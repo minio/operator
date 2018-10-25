@@ -1,0 +1,93 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio-operator-ns
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: minioinstances.miniocontroller.minio.io
+spec:
+  group: miniocontroller.minio.io
+  version: v1beta1
+  names:
+    kind: MinioInstance
+    plural: minioinstances
+  scope: Namespaced
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: minio-operator-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - secrets
+  - pods
+  - services
+  verbs:
+  - get
+  - watch
+  - create
+  - list
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - create
+  - list
+  - patch
+- apiGroups:
+  - miniocontroller.minio.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - minio.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: minio-operator-sa
+  namespace: minio-operator-ns
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: minio-operator-binding
+  namespace: minio-operator-ns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: minio-operator-role
+subjects:
+- kind: ServiceAccount
+  name: minio-operator-sa
+  namespace: minio-operator-ns
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: minio-operator
+  namespace: minio-operator-ns
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: minio-operator
+    spec:
+      serviceAccountName: minio-operator-sa
+      containers:
+      - name: minio-operator
+        image: nitishtiwari/operator:2
+---
