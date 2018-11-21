@@ -22,7 +22,7 @@ Minio is a high performance distributed object storage server, designed for larg
 To start Minio-Operator, use the `docs/minio-operator.yaml` file.
 
 ```
-kubectl create -f https://github.com/minio/minio-operator/blob/master/docs/minio-stanoperator.yaml?raw=true
+kubectl create -f https://github.com/minio/minio-operator/blob/master/docs/minio-operator.yaml?raw=true
 ```
 
 This will create all relevant resources required for the Operator to work. Here is a list of resources created by above `yaml` file:
