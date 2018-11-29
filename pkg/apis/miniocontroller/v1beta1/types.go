@@ -59,6 +59,12 @@ type MinioInstanceSpec struct {
 	// SSLSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
 	// +optional
 	SSLSecret *corev1.LocalObjectReference `json:"sslSecret,omitempty"`
+	// Mount path for Minio volume (PV). Defaults to /export
+	// +optional
+	Mountpath string `json:"mountPath,omitempty"`
+	// Subpath inside mount path. This is the directory where Minio stores data. Default to "" (empty)
+	// +optional
+	Subpath string `json:"subPath,omitempty"`
 }
 
 // MinioInstanceStatus is the status for a MinioInstance resource

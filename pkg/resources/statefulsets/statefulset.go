@@ -20,6 +20,7 @@ package statefulsets
 
 import (
 	"fmt"
+	"path"
 	"strconv"
 
 	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
@@ -94,6 +95,7 @@ func volumeMounts(mi *miniov1beta1.MinioInstance) []corev1.VolumeMount {
 // Builds the Minio container for a MinioInstance.
 func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName string) corev1.Container {
 	replicas := int(mi.Spec.Replicas)
+	minioPath := path.Join(mi.Spec.Mountpath, mi.Spec.Subpath)
 
 	scheme := "http"
 	if mi.RequiresSSLSetup() {
@@ -103,9 +105,10 @@ func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName string) co
 	args := []string{
 		"server",
 	}
+
 	// append all the MinioInstance replica URLs
 	for i := 0; i < replicas; i++ {
-		args = append(args, fmt.Sprintf("%s://%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local%s", scheme, mi.Name, serviceName, mi.Namespace, constants.MinioVolumeMountPath))
+		args = append(args, fmt.Sprintf("%s://%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local%s", scheme, mi.Name, serviceName, mi.Namespace, minioPath))
 	}
 
 	return corev1.Container{

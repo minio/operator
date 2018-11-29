@@ -19,6 +19,8 @@
 package v1beta1
 
 import (
+	"path"
+
 	constants "github.com/minio/minio-operator/pkg/constants"
 )
 
@@ -46,6 +48,20 @@ func (mi *MinioInstance) EnsureDefaults() *MinioInstance {
 
 	if mi.Spec.Version == "" {
 		mi.Spec.Version = constants.DefaultMinioImageVersion
+	}
+
+	if mi.Spec.Mountpath == "" {
+		mi.Spec.Mountpath = constants.MinioVolumeMountPath
+	} else {
+		// Ensure there is no trailing `/`
+		mi.Spec.Mountpath = path.Clean(mi.Spec.Mountpath)
+	}
+
+	if mi.Spec.Subpath == "" {
+		mi.Spec.Subpath = constants.MinioVolumeSubPath
+	} else {
+		// Ensure there is no `/` in beginning
+		mi.Spec.Subpath = path.Clean(mi.Spec.Subpath)
 	}
 
 	return mi
