@@ -1,13 +1,11 @@
-FROM golang:1.10.1-alpine3.7
+FROM alpine:3.7
 
 LABEL maintainer="Minio Inc <dev@minio.io>"
 
-WORKDIR /go/src/github.com/minio/
-COPY . /go/src/github.com/minio/minio-operator
+COPY minio-operator /usr/bin/
 
 RUN \
      apk add --no-cache ca-certificates 'curl>7.61.0' && \
-     cd /go/src/github.com/minio/minio-operator && \
-     go install
+     chmod +x /usr/bin/minio-operator
 
 CMD ["minio-operator"]
