@@ -89,5 +89,5 @@ spec:
       serviceAccountName: minio-operator-sa
       containers:
       - name: minio-operator
-        image: nitishtiwari/operator:2
+        image: minio/k8s-operator:latest
 ---
