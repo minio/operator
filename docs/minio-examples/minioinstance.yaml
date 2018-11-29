@@ -3,9 +3,30 @@ kind: MinioInstance
 metadata:
   name: minio
 spec:
+  ## Supply number of replicas, (should be an even number).
   replicas: 4
+  ## Minio release version, (minio/minio image tag).
+  version: RELEASE.2018-11-22T02-51-56Z
+  ## Secret with credentials to be used by Minio instance.
   credsSecret:
-    name: minio-creds-secret 
+    name: minio-creds-secret
+  ## nodeSelector parameters for Minio Pods. It specifies a map of key-value pairs. For the pod to be 
+  ## eligible to run on a node, the node must have each of the 
+  ## indicated key-value pairs as labels.
+  ## Read more here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  # nodeSelector:
+  #   disktype: ssd
+  ## Affinity settings for Minio pods. Read more about affinity 
+  ## here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity.
+  # affinity: 
+  ## Secret with certificates to configure TLS for Minio certs. Create secrets as explained 
+  ## here: https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+  # sslSecret:
+  # name: tls-ssl-minio
+  ## Mountpath where PV will be mounted inside container(s). Defaults to "/export".
+  # mountPath: /export
+  ## Subpath inside Mountpath where Minio starts. Defaults to "".
+  # subPath: /data
   volumeClaimTemplate:
     metadata:
       name: data

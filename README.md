@@ -50,6 +50,9 @@ Minio-Operator currently supports following features:
 - Create and delete highly available distributed Minio clusters.
 - Upgrading existing distributed Minio clusters.
 
+Refer [`minioinstance.yaml`](https://github.com/minio/minio-operator/blob/master/docs/minio-examples/minioinstance.yaml?raw=true) for details on how to pass supported fields to 
+the operator.
+
 ## Upcoming features
 
 With next release, we'll add Minio cluster mirror option based on [mc mirror](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror) command.
