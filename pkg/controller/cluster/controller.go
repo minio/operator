@@ -359,7 +359,6 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	c.recorder.Event(mi, corev1.EventTypeNormal, SuccessSynced, MessageResourceSynced)
 	return nil
 }
 
