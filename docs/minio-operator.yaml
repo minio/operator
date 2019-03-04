@@ -27,11 +27,13 @@ rules:
   - secrets
   - pods
   - services
+  - events
   verbs:
   - get
   - watch
   - create
   - list
+  - patch
 - apiGroups:
   - apps
   resources:
@@ -41,6 +43,7 @@ rules:
   - create
   - list
   - patch
+  - watch
 - apiGroups:
   - miniocontroller.minio.io
   resources:
