@@ -20,6 +20,7 @@ package main
 
 import (
 	"flag"
+	"github.com/minio/minio-operator/pkg/constants"
 	"os"
 	"os/signal"
 	"syscall"
@@ -39,12 +40,14 @@ import (
 
 var masterURL string
 var kubeconfig string
+var imagePath string
 var onlyOneSignalHandler = make(chan struct{})
 var shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&imagePath, "image", constants.DefaultMinioImagePath, "The minio image path.")
 }
 
 func main() {
@@ -80,7 +83,8 @@ func main() {
 	controller := cluster.NewController(kubeClient, controllerClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		minioInformerFactory.Minio().V1beta1().MinioInstances(),
-		kubeInformerFactory.Core().V1().Services())
+		kubeInformerFactory.Core().V1().Services(),
+		imagePath)
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
