@@ -36,7 +36,7 @@ import (
 	appsinformers "k8s.io/client-go/informers/apps/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
-	scheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
@@ -49,9 +49,8 @@ import (
 	minioscheme "github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/miniocontroller/v1beta1"
 	listers "github.com/minio/minio-operator/pkg/client/listers/miniocontroller/v1beta1"
-	constants "github.com/minio/minio-operator/pkg/constants"
-	services "github.com/minio/minio-operator/pkg/resources/services"
-	statefulsets "github.com/minio/minio-operator/pkg/resources/statefulsets"
+	"github.com/minio/minio-operator/pkg/resources/services"
+	"github.com/minio/minio-operator/pkg/resources/statefulsets"
 )
 
 const controllerAgentName = "minio-operator"
@@ -107,6 +106,9 @@ type Controller struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
+
+	// minio image
+	imagePath string
 }
 
 // NewController returns a new sample controller
@@ -115,7 +117,8 @@ func NewController(
 	minioClientSet clientset.Interface,
 	statefulSetInformer appsinformers.StatefulSetInformer,
 	minioInstanceInformer informers.MinioInstanceInformer,
-	serviceInformer coreinformers.ServiceInformer) *Controller {
+	serviceInformer coreinformers.ServiceInformer,
+	imagePath string) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -138,6 +141,7 @@ func NewController(
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
 		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "MinioInstances"),
 		recorder:                recorder,
+		imagePath:               imagePath,
 	}
 
 	glog.Info("Setting up event handlers")
@@ -307,7 +311,7 @@ func (c *Controller) syncHandler(key string) error {
 	ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.Name)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
-		ss = statefulsets.NewForCluster(mi, svc.Name)
+		ss = statefulsets.NewForCluster(mi, svc.Name, c.imagePath)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ss)
 	}
 
@@ -331,17 +335,17 @@ func (c *Controller) syncHandler(key string) error {
 	// should update the StatefulSet resource.
 	if mi.Spec.Replicas != *ss.Spec.Replicas {
 		glog.V(4).Infof("MinioInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.Spec.Replicas, *ss.Spec.Replicas)
-		ss = statefulsets.NewForCluster(mi, svc.Name)
+		ss = statefulsets.NewForCluster(mi, svc.Name, c.imagePath)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ss)
 	}
 
 	// If this container version on the MinioInstance resource is specified, and the
 	// version does not equal the current desired version in the StatefulSet, we
 	// should update the StatefulSet resource.
-	currentVersion := strings.TrimPrefix(ss.Spec.Template.Spec.Containers[0].Image, constants.MinioImagePath+":")
+	currentVersion := strings.TrimPrefix(ss.Spec.Template.Spec.Containers[0].Image, c.imagePath+":")
 	if mi.Spec.Version != currentVersion {
 		glog.V(4).Infof("Updating MinioInstance %s Minio server version %d, to: %d", name, mi.Spec.Version, currentVersion)
-		ss = statefulsets.NewForCluster(mi, svc.Name)
+		ss = statefulsets.NewForCluster(mi, svc.Name, c.imagePath)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ss)
 	}
 

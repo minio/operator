@@ -93,7 +93,7 @@ func volumeMounts(mi *miniov1beta1.MinioInstance) []corev1.VolumeMount {
 }
 
 // Builds the Minio container for a MinioInstance.
-func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName string) corev1.Container {
+func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName, imagePath string) corev1.Container {
 	replicas := int(mi.Spec.Replicas)
 	minioPath := path.Join(mi.Spec.Mountpath, mi.Spec.Subpath)
 
@@ -113,7 +113,7 @@ func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName string) co
 
 	return corev1.Container{
 		Name:  constants.MinioServerName,
-		Image: fmt.Sprintf("%s:%s", constants.MinioImagePath, mi.Spec.Version),
+		Image: fmt.Sprintf("%s:%s", imagePath, mi.Spec.Version),
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: constants.MinioPort,
@@ -126,7 +126,7 @@ func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName string) co
 }
 
 // NewForCluster creates a new StatefulSet for the given Cluster.
-func NewForCluster(mi *miniov1beta1.MinioInstance, serviceName string) *appsv1.StatefulSet {
+func NewForCluster(mi *miniov1beta1.MinioInstance, serviceName, imagePath string) *appsv1.StatefulSet {
 	// If a PV isn't specified just use a EmptyDir volume
 	var podVolumes = []corev1.Volume{}
 	if mi.Spec.VolumeClaimTemplate == nil {
@@ -168,7 +168,7 @@ func NewForCluster(mi *miniov1beta1.MinioInstance, serviceName string) *appsv1.S
 		})
 	}
 
-	containers := []corev1.Container{minioServerContainer(mi, serviceName)}
+	containers := []corev1.Container{minioServerContainer(mi, serviceName, imagePath)}
 
 	podLabels := map[string]string{
 		constants.InstanceLabel: mi.Name,
