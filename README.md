@@ -54,8 +54,8 @@ Refer [`minioinstance.yaml`](https://github.com/minio/minio-operator/blob/master
 the operator.
 
 ## Upcoming features
-
-With next release, we'll add Minio cluster mirror option based on [mc mirror](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror) command.
+- Federation and CoreDNS
+- Continuous remote site mirroring with [`mc mirror`](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror)
 
 ## Explore Further
 
