@@ -199,6 +199,7 @@ func NewForCluster(mi *miniov1beta1.MinioInstance, serviceName string) *appsv1.S
 				Spec: corev1.PodSpec{
 					Containers: containers,
 					Volumes:    podVolumes,
+					Affinity:   mi.Spec.Affinity,
 				},
 			},
 		},
