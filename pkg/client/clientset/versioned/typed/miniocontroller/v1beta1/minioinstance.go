@@ -27,34 +27,34 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-// MinioInstancesGetter has a method to return a MinioInstanceInterface.
+// MinIOInstancesGetter has a method to return a MinIOInstanceInterface.
 // A group's client should implement this interface.
-type MinioInstancesGetter interface {
-	MinioInstances(namespace string) MinioInstanceInterface
+type MinIOInstancesGetter interface {
+	MinIOInstances(namespace string) MinIOInstanceInterface
 }
 
-// MinioInstanceInterface has methods to work with MinioInstance resources.
-type MinioInstanceInterface interface {
-	Create(*v1beta1.MinioInstance) (*v1beta1.MinioInstance, error)
-	Update(*v1beta1.MinioInstance) (*v1beta1.MinioInstance, error)
-	UpdateStatus(*v1beta1.MinioInstance) (*v1beta1.MinioInstance, error)
+// MinIOInstanceInterface has methods to work with MinIOInstance resources.
+type MinIOInstanceInterface interface {
+	Create(*v1beta1.MinIOInstance) (*v1beta1.MinIOInstance, error)
+	Update(*v1beta1.MinIOInstance) (*v1beta1.MinIOInstance, error)
+	UpdateStatus(*v1beta1.MinIOInstance) (*v1beta1.MinIOInstance, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1beta1.MinioInstance, error)
-	List(opts v1.ListOptions) (*v1beta1.MinioInstanceList, error)
+	Get(name string, options v1.GetOptions) (*v1beta1.MinIOInstance, error)
+	List(opts v1.ListOptions) (*v1beta1.MinIOInstanceList, error)
 	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.MinioInstance, err error)
-	MinioInstanceExpansion
+	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.MinIOInstance, err error)
+	MinIOInstanceExpansion
 }
 
-// minioInstances implements MinioInstanceInterface
+// minioInstances implements MinIOInstanceInterface
 type minioInstances struct {
 	client rest.Interface
 	ns     string
 }
 
-// newMinioInstances returns a MinioInstances
-func newMinioInstances(c *MinioV1beta1Client, namespace string) *minioInstances {
+// newMinIOInstances returns a MinIOInstances
+func newMinIOInstances(c *MinIOV1beta1Client, namespace string) *minioInstances {
 	return &minioInstances{
 		client: c.RESTClient(),
 		ns:     namespace,
@@ -62,8 +62,8 @@ func newMinioInstances(c *MinioV1beta1Client, namespace string) *minioInstances 
 }
 
 // Get takes name of the minioInstance, and returns the corresponding minioInstance object, and an error if there is any.
-func (c *minioInstances) Get(name string, options v1.GetOptions) (result *v1beta1.MinioInstance, err error) {
-	result = &v1beta1.MinioInstance{}
+func (c *minioInstances) Get(name string, options v1.GetOptions) (result *v1beta1.MinIOInstance, err error) {
+	result = &v1beta1.MinIOInstance{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("minioinstances").
@@ -74,9 +74,9 @@ func (c *minioInstances) Get(name string, options v1.GetOptions) (result *v1beta
 	return
 }
 
-// List takes label and field selectors, and returns the list of MinioInstances that match those selectors.
-func (c *minioInstances) List(opts v1.ListOptions) (result *v1beta1.MinioInstanceList, err error) {
-	result = &v1beta1.MinioInstanceList{}
+// List takes label and field selectors, and returns the list of MinIOInstances that match those selectors.
+func (c *minioInstances) List(opts v1.ListOptions) (result *v1beta1.MinIOInstanceList, err error) {
+	result = &v1beta1.MinIOInstanceList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("minioinstances").
@@ -97,8 +97,8 @@ func (c *minioInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a minioInstance and creates it.  Returns the server's representation of the minioInstance, and an error, if there is any.
-func (c *minioInstances) Create(minioInstance *v1beta1.MinioInstance) (result *v1beta1.MinioInstance, err error) {
-	result = &v1beta1.MinioInstance{}
+func (c *minioInstances) Create(minioInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
+	result = &v1beta1.MinIOInstance{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("minioinstances").
@@ -109,8 +109,8 @@ func (c *minioInstances) Create(minioInstance *v1beta1.MinioInstance) (result *v
 }
 
 // Update takes the representation of a minioInstance and updates it. Returns the server's representation of the minioInstance, and an error, if there is any.
-func (c *minioInstances) Update(minioInstance *v1beta1.MinioInstance) (result *v1beta1.MinioInstance, err error) {
-	result = &v1beta1.MinioInstance{}
+func (c *minioInstances) Update(minioInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
+	result = &v1beta1.MinIOInstance{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("minioinstances").
@@ -124,8 +124,8 @@ func (c *minioInstances) Update(minioInstance *v1beta1.MinioInstance) (result *v
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
-func (c *minioInstances) UpdateStatus(minioInstance *v1beta1.MinioInstance) (result *v1beta1.MinioInstance, err error) {
-	result = &v1beta1.MinioInstance{}
+func (c *minioInstances) UpdateStatus(minioInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
+	result = &v1beta1.MinIOInstance{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("minioinstances").
@@ -160,8 +160,8 @@ func (c *minioInstances) DeleteCollection(options *v1.DeleteOptions, listOptions
 }
 
 // Patch applies the patch and returns the patched minioInstance.
-func (c *minioInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.MinioInstance, err error) {
-	result = &v1beta1.MinioInstance{}
+func (c *minioInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.MinIOInstance, err error) {
+	result = &v1beta1.MinIOInstance{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("minioinstances").

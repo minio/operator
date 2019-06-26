@@ -24,8 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// MinioInstances returns a MinioInstanceInformer.
-	MinioInstances() MinioInstanceInformer
+	// MinIOInstances returns a MinIOInstanceInformer.
+	MinIOInstances() MinIOInstanceInformer
 	// Mirrors returns a MirrorInformer.
 	Mirrors() MirrorInformer
 }
@@ -41,8 +41,8 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// MinioInstances returns a MinioInstanceInformer.
-func (v *version) MinioInstances() MinioInstanceInformer {
+// MinIOInstances returns a MinIOInstanceInformer.
+func (v *version) MinIOInstances() MinIOInstanceInformer {
 	return &minioInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 

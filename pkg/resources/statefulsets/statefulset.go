@@ -1,7 +1,7 @@
 /*
- * Minio-Operator - Manage Minio clusters in Kubernetes
+ * MinIO-Operator - Manage MinIO clusters in Kubernetes
  *
- * Minio (C) 2018 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2018, 2019 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// Returns the Minio credential environment variables
+// Returns the MinIO credential environment variables
 // If a user specifies a secret in the spec we use that
 // else we create a secret with a default password
-func minioCredentials(mi *miniov1beta1.MinioInstance) []corev1.EnvVar {
+func minioCredentials(mi *miniov1beta1.MinIOInstance) []corev1.EnvVar {
 	var secretName string
 	if mi.HasCredsSecret() {
 		secretName = mi.Spec.CredsSecret.Name
@@ -63,23 +63,23 @@ func minioCredentials(mi *miniov1beta1.MinioInstance) []corev1.EnvVar {
 			},
 		}
 	}
-	// If no secret provided, dont use env vars. Minio server automatically creates default
+	// If no secret provided, dont use env vars. MinIO server automatically creates default
 	// credentials
 	return []corev1.EnvVar{}
 }
 
-// Builds the volume mounts for Minio container.
-func volumeMounts(mi *miniov1beta1.MinioInstance) []corev1.VolumeMount {
+// Builds the volume mounts for MinIO container.
+func volumeMounts(mi *miniov1beta1.MinIOInstance) []corev1.VolumeMount {
 	var mounts []corev1.VolumeMount
 
-	name := constants.MinioVolumeName
+	name := constants.MinIOVolumeName
 	if mi.Spec.VolumeClaimTemplate != nil {
 		name = mi.Spec.VolumeClaimTemplate.Name
 	}
 
 	mounts = append(mounts, corev1.VolumeMount{
 		Name:      name,
-		MountPath: constants.MinioVolumeMountPath,
+		MountPath: constants.MinIOVolumeMountPath,
 	})
 
 	if mi.RequiresSSLSetup() {
@@ -92,8 +92,8 @@ func volumeMounts(mi *miniov1beta1.MinioInstance) []corev1.VolumeMount {
 	return mounts
 }
 
-// Builds the Minio container for a MinioInstance.
-func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName, imagePath string) corev1.Container {
+// Builds the MinIO container for a MinIOInstance.
+func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string) corev1.Container {
 	replicas := int(mi.Spec.Replicas)
 	minioPath := path.Join(mi.Spec.Mountpath, mi.Spec.Subpath)
 
@@ -106,17 +106,17 @@ func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName, imagePath
 		"server",
 	}
 
-	// append all the MinioInstance replica URLs
+	// append all the MinIOInstance replica URLs
 	for i := 0; i < replicas; i++ {
 		args = append(args, fmt.Sprintf("%s://%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local%s", scheme, mi.Name, serviceName, mi.Namespace, minioPath))
 	}
 
 	return corev1.Container{
-		Name:  constants.MinioServerName,
+		Name:  constants.MinIOServerName,
 		Image: fmt.Sprintf("%s:%s", imagePath, mi.Spec.Version),
 		Ports: []corev1.ContainerPort{
 			{
-				ContainerPort: constants.MinioPort,
+				ContainerPort: constants.MinIOPort,
 			},
 		},
 		VolumeMounts: volumeMounts(mi),
@@ -126,11 +126,11 @@ func minioServerContainer(mi *miniov1beta1.MinioInstance, serviceName, imagePath
 }
 
 // NewForCluster creates a new StatefulSet for the given Cluster.
-func NewForCluster(mi *miniov1beta1.MinioInstance, serviceName, imagePath string) *appsv1.StatefulSet {
+func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string) *appsv1.StatefulSet {
 	// If a PV isn't specified just use a EmptyDir volume
 	var podVolumes = []corev1.Volume{}
 	if mi.Spec.VolumeClaimTemplate == nil {
-		podVolumes = append(podVolumes, corev1.Volume{Name: constants.MinioVolumeName,
+		podVolumes = append(podVolumes, corev1.Volume{Name: constants.MinIOVolumeName,
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: ""}}})
 	}
 

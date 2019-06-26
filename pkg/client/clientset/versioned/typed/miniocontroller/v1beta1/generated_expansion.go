@@ -18,6 +18,6 @@ limitations under the License.
 
 package v1beta1
 
-type MinioInstanceExpansion interface{}
+type MinIOInstanceExpansion interface{}
 
 type MirrorExpansion interface{}

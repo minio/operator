@@ -1,7 +1,7 @@
 /*
- * Minio-Operator - Manage Minio clusters in Kubernetes
+ * MinIO-Operator - Manage MinIO clusters in Kubernetes
  *
- * Minio (C) 2018 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2018, 2019 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,39 +18,39 @@
 
 package constants
 
-// InstanceLabel is applied to all components of a MinioInstance cluster
-const InstanceLabel = "v1beta1.minio.io/instance"
+// InstanceLabel is applied to all components of a MinIOInstance cluster
+const InstanceLabel = "v1beta1.min.io/instance"
 
-// MinioOperatorVersionLabel denotes the version of the MinioInstance operator
+// MinIOOperatorVersionLabel denotes the version of the MinIOInstance operator
 // running in the cluster.
-const MinioOperatorVersionLabel = "v1beta1.minio.io/version"
+const MinIOOperatorVersionLabel = "v1beta1.min.io/version"
 
-// MinioPort specifies the default MinioInstance port number.
-const MinioPort = 9000
+// MinIOPort specifies the default MinIOInstance port number.
+const MinIOPort = 9000
 
-// DefaultReplicas specifies the default Minio replicas to use for distributed deployment if not specified explicitly by user
+// DefaultReplicas specifies the default MinIO replicas to use for distributed deployment if not specified explicitly by user
 const DefaultReplicas = 4
 
-// MinioVolumeName specifies the default volume name for Minio volumes
-const MinioVolumeName = "export"
+// MinIOVolumeName specifies the default volume name for MinIO volumes
+const MinIOVolumeName = "export"
 
-// MinioVolumeMountPath specifies the default mount path for Minio volumes
-const MinioVolumeMountPath = "/export"
+// MinIOVolumeMountPath specifies the default mount path for MinIO volumes
+const MinIOVolumeMountPath = "/export"
 
-// MinioVolumeSubPath specifies the default sub path under mount path
-const MinioVolumeSubPath = ""
+// MinIOVolumeSubPath specifies the default sub path under mount path
+const MinIOVolumeSubPath = ""
 
-// MinioImagePath specifies the Minio Docker hub path
-const DefaultMinioImagePath = "minio/minio"
+// DefaultMinIOImagePath specifies the MinIO Docker hub path
+const DefaultMinIOImagePath = "minio/minio"
 
-// DefaultMinioImageVersion specifies the latest released Minio Docker hub image
-const DefaultMinioImageVersion = "RELEASE.2018-11-22T02-51-56Z"
+// DefaultMinIOImageVersion specifies the latest released MinIO Docker hub image
+const DefaultMinIOImageVersion = "RELEASE.2019-06-19T18-24-42Z"
 
-// MinioServerName specifies the default container name for MinioInstance
-const MinioServerName = "minio"
+// MinIOServerName specifies the default container name for MinIOInstance
+const MinIOServerName = "minio"
 
-// DefaultMinioAccessKey specifies default access key for MinioInstance
-const DefaultMinioAccessKey = "AKIAIOSFODNN7EXAMPLE"
+// DefaultMinIOAccessKey specifies default access key for MinIOInstance
+const DefaultMinIOAccessKey = "AKIAIOSFODNN7EXAMPLE"
 
-//DefaultMinioSecretKey specifies default secret key for MinioInstance
-const DefaultMinioSecretKey = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+//DefaultMinIOSecretKey specifies default secret key for MinIOInstance
+const DefaultMinIOSecretKey = "wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY"

@@ -27,26 +27,26 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	MinioV1beta1() miniov1beta1.MinioV1beta1Interface
+	MinIOV1beta1() miniov1beta1.MinIOV1beta1Interface
 	// Deprecated: please explicitly pick a version if possible.
-	Minio() miniov1beta1.MinioV1beta1Interface
+	MinIO() miniov1beta1.MinIOV1beta1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	minioV1beta1 *miniov1beta1.MinioV1beta1Client
+	minioV1beta1 *miniov1beta1.MinIOV1beta1Client
 }
 
-// MinioV1beta1 retrieves the MinioV1beta1Client
-func (c *Clientset) MinioV1beta1() miniov1beta1.MinioV1beta1Interface {
+// MinIOV1beta1 retrieves the MinIOV1beta1Client
+func (c *Clientset) MinIOV1beta1() miniov1beta1.MinIOV1beta1Interface {
 	return c.minioV1beta1
 }
 
-// Deprecated: Minio retrieves the default version of MinioClient.
+// Deprecated: MinIO retrieves the default version of MinIOClient.
 // Please explicitly pick a version.
-func (c *Clientset) Minio() miniov1beta1.MinioV1beta1Interface {
+func (c *Clientset) MinIO() miniov1beta1.MinIOV1beta1Interface {
 	return c.minioV1beta1
 }
 

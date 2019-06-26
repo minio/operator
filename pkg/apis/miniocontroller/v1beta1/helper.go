@@ -1,7 +1,7 @@
 /*
- * Minio-Operator - Manage Minio clusters in Kubernetes
+ * MinIO-Operator - Manage MinIO clusters in Kubernetes
  *
- * Minio (C) 2018 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2018, 2019 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,15 @@ import (
 )
 
 // HasCredsSecret returns true if the user has provided a secret
-// for a MinioInstance else false
-func (mi *MinioInstance) HasCredsSecret() bool {
+// for a MinIOInstance else false
+func (mi *MinIOInstance) HasCredsSecret() bool {
 	return mi.Spec.CredsSecret != nil
 }
 
 // RequiresSSLSetup returns true is the user has provided a secret
 // that contains CA cert, server cert and server key for group replication
 // SSL support
-func (mi *MinioInstance) RequiresSSLSetup() bool {
+func (mi *MinIOInstance) RequiresSSLSetup() bool {
 	return mi.Spec.SSLSecret != nil
 }
 
@@ -41,24 +41,24 @@ func (mi *MinioInstance) RequiresSSLSetup() bool {
 // spec that are required, we set some sensible defaults.
 // For example a user can choose to omit the version
 // and number of members.
-func (mi *MinioInstance) EnsureDefaults() *MinioInstance {
+func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 	if mi.Spec.Replicas == 0 {
 		mi.Spec.Replicas = constants.DefaultReplicas
 	}
 
 	if mi.Spec.Version == "" {
-		mi.Spec.Version = constants.DefaultMinioImageVersion
+		mi.Spec.Version = constants.DefaultMinIOImageVersion
 	}
 
 	if mi.Spec.Mountpath == "" {
-		mi.Spec.Mountpath = constants.MinioVolumeMountPath
+		mi.Spec.Mountpath = constants.MinIOVolumeMountPath
 	} else {
 		// Ensure there is no trailing `/`
 		mi.Spec.Mountpath = path.Clean(mi.Spec.Mountpath)
 	}
 
 	if mi.Spec.Subpath == "" {
-		mi.Spec.Subpath = constants.MinioVolumeSubPath
+		mi.Spec.Subpath = constants.MinIOVolumeSubPath
 	} else {
 		// Ensure there is no `/` in beginning
 		mi.Spec.Subpath = path.Clean(mi.Spec.Subpath)

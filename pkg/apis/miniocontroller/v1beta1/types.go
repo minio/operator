@@ -1,7 +1,7 @@
 /*
- * Minio-Operator - Manage Minio clusters in Kubernetes
+ * MinIO-Operator - Manage MinIO clusters in Kubernetes
  *
- * Minio (C) 2018 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2018, 2019 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,26 +26,26 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MinioInstance is a specification for a Minio resource
-type MinioInstance struct {
+// MinIOInstance is a specification for a MinIO resource
+type MinIOInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MinioInstanceSpec   `json:"spec"`
-	Status MinioInstanceStatus `json:"status"`
+	Spec   MinIOInstanceSpec   `json:"spec"`
+	Status MinIOInstanceStatus `json:"status"`
 }
 
-// MinioInstanceSpec is the spec for a MinioInstance resource
-type MinioInstanceSpec struct {
-	// Version defines the MinioInstance Docker image version.
+// MinIOInstanceSpec is the spec for a MinIOInstance resource
+type MinIOInstanceSpec struct {
+	// Version defines the MinIOInstance Docker image version.
 	Version string `json:"version"`
-	// Replicas defines the number of Minio instances in a MinioInstance resource
+	// Replicas defines the number of MinIO instances in a MinIOInstance resource
 	Replicas int32 `json:"replicas"`
-	// If provided, use this secret as the credentials for MinioInstance resource
-	// Otherwise Minio server creates dynamic credentials printed on Minio server startup banner
+	// If provided, use this secret as the credentials for MinIOInstance resource
+	// Otherwise MinIO server creates dynamic credentials printed on MinIO server startup banner
 	// +optional
 	CredsSecret *corev1.LocalObjectReference `json:"credsSecret,omitempty"`
-	// VolumeClaimTemplate allows a user to specify how volumes inside a MinioInstance
+	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
 	// +optional
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
@@ -59,33 +59,33 @@ type MinioInstanceSpec struct {
 	// SSLSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
 	// +optional
 	SSLSecret *corev1.LocalObjectReference `json:"sslSecret,omitempty"`
-	// Mount path for Minio volume (PV). Defaults to /export
+	// Mount path for MinIO volume (PV). Defaults to /export
 	// +optional
 	Mountpath string `json:"mountPath,omitempty"`
-	// Subpath inside mount path. This is the directory where Minio stores data. Default to "" (empty)
+	// Subpath inside mount path. This is the directory where MinIO stores data. Default to "" (empty)
 	// +optional
 	Subpath string `json:"subPath,omitempty"`
 }
 
-// MinioInstanceStatus is the status for a MinioInstance resource
-type MinioInstanceStatus struct {
+// MinIOInstanceStatus is the status for a MinIOInstance resource
+type MinIOInstanceStatus struct {
 	AvailableReplicas int32 `json:"availableReplicas"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MinioInstanceList is a list of MinioInstance resources
-type MinioInstanceList struct {
+// MinIOInstanceList is a list of MinIOInstance resources
+type MinIOInstanceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []MinioInstance `json:"items"`
+	Items []MinIOInstance `json:"items"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Mirror is a backup of a MinioInstance.
+// Mirror is a backup of a MinIOInstance.
 type Mirror struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata"`
@@ -94,17 +94,17 @@ type Mirror struct {
 	Status MirrorStatus `json:"status"`
 }
 
-// MirrorSpec defines the specification for a MinioInstance backup. This includes the source and
+// MirrorSpec defines the specification for a MinIOInstance backup. This includes the source and
 // target where the backup should be stored. Note that both source and target are expected to be
 // AWS S3 API compliant services.
 type MirrorSpec struct {
-	// Version defines the Minio Client (mc) Docker image version.
+	// Version defines the MinIO Client (mc) Docker image version.
 	Version string `json:"version"`
-	// SourceEndpoint is the endpoint of Minio instance to backup.
+	// SourceEndpoint is the endpoint of MinIO instance to backup.
 	SourceEndpoint string `json:"srcEndpoint"`
-	// SourceCredsSecret as the credentials for source Minio instance.
+	// SourceCredsSecret as the credentials for source MinIO instance.
 	SourceCredsSecret *corev1.LocalObjectReference `json:"srcCredsSecret"`
-	// SourceBucket defines the bucket on source Minio instance
+	// SourceBucket defines the bucket on source MinIO instance
 	// +optional
 	SourceBucket string `json:"srcBucket,omitempty"`
 	// Region in which the source S3 compatible bucket is located.

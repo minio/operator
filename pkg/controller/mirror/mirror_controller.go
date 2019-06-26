@@ -1,7 +1,7 @@
 /*
- * Minio-Operator - Manage Minio clusters in Kubernetes
+ * MinIO-Operator - Manage MinIO clusters in Kubernetes
  *
- * Minio (C) 2018 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2018, 2019 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,20 +55,20 @@ import (
 const controllerAgentName = "minio-operator"
 
 const (
-	// SuccessSynced is used as part of the Event 'reason' when a MinioInstance is synced
+	// SuccessSynced is used as part of the Event 'reason' when a MinIOInstance is synced
 	SuccessSynced = "Synced"
-	// ErrResourceExists is used as part of the Event 'reason' when a MinioInstance fails
+	// ErrResourceExists is used as part of the Event 'reason' when a MinIOInstance fails
 	// to sync due to a StatefulSet of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
-	// MessageResourceExists is the message used for Events when a MinioInstance
+	// MessageResourceExists is the message used for Events when a MinIOInstance
 	// fails to sync due to a StatefulSet already existing
-	MessageResourceExists = "Resource %q already exists and is not managed by Minio"
-	// MessageResourceSynced is the message used for an Event fired when a MinioInstance
+	MessageResourceExists = "Resource %q already exists and is not managed by MinIO"
+	// MessageResourceSynced is the message used for an Event fired when a MinIOInstance
 	// is synced successfully
-	MessageResourceSynced = "MinioInstance synced successfully"
+	MessageResourceSynced = "MinIOInstance synced successfully"
 )
 
-// Controller struct watches the Kubernetes API for changes to MinioInstance resources
+// Controller struct watches the Kubernetes API for changes to MinIOInstance resources
 type Controller struct {
 	// kubeClientSet is a standard kubernetes clientset
 	kubeClientSet kubernetes.Interface
@@ -82,9 +82,9 @@ type Controller struct {
 	// has synced at least once.
 	statefulSetListerSynced cache.InformerSynced
 
-	// minioInstancesLister lists MinioInstance from a shared informer's
+	// minioInstancesLister lists MinIOInstance from a shared informer's
 	// store.
-	minioInstancesLister listers.MinioInstanceLister
+	minioInstancesLister listers.MinIOInstanceLister
 	// minioInstancesSynced returns true if the StatefulSet shared informer
 	// has synced at least once.
 	minioInstancesSynced cache.InformerSynced
@@ -115,7 +115,7 @@ func NewController(
 	kubeClientSet kubernetes.Interface,
 	minioClientSet clientset.Interface,
 	statefulSetInformer appsinformers.StatefulSetInformer,
-	minioInstanceInformer informers.MinioInstanceInformer,
+	minioInstanceInformer informers.MinIOInstanceInformer,
 	serviceInformer coreinformers.ServiceInformer,
 	imagePath string) *Controller {
 
@@ -138,22 +138,22 @@ func NewController(
 		minioInstancesSynced:    minioInstanceInformer.Informer().HasSynced,
 		serviceLister:           serviceInformer.Lister(),
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
-		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "MinioInstances"),
+		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "MinIOInstances"),
 		recorder:                recorder,
 		imagePath:               imagePath,
 	}
 
 	glog.Info("Setting up event handlers")
-	// Set up an event handler for when MinioInstance resources change
+	// Set up an event handler for when MinIOInstance resources change
 	minioInstanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueMinioInstance,
+		AddFunc: controller.enqueueMinIOInstance,
 		UpdateFunc: func(old, new interface{}) {
-			controller.enqueueMinioInstance(new)
+			controller.enqueueMinIOInstance(new)
 		},
 	})
 	// Set up an event handler for when StatefulSet resources change. This
 	// handler will lookup the owner of the given StatefulSet, and if it is
-	// owned by a MinioInstance resource will enqueue that MinioInstance resource for
+	// owned by a MinIOInstance resource will enqueue that MinIOInstance resource for
 	// processing. This way, we don't need to implement custom logic for
 	// handling StatefulSet resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
@@ -183,7 +183,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	defer c.workqueue.ShutDown()
 
 	// Start the informer factories to begin populating the informer caches
-	glog.Info("Starting MinioInstance controller")
+	glog.Info("Starting MinIOInstance controller")
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
@@ -192,7 +192,7 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	glog.Info("Starting workers")
-	// Launch two workers to process MinioInstance resources
+	// Launch two workers to process MinIOInstance resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
@@ -245,7 +245,7 @@ func (c *Controller) processNextWorkItem() bool {
 			return nil
 		}
 		// Run the syncHandler, passing it the namespace/name string of the
-		// MinioInstance resource to be synced.
+		// MinIOInstance resource to be synced.
 		if err := c.syncHandler(key); err != nil {
 			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
 		}
@@ -264,7 +264,7 @@ func (c *Controller) processNextWorkItem() bool {
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
-// converge the two. It then updates the Status block of the MinioInstance resource
+// converge the two. It then updates the Status block of the MinIOInstance resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(key string) error {
 	// Convert the namespace/name string into a distinct namespace and name
@@ -276,12 +276,12 @@ func (c *Controller) syncHandler(key string) error {
 
 	nsName := types.NamespacedName{Namespace: namespace, Name: name}
 
-	// Get the MinioInstance resource with this namespace/name
-	mi, err := c.minioInstancesLister.MinioInstances(namespace).Get(name)
+	// Get the MinIOInstance resource with this namespace/name
+	mi, err := c.minioInstancesLister.MinIOInstances(namespace).Get(name)
 	if err != nil {
-		// The MinioInstance resource may no longer exist, in which case we stop processing.
+		// The MinIOInstance resource may no longer exist, in which case we stop processing.
 		if errors.IsNotFound(err) {
-			runtime.HandleError(fmt.Errorf("MinioInstance '%s' in work queue no longer exists", key))
+			runtime.HandleError(fmt.Errorf("MinIOInstance '%s' in work queue no longer exists", key))
 			return nil
 		}
 		return err
@@ -304,7 +304,7 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// Get the StatefulSet with the name specified in MinioInstance.spec
+	// Get the StatefulSet with the name specified in MinIOInstance.spec
 	ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.Name)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
@@ -319,7 +319,7 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// If the StatefulSet is not controlled by this MinioInstance resource, we should log
+	// If the StatefulSet is not controlled by this MinIOInstance resource, we should log
 	// a warning to the event recorder and ret
 	if !metav1.IsControlledBy(ss, mi) {
 		msg := fmt.Sprintf(MessageResourceExists, ss.Name)
@@ -327,21 +327,21 @@ func (c *Controller) syncHandler(key string) error {
 		return fmt.Errorf(msg)
 	}
 
-	// If this number of the replicas on the MinioInstance resource is specified, and the
+	// If this number of the replicas on the MinIOInstance resource is specified, and the
 	// number does not equal the current desired replicas on the StatefulSet, we
 	// should update the StatefulSet resource.
 	if mi.Spec.Replicas != *ss.Spec.Replicas {
-		glog.V(4).Infof("MinioInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.Spec.Replicas, *ss.Spec.Replicas)
+		glog.V(4).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.Spec.Replicas, *ss.Spec.Replicas)
 		ss = statefulsets.NewForCluster(mi, svc.Name, c.imagePath)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ss)
 	}
 
-	// If this container version on the MinioInstance resource is specified, and the
+	// If this container version on the MinIOInstance resource is specified, and the
 	// version does not equal the current desired version in the StatefulSet, we
 	// should update the StatefulSet resource.
 	currentVersion := strings.TrimPrefix(ss.Spec.Template.Spec.Containers[0].Image, c.imagePath+":")
 	if mi.Spec.Version != currentVersion {
-		glog.V(4).Infof("Updating MinioInstance %s Minio server version %d, to: %d", name, mi.Spec.Version, currentVersion)
+		glog.V(4).Infof("Updating MinIOInstance %s MinIO server version %d, to: %d", name, mi.Spec.Version, currentVersion)
 		ss = statefulsets.NewForCluster(mi, svc.Name, c.imagePath)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ss)
 	}
@@ -353,9 +353,9 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// Finally, we update the status block of the MinioInstance resource to reflect the
+	// Finally, we update the status block of the MinIOInstance resource to reflect the
 	// current state of the world
-	err = c.updateMinioInstanceStatus(mi, ss)
+	err = c.updateMinIOInstanceStatus(mi, ss)
 	if err != nil {
 		return err
 	}
@@ -364,24 +364,24 @@ func (c *Controller) syncHandler(key string) error {
 	return nil
 }
 
-func (c *Controller) updateMinioInstanceStatus(minioInstance *miniov1beta1.MinioInstance, statefulSet *appsv1.StatefulSet) error {
+func (c *Controller) updateMinIOInstanceStatus(minioInstance *miniov1beta1.MinIOInstance, statefulSet *appsv1.StatefulSet) error {
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	minioInstanceCopy := minioInstance.DeepCopy()
 	minioInstanceCopy.Status.AvailableReplicas = statefulSet.Status.Replicas
 	// If the CustomResourceSubresources feature gate is not enabled,
-	// we must use Update instead of UpdateStatus to update the Status block of the MinioInstance resource.
+	// we must use Update instead of UpdateStatus to update the Status block of the MinIOInstance resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := c.minioClientSet.MinioV1beta1().MinioInstances(minioInstance.Namespace).Update(minioInstanceCopy)
+	_, err := c.minioClientSet.MinIOV1beta1().MinIOInstances(minioInstance.Namespace).Update(minioInstanceCopy)
 	return err
 }
 
-// enqueueMinioInstance takes a MinioInstance resource and converts it into a namespace/name
+// enqueueMinIOInstance takes a MinIOInstance resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
-// passed resources of any type other than MinioInstance.
-func (c *Controller) enqueueMinioInstance(obj interface{}) {
+// passed resources of any type other than MinIOInstance.
+func (c *Controller) enqueueMinIOInstance(obj interface{}) {
 	var key string
 	var err error
 	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
@@ -392,9 +392,9 @@ func (c *Controller) enqueueMinioInstance(obj interface{}) {
 }
 
 // handleObject will take any resource implementing metav1.Object and attempt
-// to find the MinioInstance resource that 'owns' it. It does this by looking at the
+// to find the MinIOInstance resource that 'owns' it. It does this by looking at the
 // objects metadata.ownerReferences field for an appropriate OwnerReference.
-// It then enqueues that MinioInstance resource to be processed. If the object does not
+// It then enqueues that MinIOInstance resource to be processed. If the object does not
 // have an appropriate OwnerReference, it will simply be skipped.
 func (c *Controller) handleObject(obj interface{}) {
 	var object metav1.Object
@@ -414,19 +414,19 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 	glog.V(4).Infof("Processing object: %s", object.GetName())
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a MinioInstance, we should not do anything more
+		// If this object is not owned by a MinIOInstance, we should not do anything more
 		// with it.
-		if ownerRef.Kind != "MinioInstance" {
+		if ownerRef.Kind != "MinIOInstance" {
 			return
 		}
 
-		minioInstance, err := c.minioInstancesLister.MinioInstances(object.GetNamespace()).Get(ownerRef.Name)
+		minioInstance, err := c.minioInstancesLister.MinIOInstances(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
 			glog.V(4).Infof("ignoring orphaned object '%s' of minioInstance '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
 		}
 
-		c.enqueueMinioInstance(minioInstance)
+		c.enqueueMinIOInstance(minioInstance)
 		return
 	}
 }

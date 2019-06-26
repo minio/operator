@@ -1,6 +1,6 @@
-FROM alpine:3.7
+FROM alpine:3.9
 
-LABEL maintainer="Minio Inc <dev@minio.io>"
+LABEL maintainer="MinIO Inc <dev@min.io>"
 
 COPY minio-operator /usr/bin/
 

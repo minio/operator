@@ -1,7 +1,7 @@
 /*
- * Minio-Operator - Manage Minio clusters in Kubernetes
+ * MinIO-Operator - Manage MinIO clusters in Kubernetes
  *
- * Minio (C) 2018 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2018, 2019 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ func Resource(resource string) schema.GroupResource {
 }
 
 var (
-	// SchemeBuilder collects the scheme builder functions for the Minio
+	// SchemeBuilder collects the scheme builder functions for the MinIO
 	// Operator API.
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 
@@ -49,13 +49,13 @@ var (
 )
 
 // ClusterCRDResourceKind is the Kind of a Cluster.
-const ClusterCRDResourceKind = "MinioInstance"
+const ClusterCRDResourceKind = "MinIOInstance"
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&MinioInstance{},
-		&MinioInstanceList{},
+		&MinIOInstance{},
+		&MinIOInstanceList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

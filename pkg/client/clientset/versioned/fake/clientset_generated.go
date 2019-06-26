@@ -71,12 +71,12 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 
 var _ clientset.Interface = &Clientset{}
 
-// MinioV1beta1 retrieves the MinioV1beta1Client
-func (c *Clientset) MinioV1beta1() miniov1beta1.MinioV1beta1Interface {
-	return &fakeminiov1beta1.FakeMinioV1beta1{Fake: &c.Fake}
+// MinIOV1beta1 retrieves the MinIOV1beta1Client
+func (c *Clientset) MinIOV1beta1() miniov1beta1.MinIOV1beta1Interface {
+	return &fakeminiov1beta1.FakeMinIOV1beta1{Fake: &c.Fake}
 }
 
-// Minio retrieves the MinioV1beta1Client
-func (c *Clientset) Minio() miniov1beta1.MinioV1beta1Interface {
-	return &fakeminiov1beta1.FakeMinioV1beta1{Fake: &c.Fake}
+// MinIO retrieves the MinIOV1beta1Client
+func (c *Clientset) MinIO() miniov1beta1.MinIOV1beta1Interface {
+	return &fakeminiov1beta1.FakeMinIOV1beta1{Fake: &c.Fake}
 }

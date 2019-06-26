@@ -1,7 +1,9 @@
+// +build go1.12
+
 /*
- * Minio-Operator - Manage Minio clusters in Kubernetes
+ * MinIO-Operator - Manage MinIO clusters in Kubernetes
  *
- * Minio (C) 2018 Minio, Inc.
+ * MinIO Cloud Storage, (C) 2018, 2019 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +22,12 @@ package main
 
 import (
 	"flag"
-	"github.com/minio/minio-operator/pkg/constants"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/minio/minio-operator/pkg/constants"
 
 	"github.com/golang/glog"
 
@@ -38,16 +41,19 @@ import (
 	"github.com/minio/minio-operator/pkg/controller/cluster"
 )
 
-var masterURL string
-var kubeconfig string
-var imagePath string
-var onlyOneSignalHandler = make(chan struct{})
-var shutdownSignals = []os.Signal{os.Interrupt, syscall.SIGTERM}
+var (
+	masterURL  string
+	kubeconfig string
+	imagePath  string
+
+	onlyOneSignalHandler = make(chan struct{})
+	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
+)
 
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&imagePath, "image", constants.DefaultMinioImagePath, "The minio image path.")
+	flag.StringVar(&imagePath, "image", constants.DefaultMinIOImagePath, "Custom minio container image.")
 }
 
 func main() {
@@ -82,7 +88,7 @@ func main() {
 
 	controller := cluster.NewController(kubeClient, controllerClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
-		minioInformerFactory.Minio().V1beta1().MinioInstances(),
+		minioInformerFactory.MinIO().V1beta1().MinIOInstances(),
 		kubeInformerFactory.Core().V1().Services(),
 		imagePath)
 

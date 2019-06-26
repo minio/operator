@@ -6,12 +6,12 @@ metadata:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: minioinstances.miniocontroller.minio.io
+  name: minioinstances.miniocontroller.min.io
 spec:
-  group: miniocontroller.minio.io
+  group: miniocontroller.min.io
   version: v1beta1
   names:
-    kind: MinioInstance
+    kind: MinIOInstance
     plural: minioinstances
   scope: Namespaced
 ---
@@ -45,13 +45,13 @@ rules:
   - patch
   - watch
 - apiGroups:
-  - miniocontroller.minio.io
+  - miniocontroller.min.io
   resources:
   - "*"
   verbs:
   - "*"
 - apiGroups:
-  - minio.io
+  - min.io
   resources:
   - "*"
   verbs:

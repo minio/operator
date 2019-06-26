@@ -18,13 +18,13 @@ limitations under the License.
 
 package v1beta1
 
-// MinioInstanceListerExpansion allows custom methods to be added to
-// MinioInstanceLister.
-type MinioInstanceListerExpansion interface{}
+// MinIOInstanceListerExpansion allows custom methods to be added to
+// MinIOInstanceLister.
+type MinIOInstanceListerExpansion interface{}
 
-// MinioInstanceNamespaceListerExpansion allows custom methods to be added to
-// MinioInstanceNamespaceLister.
-type MinioInstanceNamespaceListerExpansion interface{}
+// MinIOInstanceNamespaceListerExpansion allows custom methods to be added to
+// MinIOInstanceNamespaceLister.
+type MinIOInstanceNamespaceListerExpansion interface{}
 
 // MirrorListerExpansion allows custom methods to be added to
 // MirrorLister.

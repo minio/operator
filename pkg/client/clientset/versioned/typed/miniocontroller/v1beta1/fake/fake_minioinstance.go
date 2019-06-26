@@ -28,31 +28,31 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-// FakeMinioInstances implements MinioInstanceInterface
-type FakeMinioInstances struct {
-	Fake *FakeMinioV1beta1
+// FakeMinIOInstances implements MinIOInstanceInterface
+type FakeMinIOInstances struct {
+	Fake *FakeMinIOV1beta1
 	ns   string
 }
 
-var minioinstancesResource = schema.GroupVersionResource{Group: "minio.io.io", Version: "v1beta1", Resource: "minioinstances"}
+var minioinstancesResource = schema.GroupVersionResource{Group: "min.io.io", Version: "v1beta1", Resource: "minioinstances"}
 
-var minioinstancesKind = schema.GroupVersionKind{Group: "minio.io.io", Version: "v1beta1", Kind: "MinioInstance"}
+var minioinstancesKind = schema.GroupVersionKind{Group: "min.io.io", Version: "v1beta1", Kind: "MinIOInstance"}
 
 // Get takes name of the minioInstance, and returns the corresponding minioInstance object, and an error if there is any.
-func (c *FakeMinioInstances) Get(name string, options v1.GetOptions) (result *v1beta1.MinioInstance, err error) {
+func (c *FakeMinIOInstances) Get(name string, options v1.GetOptions) (result *v1beta1.MinIOInstance, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(minioinstancesResource, c.ns, name), &v1beta1.MinioInstance{})
+		Invokes(testing.NewGetAction(minioinstancesResource, c.ns, name), &v1beta1.MinIOInstance{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.MinioInstance), err
+	return obj.(*v1beta1.MinIOInstance), err
 }
 
-// List takes label and field selectors, and returns the list of MinioInstances that match those selectors.
-func (c *FakeMinioInstances) List(opts v1.ListOptions) (result *v1beta1.MinioInstanceList, err error) {
+// List takes label and field selectors, and returns the list of MinIOInstances that match those selectors.
+func (c *FakeMinIOInstances) List(opts v1.ListOptions) (result *v1beta1.MinIOInstanceList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(minioinstancesResource, minioinstancesKind, c.ns, opts), &v1beta1.MinioInstanceList{})
+		Invokes(testing.NewListAction(minioinstancesResource, minioinstancesKind, c.ns, opts), &v1beta1.MinIOInstanceList{})
 
 	if obj == nil {
 		return nil, err
@@ -62,8 +62,8 @@ func (c *FakeMinioInstances) List(opts v1.ListOptions) (result *v1beta1.MinioIns
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &v1beta1.MinioInstanceList{ListMeta: obj.(*v1beta1.MinioInstanceList).ListMeta}
-	for _, item := range obj.(*v1beta1.MinioInstanceList).Items {
+	list := &v1beta1.MinIOInstanceList{ListMeta: obj.(*v1beta1.MinIOInstanceList).ListMeta}
+	for _, item := range obj.(*v1beta1.MinIOInstanceList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -72,69 +72,69 @@ func (c *FakeMinioInstances) List(opts v1.ListOptions) (result *v1beta1.MinioIns
 }
 
 // Watch returns a watch.Interface that watches the requested minioInstances.
-func (c *FakeMinioInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeMinIOInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(minioinstancesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a minioInstance and creates it.  Returns the server's representation of the minioInstance, and an error, if there is any.
-func (c *FakeMinioInstances) Create(minioInstance *v1beta1.MinioInstance) (result *v1beta1.MinioInstance, err error) {
+func (c *FakeMinIOInstances) Create(minioInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(minioinstancesResource, c.ns, minioInstance), &v1beta1.MinioInstance{})
+		Invokes(testing.NewCreateAction(minioinstancesResource, c.ns, minioInstance), &v1beta1.MinIOInstance{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.MinioInstance), err
+	return obj.(*v1beta1.MinIOInstance), err
 }
 
 // Update takes the representation of a minioInstance and updates it. Returns the server's representation of the minioInstance, and an error, if there is any.
-func (c *FakeMinioInstances) Update(minioInstance *v1beta1.MinioInstance) (result *v1beta1.MinioInstance, err error) {
+func (c *FakeMinIOInstances) Update(minioInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(minioinstancesResource, c.ns, minioInstance), &v1beta1.MinioInstance{})
+		Invokes(testing.NewUpdateAction(minioinstancesResource, c.ns, minioInstance), &v1beta1.MinIOInstance{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.MinioInstance), err
+	return obj.(*v1beta1.MinIOInstance), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeMinioInstances) UpdateStatus(minioInstance *v1beta1.MinioInstance) (*v1beta1.MinioInstance, error) {
+func (c *FakeMinIOInstances) UpdateStatus(minioInstance *v1beta1.MinIOInstance) (*v1beta1.MinIOInstance, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(minioinstancesResource, "status", c.ns, minioInstance), &v1beta1.MinioInstance{})
+		Invokes(testing.NewUpdateSubresourceAction(minioinstancesResource, "status", c.ns, minioInstance), &v1beta1.MinIOInstance{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.MinioInstance), err
+	return obj.(*v1beta1.MinIOInstance), err
 }
 
 // Delete takes name of the minioInstance and deletes it. Returns an error if one occurs.
-func (c *FakeMinioInstances) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeMinIOInstances) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(minioinstancesResource, c.ns, name), &v1beta1.MinioInstance{})
+		Invokes(testing.NewDeleteAction(minioinstancesResource, c.ns, name), &v1beta1.MinIOInstance{})
 
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeMinioInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *FakeMinIOInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(minioinstancesResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &v1beta1.MinioInstanceList{})
+	_, err := c.Fake.Invokes(action, &v1beta1.MinIOInstanceList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched minioInstance.
-func (c *FakeMinioInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.MinioInstance, err error) {
+func (c *FakeMinIOInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.MinIOInstance, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(minioinstancesResource, c.ns, name, data, subresources...), &v1beta1.MinioInstance{})
+		Invokes(testing.NewPatchSubresourceAction(minioinstancesResource, c.ns, name, data, subresources...), &v1beta1.MinIOInstance{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*v1beta1.MinioInstance), err
+	return obj.(*v1beta1.MinIOInstance), err
 }
