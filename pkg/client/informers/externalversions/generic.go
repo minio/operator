@@ -54,9 +54,9 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	switch resource {
 	// Group=min.io.io, Version=v1beta1
 	case v1beta1.SchemeGroupVersion.WithResource("minioinstances"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.MinIO().V1beta1().MinIOInstances().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Min().V1beta1().MinIOInstances().Informer()}, nil
 	case v1beta1.SchemeGroupVersion.WithResource("mirrors"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.MinIO().V1beta1().Mirrors().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Min().V1beta1().Mirrors().Informer()}, nil
 
 	}
 

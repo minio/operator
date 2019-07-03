@@ -43,7 +43,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 
 // MinIOInstances returns a MinIOInstanceInformer.
 func (v *version) MinIOInstances() MinIOInstanceInformer {
-	return &minioInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+	return &minIOInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Mirrors returns a MirrorInformer.

@@ -34,18 +34,18 @@ type MinIOInstanceLister interface {
 	MinIOInstanceListerExpansion
 }
 
-// minioInstanceLister implements the MinIOInstanceLister interface.
-type minioInstanceLister struct {
+// minIOInstanceLister implements the MinIOInstanceLister interface.
+type minIOInstanceLister struct {
 	indexer cache.Indexer
 }
 
 // NewMinIOInstanceLister returns a new MinIOInstanceLister.
 func NewMinIOInstanceLister(indexer cache.Indexer) MinIOInstanceLister {
-	return &minioInstanceLister{indexer: indexer}
+	return &minIOInstanceLister{indexer: indexer}
 }
 
 // List lists all MinIOInstances in the indexer.
-func (s *minioInstanceLister) List(selector labels.Selector) (ret []*v1beta1.MinIOInstance, err error) {
+func (s *minIOInstanceLister) List(selector labels.Selector) (ret []*v1beta1.MinIOInstance, err error) {
 	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
 		ret = append(ret, m.(*v1beta1.MinIOInstance))
 	})
@@ -53,8 +53,8 @@ func (s *minioInstanceLister) List(selector labels.Selector) (ret []*v1beta1.Min
 }
 
 // MinIOInstances returns an object that can list and get MinIOInstances.
-func (s *minioInstanceLister) MinIOInstances(namespace string) MinIOInstanceNamespaceLister {
-	return minioInstanceNamespaceLister{indexer: s.indexer, namespace: namespace}
+func (s *minIOInstanceLister) MinIOInstances(namespace string) MinIOInstanceNamespaceLister {
+	return minIOInstanceNamespaceLister{indexer: s.indexer, namespace: namespace}
 }
 
 // MinIOInstanceNamespaceLister helps list and get MinIOInstances.
@@ -66,15 +66,15 @@ type MinIOInstanceNamespaceLister interface {
 	MinIOInstanceNamespaceListerExpansion
 }
 
-// minioInstanceNamespaceLister implements the MinIOInstanceNamespaceLister
+// minIOInstanceNamespaceLister implements the MinIOInstanceNamespaceLister
 // interface.
-type minioInstanceNamespaceLister struct {
+type minIOInstanceNamespaceLister struct {
 	indexer   cache.Indexer
 	namespace string
 }
 
 // List lists all MinIOInstances in the indexer for a given namespace.
-func (s minioInstanceNamespaceLister) List(selector labels.Selector) (ret []*v1beta1.MinIOInstance, err error) {
+func (s minIOInstanceNamespaceLister) List(selector labels.Selector) (ret []*v1beta1.MinIOInstance, err error) {
 	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
 		ret = append(ret, m.(*v1beta1.MinIOInstance))
 	})
@@ -82,7 +82,7 @@ func (s minioInstanceNamespaceLister) List(selector labels.Selector) (ret []*v1b
 }
 
 // Get retrieves the MinIOInstance from the indexer for a given namespace and name.
-func (s minioInstanceNamespaceLister) Get(name string) (*v1beta1.MinIOInstance, error) {
+func (s minIOInstanceNamespaceLister) Get(name string) (*v1beta1.MinIOInstance, error) {
 	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
 	if err != nil {
 		return nil, err

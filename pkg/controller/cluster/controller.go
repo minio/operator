@@ -376,7 +376,7 @@ func (c *Controller) updateMinIOInstanceStatus(minioInstance *miniov1beta1.MinIO
 	// we must use Update instead of UpdateStatus to update the Status block of the MinIOInstance resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := c.minioClientSet.MinIOV1beta1().MinIOInstances(minioInstance.Namespace).Update(minioInstanceCopy)
+	_, err := c.minioClientSet.MinV1beta1().MinIOInstances(minioInstance.Namespace).Update(minioInstanceCopy)
 	return err
 }
 

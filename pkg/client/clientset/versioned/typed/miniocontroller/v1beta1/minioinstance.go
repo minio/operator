@@ -19,6 +19,8 @@ limitations under the License.
 package v1beta1
 
 import (
+	"time"
+
 	v1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	scheme "github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,22 +49,22 @@ type MinIOInstanceInterface interface {
 	MinIOInstanceExpansion
 }
 
-// minioInstances implements MinIOInstanceInterface
-type minioInstances struct {
+// minIOInstances implements MinIOInstanceInterface
+type minIOInstances struct {
 	client rest.Interface
 	ns     string
 }
 
 // newMinIOInstances returns a MinIOInstances
-func newMinIOInstances(c *MinIOV1beta1Client, namespace string) *minioInstances {
-	return &minioInstances{
+func newMinIOInstances(c *MinV1beta1Client, namespace string) *minIOInstances {
+	return &minIOInstances{
 		client: c.RESTClient(),
 		ns:     namespace,
 	}
 }
 
-// Get takes name of the minioInstance, and returns the corresponding minioInstance object, and an error if there is any.
-func (c *minioInstances) Get(name string, options v1.GetOptions) (result *v1beta1.MinIOInstance, err error) {
+// Get takes name of the minIOInstance, and returns the corresponding minIOInstance object, and an error if there is any.
+func (c *minIOInstances) Get(name string, options v1.GetOptions) (result *v1beta1.MinIOInstance, err error) {
 	result = &v1beta1.MinIOInstance{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -75,47 +77,57 @@ func (c *minioInstances) Get(name string, options v1.GetOptions) (result *v1beta
 }
 
 // List takes label and field selectors, and returns the list of MinIOInstances that match those selectors.
-func (c *minioInstances) List(opts v1.ListOptions) (result *v1beta1.MinIOInstanceList, err error) {
+func (c *minIOInstances) List(opts v1.ListOptions) (result *v1beta1.MinIOInstanceList, err error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	result = &v1beta1.MinIOInstanceList{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("minioinstances").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Do().
 		Into(result)
 	return
 }
 
-// Watch returns a watch.Interface that watches the requested minioInstances.
-func (c *minioInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+// Watch returns a watch.Interface that watches the requested minIOInstances.
+func (c *minIOInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+	var timeout time.Duration
+	if opts.TimeoutSeconds != nil {
+		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
+	}
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
 		Resource("minioinstances").
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Timeout(timeout).
 		Watch()
 }
 
-// Create takes the representation of a minioInstance and creates it.  Returns the server's representation of the minioInstance, and an error, if there is any.
-func (c *minioInstances) Create(minioInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
+// Create takes the representation of a minIOInstance and creates it.  Returns the server's representation of the minIOInstance, and an error, if there is any.
+func (c *minIOInstances) Create(minIOInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
 	result = &v1beta1.MinIOInstance{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("minioinstances").
-		Body(minioInstance).
+		Body(minIOInstance).
 		Do().
 		Into(result)
 	return
 }
 
-// Update takes the representation of a minioInstance and updates it. Returns the server's representation of the minioInstance, and an error, if there is any.
-func (c *minioInstances) Update(minioInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
+// Update takes the representation of a minIOInstance and updates it. Returns the server's representation of the minIOInstance, and an error, if there is any.
+func (c *minIOInstances) Update(minIOInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
 	result = &v1beta1.MinIOInstance{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("minioinstances").
-		Name(minioInstance.Name).
-		Body(minioInstance).
+		Name(minIOInstance.Name).
+		Body(minIOInstance).
 		Do().
 		Into(result)
 	return
@@ -124,21 +136,21 @@ func (c *minioInstances) Update(minioInstance *v1beta1.MinIOInstance) (result *v
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 
-func (c *minioInstances) UpdateStatus(minioInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
+func (c *minIOInstances) UpdateStatus(minIOInstance *v1beta1.MinIOInstance) (result *v1beta1.MinIOInstance, err error) {
 	result = &v1beta1.MinIOInstance{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("minioinstances").
-		Name(minioInstance.Name).
+		Name(minIOInstance.Name).
 		SubResource("status").
-		Body(minioInstance).
+		Body(minIOInstance).
 		Do().
 		Into(result)
 	return
 }
 
-// Delete takes name of the minioInstance and deletes it. Returns an error if one occurs.
-func (c *minioInstances) Delete(name string, options *v1.DeleteOptions) error {
+// Delete takes name of the minIOInstance and deletes it. Returns an error if one occurs.
+func (c *minIOInstances) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("minioinstances").
@@ -149,18 +161,23 @@ func (c *minioInstances) Delete(name string, options *v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *minioInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *minIOInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+	var timeout time.Duration
+	if listOptions.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("minioinstances").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
+		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()
 }
 
-// Patch applies the patch and returns the patched minioInstance.
-func (c *minioInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.MinIOInstance, err error) {
+// Patch applies the patch and returns the patched minIOInstance.
+func (c *minIOInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.MinIOInstance, err error) {
 	result = &v1beta1.MinIOInstance{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).

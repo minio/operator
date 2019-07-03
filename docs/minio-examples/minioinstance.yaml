@@ -10,6 +10,20 @@ spec:
   ## Secret with credentials to be used by MinIO instance.
   credsSecret:
     name: minio-creds-secret
+  ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config) 
+  env:
+    name: MINIO_BROWSER
+    value: "on"
+    name: MINIO_STORAGE_CLASS_RRS
+    value: "EC:2"
+  ## Configure 
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 750m
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.

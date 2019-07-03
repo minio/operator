@@ -21,31 +21,31 @@ package v1beta1
 import (
 	v1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	"github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
-	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
+	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 )
 
-type MinIOV1beta1Interface interface {
+type MinV1beta1Interface interface {
 	RESTClient() rest.Interface
 	MinIOInstancesGetter
 	MirrorsGetter
 }
 
-// MinIOV1beta1Client is used to interact with features provided by the min.io.io group.
-type MinIOV1beta1Client struct {
+// MinV1beta1Client is used to interact with features provided by the min.io.io group.
+type MinV1beta1Client struct {
 	restClient rest.Interface
 }
 
-func (c *MinIOV1beta1Client) MinIOInstances(namespace string) MinIOInstanceInterface {
+func (c *MinV1beta1Client) MinIOInstances(namespace string) MinIOInstanceInterface {
 	return newMinIOInstances(c, namespace)
 }
 
-func (c *MinIOV1beta1Client) Mirrors(namespace string) MirrorInterface {
+func (c *MinV1beta1Client) Mirrors(namespace string) MirrorInterface {
 	return newMirrors(c, namespace)
 }
 
-// NewForConfig creates a new MinIOV1beta1Client for the given config.
-func NewForConfig(c *rest.Config) (*MinIOV1beta1Client, error) {
+// NewForConfig creates a new MinV1beta1Client for the given config.
+func NewForConfig(c *rest.Config) (*MinV1beta1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -54,12 +54,12 @@ func NewForConfig(c *rest.Config) (*MinIOV1beta1Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &MinIOV1beta1Client{client}, nil
+	return &MinV1beta1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new MinIOV1beta1Client for the given config and
+// NewForConfigOrDie creates a new MinV1beta1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *MinIOV1beta1Client {
+func NewForConfigOrDie(c *rest.Config) *MinV1beta1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -67,9 +67,9 @@ func NewForConfigOrDie(c *rest.Config) *MinIOV1beta1Client {
 	return client
 }
 
-// New creates a new MinIOV1beta1Client for the given RESTClient.
-func New(c rest.Interface) *MinIOV1beta1Client {
-	return &MinIOV1beta1Client{c}
+// New creates a new MinV1beta1Client for the given RESTClient.
+func New(c rest.Interface) *MinV1beta1Client {
+	return &MinV1beta1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -87,7 +87,7 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *MinIOV1beta1Client) RESTClient() rest.Interface {
+func (c *MinV1beta1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}
