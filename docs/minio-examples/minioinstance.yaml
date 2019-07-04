@@ -3,7 +3,9 @@ kind: MinIOInstance
 metadata:
   name: minio
 spec:
-  ## Supply number of replicas, (should be an even number).
+  ## Supply number of replicas.
+  ## For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
+  ## Note that the operator does not support upgrading from standalone to distributed mode.
   replicas: 4
   ## MinIO release version, (minio/minio image tag).
   version: RELEASE.2019-06-19T18-24-42Z

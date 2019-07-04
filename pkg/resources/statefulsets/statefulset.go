@@ -109,9 +109,14 @@ func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName, imagePath
 		"server",
 	}
 
-	// append all the MinIOInstance replica URLs
-	for i := 0; i < replicas; i++ {
-		args = append(args, fmt.Sprintf("%s://%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local%s", scheme, mi.Name, serviceName, mi.Namespace, minioPath))
+	if replicas == 1 {
+		// to run in standalone mode we must pass the path
+		args = append(args, constants.MinIOVolumeMountPath)
+	} else {
+		// append all the MinIOInstance replica URLs
+		for i := 0; i < replicas; i++ {
+			args = append(args, fmt.Sprintf("%s://%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local%s", scheme, mi.Name, serviceName, mi.Namespace, minioPath))
+		}
 	}
 
 	return corev1.Container{
