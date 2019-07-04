@@ -12,10 +12,10 @@ spec:
     name: minio-creds-secret
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config) 
   env:
-    name: MINIO_BROWSER
-    value: "on"
-    name: MINIO_STORAGE_CLASS_RRS
-    value: "EC:2"
+    - name: MINIO_BROWSER
+      value: "on"
+    - name: MINIO_STORAGE_CLASS_RRS
+      value: "EC:2"
   ## Configure 
   resources:
     requests:
