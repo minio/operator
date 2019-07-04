@@ -38,7 +38,7 @@ type MinIOInstanceInformer interface {
 	Lister() v1beta1.MinIOInstanceLister
 }
 
-type minioInstanceInformer struct {
+type minIOInstanceInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
@@ -61,13 +61,13 @@ func NewFilteredMinIOInstanceInformer(client versioned.Interface, namespace stri
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.MinIOV1beta1().MinIOInstances(namespace).List(options)
+				return client.MinV1beta1().MinIOInstances(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.MinIOV1beta1().MinIOInstances(namespace).Watch(options)
+				return client.MinV1beta1().MinIOInstances(namespace).Watch(options)
 			},
 		},
 		&miniocontrollerv1beta1.MinIOInstance{},
@@ -76,14 +76,14 @@ func NewFilteredMinIOInstanceInformer(client versioned.Interface, namespace stri
 	)
 }
 
-func (f *minioInstanceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+func (f *minIOInstanceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
 	return NewFilteredMinIOInstanceInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *minioInstanceInformer) Informer() cache.SharedIndexInformer {
+func (f *minIOInstanceInformer) Informer() cache.SharedIndexInformer {
 	return f.factory.InformerFor(&miniocontrollerv1beta1.MinIOInstance{}, f.defaultInformer)
 }
 
-func (f *minioInstanceInformer) Lister() v1beta1.MinIOInstanceLister {
+func (f *minIOInstanceInformer) Lister() v1beta1.MinIOInstanceLister {
 	return v1beta1.NewMinIOInstanceLister(f.Informer().GetIndexer())
 }

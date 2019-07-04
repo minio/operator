@@ -30,7 +30,7 @@ import (
 
 // FakeMirrors implements MirrorInterface
 type FakeMirrors struct {
-	Fake *FakeMinIOV1beta1
+	Fake *FakeMinV1beta1
 	ns   string
 }
 
@@ -131,7 +131,7 @@ func (c *FakeMirrors) DeleteCollection(options *v1.DeleteOptions, listOptions v1
 // Patch applies the patch and returns the patched mirror.
 func (c *FakeMirrors) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1beta1.Mirror, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(mirrorsResource, c.ns, name, data, subresources...), &v1beta1.Mirror{})
+		Invokes(testing.NewPatchSubresourceAction(mirrorsResource, c.ns, name, pt, data, subresources...), &v1beta1.Mirror{})
 
 	if obj == nil {
 		return nil, err

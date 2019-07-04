@@ -57,7 +57,7 @@ func (in *MinIOInstance) DeepCopyObject() runtime.Object {
 func (in *MinIOInstanceList) DeepCopyInto(out *MinIOInstanceList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]MinIOInstance, len(*in))
@@ -177,7 +177,7 @@ func (in *Mirror) DeepCopyObject() runtime.Object {
 func (in *MirrorList) DeepCopyInto(out *MirrorList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Mirror, len(*in))

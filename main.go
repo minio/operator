@@ -88,7 +88,7 @@ func main() {
 
 	controller := cluster.NewController(kubeClient, controllerClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
-		minioInformerFactory.MinIO().V1beta1().MinIOInstances(),
+		minioInformerFactory.Min().V1beta1().MinIOInstances(),
 		kubeInformerFactory.Core().V1().Services(),
 		imagePath)
 

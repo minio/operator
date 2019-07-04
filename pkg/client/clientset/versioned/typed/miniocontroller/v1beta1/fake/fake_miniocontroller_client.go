@@ -24,21 +24,21 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeMinIOV1beta1 struct {
+type FakeMinV1beta1 struct {
 	*testing.Fake
 }
 
-func (c *FakeMinIOV1beta1) MinIOInstances(namespace string) v1beta1.MinIOInstanceInterface {
+func (c *FakeMinV1beta1) MinIOInstances(namespace string) v1beta1.MinIOInstanceInterface {
 	return &FakeMinIOInstances{c, namespace}
 }
 
-func (c *FakeMinIOV1beta1) Mirrors(namespace string) v1beta1.MirrorInterface {
+func (c *FakeMinV1beta1) Mirrors(namespace string) v1beta1.MirrorInterface {
 	return &FakeMirrors{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeMinIOV1beta1) RESTClient() rest.Interface {
+func (c *FakeMinV1beta1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

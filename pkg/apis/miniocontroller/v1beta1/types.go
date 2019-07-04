@@ -45,6 +45,12 @@ type MinIOInstanceSpec struct {
 	// Otherwise MinIO server creates dynamic credentials printed on MinIO server startup banner
 	// +optional
 	CredsSecret *corev1.LocalObjectReference `json:"credsSecret,omitempty"`
+	// If provided, use these environment variables for MinIOInstance resource
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+	// If provided, use these requests and limit for cpu/memory resource allocation
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
 	// +optional
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`

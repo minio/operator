@@ -31,41 +31,44 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// Returns the MinIO credential environment variables
-// If a user specifies a secret in the spec we use that
-// else we create a secret with a default password
-func minioCredentials(mi *miniov1beta1.MinIOInstance) []corev1.EnvVar {
-	var secretName string
-	if mi.HasCredsSecret() {
-		secretName = mi.Spec.CredsSecret.Name
-		return []corev1.EnvVar{
-			{
-				Name: "MINIO_ACCESS_KEY",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: secretName,
-						},
-						Key: "accesskey",
-					},
-				},
-			},
-			{
-				Name: "MINIO_SECRET_KEY",
-				ValueFrom: &corev1.EnvVarSource{
-					SecretKeyRef: &corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: secretName,
-						},
-						Key: "secretkey",
-					},
-				},
-			},
-		}
+// Returns the MinIO environment variables set in configuration.
+// If a user specifies a secret in the spec (for MinIO credentials) we use
+// that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
+func minioEnvironmentVars(mi *miniov1beta1.MinIOInstance) []corev1.EnvVar {
+	envVars := make([]corev1.EnvVar, 0)
+	// Add all the environment variables
+	for _, e := range mi.Spec.Env {
+		envVars = append(envVars, e)
 	}
-	// If no secret provided, dont use env vars. MinIO server automatically creates default
-	// credentials
-	return []corev1.EnvVar{}
+	// Add env variables from credentials secret, if no secret provided, dont use
+	// env vars. MinIO server automatically creates default credentials
+	if mi.HasCredsSecret() {
+		var secretName string
+		secretName = mi.Spec.CredsSecret.Name
+		envVars = append(envVars, corev1.EnvVar{
+			Name: "MINIO_ACCESS_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "accesskey",
+				},
+			},
+		}, corev1.EnvVar{
+			Name: "MINIO_SECRET_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "secretkey",
+				},
+			},
+		})
+	}
+	// Return environment variables
+	return envVars
 }
 
 // Builds the volume mounts for MinIO container.
@@ -121,7 +124,8 @@ func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName, imagePath
 		},
 		VolumeMounts: volumeMounts(mi),
 		Args:         args,
-		Env:          minioCredentials(mi),
+		Env:          minioEnvironmentVars(mi),
+		Resources:    mi.Spec.Resources,
 	}
 }
 

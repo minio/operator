@@ -20,8 +20,8 @@ package fake
 
 import (
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
-	miniov1beta1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/miniocontroller/v1beta1"
-	fakeminiov1beta1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/miniocontroller/v1beta1/fake"
+	minv1beta1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/miniocontroller/v1beta1"
+	fakeminv1beta1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/miniocontroller/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -41,7 +41,7 @@ func NewSimpleClientset(objects ...runtime.Object) *Clientset {
 		}
 	}
 
-	cs := &Clientset{}
+	cs := &Clientset{tracker: o}
 	cs.discovery = &fakediscovery.FakeDiscovery{Fake: &cs.Fake}
 	cs.AddReactor("*", "*", testing.ObjectReaction(o))
 	cs.AddWatchReactor("*", func(action testing.Action) (handled bool, ret watch.Interface, err error) {
@@ -63,20 +63,20 @@ func NewSimpleClientset(objects ...runtime.Object) *Clientset {
 type Clientset struct {
 	testing.Fake
 	discovery *fakediscovery.FakeDiscovery
+	tracker   testing.ObjectTracker
 }
 
 func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 	return c.discovery
 }
 
-var _ clientset.Interface = &Clientset{}
-
-// MinIOV1beta1 retrieves the MinIOV1beta1Client
-func (c *Clientset) MinIOV1beta1() miniov1beta1.MinIOV1beta1Interface {
-	return &fakeminiov1beta1.FakeMinIOV1beta1{Fake: &c.Fake}
+func (c *Clientset) Tracker() testing.ObjectTracker {
+	return c.tracker
 }
 
-// MinIO retrieves the MinIOV1beta1Client
-func (c *Clientset) MinIO() miniov1beta1.MinIOV1beta1Interface {
-	return &fakeminiov1beta1.FakeMinIOV1beta1{Fake: &c.Fake}
+var _ clientset.Interface = &Clientset{}
+
+// MinV1beta1 retrieves the MinV1beta1Client
+func (c *Clientset) MinV1beta1() minv1beta1.MinV1beta1Interface {
+	return &fakeminv1beta1.FakeMinV1beta1{Fake: &c.Fake}
 }

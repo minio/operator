@@ -61,13 +61,13 @@ func NewFilteredMirrorInformer(client versioned.Interface, namespace string, res
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.MinIOV1beta1().Mirrors(namespace).List(options)
+				return client.MinV1beta1().Mirrors(namespace).List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.MinIOV1beta1().Mirrors(namespace).Watch(options)
+				return client.MinV1beta1().Mirrors(namespace).Watch(options)
 			},
 		},
 		&miniocontrollerv1beta1.Mirror{},

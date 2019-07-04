@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	MinIO() miniocontroller.Interface
+	Min() miniocontroller.Interface
 }
 
-func (f *sharedInformerFactory) MinIO() miniocontroller.Interface {
+func (f *sharedInformerFactory) Min() miniocontroller.Interface {
 	return miniocontroller.New(f, f.namespace, f.tweakListOptions)
 }

@@ -20,6 +20,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.1
 	github.com/peterbourgon/diskv v0.0.0-20180312054125-0646ccaebea1
 	github.com/spf13/pflag v1.0.3
+	github.com/stretchr/testify v1.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20180808211826-de0752318171
 	golang.org/x/net v0.0.0-20190108225652-1e06a53dbb7e
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
