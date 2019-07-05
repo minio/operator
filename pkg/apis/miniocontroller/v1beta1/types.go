@@ -71,6 +71,12 @@ type MinIOInstanceSpec struct {
 	// Subpath inside mount path. This is the directory where MinIO stores data. Default to "" (empty)
 	// +optional
 	Subpath string `json:"subPath,omitempty"`
+	// Liveness Probe for container liveness. Container will be restarted if the probe fails.
+	// +optional
+	Liveness *corev1.Probe `json:"liveness,omitempty"`
+	// Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
+	// +optional
+	Readiness *corev1.Probe `json:"readiness,omitempty"`
 }
 
 // MinIOInstanceStatus is the status for a MinIOInstance resource
