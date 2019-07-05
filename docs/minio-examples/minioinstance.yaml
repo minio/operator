@@ -2,6 +2,10 @@ apiVersion: miniocontroller.min.io/v1beta1
 kind: MinIOInstance
 metadata:
   name: minio
+## If specified, MinIOInstance pods will be dispatched by specified scheduler. 
+## If not specified, the pod will be dispatched by default scheduler.
+# scheduler:
+#  name: my-custom-scheduler
 spec:
   ## Supply number of replicas, (should be an even number).
   replicas: 4

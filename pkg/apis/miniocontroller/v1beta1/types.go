@@ -31,8 +31,15 @@ type MinIOInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MinIOInstanceSpec   `json:"spec"`
-	Status MinIOInstanceStatus `json:"status"`
+	Scheduler MinIOInstanceScheduler `json:"scheduler,omitempty`
+	Spec      MinIOInstanceSpec      `json:"spec"`
+	Status    MinIOInstanceStatus    `json:"status"`
+}
+
+// MinIOInstanceScheduler is the spec for a MinIOInstance scheduler
+type MinIOInstanceScheduler struct {
+	// SchedulerName defines the name of scheduler to be used to schedule MinIOInstance pods
+	Name string `json:"name"`
 }
 
 // MinIOInstanceSpec is the spec for a MinIOInstance resource
