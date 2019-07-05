@@ -16,7 +16,7 @@ spec:
       value: "on"
     - name: MINIO_STORAGE_CLASS_RRS
       value: "EC:2"
-  ## Configure 
+  ## Configure resource requests and limits for MinIO containers
   resources:
     requests:
       memory: 256Mi
@@ -24,6 +24,25 @@ spec:
     limits:
       memory: 512Mi
       cpu: 750m
+  ## Liveness probe detects situations where MinIO server instance
+  ## is not working properly and needs restart. Kubernetes automatically
+  ## restarts the pods if liveness checks fail.
+  liveness:
+    httpGet:
+      path: /minio/health/live
+      port: 9000
+    initialDelaySeconds: 120
+    periodSeconds: 20
+  ## Readiness probe detects situations when MinIO server instance
+  ## is not ready to accept traffic. Kubernetes doesn't forward
+  ## traffic to the pod while readiness checks fail.
+  ## Recommended to be used only for standalone MinIO Instances.
+  # readiness:
+  #   httpGet:
+  #     path: /minio/health/ready
+  #     port: 9000
+  #   initialDelaySeconds: 120
+  #   periodSeconds: 20
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.

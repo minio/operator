@@ -122,10 +122,12 @@ func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName, imagePath
 				ContainerPort: constants.MinIOPort,
 			},
 		},
-		VolumeMounts: volumeMounts(mi),
-		Args:         args,
-		Env:          minioEnvironmentVars(mi),
-		Resources:    mi.Spec.Resources,
+		VolumeMounts:   volumeMounts(mi),
+		Args:           args,
+		Env:            minioEnvironmentVars(mi),
+		Resources:      mi.Spec.Resources,
+		LivenessProbe:  mi.Spec.Liveness,
+		ReadinessProbe: mi.Spec.Readiness,
 	}
 }
 
