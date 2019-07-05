@@ -203,9 +203,10 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string
 					Labels: podLabels,
 				},
 				Spec: corev1.PodSpec{
-					Containers: containers,
-					Volumes:    podVolumes,
-					Affinity:   mi.Spec.Affinity,
+					Containers:    containers,
+					Volumes:       podVolumes,
+					Affinity:      mi.Spec.Affinity,
+					SchedulerName: mi.Scheduler.Name,
 				},
 			},
 		},
