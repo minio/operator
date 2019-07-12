@@ -71,6 +71,24 @@ func minioEnvironmentVars(mi *miniov1beta1.MinIOInstance) []corev1.EnvVar {
 	return envVars
 }
 
+// Returns the MinIO pods metadata set in configuration.
+// If a user specifies metadata in the spec we return that
+// metadata.
+func minioMetadata(mi *miniov1beta1.MinIOInstance) metav1.ObjectMeta {
+	meta := metav1.ObjectMeta{}
+	if mi.HasMetadata() {
+		meta = *mi.Spec.Metadata
+	}
+	// Add the additional label used by StatefulSet spec
+	podLabelKey, podLabelValue := minioPodLabels(mi)
+	meta.Labels[podLabelKey] = podLabelValue
+	return meta
+}
+
+func minioPodLabels(mi *miniov1beta1.MinIOInstance) (string, string) {
+	return constants.InstanceLabel, mi.Name
+}
+
 // Builds the volume mounts for MinIO container.
 func volumeMounts(mi *miniov1beta1.MinIOInstance) []corev1.VolumeMount {
 	var mounts []corev1.VolumeMount
@@ -180,9 +198,9 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string
 	}
 
 	containers := []corev1.Container{minioServerContainer(mi, serviceName, imagePath)}
-
+	podLabelKey, podLabelValue := minioPodLabels(mi)
 	podLabels := map[string]string{
-		constants.InstanceLabel: mi.Name,
+		podLabelKey: podLabelValue,
 	}
 
 	ss := &appsv1.StatefulSet{
@@ -204,9 +222,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string
 			ServiceName: serviceName,
 			Replicas:    &mi.Spec.Replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: podLabels,
-				},
+				ObjectMeta: minioMetadata(mi),
 				Spec: corev1.PodSpec{
 					Containers:    containers,
 					Volumes:       podVolumes,

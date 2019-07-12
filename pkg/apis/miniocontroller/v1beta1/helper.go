@@ -30,6 +30,12 @@ func (mi *MinIOInstance) HasCredsSecret() bool {
 	return mi.Spec.CredsSecret != nil
 }
 
+// HasMetadata returns true if the user has provided a object metadata
+// for a MinIOInstance else false
+func (mi *MinIOInstance) HasMetadata() bool {
+	return mi.Spec.Metadata != nil
+}
+
 // RequiresSSLSetup returns true is the user has provided a secret
 // that contains CA cert, server cert and server key for group replication
 // SSL support

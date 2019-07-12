@@ -1,3 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+  selector:
+    app: minio
+---
 apiVersion: miniocontroller.min.io/v1beta1
 kind: MinIOInstance
 metadata:
@@ -7,9 +20,7 @@ metadata:
 # scheduler:
 #  name: my-custom-scheduler
 spec:
-  ## Supply number of replicas.
-  ## For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
-  ## Note that the operator does not support upgrading from standalone to distributed mode.
+  ## Supply number of replicas, (should be an even number).
   replicas: 4
   ## Add metadata to the pods created by the StatefulSet
   metadata:
