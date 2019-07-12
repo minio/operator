@@ -48,6 +48,8 @@ type MinIOInstanceSpec struct {
 	Version string `json:"version"`
 	// Replicas defines the number of MinIO instances in a MinIOInstance resource
 	Replicas int32 `json:"replicas"`
+	// Metadata defines the object metadata passed to each pod that is a part of this MinIOInstance
+	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
 	// If provided, use this secret as the credentials for MinIOInstance resource
 	// Otherwise MinIO server creates dynamic credentials printed on MinIO server startup banner
 	// +optional

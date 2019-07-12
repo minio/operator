@@ -44,7 +44,7 @@ const MinIOVolumeSubPath = ""
 const DefaultMinIOImagePath = "minio/minio"
 
 // DefaultMinIOImageVersion specifies the latest released MinIO Docker hub image
-const DefaultMinIOImageVersion = "RELEASE.2019-06-19T18-24-42Z"
+const DefaultMinIOImageVersion = "RELEASE.2019-07-10T00-34-56Z"
 
 // MinIOServerName specifies the default container name for MinIOInstance
 const MinIOServerName = "minio"
