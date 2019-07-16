@@ -79,6 +79,13 @@ func minioMetadata(mi *miniov1beta1.MinIOInstance) metav1.ObjectMeta {
 	if mi.HasMetadata() {
 		meta = *mi.Spec.Metadata
 	}
+	// Initialize empty fields
+	if meta.Labels == nil {
+		meta.Labels = make(map[string]string)
+	}
+	if meta.Annotations == nil {
+		meta.Annotations = make(map[string]string)
+	}
 	// Add the additional label used by StatefulSet spec
 	podLabelKey, podLabelValue := minioPodLabels(mi)
 	meta.Labels[podLabelKey] = podLabelValue
