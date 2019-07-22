@@ -28,8 +28,8 @@ spec:
   env:
     - name: MINIO_BROWSER
       value: "on"
-    - name: MINIO_STORAGE_CLASS_RRS
-      value: "EC:2"
+    # - name: MINIO_STORAGE_CLASS_RRS
+    #   value: "EC:2"
   ## Configure resource requests and limits for MinIO containers
   resources:
     requests:
