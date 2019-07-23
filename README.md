@@ -14,7 +14,7 @@ MinIO is a high performance distributed object storage server, designed for larg
 
 ### Prerequisites
 
-- Kubernetes cluster 1.10.0+.
+- Kubernetes API v1.15 and above.
 - `kubectl` configured to refer to relevant Kubernetes cluster.
 
 ### Create Operator and related resources

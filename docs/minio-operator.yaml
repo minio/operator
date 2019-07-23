@@ -10,10 +10,32 @@ metadata:
 spec:
   group: miniocontroller.min.io
   version: v1beta1
+  scope: Namespaced
   names:
     kind: MinIOInstance
+    singular: minioinstance
     plural: minioinstances
-  scope: Namespaced
+  preserveUnknownFields: true
+  validation:
+  # openAPIV3Schema is the schema for validating custom objects.
+  # Refer https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#specifying-a-structural-schema
+  # for more details
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          properties:
+            replicas:
+              type: integer
+              minimum: 1
+              maximum: 32
+            version:
+              type: string
+            mountpath:
+              type: string
+            subpath:
+              type: string
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
