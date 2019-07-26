@@ -112,7 +112,7 @@ func volumeMounts(mi *miniov1beta1.MinIOInstance) []corev1.VolumeMount {
 
 	if mi.RequiresSSLSetup() {
 		mounts = append(mounts, corev1.VolumeMount{
-			Name:      mi.Name + "TLS",
+			Name:      mi.Name + "-tls",
 			MountPath: "/root/.minio/certs",
 		})
 	}
@@ -173,7 +173,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string
 	// Add SSL volume from SSL secret to the podVolumes
 	if mi.RequiresSSLSetup() {
 		podVolumes = append(podVolumes, corev1.Volume{
-			Name: mi.Name + "TLS",
+			Name: mi.Name + "-tls",
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
 					Sources: []corev1.VolumeProjection{
