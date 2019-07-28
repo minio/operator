@@ -21,7 +21,6 @@ package statefulsets
 import (
 	"fmt"
 	"path"
-	"strconv"
 
 	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	constants "github.com/minio/minio-operator/pkg/constants"
@@ -110,9 +109,9 @@ func volumeMounts(mi *miniov1beta1.MinIOInstance) []corev1.VolumeMount {
 		MountPath: constants.MinIOVolumeMountPath,
 	})
 
-	if mi.RequiresSSLSetup() {
+	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
 		mounts = append(mounts, corev1.VolumeMount{
-			Name:      mi.Name + "-tls",
+			Name:      mi.GetTLSSecretName(),
 			MountPath: "/root/.minio/certs",
 		})
 	}
@@ -121,12 +120,11 @@ func volumeMounts(mi *miniov1beta1.MinIOInstance) []corev1.VolumeMount {
 }
 
 // Builds the MinIO container for a MinIOInstance.
-func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string) corev1.Container {
-	replicas := int(mi.Spec.Replicas)
+func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName string) corev1.Container {
 	minioPath := path.Join(mi.Spec.Mountpath, mi.Spec.Subpath)
 
 	scheme := "http"
-	if mi.RequiresSSLSetup() {
+	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
 		scheme = "https"
 	}
 
@@ -134,19 +132,20 @@ func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName, imagePath
 		"server",
 	}
 
-	if replicas == 1 {
+	if mi.Spec.Replicas == 1 {
 		// to run in standalone mode we must pass the path
 		args = append(args, constants.MinIOVolumeMountPath)
 	} else {
 		// append all the MinIOInstance replica URLs
-		for i := 0; i < replicas; i++ {
-			args = append(args, fmt.Sprintf("%s://%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local%s", scheme, mi.Name, serviceName, mi.Namespace, minioPath))
+		hosts := mi.GetHosts()
+		for _, h := range hosts {
+			args = append(args, fmt.Sprintf("%s://"+h+"%s", scheme, minioPath))
 		}
 	}
 
 	return corev1.Container{
 		Name:  constants.MinIOServerName,
-		Image: fmt.Sprintf("%s:%s", imagePath, mi.Spec.Version),
+		Image: mi.Spec.Image,
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: constants.MinIOPort,
@@ -162,7 +161,9 @@ func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName, imagePath
 }
 
 // NewForCluster creates a new StatefulSet for the given Cluster.
-func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string) *appsv1.StatefulSet {
+func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.StatefulSet {
+	var secretName string
+
 	// If a PV isn't specified just use a EmptyDir volume
 	var podVolumes = []corev1.Volume{}
 	if mi.Spec.VolumeClaimTemplate == nil {
@@ -170,17 +171,22 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: ""}}})
 	}
 
+	if mi.RequiresAutoCertSetup() {
+		secretName = mi.GetTLSSecretName()
+	} else if mi.RequiresExternalCertSetup() {
+		secretName = mi.Spec.ExternalCertSecret.Name
+	}
 	// Add SSL volume from SSL secret to the podVolumes
-	if mi.RequiresSSLSetup() {
+	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
 		podVolumes = append(podVolumes, corev1.Volume{
-			Name: mi.Name + "-tls",
+			Name: mi.GetTLSSecretName(),
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
 					Sources: []corev1.VolumeProjection{
 						{
 							Secret: &corev1.SecretProjection{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: mi.Spec.SSLSecret.Name,
+									Name: secretName,
 								},
 								Items: []corev1.KeyToPath{
 									{
@@ -204,7 +210,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string
 		})
 	}
 
-	containers := []corev1.Container{minioServerContainer(mi, serviceName, imagePath)}
+	containers := []corev1.Container{minioServerContainer(mi, serviceName)}
 	podLabelKey, podLabelValue := minioPodLabels(mi)
 	podLabels := map[string]string{
 		podLabelKey: podLabelValue,
@@ -223,6 +229,10 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName, imagePath string
 			},
 		},
 		Spec: appsv1.StatefulSetSpec{
+			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+				Type: constants.DefaultUpdateStrategy,
+			},
+			PodManagementPolicy: constants.DefaultPodManagementPolicy,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: podLabels,
 			},

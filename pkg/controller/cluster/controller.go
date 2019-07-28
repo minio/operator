@@ -20,7 +20,6 @@ package cluster
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -37,6 +36,7 @@ import (
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
@@ -75,7 +75,8 @@ type Controller struct {
 	kubeClientSet kubernetes.Interface
 	// minioClientSet is a clientset for our own API group
 	minioClientSet clientset.Interface
-
+	// certClient is a clientset for our certficate management
+	certClient certapi.CertificatesV1beta1Client
 	// statefulSetLister is able to list/get StatefulSets from a shared
 	// informer's store.
 	statefulSetLister appslisters.StatefulSetLister
@@ -106,19 +107,16 @@ type Controller struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
-
-	// minio image
-	imagePath string
 }
 
 // NewController returns a new sample controller
 func NewController(
 	kubeClientSet kubernetes.Interface,
 	minioClientSet clientset.Interface,
+	certClient certapi.CertificatesV1beta1Client,
 	statefulSetInformer appsinformers.StatefulSetInformer,
 	minioInstanceInformer informers.MinIOInstanceInformer,
-	serviceInformer coreinformers.ServiceInformer,
-	imagePath string) *Controller {
+	serviceInformer coreinformers.ServiceInformer) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -133,6 +131,7 @@ func NewController(
 	controller := &Controller{
 		kubeClientSet:           kubeClientSet,
 		minioClientSet:          minioClientSet,
+		certClient:              certClient,
 		statefulSetLister:       statefulSetInformer.Lister(),
 		statefulSetListerSynced: statefulSetInformer.Informer().HasSynced,
 		minioInstancesLister:    minioInstanceInformer.Lister(),
@@ -141,7 +140,6 @@ func NewController(
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
 		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "MinIOInstances"),
 		recorder:                recorder,
-		imagePath:               imagePath,
 	}
 
 	glog.Info("Setting up event handlers")
@@ -293,9 +291,9 @@ func (c *Controller) syncHandler(key string) error {
 	mi.EnsureDefaults()
 
 	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.Name)
-	// If the resource doesn't exist, we'll create it
+	// If the headless service doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
-		glog.V(2).Infof("Creating a new Service for cluster %q", nsName)
+		glog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
 		svc = services.NewForCluster(mi)
 		_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(svc)
 	}
@@ -307,11 +305,33 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
+	// check if both auto certificate creation and external secret with certificate is passed,
+	// this is an error as only one of this is allowed in one MinIOInstance
+	if mi.RequiresAutoCertSetup() && mi.RequiresExternalCertSetup() {
+		msg := "Please set either externalCertSecret or requestAutoCert in MinIOInstance config"
+		glog.V(2).Infof(msg)
+		return fmt.Errorf(msg)
+	}
+
+	if mi.RequiresAutoCertSetup() {
+		_, err := c.certClient.CertificateSigningRequests().Get(mi.Name, metav1.GetOptions{})
+		if err != nil {
+			// If the CSR doesn't exist, we'll create it
+			if apierrors.IsNotFound(err) {
+				glog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
+				// create CSR here
+				c.createCSR(mi, svc.Name)
+			} else {
+				return err
+			}
+		}
+	}
+
 	// Get the StatefulSet with the name specified in MinIOInstance.spec
 	ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.Name)
 	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		ss = statefulsets.NewForCluster(mi, svc.Name, c.imagePath)
+	if apierrors.IsNotFound(err) {
+		ss = statefulsets.NewForCluster(mi, svc.Name)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ss)
 	}
 
@@ -335,17 +355,16 @@ func (c *Controller) syncHandler(key string) error {
 	// should update the StatefulSet resource.
 	if mi.Spec.Replicas != *ss.Spec.Replicas {
 		glog.V(4).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.Spec.Replicas, *ss.Spec.Replicas)
-		ss = statefulsets.NewForCluster(mi, svc.Name, c.imagePath)
+		ss = statefulsets.NewForCluster(mi, svc.Name)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ss)
 	}
 
 	// If this container version on the MinIOInstance resource is specified, and the
 	// version does not equal the current desired version in the StatefulSet, we
 	// should update the StatefulSet resource.
-	currentVersion := strings.TrimPrefix(ss.Spec.Template.Spec.Containers[0].Image, c.imagePath+":")
-	if mi.Spec.Version != currentVersion {
-		glog.V(4).Infof("Updating MinIOInstance %s MinIO server version %d, to: %d", name, mi.Spec.Version, currentVersion)
-		ss = statefulsets.NewForCluster(mi, svc.Name, c.imagePath)
+	if mi.Spec.Image != ss.Spec.Template.Spec.Containers[0].Image {
+		glog.V(4).Infof("Updating MinIOInstance %s MinIO server version %d, to: %d", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
+		ss = statefulsets.NewForCluster(mi, svc.Name)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ss)
 	}
 

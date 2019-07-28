@@ -19,7 +19,9 @@
 package v1beta1
 
 import (
+	"fmt"
 	"path"
+	"strconv"
 
 	constants "github.com/minio/minio-operator/pkg/constants"
 )
@@ -36,11 +38,24 @@ func (mi *MinIOInstance) HasMetadata() bool {
 	return mi.Spec.Metadata != nil
 }
 
-// RequiresSSLSetup returns true is the user has provided a secret
+// HasCertConfig returns true if the user has provided a certificate
+// config
+func (mi *MinIOInstance) HasCertConfig() bool {
+	return mi.Spec.CertConfig != nil
+}
+
+// RequiresExternalCertSetup returns true is the user has provided a secret
 // that contains CA cert, server cert and server key for group replication
 // SSL support
-func (mi *MinIOInstance) RequiresSSLSetup() bool {
-	return mi.Spec.SSLSecret != nil
+func (mi *MinIOInstance) RequiresExternalCertSetup() bool {
+	return mi.Spec.ExternalCertSecret != nil
+}
+
+// RequiresAutoCertSetup returns true is the user has provided a secret
+// that contains CA cert, server cert and server key for group replication
+// SSL support
+func (mi *MinIOInstance) RequiresAutoCertSetup() bool {
+	return mi.Spec.RequestAutoCert == true
 }
 
 // EnsureDefaults will ensure that if a user omits and fields in the
@@ -52,8 +67,8 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		mi.Spec.Replicas = constants.DefaultReplicas
 	}
 
-	if mi.Spec.Version == "" {
-		mi.Spec.Version = constants.DefaultMinIOImageVersion
+	if mi.Spec.Image == "" {
+		mi.Spec.Image = constants.DefaultMinIOImage
 	}
 
 	if mi.Spec.Mountpath == "" {
@@ -70,5 +85,52 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		mi.Spec.Subpath = path.Clean(mi.Spec.Subpath)
 	}
 
+	if mi.RequiresAutoCertSetup() == true {
+		if mi.Spec.CertConfig != nil {
+			if mi.Spec.CertConfig.CommonName == "" {
+				mi.Spec.CertConfig.CommonName = mi.GetWildCardName()
+			}
+			if mi.Spec.CertConfig.DNSNames == nil {
+				mi.Spec.CertConfig.DNSNames = mi.GetHosts()
+			} else {
+				mi.Spec.CertConfig.DNSNames = append(mi.Spec.CertConfig.DNSNames, mi.GetHosts()...)
+			}
+			if mi.Spec.CertConfig.OrganizationName == nil {
+				mi.Spec.CertConfig.OrganizationName = constants.DefaultOrgName
+			}
+		} else {
+			mi.Spec.CertConfig = &CertificateConfig{
+				CommonName:       mi.GetWildCardName(),
+				DNSNames:         mi.GetHosts(),
+				OrganizationName: constants.DefaultOrgName,
+			}
+		}
+	}
+
 	return mi
+}
+
+// GetHosts returns the domain names managed by headless service created for
+// current MinIOInstance
+func (mi *MinIOInstance) GetHosts() []string {
+	args := make([]string, 0)
+	// append all the MinIOInstance replica URLs
+	// mi.Name is the headless service name
+	for i := 0; i < int(mi.Spec.Replicas); i++ {
+		args = append(args, fmt.Sprintf("%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local", mi.Name, mi.Name, mi.Namespace))
+	}
+	return args
+}
+
+// GetWildCardName returns the wild card name managed by headless service created for
+// current MinIOInstance
+func (mi *MinIOInstance) GetWildCardName() string {
+	// mi.Name is the headless service name
+	return fmt.Sprintf("*.%s.%s.svc.cluster.local", mi.Name, mi.Namespace)
+}
+
+// GetTLSSecretName returns the domain names managed by headless service created for
+// current MinIOInstance
+func (mi *MinIOInstance) GetTLSSecretName() string {
+	return mi.Name + constants.DefaultTLSSecretSuffix
 }
