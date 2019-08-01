@@ -53,9 +53,6 @@ func newPrivateKey(curve elliptic.Curve) (*ecdsa.PrivateKey, error) {
 }
 
 func generateCryptoData(mi *miniov1beta1.MinIOInstance, serviceName string) ([]byte, []byte, error) {
-	var privateKey *ecdsa.PrivateKey
-	var err error
-
 	glog.V(0).Infof("Generating private key")
 	privateKey, err := newPrivateKey(constants.DefaultEllipticCurve)
 	if err != nil {
@@ -64,6 +61,10 @@ func generateCryptoData(mi *miniov1beta1.MinIOInstance, serviceName string) ([]b
 	}
 
 	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		glog.Errorf("Unexpected error during encoding the ECDSA Private Key: %v", err)
+		return nil, nil, err
+	}
 
 	glog.V(0).Infof("Generating CSR with CN=%s", mi.Spec.CertConfig.CommonName)
 	csrTemplate := x509.CertificateRequest{
@@ -77,7 +78,7 @@ func generateCryptoData(mi *miniov1beta1.MinIOInstance, serviceName string) ([]b
 
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privateKey)
 	if err != nil {
-		glog.Errorf("Unexpected error during the CSR: %v", err)
+		glog.Errorf("Unexpected error during creating the CSR: %v", err)
 		return nil, nil, err
 	}
 	return privKeyBytes, csrBytes, nil
