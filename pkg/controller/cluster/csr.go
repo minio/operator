@@ -57,7 +57,7 @@ func generateCryptoData(mi *miniov1beta1.MinIOInstance, serviceName string) ([]b
 	var err error
 
 	glog.V(0).Infof("Generating private key")
-	privateKey, err = newPrivateKey(constants.DefaultEllipticCurve)
+	privateKey, err := newPrivateKey(constants.DefaultEllipticCurve)
 	if err != nil {
 		glog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
 		return nil, nil, err
