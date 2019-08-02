@@ -18,6 +18,13 @@
 
 package constants
 
+import (
+	"crypto/elliptic"
+	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
+)
+
 // InstanceLabel is applied to all components of a MinIOInstance cluster
 const InstanceLabel = "v1beta1.min.io/instance"
 
@@ -40,11 +47,8 @@ const MinIOVolumeMountPath = "/export"
 // MinIOVolumeSubPath specifies the default sub path under mount path
 const MinIOVolumeSubPath = ""
 
-// DefaultMinIOImagePath specifies the MinIO Docker hub path
-const DefaultMinIOImagePath = "minio/minio"
-
-// DefaultMinIOImageVersion specifies the latest released MinIO Docker hub image
-const DefaultMinIOImageVersion = "RELEASE.2019-07-10T00-34-56Z"
+// DefaultMinIOImage specifies the default MinIO Docker hub image
+const DefaultMinIOImage = "minio/minio:RELEASE.2019-07-24T02-02-23Z"
 
 // MinIOServerName specifies the default container name for MinIOInstance
 const MinIOServerName = "minio"
@@ -52,5 +56,30 @@ const MinIOServerName = "minio"
 // DefaultMinIOAccessKey specifies default access key for MinIOInstance
 const DefaultMinIOAccessKey = "AKIAIOSFODNN7EXAMPLE"
 
-//DefaultMinIOSecretKey specifies default secret key for MinIOInstance
+// DefaultMinIOSecretKey specifies default secret key for MinIOInstance
 const DefaultMinIOSecretKey = "wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY"
+
+// DefaultPodManagementPolicy specifies default pod management policy as expllained here
+// https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
+
+// DefaultUpdateStrategy specifies default pod update policy as explained here
+// https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
+const DefaultUpdateStrategy = "RollingUpdate"
+
+// Auto TLS related constants
+
+// DefaultEllipticCurve specifies the default elliptic curve to be used for key generation
+var DefaultEllipticCurve = elliptic.P256()
+
+// DefaultOrgName specifies the default Org name to be used in automatic certificate generation
+var DefaultOrgName = []string{"Acme Co"}
+
+// DefaultQueryInterval specifies the interval between each query for CSR Status
+var DefaultQueryInterval = time.Second * 5
+
+// DefaultQueryTimeout specifies the timeout for query for CSR Status
+var DefaultQueryTimeout = time.Minute * 20
+
+// DefaultTLSSecretSuffix is the suffix applied to MinIOInstance name to create the TLS secret
+var DefaultTLSSecretSuffix = "-tls"

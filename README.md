@@ -1,6 +1,6 @@
 # MinIO Operator Guide
 
-[![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/minio.svg?maxAge=604800)](https://hub.docker.com/r/minio/minio/)
+[![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
 
 MinIO is a high performance distributed object storage server, designed for large-scale private cloud infrastructure. MinIO is designed in a cloud-native manner to scale sustainably in multi-tenant environments. Orchestration platforms like Kubernetes provide perfect launchpad for MinIO to scale. There are multiple options to deploy MinIO on Kubernetes:
 
@@ -22,12 +22,12 @@ MinIO is a high performance distributed object storage server, designed for larg
 To start MinIO-Operator, use the `docs/minio-operator.yaml` file.
 
 ```
-kubectl create -f https://github.com/minio/minio-operator/blob/master/docs/minio-operator.yaml?raw=true
+kubectl create -f https://github.com/minio/minio-operator/blob/master/minio-operator.yaml?raw=true
 ```
 
 This will create all relevant resources required for the Operator to work. Here is a list of resources created by above `yaml` file:
 
-- `Namespace`: Custom namespace for MinIO-Operator. By default it is names as `minio-operator-ns`.
+- `Namespace`: Custom namespace for MinIO-Operator. By default it is named as `minio-operator-ns`.
 - `CustomResourceDefinition`: Custom resource definition named as `minioinstances.miniocontroller.min.io`.
 - `ClusterRole`: A cluster wide role for the controller. It is named as `minio-operator-role`. This is used for RBAC.
 - `ServiceAccount`: Service account is used by the custom controller to access the cluster. Account name by default is `minio-operator-sa`.
@@ -39,8 +39,7 @@ This will create all relevant resources required for the Operator to work. Here 
 Once MinIO-Operator deployment is running, you can create MinIO instances using the below command
 
 ```
-kubectl create -f https://github.com/minio/minio-operator/blob/master/docs/minio-examples/minio-secret.yaml?raw=true
-kubectl create -f https://github.com/minio/minio-operator/blob/master/docs/minio-examples/minioinstance.yaml?raw=true
+kubectl create -f https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml?raw=true
 ```
 
 ## Features
@@ -50,10 +49,10 @@ MinIO-Operator currently supports following features:
 - Create and delete highly available distributed MinIO clusters.
 - Upgrading existing distributed MinIO clusters.
 
-Refer [`minioinstance.yaml`](https://github.com/minio/minio-operator/blob/master/docs/minio-examples/minioinstance.yaml?raw=true) for details on how to pass supported fields to 
-the operator.
+Refer [`minioinstance.yaml`](https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml?raw=true) for details on how to pass supported fields to the operator.
 
 ## Upcoming features
+
 - Federation and CoreDNS
 - Continuous remote site mirroring with [`mc mirror`](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror)
 

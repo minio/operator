@@ -111,8 +111,8 @@ func (in *MinIOInstanceSpec) DeepCopyInto(out *MinIOInstanceSpec) {
 		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.SSLSecret != nil {
-		in, out := &in.SSLSecret, &out.SSLSecret
+	if in.ExternalCertSecret != nil {
+		in, out := &in.ExternalCertSecret, &out.ExternalCertSecret
 		*out = new(v1.LocalObjectReference)
 		**out = **in
 	}

@@ -67,6 +67,16 @@ rules:
   - patch
   - watch
 - apiGroups:
+  - "certificates.k8s.io"
+  resources:
+  - "certificatesigningrequests"
+  - "certificatesigningrequests/approval"
+  - "certificatesigningrequests/status"
+  verbs:
+  - update
+  - create
+  - get
+- apiGroups:
   - miniocontroller.min.io
   resources:
   - "*"

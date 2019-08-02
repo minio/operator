@@ -27,12 +27,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/minio/minio-operator/pkg/constants"
-
 	"github.com/golang/glog"
 
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -44,7 +43,6 @@ import (
 var (
 	masterURL  string
 	kubeconfig string
-	imagePath  string
 
 	onlyOneSignalHandler = make(chan struct{})
 	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
@@ -53,7 +51,6 @@ var (
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&imagePath, "image", constants.DefaultMinIOImagePath, "Custom minio container image.")
 }
 
 func main() {
@@ -80,17 +77,21 @@ func main() {
 
 	controllerClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
-		glog.Fatalf("Error building example clientset: %s", err.Error())
+		glog.Fatalf("Error building MinIO clientset: %s", err.Error())
+	}
+
+	certClient, err := certapi.NewForConfig(cfg)
+	if err != nil {
+		glog.Errorf("Error building certificate clientset: %v", err.Error())
 	}
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 
-	controller := cluster.NewController(kubeClient, controllerClient,
+	controller := cluster.NewController(kubeClient, controllerClient, *certClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		minioInformerFactory.Min().V1beta1().MinIOInstances(),
-		kubeInformerFactory.Core().V1().Services(),
-		imagePath)
+		kubeInformerFactory.Core().V1().Services())
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)

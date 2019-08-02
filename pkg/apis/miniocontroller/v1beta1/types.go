@@ -31,7 +31,7 @@ type MinIOInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Scheduler MinIOInstanceScheduler `json:"scheduler,omitempty`
+	Scheduler MinIOInstanceScheduler `json:"scheduler,omitempty"`
 	Spec      MinIOInstanceSpec      `json:"spec"`
 	Status    MinIOInstanceStatus    `json:"status"`
 }
@@ -42,12 +42,21 @@ type MinIOInstanceScheduler struct {
 	Name string `json:"name"`
 }
 
+// CertificateConfig is a specification for certificate contents
+type CertificateConfig struct {
+	CommonName       string   `json:"commonName,omitempty"`
+	OrganizationName []string `json:"organizationName,omitempty"`
+	DNSNames         []string `json:"dnsNames,omitempty"`
+}
+
 // MinIOInstanceSpec is the spec for a MinIOInstance resource
 type MinIOInstanceSpec struct {
-	// Version defines the MinIOInstance Docker image version.
-	Version string `json:"version"`
+	// Image defines the MinIOInstance Docker image.
+	// +optional
+	Image string `json:"image,omitempty"`
 	// Replicas defines the number of MinIO instances in a MinIOInstance resource
-	Replicas int32 `json:"replicas"`
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
 	// Metadata defines the object metadata passed to each pod that is a part of this MinIOInstance
 	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
 	// If provided, use this secret as the credentials for MinIOInstance resource
@@ -71,9 +80,9 @@ type MinIOInstanceSpec struct {
 	// If specified, affinity will define the pod's scheduling constraints
 	// +optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
-	// SSLSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
+	// ExternalCertSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
 	// +optional
-	SSLSecret *corev1.LocalObjectReference `json:"sslSecret,omitempty"`
+	ExternalCertSecret *corev1.LocalObjectReference `json:"externalCertSecret,omitempty"`
 	// Mount path for MinIO volume (PV). Defaults to /export
 	// +optional
 	Mountpath string `json:"mountPath,omitempty"`
@@ -86,6 +95,13 @@ type MinIOInstanceSpec struct {
 	// Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
 	// +optional
 	Readiness *corev1.Probe `json:"readiness,omitempty"`
+	// RequestAutoCert allows user to enable Kubernetes based TLS cert generation and signing as explained here:
+	// https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
+	// +optional
+	RequestAutoCert bool `json:"requestAutoCert,omitempty"`
+	// CertConfig allows users to set entries like CommonName, Organization, etc for the certificate
+	// +optional
+	CertConfig *CertificateConfig `json:"certConfig,omitempty"`
 }
 
 // MinIOInstanceStatus is the status for a MinIOInstance resource
