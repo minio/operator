@@ -124,5 +124,5 @@ spec:
       serviceAccountName: minio-operator-sa
       containers:
       - name: minio-operator
-        image: minio/k8s-operator:latest
+        image: minio/k8s-operator:1.0.0
 ---
