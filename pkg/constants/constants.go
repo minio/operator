@@ -48,7 +48,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2019-07-24T02-02-23Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2019-08-07T01-59-21Z"
 
 // MinIOServerName specifies the default container name for MinIOInstance
 const MinIOServerName = "minio"
@@ -67,6 +67,12 @@ const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
 // https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
 const DefaultUpdateStrategy = "RollingUpdate"
 
+// HeadlessServiceNameSuffix specifies the suffix added to MinIOInstance name to create a headless service
+const HeadlessServiceNameSuffix = "-hl-svc"
+
+// CSRNameSuffix specifies the suffix added to MinIOInstance name to create a CSR
+const CSRNameSuffix = "-csr"
+
 // Auto TLS related constants
 
 // DefaultEllipticCurve specifies the default elliptic curve to be used for key generation
@@ -81,5 +87,5 @@ var DefaultQueryInterval = time.Second * 5
 // DefaultQueryTimeout specifies the timeout for query for CSR Status
 var DefaultQueryTimeout = time.Minute * 20
 
-// DefaultTLSSecretSuffix is the suffix applied to MinIOInstance name to create the TLS secret
-var DefaultTLSSecretSuffix = "-tls"
+// TLSSecretSuffix is the suffix applied to MinIOInstance name to create the TLS secret
+var TLSSecretSuffix = "-tls"

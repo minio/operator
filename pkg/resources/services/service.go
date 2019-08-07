@@ -33,7 +33,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
-			Name:      mi.Name,
+			Name:      mi.GetHeadlessServiceName(),
 			Namespace: mi.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
