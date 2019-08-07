@@ -92,8 +92,6 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 			}
 			if mi.Spec.CertConfig.DNSNames == nil {
 				mi.Spec.CertConfig.DNSNames = mi.GetHosts()
-			} else {
-				mi.Spec.CertConfig.DNSNames = append(mi.Spec.CertConfig.DNSNames, mi.GetHosts()...)
 			}
 			if mi.Spec.CertConfig.OrganizationName == nil {
 				mi.Spec.CertConfig.OrganizationName = constants.DefaultOrgName
@@ -113,24 +111,34 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 // GetHosts returns the domain names managed by headless service created for
 // current MinIOInstance
 func (mi *MinIOInstance) GetHosts() []string {
-	args := make([]string, 0)
+	hosts := make([]string, 0)
 	// append all the MinIOInstance replica URLs
 	// mi.Name is the headless service name
 	for i := 0; i < int(mi.Spec.Replicas); i++ {
-		args = append(args, fmt.Sprintf("%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local", mi.Name, mi.Name, mi.Namespace))
+		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local", mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
 	}
-	return args
+	return hosts
 }
 
 // GetWildCardName returns the wild card name managed by headless service created for
 // current MinIOInstance
 func (mi *MinIOInstance) GetWildCardName() string {
 	// mi.Name is the headless service name
-	return fmt.Sprintf("*.%s.%s.svc.cluster.local", mi.Name, mi.Namespace)
+	return fmt.Sprintf("*.%s.%s.svc.cluster.local", mi.GetHeadlessServiceName(), mi.Namespace)
 }
 
-// GetTLSSecretName returns the domain names managed by headless service created for
-// current MinIOInstance
+// GetTLSSecretName returns the name of Secret that has TLS related Info (Cert & Prviate Key)
 func (mi *MinIOInstance) GetTLSSecretName() string {
-	return mi.Name + constants.DefaultTLSSecretSuffix
+	return mi.Name + constants.TLSSecretSuffix
+}
+
+// GetHeadlessServiceName returns the name of headless service that is created to manage the
+// StatefulSet of this MinIOInstance
+func (mi *MinIOInstance) GetHeadlessServiceName() string {
+	return mi.Name + constants.HeadlessServiceNameSuffix
+}
+
+// GetCSRName returns the name of CSR that generated if AutoTLS is enabled
+func (mi *MinIOInstance) GetCSRName() string {
+	return mi.Name + constants.CSRNameSuffix
 }

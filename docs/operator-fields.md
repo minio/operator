@@ -4,6 +4,13 @@
 
 This document explains the various fields supported in `MinIOInstance` yaml file and how to use these fields to deploy and access MinIO server clusters.
 
+MinIO Operator creates native Kubernetes resources within the cluster. If the MinIOInstance is named as `minioinstance`, resources and their names as created by MinIO Operator are:
+
+- Headless Service: `minioinstance-hl-svc`
+- StatefulSet: `minioinstance`
+- Secret: `minioinstance-tls` (If `requestAutoCert` is enabled)
+- CertificateSigningRequest: `minioinstance-csr` (If `requestAutoCert` is enabled)
+
 ## MinIOInstance Fields
 
 - `kind`: This defines the resource type to be created. MinIO Operator CRD defines the `kind` for MinIO server as `MinIOInstance`.

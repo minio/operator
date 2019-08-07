@@ -155,7 +155,7 @@ func NewController(
 	// owned by a MinIOInstance resource will enqueue that MinIOInstance resource for
 	// processing. This way, we don't need to implement custom logic for
 	// handling StatefulSet resources. More info on this pattern:
-	// https://github.com/kubernetes/community/blob/8cafef897a22026d42f5e5bb3f104febe7e29830/contributors/devel/controllers.md
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md
 	statefulSetInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
 		UpdateFunc: func(old, new interface{}) {
@@ -290,7 +290,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	mi.EnsureDefaults()
 
-	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.Name)
+	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.GetHeadlessServiceName())
 	// If the headless service doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
 		glog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
@@ -314,13 +314,13 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if mi.RequiresAutoCertSetup() {
-		_, err := c.certClient.CertificateSigningRequests().Get(mi.Name, metav1.GetOptions{})
+		_, err := c.certClient.CertificateSigningRequests().Get(mi.GetCSRName(), metav1.GetOptions{})
 		if err != nil {
 			// If the CSR doesn't exist, we'll create it
 			if apierrors.IsNotFound(err) {
 				glog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
 				// create CSR here
-				c.createCSR(mi, svc.Name)
+				c.createCSR(mi)
 			} else {
 				return err
 			}
