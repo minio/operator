@@ -19,6 +19,7 @@
 package v1beta1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -57,6 +58,9 @@ type MinIOInstanceSpec struct {
 	// Replicas defines the number of MinIO instances in a MinIOInstance resource
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
+	// Pod Management Policy for pod created by StatefulSet
+	// +optional
+	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy, omitempty"`
 	// Metadata defines the object metadata passed to each pod that is a part of this MinIOInstance
 	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
 	// If provided, use this secret as the credentials for MinIOInstance resource

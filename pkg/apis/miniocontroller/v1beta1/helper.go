@@ -23,6 +23,8 @@ import (
 	"path"
 	"strconv"
 
+	appsv1 "k8s.io/api/apps/v1"
+
 	constants "github.com/minio/minio-operator/pkg/constants"
 )
 
@@ -65,6 +67,11 @@ func (mi *MinIOInstance) RequiresAutoCertSetup() bool {
 func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 	if mi.Spec.Replicas == 0 {
 		mi.Spec.Replicas = constants.DefaultReplicas
+	}
+
+	if mi.Spec.PodManagementPolicy == "" || (mi.Spec.PodManagementPolicy != appsv1.OrderedReadyPodManagement &&
+		mi.Spec.PodManagementPolicy != appsv1.ParallelPodManagement) {
+		mi.Spec.PodManagementPolicy = constants.DefaultPodManagementPolicy
 	}
 
 	if mi.Spec.Image == "" {

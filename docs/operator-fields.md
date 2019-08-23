@@ -27,6 +27,8 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Mi
 
 - `spec.replicas`: Define the number of nodes to be created for current MinIOInstance cluster.
 
+- `spec.podManagementPolicy`: Define Pod Management policy for pods created by StatefulSet. This is set to `Parallel` by default. Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy for details.
+
 - `spec.mountPath`: Set custom mount path. This is the path where PV gets mounted on MinIOInstance pods. This is set to `/export` by default.
 
 - `spec.subPath`: Set custom sub-path under mount path. This is the directory under mount path where PV gets mounted on MinIOInstance pods. This is set to `""` by default.

@@ -232,7 +232,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: constants.DefaultUpdateStrategy,
 			},
-			PodManagementPolicy: constants.DefaultPodManagementPolicy,
+			PodManagementPolicy: mi.Spec.PodManagementPolicy,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: podLabels,
 			},
