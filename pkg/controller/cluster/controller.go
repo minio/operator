@@ -363,7 +363,7 @@ func (c *Controller) syncHandler(key string) error {
 	// version does not equal the current desired version in the StatefulSet, we
 	// should update the StatefulSet resource.
 	if mi.Spec.Image != ss.Spec.Template.Spec.Containers[0].Image {
-		glog.V(4).Infof("Updating MinIOInstance %s MinIO server version %d, to: %d", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
+		glog.V(4).Infof("Updating MinIOInstance %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
 		ss = statefulsets.NewForCluster(mi, svc.Name)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ss)
 	}
