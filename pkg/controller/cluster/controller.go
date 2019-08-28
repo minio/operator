@@ -243,7 +243,7 @@ func (c *Controller) processNextWorkItem() bool {
 			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
 			return nil
 		}
-		fmt.Printf("Key from workqueue: %s", key)
+		glog.V(2).Infof("Key from workqueue: %s", key)
 		// Run the syncHandler, passing it the namespace/name string of the
 		// MinIOInstance resource to be synced.
 		if err := c.syncHandler(key); err != nil {
@@ -269,7 +269,7 @@ func (c *Controller) processNextWorkItem() bool {
 func (c *Controller) syncHandler(key string) error {
 	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	fmt.Printf("Key after splitting, namespace: %s, name: %s", namespace, name)
+	glog.V(2).Infof("Key after splitting, namespace: %s, name: %s", namespace, name)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))
 		return nil
