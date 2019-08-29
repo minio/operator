@@ -19,7 +19,6 @@ matrix:
       sudo: required
       env:
         - ARCH=x86_64
-        - CGO_ENABLED=0
         - GO111MODULE=on
         - GOPROXY=https://proxy.golang.org
       go: 1.12.x
