@@ -21,8 +21,8 @@ package v1beta1
 import (
 	v1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	"github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
-	rest "k8s.io/client-go/rest"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
+	rest "k8s.io/client-go/rest"
 )
 
 type MinV1beta1Interface interface {
