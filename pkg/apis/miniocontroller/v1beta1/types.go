@@ -60,7 +60,7 @@ type MinIOInstanceSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 	// Pod Management Policy for pod created by StatefulSet
 	// +optional
-	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy, omitempty"`
+	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 	// Metadata defines the object metadata passed to each pod that is a part of this MinIOInstance
 	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
 	// If provided, use this secret as the credentials for MinIOInstance resource

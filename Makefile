@@ -9,3 +9,9 @@ build:
 
 install: all
 	@docker push $(TAG)
+
+govet:
+	go vet ./...
+
+gotest:
+	go test ./...
