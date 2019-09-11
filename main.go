@@ -1,4 +1,4 @@
-// +build go1.12
+// +build go1.13
 
 /*
  * MinIO-Operator - Manage MinIO clusters in Kubernetes
@@ -22,6 +22,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,17 +41,22 @@ import (
 	"github.com/minio/minio-operator/pkg/controller/cluster"
 )
 
+// Version provides the version of this minio-operator
+var Version = "DEVELOPMENT.GOGET"
+
 var (
-	masterURL  string
-	kubeconfig string
+	masterURL    string
+	kubeconfig   string
+	checkVersion bool
 
 	onlyOneSignalHandler = make(chan struct{})
 	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
 )
 
 func init() {
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.StringVar(&kubeconfig, "kubeconfig", "", "path to a kubeconfig. Only required if out-of-cluster")
+	flag.StringVar(&masterURL, "master", "", "the address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster")
+	flag.BoolVar(&checkVersion, "version", false, "print version")
 }
 
 func main() {
@@ -58,6 +64,11 @@ func main() {
 	stopCh := setupSignalHandler()
 
 	flag.Parse()
+
+	if checkVersion {
+		fmt.Println(Version)
+		return
+	}
 
 	// Look for incluster config by default
 	cfg, err := rest.InClusterConfig()

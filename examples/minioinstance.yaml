@@ -25,7 +25,7 @@ spec:
       prometheus.io/port: "9000"
       prometheus.io/scrape: "true"
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2019-09-05T23-24-38Z
+  image: minio/minio:RELEASE.2019-09-11T19-53-16Z
   ## Secret with credentials to be used by MinIO instance.
   credsSecret:
     name: minio-creds-secret
