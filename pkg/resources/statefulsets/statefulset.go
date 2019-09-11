@@ -160,6 +160,17 @@ func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName string) co
 	}
 }
 
+// Builds the tolerations for a MinIOInstance.
+func minioTolerations(mi *miniov1beta1.MinIOInstance) []corev1.Toleration {
+	tolerations := make([]corev1.Toleration, 0)
+	// Add all the tolerations
+	for _, t := range mi.Spec.Tolerations {
+		tolerations = append(tolerations, t)
+	}
+	// Return tolerations
+	return tolerations
+}
+
 // NewForCluster creates a new StatefulSet for the given Cluster.
 func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.StatefulSet {
 	var secretName string
@@ -245,6 +256,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 					Volumes:       podVolumes,
 					Affinity:      mi.Spec.Affinity,
 					SchedulerName: mi.Scheduler.Name,
+					Tolerations:   minioTolerations(mi),
 				},
 			},
 		},
