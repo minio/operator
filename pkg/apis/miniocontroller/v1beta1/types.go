@@ -106,6 +106,9 @@ type MinIOInstanceSpec struct {
 	// CertConfig allows users to set entries like CommonName, Organization, etc for the certificate
 	// +optional
 	CertConfig *CertificateConfig `json:"certConfig,omitempty"`
+	// Tolerations allows users to set entries like effect, key, operator, value.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // MinIOInstanceStatus is the status for a MinIOInstance resource
