@@ -1,5 +1,10 @@
+By contributing to minio-controller, you agree to assign the copyright to MinIO.
+
+The contributed source files should have the following notice:
+
+```
 /*
- * Copyright (C) 2019, MinIO, Inc.
+ * Copyright (C) YYYY, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -14,10 +19,4 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *
  */
-
-package miniocontroller
-
-// Controller MinIO group name.
-const (
-	GroupName = "miniocontroller.min.io"
-)
+ ```
