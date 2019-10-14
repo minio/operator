@@ -109,20 +109,23 @@ subjects:
   name: minio-operator-sa
   namespace: minio-operator-ns
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: minio-operator
   namespace: minio-operator-ns
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      name: minio-operator
   template:
     metadata:
       labels:
-        app: minio-operator
+        name: minio-operator
     spec:
       serviceAccountName: minio-operator-sa
       containers:
-      - name: minio-operator
-        image: minio/k8s-operator:1.0.1
----
+        - name: minio-operator
+          image: minio/k8s-operator:1.0.4
+          imagePullPolicy: IfNotPresent
