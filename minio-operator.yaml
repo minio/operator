@@ -36,6 +36,10 @@ spec:
               type: string
             subpath:
               type: string
+  additionalPrinterColumns:
+    - name: Replicas
+      type: integer
+      JSONPath: ".spec.replicas"
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole

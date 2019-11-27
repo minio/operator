@@ -22,7 +22,7 @@ MinIO is a high performance distributed object storage server, designed for larg
 To start MinIO-Operator, use the `docs/minio-operator.yaml` file.
 
 ```
-kubectl create -f https://github.com/minio/minio-operator/blob/master/minio-operator.yaml?raw=true
+kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
 ```
 
 This will create all relevant resources required for the Operator to work. Here is a list of resources created by above `yaml` file:
@@ -39,7 +39,7 @@ This will create all relevant resources required for the Operator to work. Here 
 Once MinIO-Operator deployment is running, you can create MinIO instances using the below command
 
 ```
-kubectl create -f https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml?raw=true
+kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml
 ```
 
 ## Features
@@ -49,7 +49,7 @@ MinIO-Operator currently supports following features:
 - Create and delete highly available distributed MinIO clusters.
 - Upgrading existing distributed MinIO clusters.
 
-Refer [`minioinstance.yaml`](https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml?raw=true) for details on how to pass supported fields to the operator.
+Refer [`minioinstance.yaml`](https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml) for details on how to pass supported fields to the operator.
 
 ## Upcoming features
 
