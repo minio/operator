@@ -53,6 +53,7 @@ Refer [`minioinstance.yaml`](https://raw.githubusercontent.com/minio/minio-opera
 
 ## Upcoming features
 
+- Bucket Expansion Support
 - Federation and CoreDNS
 - Continuous remote site mirroring with [`mc mirror`](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror)
 
