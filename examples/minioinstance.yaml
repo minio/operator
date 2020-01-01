@@ -36,6 +36,8 @@ spec:
   ## PodManagement policy for pods created by StatefulSet. Can be "OrderedReady" or "Parallel"
   ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
   ## for details. Defaults to "Parallel"
+  ## If set to "OrderedReady", then disable Readiness checks below. Readiness check will only
+  ## work if PodManagementPolicy is set to "Parallel".
   podManagementPolicy: Parallel
   ## Enable Kubernetes based certificate generation and signing as explained in
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
@@ -48,7 +50,7 @@ spec:
     dnsNames: []
 
   ## Used to specify a toleration for a pod
-  #tolerations:
+  # tolerations:
   #  - effect: NoSchedule
   #    key: dedicated
   #    operator: Equal
@@ -76,13 +78,14 @@ spec:
   ## Readiness probe detects situations when MinIO server instance
   ## is not ready to accept traffic. Kubernetes doesn't forward
   ## traffic to the pod while readiness checks fail.
-  ## Recommended to be used only for standalone MinIO Instances. (replicas = 1)
-  # readiness:
-  #   httpGet:
-  #     path: /minio/health/ready
-  #     port: 9000
-  #   initialDelaySeconds: 120
-  #   periodSeconds: 20
+  ## Readiness check will only work if PodManagementPolicy is set to "Parallel".
+  ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
+  readiness:
+    httpGet:
+      path: /minio/health/ready
+      port: 9000
+    initialDelaySeconds: 120
+    periodSeconds: 20
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.
