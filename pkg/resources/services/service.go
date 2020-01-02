@@ -46,7 +46,8 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
 			},
 		},
 		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{minioPort},
+			PublishNotReadyAddresses: true,
+			Ports:                    []corev1.ServicePort{minioPort},
 			Selector: map[string]string{
 				constants.InstanceLabel: mi.Name,
 			},
