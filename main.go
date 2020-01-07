@@ -58,6 +58,7 @@ func init() {
 	flag.BoolVar(&checkVersion, "version", false, "print version")
 }
 
+
 func main() {
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
@@ -95,8 +96,17 @@ func main() {
 		glog.Errorf("Error building certificate clientset: %v", err.Error())
 	}
 
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
+	namespace, isNamespaced := os.LookupEnv("WATCHED_NAMESPACE")
+
+	var kubeInformerFactory kubeinformers.SharedInformerFactory
+	var minioInformerFactory informers.SharedInformerFactory
+	if isNamespaced {
+		kubeInformerFactory = kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(namespace))
+		minioInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(namespace))
+	} else {
+		kubeInformerFactory = kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
+		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
+	}
 
 	controller := cluster.NewController(kubeClient, controllerClient, *certClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
