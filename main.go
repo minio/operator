@@ -58,7 +58,6 @@ func init() {
 	flag.BoolVar(&checkVersion, "version", false, "print version")
 }
 
-
 func main() {
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
