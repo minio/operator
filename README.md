@@ -34,6 +34,14 @@ This will create all relevant resources required for the Operator to work. Here 
 - `ClusterRoleBinding`: This cluster wide binding binds the service account `minio-operator-sa` to cluster role `minio-operator-role`.
 - `Deployment`: Deployment creates a pod using the MinIO-Operator Docker image. This is where the custom controller runs and looks after any changes in custom resource.
 
+### Environment variables
+
+These variables may be passed to operator Deployment in order to modify some of its parameters
+
+| name                | default | description                                                                                                                   |
+| ---                 | ---     | ---                                                                                                                           |
+| `WATCHED_NAMESPACE` |         | If set, the operator will watch only MinIO resources deployed in the specified namespace. All namespaces are watched if empty |
+
 ### Create a MinIO instance
 
 Once MinIO-Operator deployment is running, you can create MinIO instances using the below command
