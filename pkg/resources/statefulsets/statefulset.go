@@ -181,11 +181,31 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: ""}}})
 	}
 
+	var keyPaths = []corev1.KeyToPath{
+		{Key: "public.crt", Path: "public.crt"},
+		{Key: "private.key", Path: "private.key"},
+		{Key: "public.crt", Path: "CAs/public.crt"},
+	}
+
 	if mi.RequiresAutoCertSetup() {
 		secretName = mi.GetTLSSecretName()
 	} else if mi.RequiresExternalCertSetup() {
 		secretName = mi.Spec.ExternalCertSecret.Name
+		if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" {
+			keyPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: "public.crt"},
+				{Key: "tls.key", Path: "private.key"},
+				{Key: "tls.crt", Path: "CAs/public.crt"},
+			}
+		} else if mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			keyPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: "public.crt"},
+				{Key: "tls.key", Path: "private.key"},
+				{Key: "ca.crt", Path: "CAs/public.crt"},
+			}
+		}
 	}
+
 	// Add SSL volume from SSL secret to the podVolumes
 	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
 		podVolumes = append(podVolumes, corev1.Volume{
@@ -198,20 +218,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 								LocalObjectReference: corev1.LocalObjectReference{
 									Name: secretName,
 								},
-								Items: []corev1.KeyToPath{
-									{
-										Key:  "public.crt",
-										Path: "public.crt",
-									},
-									{
-										Key:  "private.key",
-										Path: "private.key",
-									},
-									{
-										Key:  "public.crt",
-										Path: "CAs/public.crt",
-									},
-								},
+								Items: keyPaths,
 							},
 						},
 					},
