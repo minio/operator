@@ -1,10 +1,22 @@
 # MinIO Operator TLS Configuration
 
-[![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
+[![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
+[![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
 
-This document explains how to enable TLS on MinIOInstance pods. There are two approaches to enable TLS via MinIO Operator. First approach is using Kubernetes cluster root Certificate Authority (CA) to establish trust. In this approach MinIO Operator creates a private key and a certificate signing request (CSR) and submits it to `certificates.k8s.io` API for signing. Approving the CSR is either done by an automated approval process or on a one off basis by a Kubernetes cluster administrator.
+This document explains how to enable TLS on MinIOInstance pods. There are a few approaches to enable TLS for MinIO:
 
-Second approach is to acquire a self-signed or CA signed certificate and use Kubernetes Secret to store this information. Once the Secret is created, pass the Secret name to MinIO Operator, which then uses the Secret to extract certificate data and mount it at relevant locations within MinIOInstance pods.
+- Use the Kubernetes cluster's root Certificate Authority (CA) to establish trust.
+
+  The MinIO Operator creates a private key, and a certificate signing request (CSR) which is submitted to the `certificates.k8s.io` API for signing. Approving the CSR is either done by an automated approval process or on a one off basis by a Kubernetes cluster administrator.
+
+- Acquire a self-signed or CA signed certificate and use a Kubernetes Secret resource to store this information.
+
+  Once the Secret is manually created, pass the Secret name to MinIO Operator, which then uses the Secret to extract certificate data and mount it at relevant locations within MinIOInstance pods.
+
+- Configure MinIO to use a certificate issued by [cert-manager][1].
+
+  Similar to using a self-signed or CA signed certificate, but the operator is able to accept a Secret resource created by cert-manager.
+
 
 ## Automatic CSR Generation
 
@@ -20,13 +32,13 @@ Once you enable `requestAutoCert` field and create the MinIOInstance, MinIO Oper
 
 - Get the CSR
 
-```
+```bash
 kubectl get csr
 ```
 
 - Approve the CSR
 
-```
+```bash
 kubectl certificate approve <CSR_Name>
 ```
 
@@ -36,8 +48,67 @@ Once the CSR is approved and Certificate available, MinIO operator downloads the
 
 Follow this approach if you plan to use CA signed or self-signed certificates for MinIOInstance pods. Once you have the key and certificate file available, create a Kubernetes Secret using
 
-```
+```bash
 kubectl create secret generic tls-ssl-minio --from-file=path/to/private.key --from-file=path/to/public.crt
 ```
 
 Once created, set the name of Secret (here it is `tls-ssl-minio`) under `spec.externalCertSecret` field. Then create the MinIOInstance. MinIO Operator will use this Secret to fetch key and certificate and mount it to relevant locations inside the MinIOInstance pods.
+
+### Using Kubernetes TLS
+
+Alternatively to the above, it's possible to use a TLS secret. First, create the Kubernetes secret:
+
+```bash
+kubectl create secret tls tls-ssl-minio --key=private.key --cert=public.crt
+```
+
+Once created, set the name of the Secret (in this example `tls-ssl-minio`) under `spec.externalCertSecret.name`. Also set the type under `spec.externalCertSecret.type` to `kubernetes.io/tls`:
+
+```yaml
+  externalCertSecret:
+    name: tls-ssl-minio
+    type: kubernetes.io/tls
+```
+
+
+## Using cert-manager
+
+[Certificate Manager][1] is a Kubernetes Operator capable of automatically issuing certificates from multiple Issuers. Integration with MinIO is simple. First, create a new certificate issuer; for this demonstration the issuer certificate will be self-signed:
+
+```yaml
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadata:
+  name: selfsigning-issuer
+spec:
+  selfSigned: {}
+```
+
+Now it's possible to issue the MinIO certificate using the above issuer:
+
+```yaml
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: tls-minio
+spec:
+  commonName: minio.example.com
+  secretName: tls-minio
+  dnsNames:
+    - minio.example.com # Ingress domain
+    - minio-hl-svc # Internal domain
+    - minio-hl-svc.default.svc.cluster.local
+  issuerRef:
+    name: selfsigning-issuer
+```
+
+Finally configure MinIO to use the newly created TLS certificate:
+
+```yaml
+  externalCertSecret:
+    name: tls-minio
+    type: cert-manager.io/v1alpha2
+```
+
+[1]: https://cert-manager.io
