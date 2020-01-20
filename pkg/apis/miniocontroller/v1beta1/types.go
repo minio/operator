@@ -49,6 +49,11 @@ type CertificateConfig struct {
 	DNSNames         []string `json:"dnsNames,omitempty"`
 }
 
+type LocalCertificateReference struct {
+	Name string `json:"name"`
+	Type string `json:"type,omitempty"`
+}
+
 // MinIOInstanceSpec is the spec for a MinIOInstance resource
 type MinIOInstanceSpec struct {
 	// Image defines the MinIOInstance Docker image.
@@ -85,7 +90,7 @@ type MinIOInstanceSpec struct {
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// ExternalCertSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
 	// +optional
-	ExternalCertSecret *corev1.LocalObjectReference `json:"externalCertSecret,omitempty"`
+	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
 	// Mount path for MinIO volume (PV). Defaults to /export
 	// +optional
 	Mountpath string `json:"mountPath,omitempty"`
