@@ -78,7 +78,6 @@ spec:
 
   maturity: stable
   version: 1.0.3
-  replaces: ''
   minKubeVersion: 1.14.0
   keywords:
     - Object Storage
