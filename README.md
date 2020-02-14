@@ -1,6 +1,4 @@
-# MinIO Operator Guide
-
-[![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
+# MinIO Operator Guide [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
 
 MinIO is a high performance distributed object storage server, designed for large-scale private cloud infrastructure. MinIO is designed in a cloud-native manner to scale sustainably in multi-tenant environments. Orchestration platforms like Kubernetes provide perfect launchpad for MinIO to scale. There are multiple options to deploy MinIO on Kubernetes:
 
@@ -14,8 +12,8 @@ MinIO is a high performance distributed object storage server, designed for larg
 
 ### Prerequisites
 
-- Kubernetes API v1.15 and above.
-- `kubectl` configured to refer to relevant Kubernetes cluster.
+- Kubernetes version v1.15.5 and above.
+- `kubectl` configured to refer to a Kubernetes cluster.
 
 ### Create Operator and related resources
 
