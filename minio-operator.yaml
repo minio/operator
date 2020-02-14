@@ -131,5 +131,5 @@ spec:
       serviceAccountName: minio-operator-sa
       containers:
         - name: minio-operator
-          image: minio/k8s-operator:1.0.4
+          image: minio/k8s-operator:1.0.7
           imagePullPolicy: IfNotPresent
