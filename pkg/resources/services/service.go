@@ -21,6 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	constants "github.com/minio/minio-operator/pkg/constants"
@@ -28,7 +29,6 @@ import (
 
 // NewForCluster will return a new headless Kubernetes service for a MinIOInstance
 func NewForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: constants.MinIOPort}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
@@ -47,7 +47,14 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			PublishNotReadyAddresses: true,
-			Ports:                    []corev1.ServicePort{minioPort},
+			Ports: []corev1.ServicePort{
+				{
+					Name:       "http-" + mi.GetHeadlessServiceName(),
+					Port:       constants.MinIOPort,
+					TargetPort: intstr.FromInt(constants.MinIOPort),
+					Protocol:   "TCP",
+				},
+			},
 			Selector: map[string]string{
 				constants.InstanceLabel: mi.Name,
 			},
