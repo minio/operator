@@ -58,7 +58,6 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
 			Selector: map[string]string{
 				constants.InstanceLabel: mi.Name,
 			},
-			ClusterIP: corev1.ClusterIPNone,
 		},
 	}
 
