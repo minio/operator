@@ -29,10 +29,13 @@ metadata:
 # scheduler:
 #  name: my-custom-scheduler
 spec:
-  ## Add metadata to the pods created by the StatefulSet
+  selector:
+    matchLabels:
+      app: minio # Should match spec.metadata.labels
+  ## Add metadata to the all pods created by the StatefulSet
   metadata:
     labels:
-      app: minio
+      app: minio # Should match spec.selector.matchLabels
     annotations:
       prometheus.io/path: /minio/prometheus/metrics
       prometheus.io/port: "9000"

@@ -59,6 +59,9 @@ type MinIOInstanceSpec struct {
 	// Image defines the MinIOInstance Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// ImagePullSecret defines the secret to be used for pull image from a private Docker image.
+	// +optional
+	ImagePullSecret corev1.LocalObjectReference `json:"imagePullSecret,omitempty"`
 	// Replicas defines the number of MinIO instances in a MinIOInstance resource
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
@@ -80,6 +83,9 @@ type MinIOInstanceSpec struct {
 	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
 	// +optional
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
+	// Selector is a label query over pods that should match the replica count.
+	// +optional
+	Selector *metav1.LabelSelector `json:"selector,omitempty"`
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/

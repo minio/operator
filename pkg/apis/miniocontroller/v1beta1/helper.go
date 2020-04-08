@@ -23,6 +23,7 @@ import (
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	constants "github.com/minio/minio-operator/pkg/constants"
 )
@@ -33,10 +34,16 @@ func (mi *MinIOInstance) HasCredsSecret() bool {
 	return mi.Spec.CredsSecret != nil
 }
 
-// HasMetadata returns true if the user has provided a object metadata
+// HasMetadata returns true if the user has provided a pod metadata
 // for a MinIOInstance else false
 func (mi *MinIOInstance) HasMetadata() bool {
 	return mi.Spec.Metadata != nil
+}
+
+// HasSelector returns true if the user has provided a pod selector
+// field (ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-selector)
+func (mi *MinIOInstance) HasSelector() bool {
+	return mi.Spec.Selector != nil
 }
 
 // HasCertConfig returns true if the user has provided a certificate
@@ -57,6 +64,13 @@ func (mi *MinIOInstance) RequiresExternalCertSetup() bool {
 // SSL support
 func (mi *MinIOInstance) RequiresAutoCertSetup() bool {
 	return mi.Spec.RequestAutoCert == true
+}
+
+// PodLabels retuns the default labels
+func (mi *MinIOInstance) PodLabels() map[string]string {
+	m := make(map[string]string, 1)
+	m[constants.InstanceLabel] = mi.Name
+	return m
 }
 
 // EnsureDefaults will ensure that if a user omits and fields in the
@@ -108,6 +122,12 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 				DNSNames:         mi.GetHosts(),
 				OrganizationName: constants.DefaultOrgName,
 			}
+		}
+	}
+
+	if !mi.HasSelector() {
+		mi.Spec.Selector = &metav1.LabelSelector{
+			MatchLabels: mi.PodLabels(),
 		}
 	}
 
