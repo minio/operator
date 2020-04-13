@@ -85,13 +85,16 @@ func minioMetadata(mi *miniov1beta1.MinIOInstance) metav1.ObjectMeta {
 		meta.Annotations = make(map[string]string)
 	}
 	// Add the additional label used by StatefulSet spec
-	podLabelKey, podLabelValue := minioPodLabels(mi)
-	meta.Labels[podLabelKey] = podLabelValue
+	for k, v := range mi.PodLabels() {
+		meta.Labels[k] = v
+	}
+	// Add the Selector labels set by user
+	if mi.HasSelector() {
+		for k, v := range mi.Spec.Selector.MatchLabels {
+			meta.Labels[k] = v
+		}
+	}
 	return meta
-}
-
-func minioPodLabels(mi *miniov1beta1.MinIOInstance) (string, string) {
-	return constants.InstanceLabel, mi.Name
 }
 
 // Builds the volume mounts for MinIO container.
@@ -228,10 +231,6 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 	}
 
 	containers := []corev1.Container{minioServerContainer(mi, serviceName)}
-	podLabelKey, podLabelValue := minioPodLabels(mi)
-	podLabels := map[string]string{
-		podLabelKey: podLabelValue,
-	}
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -250,19 +249,18 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 				Type: constants.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: mi.Spec.PodManagementPolicy,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: podLabels,
-			},
-			ServiceName: serviceName,
-			Replicas:    &mi.Spec.Replicas,
+			Selector:            mi.Spec.Selector,
+			ServiceName:         serviceName,
+			Replicas:            &mi.Spec.Replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: minioMetadata(mi),
 				Spec: corev1.PodSpec{
-					Containers:    containers,
-					Volumes:       podVolumes,
-					Affinity:      mi.Spec.Affinity,
-					SchedulerName: mi.Scheduler.Name,
-					Tolerations:   minioTolerations(mi),
+					Containers:       containers,
+					Volumes:          podVolumes,
+					ImagePullSecrets: []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
+					Affinity:         mi.Spec.Affinity,
+					SchedulerName:    mi.Scheduler.Name,
+					Tolerations:      minioTolerations(mi),
 				},
 			},
 		},

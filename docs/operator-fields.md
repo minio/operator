@@ -23,11 +23,13 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Mi
 
 - `spec.image`: Set the container registry and image tag for MinIO server to be used in the MinIOInstance.
 
+- `spec.imagePullSecret`: Defines the secret to be used for pull image from a private Docker image.
+
 - `spec.credsSecret`: Use this secret to assign custom credentials (access key and secret key) to MinIOInstance.
 
 - `spec.replicas`: Define the number of nodes to be created for current MinIOInstance cluster.
 
-- `spec.podManagementPolicy`: Define Pod Management policy for pods created by StatefulSet. This is set to `Parallel` by default. Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy for details.
+- `spec.podManagementPolicy`: Define Pod Management policy for pods created by StatefulSet. This is set to `Parallel` by default. Refer [the documentation](https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy) for details.
 
 - `spec.mountPath`: Set custom mount path. This is the path where PV gets mounted on MinIOInstance pods. This is set to `/export` by default.
 
