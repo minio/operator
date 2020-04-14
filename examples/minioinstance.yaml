@@ -28,30 +28,54 @@ spec:
       prometheus.io/port: "9000"
       prometheus.io/scrape: "true"
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2020-01-03T19-12-21Z
+  image: minio/minio:RELEASE.2020-04-15T00-39-01Z
+  zones:
+    - name: "zone-0"
+      ## Number of MinIO servers/pods in this zone.
+      ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
+      ## Note that the operator does not support upgrading from standalone to distributed mode.
+      servers: 4
+  ## Supply number of volumes to be mounted per MinIO server instance.
+  volumesPerServer: 1
+  ## Mount path where PV will be mounted inside container(s). Defaults to "/export".
+  mountPath: /export
+  ## Sub path inside Mount path where MinIO starts. Defaults to "".
+  # subPath: /data
+  ## This VolumeClaimTemplate is used across all the volumes provisioned for MinIO cluster.
+  ## Please do not change the volumeClaimTemplate field while expanding the cluster, this may
+  ## lead to unbound PVCs and missing data
+  volumeClaimTemplate:
+    metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
   ## Secret with credentials to be used by MinIO instance.
   credsSecret:
     name: minio-creds-secret
-  ## Supply number of replicas.
-  ## For standalone mode, supply 1. For distributed mode, supply 4 or more (should be even).
-  ## Note that the operator does not support upgrading from standalone to distributed mode.
-  replicas: 4
   ## PodManagement policy for pods created by StatefulSet. Can be "OrderedReady" or "Parallel"
   ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
   ## for details. Defaults to "Parallel"
   ## If set to "OrderedReady", then disable Readiness checks below. Readiness check will only
   ## work if PodManagementPolicy is set to "Parallel".
   podManagementPolicy: Parallel
+  ## Secret with certificates to configure TLS for MinIO certs. Create secrets as explained
+  ## here: https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+  # externalCertSecret:
+  # name: tls-ssl-minio
   ## Enable Kubernetes based certificate generation and signing as explained in
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
   requestAutoCert: false
   ## Used when "requestAutoCert" is set to true. Set CommonName for the auto-generated certificate.
   ## Internal DNS name for the pod will be used if CommonName is not provided.
+  ## DNS name format is minio-{0...3}.minio.default.svc.cluster.local
   certConfig:
     commonName: ""
     organizationName: []
     dnsNames: []
-
   ## Used to specify a toleration for a pod
   # tolerations:
   #  - effect: NoSchedule
@@ -98,20 +122,4 @@ spec:
   ## Affinity settings for MinIO pods. Read more about affinity
   ## here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity.
   # affinity:
-  ## Secret with certificates to configure TLS for MinIO certs. Create secrets as explained
-  ## here: https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
-  # externalCertSecret:
-  # name: tls-ssl-minio
-  ## Mountpath where PV will be mounted inside container(s). Defaults to "/export".
-  # mountPath: /export
-  ## Subpath inside Mountpath where MinIO starts. Defaults to "".
-  # subPath: /data
-  volumeClaimTemplate:
-    metadata:
-      name: data
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
+  

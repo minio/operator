@@ -66,11 +66,30 @@ func (mi *MinIOInstance) RequiresAutoCertSetup() bool {
 	return mi.Spec.RequestAutoCert == true
 }
 
-// PodLabels retuns the default labels
+// PodLabels returns the default labels
 func (mi *MinIOInstance) PodLabels() map[string]string {
 	m := make(map[string]string, 1)
 	m[constants.InstanceLabel] = mi.Name
 	return m
+}
+
+// GetVolumesPath returns the paths for MinIO mounts based on
+// total number of volumes per MinIO server
+func (mi *MinIOInstance) GetVolumesPath() string {
+	if mi.Spec.VolumesPerServer == 1 {
+		return path.Join(mi.Spec.Mountpath, mi.Spec.Subpath)
+	}
+	return path.Join(mi.Spec.Mountpath+"{0..."+strconv.Itoa((mi.Spec.VolumesPerServer)-1)+"}", mi.Spec.Subpath)
+}
+
+// GetReplicas returns the number of total replicas
+// required for this cluster
+func (mi *MinIOInstance) GetReplicas() int32 {
+	var replicas int32
+	for _, z := range mi.Spec.Zones {
+		replicas = replicas + z.Servers
+	}
+	return replicas
 }
 
 // EnsureDefaults will ensure that if a user omits and fields in the
@@ -78,10 +97,6 @@ func (mi *MinIOInstance) PodLabels() map[string]string {
 // For example a user can choose to omit the version
 // and number of members.
 func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
-	if mi.Spec.Replicas == 0 {
-		mi.Spec.Replicas = constants.DefaultReplicas
-	}
-
 	if mi.Spec.PodManagementPolicy == "" || (mi.Spec.PodManagementPolicy != appsv1.OrderedReadyPodManagement &&
 		mi.Spec.PodManagementPolicy != appsv1.ParallelPodManagement) {
 		mi.Spec.PodManagementPolicy = constants.DefaultPodManagementPolicy
@@ -91,18 +106,22 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		mi.Spec.Image = constants.DefaultMinIOImage
 	}
 
+	for _, z := range mi.Spec.Zones {
+		if z.Servers == 0 {
+			z.Servers = constants.DefaultServers
+		}
+	}
+
+	if mi.Spec.VolumesPerServer == 0 {
+		mi.Spec.VolumesPerServer = constants.DefaultVolumesPerServer
+	}
+
 	if mi.Spec.Mountpath == "" {
 		mi.Spec.Mountpath = constants.MinIOVolumeMountPath
-	} else {
-		// Ensure there is no trailing `/`
-		mi.Spec.Mountpath = path.Clean(mi.Spec.Mountpath)
 	}
 
 	if mi.Spec.Subpath == "" {
 		mi.Spec.Subpath = constants.MinIOVolumeSubPath
-	} else {
-		// Ensure there is no `/` in beginning
-		mi.Spec.Subpath = path.Clean(mi.Spec.Subpath)
 	}
 
 	if mi.RequiresAutoCertSetup() == true {
@@ -138,10 +157,16 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 // current MinIOInstance
 func (mi *MinIOInstance) GetHosts() []string {
 	hosts := make([]string, 0)
-	// append all the MinIOInstance replica URLs
+	var max int32
+	// Create the ellipses style URL
 	// mi.Name is the headless service name
-	for i := 0; i < int(mi.Spec.Replicas); i++ {
-		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local", mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
+	for i, z := range mi.Spec.Zones {
+		max = max + z.Servers
+		if i == 0 {
+			hosts = append(hosts, fmt.Sprintf("%s-{0..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc.cluster.local", mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
+		} else {
+			hosts = append(hosts, fmt.Sprintf("%s-{"+strconv.Itoa(int(mi.Spec.Zones[i-1].Servers))+"..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc.cluster.local", mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
+		}
 	}
 	return hosts
 }
