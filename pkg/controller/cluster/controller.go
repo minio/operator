@@ -352,8 +352,8 @@ func (c *Controller) syncHandler(key string) error {
 	// If this number of the replicas on the MinIOInstance resource is specified, and the
 	// number does not equal the current desired replicas on the StatefulSet, we
 	// should update the StatefulSet resource.
-	if mi.Spec.Replicas != *ss.Spec.Replicas {
-		glog.V(4).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.Spec.Replicas, *ss.Spec.Replicas)
+	if mi.GetReplicas() != *ss.Spec.Replicas {
+		glog.V(4).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.GetReplicas(), *ss.Spec.Replicas)
 		ss = statefulsets.NewForCluster(mi, svc.Name)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ss)
 	}

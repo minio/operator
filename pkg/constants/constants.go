@@ -34,9 +34,6 @@ const MinIOOperatorVersionLabel = "v1beta1.min.io/version"
 // MinIOPort specifies the default MinIOInstance port number.
 const MinIOPort = 9000
 
-// DefaultReplicas specifies the default MinIO replicas to use for distributed deployment if not specified explicitly by user
-const DefaultReplicas = 4
-
 // MinIOVolumeName specifies the default volume name for MinIO volumes
 const MinIOVolumeName = "export"
 
@@ -47,7 +44,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2020-01-03T19-12-21Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2020-04-15T00-39-01Z"
 
 // MinIOServerName specifies the default container name for MinIOInstance
 const MinIOServerName = "minio"
@@ -65,6 +62,9 @@ const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
 // DefaultUpdateStrategy specifies default pod update policy as explained here
 // https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
 const DefaultUpdateStrategy = "RollingUpdate"
+
+// DefaultImagePullPolicy specifies the policy to image pulls
+const DefaultImagePullPolicy = "Always"
 
 // HeadlessServiceNameSuffix specifies the suffix added to MinIOInstance name to create a headless service
 const HeadlessServiceNameSuffix = "-hl-svc"
@@ -88,3 +88,12 @@ var DefaultQueryTimeout = time.Minute * 20
 
 // TLSSecretSuffix is the suffix applied to MinIOInstance name to create the TLS secret
 var TLSSecretSuffix = "-tls"
+
+// DefaultServers specifies the default MinIO replicas to use for distributed deployment if not specified explicitly by user
+const DefaultServers = 1
+
+// DefaultVolumesPerServer specifies the default number of volumes per MinIO instance
+const DefaultVolumesPerServer = 1
+
+// DefaultZoneName specifies the default zone name
+const DefaultZoneName = "zone-0"

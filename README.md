@@ -48,11 +48,22 @@ Once MinIO-Operator deployment is running, you can create MinIO instances using 
 kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml
 ```
 
+### Expand a MinIO cluster
+
+After you have a distributed MinIO Cluster running (zones.server > 3), you can expand the MinIO cluster using
+
+```
+kubectl patch minioinstances.miniocontroller.min.io minio --patch "$(cat examples/patch.yaml)" --type=merge
+```
+
+You can further keep adding new zones in the `patch.yaml` file and apply the patch, to add new nodes to existing cluster. 
+
 ## Features
 
 MinIO-Operator currently supports following features:
 
 - Create and delete highly available distributed MinIO clusters.
+- Expand an existing MinIO cluster.
 - Upgrading existing distributed MinIO clusters.
 
 Refer [`minioinstance.yaml`](https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml) for details on how to pass supported fields to the operator.

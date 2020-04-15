@@ -13,7 +13,6 @@ func TestEnsureDefaults(t *testing.T) {
 	mi.EnsureDefaults()
 
 	t.Run("defaults", func(t *testing.T) {
-		assert.Equal(t, mi.Spec.Replicas, int32(constants.DefaultReplicas))
 		assert.Equal(t, mi.Spec.Image, constants.DefaultMinIOImage)
 		assert.Equal(t, mi.Spec.Mountpath, constants.MinIOVolumeMountPath)
 		assert.Equal(t, mi.Spec.Subpath, constants.MinIOVolumeSubPath)
@@ -38,13 +37,9 @@ func TestEnsureDefaults(t *testing.T) {
 
 	t.Run("defaults don't override", func(t *testing.T) {
 		newImage := "minio/minio:latest"
-		newReplicas := int32(99)
 		mi.Spec.Image = newImage
-		mi.Spec.Replicas = newReplicas
-
 		mi.EnsureDefaults()
 
 		assert.Equal(t, newImage, mi.Spec.Image)
-		assert.Equal(t, newReplicas, mi.Spec.Replicas)
 	})
 }
