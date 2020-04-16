@@ -19,7 +19,7 @@ package statefulsets
 
 import (
 	"fmt"
-	"path"
+	"strconv"
 
 	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
 	constants "github.com/minio/minio-operator/pkg/constants"
@@ -101,15 +101,26 @@ func minioMetadata(mi *miniov1beta1.MinIOInstance) metav1.ObjectMeta {
 func volumeMounts(mi *miniov1beta1.MinIOInstance) []corev1.VolumeMount {
 	var mounts []corev1.VolumeMount
 
+	// This is the case where user didn't provide a zone and we deploy a EmptyDir based
+	// single node single drive (FS) MinIO deployment
 	name := constants.MinIOVolumeName
 	if mi.Spec.VolumeClaimTemplate != nil {
 		name = mi.Spec.VolumeClaimTemplate.Name
 	}
 
-	mounts = append(mounts, corev1.VolumeMount{
-		Name:      name,
-		MountPath: constants.MinIOVolumeMountPath,
-	})
+	if mi.Spec.VolumesPerServer == 1 {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      name + strconv.Itoa(0),
+			MountPath: constants.MinIOVolumeMountPath,
+		})
+	} else {
+		for i := 0; i < mi.Spec.VolumesPerServer; i++ {
+			mounts = append(mounts, corev1.VolumeMount{
+				Name:      name + strconv.Itoa(i),
+				MountPath: constants.MinIOVolumeMountPath + strconv.Itoa(i),
+			})
+		}
+	}
 
 	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
 		mounts = append(mounts, corev1.VolumeMount{
@@ -123,25 +134,21 @@ func volumeMounts(mi *miniov1beta1.MinIOInstance) []corev1.VolumeMount {
 
 // Builds the MinIO container for a MinIOInstance.
 func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName string) corev1.Container {
-	minioPath := path.Join(mi.Spec.Mountpath, mi.Spec.Subpath)
-
 	scheme := "http"
 	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
 		scheme = "https"
 	}
 
-	args := []string{
-		"server",
-	}
+	args := []string{"server"}
 
-	if mi.Spec.Replicas == 1 {
+	if mi.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
 		args = append(args, constants.MinIOVolumeMountPath)
 	} else {
 		// append all the MinIOInstance replica URLs
 		hosts := mi.GetHosts()
 		for _, h := range hosts {
-			args = append(args, fmt.Sprintf("%s://"+h+"%s", scheme, minioPath))
+			args = append(args, fmt.Sprintf("%s://"+h+"%s", scheme, mi.GetVolumesPath()))
 		}
 	}
 
@@ -153,12 +160,13 @@ func minioServerContainer(mi *miniov1beta1.MinIOInstance, serviceName string) co
 				ContainerPort: constants.MinIOPort,
 			},
 		},
-		VolumeMounts:   volumeMounts(mi),
-		Args:           args,
-		Env:            minioEnvironmentVars(mi),
-		Resources:      mi.Spec.Resources,
-		LivenessProbe:  mi.Spec.Liveness,
-		ReadinessProbe: mi.Spec.Readiness,
+		ImagePullPolicy: constants.DefaultImagePullPolicy,
+		VolumeMounts:    volumeMounts(mi),
+		Args:            args,
+		Env:             minioEnvironmentVars(mi),
+		Resources:       mi.Spec.Resources,
+		LivenessProbe:   mi.Spec.Liveness,
+		ReadinessProbe:  mi.Spec.Readiness,
 	}
 }
 
@@ -173,16 +181,26 @@ func minioTolerations(mi *miniov1beta1.MinIOInstance) []corev1.Toleration {
 	return tolerations
 }
 
+func getVolumesForContainer(mi *miniov1beta1.MinIOInstance) []corev1.Volume {
+	var podVolumes = []corev1.Volume{}
+	// This is the case where user didn't provide a volume claim template and we deploy a
+	// EmptyDir based MinIO deployment
+	if mi.Spec.VolumeClaimTemplate == nil {
+		for _, z := range mi.Spec.Zones {
+			podVolumes = append(podVolumes, corev1.Volume{Name: z.Name,
+				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: ""}}})
+		}
+	}
+	return podVolumes
+}
+
 // NewForCluster creates a new StatefulSet for the given Cluster.
 func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.StatefulSet {
 	var secretName string
 
 	// If a PV isn't specified just use a EmptyDir volume
-	var podVolumes = []corev1.Volume{}
-	if mi.Spec.VolumeClaimTemplate == nil {
-		podVolumes = append(podVolumes, corev1.Volume{Name: constants.MinIOVolumeName,
-			VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: ""}}})
-	}
+	var podVolumes = getVolumesForContainer(mi)
+	var replicas = mi.GetReplicas()
 
 	var keyPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "public.crt"},
@@ -251,7 +269,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 			PodManagementPolicy: mi.Spec.PodManagementPolicy,
 			Selector:            mi.Spec.Selector,
 			ServiceName:         serviceName,
-			Replicas:            &mi.Spec.Replicas,
+			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: minioMetadata(mi),
 				Spec: corev1.PodSpec{
@@ -267,7 +285,12 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 	}
 
 	if mi.Spec.VolumeClaimTemplate != nil {
-		ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, *mi.Spec.VolumeClaimTemplate)
+		pvClaim := *mi.Spec.VolumeClaimTemplate
+		name := pvClaim.Name
+		for i := 0; i < mi.Spec.VolumesPerServer; i++ {
+			pvClaim.Name = name + strconv.Itoa(i)
+			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvClaim)
+		}
 	}
 	return ss
 }
