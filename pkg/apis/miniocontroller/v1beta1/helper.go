@@ -87,6 +87,10 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		mi.Spec.PodManagementPolicy = constants.DefaultPodManagementPolicy
 	}
 
+	if mi.Spec.ClusterDomain == "" {
+		mi.Spec.ClusterDomain = constants.DefaultClusterDomain
+	}
+
 	if mi.Spec.Image == "" {
 		mi.Spec.Image = constants.DefaultMinIOImage
 	}
@@ -141,7 +145,7 @@ func (mi *MinIOInstance) GetHosts() []string {
 	// append all the MinIOInstance replica URLs
 	// mi.Name is the headless service name
 	for i := 0; i < int(mi.Spec.Replicas); i++ {
-		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(i)+".%s.%s.svc.cluster.local", mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
+		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(i)+".%s.%s.svc.%s", mi.Name, mi.GetHeadlessServiceName(), mi.Namespace, mi.Spec.ClusterDomain))
 	}
 	return hosts
 }
@@ -150,7 +154,7 @@ func (mi *MinIOInstance) GetHosts() []string {
 // current MinIOInstance
 func (mi *MinIOInstance) GetWildCardName() string {
 	// mi.Name is the headless service name
-	return fmt.Sprintf("*.%s.%s.svc.cluster.local", mi.GetHeadlessServiceName(), mi.Namespace)
+	return fmt.Sprintf("*.%s.%s.svc.%s", mi.GetHeadlessServiceName(), mi.Namespace, mi.Spec.ClusterDomain)
 }
 
 // GetTLSSecretName returns the name of Secret that has TLS related Info (Cert & Prviate Key)

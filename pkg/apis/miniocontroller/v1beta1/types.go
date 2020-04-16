@@ -56,6 +56,9 @@ type LocalCertificateReference struct {
 
 // MinIOInstanceSpec is the spec for a MinIOInstance resource
 type MinIOInstanceSpec struct {
+	// ClusterDomain specifies the internal Kubernetes cluster domain
+	// +optional
+	ClusterDomain string `json:"clusterDomain,omitempty"`
 	// Image defines the MinIOInstance Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`

@@ -66,6 +66,9 @@ const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
 // https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
 const DefaultUpdateStrategy = "RollingUpdate"
 
+// DefaultClusterDomain specifies the default cluster domain if not specified otherwise
+const DefaultClusterDomain = "cluster.local"
+
 // HeadlessServiceNameSuffix specifies the suffix added to MinIOInstance name to create a headless service
 const HeadlessServiceNameSuffix = "-hl-svc"
 
