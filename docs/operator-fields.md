@@ -21,6 +21,8 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Mi
 
 - `spec.metadata`: Define the object metadata to be passed to all the members pods of this MinIOInstance. This allows adding annotations and labels. For example,you can add Prometheus annotations here. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta).
 
+- `spec.clusterDomain`: Set the internal Kubernetes cluster domain. If not specified, it falls back to the default value `cluster.local`.
+
 - `spec.image`: Set the container registry and image tag for MinIO server to be used in the MinIOInstance.
 
 - `spec.zones`: Set the number of servers per MinIO Zone. Add a new Zone field to expand the MinIO cluster. Read more on [MinIO zones here](https://github.com/minio/minio/blob/master/docs/distributed/DESIGN.md).
