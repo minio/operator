@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
 	github.com/ghodss/yaml v0.0.0-20180820084758-c7ce16629ff4 // indirect
 	github.com/gogo/protobuf v0.0.0-20170702163824-dda3e8acadcc // indirect

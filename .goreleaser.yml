@@ -1,0 +1,31 @@
+# This is an example goreleaser.yaml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+project_name: minio-operator
+
+before:
+  hooks:
+    # you may remove this if you don't use vgo
+    - go mod tidy
+builds:
+  -
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+dockers:
+  -
+    # GOOS of the built binary that should be used.
+    goos: linux
+    # GOARCH of the built binary that should be used.
+    goarch: amd64
+    dockerfile: Dockerfile
+    image_templates:
+      - "minio/k8s-operator:{{ .Tag }}"
+      - "minio/k8s-operator:latest"
+    extra_files:
+      - LICENSE
+      - README.md
