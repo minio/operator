@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio-operator-ns
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: minioinstances.miniocontroller.min.io
+spec:
+  group: miniocontroller.min.io
+  version: v1beta1
+  scope: Namespaced
+  names:
+    kind: MinIOInstance
+    singular: minioinstance
+    plural: minioinstances
+  preserveUnknownFields: true
+  validation:
+  # openAPIV3Schema is the schema for validating custom objects.
+  # Refer https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#specifying-a-structural-schema
+  # for more details
+    openAPIV3Schema:
+      type: object
+      properties:
+        spec:
+          type: object
+          properties:
+            replicas:
+              type: integer
+              minimum: 1
+              maximum: 32
+            version:
+              type: string
+            mountpath:
+              type: string
+            subpath:
+              type: string
+  additionalPrinterColumns:
+    - name: Replicas
+      type: integer
+      JSONPath: ".spec.replicas"
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: minio-operator-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - secrets
+  - pods
+  - services
+  - events
+  verbs:
+  - get
+  - watch
+  - create
+  - list
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - create
+  - list
+  - patch
+  - watch
+  - update
+- apiGroups:
+  - "certificates.k8s.io"
+  resources:
+  - "certificatesigningrequests"
+  - "certificatesigningrequests/approval"
+  - "certificatesigningrequests/status"
+  verbs:
+  - update
+  - create
+  - get
+- apiGroups:
+  - miniocontroller.min.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+- apiGroups:
+  - min.io
+  resources:
+  - "*"
+  verbs:
+  - "*"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: minio-operator-sa
+  namespace: minio-operator-ns
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: minio-operator-binding
+  namespace: minio-operator-ns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: minio-operator-role
+subjects:
+- kind: ServiceAccount
+  name: minio-operator-sa
+  namespace: minio-operator-ns
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-operator
+  namespace: minio-operator-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: minio-operator
+  template:
+    metadata:
+      labels:
+        name: minio-operator
+    spec:
+      serviceAccountName: minio-operator-sa
+      containers:
+        - name: minio-operator
+          image: minio/k8s-operator:1.0.8
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CLUSTER_DOMAIN
+              value: mycluster.mydomain
