@@ -19,8 +19,8 @@ package constants
 
 import (
 	"crypto/elliptic"
-	"time"
 	"os"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 )
@@ -100,11 +100,11 @@ const DefaultVolumesPerServer = 1
 const DefaultZoneName = "zone-0"
 
 func getEnv(key, defaultValue string) string {
-    value := os.Getenv(key)
-    if len(value) == 0 {
-        return defaultValue
-    }
-    return value
+	value := os.Getenv(key)
+	if len(value) == 0 {
+		return defaultValue
+	}
+	return value
 }
 
 var ClusterDomain = getEnv("CLUSTER_DOMAIN", "cluster.local")
