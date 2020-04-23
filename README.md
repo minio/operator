@@ -32,16 +32,6 @@ This will create all relevant resources required for the Operator to work. Here 
 - `ClusterRoleBinding`: This cluster wide binding binds the service account `minio-operator-sa` to cluster role `minio-operator-role`.
 - `Deployment`: Deployment creates a pod using the MinIO-Operator Docker image. This is where the custom controller runs and looks after any changes in custom resource.
 
-To specify the cluster domain instead of the default `cluster.local`, add an environment variable to the pod spec on the deployment.
-
-```
-env:
-    - name: CLUSTER_DOMAIN
-      value: mycluster.mydomain
-```
-
-Or modify the file `minio-operator-with-cluster-name.yaml`
-
 ### Environment variables
 
 These variables may be passed to operator Deployment in order to modify some of its parameters
@@ -49,6 +39,7 @@ These variables may be passed to operator Deployment in order to modify some of 
 | name                | default | description                                                                                                                   |
 | ---                 | ---     | ---                                                                                                                           |
 | `WATCHED_NAMESPACE` |         | If set, the operator will watch only MinIO resources deployed in the specified namespace. All namespaces are watched if empty |
+| `CLUSTER_DOMAIN` | cluster.local | "cluster domain" of the kubernetes cluster the operator is to be installed on |
 
 ### Create a MinIO instance
 
