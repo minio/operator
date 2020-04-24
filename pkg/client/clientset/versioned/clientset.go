@@ -19,7 +19,9 @@ limitations under the License.
 package versioned
 
 import (
-	minv1beta1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/miniocontroller/v1beta1"
+	"fmt"
+
+	miniooperatorv1beta1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/miniooperator.min.io/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -27,19 +29,19 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	MinV1beta1() minv1beta1.MinV1beta1Interface
+	MiniooperatorV1beta1() miniooperatorv1beta1.MiniooperatorV1beta1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	minV1beta1 *minv1beta1.MinV1beta1Client
+	miniooperatorV1beta1 *miniooperatorv1beta1.MiniooperatorV1beta1Client
 }
 
-// MinV1beta1 retrieves the MinV1beta1Client
-func (c *Clientset) MinV1beta1() minv1beta1.MinV1beta1Interface {
-	return c.minV1beta1
+// MiniooperatorV1beta1 retrieves the MiniooperatorV1beta1Client
+func (c *Clientset) MiniooperatorV1beta1() miniooperatorv1beta1.MiniooperatorV1beta1Interface {
+	return c.miniooperatorV1beta1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -51,14 +53,19 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 }
 
 // NewForConfig creates a new Clientset for the given config.
+// If config's RateLimiter is not set and QPS and Burst are acceptable,
+// NewForConfig will generate a rate-limiter in configShallowCopy.
 func NewForConfig(c *rest.Config) (*Clientset, error) {
 	configShallowCopy := *c
 	if configShallowCopy.RateLimiter == nil && configShallowCopy.QPS > 0 {
+		if configShallowCopy.Burst <= 0 {
+			return nil, fmt.Errorf("burst is required to be greater than 0 when RateLimiter is not set and QPS is set to greater than 0")
+		}
 		configShallowCopy.RateLimiter = flowcontrol.NewTokenBucketRateLimiter(configShallowCopy.QPS, configShallowCopy.Burst)
 	}
 	var cs Clientset
 	var err error
-	cs.minV1beta1, err = minv1beta1.NewForConfig(&configShallowCopy)
+	cs.miniooperatorV1beta1, err = miniooperatorv1beta1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +81,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.minV1beta1 = minv1beta1.NewForConfigOrDie(c)
+	cs.miniooperatorV1beta1 = miniooperatorv1beta1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -83,7 +90,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.minV1beta1 = minv1beta1.New(c)
+	cs.miniooperatorV1beta1 = miniooperatorv1beta1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

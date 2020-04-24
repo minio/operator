@@ -15,25 +15,27 @@
  *
  */
 
-package services
+package deployments
 
 import (
+	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
+	"github.com/minio/minio-operator/pkg/constants"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
-	constants "github.com/minio/minio-operator/pkg/constants"
 )
 
-// NewForCluster will return a new headless Kubernetes service for a MinIOInstance
-func NewForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: constants.MinIOPort}
-	svc := &corev1.Service{
+// NewForCluster creates a new Deployment for the given mirror instance.
+func NewForCluster(mi *miniov1beta1.MirrorInstance) *appsv1.Deployment {
+
+	//containers := []corev1.Container{minioServerContainer(mi, serviceName)}
+	var replicas int32 = 1
+
+	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
-			Name:      mi.GetHeadlessServiceName(),
 			Namespace: mi.Namespace,
+			Name:      mi.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
 					Group:   miniov1beta1.SchemeGroupVersion.Group,
@@ -41,19 +43,12 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
 					Kind:    constants.ClusterCRDResourceKind,
 				}),
 			},
-			Annotations: map[string]string{
-				"service.alpha.kubernetes.io/tolerate-unready-endpoints": "true",
-			},
 		},
-		Spec: corev1.ServiceSpec{
-			PublishNotReadyAddresses: true,
-			Ports:                    []corev1.ServicePort{minioPort},
-			Selector: map[string]string{
-				constants.InstanceLabel: mi.Name,
-			},
-			ClusterIP: corev1.ClusterIPNone,
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Template: corev1.PodTemplateSpec{},
 		},
 	}
 
-	return svc
+	return d
 }

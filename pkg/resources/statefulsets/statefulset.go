@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strconv"
 
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniocontroller/v1beta1"
+	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
 	constants "github.com/minio/minio-operator/pkg/constants"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -267,7 +267,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
 					Group:   miniov1beta1.SchemeGroupVersion.Group,
 					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    miniov1beta1.ClusterCRDResourceKind,
+					Kind:    constants.ClusterCRDResourceKind,
 				}),
 			},
 		},
@@ -285,6 +285,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 					Containers:       containers,
 					Volumes:          podVolumes,
 					ImagePullSecrets: []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
+					RestartPolicy:    "Always",
 					Affinity:         mi.Spec.Affinity,
 					SchedulerName:    mi.Scheduler.Name,
 					Tolerations:      minioTolerations(mi),
