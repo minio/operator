@@ -163,9 +163,9 @@ func (mi *MinIOInstance) GetHosts() []string {
 	for i, z := range mi.Spec.Zones {
 		max = max + z.Servers
 		if i == 0 {
-			hosts = append(hosts, fmt.Sprintf("%s-{0..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc.cluster.local", mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
+			hosts = append(hosts, fmt.Sprintf("%s-{0..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc."+constants.ClusterDomain, mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
 		} else {
-			hosts = append(hosts, fmt.Sprintf("%s-{"+strconv.Itoa(int(mi.Spec.Zones[i-1].Servers))+"..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc.cluster.local", mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
+			hosts = append(hosts, fmt.Sprintf("%s-{"+strconv.Itoa(int(mi.Spec.Zones[i-1].Servers))+"..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc."+constants.ClusterDomain, mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
 		}
 	}
 	return hosts
@@ -175,7 +175,7 @@ func (mi *MinIOInstance) GetHosts() []string {
 // current MinIOInstance
 func (mi *MinIOInstance) GetWildCardName() string {
 	// mi.Name is the headless service name
-	return fmt.Sprintf("*.%s.%s.svc.cluster.local", mi.GetHeadlessServiceName(), mi.Namespace)
+	return fmt.Sprintf("*.%s.%s.svc."+constants.ClusterDomain, mi.GetHeadlessServiceName(), mi.Namespace)
 }
 
 // GetTLSSecretName returns the name of Secret that has TLS related Info (Cert & Prviate Key)

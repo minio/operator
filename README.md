@@ -39,6 +39,7 @@ These variables may be passed to operator Deployment in order to modify some of 
 | name                | default | description                                                                                                                   |
 | ---                 | ---     | ---                                                                                                                           |
 | `WATCHED_NAMESPACE` |         | If set, the operator will watch only MinIO resources deployed in the specified namespace. All namespaces are watched if empty |
+| `CLUSTER_DOMAIN` | cluster.local | "cluster domain" of the kubernetes cluster the operator is to be installed on |
 
 ### Create a MinIO instance
 
