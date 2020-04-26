@@ -59,6 +59,8 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Mi
 
 - `spec.tolerations`: Define a toleration for the MinIOInstance pod to match on a taint. Refer [this document](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/) for details.
 
+`spec.securityContext`: Define a security context for the MinIOInstance pod. Refer [this document](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) for details.
+
 ## Access MinIOInstance via Service
 
 Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in MinIOInstance definition to enable Service based access to the MinIOInstance pods. Refer [the example here](https://github.com/minio/minio-operator/blob/master/examples/minioinstance-with-external-service.yaml?raw=true) for details on how to setup service based access for MinIOInstance pods.
