@@ -126,6 +126,9 @@ type MinIOInstanceSpec struct {
 	// Tolerations allows users to set entries like effect, key, operator, value.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// Security Context allows user to set entries like runAsUser, privlege escalation etc.
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 	// Definition for Cluster in given MinIO cluster
 	// +optional
 	Zones []Zone `json:"zones"`
