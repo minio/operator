@@ -181,6 +181,15 @@ func minioTolerations(mi *miniov1beta1.MinIOInstance) []corev1.Toleration {
 	return tolerations
 }
 
+// Builds the security contexts for a MinIOInstance
+func minioSecurityContext(mi *miniov1beta1.MinIOInstance) *corev1.PodSecurityContext {
+	var securityContext = corev1.PodSecurityContext{}
+	if mi.Spec.SecurityContext != nil {
+		securityContext = *mi.Spec.SecurityContext
+	}
+	return &securityContext
+}
+
 func getVolumesForContainer(mi *miniov1beta1.MinIOInstance) []corev1.Volume {
 	var podVolumes = []corev1.Volume{}
 	// This is the case where user didn't provide a volume claim template and we deploy a
@@ -279,6 +288,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 					Affinity:         mi.Spec.Affinity,
 					SchedulerName:    mi.Scheduler.Name,
 					Tolerations:      minioTolerations(mi),
+					SecurityContext:  minioSecurityContext(mi),
 				},
 			},
 		},
