@@ -39,6 +39,12 @@ const MinIOPort = 9000
 // MinIOServicePortName specifies the default Service's port name, e.g. for automatic protocol selection in Istio
 const MinIOServicePortName = "http-minio"
 
+// MinIOServicePortNumber specifies the default Service's port number.
+const MinIOServicePortNumber = 9000
+
+// McsPort specifies the default Mcs port number.
+const McsPort = 9090
+
 // MinIOVolumeName specifies the default volume name for MinIO volumes
 const MinIOVolumeName = "export"
 
@@ -53,6 +59,9 @@ const DefaultMinIOImage = "minio/minio:RELEASE.2020-05-01T22-19-14Z"
 
 // DefaultMCImage specifies the default mc Docker hub image
 const DefaultMCImage = "minio/mc:RELEASE.2020-04-25T00-43-23Z"
+
+// DefaultMcsImage specifies the latest Mcs Docker hub image
+const DefaultMcsImage = "minio/mcs:v0.0.2"
 
 // MinIOServerName specifies the default container name for MinIOInstance
 const MinIOServerName = "minio"
@@ -120,6 +129,12 @@ const DefaultVolumesPerServer = 1
 
 // DefaultZoneName specifies the default zone name
 const DefaultZoneName = "zone-0"
+
+// McsName specifies the default container name for Mcs
+const McsName = "mcs"
+
+// MCSAdminPolicyName denotes the policy name for MCS user
+const MCSAdminPolicyName = "mcsAdmin"
 
 func getEnv(key, defaultValue string) string {
 	value := os.Getenv(key)

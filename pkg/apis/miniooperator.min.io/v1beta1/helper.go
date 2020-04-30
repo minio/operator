@@ -18,14 +18,23 @@
 package v1beta1
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"net"
 	"path"
 	"strconv"
 
+	"github.com/golang/glog"
+
+	constants "github.com/minio/minio-operator/pkg/constants"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	constants "github.com/minio/minio-operator/pkg/constants"
+	"github.com/minio/minio/pkg/bucket/policy"
+	"github.com/minio/minio/pkg/bucket/policy/condition"
+	iampolicy "github.com/minio/minio/pkg/iam/policy"
+	"github.com/minio/minio/pkg/madmin"
 )
 
 // HasCredsSecret returns true if the user has provided a secret
@@ -150,6 +159,10 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		}
 	}
 
+	if mi.HasMcsEnabled() && mi.Spec.Mcs.Image == "" {
+		mi.Spec.Mcs.Image = constants.DefaultMcsImage
+	}
+
 	return mi
 }
 
@@ -166,6 +179,18 @@ func (mi *MinIOInstance) GetHosts() []string {
 		index = max
 	}
 	return hosts
+}
+
+// GetServiceHost returns headless service Host.
+// current MinIOInstance
+func (mi *MinIOInstance) GetServiceHost() string {
+	if mi.Spec.Zones[0].Servers == 1 {
+		msg := "Please set the server count > 1"
+		glog.V(2).Infof(msg)
+		return ""
+	}
+	hostStr := fmt.Sprintf("%s.%s.svc."+constants.ClusterDomain, mi.GetHeadlessServiceName(), mi.Namespace)
+	return net.JoinHostPort(hostStr, strconv.Itoa(constants.MinIOServicePortNumber))
 }
 
 // GetWildCardName returns the wild card name managed by headless service created for
@@ -210,4 +235,94 @@ func (mi *MirrorInstance) HasMetadata() bool {
 // field (ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-selector)
 func (mi *MirrorInstance) HasSelector() bool {
 	return mi.Spec.Selector != nil
+}
+
+// HasMcsEnabled checks if the mcs has been enabled by the user
+func (mi *MinIOInstance) HasMcsEnabled() bool {
+	return mi.Spec.Mcs != nil
+}
+
+// HasMcsSecret returns true if the user has provided an mcs secret
+// for a MinIOInstance else false
+func (mi *MinIOInstance) HasMcsSecret() bool {
+	return mi.Spec.Mcs != nil && mi.Spec.Mcs.McsSecret != nil
+}
+
+// HasMcsMetadata returns true if the user has provided a mcs metadata
+// for a MinIOInstance else false
+func (mi *MinIOInstance) HasMcsMetadata() bool {
+	return mi.Spec.Mcs != nil && mi.Spec.Mcs.Metadata != nil
+}
+
+// HasMcsSelector returns true if the user has provided a mcs selector
+// for a MinIOInstance else false
+func (mi *MinIOInstance) HasMcsSelector() bool {
+	return mi.Spec.Mcs != nil && mi.Spec.Mcs.Selector != nil
+}
+
+// CreateMcsUser function creates an admin user
+func (mi *MinIOInstance) CreateMcsUser(minioSecret, mcsSecret map[string][]byte) error {
+
+	var accessKey, secretKey, mcsSecretKey []byte
+	var ok bool
+
+	host := mi.GetServiceHost()
+	if host == "" {
+		return errors.New("MCS MINIO SERVER is empty")
+	}
+
+	accessKey, ok = minioSecret["accesskey"]
+	if !ok {
+		return errors.New("accesskey not provided")
+	}
+
+	secretKey, ok = minioSecret["secretkey"]
+	if !ok {
+		return errors.New("secretkey not provided")
+	}
+
+	mcsSecretKey, ok = mcsSecret["mcssecretkey"]
+	if !ok {
+		return errors.New("mcssecretkey not provided")
+	}
+
+	madmClnt, err := madmin.New(host, string(accessKey), string(secretKey), false)
+	if err != nil {
+		return err
+	}
+
+	if err = madmClnt.AddUser(context.Background(), string(mi.Spec.Mcs.McsAccessKey), string(mcsSecretKey)); err != nil {
+		return err
+	}
+
+	// Create policy
+	p := iampolicy.Policy{
+		Version: iampolicy.DefaultVersion,
+		Statements: []iampolicy.Statement{
+			{
+				SID:        policy.ID(""),
+				Effect:     policy.Allow,
+				Actions:    iampolicy.NewActionSet(iampolicy.AllAdminActions),
+				Resources:  iampolicy.NewResourceSet(),
+				Conditions: condition.NewFunctions(),
+			},
+			{
+				SID:        policy.ID(""),
+				Effect:     policy.Allow,
+				Actions:    iampolicy.NewActionSet(iampolicy.AllActions),
+				Resources:  iampolicy.NewResourceSet(iampolicy.NewResource("*", "")),
+				Conditions: condition.NewFunctions(),
+			},
+		},
+	}
+
+	if err = madmClnt.AddCannedPolicy(context.Background(), constants.MCSAdminPolicyName, &p); err != nil {
+		return err
+	}
+
+	if err = madmClnt.SetPolicy(context.Background(), constants.MCSAdminPolicyName, string(mi.Spec.Mcs.McsAccessKey), false); err != nil {
+		return err
+	}
+
+	return nil
 }

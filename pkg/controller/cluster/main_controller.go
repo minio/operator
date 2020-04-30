@@ -49,6 +49,7 @@ import (
 	minioscheme "github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/miniooperator.min.io/v1beta1"
 	listers "github.com/minio/minio-operator/pkg/client/listers/miniooperator.min.io/v1beta1"
+	"github.com/minio/minio-operator/pkg/resources/deployments"
 	"github.com/minio/minio-operator/pkg/resources/services"
 	"github.com/minio/minio-operator/pkg/resources/statefulsets"
 )
@@ -84,6 +85,13 @@ type Controller struct {
 	// has synced at least once.
 	statefulSetListerSynced cache.InformerSynced
 
+	// deploymentLister is able to list/get Deployments from a shared
+	// informer's store.
+	deploymentLister appslisters.DeploymentLister
+	// deploymentListerSynced returns true if the Deployment shared informer
+	// has synced at least once.
+	deploymentListerSynced cache.InformerSynced
+
 	// minioInstancesLister lists MinIOInstance from a shared informer's
 	// store.
 	minioInstancesLister listers.MinIOInstanceLister
@@ -115,6 +123,7 @@ func NewController(
 	minioClientSet clientset.Interface,
 	certClient certapi.CertificatesV1beta1Client,
 	statefulSetInformer appsinformers.StatefulSetInformer,
+	deploymentInformer appsinformers.DeploymentInformer,
 	minioInstanceInformer informers.MinIOInstanceInformer,
 	serviceInformer coreinformers.ServiceInformer) *Controller {
 
@@ -134,6 +143,8 @@ func NewController(
 		certClient:              certClient,
 		statefulSetLister:       statefulSetInformer.Lister(),
 		statefulSetListerSynced: statefulSetInformer.Informer().HasSynced,
+		deploymentLister:        deploymentInformer.Lister(),
+		deploymentListerSynced:  statefulSetInformer.Informer().HasSynced,
 		minioInstancesLister:    minioInstanceInformer.Lister(),
 		minioInstancesSynced:    minioInstanceInformer.Informer().HasSynced,
 		serviceLister:           serviceInformer.Lister(),
@@ -170,6 +181,21 @@ func NewController(
 		},
 		DeleteFunc: controller.handleObject,
 	})
+
+	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.handleObject,
+		UpdateFunc: func(old, new interface{}) {
+			newDepl := new.(*appsv1.Deployment)
+			oldDepl := old.(*appsv1.Deployment)
+			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same Deployments will always have different RVs.
+				return
+			}
+			controller.handleObject(new)
+		},
+		DeleteFunc: controller.handleObject,
+	})
 	return controller
 }
 
@@ -184,7 +210,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 	// Wait for the caches to be synced before starting workers
 	glog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.minioInstancesSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.minioInstancesSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -271,6 +297,9 @@ func (c *Controller) syncHandler(key string) error {
 	ctx := context.Background()
 	cOpts := metav1.CreateOptions{}
 	uOpts := metav1.UpdateOptions{}
+	gOpts := metav1.GetOptions{}
+
+	var d *appsv1.Deployment
 
 	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
@@ -337,7 +366,7 @@ func (c *Controller) syncHandler(key string) error {
 	// If the resource doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
 		ss = statefulsets.NewForCluster(mi, svc.Name)
-		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
+		ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
@@ -345,6 +374,47 @@ func (c *Controller) syncHandler(key string) error {
 	// temporary network failure, or any other transient reason.
 	if err != nil {
 		return err
+	}
+
+	if mi.HasMcsEnabled() {
+		// Get the Deployment with the name specified in MirrorInstace.spec
+		d, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.Name)
+		// If the resource doesn't exist, we'll create it
+		if apierrors.IsNotFound(err) {
+			if !mi.HasCredsSecret() || !mi.HasMcsSecret() {
+				msg := "Please set the credentials"
+				glog.V(2).Infof(msg)
+				return fmt.Errorf(msg)
+			}
+
+			minioSecretName := mi.Spec.CredsSecret.Name
+			minioSecret, sErr := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, minioSecretName, gOpts)
+			if sErr != nil {
+				return sErr
+			}
+
+			mcsSecretName := mi.Spec.Mcs.McsSecret.Name
+			mcsSecret, sErr := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, mcsSecretName, gOpts)
+			if sErr != nil {
+				return sErr
+			}
+
+			// Check if any one replica is READY
+			if ss.Status.ReadyReplicas > 0 {
+				if pErr := mi.CreateMcsUser(minioSecret.Data, mcsSecret.Data); pErr != nil {
+					glog.V(2).Infof(pErr.Error())
+					return pErr
+				}
+				d = deployments.NewForCluster(mi)
+				d, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, d, cOpts)
+				if err != nil {
+					glog.V(2).Infof(err.Error())
+					return err
+				}
+			}
+		} else {
+			return err
+		}
 	}
 
 	// If the StatefulSet is not controlled by this MinIOInstance resource, we should log
@@ -387,13 +457,24 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
+	if mi.HasMcsEnabled() && d != nil && mi.Spec.Mcs.Image != d.Spec.Template.Spec.Containers[0].Image {
+		glog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name, mi.Spec.Mcs.Image, d.Spec.Template.Spec.Containers[0].Image)
+		d = deployments.NewForCluster(mi)
+		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, d, uOpts)
+		// If an error occurs during Update, we'll requeue the item so we can
+		// attempt processing again later. This could have been caused by a
+		// temporary network failure, or any other transient reason.
+		if err != nil {
+			return err
+		}
+	}
+
 	// Finally, we update the status block of the MinIOInstance resource to reflect the
 	// current state of the world
 	err = c.updateMinIOInstanceStatus(ctx, mi, ss)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
