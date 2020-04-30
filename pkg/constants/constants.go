@@ -45,7 +45,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2020-04-15T00-39-01Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2020-04-23T00-58-49Z"
 
 // MinIOServerName specifies the default container name for MinIOInstance
 const MinIOServerName = "minio"
@@ -72,6 +72,9 @@ const HeadlessServiceNameSuffix = "-hl-svc"
 
 // CSRNameSuffix specifies the suffix added to MinIOInstance name to create a CSR
 const CSRNameSuffix = "-csr"
+
+// ClusterCRDResourceKind is the Kind of a Cluster.
+const ClusterCRDResourceKind = "MinIOInstance"
 
 // Auto TLS related constants
 

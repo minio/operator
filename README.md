@@ -12,7 +12,7 @@ MinIO is a high performance distributed object storage server, designed for larg
 
 ### Prerequisites
 
-- Kubernetes version v1.15.5 and above.
+- Kubernetes version v1.17.0 and above for compatibility. MinIO Operator uses `k8s/client-go` v0.18.0.
 - `kubectl` configured to refer to a Kubernetes cluster.
 
 ### Create Operator and related resources
@@ -26,7 +26,7 @@ kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/
 This will create all relevant resources required for the Operator to work. Here is a list of resources created by above `yaml` file:
 
 - `Namespace`: Custom namespace for MinIO-Operator. By default it is named as `minio-operator-ns`.
-- `CustomResourceDefinition`: Custom resource definition named as `minioinstances.miniocontroller.min.io`.
+- `CustomResourceDefinition`: Custom resource definition named as `minioinstances.miniooperator.min.io`.
 - `ClusterRole`: A cluster wide role for the controller. It is named as `minio-operator-role`. This is used for RBAC.
 - `ServiceAccount`: Service account is used by the custom controller to access the cluster. Account name by default is `minio-operator-sa`.
 - `ClusterRoleBinding`: This cluster wide binding binds the service account `minio-operator-sa` to cluster role `minio-operator-role`.
@@ -36,10 +36,10 @@ This will create all relevant resources required for the Operator to work. Here 
 
 These variables may be passed to operator Deployment in order to modify some of its parameters
 
-| name                | default | description                                                                                                                   |
+| Name                | Default | Description                                                                                                                   |
 | ---                 | ---     | ---                                                                                                                           |
 | `WATCHED_NAMESPACE` |         | If set, the operator will watch only MinIO resources deployed in the specified namespace. All namespaces are watched if empty |
-| `CLUSTER_DOMAIN` | cluster.local | "cluster domain" of the kubernetes cluster the operator is to be installed on |
+| `CLUSTER_DOMAIN`    | cluster.local | Cluster Domain of the Kubernetes cluster |
 
 ### Create a MinIO instance
 
@@ -51,13 +51,21 @@ kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/
 
 ### Expand a MinIO cluster
 
-After you have a distributed MinIO Cluster running (zones.server > 3), you can expand the MinIO cluster using
+After you have a distributed MinIO Cluster running (zones.server >= 4), you can expand the MinIO cluster using
 
 ```
-kubectl patch minioinstances.miniocontroller.min.io minio --patch "$(cat examples/patch.yaml)" --type=merge
+kubectl patch minioinstances.miniooperator.min.io minio --patch "$(cat examples/patch.yaml)" --type=merge
 ```
 
-You can further keep adding new zones in the `patch.yaml` file and apply the patch, to add new nodes to existing cluster. 
+You can expand an existing cluster by adding new zones to the `patch.yaml` and run the above `kubectl-patch` command.
+
+**NOTE**: Important point to consider _before_ using cluster expansion:
+
+During cluster expansion, MinIO Operator removes the existing StatefulSet and creates a new StatefulSet with required number of Pods. This means, there is a short downtime during expansion, as the pods are terminated and created again.
+
+As existing StatefulSet pods are terminated, its PVCs are also deleted. It is _very important_ to ensure PVs bound to MinIO StatefulSet PVCs are not deleted at this time to avoid data loss. We recommend configuring every PV with reclaim policy [`retain`](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#retain), to ensure the PV is not deleted.
+
+If you attempt cluster expansion while the PV reclaim policy is set to something else, it may lead to data loss. If you have the reclaim policy set to something else, change it as explained in [Kubernetes documents](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/).
 
 ## Features
 
@@ -71,8 +79,6 @@ Refer [`minioinstance.yaml`](https://raw.githubusercontent.com/minio/minio-opera
 
 ## Upcoming features
 
-- Bucket Expansion Support
-- Federation and CoreDNS
 - Continuous remote site mirroring with [`mc mirror`](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror)
 
 ## Explore Further

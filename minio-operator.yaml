@@ -6,9 +6,9 @@ metadata:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: minioinstances.miniocontroller.min.io
+  name: minioinstances.miniooperator.min.io
 spec:
-  group: miniocontroller.min.io
+  group: miniooperator.min.io
   version: v1beta1
   scope: Namespaced
   names:
@@ -41,6 +41,20 @@ spec:
       type: integer
       JSONPath: ".spec.replicas"
 ---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: mirrorinstances.miniooperator.min.io
+spec:
+  group: miniooperator.min.io
+  version: v1beta1
+  scope: Namespaced
+  names:
+    kind: MirrorInstance
+    singular: mirrorinstance
+    plural: mirrorinstances
+  preserveUnknownFields: true
+---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
@@ -71,6 +85,7 @@ rules:
   - patch
   - watch
   - update
+  - delete
 - apiGroups:
   - "certificates.k8s.io"
   resources:
@@ -82,7 +97,7 @@ rules:
   - create
   - get
 - apiGroups:
-  - miniocontroller.min.io
+  - miniooperator.min.io
   resources:
   - "*"
   verbs:
@@ -132,7 +147,7 @@ spec:
       serviceAccountName: minio-operator-sa
       containers:
         - name: minio-operator
-          image: minio/k8s-operator:1.0.8
+          image: minio/k8s-operator:1.0.9
           imagePullPolicy: IfNotPresent
           # To specify cluster domain, un comment the following:
           # env:

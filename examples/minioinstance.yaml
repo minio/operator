@@ -7,7 +7,20 @@ data:
   accesskey: bWluaW8= # base 64 encoded "minio" (echo -n 'minio' | base64)
   secretkey: bWluaW8xMjM= # based 64 encoded "minio123" (echo -n 'minio123' | base64)
 ---
-apiVersion: miniocontroller.min.io/v1beta1
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+  selector:
+    app: minio
+---
+apiVersion: miniooperator.min.io/v1beta1
 kind: MinIOInstance
 metadata:
   name: minio
@@ -28,7 +41,7 @@ spec:
       prometheus.io/port: "9000"
       prometheus.io/scrape: "true"
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2020-04-15T00-39-01Z
+  image: minio/minio:RELEASE.2020-04-23T00-58-49Z
   zones:
     - name: "zone-0"
       ## Number of MinIO servers/pods in this zone.
@@ -101,7 +114,7 @@ spec:
       path: /minio/health/live
       port: 9000
     initialDelaySeconds: 120
-    periodSeconds: 20
+    periodSeconds: 60
   ## Readiness probe detects situations when MinIO server instance
   ## is not ready to accept traffic. Kubernetes doesn't forward
   ## traffic to the pod while readiness checks fail.
@@ -112,7 +125,7 @@ spec:
       path: /minio/health/ready
       port: 9000
     initialDelaySeconds: 120
-    periodSeconds: 20
+    periodSeconds: 60
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.
@@ -122,4 +135,3 @@ spec:
   ## Affinity settings for MinIO pods. Read more about affinity
   ## here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity.
   # affinity:
-  

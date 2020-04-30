@@ -38,6 +38,7 @@ import (
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions"
 	"github.com/minio/minio-operator/pkg/controller/cluster"
+	"github.com/minio/minio-operator/pkg/controller/mirror"
 )
 
 // Version provides the version of this minio-operator
@@ -99,6 +100,7 @@ func main() {
 
 	var kubeInformerFactory kubeinformers.SharedInformerFactory
 	var minioInformerFactory informers.SharedInformerFactory
+	var mirrorInformerFactory informers.SharedInformerFactory
 	if isNamespaced {
 		kubeInformerFactory = kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(namespace))
 		minioInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(namespace))
@@ -107,16 +109,27 @@ func main() {
 		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	}
 
-	controller := cluster.NewController(kubeClient, controllerClient, *certClient,
+	mainController := cluster.NewController(kubeClient, controllerClient, *certClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
-		minioInformerFactory.Min().V1beta1().MinIOInstances(),
+		minioInformerFactory.Miniooperator().V1beta1().MinIOInstances(),
 		kubeInformerFactory.Core().V1().Services())
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
 
-	if err = controller.Run(2, stopCh); err != nil {
-		glog.Fatalf("Error running controller: %s", err.Error())
+	if err = mainController.Run(2, stopCh); err != nil {
+		glog.Fatalf("Error running mainController: %s", err.Error())
+	}
+
+	mirrorController := mirror.NewController(kubeClient, controllerClient,
+		kubeInformerFactory.Apps().V1().Deployments(),
+		mirrorInformerFactory.Miniooperator().V1beta1().MirrorInstances())
+
+	go kubeInformerFactory.Start(stopCh)
+	go minioInformerFactory.Start(stopCh)
+
+	if err = mirrorController.Run(2, stopCh); err != nil {
+		glog.Fatalf("Error running mirrorController: %s", err.Error())
 	}
 }
 
