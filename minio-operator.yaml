@@ -78,6 +78,19 @@ rules:
   - apps
   resources:
   - statefulsets
+  - deployments
+  verbs:
+  - get
+  - create
+  - list
+  - patch
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - batch
+  resources:
+  - jobs
   verbs:
   - get
   - create

@@ -83,7 +83,7 @@ func main() {
 
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		glog.Fatalf("Error building kubernetes clientset: %s", err.Error())
+		glog.Fatalf("Error building Kubernetes clientset: %s", err.Error())
 	}
 
 	controllerClient, err := clientset.NewForConfig(cfg)
@@ -104,9 +104,11 @@ func main() {
 	if isNamespaced {
 		kubeInformerFactory = kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(namespace))
 		minioInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(namespace))
+		mirrorInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(namespace))
 	} else {
 		kubeInformerFactory = kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
+		mirrorInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	}
 
 	mainController := cluster.NewController(kubeClient, controllerClient, *certClient,
@@ -114,23 +116,26 @@ func main() {
 		minioInformerFactory.Miniooperator().V1beta1().MinIOInstances(),
 		kubeInformerFactory.Core().V1().Services())
 
-	go kubeInformerFactory.Start(stopCh)
-	go minioInformerFactory.Start(stopCh)
-
-	if err = mainController.Run(2, stopCh); err != nil {
-		glog.Fatalf("Error running mainController: %s", err.Error())
-	}
-
 	mirrorController := mirror.NewController(kubeClient, controllerClient,
-		kubeInformerFactory.Apps().V1().Deployments(),
+		kubeInformerFactory.Batch().V1().Jobs(),
 		mirrorInformerFactory.Miniooperator().V1beta1().MirrorInstances())
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
+	go mirrorInformerFactory.Start(stopCh)
 
-	if err = mirrorController.Run(2, stopCh); err != nil {
+	if err = mainController.Start(2, stopCh); err != nil {
+		glog.Fatalf("Error running mainController: %s", err.Error())
+	}
+
+	if err = mirrorController.Start(2, stopCh); err != nil {
 		glog.Fatalf("Error running mirrorController: %s", err.Error())
 	}
+
+	<-stopCh
+	glog.Info("Shutting down the MinIO Operator")
+	mainController.Stop()
+	mirrorController.Stop()
 }
 
 // setupSignalHandler registered for SIGTERM and SIGINT. A stop channel is returned

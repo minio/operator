@@ -1,0 +1,57 @@
+apiVersion: miniooperator.min.io/v1beta1
+kind: MirrorInstance
+metadata:
+  name: minio
+## If specified, MinIOInstance pods will be dispatched by specified scheduler.
+## If not specified, the pod will be dispatched by default scheduler.
+# scheduler:
+#  name: my-custom-scheduler
+spec:
+  selector:
+    matchLabels:
+      app: mc # Should match spec.metadata.labels
+  ## Add metadata to the all pods created by the StatefulSet
+  metadata:
+    labels:
+      app: mc # Should match spec.selector.matchLabels
+  ## Registry location and Tag to download MC image
+  image: minio/mc:RELEASE.2020-04-25T00-43-23Z
+  ## This is used to set configuration
+  ## Format name: MC_HOST_<alias>
+  ## Format value: https://<access_key>:<secret_key>@<minio_server_url>
+  env:
+    - name: MC_HOST_source
+      value: "https://Q3AM3UQ867SPQQA43P2F:zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG@play.min.io"
+    - name: MC_HOST_target
+      value: "https://Q3AM3UQ867SPQQA43P2F:zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG@play.min.io"
+  ## Use this field to set the source and target for mirror.
+  ## source and target can be site wide / bucket wide / prefix wide.
+  ## Please ensure to use the same aliases as set in above environment.
+  ## Format <alias>/<bucket>/<prefix>
+  args:
+    source: "source/sample-mc"
+    target: "target/sample-bucket2"
+    ## Add mc mirror specific flags to define mirror behavior. Refer the mc mirror docs for
+    ## more details https://docs.minio.io/docs/minio-client-complete-guide.html#mirror
+    ## To enable a flag, uncomment the field and add relevant value if required.
+    flags:
+      # - "--overwrite"                        ## overwrite object(s) on target
+      # - "--watch"                            ## watch and synchronize changes
+      # - "--exclude `*.before`"               ## exclude object(s) that match specified object name pattern
+      # - "--remove"                           ## remove extraneous object(s) on target
+      # - "--region value"                     ## specify region when creating new bucket(s) on target (default: "us-east-1")
+      # - "--preserve"                         ## preserve file(s)/object(s) attributes and bucket policy rules on target bucket(s)
+      # - "--md5"                              ## force all upload(s) to calculate md5sum checksum
+      # - "--multi-master value"               ## enable multi-master multi-site setup
+      # - "--disable-multipart"                ## disable multipart upload feature
+      # - "--older-than value"                 ## filter object(s) older than L days, M hours and N minutes
+      # - "--newer-than 10d"                   ## filter object(s) newer than L days, M hours and N minutes
+      # - "--storage-class value"              ## specify storage class for new object(s) on target
+      # - "--encrypt value"                    ## encrypt/decrypt objects (using server-side encryption with server managed keys)
+      # - "--attr value"                       ## add custom metadata for all objects
+      # - "--encrypt-key value"                ## encrypt/decrypt objects (using server-side encryption with customer provided keys)
+  ## Configure resource requests and limits for MinIO containers
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m

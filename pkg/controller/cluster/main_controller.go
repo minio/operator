@@ -63,7 +63,7 @@ const (
 	ErrResourceExists = "ErrResourceExists"
 	// MessageResourceExists is the message used for Events when a MinIOInstance
 	// fails to sync due to a StatefulSet already existing
-	MessageResourceExists = "Resource %q already exists and is not managed by MinIO"
+	MessageResourceExists = "Resource %q already exists and is not managed by MinIO Operator"
 	// MessageResourceSynced is the message used for an Event fired when a MinIOInstance
 	// is synced successfully
 	MessageResourceSynced = "MinIOInstance synced successfully"
@@ -173,13 +173,11 @@ func NewController(
 	return controller
 }
 
-// Run will set up the event handlers for types we are interested in, as well
+// Start will set up the event handlers for types we are interested in, as well
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it w	ill shutdown the workqueue and wait for
 // workers to finish processing their current work items.
-func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
-	defer runtime.HandleCrash()
-	defer c.workqueue.ShutDown()
+func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 	// Start the informer factories to begin populating the informer caches
 	glog.Info("Starting MinIOInstance controller")
@@ -196,17 +194,20 @@ func (c *Controller) Run(threadiness int, stopCh <-chan struct{}) error {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
-	glog.Info("Started workers")
-	<-stopCh
-	glog.Info("Shutting down workers")
-
 	return nil
+}
+
+// Stop is called to shutdown the controller
+func (c *Controller) Stop() {
+	glog.Info("Stopping the minio controller")
+	c.workqueue.ShutDown()
 }
 
 // runWorker is a long-running function that will continually call the
 // processNextWorkItem function in order to read and process a message on the
 // workqueue.
 func (c *Controller) runWorker() {
+	defer runtime.HandleCrash()
 	for c.processNextWorkItem() {
 	}
 }

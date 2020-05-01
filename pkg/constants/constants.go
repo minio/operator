@@ -23,6 +23,7 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // InstanceLabel is applied to all components of a MinIOInstance cluster
@@ -48,10 +49,22 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2020-04-23T00-58-49Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2020-05-01T22-19-14Z"
+
+// DefaultMCImage specifies the default mc Docker hub image
+const DefaultMCImage = "minio/mc:RELEASE.2020-04-25T00-43-23Z"
 
 // MinIOServerName specifies the default container name for MinIOInstance
 const MinIOServerName = "minio"
+
+// MirorContainerName specifies the default container name for MirrorInstance
+const MirorContainerName = "mirror"
+
+// MirrorJobRestartPolicy specifies the restart policy for the job created for mirroring
+const MirrorJobRestartPolicy = corev1.RestartPolicyOnFailure
+
+// DefaultMirrorFlags specifies the restart policy for the job created for mirroring
+var DefaultMirrorFlags = []string{"--no-color", "--json"}
 
 // DefaultMinIOAccessKey specifies default access key for MinIOInstance
 const DefaultMinIOAccessKey = "AKIAIOSFODNN7EXAMPLE"
@@ -76,8 +89,11 @@ const HeadlessServiceNameSuffix = "-hl-svc"
 // CSRNameSuffix specifies the suffix added to MinIOInstance name to create a CSR
 const CSRNameSuffix = "-csr"
 
-// ClusterCRDResourceKind is the Kind of a Cluster.
-const ClusterCRDResourceKind = "MinIOInstance"
+// MinIOCRDResourceKind is the Kind of a Cluster.
+const MinIOCRDResourceKind = "MinIOInstance"
+
+// MirrorCRDResourceKind is the Kind of a Cluster.
+const MirrorCRDResourceKind = "MirrorInstance"
 
 // Auto TLS related constants
 

@@ -190,3 +190,24 @@ func (mi *MinIOInstance) GetHeadlessServiceName() string {
 func (mi *MinIOInstance) GetCSRName() string {
 	return mi.Name + constants.CSRNameSuffix
 }
+
+// EnsureDefaults will ensure that if a user omits and fields in the
+// spec that are required, we set some sensible defaults.
+func (mi *MirrorInstance) EnsureDefaults() *MirrorInstance {
+	if mi.Spec.Image == "" {
+		mi.Spec.Image = constants.DefaultMCImage
+	}
+	return mi
+}
+
+// HasMetadata returns true if the user has provided a pod metadata
+// for a MinIOInstance else false
+func (mi *MirrorInstance) HasMetadata() bool {
+	return mi.Spec.Metadata != nil
+}
+
+// HasSelector returns true if the user has provided a pod selector
+// field (ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-selector)
+func (mi *MirrorInstance) HasSelector() bool {
+	return mi.Spec.Selector != nil
+}
