@@ -59,6 +59,16 @@ kubectl patch minioinstances.miniocontroller.min.io minio --patch "$(cat example
 
 You can further keep adding new zones in the `patch.yaml` file and apply the patch, to add new nodes to existing cluster. 
 
+### Expose MinIO via Istio
+
+Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO instance, you can also directly target the headless Service that is created by the operator.
+
+For example, to expose the created headless Service `minio-hl-svc` on http://minio.example.com:
+
+```
+kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/expose-via-istio.yaml
+```
+
 ## Features
 
 MinIO-Operator currently supports following features:
