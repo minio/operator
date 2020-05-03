@@ -1,0 +1,30 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: minio
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http-minio
+        protocol: HTTP
+      hosts:
+        - "minio.example.com"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: minio
+spec:
+  hosts:
+  - "minio.example.com"
+  gateways:
+  - minio
+  http:
+  - route:
+    - destination:
+        host: minio-hl-svc
+        port:
+          number: 9000

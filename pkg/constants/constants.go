@@ -35,6 +35,9 @@ const MinIOOperatorVersionLabel = "v1beta1.min.io/version"
 // MinIOPort specifies the default MinIOInstance port number.
 const MinIOPort = 9000
 
+// MinIOServicePortName specifies the default Service's port name, e.g. for automatic protocol selection in Istio
+const MinIOServicePortName = "http-minio"
+
 // MinIOVolumeName specifies the default volume name for MinIO volumes
 const MinIOVolumeName = "export"
 

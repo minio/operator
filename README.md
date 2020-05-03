@@ -67,6 +67,16 @@ As existing StatefulSet pods are terminated, its PVCs are also deleted. It is _v
 
 If you attempt cluster expansion while the PV reclaim policy is set to something else, it may lead to data loss. If you have the reclaim policy set to something else, change it as explained in [Kubernetes documents](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/).
 
+### Expose MinIO via Istio
+
+Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO instance, you can also directly target the headless Service that is created by the operator.
+
+For example, to expose the created headless Service `minio-hl-svc` on http://minio.example.com:
+
+```
+kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/expose-via-istio.yaml
+```
+
 ## Features
 
 MinIO-Operator currently supports following features:
