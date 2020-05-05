@@ -116,6 +116,9 @@ type MinIOInstanceSpec struct {
 	// Definition for Cluster in given MinIO cluster
 	// +optional
 	Zones []Zone `json:"zones"`
+	// McsConfig is for setting up minio/mcs for graphical user interface
+	//+optional
+	Mcs *McsConfig `json:"mcs,omitempty"`
 }
 
 // MinIOInstanceStatus is the status for a MinIOInstance resource
@@ -206,4 +209,13 @@ type Args struct {
 	Source string   `json:"source"`
 	Target string   `json:"target"`
 	Flags  []string `json:"flags"`
+}
+
+// McsConfig defines the credentials for mcs
+type McsConfig struct {
+	Image        string                       `json:"image,omitempty"`
+	McsAccessKey string                       `json:"mcsAccessKey"`
+	McsSecret    *corev1.LocalObjectReference `json:"mcsSecret,omitempty"`
+	Selector     *metav1.LabelSelector        `json:"selector,omitempty"`
+	Metadata     *metav1.ObjectMeta           `json:"metadata,omitempty"`
 }

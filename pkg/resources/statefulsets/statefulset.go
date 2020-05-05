@@ -285,7 +285,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 					Containers:       containers,
 					Volumes:          podVolumes,
 					ImagePullSecrets: []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
-					RestartPolicy:    "Always",
+					RestartPolicy:    corev1.RestartPolicyAlways,
 					Affinity:         mi.Spec.Affinity,
 					SchedulerName:    mi.Scheduler.Name,
 					Tolerations:      minioTolerations(mi),
