@@ -267,7 +267,7 @@ func NewForCluster(mi *miniov1beta1.MinIOInstance, serviceName string) *appsv1.S
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
 					Group:   miniov1beta1.SchemeGroupVersion.Group,
 					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.ClusterCRDResourceKind,
+					Kind:    constants.MinIOCRDResourceKind,
 				}),
 			},
 		},

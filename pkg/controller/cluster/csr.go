@@ -156,7 +156,7 @@ func (c *Controller) submitCSR(ctx context.Context, mi *miniov1beta1.MinIOInstan
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
 					Group:   miniov1beta1.SchemeGroupVersion.Group,
 					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.ClusterCRDResourceKind,
+					Kind:    constants.MinIOCRDResourceKind,
 				}),
 			},
 		},
@@ -239,7 +239,7 @@ func (c *Controller) createSecret(ctx context.Context, mi *miniov1beta1.MinIOIns
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
 					Group:   miniov1beta1.SchemeGroupVersion.Group,
 					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.ClusterCRDResourceKind,
+					Kind:    constants.MinIOCRDResourceKind,
 				}),
 			},
 		},

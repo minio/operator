@@ -171,17 +171,24 @@ type MirrorInstance struct {
 // target where the backup should be stored. Note that both source and target are expected to be
 // AWS S3 API compliant services.
 type MirrorInstanceSpec struct {
-	// Version defines the MinIO Client (mc) Docker image version.
-	Version string `json:"version"`
-	// Env is used to add alias (source and target MinIO servers) to mc.
-	Env []corev1.EnvVar `json:"env,omitempty"`
-	// SourceBucket defines the bucket on source MinIO instance
-	SourceBucket string `json:"srcBucket,omitempty"`
-	// TargetBucket defines where to store the Backup.
-	TargetBucket string `json:"targetBucket"`
-	// MirrorFlags is a map to add `mc` flags
+	// Image defines the mc Docker image.
 	// +optional
-	MirrorFlags map[string]string `json:"mirrorFlags,omitempty"`
+	Image string `json:"image,omitempty"`
+	// ImagePullSecret defines the secret to be used for pull image from a private Docker image.
+	// +optional
+	ImagePullSecret corev1.LocalObjectReference `json:"imagePullSecret,omitempty"`
+	// Env is used to add alias (sourceAlias and targetAlias MinIO servers) to mc.
+	Env []corev1.EnvVar `json:"env"`
+	// Args allows configuring fields
+	Args Args `json:"args"`
+	// If provided, use these requests and limit for cpu/memory resource allocation
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Metadata defines the object metadata passed to each pod that is a part of this MinIOInstance
+	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
+	// Selector is a label query over pods that should match the replica count.
+	// +optional
+	Selector *metav1.LabelSelector `json:"selector,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -192,4 +199,11 @@ type MirrorInstanceList struct {
 	metav1.ListMeta `json:"metadata"`
 
 	Items []MirrorInstance `json:"items"`
+}
+
+// Args specifies configuration for mirror jobs
+type Args struct {
+	Source string   `json:"source"`
+	Target string   `json:"target"`
+	Flags  []string `json:"flags"`
 }
