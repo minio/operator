@@ -412,8 +412,16 @@ func (c *Controller) syncHandler(key string) error {
 					klog.V(2).Infof(pErr.Error())
 					return pErr
 				}
-				d = deployments.NewForCluster(mi)
+				// Create MCS Deployment
+				d = deployments.NewMcsDeployment(mi)
 				d, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, d, cOpts)
+				if err != nil {
+					klog.V(2).Infof(err.Error())
+					return err
+				}
+				// Create MCS service
+				mcsSvc := services.NewMcsServiceForCluster(mi)
+				_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, mcsSvc, cOpts)
 				if err != nil {
 					klog.V(2).Infof(err.Error())
 					return err
@@ -466,7 +474,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	if mi.HasMcsEnabled() && d != nil && mi.Spec.Mcs.Image != d.Spec.Template.Spec.Containers[0].Image {
 		klog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name, mi.Spec.Mcs.Image, d.Spec.Template.Spec.Containers[0].Image)
-		d = deployments.NewForCluster(mi)
+		d = deployments.NewMcsDeployment(mi)
 		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, d, uOpts)
 		// If an error occurs during Update, we'll requeue the item so we can
 		// attempt processing again later. This could have been caused by a

@@ -88,3 +88,30 @@ func NewHeadlessServiceForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Servic
 
 	return svc
 }
+
+// NewMcsServiceForCluster will return a new service for a MinIOInstance's MCS
+func NewMcsServiceForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
+	minioPort := corev1.ServicePort{Port: constants.McsPort, Name: constants.McsServicePortName}
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
+			Name:      mi.GetMcsServiceName(),
+			Namespace: mi.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
+					Group:   miniov1beta1.SchemeGroupVersion.Group,
+					Version: miniov1beta1.SchemeGroupVersion.Version,
+					Kind:    constants.MinIOCRDResourceKind,
+				}),
+			},
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{minioPort},
+			Selector: map[string]string{
+				constants.McsInstanceLabel: mi.Name + constants.McsServiceNameSuffix,
+			},
+		},
+	}
+
+	return svc
+}

@@ -29,6 +29,9 @@ import (
 // InstanceLabel is applied to all components of a MinIOInstance cluster
 const InstanceLabel = "v1.min.io/instance"
 
+// McsInstanceLabel is applied to the MCS pods of a MinIOInstance cluster
+const McsInstanceLabel = "v1.min.io/mcs"
+
 // MinIOOperatorVersionLabel denotes the version of the MinIOInstance operator
 // running in the cluster.
 const MinIOOperatorVersionLabel = "v1.min.io/version"
@@ -44,6 +47,9 @@ const MinIOServicePortNumber = 9000
 
 // McsPort specifies the default Mcs port number.
 const McsPort = 9090
+
+// McsServicePortName specifies the default Service's port name, e.g. for automatic protocol selection in Istio
+const McsServicePortName = "http-mcs"
 
 // MinIOVolumeName specifies the default volume name for MinIO volumes
 const MinIOVolumeName = "export"
@@ -94,6 +100,9 @@ const DefaultImagePullPolicy = "Always"
 
 // HeadlessServiceNameSuffix specifies the suffix added to MinIOInstance name to create a headless service
 const HeadlessServiceNameSuffix = "-hl-svc"
+
+// McsServiceNameSuffix specifies the suffix added to MinIOInstance servce name to create a service for mcs
+const McsServiceNameSuffix = "-ui"
 
 // CSRNameSuffix specifies the suffix added to MinIOInstance name to create a CSR
 const CSRNameSuffix = "-csr"

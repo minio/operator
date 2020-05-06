@@ -222,6 +222,12 @@ func (mi *MinIOInstance) GetHeadlessServiceName() string {
 	return mi.Name + constants.HeadlessServiceNameSuffix
 }
 
+// GetMcsServiceName returns the name of the service that is created to access the mcs for the
+// MinIOInstance
+func (mi *MinIOInstance) GetMcsServiceName() string {
+	return mi.GetServiceName() + constants.McsServiceNameSuffix
+}
+
 // GetCSRName returns the name of CSR that generated if AutoTLS is enabled
 func (mi *MinIOInstance) GetCSRName() string {
 	return mi.Name + constants.CSRNameSuffix
