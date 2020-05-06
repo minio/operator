@@ -18,7 +18,7 @@
 package deployments
 
 import (
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
+	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	"github.com/minio/minio-operator/pkg/constants"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

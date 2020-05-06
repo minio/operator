@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019, MinIO, Inc.
+ * Copyright (C) 2020, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -27,11 +27,11 @@ import (
 )
 
 // InstanceLabel is applied to all components of a MinIOInstance cluster
-const InstanceLabel = "v1beta1.min.io/instance"
+const InstanceLabel = "v1.min.io/instance"
 
 // MinIOOperatorVersionLabel denotes the version of the MinIOInstance operator
 // running in the cluster.
-const MinIOOperatorVersionLabel = "v1beta1.min.io/version"
+const MinIOOperatorVersionLabel = "v1.min.io/version"
 
 // MinIOPort specifies the default MinIOInstance port number.
 const MinIOPort = 9000

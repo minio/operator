@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019, MinIO, Inc.
+ * Copyright (C) 2020, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -22,8 +22,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
-
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -38,11 +36,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
-	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/miniooperator.min.io/v1beta1"
-	listers "github.com/minio/minio-operator/pkg/client/listers/miniooperator.min.io/v1beta1"
+	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/operator.min.io/v1"
+	listers "github.com/minio/minio-operator/pkg/client/listers/operator.min.io/v1"
 	"github.com/minio/minio-operator/pkg/resources/jobs"
 )
 
@@ -106,9 +105,9 @@ func NewController(
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
 	minioscheme.AddToScheme(scheme.Scheme)
-	glog.Info("Creating event broadcaster")
+	klog.Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.Infof)
+	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClientSet.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
@@ -123,7 +122,7 @@ func NewController(
 		recorder:           recorder,
 	}
 
-	glog.Info("Setting up event handlers")
+	klog.Info("Setting up event handlers")
 	// Set up an event handler for when MirrorInstance resources change
 	mirrorInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueMirrorInstance,
@@ -161,15 +160,15 @@ func NewController(
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 	// Start the informer factories to begin populating the informer caches
-	glog.Info("Starting MirrorInstance controller")
+	klog.Info("Starting MirrorInstance controller")
 
 	// Wait for the caches to be synced before starting workers
-	glog.Info("Waiting for informer caches to sync")
+	klog.Info("Waiting for informer caches to sync")
 	if ok := cache.WaitForCacheSync(stopCh, c.jobListerSynced, c.mirrorListerSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	glog.Info("Starting workers")
+	klog.Info("Starting workers")
 	// Launch two workers to process MirrorInstance resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -180,7 +179,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 // Stop is called to shutdown the controller
 func (c *Controller) Stop() {
-	glog.Info("Stopping the mirror controller")
+	klog.Info("Stopping the mirror controller")
 	c.workqueue.ShutDown()
 }
 
@@ -233,7 +232,7 @@ func (c *Controller) processNextWorkItem() bool {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
 		c.workqueue.Forget(obj)
-		glog.Infof("Successfully synced '%s'", key)
+		klog.Infof("Successfully synced '%s'", key)
 		return nil
 	}(obj)
 
@@ -338,9 +337,9 @@ func (c *Controller) handleObject(obj interface{}) {
 			runtime.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
 			return
 		}
-		glog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
+		klog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
 	}
-	glog.V(4).Infof("Processing object: %s", object.GetName())
+	klog.V(4).Infof("Processing object: %s", object.GetName())
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
 		// If this object is not owned by a MirrorInstance, we should not do anything more
 		// with it.
@@ -350,7 +349,7 @@ func (c *Controller) handleObject(obj interface{}) {
 
 		mirrorInstance, err := c.mirrorLister.MirrorInstances(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
-			glog.V(4).Infof("ignoring orphaned object '%s' of mirrorInstance '%s'", object.GetSelfLink(), ownerRef.Name)
+			klog.V(4).Infof("ignoring orphaned object '%s' of mirrorInstance '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
 		}
 

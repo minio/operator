@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019, MinIO, Inc.
+ * Copyright (C) 2020, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,11 +44,11 @@ import (
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
 
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
+	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
-	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/miniooperator.min.io/v1beta1"
-	listers "github.com/minio/minio-operator/pkg/client/listers/miniooperator.min.io/v1beta1"
+	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/operator.min.io/v1"
+	listers "github.com/minio/minio-operator/pkg/client/listers/operator.min.io/v1"
 	"github.com/minio/minio-operator/pkg/resources/deployments"
 	"github.com/minio/minio-operator/pkg/resources/services"
 	"github.com/minio/minio-operator/pkg/resources/statefulsets"
@@ -131,9 +131,9 @@ func NewController(
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
 	minioscheme.AddToScheme(scheme.Scheme)
-	glog.V(4).Info("Creating event broadcaster")
+	klog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartLogging(glog.Infof)
+	eventBroadcaster.StartLogging(klog.Infof)
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClientSet.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
@@ -153,7 +153,7 @@ func NewController(
 		recorder:                recorder,
 	}
 
-	glog.Info("Setting up event handlers")
+	klog.Info("Setting up event handlers")
 	// Set up an event handler for when MinIOInstance resources change
 	minioInstanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueMinIOInstance,
@@ -206,15 +206,15 @@ func NewController(
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 	// Start the informer factories to begin populating the informer caches
-	glog.Info("Starting MinIOInstance controller")
+	klog.Info("Starting MinIOInstance controller")
 
 	// Wait for the caches to be synced before starting workers
-	glog.Info("Waiting for informer caches to sync")
+	klog.Info("Waiting for informer caches to sync")
 	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.minioInstancesSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	glog.Info("Starting workers")
+	klog.Info("Starting workers")
 	// Launch two workers to process MinIOInstance resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
@@ -225,7 +225,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 // Stop is called to shutdown the controller
 func (c *Controller) Stop() {
-	glog.Info("Stopping the minio controller")
+	klog.Info("Stopping the minio controller")
 	c.workqueue.ShutDown()
 }
 
@@ -270,7 +270,7 @@ func (c *Controller) processNextWorkItem() bool {
 			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
 			return nil
 		}
-		glog.V(2).Infof("Key from workqueue: %s", key)
+		klog.V(2).Infof("Key from workqueue: %s", key)
 		// Run the syncHandler, passing it the namespace/name string of the
 		// MinIOInstance resource to be synced.
 		if err := c.syncHandler(key); err != nil {
@@ -279,7 +279,7 @@ func (c *Controller) processNextWorkItem() bool {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
 		c.workqueue.Forget(obj)
-		glog.Infof("Successfully synced '%s'", key)
+		klog.Infof("Successfully synced '%s'", key)
 		return nil
 	}(obj)
 
@@ -303,7 +303,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	glog.V(2).Infof("Key after splitting, namespace: %s, name: %s", namespace, name)
+	klog.V(2).Infof("Key after splitting, namespace: %s, name: %s", namespace, name)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))
 		return nil
@@ -324,12 +324,20 @@ func (c *Controller) syncHandler(key string) error {
 
 	mi.EnsureDefaults()
 
-	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.GetHeadlessServiceName())
+	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.GetServiceName())
+	// If the service doesn't exist, we'll create it
+	if apierrors.IsNotFound(err) {
+		klog.V(2).Infof("Creating a new Service for cluster %q", nsName)
+		svc = services.NewServiceForCluster(mi)
+		_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts)
+	}
+
+	hlSvc, err := c.serviceLister.Services(mi.Namespace).Get(mi.GetHeadlessServiceName())
 	// If the headless service doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
-		glog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
-		svc = services.NewForCluster(mi)
-		_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts)
+		klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
+		hlSvc = services.NewHeadlessServiceForCluster(mi)
+		_, err = c.kubeClientSet.CoreV1().Services(hlSvc.Namespace).Create(ctx, hlSvc, cOpts)
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
@@ -343,7 +351,7 @@ func (c *Controller) syncHandler(key string) error {
 	// this is an error as only one of this is allowed in one MinIOInstance
 	if mi.RequiresAutoCertSetup() && mi.RequiresExternalCertSetup() {
 		msg := "Please set either externalCertSecret or requestAutoCert in MinIOInstance config"
-		glog.V(2).Infof(msg)
+		klog.V(2).Infof(msg)
 		return fmt.Errorf(msg)
 	}
 
@@ -352,7 +360,7 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			// If the CSR doesn't exist, we'll create it
 			if apierrors.IsNotFound(err) {
-				glog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
+				klog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
 				// create CSR here
 				c.createCSR(ctx, mi)
 			} else {
@@ -365,7 +373,7 @@ func (c *Controller) syncHandler(key string) error {
 	ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.Name)
 	// If the resource doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
-		ss = statefulsets.NewForCluster(mi, svc.Name)
+		ss = statefulsets.NewForCluster(mi, hlSvc.Name)
 		ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 	}
 
@@ -377,13 +385,13 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if mi.HasMcsEnabled() {
-		// Get the Deployment with the name specified in MirrorInstace.spec
+		// Get the Deployment with the name specified in MinIOInstance.spec
 		d, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.Name)
 		// If the resource doesn't exist, we'll create it
 		if apierrors.IsNotFound(err) {
 			if !mi.HasCredsSecret() || !mi.HasMcsSecret() {
 				msg := "Please set the credentials"
-				glog.V(2).Infof(msg)
+				klog.V(2).Infof(msg)
 				return fmt.Errorf(msg)
 			}
 
@@ -398,17 +406,16 @@ func (c *Controller) syncHandler(key string) error {
 			if sErr != nil {
 				return sErr
 			}
-
 			// Check if any one replica is READY
 			if ss.Status.ReadyReplicas > 0 {
 				if pErr := mi.CreateMcsUser(minioSecret.Data, mcsSecret.Data); pErr != nil {
-					glog.V(2).Infof(pErr.Error())
+					klog.V(2).Infof(pErr.Error())
 					return pErr
 				}
 				d = deployments.NewForCluster(mi)
 				d, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, d, cOpts)
 				if err != nil {
-					glog.V(2).Infof(err.Error())
+					klog.V(2).Infof(err.Error())
 					return err
 				}
 			}
@@ -429,8 +436,8 @@ func (c *Controller) syncHandler(key string) error {
 	// number does not equal the current desired replicas on the StatefulSet, we
 	// should update the StatefulSet resource.
 	if mi.GetReplicas() != *ss.Spec.Replicas {
-		glog.V(4).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.GetReplicas(), *ss.Spec.Replicas)
-		ss = statefulsets.NewForCluster(mi, svc.Name)
+		klog.V(4).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.GetReplicas(), *ss.Spec.Replicas)
+		ss = statefulsets.NewForCluster(mi, hlSvc.Name)
 		err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Delete(ctx, ss.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
@@ -445,8 +452,8 @@ func (c *Controller) syncHandler(key string) error {
 	// version does not equal the current desired version in the StatefulSet, we
 	// should update the StatefulSet resource.
 	if mi.Spec.Image != ss.Spec.Template.Spec.Containers[0].Image {
-		glog.V(4).Infof("Updating MinIOInstance %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
-		ss = statefulsets.NewForCluster(mi, svc.Name)
+		klog.V(4).Infof("Updating MinIOInstance %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
+		ss = statefulsets.NewForCluster(mi, hlSvc.Name)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts)
 	}
 
@@ -458,7 +465,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if mi.HasMcsEnabled() && d != nil && mi.Spec.Mcs.Image != d.Spec.Template.Spec.Containers[0].Image {
-		glog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name, mi.Spec.Mcs.Image, d.Spec.Template.Spec.Containers[0].Image)
+		klog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name, mi.Spec.Mcs.Image, d.Spec.Template.Spec.Containers[0].Image)
 		d = deployments.NewForCluster(mi)
 		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, d, uOpts)
 		// If an error occurs during Update, we'll requeue the item so we can
@@ -489,7 +496,7 @@ func (c *Controller) updateMinIOInstanceStatus(ctx context.Context, minioInstanc
 	// we must use Update instead of UpdateStatus to update the Status block of the MinIOInstance resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := c.minioClientSet.MiniooperatorV1beta1().MinIOInstances(minioInstance.Namespace).Update(ctx, minioInstanceCopy, opts)
+	_, err := c.minioClientSet.OperatorV1().MinIOInstances(minioInstance.Namespace).Update(ctx, minioInstanceCopy, opts)
 	return err
 }
 
@@ -525,9 +532,9 @@ func (c *Controller) handleObject(obj interface{}) {
 			runtime.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
 			return
 		}
-		glog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
+		klog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
 	}
-	glog.V(4).Infof("Processing object: %s", object.GetName())
+	klog.V(4).Infof("Processing object: %s", object.GetName())
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
 		// If this object is not owned by a MinIOInstance, we should not do anything more
 		// with it.
@@ -537,7 +544,7 @@ func (c *Controller) handleObject(obj interface{}) {
 
 		minioInstance, err := c.minioInstancesLister.MinIOInstances(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
-			glog.V(4).Infof("ignoring orphaned object '%s' of minioInstance '%s'", object.GetSelfLink(), ownerRef.Name)
+			klog.V(4).Infof("ignoring orphaned object '%s' of minioInstance '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
 		}
 
