@@ -18,7 +18,7 @@
 package deployments
 
 import (
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
+	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	"github.com/minio/minio-operator/pkg/constants"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -103,6 +103,10 @@ func mcsMetadata(mi *miniov1beta1.MinIOInstance) metav1.ObjectMeta {
 			meta.Labels[k] = v
 		}
 	}
+
+	// attach McsInstanceLabel to be able to target this from the MCS service
+	meta.Labels[constants.McsInstanceLabel] = mi.Name + constants.McsServiceNameSuffix
+
 	return meta
 }
 
@@ -125,8 +129,8 @@ func mcsContainer(mi *miniov1beta1.MinIOInstance) corev1.Container {
 	}
 }
 
-// NewForCluster creates a new Deployment for the given MinIO instance.
-func NewForCluster(mi *miniov1beta1.MinIOInstance) *appsv1.Deployment {
+// NewMcsDeployment creates a new Deployment for the given MinIO instance.
+func NewMcsDeployment(mi *miniov1beta1.MinIOInstance) *appsv1.Deployment {
 
 	var replicas int32 = 1
 

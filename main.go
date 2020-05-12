@@ -1,7 +1,7 @@
 // +build go1.13
 
 /*
- * Copyright (C) 2019, MinIO, Inc.
+ * Copyright (C) 2020, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -27,18 +27,18 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/golang/glog"
-
-	kubeinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"k8s.io/klog"
 
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions"
 	"github.com/minio/minio-operator/pkg/controller/cluster"
 	"github.com/minio/minio-operator/pkg/controller/mirror"
+	kubeinformers "k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
+	"k8s.io/client-go/rest"
 )
 
 // Version provides the version of this minio-operator
@@ -60,6 +60,7 @@ func init() {
 }
 
 func main() {
+	klog.Info("Starting MinIO Operator")
 	// set up signals so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
 
@@ -78,22 +79,22 @@ func main() {
 	}
 
 	if err != nil {
-		glog.Fatalf("Error building kubeconfig: %s", err.Error())
+		klog.Fatalf("Error building kubeconfig: %s", err.Error())
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		glog.Fatalf("Error building Kubernetes clientset: %s", err.Error())
+		klog.Fatalf("Error building Kubernetes clientset: %s", err.Error())
 	}
 
 	controllerClient, err := clientset.NewForConfig(cfg)
 	if err != nil {
-		glog.Fatalf("Error building MinIO clientset: %s", err.Error())
+		klog.Fatalf("Error building MinIO clientset: %s", err.Error())
 	}
 
 	certClient, err := certapi.NewForConfig(cfg)
 	if err != nil {
-		glog.Errorf("Error building certificate clientset: %v", err.Error())
+		klog.Errorf("Error building certificate clientset: %v", err.Error())
 	}
 
 	namespace, isNamespaced := os.LookupEnv("WATCHED_NAMESPACE")
@@ -114,27 +115,27 @@ func main() {
 	mainController := cluster.NewController(kubeClient, controllerClient, *certClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
-		minioInformerFactory.Miniooperator().V1beta1().MinIOInstances(),
+		minioInformerFactory.Operator().V1().MinIOInstances(),
 		kubeInformerFactory.Core().V1().Services())
 
 	mirrorController := mirror.NewController(kubeClient, controllerClient,
 		kubeInformerFactory.Batch().V1().Jobs(),
-		mirrorInformerFactory.Miniooperator().V1beta1().MirrorInstances())
+		mirrorInformerFactory.Operator().V1().MirrorInstances())
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
 	go mirrorInformerFactory.Start(stopCh)
 
 	if err = mainController.Start(2, stopCh); err != nil {
-		glog.Fatalf("Error running mainController: %s", err.Error())
+		klog.Fatalf("Error running mainController: %s", err.Error())
 	}
 
 	if err = mirrorController.Start(2, stopCh); err != nil {
-		glog.Fatalf("Error running mirrorController: %s", err.Error())
+		klog.Fatalf("Error running mirrorController: %s", err.Error())
 	}
 
 	<-stopCh
-	glog.Info("Shutting down the MinIO Operator")
+	klog.Info("Shutting down the MinIO Operator")
 	mainController.Stop()
 	mirrorController.Stop()
 }

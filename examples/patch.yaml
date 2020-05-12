@@ -1,4 +1,4 @@
-apiVersion: miniooperator.min.io/v1beta1
+apiVersion: operator.min.io/v1
 kind: MinIOInstance
 metadata:
   name: minio

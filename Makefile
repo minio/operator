@@ -8,8 +8,7 @@ all: build
 verify: govet gotest
 
 build:
-	@CGO_ENABLED=0 go build --ldflags $(LDFLAGS) -o $(PWD)/minio-operator
-	@docker build -t $(TAG) .
+	@docker build -t $(TAG) --build-arg ldflags=$(LDFLAGS) .
 
 install: all
 	@docker push $(TAG)

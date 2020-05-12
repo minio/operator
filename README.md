@@ -26,7 +26,7 @@ kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/
 This will create all relevant resources required for the Operator to work. Here is a list of resources created by above `yaml` file:
 
 - `Namespace`: Custom namespace for MinIO-Operator. By default it is named as `minio-operator-ns`.
-- `CustomResourceDefinition`: Custom resource definition named as `minioinstances.miniooperator.min.io`.
+- `CustomResourceDefinition`: Custom resource definition named as `minioinstances.operator.min.io`.
 - `ClusterRole`: A cluster wide role for the controller. It is named as `minio-operator-role`. This is used for RBAC.
 - `ServiceAccount`: Service account is used by the custom controller to access the cluster. Account name by default is `minio-operator-sa`.
 - `ClusterRoleBinding`: This cluster wide binding binds the service account `minio-operator-sa` to cluster role `minio-operator-role`.
@@ -54,7 +54,7 @@ kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/
 After you have a distributed MinIO Cluster running (zones.server >= 4), you can expand the MinIO cluster using
 
 ```
-kubectl patch minioinstances.miniooperator.min.io minio --patch "$(cat examples/patch.yaml)" --type=merge
+kubectl patch minioinstances.operator.min.io minio --patch "$(cat examples/patch.yaml)" --type=merge
 ```
 
 You can expand an existing cluster by adding new zones to the `patch.yaml` and run the above `kubectl-patch` command.

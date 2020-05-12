@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019, MinIO, Inc.
+ * Copyright (C) 2020, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strconv"
 
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
+	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	constants "github.com/minio/minio-operator/pkg/constants"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

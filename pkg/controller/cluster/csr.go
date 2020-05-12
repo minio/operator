@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019, MinIO, Inc.
+ * Copyright (C) 2020, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -31,9 +31,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/miniooperator.min.io/v1beta1"
+	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	"github.com/minio/minio-operator/pkg/constants"
 
 	certificates "k8s.io/api/certificates/v1beta1"
@@ -67,20 +67,20 @@ func isEqual(a, b []string) bool {
 
 func generateCryptoData(mi *miniov1beta1.MinIOInstance) ([]byte, []byte, error) {
 	dnsNames := make([]string, 0)
-	glog.V(0).Infof("Generating private key")
+	klog.V(0).Infof("Generating private key")
 	privateKey, err := newPrivateKey(constants.DefaultEllipticCurve)
 	if err != nil {
-		glog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
+		klog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
 		return nil, nil, err
 	}
 
 	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
 	if err != nil {
-		glog.Errorf("Unexpected error during encoding the ECDSA Private Key: %v", err)
+		klog.Errorf("Unexpected error during encoding the ECDSA Private Key: %v", err)
 		return nil, nil, err
 	}
 
-	glog.V(0).Infof("Generating CSR with CN=%s", mi.Spec.CertConfig.CommonName)
+	klog.V(0).Infof("Generating CSR with CN=%s", mi.Spec.CertConfig.CommonName)
 
 	if isEqual(mi.Spec.CertConfig.DNSNames, mi.GetHosts()) {
 		dnsNames = mi.Spec.CertConfig.DNSNames
@@ -99,7 +99,7 @@ func generateCryptoData(mi *miniov1beta1.MinIOInstance) ([]byte, []byte, error) 
 
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privateKey)
 	if err != nil {
-		glog.Errorf("Unexpected error during creating the CSR: %v", err)
+		klog.Errorf("Unexpected error during creating the CSR: %v", err)
 		return nil, nil, err
 	}
 	return privKeyBytes, csrBytes, nil
@@ -110,22 +110,22 @@ func generateCryptoData(mi *miniov1beta1.MinIOInstance) ([]byte, []byte, error) 
 func (c *Controller) createCSR(ctx context.Context, mi *miniov1beta1.MinIOInstance) error {
 	privKeysBytes, csrBytes, err := generateCryptoData(mi)
 	if err != nil {
-		glog.Errorf("Private Key and CSR generation failed with error: %v", err)
+		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err
 	}
 
-	glog.V(2).Infof("Creating csr/%s", mi.GetCSRName())
+	klog.V(2).Infof("Creating csr/%s", mi.GetCSRName())
 	err = c.submitCSR(ctx, mi, csrBytes)
 	if err != nil {
-		glog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.GetCSRName(), err)
+		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.GetCSRName(), err)
 		return err
 	}
-	glog.V(0).Infof("Successfully created csr/%s", mi.GetCSRName())
+	klog.V(0).Infof("Successfully created csr/%s", mi.GetCSRName())
 
 	// fetch certificate from CSR
 	certbytes, err := c.fetchCertificate(ctx, mi.GetCSRName())
 	if err != nil {
-		glog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.GetCSRName(), err)
+		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.GetCSRName(), err)
 		return err
 	}
 	// PEM encode private ECDSA key
@@ -133,7 +133,7 @@ func (c *Controller) createCSR(ctx context.Context, mi *miniov1beta1.MinIOInstan
 	// Create secret for MinIO Statefulset to use
 	err = c.createSecret(ctx, mi, encodedPrivKey, certbytes)
 	if err != nil {
-		glog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.GetTLSSecretName(), err)
+		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.GetTLSSecretName(), err)
 		return err
 	}
 	return nil
@@ -180,7 +180,7 @@ func (c *Controller) submitCSR(ctx context.Context, mi *miniov1beta1.MinIOInstan
 
 // FetchCertificate fetches the generated certificate from the CSR
 func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]byte, error) {
-	glog.V(0).Infof("Start polling for certificate of csr/%s, every %s, timeout after %s", csrName,
+	klog.V(0).Infof("Start polling for certificate of csr/%s, every %s, timeout after %s", csrName,
 		constants.DefaultQueryInterval, constants.DefaultQueryTimeout)
 
 	tick := time.NewTicker(constants.DefaultQueryInterval)
@@ -196,27 +196,27 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 	for {
 		select {
 		case s := <-ch:
-			glog.Infof("Signal %s received, exiting ...", s.String())
+			klog.Infof("Signal %s received, exiting ...", s.String())
 			return nil, fmt.Errorf("%s", s.String())
 
 		case <-tick.C:
 			r, err := c.certClient.CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
 			if err != nil {
-				glog.Errorf("Unexpected error during certificate fetching of csr/%s: %s", csrName, err)
+				klog.Errorf("Unexpected error during certificate fetching of csr/%s: %s", csrName, err)
 				return nil, err
 			}
 			if r.Status.Certificate != nil {
-				glog.V(0).Infof("Certificate successfully fetched, creating secret with Private key and Certificate")
+				klog.V(0).Infof("Certificate successfully fetched, creating secret with Private key and Certificate")
 				return r.Status.Certificate, nil
 			}
 			for _, c := range r.Status.Conditions {
 				if c.Type == certificates.CertificateDenied {
 					err := fmt.Errorf("csr/%s uid: %s is %q: %s", r.Name, r.UID, c.Type, c.String())
-					glog.Errorf("Unexpected error during fetch: %v", err)
+					klog.Errorf("Unexpected error during fetch: %v", err)
 					return nil, err
 				}
 			}
-			glog.V(1).Infof("Certificate of csr/%s still not available, next try in %d", csrName, constants.DefaultQueryInterval)
+			klog.V(1).Infof("Certificate of csr/%s still not available, next try in %d", csrName, constants.DefaultQueryInterval)
 
 		case <-timeout.C:
 			return nil, fmt.Errorf("timeout during certificate fetching of csr/%s", csrName)
