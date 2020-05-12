@@ -274,7 +274,7 @@ func (c *Controller) syncHandler(key string) error {
 	j, err := c.jobLister.Jobs(mi.Namespace).Get(mi.Name)
 	// If the resource doesn't exist, we'll create it
 	if errors.IsNotFound(err) {
-		j = jobs.NewForCluster(mi)
+		j = jobs.NewForMirror(mi)
 
 		_, err = c.kubeClientSet.BatchV1().Jobs(mi.Namespace).Create(ctx, j, cOpts)
 	}

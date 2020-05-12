@@ -120,9 +120,12 @@ type MinIOInstanceSpec struct {
 	// Definition for Cluster in given MinIO cluster
 	// +optional
 	Zones []Zone `json:"zones"`
-	// McsConfig is for setting up minio/mcs for graphical user interface
+	// MCSConfig is for setting up minio/mcs for graphical user interface
 	//+optional
-	Mcs *McsConfig `json:"mcs,omitempty"`
+	MCS *MCSConfig `json:"mcs,omitempty"`
+	// KES is for setting up minio/kes as MinIO KMS
+	//+optional
+	KES *KESConfig `json:"kes,omitempty"`
 }
 
 // MinIOInstanceStatus is the status for a MinIOInstance resource
@@ -147,6 +150,30 @@ type LocalCertificateReference struct {
 type Zone struct {
 	Name    string `json:"name"`
 	Servers int32  `json:"servers"`
+}
+
+// MCSConfig defines the credentials for mcs
+type MCSConfig struct {
+	Image        string                       `json:"image,omitempty"`
+	MCSAccessKey string                       `json:"mcsAccessKey"`
+	MCSSecret    *corev1.LocalObjectReference `json:"mcsSecret,omitempty"`
+	Selector     *metav1.LabelSelector        `json:"selector,omitempty"`
+	Metadata     *metav1.ObjectMeta           `json:"metadata,omitempty"`
+}
+
+// KESConfig defines the specifications for KES StatefulSet
+type KESConfig struct {
+	// Replicas defines number of pods for KES StatefulSet.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+	// Image defines the MinIOInstance Docker image.
+	// +optional
+	Image string `json:"image,omitempty"`
+	// This configSecret serves as the configuration for KES
+	// This is a mandatory field
+	Configuration *corev1.LocalObjectReference `json:"configSecret"`
+	Selector      *metav1.LabelSelector        `json:"selector,omitempty"`
+	Metadata      *metav1.ObjectMeta           `json:"metadata,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -213,13 +240,4 @@ type Args struct {
 	Source string   `json:"source"`
 	Target string   `json:"target"`
 	Flags  []string `json:"flags"`
-}
-
-// McsConfig defines the credentials for mcs
-type McsConfig struct {
-	Image        string                       `json:"image,omitempty"`
-	McsAccessKey string                       `json:"mcsAccessKey"`
-	McsSecret    *corev1.LocalObjectReference `json:"mcsSecret,omitempty"`
-	Selector     *metav1.LabelSelector        `json:"selector,omitempty"`
-	Metadata     *metav1.ObjectMeta           `json:"metadata,omitempty"`
 }

@@ -18,6 +18,19 @@ data:
   mcspbkdfsalt: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
   mcssecretkey: WU9VUk1DU1NFQ1JFVA== # base 64 encoded "YOURMCSSECRET" (echo -n 'YOURMCSSECRET' | base64)
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+  selector:
+    app: minio
+---
 apiVersion: operator.min.io/v1
 kind: MinIOInstance
 metadata:
@@ -42,6 +55,9 @@ spec:
   image: minio/minio:RELEASE.2020-05-08T02-40-49Z
   ## A ClusterIP Service will be created with the given name
   serviceName: minio-internal-service
+  ## Secret with credentials to be used by MinIO instance.
+  credsSecret:
+    name: minio-creds-secret
   zones:
     - name: "zone-0"
       ## Number of MinIO servers/pods in this zone.
@@ -66,22 +82,43 @@ spec:
       resources:
         requests:
           storage: 10Gi
-  ## Secret with credentials to be used by MinIO instance.
-  credsSecret:
-    name: minio-creds-secret
-  ## PodManagement policy for pods created by StatefulSet. Can be "OrderedReady" or "Parallel"
-  ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
-  ## for details. Defaults to "Parallel"
-  ## If set to "OrderedReady", then disable Readiness checks below. Readiness check will only
-  ## work if PodManagementPolicy is set to "Parallel".
-  podManagementPolicy: Parallel
+  ## Define configuration for MCS (Graphical user interface for MinIO)
+  mcs:
+    image: minio/mcs:v0.0.3
+    mcsAccessKey: "mcs"
+    mcsSecret:
+      name: minio-mcs-secret
+    metadata:
+      labels:
+        app: mcs # Should match spec.mcs.selector.matchLabels
+    selector:
+      matchLabels:
+        app: mcs # Should match spec.mcs.metadata.labels
+  ## Define configuration for KES (stateless and distributed key-management system)
+  kes:
+    image: minio/kes:v0.9.0
+    replicas: 2
+    configSecret:
+      name: kes-config
+    metadata:
+      labels:
+        app: kes # Should match spec.kes.selector.matchLabels
+    selector:
+      matchLabels:
+        app: kes # Should match spec.kes.metadata.labels
   ## Secret with certificates to configure TLS for MinIO certs. Create secrets as explained
   ## here: https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
   # externalCertSecret:
   # name: tls-ssl-minio
   ## Enable Kubernetes based certificate generation and signing as explained in
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
-  requestAutoCert: false
+  requestAutoCert: true
+  ## PodManagement policy for pods created by StatefulSet. Can be "OrderedReady" or "Parallel"
+  ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
+  ## for details. Defaults to "Parallel"
+  ## If set to "OrderedReady", then disable Readiness checks below. Readiness check will only
+  ## work if PodManagementPolicy is set to "Parallel".
+  podManagementPolicy: Parallel
   ## Used when "requestAutoCert" is set to true. Set CommonName for the auto-generated certificate.
   ## Internal DNS name for the pod will be used if CommonName is not provided.
   ## DNS name format is minio-{0...3}.minio.default.svc.cluster.local
@@ -95,18 +132,6 @@ spec:
   #    key: dedicated
   #    operator: Equal
   #    value: storage
-  ## Define configuration for mcs (A graphical user interface for MinIO)
-  mcs:
-    image: minio/mcs:v0.0.3
-    mcsAccessKey: "mcs"
-    mcsSecret:
-      name: minio-mcs-secret
-    selector:
-      matchLabels:
-        app: mcs # Should match spec.mcs.metadata.labels
-    metadata:
-      labels:
-        app: mcs # Should match spec.mcs.selector.matchLabels
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
   env:
     - name: MINIO_BROWSER
@@ -123,6 +148,7 @@ spec:
   ## restarts the pods if liveness checks fail.
   liveness:
     httpGet:
+      scheme: HTTPS
       path: /minio/health/live
       port: 9000
     initialDelaySeconds: 120
@@ -134,6 +160,7 @@ spec:
   ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
   readiness:
     httpGet:
+      scheme: HTTPS
       path: /minio/health/ready
       port: 9000
     initialDelaySeconds: 120

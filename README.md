@@ -32,15 +32,6 @@ This will create all relevant resources required for the Operator to work. Here 
 - `ClusterRoleBinding`: This cluster wide binding binds the service account `minio-operator-sa` to cluster role `minio-operator-role`.
 - `Deployment`: Deployment creates a pod using the MinIO-Operator Docker image. This is where the custom controller runs and looks after any changes in custom resource.
 
-### Environment variables
-
-These variables may be passed to operator Deployment in order to modify some of its parameters
-
-| Name                | Default | Description                                                                                                                   |
-| ---                 | ---     | ---                                                                                                                           |
-| `WATCHED_NAMESPACE` |         | If set, the operator will watch only MinIO resources deployed in the specified namespace. All namespaces are watched if empty |
-| `CLUSTER_DOMAIN`    | cluster.local | Cluster Domain of the Kubernetes cluster |
-
 ### Create a MinIO instance
 
 Once MinIO-Operator deployment is running, you can create MinIO instances using the below command
@@ -77,19 +68,27 @@ For example, to expose the created headless Service `minio-hl-svc` on http://min
 kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/expose-via-istio.yaml
 ```
 
+### Environment variables
+
+These variables may be passed to operator Deployment in order to modify some of its parameters
+
+| Name                | Default | Description                                                                                                                   |
+| ---                 | ---     | ---                                                                                                                           |
+| `WATCHED_NAMESPACE` |         | If set, the operator will watch only MinIO resources deployed in the specified namespace. All namespaces are watched if empty |
+| `CLUSTER_DOMAIN`    | cluster.local | Cluster Domain of the Kubernetes cluster |
+
 ## Features
 
 MinIO-Operator currently supports following features:
 
-- Create and delete highly available distributed MinIO clusters.
-- Expand an existing MinIO cluster.
-- Upgrading existing distributed MinIO clusters.
-
-Refer [`minioinstance.yaml`](https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml) for details on how to pass supported fields to the operator.
-
-## Upcoming features
-
-- Continuous remote site mirroring with [`mc mirror`](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror)
+| Feature                 | Reference Document |
+|-------------------------|--------------------|
+| Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/minio-operator#create-a-minio-instance). |
+| Expand an existing MinIO cluster                               | [Expand a MinIO Cluster](https://github.com/minio/minio-operator#expand-a-minio-cluster). |
+| Automatic TLS for MinIO                                        | [Automatic TLS for MinIO Instance](https://github.com/minio/minio-operator/blob/master/docs/tls.md#automatic-csr-generation). |
+| Deploy [MCS](https://github.com/minio/mcs) with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/minio-operator/blob/master/docs/mcs.md). |
+| Deploy [KES](https://github.com/minio/kes) with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/minio-operator/blob/master/docs/kes.md). |
+| Deploy [mc mirror](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror)  | [Deploy Mirror Instance](https://github.com/minio/minio-operator/blob/master/docs/mirror.md). |
 
 ## Explore Further
 

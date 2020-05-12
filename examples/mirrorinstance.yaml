@@ -15,7 +15,7 @@ spec:
     labels:
       app: mc # Should match spec.selector.matchLabels
   ## Registry location and Tag to download MC image
-  image: minio/mc:RELEASE.2020-04-25T00-43-23Z
+  image: minio/mc:RELEASE.2020-05-06T18-00-07Z
   ## This is used to set configuration
   ## Format name: MC_HOST_<alias>
   ## Format value: https://<access_key>:<secret_key>@<minio_server_url>

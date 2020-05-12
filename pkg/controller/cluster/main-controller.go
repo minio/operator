@@ -33,23 +33,26 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
+	batchinformers "k8s.io/client-go/informers/batch/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
+	batchlisters "k8s.io/client-go/listers/batch/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
 
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/operator.min.io/v1"
 	listers "github.com/minio/minio-operator/pkg/client/listers/operator.min.io/v1"
 	"github.com/minio/minio-operator/pkg/resources/deployments"
+	"github.com/minio/minio-operator/pkg/resources/jobs"
 	"github.com/minio/minio-operator/pkg/resources/services"
 	"github.com/minio/minio-operator/pkg/resources/statefulsets"
 )
@@ -92,6 +95,13 @@ type Controller struct {
 	// has synced at least once.
 	deploymentListerSynced cache.InformerSynced
 
+	// jobLister is able to list/get Deployments from a shared
+	// informer's store.
+	jobLister batchlisters.JobLister
+	// jobListerSynced returns true if the Deployment shared informer
+	// has synced at least once.
+	jobListerSynced cache.InformerSynced
+
 	// minioInstancesLister lists MinIOInstance from a shared informer's
 	// store.
 	minioInstancesLister listers.MinIOInstanceLister
@@ -124,6 +134,7 @@ func NewController(
 	certClient certapi.CertificatesV1beta1Client,
 	statefulSetInformer appsinformers.StatefulSetInformer,
 	deploymentInformer appsinformers.DeploymentInformer,
+	jobInformer batchinformers.JobInformer,
 	minioInstanceInformer informers.MinIOInstanceInformer,
 	serviceInformer coreinformers.ServiceInformer) *Controller {
 
@@ -145,6 +156,8 @@ func NewController(
 		statefulSetListerSynced: statefulSetInformer.Informer().HasSynced,
 		deploymentLister:        deploymentInformer.Lister(),
 		deploymentListerSynced:  statefulSetInformer.Informer().HasSynced,
+		jobLister:               jobInformer.Lister(),
+		jobListerSynced:         jobInformer.Informer().HasSynced,
 		minioInstancesLister:    minioInstanceInformer.Lister(),
 		minioInstancesSynced:    minioInstanceInformer.Informer().HasSynced,
 		serviceLister:           serviceInformer.Lister(),
@@ -323,21 +336,22 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	mi.EnsureDefaults()
+	miniov1.InitGlobals(mi)
 
-	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.GetServiceName())
+	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.MinIOCIServiceName())
 	// If the service doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
-		klog.V(2).Infof("Creating a new Service for cluster %q", nsName)
-		svc = services.NewServiceForCluster(mi)
-		_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts)
+		klog.V(2).Infof("Creating a new Cluster IP Service for cluster %q", nsName)
+		svc = services.NewClusterIPForMinIO(mi)
+		_, err = c.kubeClientSet.CoreV1().Services(mi.Namespace).Create(ctx, svc, cOpts)
 	}
 
-	hlSvc, err := c.serviceLister.Services(mi.Namespace).Get(mi.GetHeadlessServiceName())
+	hlSvc, err := c.serviceLister.Services(mi.Namespace).Get(mi.MinIOHLServiceName())
 	// If the headless service doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
 		klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
-		hlSvc = services.NewHeadlessServiceForCluster(mi)
-		_, err = c.kubeClientSet.CoreV1().Services(hlSvc.Namespace).Create(ctx, hlSvc, cOpts)
+		hlSvc = services.NewHeadlessForMinIO(mi)
+		_, err = c.kubeClientSet.CoreV1().Services(mi.Namespace).Create(ctx, hlSvc, cOpts)
 	}
 
 	// If an error occurs during Get/Create, we'll requeue the item so we can
@@ -356,7 +370,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if mi.RequiresAutoCertSetup() {
-		_, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.GetCSRName(), metav1.GetOptions{})
+		_, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOCSRName(), metav1.GetOptions{})
 		if err != nil {
 			// If the CSR doesn't exist, we'll create it
 			if apierrors.IsNotFound(err) {
@@ -367,13 +381,41 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 		}
+		if mi.HasKESEnabled() {
+			_, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.KESCSRName(), metav1.GetOptions{})
+			if err != nil {
+				// If the CSR doesn't exist, we'll create it
+				if apierrors.IsNotFound(err) {
+					klog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
+					err = c.createKESTLSCSR(ctx, mi)
+					if err != nil {
+						return err
+					}
+				} else {
+					return err
+				}
+			}
+			_, err = c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOClientCSRName(), metav1.GetOptions{})
+			if err != nil {
+				// If the CSR doesn't exist, we'll create it
+				if apierrors.IsNotFound(err) {
+					klog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
+					err = c.createMinIOClientTLSCSR(ctx, mi)
+					if err != nil {
+						return err
+					}
+				} else {
+					return err
+				}
+			}
+		}
 	}
 
 	// Get the StatefulSet with the name specified in MinIOInstance.spec
 	ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.Name)
 	// If the resource doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
-		ss = statefulsets.NewForCluster(mi, hlSvc.Name)
+		ss = statefulsets.NewForMinIO(mi, hlSvc.Name)
 		ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 	}
 
@@ -384,12 +426,12 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	if mi.HasMcsEnabled() {
-		// Get the Deployment with the name specified in MinIOInstance.spec
-		d, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.Name)
+	if mi.HasMCSEnabled() {
+		// Get the Deployment with the name specified in MirrorInstace.spec
+		d, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.MCSDeploymentName())
 		// If the resource doesn't exist, we'll create it
 		if apierrors.IsNotFound(err) {
-			if !mi.HasCredsSecret() || !mi.HasMcsSecret() {
+			if !mi.HasCredsSecret() || !mi.HasMCSSecret() {
 				msg := "Please set the credentials"
 				klog.V(2).Infof(msg)
 				return fmt.Errorf(msg)
@@ -401,31 +443,75 @@ func (c *Controller) syncHandler(key string) error {
 				return sErr
 			}
 
-			mcsSecretName := mi.Spec.Mcs.McsSecret.Name
+			mcsSecretName := mi.Spec.MCS.MCSSecret.Name
 			mcsSecret, sErr := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, mcsSecretName, gOpts)
 			if sErr != nil {
 				return sErr
 			}
 			// Check if any one replica is READY
 			if ss.Status.ReadyReplicas > 0 {
-				if pErr := mi.CreateMcsUser(minioSecret.Data, mcsSecret.Data); pErr != nil {
+				if pErr := mi.CreateMCSUser(minioSecret.Data, mcsSecret.Data); pErr != nil {
 					klog.V(2).Infof(pErr.Error())
 					return pErr
 				}
 				// Create MCS Deployment
-				d = deployments.NewMcsDeployment(mi)
+				d = deployments.NewForMCS(mi)
 				d, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, d, cOpts)
 				if err != nil {
 					klog.V(2).Infof(err.Error())
 					return err
 				}
 				// Create MCS service
-				mcsSvc := services.NewMcsServiceForCluster(mi)
+				mcsSvc := services.NewClusterIPForMCS(mi)
 				_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, mcsSvc, cOpts)
 				if err != nil {
 					klog.V(2).Infof(err.Error())
 					return err
 				}
+			}
+		} else {
+			return err
+		}
+	}
+
+	if mi.HasKESEnabled() && !(mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup()) {
+		msg := "KES Setup Requires MinIO to be configured with TLS"
+		klog.V(2).Infof(msg)
+		return fmt.Errorf(msg)
+	}
+
+	if mi.HasKESEnabled() && (mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup()) {
+		svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.KESHLServiceName())
+		// If the headless service doesn't exist, we'll create it
+		if apierrors.IsNotFound(err) {
+			klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
+			svc = services.NewHeadlessForKES(mi)
+			_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts)
+		} else {
+			return err
+		}
+		// Get the StatefulSet with the name specified in spec
+		ks, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.KESStatefulSetName())
+		if apierrors.IsNotFound(err) {
+			ks = statefulsets.NewForKES(mi, svc.Name)
+			klog.V(2).Infof("Creating a new StatefulSet for cluster %q", nsName)
+			ks, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ks, cOpts)
+			if err != nil {
+				klog.V(2).Infof(err.Error())
+				return err
+			}
+		} else {
+			return err
+		}
+		// After KES and MinIO are deployed successfully, create the MinIO Key on KES KMS Backend
+		j, err := c.jobLister.Jobs(mi.Namespace).Get(mi.Name)
+		if apierrors.IsNotFound(err) {
+			j = jobs.NewForKES(mi)
+			klog.V(2).Infof("Creating a new Job for cluster %q", nsName)
+			j, err = c.kubeClientSet.BatchV1().Jobs(mi.Namespace).Create(ctx, j, cOpts)
+			if err != nil {
+				klog.V(2).Infof(err.Error())
+				return err
 			}
 		} else {
 			return err
@@ -443,9 +529,9 @@ func (c *Controller) syncHandler(key string) error {
 	// If this number of the replicas on the MinIOInstance resource is specified, and the
 	// number does not equal the current desired replicas on the StatefulSet, we
 	// should update the StatefulSet resource.
-	if mi.GetReplicas() != *ss.Spec.Replicas {
-		klog.V(4).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.GetReplicas(), *ss.Spec.Replicas)
-		ss = statefulsets.NewForCluster(mi, hlSvc.Name)
+	if mi.MinIOReplicas() != *ss.Spec.Replicas {
+		klog.V(4).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.MinIOReplicas(), *ss.Spec.Replicas)
+		ss = statefulsets.NewForMinIO(mi, hlSvc.Name)
 		err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Delete(ctx, ss.Name, metav1.DeleteOptions{})
 		if err != nil {
 			return err
@@ -461,7 +547,7 @@ func (c *Controller) syncHandler(key string) error {
 	// should update the StatefulSet resource.
 	if mi.Spec.Image != ss.Spec.Template.Spec.Containers[0].Image {
 		klog.V(4).Infof("Updating MinIOInstance %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
-		ss = statefulsets.NewForCluster(mi, hlSvc.Name)
+		ss = statefulsets.NewForMinIO(mi, hlSvc.Name)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts)
 	}
 
@@ -472,9 +558,9 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	if mi.HasMcsEnabled() && d != nil && mi.Spec.Mcs.Image != d.Spec.Template.Spec.Containers[0].Image {
-		klog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name, mi.Spec.Mcs.Image, d.Spec.Template.Spec.Containers[0].Image)
-		d = deployments.NewMcsDeployment(mi)
+	if mi.HasMCSEnabled() && d != nil && mi.Spec.MCS.Image != d.Spec.Template.Spec.Containers[0].Image {
+		klog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name, mi.Spec.MCS.Image, d.Spec.Template.Spec.Containers[0].Image)
+		d = deployments.NewForMCS(mi)
 		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, d, uOpts)
 		// If an error occurs during Update, we'll requeue the item so we can
 		// attempt processing again later. This could have been caused by a
@@ -493,7 +579,7 @@ func (c *Controller) syncHandler(key string) error {
 	return nil
 }
 
-func (c *Controller) updateMinIOInstanceStatus(ctx context.Context, minioInstance *miniov1beta1.MinIOInstance, statefulSet *appsv1.StatefulSet) error {
+func (c *Controller) updateMinIOInstanceStatus(ctx context.Context, minioInstance *miniov1.MinIOInstance, statefulSet *appsv1.StatefulSet) error {
 	opts := metav1.UpdateOptions{}
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy

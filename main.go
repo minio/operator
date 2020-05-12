@@ -115,6 +115,7 @@ func main() {
 	mainController := cluster.NewController(kubeClient, controllerClient, *certClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
+		kubeInformerFactory.Batch().V1().Jobs(),
 		minioInformerFactory.Operator().V1().MinIOInstances(),
 		kubeInformerFactory.Core().V1().Services())
 
