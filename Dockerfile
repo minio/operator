@@ -1,4 +1,4 @@
-FROM golang:1.14.0
+FROM golang:1.14
 
 ADD go.mod /go/src/github.com/minio/minio-operator/go.mod
 ADD go.sum /go/src/github.com/minio/minio-operator/go.sum
@@ -9,7 +9,6 @@ RUN apt-get update -y && apt-get install -y ca-certificates
 
 # Get dependencies - will also be cached if we won't change mod/sum
 RUN go mod download
-
 
 ADD . /go/src/github.com/minio/minio-operator/
 WORKDIR /go/src/github.com/minio/minio-operator/
