@@ -17,7 +17,7 @@ MinIO is a high performance distributed object storage server, designed for larg
 
 ### Create Operator and related resources
 
-To start MinIO-Operator, use the `docs/minio-operator.yaml` file.
+To start MinIO-Operator, use the `minio-operator.yaml` file.
 
 ```
 kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
