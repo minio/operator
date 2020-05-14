@@ -44,11 +44,17 @@ If the MirrorInstance is named as `mirrorinstance`, resources and their names as
 | spec.tolerations | Define a toleration for the MinIOInstance pod to match on a taint. Refer [this document](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/) for details. |
 | spec.securityContext | Define a security context for the MinIOInstance pod. Refer [this document](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) for details. |
 | spec.mcs | Defines the mcs configuration. mcs is a graphical user interface for MinIO. Refer [this](https://github.com/minio/mcs) |
-| spec.mcs.image | Defines the mcs image (If unspecified, It will be set to the default: `minio/mcs:v0.0.2`) |
+| spec.mcs.image | Defines the mcs image. |
 | spec.mcs.mcsAccessKey | Specify the access key to be used by mcs |
 | spec.mcs.mcsSecret | Use this secret to assign mcs credentials to MinIOInstance. |
 | spec.mcs.selector | Add a selector for the mcs. Which will be used by the mcs container for grouping. (Note: Should not match the labels provided in `spec.selector`) |
 | spec.mcs.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). [Note: Should match the labels in `spec.mcs.selector`] |
+| spec.kes | Defines the KES configuration. Refer [this](https://github.com/minio/kes) |
+| spec.kes.replicas | Number of KES pods to be created. |
+| spec.kes.image | Defines the KES image. |
+| spec.kes.configSecret | Secret to specify KES Configuration. This is a mandatory field. |
+| spec.kes.selector | Add a selector for the KES. Which will be used by the KES pods for grouping. (Note: Should not match the labels provided in `spec.selector`) |
+| spec.kes.metadata | This allows a way to map metadata to the KES pods. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). [Note: Should match the labels in `spec.kes.selector`] |
 
 ## MirrorInstance Fields
 

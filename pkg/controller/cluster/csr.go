@@ -25,7 +25,10 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -33,8 +36,7 @@ import (
 
 	"k8s.io/klog"
 
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
-	"github.com/minio/minio-operator/pkg/constants"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 
 	certificates "k8s.io/api/certificates/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,10 +67,10 @@ func isEqual(a, b []string) bool {
 	return true
 }
 
-func generateCryptoData(mi *miniov1beta1.MinIOInstance) ([]byte, []byte, error) {
+func generateCryptoData(mi *miniov1.MinIOInstance) ([]byte, []byte, error) {
 	dnsNames := make([]string, 0)
 	klog.V(0).Infof("Generating private key")
-	privateKey, err := newPrivateKey(constants.DefaultEllipticCurve)
+	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
 	if err != nil {
 		klog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
 		return nil, nil, err
@@ -82,10 +84,12 @@ func generateCryptoData(mi *miniov1beta1.MinIOInstance) ([]byte, []byte, error) 
 
 	klog.V(0).Infof("Generating CSR with CN=%s", mi.Spec.CertConfig.CommonName)
 
-	if isEqual(mi.Spec.CertConfig.DNSNames, mi.GetHosts()) {
+	hosts := mi.AllMinIOHosts()
+
+	if isEqual(mi.Spec.CertConfig.DNSNames, hosts) {
 		dnsNames = mi.Spec.CertConfig.DNSNames
 	} else {
-		dnsNames = append(mi.Spec.CertConfig.DNSNames, mi.GetHosts()...)
+		dnsNames = append(mi.Spec.CertConfig.DNSNames, hosts...)
 	}
 
 	csrTemplate := x509.CertificateRequest{
@@ -107,40 +111,42 @@ func generateCryptoData(mi *miniov1beta1.MinIOInstance) ([]byte, []byte, error) 
 
 // createCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that MinIO statefulset will use to mount private key and certificate for TLS
-func (c *Controller) createCSR(ctx context.Context, mi *miniov1beta1.MinIOInstance) error {
+// This Method Blocks till the CSR Request is approved via kubectl approve
+func (c *Controller) createCSR(ctx context.Context, mi *miniov1.MinIOInstance) error {
 	privKeysBytes, csrBytes, err := generateCryptoData(mi)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err
 	}
 
-	klog.V(2).Infof("Creating csr/%s", mi.GetCSRName())
-	err = c.submitCSR(ctx, mi, csrBytes)
+	err = c.submitCSR(ctx, mi.MinIOPodLabels(), mi.MinIOCSRName(), mi.Namespace, csrBytes, mi)
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.GetCSRName(), err)
+		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.MinIOCSRName(), err)
 		return err
 	}
-	klog.V(0).Infof("Successfully created csr/%s", mi.GetCSRName())
 
 	// fetch certificate from CSR
-	certbytes, err := c.fetchCertificate(ctx, mi.GetCSRName())
+	certbytes, err := c.fetchCertificate(ctx, mi.MinIOCSRName())
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.GetCSRName(), err)
+		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.MinIOCSRName(), err)
 		return err
 	}
+
 	// PEM encode private ECDSA key
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
+
 	// Create secret for MinIO Statefulset to use
-	err = c.createSecret(ctx, mi, encodedPrivKey, certbytes)
+	err = c.createSecret(ctx, mi, mi.MinIOPodLabels(), mi.MinIOTLSSecretName(), mi.Namespace, encodedPrivKey, certbytes)
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.GetTLSSecretName(), err)
+		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.MinIOTLSSecretName(), err)
 		return err
 	}
+
 	return nil
 }
 
 // SubmitCSR is equivalent to kubectl create ${CSR}, if the override is configured, it becomes kubectl apply ${CSR}
-func (c *Controller) submitCSR(ctx context.Context, mi *miniov1beta1.MinIOInstance, csrBytes []byte) error {
+func (c *Controller) submitCSR(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, mi *miniov1.MinIOInstance) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 
 	kubeCSR := &certificates.CertificateSigningRequest{
@@ -149,14 +155,14 @@ func (c *Controller) submitCSR(ctx context.Context, mi *miniov1beta1.MinIOInstan
 			Kind:       "CertificateSigningRequest",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      mi.GetCSRName(),
-			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
-			Namespace: mi.Namespace,
+			Name:      name,
+			Labels:    labels,
+			Namespace: namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
-					Group:   miniov1beta1.SchemeGroupVersion.Group,
-					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.MinIOCRDResourceKind,
+					Group:   miniov1.SchemeGroupVersion.Group,
+					Version: miniov1.SchemeGroupVersion.Version,
+					Kind:    miniov1.MinIOCRDResourceKind,
 				}),
 			},
 		},
@@ -181,12 +187,12 @@ func (c *Controller) submitCSR(ctx context.Context, mi *miniov1beta1.MinIOInstan
 // FetchCertificate fetches the generated certificate from the CSR
 func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]byte, error) {
 	klog.V(0).Infof("Start polling for certificate of csr/%s, every %s, timeout after %s", csrName,
-		constants.DefaultQueryInterval, constants.DefaultQueryTimeout)
+		miniov1.DefaultQueryInterval, miniov1.DefaultQueryTimeout)
 
-	tick := time.NewTicker(constants.DefaultQueryInterval)
+	tick := time.NewTicker(miniov1.DefaultQueryInterval)
 	defer tick.Stop()
 
-	timeout := time.NewTimer(constants.DefaultQueryTimeout)
+	timeout := time.NewTimer(miniov1.DefaultQueryTimeout)
 	defer tick.Stop()
 
 	ch := make(chan os.Signal)
@@ -216,7 +222,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 					return nil, err
 				}
 			}
-			klog.V(1).Infof("Certificate of csr/%s still not available, next try in %d", csrName, constants.DefaultQueryInterval)
+			klog.V(1).Infof("Certificate of csr/%s still not available, next try in %d", csrName, miniov1.DefaultQueryInterval)
 
 		case <-timeout.C:
 			return nil, fmt.Errorf("timeout during certificate fetching of csr/%s", csrName)
@@ -224,7 +230,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 	}
 }
 
-func (c *Controller) createSecret(ctx context.Context, mi *miniov1beta1.MinIOInstance, pkBytes, certBytes []byte) error {
+func (c *Controller) createSecret(ctx context.Context, mi *miniov1.MinIOInstance, labels map[string]string, name, namespace string, pkBytes, certBytes []byte) error {
 	secret := &corev1.Secret{
 		Type: "Opaque",
 		TypeMeta: metav1.TypeMeta{
@@ -232,14 +238,14 @@ func (c *Controller) createSecret(ctx context.Context, mi *miniov1beta1.MinIOIns
 			APIVersion: "apps/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      mi.GetTLSSecretName(),
-			Namespace: mi.Namespace,
-			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
+			Name:      name,
+			Namespace: namespace,
+			Labels:    labels,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
-					Group:   miniov1beta1.SchemeGroupVersion.Group,
-					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.MinIOCRDResourceKind,
+					Group:   miniov1.SchemeGroupVersion.Group,
+					Version: miniov1.SchemeGroupVersion.Version,
+					Kind:    miniov1.MinIOCRDResourceKind,
 				}),
 			},
 		},
@@ -254,4 +260,24 @@ func (c *Controller) createSecret(ctx context.Context, mi *miniov1beta1.MinIOIns
 		return err
 	}
 	return nil
+}
+
+func parseCertificate(r io.Reader) (*x509.Certificate, error) {
+	certPEMBlock, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		var certDERBlock *pem.Block
+		certDERBlock, certPEMBlock = pem.Decode(certPEMBlock)
+		if certDERBlock == nil {
+			break
+		}
+
+		if certDERBlock.Type == "CERTIFICATE" {
+			return x509.ParseCertificate(certDERBlock.Bytes)
+		}
+	}
+	return nil, errors.New("found no (non-CA) certificate in any PEM block")
 }

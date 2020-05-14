@@ -18,21 +18,21 @@
 package deployments
 
 import (
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
-	"github.com/minio/minio-operator/pkg/constants"
+	"net"
+	"strconv"
+
+	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// Returns the Mcs environment variables set in configuration.
-// If a user specifies a set of secrets for the MCS Environment
-func mcsEnvironmentVars(mi *miniov1beta1.MinIOInstance) []corev1.EnvVar {
+// Returns the MCS environment variables set in configuration.
+func mcsEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 	envVars := make([]corev1.EnvVar, 0)
-	if mi.HasMcsSecret() {
+	if mi.HasMCSSecret() {
 		var secretName string
-		secretName = mi.Spec.Mcs.McsSecret.Name
+		secretName = mi.Spec.MCS.MCSSecret.Name
 		envVars = append(envVars, corev1.EnvVar{
 			Name: "MCS_HMAC_JWT_SECRET",
 			ValueFrom: &corev1.EnvVarSource{
@@ -65,7 +65,7 @@ func mcsEnvironmentVars(mi *miniov1beta1.MinIOInstance) []corev1.EnvVar {
 			},
 		}, corev1.EnvVar{
 			Name:  "MCS_MINIO_SERVER",
-			Value: "http://" + mi.GetServiceHost(),
+			Value: miniov1.Scheme + "://" + net.JoinHostPort(mi.MinIOCIServiceHost(), strconv.Itoa(miniov1.MinIOPort)),
 		}, corev1.EnvVar{
 			Name: "MCS_SECRET_KEY",
 			ValueFrom: &corev1.EnvVarSource{
@@ -78,18 +78,14 @@ func mcsEnvironmentVars(mi *miniov1beta1.MinIOInstance) []corev1.EnvVar {
 			},
 		}, corev1.EnvVar{
 			Name:  "MCS_ACCESS_KEY",
-			Value: mi.Spec.Mcs.McsAccessKey,
+			Value: mi.Spec.MCS.MCSAccessKey,
 		})
 	}
-	// Return environment variables
 	return envVars
 }
 
-func mcsMetadata(mi *miniov1beta1.MinIOInstance) metav1.ObjectMeta {
+func mcsMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if mi.HasMcsMetadata() {
-		meta = *mi.Spec.Mcs.Metadata
-	}
 	// Initialize empty fields
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
@@ -97,63 +93,60 @@ func mcsMetadata(mi *miniov1beta1.MinIOInstance) metav1.ObjectMeta {
 	if meta.Annotations == nil {
 		meta.Annotations = make(map[string]string)
 	}
+
+	if mi.HasMCSMetadata() {
+		meta = *mi.Spec.MCS.Metadata
+	}
+	for k, v := range mi.MCSPodLabels() {
+		meta.Labels[k] = v
+	}
 	// Add the Selector labels set by user
-	if mi.HasMcsSelector() {
-		for k, v := range mi.Spec.Mcs.Selector.MatchLabels {
+	if mi.HasMCSSelector() {
+		for k, v := range mi.Spec.MCS.Selector.MatchLabels {
 			meta.Labels[k] = v
 		}
 	}
-
-	// attach McsInstanceLabel to be able to target this from the MCS service
-	meta.Labels[constants.McsInstanceLabel] = mi.Name + constants.McsServiceNameSuffix
-
 	return meta
 }
 
-// Builds the Mcs container for a MinIOInstance.
-func mcsContainer(mi *miniov1beta1.MinIOInstance) corev1.Container {
+// Builds the MCS container for a MinIOInstance.
+func mcsContainer(mi *miniov1.MinIOInstance) corev1.Container {
 	args := []string{"server"}
 
 	return corev1.Container{
-		Name:  constants.McsName,
-		Image: mi.Spec.Mcs.Image,
+		Name:  miniov1.MCSContainerName,
+		Image: mi.Spec.MCS.Image,
 		Ports: []corev1.ContainerPort{
 			{
-				ContainerPort: constants.McsPort,
+				ContainerPort: miniov1.MCSPort,
 			},
 		},
-		ImagePullPolicy: constants.DefaultImagePullPolicy,
+		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
 		Args:            args,
 		Env:             mcsEnvironmentVars(mi),
 		Resources:       mi.Spec.Resources,
 	}
 }
 
-// NewMcsDeployment creates a new Deployment for the given MinIO instance.
-func NewMcsDeployment(mi *miniov1beta1.MinIOInstance) *appsv1.Deployment {
+// NewForMCS creates a new Deployment for the given MinIO instance.
+func NewForMCS(mi *miniov1.MinIOInstance) *appsv1.Deployment {
 
 	var replicas int32 = 1
 
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: mi.Namespace,
-			Name:      mi.Name,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
-					Group:   miniov1beta1.SchemeGroupVersion.Group,
-					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.MinIOCRDResourceKind,
-				}),
-			},
+			Namespace:       mi.Namespace,
+			Name:            mi.MCSDeploymentName(),
+			OwnerReferences: mi.OwnerRef(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
-			Selector: mi.Spec.Mcs.Selector,
+			Selector: mi.Spec.MCS.Selector,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: mcsMetadata(mi),
 				Spec: corev1.PodSpec{
 					Containers:    []corev1.Container{mcsContainer(mi)},
-					RestartPolicy: corev1.RestartPolicyAlways,
+					RestartPolicy: miniov1.MCSRestartPolicy,
 				},
 			},
 		},

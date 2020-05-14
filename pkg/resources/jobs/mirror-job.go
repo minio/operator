@@ -20,16 +20,15 @@ package jobs
 import (
 	"strings"
 
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
-	"github.com/minio/minio-operator/pkg/constants"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// NewForCluster creates a new Job for the given mirror instance.
-func NewForCluster(mi *miniov1beta1.MirrorInstance) *batchv1.Job {
+// NewForMirror creates a new Job for the given mirror instance.
+func NewForMirror(mi *miniov1.MirrorInstance) *batchv1.Job {
 
 	containers := []corev1.Container{mirrorJobContainer(mi)}
 
@@ -39,9 +38,9 @@ func NewForCluster(mi *miniov1beta1.MirrorInstance) *batchv1.Job {
 			Name:      mi.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
-					Group:   miniov1beta1.SchemeGroupVersion.Group,
-					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.MirrorCRDResourceKind,
+					Group:   miniov1.SchemeGroupVersion.Group,
+					Version: miniov1.SchemeGroupVersion.Version,
+					Kind:    miniov1.MirrorCRDResourceKind,
 				}),
 			},
 		},
@@ -49,7 +48,7 @@ func NewForCluster(mi *miniov1beta1.MirrorInstance) *batchv1.Job {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: mirrorMetadata(mi),
 				Spec: corev1.PodSpec{
-					RestartPolicy:    constants.MirrorJobRestartPolicy,
+					RestartPolicy:    miniov1.MirrorJobRestartPolicy,
 					Containers:       containers,
 					ImagePullSecrets: []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
 				},
@@ -61,11 +60,11 @@ func NewForCluster(mi *miniov1beta1.MirrorInstance) *batchv1.Job {
 }
 
 // Builds the mc container for a MirrorInstance.
-func mirrorJobContainer(mi *miniov1beta1.MirrorInstance) corev1.Container {
+func mirrorJobContainer(mi *miniov1.MirrorInstance) corev1.Container {
 	args := []string{"mirror"}
 
 	// Add default flags
-	args = append(args, constants.DefaultMirrorFlags...)
+	args = append(args, miniov1.DefaultMirrorFlags...)
 
 	for _, f := range mi.Spec.Args.Flags {
 		arg := strings.Split(f, " ")
@@ -81,16 +80,16 @@ func mirrorJobContainer(mi *miniov1beta1.MirrorInstance) corev1.Container {
 	}
 
 	return corev1.Container{
-		Name:            constants.MirorContainerName,
+		Name:            miniov1.MirrorContainerName,
 		Image:           mi.Spec.Image,
-		ImagePullPolicy: constants.DefaultImagePullPolicy,
+		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
 		Args:            args,
 		Env:             mirrorEnvironmentVars(mi),
 	}
 }
 
 // Returns the mc mirror environment variables set in configuration.
-func mirrorEnvironmentVars(mi *miniov1beta1.MirrorInstance) []corev1.EnvVar {
+func mirrorEnvironmentVars(mi *miniov1.MirrorInstance) []corev1.EnvVar {
 	envVars := make([]corev1.EnvVar, 0)
 	// Add all the environment variables
 	for _, e := range mi.Spec.Env {
@@ -103,7 +102,7 @@ func mirrorEnvironmentVars(mi *miniov1beta1.MirrorInstance) []corev1.EnvVar {
 // Returns the MC pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func mirrorMetadata(mi *miniov1beta1.MirrorInstance) metav1.ObjectMeta {
+func mirrorMetadata(mi *miniov1.MirrorInstance) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	if mi.HasMetadata() {
 		meta = *mi.Spec.Metadata

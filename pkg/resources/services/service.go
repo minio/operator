@@ -20,96 +20,89 @@ package services
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	miniov1beta1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
-	constants "github.com/minio/minio-operator/pkg/constants"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 )
 
-// NewServiceForCluster will return a new headless Kubernetes service for a MinIOInstance
-func NewServiceForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: constants.MinIOServicePortNumber, Name: constants.MinIOServicePortName}
+// NewClusterIPForMinIO will return a new headless Kubernetes service for a MinIOInstance
+func NewClusterIPForMinIO(mi *miniov1.MinIOInstance) *corev1.Service {
+	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServicePortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
-			Name:      mi.GetServiceName(),
-			Namespace: mi.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
-					Group:   miniov1beta1.SchemeGroupVersion.Group,
-					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.MinIOCRDResourceKind,
-				}),
-			},
-			Annotations: map[string]string{
-				"service.alpha.kubernetes.io/tolerate-unready-endpoints": "true",
-			},
+			Labels:          mi.MinIOPodLabels(),
+			Name:            mi.MinIOCIServiceName(),
+			Namespace:       mi.Namespace,
+			OwnerReferences: mi.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
 			PublishNotReadyAddresses: true,
 			Ports:                    []corev1.ServicePort{minioPort},
-			Selector: map[string]string{
-				constants.InstanceLabel: mi.Name,
-			},
+			Selector:                 mi.MinIOPodLabels(),
+			Type:                     corev1.ServiceTypeClusterIP,
 		},
 	}
 
 	return svc
 }
 
-// NewHeadlessServiceForCluster will return a new headless Kubernetes service for a MinIOInstance
-func NewHeadlessServiceForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: constants.MinIOServicePortNumber, Name: constants.MinIOServicePortName}
+// NewHeadlessForMinIO will return a new headless Kubernetes service for a MinIOInstance
+func NewHeadlessForMinIO(mi *miniov1.MinIOInstance) *corev1.Service {
+	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServicePortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
-			Name:      mi.GetHeadlessServiceName(),
-			Namespace: mi.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
-					Group:   miniov1beta1.SchemeGroupVersion.Group,
-					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.MinIOCRDResourceKind,
-				}),
-			},
-			Annotations: map[string]string{
-				"service.alpha.kubernetes.io/tolerate-unready-endpoints": "true",
-			},
+			Labels:          mi.MinIOPodLabels(),
+			Name:            mi.MinIOHLServiceName(),
+			Namespace:       mi.Namespace,
+			OwnerReferences: mi.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
 			PublishNotReadyAddresses: true,
 			Ports:                    []corev1.ServicePort{minioPort},
-			Selector: map[string]string{
-				constants.InstanceLabel: mi.Name,
-			},
-			ClusterIP: corev1.ClusterIPNone,
+			Selector:                 mi.MinIOPodLabels(),
+			Type:                     corev1.ServiceTypeClusterIP,
+			ClusterIP:                corev1.ClusterIPNone,
 		},
 	}
 
 	return svc
 }
 
-// NewMcsServiceForCluster will return a new service for a MinIOInstance's MCS
-func NewMcsServiceForCluster(mi *miniov1beta1.MinIOInstance) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: constants.McsPort, Name: constants.McsServicePortName}
+// NewHeadlessForKES will return a new headless Kubernetes service for a KES StatefulSet
+func NewHeadlessForKES(mi *miniov1.MinIOInstance) *corev1.Service {
+	kesPort := corev1.ServicePort{Port: miniov1.KESPort, Name: miniov1.KESServicePortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:    map[string]string{constants.InstanceLabel: mi.Name},
-			Name:      mi.GetMcsServiceName(),
-			Namespace: mi.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
-					Group:   miniov1beta1.SchemeGroupVersion.Group,
-					Version: miniov1beta1.SchemeGroupVersion.Version,
-					Kind:    constants.MinIOCRDResourceKind,
-				}),
-			},
+			Labels:          mi.KESPodLabels(),
+			Name:            mi.KESHLServiceName(),
+			Namespace:       mi.Namespace,
+			OwnerReferences: mi.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{minioPort},
-			Selector: map[string]string{
-				constants.McsInstanceLabel: mi.Name + constants.McsServiceNameSuffix,
-			},
+			PublishNotReadyAddresses: true,
+			Ports:                    []corev1.ServicePort{kesPort},
+			Selector:                 mi.KESPodLabels(),
+			Type:                     corev1.ServiceTypeClusterIP,
+			ClusterIP:                corev1.ClusterIPNone,
+		},
+	}
+
+	return svc
+}
+
+// NewClusterIPForMCS will return a new cluster IP service for MCS Deployment
+func NewClusterIPForMCS(mi *miniov1.MinIOInstance) *corev1.Service {
+	minioPort := corev1.ServicePort{Port: miniov1.MCSPort, Name: miniov1.MCSServicePortName}
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:          mi.MCSPodLabels(),
+			Name:            mi.MCSCIServiceName(),
+			Namespace:       mi.Namespace,
+			OwnerReferences: mi.OwnerRef(),
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:    []corev1.ServicePort{minioPort},
+			Selector: mi.MCSPodLabels(),
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 

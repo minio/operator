@@ -3,7 +3,6 @@ package v1
 import (
 	"testing"
 
-	constants "github.com/minio/minio-operator/pkg/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,9 +12,9 @@ func TestEnsureDefaults(t *testing.T) {
 	mi.EnsureDefaults()
 
 	t.Run("defaults", func(t *testing.T) {
-		assert.Equal(t, mi.Spec.Image, constants.DefaultMinIOImage)
-		assert.Equal(t, mi.Spec.Mountpath, constants.MinIOVolumeMountPath)
-		assert.Equal(t, mi.Spec.Subpath, constants.MinIOVolumeSubPath)
+		assert.Equal(t, mi.Spec.Image, DefaultMinIOImage)
+		assert.Equal(t, mi.Spec.Mountpath, MinIOVolumeMountPath)
+		assert.Equal(t, mi.Spec.Subpath, MinIOVolumeSubPath)
 		assert.False(t, mi.RequiresAutoCertSetup())
 	})
 

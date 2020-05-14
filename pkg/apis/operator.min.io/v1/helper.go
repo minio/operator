@@ -26,11 +26,10 @@ import (
 	"strconv"
 	"time"
 
-	"k8s.io/klog"
-
-	constants "github.com/minio/minio-operator/pkg/constants"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/klog"
 
 	"github.com/minio/minio/pkg/bucket/policy"
 	"github.com/minio/minio/pkg/bucket/policy/condition"
@@ -76,28 +75,31 @@ func (mi *MinIOInstance) RequiresAutoCertSetup() bool {
 	return mi.Spec.RequestAutoCert == true
 }
 
-// PodLabels returns the default labels
-func (mi *MinIOInstance) PodLabels() map[string]string {
-	m := make(map[string]string, 1)
-	m[constants.InstanceLabel] = mi.Name
-	return m
-}
-
-// GetVolumesPath returns the paths for MinIO mounts based on
+// VolumePath returns the paths for MinIO mounts based on
 // total number of volumes per MinIO server
-func (mi *MinIOInstance) GetVolumesPath() string {
+func (mi *MinIOInstance) VolumePath() string {
 	if mi.Spec.VolumesPerServer == 1 {
 		return path.Join(mi.Spec.Mountpath, mi.Spec.Subpath)
 	}
 	return path.Join(mi.Spec.Mountpath+"{0..."+strconv.Itoa((mi.Spec.VolumesPerServer)-1)+"}", mi.Spec.Subpath)
 }
 
-// GetReplicas returns the number of total replicas
+// MinIOReplicas returns the number of total replicas
 // required for this cluster
-func (mi *MinIOInstance) GetReplicas() int32 {
+func (mi *MinIOInstance) MinIOReplicas() int32 {
 	var replicas int32
 	for _, z := range mi.Spec.Zones {
 		replicas = replicas + z.Servers
+	}
+	return replicas
+}
+
+// KESReplicas returns the number of total KES replicas
+// required for this cluster
+func (mi *MinIOInstance) KESReplicas() int32 {
+	var replicas int32
+	if mi.Spec.KES != nil && mi.Spec.KES.Replicas != 0 {
+		replicas = mi.Spec.KES.Replicas
 	}
 	return replicas
 }
@@ -109,11 +111,11 @@ func (mi *MinIOInstance) GetReplicas() int32 {
 func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 	if mi.Spec.PodManagementPolicy == "" || (mi.Spec.PodManagementPolicy != appsv1.OrderedReadyPodManagement &&
 		mi.Spec.PodManagementPolicy != appsv1.ParallelPodManagement) {
-		mi.Spec.PodManagementPolicy = constants.DefaultPodManagementPolicy
+		mi.Spec.PodManagementPolicy = DefaultPodManagementPolicy
 	}
 
 	if mi.Spec.Image == "" {
-		mi.Spec.Image = constants.DefaultMinIOImage
+		mi.Spec.Image = DefaultMinIOImage
 	}
 
 	// Default an empty service name to the instance name
@@ -123,167 +125,177 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 
 	for _, z := range mi.Spec.Zones {
 		if z.Servers == 0 {
-			z.Servers = constants.DefaultServers
+			z.Servers = DefaultServers
 		}
 	}
 
 	if mi.Spec.VolumesPerServer == 0 {
-		mi.Spec.VolumesPerServer = constants.DefaultVolumesPerServer
+		mi.Spec.VolumesPerServer = DefaultVolumesPerServer
 	}
 
 	if mi.Spec.Mountpath == "" {
-		mi.Spec.Mountpath = constants.MinIOVolumeMountPath
+		mi.Spec.Mountpath = MinIOVolumeMountPath
 	}
 
 	if mi.Spec.Subpath == "" {
-		mi.Spec.Subpath = constants.MinIOVolumeSubPath
+		mi.Spec.Subpath = MinIOVolumeSubPath
 	}
 
 	if mi.RequiresAutoCertSetup() == true {
 		if mi.Spec.CertConfig != nil {
 			if mi.Spec.CertConfig.CommonName == "" {
-				mi.Spec.CertConfig.CommonName = mi.GetWildCardName()
+				mi.Spec.CertConfig.CommonName = mi.MinIOWildCardName()
 			}
 			if mi.Spec.CertConfig.DNSNames == nil {
-				mi.Spec.CertConfig.DNSNames = mi.GetHosts()
+				mi.Spec.CertConfig.DNSNames = mi.MinIOHosts()
 			}
 			if mi.Spec.CertConfig.OrganizationName == nil {
-				mi.Spec.CertConfig.OrganizationName = constants.DefaultOrgName
+				mi.Spec.CertConfig.OrganizationName = DefaultOrgName
 			}
 		} else {
 			mi.Spec.CertConfig = &CertificateConfig{
-				CommonName:       mi.GetWildCardName(),
-				DNSNames:         mi.GetHosts(),
-				OrganizationName: constants.DefaultOrgName,
+				CommonName:       mi.MinIOWildCardName(),
+				DNSNames:         mi.MinIOHosts(),
+				OrganizationName: DefaultOrgName,
 			}
 		}
 	}
 
 	if !mi.HasSelector() {
 		mi.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: mi.PodLabels(),
+			MatchLabels: mi.MinIOPodLabels(),
 		}
 	}
 
-	if mi.HasMcsEnabled() && mi.Spec.Mcs.Image == "" {
-		mi.Spec.Mcs.Image = constants.DefaultMcsImage
+	if mi.HasMCSEnabled() && mi.Spec.MCS.Image == "" {
+		mi.Spec.MCS.Image = DefaultMCSImage
+	}
+
+	if mi.HasKESEnabled() {
+		if mi.Spec.KES.Image == "" {
+			mi.Spec.KES.Image = DefaultKESImage
+		}
+		if mi.Spec.KES.Replicas == 0 {
+			mi.Spec.KES.Replicas = DefaultKESReplicas
+		}
 	}
 
 	return mi
 }
 
-// GetHosts returns the domain names managed by headless service created for
-// current MinIOInstance
-func (mi *MinIOInstance) GetHosts() []string {
+// MinIOHosts returns the domain names in ellipses format created for current MinIOInstance
+func (mi *MinIOInstance) MinIOHosts() []string {
 	hosts := make([]string, 0)
 	var max, index int32
 	// Create the ellipses style URL
-	// mi.Name is the headless service name
 	for _, z := range mi.Spec.Zones {
 		max = max + z.Servers
-		hosts = append(hosts, fmt.Sprintf("%s-{"+strconv.Itoa(int(index))+"..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc."+constants.ClusterDomain, mi.Name, mi.GetHeadlessServiceName(), mi.Namespace))
+		hosts = append(hosts, fmt.Sprintf("%s-{"+strconv.Itoa(int(index))+"..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc.%s", mi.MinIOStatefulSetName(), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
 		index = max
 	}
 	return hosts
 }
 
-// GetServiceHost returns headless service Host.
-// current MinIOInstance
-func (mi *MinIOInstance) GetServiceHost() string {
+// AllMinIOHosts returns the all the individual domain names relevant for current MinIOInstance
+func (mi *MinIOInstance) AllMinIOHosts() []string {
+	hosts := make([]string, 0)
+	var max, index int32
+	for _, z := range mi.Spec.Zones {
+		max = max + z.Servers
+		for index < max {
+			hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(index))+".%s.%s.svc.%s", mi.MinIOStatefulSetName(), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
+			index++
+		}
+	}
+	hosts = append(hosts, mi.MinIOCIServiceHost())
+	hosts = append(hosts, mi.MinIOHeadlessServiceHost())
+	return hosts
+}
+
+// MinIOCIServiceHost returns ClusterIP service Host for current MinIOInstance
+func (mi *MinIOInstance) MinIOCIServiceHost() string {
 	if mi.Spec.Zones[0].Servers == 1 {
 		msg := "Please set the server count > 1"
 		klog.V(2).Infof(msg)
 		return ""
 	}
-	hostStr := fmt.Sprintf("%s.%s.svc."+constants.ClusterDomain, mi.GetServiceName(), mi.Namespace)
-	return net.JoinHostPort(hostStr, strconv.Itoa(constants.MinIOServicePortNumber))
+	return fmt.Sprintf("%s.%s.svc.%s", mi.MinIOCIServiceName(), mi.Namespace, ClusterDomain)
 }
 
-// GetWildCardName returns the wild card name managed by headless service created for
-// current MinIOInstance
-func (mi *MinIOInstance) GetWildCardName() string {
-	// mi.Name is the headless service name
-	return fmt.Sprintf("*.%s.%s.svc."+constants.ClusterDomain, mi.GetHeadlessServiceName(), mi.Namespace)
-}
-
-// GetTLSSecretName returns the name of Secret that has TLS related Info (Cert & Prviate Key)
-func (mi *MinIOInstance) GetTLSSecretName() string {
-	return mi.Name + constants.TLSSecretSuffix
-}
-
-// GetServiceName returns the name of service that is exposes the MinIO Instance
-func (mi *MinIOInstance) GetServiceName() string {
-	return mi.Spec.ServiceName
-}
-
-// GetHeadlessServiceName returns the name of headless service that is created to manage the
-// StatefulSet of this MinIOInstance
-func (mi *MinIOInstance) GetHeadlessServiceName() string {
-	return mi.Name + constants.HeadlessServiceNameSuffix
-}
-
-// GetMcsServiceName returns the name of the service that is created to access the mcs for the
-// MinIOInstance
-func (mi *MinIOInstance) GetMcsServiceName() string {
-	return mi.GetServiceName() + constants.McsServiceNameSuffix
-}
-
-// GetCSRName returns the name of CSR that generated if AutoTLS is enabled
-func (mi *MinIOInstance) GetCSRName() string {
-	return mi.Name + constants.CSRNameSuffix
-}
-
-// EnsureDefaults will ensure that if a user omits and fields in the
-// spec that are required, we set some sensible defaults.
-func (mi *MirrorInstance) EnsureDefaults() *MirrorInstance {
-	if mi.Spec.Image == "" {
-		mi.Spec.Image = constants.DefaultMCImage
+// MinIOHeadlessServiceHost returns headless service Host for current MinIOInstance
+func (mi *MinIOInstance) MinIOHeadlessServiceHost() string {
+	if mi.Spec.Zones[0].Servers == 1 {
+		msg := "Please set the server count > 1"
+		klog.V(2).Infof(msg)
+		return ""
 	}
-	return mi
+	return fmt.Sprintf("%s.%s.svc.%s", mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain)
 }
 
-// HasMetadata returns true if the user has provided a pod metadata
+// KESHosts returns the host names created for current KES StatefulSet
+func (mi *MinIOInstance) KESHosts() []string {
+	hosts := make([]string, 0)
+	var i int32 = 0
+	for i < mi.Spec.KES.Replicas {
+		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(i))+".%s.%s.svc.%s", mi.KESStatefulSetName(), mi.KESHLServiceName(), mi.Namespace, ClusterDomain))
+		i++
+	}
+	hosts = append(hosts, mi.KESServiceHost())
+	return hosts
+}
+
+// KESServiceHost returns headless service Host for KES in current MinIOInstance
+func (mi *MinIOInstance) KESServiceHost() string {
+	return fmt.Sprintf("%s.%s.svc.%s", mi.KESHLServiceName(), mi.Namespace, ClusterDomain)
+}
+
+// HasKESEnabled checks if kes configuration is provided by user
+func (mi *MinIOInstance) HasKESEnabled() bool {
+	return mi.Spec.KES != nil
+}
+
+// HasMCSEnabled checks if the mcs has been enabled by the user
+func (mi *MinIOInstance) HasMCSEnabled() bool {
+	return mi.Spec.MCS != nil
+}
+
+// HasMCSSecret returns true if the user has provided an mcs secret
 // for a MinIOInstance else false
-func (mi *MirrorInstance) HasMetadata() bool {
-	return mi.Spec.Metadata != nil
+func (mi *MinIOInstance) HasMCSSecret() bool {
+	return mi.Spec.MCS != nil && mi.Spec.MCS.MCSSecret != nil
 }
 
-// HasSelector returns true if the user has provided a pod selector
-// field (ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-selector)
-func (mi *MirrorInstance) HasSelector() bool {
-	return mi.Spec.Selector != nil
-}
-
-// HasMcsEnabled checks if the mcs has been enabled by the user
-func (mi *MinIOInstance) HasMcsEnabled() bool {
-	return mi.Spec.Mcs != nil
-}
-
-// HasMcsSecret returns true if the user has provided an mcs secret
+// HasMCSMetadata returns true if the user has provided a mcs metadata
 // for a MinIOInstance else false
-func (mi *MinIOInstance) HasMcsSecret() bool {
-	return mi.Spec.Mcs != nil && mi.Spec.Mcs.McsSecret != nil
+func (mi *MinIOInstance) HasMCSMetadata() bool {
+	return mi.Spec.MCS != nil && mi.Spec.MCS.Metadata != nil
 }
 
-// HasMcsMetadata returns true if the user has provided a mcs metadata
+// HasMCSSelector returns true if the user has provided a mcs selector
 // for a MinIOInstance else false
-func (mi *MinIOInstance) HasMcsMetadata() bool {
-	return mi.Spec.Mcs != nil && mi.Spec.Mcs.Metadata != nil
+func (mi *MinIOInstance) HasMCSSelector() bool {
+	return mi.Spec.MCS != nil && mi.Spec.MCS.Selector != nil
 }
 
-// HasMcsSelector returns true if the user has provided a mcs selector
+// HasKESMetadata returns true if the user has provided KES metadata
 // for a MinIOInstance else false
-func (mi *MinIOInstance) HasMcsSelector() bool {
-	return mi.Spec.Mcs != nil && mi.Spec.Mcs.Selector != nil
+func (mi *MinIOInstance) HasKESMetadata() bool {
+	return mi.Spec.KES != nil && mi.Spec.KES.Metadata != nil
 }
 
-// CreateMcsUser function creates an admin user
-func (mi *MinIOInstance) CreateMcsUser(minioSecret, mcsSecret map[string][]byte) error {
+// HasKESSelector returns true if the user has provided a KES selector
+// for a MinIOInstance else false
+func (mi *MinIOInstance) HasKESSelector() bool {
+	return mi.Spec.KES != nil && mi.Spec.KES.Selector != nil
+}
+
+// CreateMCSUser function creates an admin user
+func (mi *MinIOInstance) CreateMCSUser(minioSecret, mcsSecret map[string][]byte) error {
 
 	var accessKey, secretKey, mcsSecretKey []byte
 	var ok bool
 
-	host := mi.GetServiceHost()
+	host := net.JoinHostPort(mi.MinIOCIServiceHost(), strconv.Itoa(MinIOPort))
 	if host == "" {
 		return errors.New("MCS MINIO SERVER is empty")
 	}
@@ -302,15 +314,15 @@ func (mi *MinIOInstance) CreateMcsUser(minioSecret, mcsSecret map[string][]byte)
 	if !ok {
 		return errors.New("mcssecretkey not provided")
 	}
-	//TODO: Set Secure=true if the instance was setup like so
-	madmClnt, err := madmin.New(host, string(accessKey), string(secretKey), false)
+
+	madmClnt, err := madmin.New(host, string(accessKey), string(secretKey), Scheme == "https")
 	if err != nil {
 		return err
 	}
 	// try to add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	if err = madmClnt.AddUser(ctx, mi.Spec.Mcs.McsAccessKey, string(mcsSecretKey)); err != nil {
+	if err = madmClnt.AddUser(ctx, mi.Spec.MCS.MCSAccessKey, string(mcsSecretKey)); err != nil {
 		return err
 	}
 
@@ -335,13 +347,45 @@ func (mi *MinIOInstance) CreateMcsUser(minioSecret, mcsSecret map[string][]byte)
 		},
 	}
 
-	if err = madmClnt.AddCannedPolicy(context.Background(), constants.MCSAdminPolicyName, &p); err != nil {
+	if err = madmClnt.AddCannedPolicy(context.Background(), MCSAdminPolicyName, &p); err != nil {
 		return err
 	}
 
-	if err = madmClnt.SetPolicy(context.Background(), constants.MCSAdminPolicyName, string(mi.Spec.Mcs.McsAccessKey), false); err != nil {
+	if err = madmClnt.SetPolicy(context.Background(), MCSAdminPolicyName, string(mi.Spec.MCS.MCSAccessKey), false); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// OwnerRef returns the OwnerReference to be added to all resources created by MinIOInstance
+func (mi *MinIOInstance) OwnerRef() []metav1.OwnerReference {
+	return []metav1.OwnerReference{
+		*metav1.NewControllerRef(mi, schema.GroupVersionKind{
+			Group:   SchemeGroupVersion.Group,
+			Version: SchemeGroupVersion.Version,
+			Kind:    MinIOCRDResourceKind,
+		}),
+	}
+}
+
+// EnsureDefaults will ensure that if a user omits and fields in the
+// spec that are required, we set some sensible defaults.
+func (mi *MirrorInstance) EnsureDefaults() *MirrorInstance {
+	if mi.Spec.Image == "" {
+		mi.Spec.Image = DefaultMCImage
+	}
+	return mi
+}
+
+// HasMetadata returns true if the user has provided a pod metadata
+// for a MinIOInstance else false
+func (mi *MirrorInstance) HasMetadata() bool {
+	return mi.Spec.Metadata != nil
+}
+
+// HasSelector returns true if the user has provided a pod selector
+// field (ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-selector)
+func (mi *MirrorInstance) HasSelector() bool {
+	return mi.Spec.Selector != nil
 }
