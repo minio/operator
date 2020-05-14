@@ -69,7 +69,3 @@ If the MirrorInstance is named as `mirrorinstance`, resources and their names as
 | spec.args.target      | Specify the target location for mirror operation. This can be a top level alias (e.g `target`), a bucket (e.g `target/bucket`), or a prefix (e.g `target/bucket/prefix`.)  |
 | spec.args.flags       | Specify the flags to fine tune the mirror operation. Refer the [mc mirror documentation](https://github.com/minio/mc/blob/master/docs/minio-client-complete-guide.md#mirror) for possible values for flags. |
 | spec.resources | Specify CPU and Memory resources for each MirrorInstance Job container. Refer [this document](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#resource-types) for details. |
-
-## Access MinIOInstance via Service
-
-Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in MinIOInstance definition to enable Service based access to the MinIOInstance pods. Refer [the example here](https://github.com/minio/minio-operator/blob/master/examples/minioinstance-with-external-service.yaml?raw=true) for details on how to setup service based access for MinIOInstance pods.

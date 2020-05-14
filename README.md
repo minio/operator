@@ -1,12 +1,17 @@
 # MinIO Operator Guide [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
 
-MinIO is a high performance distributed object storage server, designed for large-scale private cloud infrastructure. MinIO is designed in a cloud-native manner to scale sustainably in multi-tenant environments. Orchestration platforms like Kubernetes provide perfect launchpad for MinIO to scale. There are multiple options to deploy MinIO on Kubernetes:
+MinIO is a high performance distributed object storage server, designed for large-scale private cloud infrastructure. MinIO is designed in a cloud-native manner to scale sustainably in multi-tenant environments. Orchestration platforms like Kubernetes provide perfect launchpad for MinIO to scale.
 
-- Helm Chart: MinIO Helm Chart offers customizable and easy MinIO deployment with a single command. Refer [MinIO Helm Chart repository documentation](https://github.com/helm/charts/tree/master/stable/minio) for more details.
+MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), [KES](https://github.com/minio/kes) and [mc Mirror](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror) support to Kubernetes. MinIO-Operator currently supports following features:
 
-- YAML File: MinIO can be deployed with yaml files via kubectl. Refer [MinIO yaml file documentation](https://docs.min.io/docs/deploy-minio-on-kubernetes.html) to deploy MinIO using yaml files.
-
-- MinIO-Operator: Operator creates and manages distributed MinIO deployments running on Kubernetes, using CustomResourceDefinitions and Controller.
+| Feature                 | Reference Document |
+|-------------------------|--------------------|
+| Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/minio-operator#create-a-minio-instance). |
+| Expand an existing MinIO cluster                               | [Expand a MinIO Cluster](https://github.com/minio/minio-operator#expand-a-minio-cluster). |
+| Automatic TLS for MinIO                                        | [Automatic TLS for MinIO Instance](https://github.com/minio/minio-operator/blob/master/docs/tls.md#automatic-csr-generation). |
+| Deploy MCS with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/minio-operator/blob/master/docs/mcs.md). |
+| Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/minio-operator/blob/master/docs/kes.md). |
+| Deploy mc mirror  | [Deploy Mirror Instance](https://github.com/minio/minio-operator/blob/master/docs/mirror.md). |
 
 ## Getting Started
 
@@ -23,14 +28,7 @@ To start MinIO-Operator, use the `minio-operator.yaml` file.
 kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
 ```
 
-This will create all relevant resources required for the Operator to work. Here is a list of resources created by above `yaml` file:
-
-- `Namespace`: Custom namespace for MinIO-Operator. By default it is named as `minio-operator-ns`.
-- `CustomResourceDefinition`: Custom resource definition named as `minioinstances.operator.min.io`.
-- `ClusterRole`: A cluster wide role for the controller. It is named as `minio-operator-role`. This is used for RBAC.
-- `ServiceAccount`: Service account is used by the custom controller to access the cluster. Account name by default is `minio-operator-sa`.
-- `ClusterRoleBinding`: This cluster wide binding binds the service account `minio-operator-sa` to cluster role `minio-operator-role`.
-- `Deployment`: Deployment creates a pod using the MinIO-Operator Docker image. This is where the custom controller runs and looks after any changes in custom resource.
+This will create all relevant resources required for the Operator to work.
 
 ### Create a MinIO instance
 
@@ -58,6 +56,10 @@ As existing StatefulSet pods are terminated, its PVCs are also deleted. It is _v
 
 If you attempt cluster expansion while the PV reclaim policy is set to something else, it may lead to data loss. If you have the reclaim policy set to something else, change it as explained in [Kubernetes documents](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/).
 
+### Access MinIOInstance via Service
+
+Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in MinIOInstance definition to enable Service based access to the MinIOInstance pods. Refer [the example here](https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml?raw=true) for details on how to setup service based access for MinIOInstance pods.
+
 ### Expose MinIO via Istio
 
 Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO instance, you can also directly target the headless Service that is created by the operator.
@@ -76,19 +78,6 @@ These variables may be passed to operator Deployment in order to modify some of 
 | ---                 | ---     | ---                                                                                                                           |
 | `WATCHED_NAMESPACE` |         | If set, the operator will watch only MinIO resources deployed in the specified namespace. All namespaces are watched if empty |
 | `CLUSTER_DOMAIN`    | cluster.local | Cluster Domain of the Kubernetes cluster |
-
-## Features
-
-MinIO-Operator currently supports following features:
-
-| Feature                 | Reference Document |
-|-------------------------|--------------------|
-| Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/minio-operator#create-a-minio-instance). |
-| Expand an existing MinIO cluster                               | [Expand a MinIO Cluster](https://github.com/minio/minio-operator#expand-a-minio-cluster). |
-| Automatic TLS for MinIO                                        | [Automatic TLS for MinIO Instance](https://github.com/minio/minio-operator/blob/master/docs/tls.md#automatic-csr-generation). |
-| Deploy [MCS](https://github.com/minio/mcs) with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/minio-operator/blob/master/docs/mcs.md). |
-| Deploy [KES](https://github.com/minio/kes) with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/minio-operator/blob/master/docs/kes.md). |
-| Deploy [mc mirror](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror)  | [Deploy Mirror Instance](https://github.com/minio/minio-operator/blob/master/docs/mirror.md). |
 
 ## Explore Further
 
