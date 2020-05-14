@@ -7,14 +7,15 @@ all: build
 
 verify: govet gotest
 
-build:
-	@docker build -t $(TAG) --build-arg ldflags=$(LDFLAGS) .
+build: verify
+	@CGO_ENABLED=0 go build -trimpath --ldflags $(LDFLAGS)
+	@docker build -t $(TAG) .
 
 install: all
 	@docker push $(TAG)
 
 govet:
-	@CGO_ENABLED=0 go vet ./...
+	@go vet ./...
 
 gotest:
 	@go test -race ./...
