@@ -24,18 +24,25 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), [KES](h
 
 To start MinIO-Operator, use the `minio-operator.yaml` file.
 
-```
-kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
+```bash
+kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
 ```
 
 This will create all relevant resources required for the Operator to work.
+
+You could install the MinIO Operator a custom namespace by passing the `-n` flag
+
+```bash
+kubectl create namespace minio-operator-ns
+kubectl apply -n minio-operator-ns -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
+```
 
 ### Create a MinIO instance
 
 Once MinIO-Operator deployment is running, you can create MinIO instances using the below command
 
 ```
-kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml
+kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml
 ```
 
 ### Expand a MinIO cluster
