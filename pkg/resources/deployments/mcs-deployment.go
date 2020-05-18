@@ -27,59 +27,33 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Returns the MCS environment variables set in configuration.
-func mcsEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
-	envVars := make([]corev1.EnvVar, 0)
-	if mi.HasMCSSecret() {
-		var secretName string
-		secretName = mi.Spec.MCS.MCSSecret.Name
-		envVars = append(envVars, corev1.EnvVar{
-			Name: "MCS_HMAC_JWT_SECRET",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "mcshmacjwt",
-				},
-			},
-		}, corev1.EnvVar{
-			Name: "MCS_PBKDF_PASSPHRASE",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "mcspbkdfpassphrase",
-				},
-			},
-		}, corev1.EnvVar{
-			Name: "MCS_PBKDF_SALT",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "mcspbkdfsalt",
-				},
-			},
-		}, corev1.EnvVar{
+// Adds required MCS environment variables
+func mcsEnvVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
+	envVars := []corev1.EnvVar{
+		{
 			Name:  "MCS_MINIO_SERVER",
 			Value: miniov1.Scheme + "://" + net.JoinHostPort(mi.MinIOCIServiceHost(), strconv.Itoa(miniov1.MinIOPort)),
-		}, corev1.EnvVar{
-			Name: "MCS_SECRET_KEY",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "mcssecretkey",
+		},
+	}
+	if miniov1.Scheme == "https" {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "MCS_MINIO_SERVER_TLS_SKIP_VERIFICATION",
+			Value: "on",
+		})
+	}
+	return envVars
+}
+
+// Returns the MCS environment variables set in configuration.
+func mcsSecretEnvVars(mi *miniov1.MinIOInstance) []corev1.EnvFromSource {
+	envVars := []corev1.EnvFromSource{
+		{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: mi.Spec.MCS.MCSSecret.Name,
 				},
 			},
-		}, corev1.EnvVar{
-			Name:  "MCS_ACCESS_KEY",
-			Value: mi.Spec.MCS.MCSAccessKey,
-		})
+		},
 	}
 	return envVars
 }
@@ -123,15 +97,14 @@ func mcsContainer(mi *miniov1.MinIOInstance) corev1.Container {
 		},
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
 		Args:            args,
-		Env:             mcsEnvironmentVars(mi),
+		Env:             mcsEnvVars(mi),
+		EnvFrom:         mcsSecretEnvVars(mi),
 		Resources:       mi.Spec.Resources,
 	}
 }
 
 // NewForMCS creates a new Deployment for the given MinIO instance.
 func NewForMCS(mi *miniov1.MinIOInstance) *appsv1.Deployment {
-
-	var replicas int32 = 1
 
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -140,7 +113,7 @@ func NewForMCS(mi *miniov1.MinIOInstance) *appsv1.Deployment {
 			OwnerReferences: mi.OwnerRef(),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
+			Replicas: &mi.Spec.MCS.Replicas,
 			Selector: mi.Spec.MCS.Selector,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: mcsMetadata(mi),

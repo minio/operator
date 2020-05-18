@@ -154,11 +154,17 @@ type Zone struct {
 
 // MCSConfig defines the credentials for mcs
 type MCSConfig struct {
-	Image        string                       `json:"image,omitempty"`
-	MCSAccessKey string                       `json:"mcsAccessKey"`
-	MCSSecret    *corev1.LocalObjectReference `json:"mcsSecret,omitempty"`
-	Selector     *metav1.LabelSelector        `json:"selector,omitempty"`
-	Metadata     *metav1.ObjectMeta           `json:"metadata,omitempty"`
+	// Replicas defines number of pods for KES StatefulSet.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+	// Image defines the MinIOInstance Docker image.
+	// +optional
+	Image string `json:"image,omitempty"`
+	// This secret provides all environment variables for KES
+	// This is a mandatory field
+	MCSSecret *corev1.LocalObjectReference `json:"mcsSecret,omitempty"`
+	Selector  *metav1.LabelSelector        `json:"selector,omitempty"`
+	Metadata  *metav1.ObjectMeta           `json:"metadata,omitempty"`
 }
 
 // KESConfig defines the specifications for KES StatefulSet

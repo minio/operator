@@ -104,7 +104,7 @@ const MirrorCRDResourceKind = "MirrorInstance"
 // MCS Related Constants
 
 // DefaultMCSImage specifies the latest MCS Docker hub image
-const DefaultMCSImage = "minio/mcs:v0.0.3"
+const DefaultMCSImage = "minio/mcs:v0.0.4"
 
 // MCSInstanceLabel is applied to the MCS pods of a MinIOInstance cluster
 const MCSInstanceLabel = "v1.min.io/mcs"
@@ -126,6 +126,9 @@ const MCSAdminPolicyName = "mcsAdmin"
 
 // MCSRestartPolicy defines the default restart policy for MCS Containers
 const MCSRestartPolicy = corev1.RestartPolicyAlways
+
+// DefaultMCSReplicas specifies the default number of MCS pods to be created if not specified
+const DefaultMCSReplicas = 2
 
 // KES Related Constants
 

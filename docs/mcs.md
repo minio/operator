@@ -21,7 +21,7 @@ MCS Configuration is a part of MinIOInstance yaml file. Check the sample file [a
 |-----------------------|-------------|
 | spec.mcs | Defines the mcs configuration. mcs is a graphical user interface for MinIO. Refer [this](https://github.com/minio/mcs) |
 | spec.mcs.image | Defines the mcs image |
-| spec.mcs.mcsAccessKey | Specify the access key to be used by mcs |
+| spec.mcs.replicas | Number of MCS pods to be created. |
 | spec.mcs.mcsSecret | Use this secret to assign mcs credentials to MinIOInstance. |
 | spec.mcs.selector | Add a selector for the mcs. Which will be used by the mcs container for grouping. (Note: Should not match the labels provided in `spec.selector`) |
 | spec.mcs.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). [Note: Should match the labels in `spec.mcs.selector`] |
@@ -39,3 +39,16 @@ Alternatively, you can deploy the example like this
 ```
 kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance-mcs.yaml
 ```
+
+Above example file uses CSR for self signed certificate generation. MinIO requires one certificates/key pair 
+
+- X.509 certificate for the MinIO server and the corresponding private key.
+
+Accordingly, you'll need to approve the CSR request, using below approach
+
+```
+kubectl get csr
+kubectl certificate approve <csr-name>
+```
+
+Once all the CSRs are approved, MinIO Operator will deploy MCS Pods and start MinIO Server with MCS integration.
