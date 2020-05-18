@@ -13,10 +13,11 @@ metadata:
   name: minio-mcs-secret
 type: Opaque
 data:
-  mcshmacjwt: WU9VUkpXVFNJR05JTkdTRUNSRVQ= # base 64 encoded "YOURJWTSIGNINGSECRET" (echo -n 'YOURJWTSIGNINGSECRET' | base64)
-  mcspbkdfpassphrase: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
-  mcspbkdfsalt: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
-  mcssecretkey: WU9VUk1DU1NFQ1JFVA== # base 64 encoded "YOURMCSSECRET" (echo -n 'YOURMCSSECRET' | base64)
+  MCS_HMAC_JWT_SECRET: WU9VUkpXVFNJR05JTkdTRUNSRVQ= # base 64 encoded "YOURJWTSIGNINGSECRET" (echo -n 'YOURJWTSIGNINGSECRET' | base64)
+  MCS_PBKDF_PASSPHRASE: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
+  MCS_PBKDF_SALT: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
+  MCS_ACCESS_KEY: WU9VUk1DU0FDQ0VTUw== # base 64 encoded "YOURMCSACCESS" (echo -n 'YOURMCSACCESS' | base64)
+  MCS_SECRET_KEY: WU9VUk1DU1NFQ1JFVA== # base 64 encoded "YOURMCSSECRET" (echo -n 'YOURMCSSECRET' | base64)
 ---
 apiVersion: v1
 kind: Service
@@ -84,8 +85,8 @@ spec:
           storage: 10Gi
   ## Define configuration for MCS (Graphical user interface for MinIO)
   mcs:
-    image: minio/mcs:v0.0.3
-    mcsAccessKey: "mcs"
+    image: minio/mcs:v0.0.4
+    replicas: 2
     mcsSecret:
       name: minio-mcs-secret
     metadata:
@@ -100,7 +101,7 @@ spec:
   # name: tls-ssl-minio
   ## Enable Kubernetes based certificate generation and signing as explained in
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
-  requestAutoCert: false
+  requestAutoCert: true
   ## PodManagement policy for pods created by StatefulSet. Can be "OrderedReady" or "Parallel"
   ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
   ## for details. Defaults to "Parallel"
@@ -136,6 +137,7 @@ spec:
   ## restarts the pods if liveness checks fail.
   liveness:
     httpGet:
+      scheme: HTTPS
       path: /minio/health/live
       port: 9000
     initialDelaySeconds: 120
@@ -147,6 +149,7 @@ spec:
   ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
   readiness:
     httpGet:
+      scheme: HTTPS
       path: /minio/health/ready
       port: 9000
     initialDelaySeconds: 120

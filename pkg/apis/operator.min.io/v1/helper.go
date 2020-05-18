@@ -19,9 +19,11 @@ package v1
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"path"
 	"strconv"
 	"time"
@@ -167,8 +169,13 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		}
 	}
 
-	if mi.HasMCSEnabled() && mi.Spec.MCS.Image == "" {
-		mi.Spec.MCS.Image = DefaultMCSImage
+	if mi.HasMCSEnabled() {
+		if mi.Spec.MCS.Image == "" {
+			mi.Spec.MCS.Image = DefaultMCSImage
+		}
+		if mi.Spec.MCS.Replicas == 0 {
+			mi.Spec.MCS.Replicas = DefaultMCSReplicas
+		}
 	}
 
 	if mi.HasKESEnabled() {
@@ -292,7 +299,7 @@ func (mi *MinIOInstance) HasKESSelector() bool {
 // CreateMCSUser function creates an admin user
 func (mi *MinIOInstance) CreateMCSUser(minioSecret, mcsSecret map[string][]byte) error {
 
-	var accessKey, secretKey, mcsSecretKey []byte
+	var accessKey, secretKey, mcsAccessKey, mcsSecretKey []byte
 	var ok bool
 
 	host := net.JoinHostPort(mi.MinIOCIServiceHost(), strconv.Itoa(MinIOPort))
@@ -310,19 +317,30 @@ func (mi *MinIOInstance) CreateMCSUser(minioSecret, mcsSecret map[string][]byte)
 		return errors.New("secretkey not provided")
 	}
 
-	mcsSecretKey, ok = mcsSecret["mcssecretkey"]
+	mcsAccessKey, ok = mcsSecret["MCS_ACCESS_KEY"]
 	if !ok {
-		return errors.New("mcssecretkey not provided")
+		return errors.New("MCS_ACCESS_KEY not provided")
+	}
+
+	mcsSecretKey, ok = mcsSecret["MCS_SECRET_KEY"]
+	if !ok {
+		return errors.New("MCS_SECRET_KEY not provided")
 	}
 
 	madmClnt, err := madmin.New(host, string(accessKey), string(secretKey), Scheme == "https")
 	if err != nil {
 		return err
 	}
-	// try to add user with a 20 seconds timeout
+
+	if Scheme == "https" {
+		madmClnt = setUpInsecureTLS(madmClnt)
+	}
+
+	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	if err = madmClnt.AddUser(ctx, mi.Spec.MCS.MCSAccessKey, string(mcsSecretKey)); err != nil {
+
+	if err = madmClnt.AddUser(ctx, string(mcsAccessKey), string(mcsSecretKey)); err != nil {
 		return err
 	}
 
@@ -351,11 +369,35 @@ func (mi *MinIOInstance) CreateMCSUser(minioSecret, mcsSecret map[string][]byte)
 		return err
 	}
 
-	if err = madmClnt.SetPolicy(context.Background(), MCSAdminPolicyName, string(mi.Spec.MCS.MCSAccessKey), false); err != nil {
+	if err = madmClnt.SetPolicy(context.Background(), MCSAdminPolicyName, string(mcsAccessKey), false); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// Set up admin client to use self certificates
+func setUpInsecureTLS(api *madmin.AdminClient) *madmin.AdminClient {
+	// Keep TLS config.
+	tlsConfig := &tls.Config{
+		// Can't use SSLv3 because of POODLE and BEAST
+		// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
+		// Can't use TLSv1.1 because of RC4 cipher usage
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: true,
+	}
+
+	var transport http.RoundTripper = &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 15 * time.Second,
+		}).DialContext,
+		TLSClientConfig: tlsConfig,
+	}
+
+	// Set custom transport.
+	api.SetCustomTransport(transport)
+	return api
 }
 
 // OwnerRef returns the OwnerReference to be added to all resources created by MinIOInstance

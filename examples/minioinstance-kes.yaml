@@ -84,8 +84,8 @@ spec:
           storage: 10Gi
   ## Define configuration for MCS (Graphical user interface for MinIO)
   mcs:
-    image: minio/mcs:v0.0.3
-    mcsAccessKey: "mcs"
+    image: minio/mcs:v0.0.4
+    replicas: 2
     mcsSecret:
       name: minio-mcs-secret
     metadata:
