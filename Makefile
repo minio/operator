@@ -8,7 +8,7 @@ all: build
 verify: govet gotest
 
 build: verify
-	@CGO_ENABLED=0 go build -trimpath --ldflags $(LDFLAGS)
+	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS)
 	@docker build -t $(TAG) .
 
 install: all
