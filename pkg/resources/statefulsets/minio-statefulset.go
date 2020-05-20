@@ -320,9 +320,13 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 				Type: miniov1.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: mi.Spec.PodManagementPolicy,
-			Selector:            mi.Spec.Selector,
-			ServiceName:         serviceName,
-			Replicas:            &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					miniov1.InstanceLabel: mi.MinIOStatefulSetName(),
+				},
+			},
+			ServiceName: serviceName,
+			Replicas:    &replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: minioMetadata(mi),
 				Spec: corev1.PodSpec{

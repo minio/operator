@@ -341,6 +341,11 @@ func (c *Controller) syncHandler(key string) error {
 	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.MinIOCIServiceName())
 	// If the service doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
+		currentState := "Provisioning Service"
+		mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
+		if err != nil {
+			return err
+		}
 		klog.V(2).Infof("Creating a new Cluster IP Service for cluster %q", nsName)
 		svc = services.NewClusterIPForMinIO(mi)
 		_, err = c.kubeClientSet.CoreV1().Services(mi.Namespace).Create(ctx, svc, cOpts)
@@ -349,6 +354,11 @@ func (c *Controller) syncHandler(key string) error {
 	hlSvc, err := c.serviceLister.Services(mi.Namespace).Get(mi.MinIOHLServiceName())
 	// If the headless service doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
+		currentState := "Provisining Headless Service"
+		mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
+		if err != nil {
+			return err
+		}
 		klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
 		hlSvc = services.NewHeadlessForMinIO(mi)
 		_, err = c.kubeClientSet.CoreV1().Services(mi.Namespace).Create(ctx, hlSvc, cOpts)
@@ -370,11 +380,17 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if mi.RequiresAutoCertSetup() {
-		_, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOCSRName(), metav1.GetOptions{})
+
+		_, err = c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOCSRName(), metav1.GetOptions{})
 		if err != nil {
 			// If the CSR doesn't exist, we'll create it
 			if apierrors.IsNotFound(err) {
 				klog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
+				currentState := "Requesting Certificate"
+				mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
+				if err != nil {
+					return err
+				}
 				// create CSR here
 				c.createCSR(ctx, mi)
 			} else {
@@ -386,6 +402,11 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				// If the CSR doesn't exist, we'll create it
 				if apierrors.IsNotFound(err) {
+					currentState := "Creating TLS CSR for KES"
+					mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
+					if err != nil {
+						return err
+					}
 					klog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
 					err = c.createKESTLSCSR(ctx, mi)
 					if err != nil {
@@ -399,6 +420,11 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				// If the CSR doesn't exist, we'll create it
 				if apierrors.IsNotFound(err) {
+					currentState := "Creating Client TLS CSR"
+					mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
+					if err != nil {
+						return err
+					}
 					klog.V(2).Infof("Creating a new Certificate Signing Request for cluster %q", nsName)
 					err = c.createMinIOClientTLSCSR(ctx, mi)
 					if err != nil {
@@ -415,6 +441,11 @@ func (c *Controller) syncHandler(key string) error {
 	ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.Name)
 	// If the resource doesn't exist, we'll create it
 	if apierrors.IsNotFound(err) {
+		currentState := "Provisioning Statefulset"
+		mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
+		if err != nil {
+			return err
+		}
 		ss = statefulsets.NewForMinIO(mi, hlSvc.Name)
 		ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 	}
@@ -450,6 +481,11 @@ func (c *Controller) syncHandler(key string) error {
 			}
 			// Check if any one replica is READY
 			if ss.Status.ReadyReplicas > 0 {
+				currentState := "Provisioning MCS"
+				mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, ss.Status.Replicas)
+				if err != nil {
+					return err
+				}
 				if pErr := mi.CreateMCSUser(minioSecret.Data, mcsSecret.Data); pErr != nil {
 					klog.V(2).Infof(pErr.Error())
 					return pErr
@@ -468,6 +504,12 @@ func (c *Controller) syncHandler(key string) error {
 					klog.V(2).Infof(err.Error())
 					return err
 				}
+			} else {
+				currentState := "Waiting for Pods to be ready"
+				mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, ss.Status.Replicas)
+				if err != nil {
+					return err
+				}
 			}
 		} else {
 			return err
@@ -475,6 +517,11 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if mi.HasKESEnabled() && !(mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup()) {
+		currentState := "waiting on TLS for KES"
+		mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, ss.Status.Replicas)
+		if err != nil {
+			return err
+		}
 		msg := "KES Setup Requires MinIO to be configured with TLS"
 		klog.V(2).Infof(msg)
 		return fmt.Errorf(msg)
@@ -521,6 +568,11 @@ func (c *Controller) syncHandler(key string) error {
 	// If the StatefulSet is not controlled by this MinIOInstance resource, we should log
 	// a warning to the event recorder and ret
 	if !metav1.IsControlledBy(ss, mi) {
+		currentState := "Statefulset not controlled by operator"
+		mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, ss.Status.Replicas)
+		if err != nil {
+			return err
+		}
 		msg := fmt.Sprintf(MessageResourceExists, ss.Name)
 		c.recorder.Event(mi, corev1.EventTypeWarning, ErrResourceExists, msg)
 		return fmt.Errorf(msg)
@@ -546,6 +598,10 @@ func (c *Controller) syncHandler(key string) error {
 	// version does not equal the current desired version in the StatefulSet, we
 	// should update the StatefulSet resource.
 	if mi.Spec.Image != ss.Spec.Template.Spec.Containers[0].Image {
+		mi, err = c.updateMinIOInstanceStatus(ctx, mi, "Updating MinIO Version", ss.Status.Replicas)
+		if err != nil {
+			return err
+		}
 		klog.V(4).Infof("Updating MinIOInstance %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
 		ss = statefulsets.NewForMinIO(mi, hlSvc.Name)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts)
@@ -559,6 +615,10 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if mi.HasMCSEnabled() && d != nil && mi.Spec.MCS.Image != d.Spec.Template.Spec.Containers[0].Image {
+		mi, err = c.updateMinIOInstanceStatus(ctx, mi, "Updating MCS Version", ss.Status.Replicas)
+		if err != nil {
+			return err
+		}
 		klog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name, mi.Spec.MCS.Image, d.Spec.Template.Spec.Containers[0].Image)
 		d = deployments.NewForMCS(mi)
 		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, d, uOpts)
@@ -572,26 +632,28 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Finally, we update the status block of the MinIOInstance resource to reflect the
 	// current state of the world
-	err = c.updateMinIOInstanceStatus(ctx, mi, ss)
+	_, err = c.updateMinIOInstanceStatus(ctx, mi, "Ready", ss.Status.Replicas)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Controller) updateMinIOInstanceStatus(ctx context.Context, minioInstance *miniov1.MinIOInstance, statefulSet *appsv1.StatefulSet) error {
+func (c *Controller) updateMinIOInstanceStatus(ctx context.Context, minioInstance *miniov1.MinIOInstance, currentState string, availableReplicas int32) (*miniov1.MinIOInstance, error) {
 	opts := metav1.UpdateOptions{}
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	minioInstanceCopy := minioInstance.DeepCopy()
-	minioInstanceCopy.Status.AvailableReplicas = statefulSet.Status.Replicas
+	minioInstanceCopy.Status.AvailableReplicas = availableReplicas
+	minioInstanceCopy.Status.CurrentState = currentState
 	// If the CustomResourceSubresources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the MinIOInstance resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
-	_, err := c.minioClientSet.OperatorV1().MinIOInstances(minioInstance.Namespace).Update(ctx, minioInstanceCopy, opts)
-	return err
+	mi, err := c.minioClientSet.OperatorV1().MinIOInstances(minioInstance.Namespace).UpdateStatus(ctx, minioInstanceCopy, opts)
+	time.Sleep(time.Second * 2)
+	return mi, err
 }
 
 // enqueueMinIOInstance takes a MinIOInstance resource and converts it into a namespace/name

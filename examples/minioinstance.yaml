@@ -40,13 +40,11 @@ metadata:
 # scheduler:
 #  name: my-custom-scheduler
 spec:
-  selector:
-    matchLabels:
-      app: minio # Should match spec.metadata.labels
   ## Add metadata to the all pods created by the StatefulSet
   metadata:
-    labels:
-      app: minio # Should match spec.selector.matchLabels
+    ## Optionally pass labels to be applied to the statefulset pods
+    #labels:
+    #   app: minio
     annotations:
       prometheus.io/path: /minio/prometheus/metrics
       prometheus.io/port: "9000"
@@ -114,12 +112,10 @@ spec:
     replicas: 2
     mcsSecret:
       name: minio-mcs-secret
-    selector:
-      matchLabels:
-        app: mcs # Should match spec.mcs.metadata.labels
-    metadata:
-      labels:
-        app: mcs # Should match spec.mcs.selector.matchLabels
+  ## Optionally metadata can be attached to the mcs pod
+  # metadata:
+  #   labels:
+  #     extra: labels
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
   env:
     - name: MINIO_BROWSER

@@ -114,7 +114,12 @@ func NewForMCS(mi *miniov1.MinIOInstance) *appsv1.Deployment {
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &mi.Spec.MCS.Replicas,
-			Selector: mi.Spec.MCS.Selector,
+			// MCS is always matched via MinIOInstance Name + mcs prefix
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					miniov1.MCSInstanceLabel: mi.MCSDeploymentName(),
+				},
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: mcsMetadata(mi),
 				Spec: corev1.PodSpec{
