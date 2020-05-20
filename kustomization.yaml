@@ -1,0 +1,4 @@
+namespace: minio-operator-ns
+
+resources:
+  - minio-operator.yaml

@@ -30,11 +30,10 @@ kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/m
 
 This will create all relevant resources required for the Operator to work.
 
-You could install the MinIO Operator a custom namespace by passing the `-n` flag
+You could install the MinIO Operator a custom namespace by customizing the `minio-operator.yaml` file or using [kustomize](https://github.com/kubernetes-sigs/kustomize) 
 
 ```bash
-kubectl create namespace minio-operator-ns
-kubectl apply -n minio-operator-ns -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
+kustomize build | kubectl apply -f -
 ```
 
 ### Create a MinIO instance
