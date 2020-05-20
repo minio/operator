@@ -1,13 +1,13 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: minio-operator.v2.0.0
+  name: minio-operator.v2.0.1
   namespace: placeholder
   annotations:
     categories: 'Storage,    Big Data, AI/Machine Learning'
     certified: 'false'
     description: ' MinIO Operator allows creating distributed MinIO Clusters and manage their lifecycle'
-    containerImage: 'minio/k8s-operator:2.0.0'
+    containerImage: 'minio/k8s-operator:2.0.1'
     support: 'MinIO, Inc.'
     capabilities: Full Lifecycle
     repository: 'https://github.com/minio/minio-operator'
@@ -78,7 +78,7 @@ spec:
     erasure code configuration, and replicas.
 
   maturity: stable
-  version: 2.0.0
+  version: 2.0.1
   minKubeVersion: 1.14.0
   keywords:
     - Object Storage
@@ -262,7 +262,7 @@ spec:
                 serviceAccountName: minio-operator-sa
                 containers:
                   - name: minio-operator
-                    image: 'minio/k8s-operator:2.0.0'
+                    image: 'minio/k8s-operator:2.0.1'
   installModes:
     - type: OwnNamespace
       supported: true

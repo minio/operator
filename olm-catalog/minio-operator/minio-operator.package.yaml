@@ -1,5 +1,5 @@
 packageName: minio-operator
 channels:
   - name: stable
-    currentCSV: minio-operator.v2.0.0
+    currentCSV: minio-operator.v2.0.1
 defaultChannel: stable
