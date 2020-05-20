@@ -202,7 +202,7 @@ spec:
       serviceAccountName: minio-operator-sa
       containers:
         - name: minio-operator
-          image: minio/k8s-operator:2.0.0
+          image: minio/k8s-operator:2.0.1
           imagePullPolicy: IfNotPresent
           # To specify cluster domain, un comment the following:
           # env:
