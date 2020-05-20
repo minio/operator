@@ -127,5 +127,5 @@ func (mi *MinIOInstance) MCSDeploymentName() string {
 
 // MCSCIServiceName returns the name for MCS Cluster IP Service
 func (mi *MinIOInstance) MCSCIServiceName() string {
-	return mi.Name + MCSName + "-service"
+	return mi.Name + MCSName
 }

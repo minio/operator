@@ -28,12 +28,40 @@ spec:
                   type: integer
                   minimum: 1
                   maximum: 32
+                image:
+                  type: string
+                serviceName:
+                  type: string
+                volumesPerServer:
+                  type: integer
+                mountPath:
+                  type: string
+                podManagementPolicy:
+                  type: string
+                  enum: [Parallel,OrderedReady]
+                  default: Parallel
+                requestAutoCert:
+                  type: boolean
+                  default: false
                 version:
                   type: string
                 mountpath:
                   type: string
                 subpath:
                   type: string
+                mcs:
+                  type: object
+                  properties:
+                    image:
+                      type: string
+                    replicas:
+                      type: integer
+                      default: 2
+                    mcsSecret:
+                      type: object
+                      properties:
+                        name:
+                          type: string
       additionalPrinterColumns:
         - name: Replicas
           type: integer
