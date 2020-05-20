@@ -62,10 +62,18 @@ spec:
                       properties:
                         name:
                           type: string
+            status:
+              type: object
+              properties:
+                currentState:
+                  type: string
+      subresources:
+        # status enables the status subresource.
+        status: {}
       additionalPrinterColumns:
-        - name: Replicas
-          type: integer
-          jsonPath: ".spec.replicas"
+        - name: Current State
+          type: string
+          jsonPath: ".status.currentState"
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
