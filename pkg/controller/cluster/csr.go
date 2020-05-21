@@ -254,9 +254,7 @@ func (c *Controller) createSecret(ctx context.Context, mi *miniov1.MinIOInstance
 			"public.crt":  certBytes,
 		},
 	}
-	cOpts := metav1.CreateOptions{}
-	_, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, secret, cOpts)
-	if err != nil {
+	if _, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, secret, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 	return nil

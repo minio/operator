@@ -7,8 +7,8 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), [KES](h
 | Feature                 | Reference Document |
 |-------------------------|--------------------|
 | Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/minio-operator#create-a-minio-instance). |
-| Expand an existing MinIO cluster                               | [Expand a MinIO Cluster](https://github.com/minio/minio-operator#expand-a-minio-cluster). |
 | Automatic TLS for MinIO                                        | [Automatic TLS for MinIO Instance](https://github.com/minio/minio-operator/blob/master/docs/tls.md#automatic-csr-generation). |
+| Expand an existing MinIO cluster                               | [Expand a MinIO Cluster](https://github.com/minio/minio-operator/blob/master/docs/adding-zones.md). |
 | Deploy MCS with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/minio-operator/blob/master/docs/mcs.md). |
 | Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/minio-operator/blob/master/docs/kes.md). |
 | Deploy mc mirror  | [Deploy Mirror Instance](https://github.com/minio/minio-operator/blob/master/docs/mirror.md). |
@@ -43,24 +43,6 @@ Once MinIO-Operator deployment is running, you can create MinIO instances using 
 ```
 kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml
 ```
-
-### Expand a MinIO cluster
-
-After you have a distributed MinIO Cluster running (zones.server >= 4), you can expand the MinIO cluster using
-
-```
-kubectl patch minioinstances.operator.min.io minio --patch "$(cat examples/patch.yaml)" --type=merge
-```
-
-You can expand an existing cluster by adding new zones to the `patch.yaml` and run the above `kubectl-patch` command.
-
-**NOTE**: Important point to consider _before_ using cluster expansion:
-
-During cluster expansion, MinIO Operator removes the existing StatefulSet and creates a new StatefulSet with required number of Pods. This means, there is a short downtime during expansion, as the pods are terminated and created again.
-
-As existing StatefulSet pods are terminated, its PVCs are also deleted. It is _very important_ to ensure PVs bound to MinIO StatefulSet PVCs are not deleted at this time to avoid data loss. We recommend configuring every PV with reclaim policy [`retain`](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#retain), to ensure the PV is not deleted.
-
-If you attempt cluster expansion while the PV reclaim policy is set to something else, it may lead to data loss. If you have the reclaim policy set to something else, change it as explained in [Kubernetes documents](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/).
 
 ### Access MinIOInstance via Service
 

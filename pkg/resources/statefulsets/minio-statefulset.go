@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 
 	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -166,6 +167,12 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.
 		}
 	}
 
+	readyProbe := mi.Spec.Readiness
+	readyProbe.HTTPGet.Scheme = corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
+
+	liveProbe := mi.Spec.Liveness
+	liveProbe.HTTPGet.Scheme = corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
+
 	return corev1.Container{
 		Name:  miniov1.MinIOServerName,
 		Image: mi.Spec.Image,
@@ -179,8 +186,8 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.
 		Args:            args,
 		Env:             minioEnvironmentVars(mi),
 		Resources:       mi.Spec.Resources,
-		LivenessProbe:   mi.Spec.Liveness,
-		ReadinessProbe:  mi.Spec.Readiness,
+		LivenessProbe:   liveProbe,
+		ReadinessProbe:  readyProbe,
 	}
 }
 

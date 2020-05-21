@@ -5,8 +5,8 @@ metadata:
 spec:
   zones:
     - name: "zone-0"
-      ## Number of MinIO servers/pods in this zone.
+      ## Number of MinIO servers/pods in zone-0.
       servers: 4
     - name: "zone-1"
-      ## Number of MinIO servers/pods in this zone.
+      ## Number of MinIO servers/pods in zone-1.
       servers: 4

@@ -8,17 +8,6 @@ data:
   secretkey: bWluaW8xMjM= # based 64 encoded "minio123" (echo -n 'minio123' | base64)
 ---
 apiVersion: v1
-kind: Secret
-metadata:
-  name: minio-mcs-secret
-type: Opaque
-data:
-  mcshmacjwt: WU9VUkpXVFNJR05JTkdTRUNSRVQ= # base 64 encoded "YOURJWTSIGNINGSECRET" (echo -n 'YOURJWTSIGNINGSECRET' | base64)
-  mcspbkdfpassphrase: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
-  mcspbkdfsalt: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
-  mcssecretkey: WU9VUk1DU1NFQ1JFVA== # base 64 encoded "YOURMCSSECRET" (echo -n 'YOURMCSSECRET' | base64)
----
-apiVersion: v1
 kind: Service
 metadata:
   name: minio-service
@@ -106,16 +95,6 @@ spec:
   #    key: dedicated
   #    operator: Equal
   #    value: storage
-  ## Define configuration for mcs (A graphical user interface for MinIO)
-  mcs:
-    image: minio/mcs:v0.0.4
-    replicas: 2
-    mcsSecret:
-      name: minio-mcs-secret
-  ## Optionally metadata can be attached to the mcs pod
-  # metadata:
-  #   labels:
-  #     extra: labels
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
   env:
     - name: MINIO_BROWSER
