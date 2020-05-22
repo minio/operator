@@ -5,7 +5,11 @@ LDFLAGS ?= "-s -w -X main.Version=$(VERSION)"
 
 all: build
 
-verify: govet gotest
+getdeps:
+	@mkdir -p ${GOPATH}/bin
+	@which golangci-lint 1>/dev/null || (echo "Installing golangci-lint" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.27.0)
+
+verify: govet gotest lint
 
 build: verify
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS)
@@ -13,6 +17,11 @@ build: verify
 
 install: all
 	@docker push $(TAG)
+
+lint:
+	@echo "Running $@ check"
+	@GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean
+	@GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ./.golangci.yml
 
 govet:
 	@go vet ./...

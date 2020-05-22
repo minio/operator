@@ -68,7 +68,7 @@ func isEqual(a, b []string) bool {
 }
 
 func generateCryptoData(mi *miniov1.MinIOInstance) ([]byte, []byte, error) {
-	dnsNames := make([]string, 0)
+	var dnsNames []string
 	klog.V(0).Infof("Generating private key")
 	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
 	if err != nil {
