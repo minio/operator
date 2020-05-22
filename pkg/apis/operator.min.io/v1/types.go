@@ -114,7 +114,7 @@ type MinIOInstanceSpec struct {
 	// Tolerations allows users to set entries like effect, key, operator, value.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-	// Security Context allows user to set entries like runAsUser, privlege escalation etc.
+	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 	// Definition for Cluster in given MinIO cluster
@@ -126,6 +126,10 @@ type MinIOInstanceSpec struct {
 	// KES is for setting up minio/kes as MinIO KMS
 	//+optional
 	KES *KESConfig `json:"kes,omitempty"`
+	// ServiceAccountName is the name of the ServiceAccount to use to run pods of all MinIO
+	// Pods created as a part of this MinIOInstance.
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // MinIOInstanceStatus is the status for a MinIOInstance resource
