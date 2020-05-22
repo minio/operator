@@ -1,0 +1,65 @@
+# Default values for minio-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: minio/k8s-operator
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+clusterRoleName: "minio-operator-role"
+clusterRoleBindingName: "minio-operator-binding"
+
+environment:
+  # Specifies environment variables that can be added
+  # - name: CLUSTER_DOMAIN
+  #   value: mycluster.mydomain
+  # - name: WATCHED_NAMESPACE
+  #   value: namespace-to-watch
+
+nameSpace:
+  # Specifies whether a namespace should be created
+  create: true
+  # The name of the service account to use.
+  name: "minio-operator-ns"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "minio-operator-sa"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
