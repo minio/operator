@@ -137,7 +137,6 @@ spec:
   ## restarts the pods if liveness checks fail.
   liveness:
     httpGet:
-      scheme: HTTPS
       path: /minio/health/live
       port: 9000
     initialDelaySeconds: 120
@@ -149,7 +148,6 @@ spec:
   ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
   readiness:
     httpGet:
-      scheme: HTTPS
       path: /minio/health/ready
       port: 9000
     initialDelaySeconds: 120
