@@ -481,7 +481,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	if mi.HasMCSEnabled() {
 		// Get the Deployment with the name specified in MirrorInstace.spec
-		if d, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.MCSDeploymentName()); err != nil {
+		if _, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.MCSDeploymentName()); err != nil {
 			if apierrors.IsNotFound(err) {
 				if !mi.HasCredsSecret() || !mi.HasMCSSecret() {
 					msg := "Please set the credentials"
@@ -513,7 +513,7 @@ func (c *Controller) syncHandler(key string) error {
 					}
 					// Create MCS Deployment
 					d = deployments.NewForMCS(mi)
-					d, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, d, cOpts)
+					_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, d, cOpts)
 					if err != nil {
 						klog.V(2).Infof(err.Error())
 						return err
@@ -549,30 +549,29 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 		// Get the StatefulSet with the name specified in spec
-		ks, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.KESStatefulSetName())
+		_, err = c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.KESStatefulSetName())
 		if apierrors.IsNotFound(err) {
 			currentState := "Provisioning KES StatefulSet"
 			mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
 			if err != nil {
 				return err
 			}
-			ks = statefulsets.NewForKES(mi, svc.Name)
+			ks := statefulsets.NewForKES(mi, svc.Name)
 			klog.V(2).Infof("Creating a new StatefulSet for cluster %q", nsName)
-			ks, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ks, cOpts)
-			if err != nil {
+			if _, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ks, cOpts); err != nil {
 				klog.V(2).Infof(err.Error())
 				return err
 			}
 		} else {
 			return err
 		}
+
 		// After KES and MinIO are deployed successfully, create the MinIO Key on KES KMS Backend
-		j, err := c.jobLister.Jobs(mi.Namespace).Get(mi.Name)
+		_, err = c.jobLister.Jobs(mi.Namespace).Get(mi.Name)
 		if apierrors.IsNotFound(err) {
-			j = jobs.NewForKES(mi)
+			j := jobs.NewForKES(mi)
 			klog.V(2).Infof("Creating a new Job for cluster %q", nsName)
-			j, err = c.kubeClientSet.BatchV1().Jobs(mi.Namespace).Create(ctx, j, cOpts)
-			if err != nil {
+			if _, err = c.kubeClientSet.BatchV1().Jobs(mi.Namespace).Create(ctx, j, cOpts); err != nil {
 				klog.V(2).Infof(err.Error())
 				return err
 			}

@@ -34,16 +34,13 @@ import (
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
 func minioEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
-	envVars := make([]corev1.EnvVar, 0)
+	var envVars []corev1.EnvVar
 	// Add all the environment variables
-	for _, e := range mi.Spec.Env {
-		envVars = append(envVars, e)
-	}
+	envVars = append(envVars, mi.Spec.Env...)
 	// Add env variables from credentials secret, if no secret provided, dont use
 	// env vars. MinIO server automatically creates default credentials
 	if mi.HasCredsSecret() {
-		var secretName string
-		secretName = mi.Spec.CredsSecret.Name
+		secretName := mi.Spec.CredsSecret.Name
 		envVars = append(envVars, corev1.EnvVar{
 			Name: "MINIO_ACCESS_KEY",
 			ValueFrom: &corev1.EnvVarSource{
@@ -193,13 +190,8 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.
 
 // Builds the tolerations for a MinIOInstance.
 func minioTolerations(mi *miniov1.MinIOInstance) []corev1.Toleration {
-	tolerations := make([]corev1.Toleration, 0)
-	// Add all the tolerations
-	for _, t := range mi.Spec.Tolerations {
-		tolerations = append(tolerations, t)
-	}
-	// Return tolerations
-	return tolerations
+	var tolerations []corev1.Toleration
+	return append(tolerations, mi.Spec.Tolerations...)
 }
 
 // Builds the security context for a MinIOInstance
@@ -226,8 +218,6 @@ func getVolumesForContainer(mi *miniov1.MinIOInstance) []corev1.Volume {
 
 // NewForMinIO creates a new StatefulSet for the given Cluster.
 func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSet {
-	var secretName string
-
 	// If a PV isn't specified just use a EmptyDir volume
 	var podVolumes = getVolumesForContainer(mi)
 	var replicas = mi.MinIOReplicas()
@@ -247,6 +237,7 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 		{Key: "public.crt", Path: "CAs/server.crt"},
 	}
 
+	var secretName string
 	if mi.RequiresAutoCertSetup() {
 		secretName = mi.MinIOTLSSecretName()
 	} else if mi.RequiresExternalCertSetup() {
