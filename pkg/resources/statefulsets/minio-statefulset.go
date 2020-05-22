@@ -202,7 +202,7 @@ func minioTolerations(mi *miniov1.MinIOInstance) []corev1.Toleration {
 	return tolerations
 }
 
-// Builds the security contexts for a MinIOInstance
+// Builds the security context for a MinIOInstance
 func minioSecurityContext(mi *miniov1.MinIOInstance) *corev1.PodSecurityContext {
 	var securityContext = corev1.PodSecurityContext{}
 	if mi.Spec.SecurityContext != nil {
@@ -337,14 +337,15 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: minioMetadata(mi),
 				Spec: corev1.PodSpec{
-					Containers:       containers,
-					Volumes:          podVolumes,
-					ImagePullSecrets: []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
-					RestartPolicy:    corev1.RestartPolicyAlways,
-					Affinity:         mi.Spec.Affinity,
-					SchedulerName:    mi.Scheduler.Name,
-					Tolerations:      minioTolerations(mi),
-					SecurityContext:  minioSecurityContext(mi),
+					Containers:         containers,
+					Volumes:            podVolumes,
+					ImagePullSecrets:   []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
+					RestartPolicy:      corev1.RestartPolicyAlways,
+					Affinity:           mi.Spec.Affinity,
+					SchedulerName:      mi.Scheduler.Name,
+					Tolerations:        minioTolerations(mi),
+					SecurityContext:    minioSecurityContext(mi),
+					ServiceAccountName: mi.Spec.ServiceAccountName,
 				},
 			},
 		},

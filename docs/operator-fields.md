@@ -43,6 +43,7 @@ If the MirrorInstance is named as `mirrorinstance`, resources and their names as
 | spec.nodeSelector | Add a selector which must be true for the MinIOInstance pod to fit on a node. Refer [this document](https://kubernetes.io/docs/concepts/configuration/assign-pod-node/) for details.|
 | spec.tolerations | Define a toleration for the MinIOInstance pod to match on a taint. Refer [this document](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/) for details. |
 | spec.securityContext | Define a security context for the MinIOInstance pod. Refer [this document](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) for details. |
+| spec.serviceAccountName | Define a ServiceAccountName for the ServiceAccount to use to run MinIO pods created for this MinIOInstance. Refer [this document](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) for details. |
 | spec.mcs | Defines the mcs configuration. mcs is a graphical user interface for MinIO. Refer [this](https://github.com/minio/mcs) |
 | spec.mcs.image | Defines the mcs image. |
 | spec.mcs.replicas | Number of MCS pods to be created. |
