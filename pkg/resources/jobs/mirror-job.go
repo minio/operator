@@ -90,13 +90,8 @@ func mirrorJobContainer(mi *miniov1.MirrorInstance) corev1.Container {
 
 // Returns the mc mirror environment variables set in configuration.
 func mirrorEnvironmentVars(mi *miniov1.MirrorInstance) []corev1.EnvVar {
-	envVars := make([]corev1.EnvVar, 0)
-	// Add all the environment variables
-	for _, e := range mi.Spec.Env {
-		envVars = append(envVars, e)
-	}
-	// Return environment variables
-	return envVars
+	var envVars []corev1.EnvVar
+	return append(envVars, mi.Spec.Env...)
 }
 
 // Returns the MC pods metadata set in configuration.

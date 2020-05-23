@@ -74,7 +74,7 @@ func (mi *MinIOInstance) RequiresExternalCertSetup() bool {
 // that contains CA cert, server cert and server key for group replication
 // SSL support
 func (mi *MinIOInstance) RequiresAutoCertSetup() bool {
-	return mi.Spec.RequestAutoCert == true
+	return mi.Spec.RequestAutoCert
 }
 
 // VolumePath returns the paths for MinIO mounts based on
@@ -143,7 +143,7 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		mi.Spec.Subpath = MinIOVolumeSubPath
 	}
 
-	if mi.RequiresAutoCertSetup() == true {
+	if mi.RequiresAutoCertSetup() {
 		if mi.Spec.CertConfig != nil {
 			if mi.Spec.CertConfig.CommonName == "" {
 				mi.Spec.CertConfig.CommonName = mi.MinIOWildCardName()
