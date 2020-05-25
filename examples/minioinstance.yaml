@@ -35,8 +35,8 @@ spec:
   ## Add metadata to the all pods created by the StatefulSet
   metadata:
     ## Optionally pass labels to be applied to the statefulset pods
-    #labels:
-    #   app: minio
+    labels:
+      app: minio
     annotations:
       prometheus.io/path: /minio/prometheus/metrics
       prometheus.io/port: "9000"
@@ -50,9 +50,9 @@ spec:
       ## Number of MinIO servers/pods in this zone.
       ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
       ## Note that the operator does not support upgrading from standalone to distributed mode.
-      servers: 16
+      servers: 4
   ## Supply number of volumes to be mounted per MinIO server instance.
-  volumesPerServer: 1
+  volumesPerServer: 4
   ## Mount path where PV will be mounted inside container(s). Defaults to "/export".
   mountPath: /export
   ## Sub path inside Mount path where MinIO starts. Defaults to "".
