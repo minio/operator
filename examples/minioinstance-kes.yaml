@@ -150,9 +150,6 @@ spec:
   ## is not working properly and needs restart. Kubernetes automatically
   ## restarts the pods if liveness checks fail.
   liveness:
-    httpGet:
-      path: /minio/health/live
-      port: 9000
     initialDelaySeconds: 120
     periodSeconds: 60
   ## Readiness probe detects situations when MinIO server instance
@@ -161,9 +158,6 @@ spec:
   ## Readiness check will only work if PodManagementPolicy is set to "Parallel".
   ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
   readiness:
-    httpGet:
-      path: /minio/health/ready
-      port: 9000
     initialDelaySeconds: 120
     periodSeconds: 60
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be

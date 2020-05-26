@@ -28,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // Returns the MinIO environment variables set in configuration.
@@ -149,6 +150,43 @@ func volumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
 	return mounts
 }
 
+func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
+	scheme := corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
+	port := intstr.IntOrString{
+		IntVal: int32(miniov1.MinIOPort),
+	}
+
+	if mi.Spec.Readiness != nil {
+		readiness = &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   miniov1.ReadinessPath,
+					Port:   port,
+					Scheme: scheme,
+				},
+			},
+			InitialDelaySeconds: mi.Spec.Readiness.InitialDelaySeconds,
+			PeriodSeconds:       mi.Spec.Readiness.PeriodSeconds,
+		}
+	}
+
+	if mi.Spec.Liveness != nil {
+		liveness = &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   miniov1.LivenessPath,
+					Port:   port,
+					Scheme: scheme,
+				},
+			},
+			InitialDelaySeconds: mi.Spec.Liveness.InitialDelaySeconds,
+			PeriodSeconds:       mi.Spec.Liveness.PeriodSeconds,
+		}
+	}
+
+	return readiness, liveness
+}
+
 // Builds the MinIO container for a MinIOInstance.
 func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.Container {
 	args := []string{"server"}
@@ -164,11 +202,7 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.
 		}
 	}
 
-	readyProbe := mi.Spec.Readiness
-	readyProbe.HTTPGet.Scheme = corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
-
-	liveProbe := mi.Spec.Liveness
-	liveProbe.HTTPGet.Scheme = corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
+	readyProbe, liveProbe := probes(mi)
 
 	return corev1.Container{
 		Name:  miniov1.MinIOServerName,
