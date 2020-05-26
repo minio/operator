@@ -100,10 +100,10 @@ type MinIOInstanceSpec struct {
 	Subpath string `json:"subPath,omitempty"`
 	// Liveness Probe for container liveness. Container will be restarted if the probe fails.
 	// +optional
-	Liveness *corev1.Probe `json:"liveness,omitempty"`
+	Liveness *Liveness `json:"liveness,omitempty"`
 	// Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
 	// +optional
-	Readiness *corev1.Probe `json:"readiness,omitempty"`
+	Readiness *Readiness `json:"readiness,omitempty"`
 	// RequestAutoCert allows user to enable Kubernetes based TLS cert generation and signing as explained here:
 	// https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
 	// +optional
@@ -155,6 +155,18 @@ type LocalCertificateReference struct {
 type Zone struct {
 	Name    string `json:"name"`
 	Servers int32  `json:"servers"`
+}
+
+// Liveness specifies the spec for liveness probe
+type Liveness struct {
+	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
+	PeriodSeconds       int32 `json:"periodSeconds"`
+}
+
+// Readiness specifies the spec for liveness probe
+type Readiness struct {
+	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
+	PeriodSeconds       int32 `json:"periodSeconds"`
 }
 
 // MCSConfig defines the credentials for mcs
