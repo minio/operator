@@ -32,3 +32,8 @@ govet:
 
 gotest:
 	@go test -race ./...
+
+clean:
+	@echo "Cleaning up all the generated files"
+	@find . -name '*.test' | xargs rm -fv
+	@find . -name '*~' | xargs rm -fv

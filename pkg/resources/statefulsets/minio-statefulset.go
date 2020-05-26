@@ -28,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // Returns the MinIO environment variables set in configuration.
@@ -69,13 +70,13 @@ func minioEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 			Value: "https://" + net.JoinHostPort(mi.KESServiceHost(), strconv.Itoa(miniov1.KESPort)),
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CERT_FILE",
-			Value: "/root/.minio/certs/client.crt",
+			Value: "/tmp/certs/client.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_FILE",
-			Value: "/root/.minio/certs/client.key",
+			Value: "/tmp/certs/client.key",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CA_PATH",
-			Value: "/root/.minio/certs/CAs/server.crt",
+			Value: "/tmp/certs/CAs/server.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
 			Value: miniov1.KESMinIOKey,
@@ -115,9 +116,7 @@ func minioMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
-	var mounts []corev1.VolumeMount
-
+func volumeMounts(mi *miniov1.MinIOInstance) (mounts []corev1.VolumeMount) {
 	// This is the case where user didn't provide a zone and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
 	name := miniov1.MinIOVolumeName
@@ -128,13 +127,13 @@ func volumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
 	if mi.Spec.VolumesPerServer == 1 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      name + strconv.Itoa(0),
-			MountPath: miniov1.MinIOVolumeMountPath,
+			MountPath: mi.Spec.Mountpath,
 		})
 	} else {
 		for i := 0; i < mi.Spec.VolumesPerServer; i++ {
 			mounts = append(mounts, corev1.VolumeMount{
 				Name:      name + strconv.Itoa(i),
-				MountPath: miniov1.MinIOVolumeMountPath + strconv.Itoa(i),
+				MountPath: mi.Spec.Mountpath + strconv.Itoa(i),
 			})
 		}
 	}
@@ -142,33 +141,65 @@ func volumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
 	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      mi.MinIOTLSSecretName(),
-			MountPath: "/root/.minio/certs",
+			MountPath: "/tmp/certs",
 		})
 	}
 
 	return mounts
 }
 
+func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
+	scheme := corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
+	port := intstr.IntOrString{
+		IntVal: int32(miniov1.MinIOPort),
+	}
+
+	if mi.Spec.Readiness != nil {
+		readiness = &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   miniov1.ReadinessPath,
+					Port:   port,
+					Scheme: scheme,
+				},
+			},
+			InitialDelaySeconds: mi.Spec.Readiness.InitialDelaySeconds,
+			PeriodSeconds:       mi.Spec.Readiness.PeriodSeconds,
+		}
+	}
+
+	if mi.Spec.Liveness != nil {
+		liveness = &corev1.Probe{
+			Handler: corev1.Handler{
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:   miniov1.LivenessPath,
+					Port:   port,
+					Scheme: scheme,
+				},
+			},
+			InitialDelaySeconds: mi.Spec.Liveness.InitialDelaySeconds,
+			PeriodSeconds:       mi.Spec.Liveness.PeriodSeconds,
+		}
+	}
+
+	return readiness, liveness
+}
+
 // Builds the MinIO container for a MinIOInstance.
 func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.Container {
-	args := []string{"server"}
+	args := []string{"server", "--certs-dir", "/tmp/certs"}
 
 	if mi.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
 		args = append(args, miniov1.MinIOVolumeMountPath)
 	} else {
 		// append all the MinIOInstance replica URLs
-		hosts := mi.MinIOHosts()
-		for _, h := range hosts {
+		for _, h := range mi.MinIOHosts() {
 			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, mi.VolumePath()))
 		}
 	}
 
-	readyProbe := mi.Spec.Readiness
-	readyProbe.HTTPGet.Scheme = corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
-
-	liveProbe := mi.Spec.Liveness
-	liveProbe.HTTPGet.Scheme = corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
+	readyProbe, liveProbe := probes(mi)
 
 	return corev1.Container{
 		Name:  miniov1.MinIOServerName,

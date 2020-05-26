@@ -17,6 +17,9 @@ spec:
     - port: 9000
       targetPort: 9000
       protocol: TCP
+      # Optional field
+      # By default and for convenience, the Kubernetes control plane will allocate a port from a range (default: 30000-32767)
+      # nodePort: 30007
   selector:
     app: minio
 ---
@@ -32,8 +35,8 @@ spec:
   ## Add metadata to the all pods created by the StatefulSet
   metadata:
     ## Optionally pass labels to be applied to the statefulset pods
-    #labels:
-    #   app: minio
+    labels:
+      app: minio
     annotations:
       prometheus.io/path: /minio/prometheus/metrics
       prometheus.io/port: "9000"
@@ -49,7 +52,7 @@ spec:
       ## Note that the operator does not support upgrading from standalone to distributed mode.
       servers: 4
   ## Supply number of volumes to be mounted per MinIO server instance.
-  volumesPerServer: 1
+  volumesPerServer: 4
   ## Mount path where PV will be mounted inside container(s). Defaults to "/export".
   mountPath: /export
   ## Sub path inside Mount path where MinIO starts. Defaults to "".
@@ -65,7 +68,7 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 10Gi
+          storage: 1Ti
   ## Secret with credentials to be used by MinIO instance.
   credsSecret:
     name: minio-creds-secret
@@ -96,23 +99,19 @@ spec:
   #    operator: Equal
   #    value: storage
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
-  env:
-    - name: MINIO_BROWSER
-      value: "on"
-    # - name: MINIO_STORAGE_CLASS_RRS
+  # env:
+    # - name: MINIO_BROWSER
+    #  value: "off" # to turn-off browser
+    # - name: MINIO_STORAGE_CLASS_STANDARD
     #   value: "EC:2"
   ## Configure resource requests and limits for MinIO containers
-  resources:
-    requests:
-      memory: 512Mi
-      cpu: 250m
+  # resources:
+    # requests:
+      # memory: 20Gi
   ## Liveness probe detects situations where MinIO server instance
   ## is not working properly and needs restart. Kubernetes automatically
   ## restarts the pods if liveness checks fail.
   liveness:
-    httpGet:
-      path: /minio/health/live
-      port: 9000
     initialDelaySeconds: 120
     periodSeconds: 60
   ## Readiness probe detects situations when MinIO server instance
@@ -121,9 +120,6 @@ spec:
   ## Readiness check will only work if PodManagementPolicy is set to "Parallel".
   ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
   readiness:
-    httpGet:
-      path: /minio/health/ready
-      port: 9000
     initialDelaySeconds: 120
     periodSeconds: 60
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be

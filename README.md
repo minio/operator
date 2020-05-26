@@ -19,6 +19,7 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), [KES](h
 
 - Kubernetes version v1.17.0 and above for compatibility. MinIO Operator uses `k8s/client-go` v0.18.0.
 - `kubectl` configured to refer to a Kubernetes cluster.
+- Create the required PVs as [explained here](https://github.com/minio/minio-operator/blob/master/docs/creating-pv-manually.md).
 
 ### Create Operator and related resources
 
@@ -30,7 +31,7 @@ kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/m
 
 This will create all relevant resources required for the Operator to work.
 
-You could install the MinIO Operator a custom namespace by customizing the `minio-operator.yaml` file or using [kustomize](https://github.com/kubernetes-sigs/kustomize) 
+You could install the MinIO Operator a custom namespace by customizing the `minio-operator.yaml` file or using [kustomize](https://github.com/kubernetes-sigs/kustomize)
 
 ```bash
 kustomize build | kubectl apply -f -
