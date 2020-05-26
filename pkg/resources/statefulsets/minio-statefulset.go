@@ -69,13 +69,13 @@ func minioEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 			Value: "https://" + net.JoinHostPort(mi.KESServiceHost(), strconv.Itoa(miniov1.KESPort)),
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CERT_FILE",
-			Value: "/root/.minio/certs/client.crt",
+			Value: "/tmp/certs/client.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_FILE",
-			Value: "/root/.minio/certs/client.key",
+			Value: "/tmp/certs/client.key",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CA_PATH",
-			Value: "/root/.minio/certs/CAs/server.crt",
+			Value: "/tmp/certs/CAs/server.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
 			Value: miniov1.KESMinIOKey,
@@ -115,9 +115,7 @@ func minioMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
-	var mounts []corev1.VolumeMount
-
+func volumeMounts(mi *miniov1.MinIOInstance) (mounts []corev1.VolumeMount) {
 	// This is the case where user didn't provide a zone and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
 	name := miniov1.MinIOVolumeName
@@ -128,13 +126,13 @@ func volumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
 	if mi.Spec.VolumesPerServer == 1 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      name + strconv.Itoa(0),
-			MountPath: miniov1.MinIOVolumeMountPath,
+			MountPath: mi.Spec.Mountpath,
 		})
 	} else {
 		for i := 0; i < mi.Spec.VolumesPerServer; i++ {
 			mounts = append(mounts, corev1.VolumeMount{
 				Name:      name + strconv.Itoa(i),
-				MountPath: miniov1.MinIOVolumeMountPath + strconv.Itoa(i),
+				MountPath: mi.Spec.Mountpath + strconv.Itoa(i),
 			})
 		}
 	}
@@ -142,7 +140,7 @@ func volumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
 	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      mi.MinIOTLSSecretName(),
-			MountPath: "/root/.minio/certs",
+			MountPath: "/tmp/certs",
 		})
 	}
 
@@ -151,15 +149,14 @@ func volumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
 
 // Builds the MinIO container for a MinIOInstance.
 func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.Container {
-	args := []string{"server"}
+	args := []string{"server", "--certs-dir", "/tmp/certs"}
 
 	if mi.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
 		args = append(args, miniov1.MinIOVolumeMountPath)
 	} else {
 		// append all the MinIOInstance replica URLs
-		hosts := mi.MinIOHosts()
-		for _, h := range hosts {
+		for _, h := range mi.MinIOHosts() {
 			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, mi.VolumePath()))
 		}
 	}
