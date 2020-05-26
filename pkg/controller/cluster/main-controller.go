@@ -125,6 +125,9 @@ type Controller struct {
 	// recorder is an event recorder for recording Event resources to the
 	// Kubernetes API.
 	recorder record.EventRecorder
+
+	// Use a go template to render the hosts string
+	hostsTemplate string
 }
 
 // NewController returns a new sample controller
@@ -136,7 +139,8 @@ func NewController(
 	deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer batchinformers.JobInformer,
 	minioInstanceInformer informers.MinIOInstanceInformer,
-	serviceInformer coreinformers.ServiceInformer) *Controller {
+	serviceInformer coreinformers.ServiceInformer,
+	hostsTemplate string) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -164,6 +168,7 @@ func NewController(
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
 		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "MinIOInstances"),
 		recorder:                recorder,
+		hostsTemplate:           hostsTemplate,
 	}
 
 	klog.Info("Setting up event handlers")
@@ -411,7 +416,7 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
-			ss = statefulsets.NewForMinIO(mi, hlSvc.Name)
+			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate)
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -450,7 +455,7 @@ func (c *Controller) syncHandler(key string) error {
 				}
 			}
 
-			ss = statefulsets.NewForMinIO(mi, hlSvc.Name)
+			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate)
 			klog.V(2).Infof("Removing the existing StatefulSet %s with replicas: %d", name, *ss.Spec.Replicas)
 			if err := c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Delete(ctx, ss.Name, metav1.DeleteOptions{}); err != nil {
 				return err
@@ -476,7 +481,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 			klog.V(4).Infof("Updating MinIOInstance %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
-			ss = statefulsets.NewForMinIO(mi, hlSvc.Name)
+			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate)
 			if _, err := c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}

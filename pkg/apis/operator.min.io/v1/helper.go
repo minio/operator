@@ -18,6 +18,7 @@
 package v1
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -26,6 +27,7 @@ import (
 	"net/http"
 	"path"
 	"strconv"
+	"text/template"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -38,6 +40,19 @@ import (
 	iampolicy "github.com/minio/minio/pkg/iam/policy"
 	"github.com/minio/minio/pkg/madmin"
 )
+
+type hostsTemplateValues struct {
+	StatefulSet string
+	CIService   string
+	HLService   string
+	Ellipsis    string
+	Domain      string
+}
+
+// ellipsis returns the host range string
+func ellipsis(start, end int) string {
+	return "{" + strconv.Itoa(start) + "..." + strconv.Itoa(end) + "}"
+}
 
 // HasCredsSecret returns true if the user has provided a secret
 // for a MinIOInstance else false
@@ -77,7 +92,7 @@ func (mi *MinIOInstance) VolumePath() string {
 	if mi.Spec.VolumesPerServer == 1 {
 		return path.Join(mi.Spec.Mountpath, mi.Spec.Subpath)
 	}
-	return path.Join(mi.Spec.Mountpath+"{0..."+strconv.Itoa((mi.Spec.VolumesPerServer)-1)+"}", mi.Spec.Subpath)
+	return path.Join(mi.Spec.Mountpath+ellipsis(0, mi.Spec.VolumesPerServer-1), mi.Spec.Subpath)
 }
 
 // MinIOReplicas returns the number of total replicas
@@ -203,7 +218,37 @@ func (mi *MinIOInstance) MinIOHosts() []string {
 	// Create the ellipses style URL
 	for _, z := range mi.Spec.Zones {
 		max = max + z.Servers
-		hosts = append(hosts, fmt.Sprintf("%s-{"+strconv.Itoa(int(index))+"..."+strconv.Itoa(int(max)-1)+"}.%s.%s.svc.%s", mi.MinIOStatefulSetName(), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
+		hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", ellipsis(int(index), int(max)-1), mi.MinIOStatefulSetName(), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
+		index = max
+	}
+	return hosts
+}
+
+// TemplatedMinIOHosts returns the domain names in ellipses format created for current MinIOInstance without the service part
+func (mi *MinIOInstance) TemplatedMinIOHosts(hostsTemplate string) []string {
+	hosts := make([]string, 0)
+	tmpl, err := template.New("hosts").Parse(hostsTemplate)
+	if err != nil {
+		msg := "Invalid go template for hosts"
+		klog.V(2).Infof(msg)
+		return hosts
+	}
+	var max, index int32
+	// Create the ellipses style URL
+	for _, z := range mi.Spec.Zones {
+		max = max + z.Servers
+		data := hostsTemplateValues{
+			StatefulSet: mi.MinIOStatefulSetName(),
+			CIService:   mi.MinIOCIServiceName(),
+			HLService:   mi.MinIOHLServiceName(),
+			Ellipsis:    ellipsis(int(index), int(max)-1),
+			Domain:      ClusterDomain,
+		}
+		output := new(bytes.Buffer)
+		if err = tmpl.Execute(output, data); err != nil {
+			continue
+		}
+		hosts = append(hosts, output.String())
 		index = max
 	}
 	return hosts

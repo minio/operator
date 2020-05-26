@@ -183,7 +183,7 @@ func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
 }
 
 // Builds the MinIO container for a MinIOInstance.
-func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.Container {
+func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string) corev1.Container {
 	args := []string{"server", "--certs-dir", "/tmp/certs"}
 
 	if mi.Spec.Zones[0].Servers == 1 {
@@ -191,7 +191,11 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.
 		args = append(args, mi.VolumePath())
 	} else {
 		// append all the MinIOInstance replica URLs
-		for _, h := range mi.MinIOHosts() {
+		hosts := mi.MinIOHosts()
+		if hostsTemplate != "" {
+			hosts = mi.TemplatedMinIOHosts(hostsTemplate)
+		}
+		for _, h := range hosts {
 			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, mi.VolumePath()))
 		}
 	}
@@ -245,7 +249,7 @@ func getVolumesForContainer(mi *miniov1.MinIOInstance) []corev1.Volume {
 }
 
 // NewForMinIO creates a new StatefulSet for the given Cluster.
-func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSet {
+func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
 	// If a PV isn't specified just use a EmptyDir volume
 	var podVolumes = getVolumesForContainer(mi)
 	var replicas = mi.MinIOReplicas()
@@ -327,7 +331,7 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 		})
 	}
 
-	containers := []corev1.Container{minioServerContainer(mi, serviceName)}
+	containers := []corev1.Container{minioServerContainer(mi, serviceName, hostsTemplate)}
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
