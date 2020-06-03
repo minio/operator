@@ -19,5 +19,3 @@
 package v1
 
 type MinIOInstanceExpansion interface{}
-
-type MirrorInstanceExpansion interface{}

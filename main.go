@@ -34,7 +34,6 @@ import (
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions"
 	"github.com/minio/minio-operator/pkg/controller/cluster"
-	"github.com/minio/minio-operator/pkg/controller/mirror"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
@@ -101,15 +100,12 @@ func main() {
 
 	var kubeInformerFactory kubeinformers.SharedInformerFactory
 	var minioInformerFactory informers.SharedInformerFactory
-	var mirrorInformerFactory informers.SharedInformerFactory
 	if isNamespaced {
 		kubeInformerFactory = kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(namespace))
 		minioInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(namespace))
-		mirrorInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(namespace))
 	} else {
 		kubeInformerFactory = kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
-		mirrorInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	}
 
 	mainController := cluster.NewController(kubeClient, controllerClient, *certClient,
@@ -119,26 +115,16 @@ func main() {
 		minioInformerFactory.Operator().V1().MinIOInstances(),
 		kubeInformerFactory.Core().V1().Services())
 
-	mirrorController := mirror.NewController(kubeClient, controllerClient,
-		kubeInformerFactory.Batch().V1().Jobs(),
-		mirrorInformerFactory.Operator().V1().MirrorInstances())
-
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
-	go mirrorInformerFactory.Start(stopCh)
 
 	if err = mainController.Start(2, stopCh); err != nil {
 		klog.Fatalf("Error running mainController: %s", err.Error())
 	}
 
-	if err = mirrorController.Start(2, stopCh); err != nil {
-		klog.Fatalf("Error running mirrorController: %s", err.Error())
-	}
-
 	<-stopCh
 	klog.Info("Shutting down the MinIO Operator")
 	mainController.Stop()
-	mirrorController.Stop()
 }
 
 // setupSignalHandler registered for SIGTERM and SIGINT. A stop channel is returned

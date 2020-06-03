@@ -27,7 +27,6 @@ import (
 type OperatorV1Interface interface {
 	RESTClient() rest.Interface
 	MinIOInstancesGetter
-	MirrorInstancesGetter
 }
 
 // OperatorV1Client is used to interact with features provided by the operator.min.io group.
@@ -37,10 +36,6 @@ type OperatorV1Client struct {
 
 func (c *OperatorV1Client) MinIOInstances(namespace string) MinIOInstanceInterface {
 	return newMinIOInstances(c, namespace)
-}
-
-func (c *OperatorV1Client) MirrorInstances(namespace string) MirrorInstanceInterface {
-	return newMirrorInstances(c, namespace)
 }
 
 // NewForConfig creates a new OperatorV1Client for the given config.

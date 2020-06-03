@@ -24,9 +24,6 @@ import (
 // MinIOServerName specifies the default container name for MinIOInstance
 const MinIOServerName = "minio"
 
-// MirrorContainerName specifies the default container name for MirrorInstance
-const MirrorContainerName = "mirror"
-
 // KESContainerName specifies the default container name for KES
 const KESContainerName = "kes"
 

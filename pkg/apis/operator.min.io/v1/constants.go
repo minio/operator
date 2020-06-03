@@ -105,20 +105,6 @@ const LivenessInitialDelay = 120
 // LivenessPeriod specifies the interval in calling the liveness endpoint
 const LivenessPeriod = 60
 
-// MC Mirror Related Constants
-
-// DefaultMCImage specifies the default mc Docker hub image
-const DefaultMCImage = "minio/mc:RELEASE.2020-05-06T18-00-07Z"
-
-// MirrorJobRestartPolicy specifies the restart policy for the job created for mirroring
-const MirrorJobRestartPolicy = corev1.RestartPolicyOnFailure
-
-// DefaultMirrorFlags specifies the restart policy for the job created for mirroring
-var DefaultMirrorFlags = []string{"--no-color", "--json"}
-
-// MirrorCRDResourceKind is the Kind of a Cluster.
-const MirrorCRDResourceKind = "MirrorInstance"
-
 // MCS Related Constants
 
 // DefaultMCSImage specifies the latest MCS Docker hub image
@@ -165,7 +151,7 @@ const KESServicePortName = "http-kes"
 // KESMinIOKey is the name of key that KES creates on the KMS backend
 const KESMinIOKey = "my-minio-key"
 
-// KESJobRestartPolicy specifies the restart policy for the job created for mirroring
+// KESJobRestartPolicy specifies the restart policy for the job created for key creation
 const KESJobRestartPolicy = corev1.RestartPolicyOnFailure
 
 // KESHLSvcNameSuffix specifies the suffix added to MinIOInstance name to create a headless service for KES

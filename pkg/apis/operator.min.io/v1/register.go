@@ -55,8 +55,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&MinIOInstance{},
 		&MinIOInstanceList{},
-		&MirrorInstance{},
-		&MirrorInstanceList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

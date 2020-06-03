@@ -2,7 +2,7 @@
 
 MinIO is a high performance distributed object storage server, designed for large-scale private cloud infrastructure. MinIO is designed in a cloud-native manner to scale sustainably in multi-tenant environments. Orchestration platforms like Kubernetes provide perfect launchpad for MinIO to scale.
 
-MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), [KES](https://github.com/minio/kes) and [mc Mirror](https://docs.minio.io/docs/minio-client-complete-guide.html#mirror) support to Kubernetes. MinIO-Operator currently supports following features:
+MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KES](https://github.com/minio/kes) support to Kubernetes. MinIO-Operator currently supports following features:
 
 | Feature                 | Reference Document |
 |-------------------------|--------------------|
@@ -11,7 +11,6 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), [KES](h
 | Expand an existing MinIO cluster                               | [Expand a MinIO Cluster](https://github.com/minio/minio-operator/blob/master/docs/adding-zones.md). |
 | Deploy MCS with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/minio-operator/blob/master/docs/mcs.md). |
 | Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/minio-operator/blob/master/docs/kes.md). |
-| Deploy mc mirror  | [Deploy Mirror Instance](https://github.com/minio/minio-operator/blob/master/docs/mirror.md). |
 
 ## Getting Started
 
