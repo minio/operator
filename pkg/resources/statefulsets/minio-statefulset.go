@@ -191,7 +191,7 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.
 
 	if mi.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
-		args = append(args, miniov1.MinIOVolumeMountPath)
+		args = append(args, mi.VolumePath())
 	} else {
 		// append all the MinIOInstance replica URLs
 		for _, h := range mi.MinIOHosts() {
