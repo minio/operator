@@ -425,7 +425,11 @@ func (c *Controller) syncHandler(key string) error {
 		// should update the StatefulSet resource.
 		if mi.MinIOReplicas() != *ss.Spec.Replicas {
 			klog.V(2).Infof("MinIOInstance %s replicas: %d, StatefulSet replicas: %d", name, mi.MinIOReplicas(), *ss.Spec.Replicas)
-
+			currentState := "Adding new Zone"
+			mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
+			if err != nil {
+				return err
+			}
 			// If this was a TLS enabled Setup, we create new CSR because change in number of replicas means the new endpoints
 			// need to be added in the CSR
 			if mi.RequiresAutoCertSetup() {
@@ -452,7 +456,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			currentState := "Provisioning Statefulset"
+			currentState = "Provisioning Statefulset"
 			mi, err = c.updateMinIOInstanceStatus(ctx, mi, currentState, 0)
 			if err != nil {
 				return err
@@ -620,18 +624,26 @@ func (c *Controller) syncHandler(key string) error {
 
 func (c *Controller) removeMinIOCSRAndSecrets(ctx context.Context, mi *miniov1.MinIOInstance) error {
 	if err := c.certClient.CertificateSigningRequests().Delete(ctx, mi.MinIOCSRName(), metav1.DeleteOptions{}); err != nil {
-		return err
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
 	}
 	if err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Delete(ctx, mi.MinIOTLSSecretName(), metav1.DeleteOptions{}); err != nil {
-		return err
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
 	}
 
 	if mi.HasKESEnabled() {
 		if err := c.certClient.CertificateSigningRequests().Delete(ctx, mi.MinIOClientCSRName(), metav1.DeleteOptions{}); err != nil {
-			return err
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
 		}
 		if err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Delete(ctx, mi.MinIOClientTLSSecretName(), metav1.DeleteOptions{}); err != nil {
-			return err
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
 		}
 	}
 	return nil

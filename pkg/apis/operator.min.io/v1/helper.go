@@ -51,12 +51,6 @@ func (mi *MinIOInstance) HasMetadata() bool {
 	return mi.Spec.Metadata != nil
 }
 
-// HasSelector returns true if the user has provided a pod selector
-// field (ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-selector)
-func (mi *MinIOInstance) HasSelector() bool {
-	return mi.Spec.Selector != nil
-}
-
 // HasCertConfig returns true if the user has provided a certificate
 // config
 func (mi *MinIOInstance) HasCertConfig() bool {
@@ -160,12 +154,6 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 				DNSNames:         mi.MinIOHosts(),
 				OrganizationName: DefaultOrgName,
 			}
-		}
-	}
-
-	if !mi.HasSelector() {
-		mi.Spec.Selector = &metav1.LabelSelector{
-			MatchLabels: mi.MinIOPodLabels(),
 		}
 	}
 
@@ -296,22 +284,10 @@ func (mi *MinIOInstance) HasMCSMetadata() bool {
 	return mi.Spec.MCS != nil && mi.Spec.MCS.Metadata != nil
 }
 
-// HasMCSSelector returns true if the user has provided a mcs selector
-// for a MinIOInstance else false
-func (mi *MinIOInstance) HasMCSSelector() bool {
-	return mi.Spec.MCS != nil && mi.Spec.MCS.Selector != nil
-}
-
 // HasKESMetadata returns true if the user has provided KES metadata
 // for a MinIOInstance else false
 func (mi *MinIOInstance) HasKESMetadata() bool {
 	return mi.Spec.KES != nil && mi.Spec.KES.Metadata != nil
-}
-
-// HasKESSelector returns true if the user has provided a KES selector
-// for a MinIOInstance else false
-func (mi *MinIOInstance) HasKESSelector() bool {
-	return mi.Spec.KES != nil && mi.Spec.KES.Selector != nil
 }
 
 // CreateMCSUser function creates an admin user

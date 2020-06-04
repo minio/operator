@@ -81,11 +81,6 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
-	if in.Selector != nil {
-		in, out := &in.Selector, &out.Selector
-		*out = new(metav1.LabelSelector)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Metadata != nil {
 		in, out := &in.Metadata, &out.Metadata
 		*out = new(metav1.ObjectMeta)
@@ -143,11 +138,6 @@ func (in *MCSConfig) DeepCopyInto(out *MCSConfig) {
 		in, out := &in.MCSSecret, &out.MCSSecret
 		*out = new(corev1.LocalObjectReference)
 		**out = **in
-	}
-	if in.Selector != nil {
-		in, out := &in.Selector, &out.Selector
-		*out = new(metav1.LabelSelector)
-		(*in).DeepCopyInto(*out)
 	}
 	if in.Metadata != nil {
 		in, out := &in.Metadata, &out.Metadata
@@ -270,11 +260,6 @@ func (in *MinIOInstanceSpec) DeepCopyInto(out *MinIOInstanceSpec) {
 	if in.VolumeClaimTemplate != nil {
 		in, out := &in.VolumeClaimTemplate, &out.VolumeClaimTemplate
 		*out = new(corev1.PersistentVolumeClaim)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Selector != nil {
-		in, out := &in.Selector, &out.Selector
-		*out = new(metav1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
 	if in.NodeSelector != nil {

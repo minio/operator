@@ -78,9 +78,6 @@ type MinIOInstanceSpec struct {
 	// VolumeClaimTemplate allows a user to specify how volumes inside a MinIOInstance
 	// +optional
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
-	// Selector is a label query over pods that should match the replica count.
-	// +optional
-	Selector *metav1.LabelSelector `json:"selector,omitempty"`
 	// NodeSelector is a selector which must be true for the pod to fit on a node.
 	// Selector which must match a node's labels for the pod to be scheduled on that node.
 	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
@@ -169,7 +166,7 @@ type Readiness struct {
 	PeriodSeconds       int32 `json:"periodSeconds"`
 }
 
-// MCSConfig defines the credentials for mcs
+// MCSConfig defines the specifications for MCS Deployment
 type MCSConfig struct {
 	// Replicas defines number of pods for KES StatefulSet.
 	// +optional
@@ -179,8 +176,7 @@ type MCSConfig struct {
 	Image string `json:"image,omitempty"`
 	// This secret provides all environment variables for KES
 	// This is a mandatory field
-	MCSSecret *corev1.LocalObjectReference `json:"mcsSecret,omitempty"`
-	Selector  *metav1.LabelSelector        `json:"selector,omitempty"`
+	MCSSecret *corev1.LocalObjectReference `json:"mcsSecret"`
 	Metadata  *metav1.ObjectMeta           `json:"metadata,omitempty"`
 }
 
@@ -192,10 +188,9 @@ type KESConfig struct {
 	// Image defines the MinIOInstance Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`
-	// This configSecret serves as the configuration for KES
+	// This kesSecret serves as the configuration for KES
 	// This is a mandatory field
-	Configuration *corev1.LocalObjectReference `json:"configSecret"`
-	Selector      *metav1.LabelSelector        `json:"selector,omitempty"`
+	Configuration *corev1.LocalObjectReference `json:"kesSecret"`
 	Metadata      *metav1.ObjectMeta           `json:"metadata,omitempty"`
 }
 

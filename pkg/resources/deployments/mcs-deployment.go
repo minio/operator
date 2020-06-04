@@ -60,27 +60,23 @@ func mcsSecretEnvVars(mi *miniov1.MinIOInstance) []corev1.EnvFromSource {
 
 func mcsMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	// Initialize empty fields
-	if meta.Labels == nil {
-		meta.Labels = make(map[string]string)
-	}
-	if meta.Annotations == nil {
-		meta.Annotations = make(map[string]string)
-	}
-
 	if mi.HasMCSMetadata() {
 		meta = *mi.Spec.MCS.Metadata
+	}
+	if meta.Labels == nil {
+		meta.Labels = make(map[string]string)
 	}
 	for k, v := range mi.MCSPodLabels() {
 		meta.Labels[k] = v
 	}
-	// Add the Selector labels set by user
-	if mi.HasMCSSelector() {
-		for k, v := range mi.Spec.MCS.Selector.MatchLabels {
-			meta.Labels[k] = v
-		}
-	}
 	return meta
+}
+
+// mcsSelector Returns the MCS pods selector
+func mcsSelector(mi *miniov1.MinIOInstance) *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: mi.MCSPodLabels(),
+	}
 }
 
 // Builds the MCS container for a MinIOInstance.
@@ -115,11 +111,7 @@ func NewForMCS(mi *miniov1.MinIOInstance) *appsv1.Deployment {
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &mi.Spec.MCS.Replicas,
 			// MCS is always matched via MinIOInstance Name + mcs prefix
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					miniov1.MCSInstanceLabel: mi.MCSDeploymentName(),
-				},
-			},
+			Selector: mcsSelector(mi),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: mcsMetadata(mi),
 				Spec: corev1.PodSpec{
