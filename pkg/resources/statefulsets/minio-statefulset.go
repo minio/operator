@@ -95,24 +95,21 @@ func minioMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
 	if mi.HasMetadata() {
 		meta = *mi.Spec.Metadata
 	}
-	// Initialize empty fields
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
-	if meta.Annotations == nil {
-		meta.Annotations = make(map[string]string)
-	}
-	// Add the additional label used by StatefulSet spec
+	// Add the additional label used by StatefulSet spec selector
 	for k, v := range mi.MinIOPodLabels() {
 		meta.Labels[k] = v
 	}
-	// Add the Selector labels set by user
-	if mi.HasSelector() {
-		for k, v := range mi.Spec.Selector.MatchLabels {
-			meta.Labels[k] = v
-		}
-	}
 	return meta
+}
+
+// MinIOSelector Returns the MinIO pods selector set in configuration.
+func MinIOSelector(mi *miniov1.MinIOInstance) *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: mi.MinIOPodLabels(),
+	}
 }
 
 // Builds the volume mounts for MinIO container.
@@ -191,7 +188,7 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string) corev1.
 
 	if mi.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
-		args = append(args, miniov1.MinIOVolumeMountPath)
+		args = append(args, mi.VolumePath())
 	} else {
 		// append all the MinIOInstance replica URLs
 		for _, h := range mi.MinIOHosts() {
@@ -349,19 +346,14 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 				Type: miniov1.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: mi.Spec.PodManagementPolicy,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					miniov1.InstanceLabel: mi.MinIOStatefulSetName(),
-				},
-			},
-			ServiceName: serviceName,
-			Replicas:    &replicas,
+			Selector:            MinIOSelector(mi),
+			ServiceName:         serviceName,
+			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: minioMetadata(mi),
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					Volumes:            podVolumes,
-					ImagePullSecrets:   []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Affinity:           mi.Spec.Affinity,
 					SchedulerName:      mi.Scheduler.Name,
@@ -371,6 +363,11 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 				},
 			},
 		},
+	}
+
+	// Address issue https://github.com/kubernetes/kubernetes/issues/85332
+	if mi.Spec.ImagePullSecret.Name != "" {
+		ss.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{mi.Spec.ImagePullSecret}
 	}
 
 	if mi.Spec.VolumeClaimTemplate != nil {

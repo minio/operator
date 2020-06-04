@@ -116,21 +116,15 @@ func kesEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 // metadata.
 func kesMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-
 	if mi.HasKESMetadata() {
 		meta = *mi.Spec.KES.Metadata
 	}
-
+	if meta.Labels == nil {
+		meta.Labels = make(map[string]string)
+	}
 	// Add the additional label from spec
 	for k, v := range mi.KESPodLabels() {
 		meta.Labels[k] = v
-	}
-
-	// Add the Selector labels set by user
-	if mi.HasKESSelector() {
-		for k, v := range mi.Spec.KES.Selector.MatchLabels {
-			meta.Labels[k] = v
-		}
 	}
 	return meta
 }

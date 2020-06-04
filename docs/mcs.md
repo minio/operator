@@ -23,8 +23,7 @@ MCS Configuration is a part of MinIOInstance yaml file. Check the sample file [a
 | spec.mcs.image | Defines the mcs image |
 | spec.mcs.replicas | Number of MCS pods to be created. |
 | spec.mcs.mcsSecret | Use this secret to assign mcs credentials to MinIOInstance. |
-| spec.mcs.selector | Add a selector for the mcs. Which will be used by the mcs container for grouping. (Note: Should not match the labels provided in `spec.selector`) |
-| spec.mcs.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). [Note: Should match the labels in `spec.mcs.selector`] |
+| spec.mcs.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
 
 ### Create MinIO Instance
 
