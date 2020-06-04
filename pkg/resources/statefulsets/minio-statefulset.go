@@ -354,7 +354,6 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					Volumes:            podVolumes,
-					ImagePullSecrets:   []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					Affinity:           mi.Spec.Affinity,
 					SchedulerName:      mi.Scheduler.Name,
@@ -364,6 +363,11 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 				},
 			},
 		},
+	}
+
+	// Address issue https://github.com/kubernetes/kubernetes/issues/85332
+	if mi.Spec.ImagePullSecret.Name != "" {
+		ss.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{mi.Spec.ImagePullSecret}
 	}
 
 	if mi.Spec.VolumeClaimTemplate != nil {
