@@ -51,6 +51,7 @@ spec:
                   type: string
                 mcs:
                   type: object
+                  x-kubernetes-preserve-unknown-fields: true
                   properties:
                     image:
                       type: string
@@ -58,6 +59,20 @@ spec:
                       type: integer
                       default: 2
                     mcsSecret:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                kes:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                  properties:
+                    image:
+                      type: string
+                    replicas:
+                      type: integer
+                      default: 2
+                    kesSecret:
                       type: object
                       properties:
                         name:
@@ -116,7 +131,7 @@ rules:
   - watch
   - create
   - list
-  - patch
+  - delete
 - apiGroups:
   - apps
   resources:
@@ -152,6 +167,7 @@ rules:
   - update
   - create
   - get
+  - delete
 - apiGroups:
   - operator.min.io
   resources:

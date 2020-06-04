@@ -95,24 +95,21 @@ func minioMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
 	if mi.HasMetadata() {
 		meta = *mi.Spec.Metadata
 	}
-	// Initialize empty fields
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
-	if meta.Annotations == nil {
-		meta.Annotations = make(map[string]string)
-	}
-	// Add the additional label used by StatefulSet spec
+	// Add the additional label used by StatefulSet spec selector
 	for k, v := range mi.MinIOPodLabels() {
 		meta.Labels[k] = v
 	}
-	// Add the Selector labels set by user
-	if mi.HasSelector() {
-		for k, v := range mi.Spec.Selector.MatchLabels {
-			meta.Labels[k] = v
-		}
-	}
 	return meta
+}
+
+// MinIOSelector Returns the MinIO pods selector set in configuration.
+func MinIOSelector(mi *miniov1.MinIOInstance) *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: mi.MinIOPodLabels(),
+	}
 }
 
 // Builds the volume mounts for MinIO container.
@@ -349,13 +346,9 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string) *appsv1.Stateful
 				Type: miniov1.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: mi.Spec.PodManagementPolicy,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					miniov1.InstanceLabel: mi.MinIOStatefulSetName(),
-				},
-			},
-			ServiceName: serviceName,
-			Replicas:    &replicas,
+			Selector:            MinIOSelector(mi),
+			ServiceName:         serviceName,
+			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: minioMetadata(mi),
 				Spec: corev1.PodSpec{

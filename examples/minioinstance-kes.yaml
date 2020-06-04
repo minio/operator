@@ -10,7 +10,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: minio-mcs-secret
+  name: mcs-secret
 type: Opaque
 data:
   MCS_HMAC_JWT_SECRET: WU9VUkpXVFNJR05JTkdTRUNSRVQ= # base 64 encoded "YOURJWTSIGNINGSECRET" (echo -n 'YOURJWTSIGNINGSECRET' | base64)
@@ -44,19 +44,16 @@ metadata:
 # scheduler:
 #  name: my-custom-scheduler
 spec:
-  selector:
-    matchLabels:
-      app: minio # Should match spec.metadata.labels
   ## Add metadata to the all pods created by the StatefulSet
   metadata:
     labels:
-      app: minio # Should match spec.selector.matchLabels
+      app: minio
     annotations:
       prometheus.io/path: /minio/prometheus/metrics
       prometheus.io/port: "9000"
       prometheus.io/scrape: "true"
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2020-05-08T02-40-49Z
+  image: minio/minio:RELEASE.2020-06-03T22-13-49Z
   ## A ClusterIP Service will be created with the given name
   serviceName: minio-internal-service
   ## Secret with credentials to be used by MinIO instance.
@@ -88,28 +85,22 @@ spec:
           storage: 1Ti
   ## Define configuration for MCS (Graphical user interface for MinIO)
   mcs:
-    image: minio/mcs:v0.0.4
+    image: minio/mcs:v0.0.6
     replicas: 2
     mcsSecret:
-      name: minio-mcs-secret
+      name: mcs-secret
     metadata:
       labels:
-        app: mcs # Should match spec.mcs.selector.matchLabels
-    selector:
-      matchLabels:
-        app: mcs # Should match spec.mcs.metadata.labels
+        app: mcs
   ## Define configuration for KES (stateless and distributed key-management system)
   kes:
     image: minio/kes:v0.9.0
     replicas: 2
-    configSecret:
+    kesSecret:
       name: kes-config
     metadata:
       labels:
-        app: kes # Should match spec.kes.selector.matchLabels
-    selector:
-      matchLabels:
-        app: kes # Should match spec.kes.metadata.labels
+        app: kes
   ## Secret with certificates to configure TLS for MinIO certs. Create secrets as explained
   ## here: https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
   # externalCertSecret:

@@ -29,22 +29,23 @@ import (
 // metadata.
 func KESMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-
 	if mi.HasKESMetadata() {
 		meta = *mi.Spec.KES.Metadata
 	}
-
-	// Add the additional label used by StatefulSet spec
+	if meta.Labels == nil {
+		meta.Labels = make(map[string]string)
+	}
 	for k, v := range mi.KESPodLabels() {
 		meta.Labels[k] = v
 	}
-	// Add the Selector labels set by user
-	if mi.HasKESSelector() {
-		for k, v := range mi.Spec.KES.Selector.MatchLabels {
-			meta.Labels[k] = v
-		}
-	}
 	return meta
+}
+
+// KESSelector Returns the KES pods selector set in configuration.
+func KESSelector(mi *miniov1.MinIOInstance) *metav1.LabelSelector {
+	return &metav1.LabelSelector{
+		MatchLabels: mi.KESPodLabels(),
+	}
 }
 
 // KESVolumeMounts builds the volume mounts for MinIO container.
@@ -147,9 +148,10 @@ func NewForKES(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSe
 				Type: miniov1.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: mi.Spec.PodManagementPolicy,
-			Selector:            mi.Spec.KES.Selector,
-			ServiceName:         serviceName,
-			Replicas:            &replicas,
+			// KES is always matched via MinIOInstance Name + KES prefix
+			Selector:    KESSelector(mi),
+			ServiceName: serviceName,
+			Replicas:    &replicas,
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: KESMetadata(mi),
 				Spec: corev1.PodSpec{
