@@ -44,9 +44,10 @@ import (
 var Version = "DEVELOPMENT.GOGET"
 
 var (
-	masterURL    string
-	kubeconfig   string
-	checkVersion bool
+	masterURL     string
+	kubeconfig    string
+	hostsTemplate string
+	checkVersion  bool
 
 	onlyOneSignalHandler = make(chan struct{})
 	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
@@ -55,6 +56,7 @@ var (
 func init() {
 	flag.StringVar(&kubeconfig, "kubeconfig", "", "path to a kubeconfig. Only required if out-of-cluster")
 	flag.StringVar(&masterURL, "master", "", "the address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster")
+	flag.StringVar(&hostsTemplate, "hosts-template", "", "the go template to use for hostname formatting of name fields (StatefulSet, CIService, HLService, Ellipsis, Domain)")
 	flag.BoolVar(&checkVersion, "version", false, "print version")
 }
 
@@ -113,7 +115,8 @@ func main() {
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Batch().V1().Jobs(),
 		minioInformerFactory.Operator().V1().MinIOInstances(),
-		kubeInformerFactory.Core().V1().Services())
+		kubeInformerFactory.Core().V1().Services(),
+		hostsTemplate)
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)

@@ -101,7 +101,7 @@ func (c *Controller) createKESTLSCSR(ctx context.Context, mi *miniov1.MinIOInsta
 // createMinIOClientTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that KES Statefulset will use for MinIO Client Auth
 func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, mi *miniov1.MinIOInstance) error {
-	privKeysBytes, csrBytes, err := generateCryptoData(mi)
+	privKeysBytes, csrBytes, err := generateCryptoData(mi, c.hostsTemplate)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err

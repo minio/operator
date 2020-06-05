@@ -67,7 +67,7 @@ func isEqual(a, b []string) bool {
 	return true
 }
 
-func generateCryptoData(mi *miniov1.MinIOInstance) ([]byte, []byte, error) {
+func generateCryptoData(mi *miniov1.MinIOInstance, hostsTemplate string) ([]byte, []byte, error) {
 	var dnsNames []string
 	klog.V(0).Infof("Generating private key")
 	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
@@ -85,6 +85,9 @@ func generateCryptoData(mi *miniov1.MinIOInstance) ([]byte, []byte, error) {
 	klog.V(0).Infof("Generating CSR with CN=%s", mi.Spec.CertConfig.CommonName)
 
 	hosts := mi.AllMinIOHosts()
+	if hostsTemplate != "" {
+		hosts = mi.TemplatedMinIOHosts(hostsTemplate)
+	}
 
 	if isEqual(mi.Spec.CertConfig.DNSNames, hosts) {
 		dnsNames = mi.Spec.CertConfig.DNSNames
@@ -113,7 +116,7 @@ func generateCryptoData(mi *miniov1.MinIOInstance) ([]byte, []byte, error) {
 // finally creating a secret that MinIO statefulset will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
 func (c *Controller) createCSR(ctx context.Context, mi *miniov1.MinIOInstance) error {
-	privKeysBytes, csrBytes, err := generateCryptoData(mi)
+	privKeysBytes, csrBytes, err := generateCryptoData(mi, c.hostsTemplate)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err

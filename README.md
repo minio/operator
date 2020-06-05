@@ -9,6 +9,7 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KE
 | Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/minio-operator#create-a-minio-instance). |
 | Automatic TLS for MinIO                                        | [Automatic TLS for MinIO Instance](https://github.com/minio/minio-operator/blob/master/docs/tls.md#automatic-csr-generation). |
 | Expand an existing MinIO cluster                               | [Expand a MinIO Cluster](https://github.com/minio/minio-operator/blob/master/docs/adding-zones.md). |
+| Use a custom template for hostname discovery                   | [Custom Hostname Discovery](https://github.com/minio/minio-operator/blob/master/docs/custom-name-templates.md). |
 | Deploy MCS with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/minio-operator/blob/master/docs/mcs.md). |
 | Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/minio-operator/blob/master/docs/kes.md). |
 
