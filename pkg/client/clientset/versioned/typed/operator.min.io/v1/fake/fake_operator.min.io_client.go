@@ -32,10 +32,6 @@ func (c *FakeOperatorV1) MinIOInstances(namespace string) v1.MinIOInstanceInterf
 	return &FakeMinIOInstances{c, namespace}
 }
 
-func (c *FakeOperatorV1) MirrorInstances(namespace string) v1.MirrorInstanceInterface {
-	return &FakeMirrorInstances{c, namespace}
-}
-
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeOperatorV1) RESTClient() rest.Interface {

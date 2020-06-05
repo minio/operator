@@ -11,10 +11,6 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Mi
 - Secret: `minioinstance-tls` (If `requestAutoCert` is enabled)
 - CertificateSigningRequest: `minioinstance-csr` (If `requestAutoCert` is enabled)
 
-If the MirrorInstance is named as `mirrorinstance`, resources and their names as created by MinIO Operator are:
-
-- Job: `mirrorinstance`
-
 ## MinIOInstance Fields
 
 | Field                 | Description |
@@ -52,19 +48,5 @@ If the MirrorInstance is named as `mirrorinstance`, resources and their names as
 | spec.kes | Defines the KES configuration. Refer [this](https://github.com/minio/kes) |
 | spec.kes.replicas | Number of KES pods to be created. |
 | spec.kes.image | Defines the KES image. |
-| spec.kes.kesSecret | Secret to specify KES Configuration. This is a mandatory field. |
-| spec.kes.metadata | This allows a way to map metadata to the KES pods. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
-
-## MirrorInstance Fields
-
-| Field                 | Description |
-|-----------------------|-------------|
-| kind                  | This defines the resource type to be created. MinIO Operator CRD defines the `kind` for Mirror Operation as `MirrorInstance`.|
-| metadata              | This field allows a way to assign metadata to a MirrorInstance. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta).|
-| spec.metadata         | Define the object metadata to be passed to all the members pods of this MirrorInstance. This allows adding annotations and labels.|
-| spec.image            | Set the container registry and image tag for MinIO Client to be used in the MirrorInstance.|
-| spec.env              | Add Mirror specific environment variables. There are two mandatory fields required for Mirror to work. `MC_HOST_source` is the environment variable to specify the source MinIO cluster for mirror operation. `MC_HOST_target` is the environment variable to specify the target MinIO cluster for mirror operation. The value of these environment variables in the format `https://<access_key>:<secret_key>@<minio_server_url>`. Refer [the document](https://github.com/minio/mc/blob/master/docs/minio-client-complete-guide.md#specify-host-configuration-through-environment-variable) for further details. |
-| spec.args.source      | Specify the source location for mirror operation. This can be a top level alias (e.g `source`), a bucket (e.g `source/bucket`), or a prefix (e.g `source/bucket/prefix`.) |
-| spec.args.target      | Specify the target location for mirror operation. This can be a top level alias (e.g `target`), a bucket (e.g `target/bucket`), or a prefix (e.g `target/bucket/prefix`.)  |
-| spec.args.flags       | Specify the flags to fine tune the mirror operation. Refer the [mc mirror documentation](https://github.com/minio/mc/blob/master/docs/minio-client-complete-guide.md#mirror) for possible values for flags. |
-| spec.resources | Specify CPU and Memory resources for each MirrorInstance Job container. Refer [this document](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#resource-types) for details. |
+| spec.kes.configSecret | Secret to specify KES Configuration. This is a mandatory field. |
+| spec.kes.metadata | This allows a way to map metadata to the KES pods. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). [Note: Should match the labels in `spec.kes.selector`] |
