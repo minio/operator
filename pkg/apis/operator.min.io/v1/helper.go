@@ -218,7 +218,7 @@ func (mi *MinIOInstance) MinIOHosts() []string {
 	// Create the ellipses style URL
 	for _, z := range mi.Spec.Zones {
 		max = max + z.Servers
-		hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", ellipsis(int(index), int(max)-1), mi.MinIOStatefulSetName(), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
+		hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", mi.MinIOStatefulSetName(), ellipsis(int(index), int(max)-1), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
 		index = max
 	}
 	return hosts
