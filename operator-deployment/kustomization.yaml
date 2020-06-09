@@ -11,7 +11,7 @@ replicas:
 images:
   - name: minio/k8s-operator
     newName: minio/k8s-operator
-    newTag: 2.0.5
+    newTag: 2.0.6
 
 # Configure the Cluster Domain and NameSpace to Watch
 configMapGenerator:
