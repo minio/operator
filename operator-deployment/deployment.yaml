@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: minio-operator
+  template:
+    metadata:
+      labels:
+        name: minio-operator
+    spec:
+      serviceAccountName: minio-operator
+      containers:
+        - name: minio-operator
+          image: minio/k8s-operator:2.0.5
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: CLUSTER_DOMAIN
+              value: $(CLUSTER_DOMAIN)
+            - name: WATCHED_NAMESPACE
+              value: $(WATCHED_NAMESPACE)
