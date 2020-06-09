@@ -161,7 +161,7 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: minio-operator-sa
+  name: minio-operator
   namespace: default
 ---
 kind: ClusterRoleBinding
@@ -174,7 +174,7 @@ roleRef:
   name: minio-operator-role
 subjects:
 - kind: ServiceAccount
-  name: minio-operator-sa
+  name: minio-operator
   namespace: default
 ---
 apiVersion: apps/v1
@@ -192,7 +192,7 @@ spec:
       labels:
         name: minio-operator
     spec:
-      serviceAccountName: minio-operator-sa
+      serviceAccountName: minio-operator
       containers:
         - name: minio-operator
           image: minio/k8s-operator:2.0.5
