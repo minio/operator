@@ -415,6 +415,22 @@ func (mi *MinIOInstance) CreateMCSUser(minioSecret, mcsSecret map[string][]byte)
 	return nil
 }
 
+// Validate returns an error if any configuration of the MinIO instance is invalid
+func (mi *MinIOInstance) Validate() error {
+	// Make sure the storage request is not 0
+	if mi.Spec.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() <= 0 {
+		return errors.New("volume size must be greater than 0")
+	}
+	// Make sure the replicas are not 0 on any zone
+	for _, z := range mi.Spec.Zones {
+		if z.Servers == 0 {
+			return fmt.Errorf("zone '%s' cannot have 0 servers", z.Name)
+		}
+	}
+
+	return nil
+}
+
 // Set up admin client to use self certificates
 func setUpInsecureTLS(api *madmin.AdminClient) *madmin.AdminClient {
 	// Keep TLS config.

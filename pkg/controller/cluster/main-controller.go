@@ -342,6 +342,13 @@ func (c *Controller) syncHandler(key string) error {
 	mi.EnsureDefaults()
 	miniov1.InitGlobals(mi)
 
+	// Validate the MinIO Instance
+	if err = mi.Validate(); err != nil {
+		mi, err = c.updateMinIOInstanceStatus(ctx, mi, err.Error(), 0)
+		klog.V(2).Infof(err.Error())
+		return err
+	}
+
 	// check if both auto certificate creation and external secret with certificate is passed,
 	// this is an error as only one of this is allowed in one MinIOInstance
 	if mi.RequiresAutoCertSetup() && mi.RequiresExternalCertSetup() {
