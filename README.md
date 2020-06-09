@@ -21,20 +21,21 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KE
 - Kubernetes version v1.17.0 and above for compatibility. MinIO Operator uses `k8s/client-go` v0.18.0.
 - `kubectl` configured to refer to a Kubernetes cluster.
 - Create the required PVs as [explained here](https://github.com/minio/minio-operator/blob/master/docs/creating-pv-manually.md).
+- Optional: `kustomize` installed as [explained here](https://github.com/kubernetes-sigs/kustomize/blob/master/docs/INSTALL.md#installation).
 
-### Create Operator and related resources
+### Create Operator Deployment
 
-To start MinIO-Operator, use the `minio-operator.yaml` file.
+To start MinIO-Operator with default configuration, use the `minio-operator.yaml` file.
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
 ```
 
-This will create all relevant resources required for the Operator to work.
-
-You could install the MinIO Operator a custom namespace by customizing the `minio-operator.yaml` file or using [kustomize](https://github.com/kubernetes-sigs/kustomize)
+Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kustomize) to customize operator configuration
 
 ```bash
+git clone https://github.com/minio/minio-operator
+cd operator-deployment
 kustomize build | kubectl apply -f -
 ```
 
@@ -50,7 +51,7 @@ kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/e
 
 Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in MinIOInstance definition to enable Service based access to the MinIOInstance pods. Refer [the example here](https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml?raw=true) for details on how to setup service based access for MinIOInstance pods.
 
-### Expose MinIO via Istio
+### Advanced: Expose MinIO via Istio
 
 Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO instance, you can also directly target the headless Service that is created by the operator.
 
