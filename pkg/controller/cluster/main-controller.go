@@ -344,8 +344,12 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Validate the MinIO Instance
 	if err = mi.Validate(); err != nil {
-		mi, err = c.updateMinIOInstanceStatus(ctx, mi, err.Error(), 0)
 		klog.V(2).Infof(err.Error())
+		var err2 error
+		mi, err2 = c.updateMinIOInstanceStatus(ctx, mi, err.Error(), 0)
+		if err2 != nil {
+			klog.V(2).Infof(err2.Error())
+		}
 		return err
 	}
 
