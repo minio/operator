@@ -418,8 +418,8 @@ func (mi *MinIOInstance) CreateMCSUser(minioSecret, mcsSecret map[string][]byte)
 // Validate returns an error if any configuration of the MinIO instance is invalid
 func (mi *MinIOInstance) Validate() error {
 	// Make sure the storage request is not 0
-	if mi.Spec.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() == 0 {
-		return errors.New("cannot use volume size 0")
+	if mi.Spec.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() <= 0 {
+		return errors.New("volume size must be greater than 0")
 	}
 	// Make sure the replicas are not 0 on any zone
 	for _, z := range mi.Spec.Zones {
