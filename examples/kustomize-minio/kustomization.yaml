@@ -1,0 +1,87 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: minio
+configurations:
+- kustomizeconfig/minioinstance.yaml
+
+# Configure tenant name, volumes per server, capacity per volume and storage class
+configMapGenerator:
+  - name: minio-storage
+    literals:
+    - tenant="minio-tenant1"
+    # - volumesPerServer=4
+    - capacity="5Ti"
+    - storageClass=""
+    - zones=
+     '- name="rack1"
+      - servers="8"
+      - name="rack2"
+      - servers="16"'
+
+# Configure repo and tag of MinIO, MCS & KES Image
+images:
+  - name: minio/minio
+    newName: minio/minio
+    newTag: RELEASE.2020-06-03T22-13-49Z
+  - name: minio/mcs
+    newName: minio/mcs
+    newTag: v0.0.6
+  - name: minio/kes
+    newName: minio/kes
+    newTag: v0.9.0
+
+# Configure the Namespace
+patchesJson6902:
+  - target:
+      version: v1
+      kind: Namespace
+      name: minio
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: "minio"
+
+vars:
+  - name: NAME
+    objref:
+      kind: ConfigMap
+      name: minio-storage
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.tenant
+  # - name: VOLUMES_PER_SERVER
+  #   objref:
+  #     kind: ConfigMap
+  #     name: minio-storage
+  #     apiVersion: v1
+  #   fieldref:
+  #     fieldpath: data.volumesPerServer
+  - name: CAPACITY
+    objref:
+      kind: ConfigMap
+      name: minio-storage
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.capacity
+  - name: STORAGE_CLASS
+    objref:
+      kind: ConfigMap
+      name: minio-storage
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.storageClass
+  - name: ZONES
+    objref:
+      kind: ConfigMap
+      name: minio-storage
+      apiVersion: v1
+    fieldref:
+      fieldpath: data.zones
+
+resources:
+  - namespace.yaml
+  - mcs-secret.yaml
+  - kes-secret.yaml
+  - minio-secret.yaml
+  - minio-service.yaml
+  - minio-tenant.yaml
