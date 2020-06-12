@@ -37,12 +37,12 @@ spec:
     path: /mnt/disks/ssd1
   nodeAffinity:
     required:
-    nodeSelectorTerms:
-    - matchExpressions:
-      - key: kubernetes.io/hostname
-        operator: In
-        values:
-        - example-node
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - example-node
 ```
 
 After configuring the PV details, use `kubectl` to create the requisite number of PVs.
