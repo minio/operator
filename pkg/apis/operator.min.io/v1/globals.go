@@ -41,7 +41,7 @@ func getEnv(key string) string {
 
 func identifyScheme(mi *MinIOInstance) string {
 	scheme := "http"
-	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
+	if mi.AutoCert() || mi.ExternalCert() {
 		scheme = "https"
 	}
 	return scheme

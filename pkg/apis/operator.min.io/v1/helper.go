@@ -72,17 +72,28 @@ func (mi *MinIOInstance) HasCertConfig() bool {
 	return mi.Spec.CertConfig != nil
 }
 
-// RequiresExternalCertSetup returns true is the user has provided a secret
-// that contains CA cert, server cert and server key for group replication
-// SSL support
-func (mi *MinIOInstance) RequiresExternalCertSetup() bool {
+// ExternalCert returns true is the user has provided a secret
+// that contains CA cert, server cert and server key
+func (mi *MinIOInstance) ExternalCert() bool {
 	return mi.Spec.ExternalCertSecret != nil
 }
 
-// RequiresAutoCertSetup returns true is the user has provided a secret
+// ExternalClientCert returns true is the user has provided a secret
+// that contains CA client cert, server cert and server key
+func (mi *MinIOInstance) ExternalClientCert() bool {
+	return mi.Spec.ExternalClientCertSecret != nil
+}
+
+// KESExternalCert returns true is the user has provided a secret
+// that contains CA cert, server cert and server key for KES pods
+func (mi *MinIOInstance) KESExternalCert() bool {
+	return mi.Spec.KES != nil && mi.Spec.KES.ExternalCertSecret != nil
+}
+
+// AutoCert returns true is the user has provided a secret
 // that contains CA cert, server cert and server key for group replication
 // SSL support
-func (mi *MinIOInstance) RequiresAutoCertSetup() bool {
+func (mi *MinIOInstance) AutoCert() bool {
 	return mi.Spec.RequestAutoCert
 }
 
@@ -152,7 +163,7 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		mi.Spec.Subpath = MinIOVolumeSubPath
 	}
 
-	if mi.RequiresAutoCertSetup() {
+	if mi.AutoCert() {
 		if mi.Spec.CertConfig != nil {
 			if mi.Spec.CertConfig.CommonName == "" {
 				mi.Spec.CertConfig.CommonName = mi.MinIOWildCardName()

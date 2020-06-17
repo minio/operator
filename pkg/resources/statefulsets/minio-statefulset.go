@@ -70,13 +70,13 @@ func minioEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 			Value: "https://" + net.JoinHostPort(mi.KESServiceHost(), strconv.Itoa(miniov1.KESPort)),
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CERT_FILE",
-			Value: "/tmp/certs/client.crt",
+			Value: miniov1.MinIOCertPath + "/client.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_FILE",
-			Value: "/tmp/certs/client.key",
+			Value: miniov1.MinIOCertPath + "/client.key",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CA_PATH",
-			Value: "/tmp/certs/CAs/server.crt",
+			Value: miniov1.MinIOCertPath + "/CAs/kes.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
 			Value: miniov1.KESMinIOKey,
@@ -135,10 +135,10 @@ func volumeMounts(mi *miniov1.MinIOInstance) (mounts []corev1.VolumeMount) {
 		}
 	}
 
-	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
+	if mi.AutoCert() || mi.ExternalCert() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      mi.MinIOTLSSecretName(),
-			MountPath: "/tmp/certs",
+			MountPath: miniov1.MinIOCertPath,
 		})
 	}
 
@@ -184,7 +184,7 @@ func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
 
 // Builds the MinIO container for a MinIOInstance.
 func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string) corev1.Container {
-	args := []string{"server", "--certs-dir", "/tmp/certs"}
+	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
 
 	if mi.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
@@ -253,51 +253,73 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 	// If a PV isn't specified just use a EmptyDir volume
 	var podVolumes = getVolumesForContainer(mi)
 	var replicas = mi.MinIOReplicas()
-
-	var keyPaths = []corev1.KeyToPath{
+	var serverCertSecret string
+	var serverCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "public.crt"},
 		{Key: "private.key", Path: "private.key"},
 		{Key: "public.crt", Path: "CAs/public.crt"},
 	}
-
-	var MinIOCertKeyPaths = []corev1.KeyToPath{
+	var clientCertSecret string
+	var clientCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "client.crt"},
 		{Key: "private.key", Path: "client.key"},
 	}
-
-	var KESCertKeyPaths = []corev1.KeyToPath{
-		{Key: "public.crt", Path: "CAs/server.crt"},
+	var kesCertSecret string
+	var KESCertPath = []corev1.KeyToPath{
+		{Key: "public.crt", Path: "CAs/kes.crt"},
 	}
 
-	var secretName string
-	if mi.RequiresAutoCertSetup() {
-		secretName = mi.MinIOTLSSecretName()
-	} else if mi.RequiresExternalCertSetup() {
-		secretName = mi.Spec.ExternalCertSecret.Name
+	if mi.AutoCert() {
+		serverCertSecret = mi.MinIOTLSSecretName()
+		clientCertSecret = mi.MinIOClientTLSSecretName()
+		kesCertSecret = mi.KESTLSSecretName()
+	} else if mi.ExternalCert() {
+		serverCertSecret = mi.Spec.ExternalCertSecret.Name
 		if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" {
-			keyPaths = []corev1.KeyToPath{
+			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: "public.crt"},
 				{Key: "tls.key", Path: "private.key"},
 				{Key: "tls.crt", Path: "CAs/public.crt"},
 			}
 		} else if mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
-			keyPaths = []corev1.KeyToPath{
+			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: "public.crt"},
 				{Key: "tls.key", Path: "private.key"},
 				{Key: "ca.crt", Path: "CAs/public.crt"},
 			}
 		}
+		if mi.ExternalClientCert() {
+			clientCertSecret = mi.Spec.ExternalClientCertSecret.Name
+			// This covers both secrets of type "kubernetes.io/tls" and
+			// "cert-manager.io/v1alpha2" because of same keys in both.
+			if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+				clientCertPaths = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: "client.crt"},
+					{Key: "tls.key", Path: "client.key"},
+				}
+			}
+		}
+		if mi.KESExternalCert() {
+			kesCertSecret = mi.Spec.KES.ExternalCertSecret.Name
+			// This covers both secrets of type "kubernetes.io/tls" and
+			// "cert-manager.io/v1alpha2" because of same keys in both.
+			if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+				KESCertPath = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: "CAs/kes.crt"},
+				}
+			}
+		}
 	}
 
 	// Add SSL volume from SSL secret to the podVolumes
-	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
+	if mi.AutoCert() || mi.ExternalCert() {
 		sources := []corev1.VolumeProjection{
 			{
 				Secret: &corev1.SecretProjection{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
+						Name: serverCertSecret,
 					},
-					Items: keyPaths,
+					Items: serverCertPaths,
 				},
 			},
 		}
@@ -306,17 +328,17 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 				{
 					Secret: &corev1.SecretProjection{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: mi.MinIOClientTLSSecretName(),
+							Name: clientCertSecret,
 						},
-						Items: MinIOCertKeyPaths,
+						Items: clientCertPaths,
 					},
 				},
 				{
 					Secret: &corev1.SecretProjection{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: mi.KESTLSSecretName(),
+							Name: kesCertSecret,
 						},
-						Items: KESCertKeyPaths,
+						Items: KESCertPath,
 					},
 				},
 			}...)

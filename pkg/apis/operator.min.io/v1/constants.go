@@ -48,6 +48,9 @@ const CSRNameSuffix = "-csr"
 
 // MinIO Related Constants
 
+// MinIOCertPath is the path where all MinIO certs are mounted
+const MinIOCertPath = "/tmp/certs"
+
 // InstanceLabel is applied to all components of a MinIOInstance cluster
 const InstanceLabel = "v1.min.io/instance"
 
@@ -67,7 +70,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2020-06-03T22-13-49Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2020-06-18T02-23-35Z"
 
 // DefaultMinIOAccessKey specifies default access key for MinIOInstance
 const DefaultMinIOAccessKey = "AKIAIOSFODNN7EXAMPLE"
@@ -108,7 +111,7 @@ const LivenessPeriod = 60
 // MCS Related Constants
 
 // DefaultMCSImage specifies the latest MCS Docker hub image
-const DefaultMCSImage = "minio/mcs:v0.0.6"
+const DefaultMCSImage = "minio/mcs:v0.1.0"
 
 // MCSInstanceLabel is applied to the MCS pods of a MinIOInstance cluster
 const MCSInstanceLabel = "v1.min.io/mcs"
@@ -137,7 +140,7 @@ const DefaultMCSReplicas = 2
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.9.0"
+const DefaultKESImage = "minio/kes:v0.10.1"
 
 // KESInstanceLabel is applied to the KES pods of a MinIOInstance cluster
 const KESInstanceLabel = "v1.min.io/kes"
@@ -161,7 +164,8 @@ const KESHLSvcNameSuffix = "-kes-hl-svc"
 const KESName = "-kes"
 
 // KESConfigMountPath specifies the path where KES config file and all secrets are mounted
-const KESConfigMountPath = "/home"
+// We keep this to /tmp so it doesn't require any special permissions
+const KESConfigMountPath = "/tmp/kes"
 
 // DefaultKESReplicas specifies the default number of KES pods to be created if not specified
 const DefaultKESReplicas = 2

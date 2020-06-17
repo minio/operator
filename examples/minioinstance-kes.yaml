@@ -53,7 +53,7 @@ spec:
       prometheus.io/port: "9000"
       prometheus.io/scrape: "true"
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2020-06-03T22-13-49Z
+  image: minio/minio:RELEASE.2020-06-18T02-23-35Z
   ## A ClusterIP Service will be created with the given name
   serviceName: minio-internal-service
   ## Secret with credentials to be used by MinIO instance.
@@ -85,7 +85,7 @@ spec:
           storage: 1Ti
   ## Define configuration for MCS (Graphical user interface for MinIO)
   mcs:
-    image: minio/mcs:v0.0.6
+    image: minio/mcs:v0.1.0
     replicas: 2
     mcsSecret:
       name: mcs-secret
@@ -94,17 +94,21 @@ spec:
         app: mcs
   ## Define configuration for KES (stateless and distributed key-management system)
   kes:
-    image: minio/kes:v0.9.0
+    image: minio/kes:v0.10.1
     replicas: 2
     kesSecret:
       name: kes-config
     metadata:
       labels:
         app: kes
+    # externalCertSecret:
+    #   name: tls-ssl-kes
   ## Secret with certificates to configure TLS for MinIO certs. Create secrets as explained
   ## here: https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
   # externalCertSecret:
-  # name: tls-ssl-minio
+  #   name: tls-ssl-minio
+  # externalClientCertSecret:
+  #   name: tls-ssl-minio-client
   ## Enable Kubernetes based certificate generation and signing as explained in
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
   requestAutoCert: true
