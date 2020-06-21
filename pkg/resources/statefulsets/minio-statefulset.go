@@ -235,7 +235,7 @@ func getVolumesForContainer(mi *miniov1.MinIOInstance) []corev1.Volume {
 }
 
 // NewForMinIO creates a new StatefulSet for the given Cluster.
-func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
+func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string, minDNSIP string) *appsv1.StatefulSet {
 	// If a PV isn't specified just use a EmptyDir volume
 	var podVolumes = getVolumesForContainer(mi)
 	var replicas = mi.MinIOReplicas()
@@ -389,6 +389,17 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 			pvClaim.Name = name + strconv.Itoa(i)
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvClaim)
 		}
+	}
+
+	if _, ok := ss.Spec.Template.ObjectMeta.Annotations["io.min.dns"]; ok {
+		// get the IP of the MinDNS if it's deployed
+
+		ss.Spec.Template.ObjectMeta.Annotations["io.min.dns"] = fmt.Sprintf("{.metadata.name}.%s", mi.MinIOHLServiceName())
+		ss.Spec.Template.Spec.DNSPolicy = corev1.DNSNone
+		ss.Spec.Template.Spec.DNSConfig = &corev1.PodDNSConfig{
+			Nameservers: []string{minDNSIP},
+		}
+
 	}
 	return ss
 }

@@ -24,6 +24,13 @@ func (mi *MinIOInstance) MinIOPodLabels() map[string]string {
 	return m
 }
 
+// MinIOPodAnnotations returns the default annotations for MinIO Pod
+func (mi *MinIOInstance) MinIOPodAnnotations() map[string]string {
+	m := make(map[string]string, 1)
+	m[InstanceLabel] = mi.MinIOStatefulSetName()
+	return m
+}
+
 // KESPodLabels returns the default labels for KES Pod
 func (mi *MinIOInstance) KESPodLabels() map[string]string {
 	m := make(map[string]string, 1)
