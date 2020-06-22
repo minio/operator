@@ -20,7 +20,6 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"k8s.io/klog"
@@ -458,7 +457,6 @@ func (c *Controller) syncHandler(key string) error {
 		if mi.MinIOReplicas() != *ss.Spec.Replicas && mi.Status.CurrentState != addingZone {
 			// save current replicas before creating new statefulset
 			// this is used later to delete only the older pods in statefulset
-			currentReplicas := mi.MinIOReplicas()
 			mi, err = c.updateMinIOInstanceStatus(ctx, mi, addingZone, 0)
 			if err != nil {
 				return err
@@ -484,12 +482,6 @@ func (c *Controller) syncHandler(key string) error {
 			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate)
 			if _, err := c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
-			}
-			// remove all the existing Pods so StatefulSet creates new pods with proper secrets/cli args etc
-			for i := 0; i < int(currentReplicas); i++ {
-				if err := c.kubeClientSet.CoreV1().Pods(mi.Namespace).Delete(ctx, "minio-"+strconv.Itoa(i), metav1.DeleteOptions{}); err != nil {
-					return err
-				}
 			}
 		}
 
