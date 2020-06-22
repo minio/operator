@@ -162,6 +162,7 @@ func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
 			},
 			InitialDelaySeconds: mi.Spec.Readiness.InitialDelaySeconds,
 			PeriodSeconds:       mi.Spec.Readiness.PeriodSeconds,
+			TimeoutSeconds:      mi.Spec.Readiness.TimeoutSeconds,
 		}
 	}
 
@@ -176,6 +177,7 @@ func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
 			},
 			InitialDelaySeconds: mi.Spec.Liveness.InitialDelaySeconds,
 			PeriodSeconds:       mi.Spec.Liveness.PeriodSeconds,
+			TimeoutSeconds:      mi.Spec.Liveness.TimeoutSeconds,
 		}
 	}
 

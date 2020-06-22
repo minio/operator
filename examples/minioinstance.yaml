@@ -100,8 +100,10 @@ spec:
   #    value: storage
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
   # env:
+    # - name: MINIO_API_READY_DEADLINE
+    #   value: "10s"
     # - name: MINIO_BROWSER
-    #  value: "off" # to turn-off browser
+    #   value: "off" # to turn-off browser
     # - name: MINIO_STORAGE_CLASS_STANDARD
     #   value: "EC:2"
   ## Configure resource requests and limits for MinIO containers
@@ -113,7 +115,8 @@ spec:
   ## restarts the pods if liveness checks fail.
   liveness:
     initialDelaySeconds: 120
-    periodSeconds: 60
+    periodSeconds: 15
+    timeoutSeconds: 12 # should always greater than MINIO_API_READY_DEADLINE (which defaults to 10s)
   ## Readiness probe detects situations when MinIO server instance
   ## is not ready to accept traffic. Kubernetes doesn't forward
   ## traffic to the pod while readiness checks fail.
@@ -121,7 +124,8 @@ spec:
   ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
   readiness:
     initialDelaySeconds: 120
-    periodSeconds: 60
+    periodSeconds: 15
+    timeoutSeconds: 1
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.
