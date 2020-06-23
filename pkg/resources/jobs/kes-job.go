@@ -32,9 +32,24 @@ func NewForKES(mi *miniov1.MinIOInstance) *batchv1.Job {
 
 	containers := []corev1.Container{kesJobContainer(mi)}
 
-	var MinIOCertKeyPaths = []corev1.KeyToPath{
+	var clientCertSecret string
+	var clientCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "minio.crt"},
 		{Key: "private.key", Path: "minio.key"},
+	}
+
+	if mi.AutoCert() {
+		clientCertSecret = mi.MinIOClientTLSSecretName()
+	} else if mi.ExternalClientCert() {
+		clientCertSecret = mi.Spec.ExternalClientCertSecret.Name
+		// This covers both secrets of type "kubernetes.io/tls" and
+		// "cert-manager.io/v1alpha2" because of same keys in both.
+		if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			clientCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: "minio.crt"},
+				{Key: "tls.key", Path: "minio.key"},
+			}
+		}
 	}
 
 	podVolumes := []corev1.Volume{
@@ -46,9 +61,9 @@ func NewForKES(mi *miniov1.MinIOInstance) *batchv1.Job {
 						{
 							Secret: &corev1.SecretProjection{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: mi.MinIOClientTLSSecretName(),
+									Name: clientCertSecret,
 								},
-								Items: MinIOCertKeyPaths,
+								Items: clientCertPaths,
 							},
 						},
 					},

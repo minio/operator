@@ -16,12 +16,12 @@ func TestEnsureDefaults(t *testing.T) {
 		assert.Equal(t, mi.Spec.Image, DefaultMinIOImage)
 		assert.Equal(t, mi.Spec.Mountpath, MinIOVolumeMountPath)
 		assert.Equal(t, mi.Spec.Subpath, MinIOVolumeSubPath)
-		assert.False(t, mi.RequiresAutoCertSetup())
+		assert.False(t, mi.AutoCert())
 	})
 
 	t.Run("auto cert", func(t *testing.T) {
 		mi.Spec.RequestAutoCert = true
-		assert.True(t, mi.RequiresAutoCertSetup())
+		assert.True(t, mi.AutoCert())
 		assert.False(t, mi.HasCertConfig())
 
 		mi.EnsureDefaults()

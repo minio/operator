@@ -50,16 +50,12 @@ func KESSelector(mi *miniov1.MinIOInstance) *metav1.LabelSelector {
 
 // KESVolumeMounts builds the volume mounts for MinIO container.
 func KESVolumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
-	var mounts []corev1.VolumeMount
-
-	if mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup() {
-		mounts = append(mounts, corev1.VolumeMount{
+	return []corev1.VolumeMount{
+		{
 			Name:      mi.KESVolMountName(),
 			MountPath: miniov1.KESConfigMountPath,
-		})
+		},
 	}
-
-	return mounts
 }
 
 // KESEnvironmentVars returns the KES environment variables set in configuration.
@@ -97,14 +93,30 @@ func KESServerContainer(mi *miniov1.MinIOInstance) corev1.Container {
 // NewForKES creates a new KES StatefulSet for the given Cluster.
 func NewForKES(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSet {
 	var replicas = mi.KESReplicas()
-
-	var KEScertKeyPaths = []corev1.KeyToPath{
-		{Key: "public.crt", Path: "server.crt"},
-		{Key: "private.key", Path: "server.key"},
+	var certPath = "server.crt"
+	var keyPath = "server.key"
+	var serverCertSecret string
+	var serverCertPaths = []corev1.KeyToPath{
+		{Key: "public.crt", Path: certPath},
+		{Key: "private.key", Path: keyPath},
 	}
 
 	var configPath = []corev1.KeyToPath{
 		{Key: "server-config.yaml", Path: "server-config.yaml"},
+	}
+
+	if mi.AutoCert() {
+		serverCertSecret = mi.KESTLSSecretName()
+	} else if mi.KESExternalCert() {
+		serverCertSecret = mi.Spec.KES.ExternalCertSecret.Name
+		// This covers both secrets of type "kubernetes.io/tls" and
+		// "cert-manager.io/v1alpha2" because of same keys in both.
+		if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			serverCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: certPath},
+				{Key: "tls.key", Path: keyPath},
+			}
+		}
 	}
 
 	podVolumes := []corev1.Volume{
@@ -116,9 +128,9 @@ func NewForKES(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSe
 						{
 							Secret: &corev1.SecretProjection{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: mi.KESTLSSecretName(),
+									Name: serverCertSecret,
 								},
-								Items: KEScertKeyPaths,
+								Items: serverCertPaths,
 							},
 						},
 						{

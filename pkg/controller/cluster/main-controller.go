@@ -18,7 +18,10 @@
 package cluster
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"time"
@@ -372,17 +375,22 @@ func (c *Controller) syncHandler(key string) error {
 
 	// check if both auto certificate creation and external secret with certificate is passed,
 	// this is an error as only one of this is allowed in one MinIOInstance
-	if mi.RequiresAutoCertSetup() && mi.RequiresExternalCertSetup() {
+	if mi.AutoCert() && (mi.ExternalCert() || mi.ExternalClientCert() || mi.KESExternalCert()) {
 		msg := "Please set either externalCertSecret or requestAutoCert in MinIOInstance config"
 		klog.V(2).Infof(msg)
 		return fmt.Errorf(msg)
 	}
 
 	// TLS is mandatory if KES is enabled
-	if mi.HasKESEnabled() && !(mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup()) {
-		msg := "KES Setup Requires MinIO to be configured with TLS"
-		klog.V(2).Infof(msg)
-		return fmt.Errorf(msg)
+	// AutoCert if enabled takes care of MinIO and KES certs
+	if mi.HasKESEnabled() && !mi.AutoCert() {
+		// if AutoCert is not enabled, user needs to provide external secrets for
+		// KES and MinIO pods
+		if !(mi.ExternalCert() && mi.ExternalClientCert() && mi.KESExternalCert()) {
+			msg := "Please provide certificate secrets for MinIO and KES, since automatic TLS is disabled"
+			klog.V(2).Infof(msg)
+			return fmt.Errorf(msg)
+		}
 	}
 
 	// Handle the Internal ClusterIP Service for MinIOInstance
@@ -427,14 +435,17 @@ func (c *Controller) syncHandler(key string) error {
 	ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.Name)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			if mi.RequiresAutoCertSetup() {
-				if err = c.checkAndCreateMinIOCSR(ctx, nsName, mi); err != nil {
+			// If auto cert is enabled, create certificates for MinIO and
+			// optionally KES
+			if mi.AutoCert() {
+				// Client cert is needed only with KES for mTLS authentication
+				if err = c.checkAndCreateMinIOCSR(ctx, nsName, mi, mi.HasKESEnabled()); err != nil {
 					return err
 				}
-			}
-			if mi.HasKESEnabled() {
-				if err = c.checkAndCreateKESCSR(ctx, nsName, mi); err != nil {
-					return err
+				if mi.HasKESEnabled() {
+					if err = c.checkAndCreateKESCSR(ctx, nsName, mi); err != nil {
+						return err
+					}
 				}
 			}
 			mi, err = c.updateMinIOInstanceStatus(ctx, mi, provisioningStatefulSet, 0)
@@ -465,13 +476,13 @@ func (c *Controller) syncHandler(key string) error {
 			}
 			// If this is a TLS enabled Setup, we create new CSR because change in number of replicas means the new endpoints
 			// need to be added in the CSR
-			if mi.RequiresAutoCertSetup() {
+			if mi.AutoCert() {
 				klog.V(2).Infof("Removing the existing MinIO CSRs and related secrets")
 				if err := c.removeMinIOCSRAndSecrets(ctx, mi); err != nil {
 					return err
 				}
 				klog.V(2).Infof("Creating required MinIO CSRs and related secrets")
-				if err := c.checkAndCreateMinIOCSR(ctx, nsName, mi); err != nil {
+				if err := c.checkAndCreateMinIOCSR(ctx, nsName, mi, mi.HasKESEnabled()); err != nil {
 					return err
 				}
 			}
@@ -566,8 +577,14 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if mi.HasKESEnabled() && (mi.RequiresAutoCertSetup() || mi.RequiresExternalCertSetup()) {
-		// If the headless service doesn't exist, we'll create it
+	if mi.HasKESEnabled() && (mi.AutoCert() || mi.ExternalCert()) {
+		if mi.ExternalClientCert() {
+			// Since we're using external secret, store the identity for later use
+			miniov1.Identity, err = c.getCertIdentity(mi.Namespace, mi.Spec.ExternalClientCertSecret)
+			if err != nil {
+				return err
+			}
+		}
 		svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.KESHLServiceName())
 		if err != nil {
 			if apierrors.IsNotFound(err) {
@@ -676,7 +693,7 @@ func (c *Controller) removeMinIOCSRAndSecrets(ctx context.Context, mi *miniov1.M
 	return nil
 }
 
-func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.MinIOInstance) error {
+func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.MinIOInstance, createClientCert bool) error {
 	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOCSRName(), metav1.GetOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
 			mi, err = c.updateMinIOInstanceStatus(ctx, mi, waitingMinIOCert, 0)
@@ -691,7 +708,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 			return err
 		}
 	}
-	if mi.HasKESEnabled() {
+	if createClientCert {
 		if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOClientCSRName(), metav1.GetOptions{}); err != nil {
 			if apierrors.IsNotFound(err) {
 				mi, err = c.updateMinIOInstanceStatus(ctx, mi, waitingMinIOClientCert, 0)
@@ -726,6 +743,37 @@ func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.Name
 		}
 	}
 	return nil
+}
+
+func (c *Controller) getCertIdentity(ns string, cert *miniov1.LocalCertificateReference) (string, error) {
+	var certbytes []byte
+	secret, err := c.kubeClientSet.CoreV1().Secrets(ns).Get(context.Background(), cert.Name, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	// Store the Identity to be used later during KES container creation
+	if secret.Type == "kubernetes.io/tls" || secret.Type == "cert-manager.io/v1alpha2" {
+		certbytes = secret.Data["tls.crt"]
+	} else {
+		certbytes = secret.Data["public.crt"]
+	}
+
+	// parse the certificate here to generate the identity for this certifcate.
+	// This is later used to update the identity in KES Server Config File
+	h := sha256.New()
+	parsedCert, err := parseCertificate(bytes.NewReader(certbytes))
+	if err != nil {
+		klog.Errorf("Unexpected error during the parsing the secret/%s: %v", cert.Name, err)
+		return "", err
+	}
+
+	_, err = h.Write(parsedCert.RawSubjectPublicKeyInfo)
+	if err != nil {
+		klog.Errorf("Unexpected error during the parsing the secret/%s: %v", cert.Name, err)
+		return "", err
+	}
+
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func (c *Controller) updateMinIOInstanceStatus(ctx context.Context, minioInstance *miniov1.MinIOInstance, currentState string, availableReplicas int32) (*miniov1.MinIOInstance, error) {

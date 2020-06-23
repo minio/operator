@@ -86,9 +86,14 @@ type MinIOInstanceSpec struct {
 	// If specified, affinity will define the pod's scheduling constraints
 	// +optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
-	// ExternalCertSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
+	// ExternalCertSecret allows a user to specify custom CA certificate, and private key. This is
+	// used for enabling TLS support on MinIO Pods.
 	// +optional
 	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
+	// ExternalClientCertSecret allows a user to specify custom CA client certificate, and private key. This is
+	// used for adding client certificates on MinIO Pods --> used for KES authentication.
+	// +optional
+	ExternalClientCertSecret *LocalCertificateReference `json:"externalClientCertSecret,omitempty"`
 	// Mount path for MinIO volume (PV). Defaults to /export
 	// +optional
 	Mountpath string `json:"mountPath,omitempty"`
@@ -194,6 +199,9 @@ type KESConfig struct {
 	// This is a mandatory field
 	Configuration *corev1.LocalObjectReference `json:"kesSecret"`
 	Metadata      *metav1.ObjectMeta           `json:"metadata,omitempty"`
+	// ExternalCertSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
+	// +optional
+	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
