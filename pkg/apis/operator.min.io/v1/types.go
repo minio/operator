@@ -163,12 +163,14 @@ type Zone struct {
 type Liveness struct {
 	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
 	PeriodSeconds       int32 `json:"periodSeconds"`
+	TimeoutSeconds      int32 `json:"timeoutSeconds"`
 }
 
 // Readiness specifies the spec for liveness probe
 type Readiness struct {
 	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
 	PeriodSeconds       int32 `json:"periodSeconds"`
+	TimeoutSeconds      int32 `json:"timeoutSeconds"`
 }
 
 // MCSConfig defines the specifications for MCS Deployment

@@ -97,7 +97,10 @@ const ReadinessPath = "/minio/health/ready"
 const ReadinessInitialDelay = 120
 
 // ReadinessPeriod specifies the interval in calling the readiness endpoint
-const ReadinessPeriod = 60
+const ReadinessPeriod = 15
+
+// ReadinessTimeout specifies the timeout for the readiness probe to expect a response
+const ReadinessTimeout = 12
 
 // LivenessPath specifies the endpoint for liveness check
 const LivenessPath = "/minio/health/live"
@@ -106,7 +109,10 @@ const LivenessPath = "/minio/health/live"
 const LivenessInitialDelay = 120
 
 // LivenessPeriod specifies the interval in calling the liveness endpoint
-const LivenessPeriod = 60
+const LivenessPeriod = 15
+
+// LivenessTimeout specifies the timeout for the liveness probe to expect a response
+const LivenessTimeout = 1
 
 // MCS Related Constants
 
