@@ -145,18 +145,18 @@ spec:
   ## is not working properly and needs restart. Kubernetes automatically
   ## restarts the pods if liveness checks fail.
   liveness:
-    initialDelaySeconds: 120
-    periodSeconds: 15
-    timeoutSeconds: 12 # should always greater than MINIO_API_READY_DEADLINE (which defaults to 10s)
+    initialDelaySeconds: 1
+    periodSeconds: 1
+    timeoutSeconds: 60 # should always greater than MINIO_API_READY_DEADLINE (which defaults to 10s)
   ## Readiness probe detects situations when MinIO server instance
   ## is not ready to accept traffic. Kubernetes doesn't forward
   ## traffic to the pod while readiness checks fail.
   ## Readiness check will only work if PodManagementPolicy is set to "Parallel".
   ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
   readiness:
-    initialDelaySeconds: 120
-    periodSeconds: 15
-    timeoutSeconds: 1
+    initialDelaySeconds: 1
+    periodSeconds: 1
+    timeoutSeconds: 60
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.
