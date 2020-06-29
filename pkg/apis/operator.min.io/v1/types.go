@@ -164,6 +164,7 @@ type Liveness struct {
 	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
 	PeriodSeconds       int32 `json:"periodSeconds"`
 	TimeoutSeconds      int32 `json:"timeoutSeconds"`
+	FailureThreshold    int32 `json:"failureThreshold"`
 }
 
 // Readiness specifies the spec for liveness probe
@@ -171,6 +172,7 @@ type Readiness struct {
 	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
 	PeriodSeconds       int32 `json:"periodSeconds"`
 	TimeoutSeconds      int32 `json:"timeoutSeconds"`
+	FailureThreshold    int32 `json:"failureThreshold"`
 }
 
 // MCSConfig defines the specifications for MCS Deployment

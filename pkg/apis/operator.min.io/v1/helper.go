@@ -193,6 +193,9 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		if mi.Spec.Readiness.TimeoutSeconds == 0 {
 			mi.Spec.Readiness.TimeoutSeconds = ReadinessTimeout
 		}
+		if mi.Spec.Readiness.FailureThreshold == 0 {
+			mi.Spec.Readiness.FailureThreshold = ReadinessFailureThreshold
+		}
 	}
 
 	if mi.Spec.Liveness != nil {
@@ -204,6 +207,9 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		}
 		if mi.Spec.Liveness.TimeoutSeconds == 0 {
 			mi.Spec.Liveness.TimeoutSeconds = LivenessTimeout
+		}
+		if mi.Spec.Liveness.FailureThreshold == 0 {
+			mi.Spec.Liveness.FailureThreshold = LivenessFailureThreshold
 		}
 	}
 

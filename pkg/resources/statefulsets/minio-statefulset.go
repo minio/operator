@@ -163,6 +163,7 @@ func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
 			InitialDelaySeconds: mi.Spec.Readiness.InitialDelaySeconds,
 			PeriodSeconds:       mi.Spec.Readiness.PeriodSeconds,
 			TimeoutSeconds:      mi.Spec.Readiness.TimeoutSeconds,
+			FailureThreshold:    mi.Spec.Readiness.FailureThreshold,
 		}
 	}
 
@@ -178,6 +179,7 @@ func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
 			InitialDelaySeconds: mi.Spec.Liveness.InitialDelaySeconds,
 			PeriodSeconds:       mi.Spec.Liveness.PeriodSeconds,
 			TimeoutSeconds:      mi.Spec.Liveness.TimeoutSeconds,
+			FailureThreshold:    mi.Spec.Liveness.FailureThreshold,
 		}
 	}
 
@@ -187,7 +189,6 @@ func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
 // Builds the MinIO container for a MinIOInstance.
 func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string) corev1.Container {
 	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
-
 	if mi.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
 		args = append(args, mi.VolumePath())

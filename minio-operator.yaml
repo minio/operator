@@ -196,7 +196,7 @@ spec:
       containers:
         - name: minio-operator
           image: minio/k8s-operator:2.0.6
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           # To specify cluster domain, un comment the following:
           # env:
           #   - name: CLUSTER_DOMAIN

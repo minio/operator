@@ -94,25 +94,31 @@ const DefaultZoneName = "zone-0"
 const ReadinessPath = "/minio/health/ready"
 
 // ReadinessInitialDelay specifies the initial delay in calling the readiness endpoint
-const ReadinessInitialDelay = 120
+const ReadinessInitialDelay = 35
 
 // ReadinessPeriod specifies the interval in calling the readiness endpoint
-const ReadinessPeriod = 15
+const ReadinessPeriod = 5
 
 // ReadinessTimeout specifies the timeout for the readiness probe to expect a response
-const ReadinessTimeout = 12
+const ReadinessTimeout = 60
+
+// ReadinessFailureThreshold specifies the number of times the probe should fail before it gives up.
+const ReadinessFailureThreshold = (1 * 60 * 60) / (ReadinessTimeout + ReadinessPeriod)
 
 // LivenessPath specifies the endpoint for liveness check
 const LivenessPath = "/minio/health/live"
 
 // LivenessInitialDelay specifies the initial delay in calling the liveness endpoint
-const LivenessInitialDelay = 120
+const LivenessInitialDelay = 35
 
 // LivenessPeriod specifies the interval in calling the liveness endpoint
-const LivenessPeriod = 15
+const LivenessPeriod = 5
 
 // LivenessTimeout specifies the timeout for the liveness probe to expect a response
-const LivenessTimeout = 1
+const LivenessTimeout = 10
+
+// LivenessFailureThreshold specifies the number of failures after which the probe should take action
+const LivenessFailureThreshold = 1000
 
 // MCS Related Constants
 
