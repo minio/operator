@@ -500,8 +500,16 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
+
+			discoSvc, err := c.kubeClientSet.
+				CoreV1().
+				Services(mi.Namespace).
+				Get(context.Background(), discoSvcName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
 			// Create a new statefulset object and send an update request
-			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate)
+			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate, discoSvc.Spec.ClusterIP)
 			if _, err := c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
