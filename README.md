@@ -31,6 +31,72 @@ To start MinIO-Operator with default configuration, use the `minio-operator.yaml
 kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
 ```
 
+MinIO Operator relies on [MinIO Disco](https://github.com/minio/disco) for Service Discovery and so that applications inside the cluster can discover instances if they lookup an instance by bucket (i.e: `bucket1.tenant.minio.local`), so you need to forward any request for the domain `minio.local` on you cluster DNS. 
+
+After installing operator you should find out the IP for the `minio-disco` service since that is going to be used to configure the top level `minio.local` domain.
+
+```bash
+$ kubectl get svc minio-disco -o wide
+NAME          TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)         AGE   SELECTOR
+minio-disco   ClusterIP   10.109.234.52   <none>        53/UDP,53/TCP   12m   app=minio-disco
+
+```
+
+Here we can see the IP is `10.109.234.52` so we are going to add that to the `Corefile` stored in the `coredns` configmap inside the `kube-system` namespace.
+
+```bash
+$ kubectl -n kube-system edit configmap corends
+```
+
+and add at the end of `Corefile`
+
+```yaml
+    minio.local:53 {
+        errors
+        cache 30
+        forward . 10.109.234.52
+    }
+```
+
+The file should look like this
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns
+  namespace: kube-system
+data:
+  Corefile: |
+    .:53 {
+        errors
+        health {
+           lameduck 5s
+        }
+        ready
+        kubernetes cluster.local in-addr.arpa ip6.arpa {
+           pods insecure
+           fallthrough in-addr.arpa ip6.arpa
+           ttl 30
+        }
+        prometheus :9153
+        forward . /etc/resolv.conf
+        cache 30
+        loop
+        reload
+        loadbalance
+    }
+    minio.local:53 {
+        errors
+        cache 30
+        forward . 10.109.234.52
+    }
+```
+Afterwards, restart the coredns pods on the `kube-system` namespace
+```bash
+$ kubectl -n kube-system delete pod $(kubectl -n kube-system get pods  | grep coredns | awk '{print $1}')
+```
+
 Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kustomize) to customize operator configuration
 
 ```bash
