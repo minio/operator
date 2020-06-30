@@ -41,7 +41,7 @@ const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
 const DefaultUpdateStrategy = "RollingUpdate"
 
 // DefaultImagePullPolicy specifies the policy to image pulls
-const DefaultImagePullPolicy = "Always"
+const DefaultImagePullPolicy = corev1.PullIfNotPresent
 
 // CSRNameSuffix specifies the suffix added to MinIOInstance name to create a CSR
 const CSRNameSuffix = "-csr"
@@ -180,3 +180,7 @@ var DefaultQueryTimeout = time.Minute * 20
 
 // TLSSecretSuffix is the suffix applied to MinIOInstance name to create the TLS secret
 var TLSSecretSuffix = "-tls"
+
+// Service Discovery
+var discoSvcName = "minio-disco"
+var discoProbeDomain = "probe.minio.local"

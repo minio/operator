@@ -391,7 +391,6 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 		}
 	}
 
-
 	// configure the pod to register into disco
 	if ss.Spec.Template.ObjectMeta.Annotations == nil {
 		ss.Spec.Template.ObjectMeta.Annotations = map[string]string{}

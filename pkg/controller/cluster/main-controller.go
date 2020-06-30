@@ -23,7 +23,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"time"
 
 	"k8s.io/klog"
@@ -62,7 +61,6 @@ import (
 )
 
 const controllerAgentName = "minio-operator"
-const discoSvcName = "minio-disco"
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a MinIOInstance is synced
@@ -454,15 +452,13 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			discoSvc, err := c.kubeClientSet.
-				CoreV1().
-				Services(mi.Namespace).
-				Get(context.Background(), discoSvcName, metav1.GetOptions{})
+			// Probe if disco is configured at cluster level
+			discoSvcIP, err := mi.ProbeDisco(c.kubeClientSet)
 			if err != nil {
 				return err
 			}
 
-			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate, discoSvc.Spec.ClusterIP)
+			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate, discoSvcIP)
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -501,15 +497,13 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			discoSvc, err := c.kubeClientSet.
-				CoreV1().
-				Services(mi.Namespace).
-				Get(context.Background(), discoSvcName, metav1.GetOptions{})
+			// Probe if disco is configured at cluster level
+			discoSvcIP, err := mi.ProbeDisco(c.kubeClientSet)
 			if err != nil {
 				return err
 			}
 			// Create a new statefulset object and send an update request
-			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate, discoSvc.Spec.ClusterIP)
+			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate, discoSvcIP)
 			if _, err := c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
@@ -524,14 +518,12 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 			klog.V(4).Infof("Updating MinIOInstance %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
-			minSvc, err := c.kubeClientSet.
-				CoreV1().
-				Services(mi.Namespace).
-				Get(context.Background(), discoSvcName, metav1.GetOptions{})
+			// Probe if disco is configured at cluster level
+			discoSvcIP, err := mi.ProbeDisco(c.kubeClientSet)
 			if err != nil {
-				log.Println(err)
+				return err
 			}
-			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate, minSvc.Spec.ClusterIP)
+			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate, discoSvcIP)
 			if _, err := c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}

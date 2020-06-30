@@ -30,6 +30,8 @@ import (
 	"text/template"
 	"time"
 
+	"k8s.io/client-go/kubernetes"
+
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -254,6 +256,8 @@ func (mi *MinIOInstance) TemplatedMinIOHosts(hostsTemplate string) []string {
 		if err = tmpl.Execute(output, data); err != nil {
 			continue
 		}
+		fmt.Println("output.String()")
+		fmt.Println(output.String())
 		hosts = append(hosts, output.String())
 		index = max
 	}
@@ -476,4 +480,24 @@ func (mi *MinIOInstance) OwnerRef() []metav1.OwnerReference {
 			Kind:    MinIOCRDResourceKind,
 		}),
 	}
+}
+
+// ProbeDisco probe Service Discovery via the `probe.minio.local` domain
+func (mi *MinIOInstance) ProbeDisco(clientset kubernetes.Interface) (string, error) {
+	// if we get a response, it means disco is
+	// properly configured in the cluster, else we fallback to get the `minio-disco` service IP and configure
+	// that on the dnsPolicy for the pods of the statefulset
+	var discoSvcIP string
+	_, err := net.LookupIP(discoProbeDomain)
+	if err != nil {
+		discoSvc, err := clientset.
+			CoreV1().
+			Services(mi.Namespace).
+			Get(context.Background(), discoSvcName, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		discoSvcIP = discoSvc.Spec.ClusterIP
+	}
+	return discoSvcIP, nil
 }
