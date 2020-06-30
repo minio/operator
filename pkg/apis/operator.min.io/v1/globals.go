@@ -34,7 +34,7 @@ var Identity string
 func getEnv(key string) string {
 	value, ok := os.LookupEnv(key)
 	if !ok {
-		return "cluster.local"
+		return "minio.local"
 	}
 	return value
 }

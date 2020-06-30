@@ -220,10 +220,11 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 func (mi *MinIOInstance) MinIOHosts() []string {
 	hosts := make([]string, 0)
 	var max, index int32
+	hostPostfix := mi.HostPostfix()
 	// Create the ellipses style URL
 	for _, z := range mi.Spec.Zones {
 		max = max + z.Servers
-		hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", mi.MinIOStatefulSetName(), ellipsis(int(index), int(max)-1), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
+		hosts = append(hosts, fmt.Sprintf("%s-%s.%s", mi.MinIOStatefulSetName(), ellipsis(int(index), int(max)-1), hostPostfix))
 		index = max
 	}
 	return hosts
@@ -259,14 +260,20 @@ func (mi *MinIOInstance) TemplatedMinIOHosts(hostsTemplate string) []string {
 	return hosts
 }
 
+// HostPostfix returns the last part of the host `service.minio.local` used ie: `instance.service.minio.local`
+func (mi *MinIOInstance) HostPostfix() string {
+	return fmt.Sprintf("%s.%s", mi.MinIOHLServiceName(), ClusterDomain)
+}
+
 // AllMinIOHosts returns the all the individual domain names relevant for current MinIOInstance
 func (mi *MinIOInstance) AllMinIOHosts() []string {
+	topLevelHostURL := mi.HostPostfix()
 	hosts := make([]string, 0)
 	var max, index int32
 	for _, z := range mi.Spec.Zones {
 		max = max + z.Servers
 		for index < max {
-			hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(index))+".%s.%s.svc.%s", mi.MinIOStatefulSetName(), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
+			hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(index))+".%s", mi.MinIOStatefulSetName(), topLevelHostURL))
 			index++
 		}
 	}
