@@ -90,6 +90,101 @@ spec:
           type: string
           jsonPath: ".status.currentState"
 ---
+#Service Discovery
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: minio-disco-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: minio-disco-sa-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - pods
+      - services
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - operator.min.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - min.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: minio-disco-sa-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: minio-disco-sa-role
+subjects:
+  - kind: ServiceAccount
+    name: minio-disco-sa
+    namespace: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: minio-disco
+  name: minio-disco
+spec:
+  ports:
+    - name: dns
+      port: 53
+      protocol: UDP
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+  selector:
+    app: minio-disco
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-disco
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio-disco
+  template:
+    metadata:
+      labels:
+        app: minio-disco
+    spec:
+      containers:
+        - args:
+            - /disco
+            - server
+          image: dvaldivia/disco:latest
+          imagePullPolicy: Always
+          name: minio-disco
+          ports:
+            - containerPort: 53
+              name: dns
+              protocol: UDP
+            - containerPort: 53
+              name: dns-tcp
+              protocol: TCP
+      serviceAccountName: minio-disco-sa
+---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
