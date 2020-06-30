@@ -145,25 +145,10 @@ func volumeMounts(mi *miniov1.MinIOInstance) (mounts []corev1.VolumeMount) {
 	return mounts
 }
 
-func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
+func probes(mi *miniov1.MinIOInstance) (liveness *corev1.Probe) {
 	scheme := corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
 	port := intstr.IntOrString{
 		IntVal: int32(miniov1.MinIOPort),
-	}
-
-	if mi.Spec.Readiness != nil {
-		readiness = &corev1.Probe{
-			Handler: corev1.Handler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   miniov1.ReadinessPath,
-					Port:   port,
-					Scheme: scheme,
-				},
-			},
-			InitialDelaySeconds: mi.Spec.Readiness.InitialDelaySeconds,
-			PeriodSeconds:       mi.Spec.Readiness.PeriodSeconds,
-			TimeoutSeconds:      mi.Spec.Readiness.TimeoutSeconds,
-		}
 	}
 
 	if mi.Spec.Liveness != nil {
@@ -181,7 +166,7 @@ func probes(mi *miniov1.MinIOInstance) (readiness, liveness *corev1.Probe) {
 		}
 	}
 
-	return readiness, liveness
+	return liveness
 }
 
 // Builds the MinIO container for a MinIOInstance.
@@ -202,7 +187,7 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string, hostsTe
 		}
 	}
 
-	readyProbe, liveProbe := probes(mi)
+	liveProbe := probes(mi)
 
 	return corev1.Container{
 		Name:  miniov1.MinIOServerName,
@@ -218,7 +203,6 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string, hostsTe
 		Env:             minioEnvironmentVars(mi),
 		Resources:       mi.Spec.Resources,
 		LivenessProbe:   liveProbe,
-		ReadinessProbe:  readyProbe,
 	}
 }
 

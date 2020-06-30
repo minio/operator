@@ -183,18 +183,6 @@ func (mi *MinIOInstance) EnsureDefaults() *MinIOInstance {
 		}
 	}
 
-	if mi.Spec.Readiness != nil {
-		if mi.Spec.Readiness.InitialDelaySeconds == 0 {
-			mi.Spec.Readiness.InitialDelaySeconds = ReadinessInitialDelay
-		}
-		if mi.Spec.Readiness.PeriodSeconds == 0 {
-			mi.Spec.Readiness.PeriodSeconds = ReadinessPeriod
-		}
-		if mi.Spec.Readiness.TimeoutSeconds == 0 {
-			mi.Spec.Readiness.TimeoutSeconds = ReadinessTimeout
-		}
-	}
-
 	if mi.Spec.Liveness != nil {
 		if mi.Spec.Liveness.InitialDelaySeconds == 0 {
 			mi.Spec.Liveness.InitialDelaySeconds = LivenessInitialDelay

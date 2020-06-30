@@ -90,26 +90,14 @@ const DefaultVolumesPerServer = 1
 // DefaultZoneName specifies the default zone name
 const DefaultZoneName = "zone-0"
 
-// ReadinessPath specifies the endpoint for readiness check
-const ReadinessPath = "/minio/health/ready"
-
-// ReadinessInitialDelay specifies the initial delay in calling the readiness endpoint
-const ReadinessInitialDelay = 120
-
-// ReadinessPeriod specifies the interval in calling the readiness endpoint
-const ReadinessPeriod = 15
-
-// ReadinessTimeout specifies the timeout for the readiness probe to expect a response
-const ReadinessTimeout = 12
-
 // LivenessPath specifies the endpoint for liveness check
 const LivenessPath = "/minio/health/live"
 
 // LivenessInitialDelay specifies the initial delay in calling the liveness endpoint
-const LivenessInitialDelay = 120
+const LivenessInitialDelay = 10
 
 // LivenessPeriod specifies the interval in calling the liveness endpoint
-const LivenessPeriod = 15
+const LivenessPeriod = 1
 
 // LivenessTimeout specifies the timeout for the liveness probe to expect a response
 const LivenessTimeout = 1

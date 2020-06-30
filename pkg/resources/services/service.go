@@ -35,10 +35,9 @@ func NewClusterIPForMinIO(mi *miniov1.MinIOInstance) *corev1.Service {
 			OwnerReferences: mi.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
-			PublishNotReadyAddresses: true,
-			Ports:                    []corev1.ServicePort{minioPort},
-			Selector:                 mi.MinIOPodLabels(),
-			Type:                     corev1.ServiceTypeClusterIP,
+			Ports:    []corev1.ServicePort{minioPort},
+			Selector: mi.MinIOPodLabels(),
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 
@@ -56,11 +55,10 @@ func NewHeadlessForMinIO(mi *miniov1.MinIOInstance) *corev1.Service {
 			OwnerReferences: mi.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
-			PublishNotReadyAddresses: true,
-			Ports:                    []corev1.ServicePort{minioPort},
-			Selector:                 mi.MinIOPodLabels(),
-			Type:                     corev1.ServiceTypeClusterIP,
-			ClusterIP:                corev1.ClusterIPNone,
+			Ports:     []corev1.ServicePort{minioPort},
+			Selector:  mi.MinIOPodLabels(),
+			Type:      corev1.ServiceTypeClusterIP,
+			ClusterIP: corev1.ClusterIPNone,
 		},
 	}
 
@@ -78,11 +76,10 @@ func NewHeadlessForKES(mi *miniov1.MinIOInstance) *corev1.Service {
 			OwnerReferences: mi.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
-			PublishNotReadyAddresses: true,
-			Ports:                    []corev1.ServicePort{kesPort},
-			Selector:                 mi.KESPodLabels(),
-			Type:                     corev1.ServiceTypeClusterIP,
-			ClusterIP:                corev1.ClusterIPNone,
+			Ports:     []corev1.ServicePort{kesPort},
+			Selector:  mi.KESPodLabels(),
+			Type:      corev1.ServiceTypeClusterIP,
+			ClusterIP: corev1.ClusterIPNone,
 		},
 	}
 
