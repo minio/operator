@@ -173,7 +173,7 @@ spec:
         - args:
             - /disco
             - server
-          image: dvaldivia/disco:latest
+          image: minio/disco:latest
           imagePullPolicy: Always
           name: minio-disco
           ports:
