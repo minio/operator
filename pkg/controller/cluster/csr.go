@@ -122,7 +122,7 @@ func (c *Controller) createCSR(ctx context.Context, mi *miniov1.MinIOInstance) e
 		return err
 	}
 
-	err = c.submitCSR(ctx, mi.MinIOPodLabels(), mi.MinIOCSRName(), mi.Namespace, csrBytes, mi)
+	err = c.createCertificate(ctx, mi.MinIOPodLabels(), mi.MinIOCSRName(), mi.Namespace, csrBytes, mi)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.MinIOCSRName(), err)
 		return err
@@ -148,8 +148,8 @@ func (c *Controller) createCSR(ctx context.Context, mi *miniov1.MinIOInstance) e
 	return nil
 }
 
-// SubmitCSR is equivalent to kubectl create ${CSR}, if the override is configured, it becomes kubectl apply ${CSR}
-func (c *Controller) submitCSR(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, mi *miniov1.MinIOInstance) error {
+// createCertificate is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
+func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, mi *miniov1.MinIOInstance) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 
 	kubeCSR := &certificates.CertificateSigningRequest{
@@ -179,11 +179,29 @@ func (c *Controller) submitCSR(ctx context.Context, labels map[string]string, na
 			},
 		},
 	}
-	cOpts := metav1.CreateOptions{}
-	_, err := c.certClient.CertificateSigningRequests().Create(ctx, kubeCSR, cOpts)
+
+	ks, err := c.certClient.CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}
+
+	// Update the CSR to be approved automatically
+	ks.Status = certificates.CertificateSigningRequestStatus{
+		Conditions: []certificates.CertificateSigningRequestCondition{
+			{
+				Type:           certificates.CertificateApproved,
+				Reason:         "MinIOOperatorAutoApproval",
+				Message:        "Automatically approved by MinIO Operator",
+				LastUpdateTime: metav1.NewTime(time.Now()),
+			},
+		},
+	}
+
+	_, err = c.certClient.CertificateSigningRequests().UpdateApproval(ctx, ks, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

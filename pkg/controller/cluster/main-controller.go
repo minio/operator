@@ -88,7 +88,6 @@ const (
 	waitingKESCert             = "Waiting for KES TLS Certificate"
 	updatingMinIOVersion       = "Updating MinIO Version"
 	updatingMCSVersion         = "Updating MCS Version"
-	updatingMinIOStatefulSet   = "Adding New Pods to MinIO Statefulset"
 	notOwned                   = "Statefulset not controlled by operator"
 )
 
@@ -472,24 +471,9 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
-			// If this is a TLS enabled Setup, we create new CSR because change in number of replicas means the new endpoints
-			// need to be added in the CSR
-			if mi.AutoCert() {
-				klog.V(2).Infof("Removing the existing MinIO CSRs and related secrets")
-				if err := c.removeMinIOCSRAndSecrets(ctx, mi); err != nil {
-					return err
-				}
-				klog.V(2).Infof("Creating required MinIO CSRs and related secrets")
-				if err := c.checkAndCreateMinIOCSR(ctx, nsName, mi, mi.HasKESEnabled()); err != nil {
-					return err
-				}
-			}
 			klog.V(2).Infof("Creating a new StatefulSet %s with replicas: %d", name, mi.MinIOReplicas())
-			mi, err = c.updateMinIOInstanceStatus(ctx, mi, updatingMinIOStatefulSet, 0)
-			if err != nil {
-				return err
-			}
 			// Create a new statefulset object and send an update request
+			// Even if this is an autoTLS enabled setup, the certs are wild card certs e.g. *.
 			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate)
 			if _, err := c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
@@ -654,33 +638,6 @@ func (c *Controller) syncHandler(key string) error {
 	_, err = c.updateMinIOInstanceStatus(ctx, mi, ready, ss.Status.Replicas)
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-func (c *Controller) removeMinIOCSRAndSecrets(ctx context.Context, mi *miniov1.MinIOInstance) error {
-	if err := c.certClient.CertificateSigningRequests().Delete(ctx, mi.MinIOCSRName(), metav1.DeleteOptions{}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-	if err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Delete(ctx, mi.MinIOTLSSecretName(), metav1.DeleteOptions{}); err != nil {
-		if !apierrors.IsNotFound(err) {
-			return err
-		}
-	}
-
-	if mi.HasKESEnabled() {
-		if err := c.certClient.CertificateSigningRequests().Delete(ctx, mi.MinIOClientCSRName(), metav1.DeleteOptions{}); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return err
-			}
-		}
-		if err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Delete(ctx, mi.MinIOClientTLSSecretName(), metav1.DeleteOptions{}); err != nil {
-			if !apierrors.IsNotFound(err) {
-				return err
-			}
-		}
 	}
 	return nil
 }

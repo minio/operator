@@ -72,7 +72,7 @@ func (c *Controller) createKESTLSCSR(ctx context.Context, mi *miniov1.MinIOInsta
 		return err
 	}
 
-	err = c.submitCSR(ctx, mi.KESPodLabels(), mi.KESCSRName(), mi.Namespace, csrBytes, mi)
+	err = c.createCertificate(ctx, mi.KESPodLabels(), mi.KESCSRName(), mi.Namespace, csrBytes, mi)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.KESCSRName(), err)
 		return err
@@ -107,7 +107,7 @@ func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, mi *miniov1.Mi
 		return err
 	}
 
-	err = c.submitCSR(ctx, mi.MinIOPodLabels(), mi.MinIOClientCSRName(), mi.Namespace, csrBytes, mi)
+	err = c.createCertificate(ctx, mi.MinIOPodLabels(), mi.MinIOClientCSRName(), mi.Namespace, csrBytes, mi)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.MinIOClientCSRName(), err)
 		return err
