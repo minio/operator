@@ -391,10 +391,10 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 		}
 	}
 
-	if _, ok := ss.Spec.Template.ObjectMeta.Annotations["io.min.dns"]; ok {
+	// if the instance has io.min.disco annotation, then we know we should configure the dns for the pods as well
+	if _, ok := ss.Spec.Template.ObjectMeta.Annotations["io.min.disco"]; ok {
 		// get the IP of the MinDNS if it's deployed
-
-		ss.Spec.Template.ObjectMeta.Annotations["io.min.dns"] = fmt.Sprintf("{.metadata.name}.%s", mi.MinIOHLServiceName())
+		ss.Spec.Template.ObjectMeta.Annotations["io.min.disco"] = fmt.Sprintf("{.metadata.name}.%s", mi.MinIOHLServiceName())
 		ss.Spec.Template.Spec.DNSPolicy = corev1.DNSNone
 		ss.Spec.Template.Spec.DNSConfig = &corev1.PodDNSConfig{
 			Nameservers: []string{minDNSIP},
