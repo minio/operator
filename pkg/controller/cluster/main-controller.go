@@ -62,6 +62,7 @@ import (
 )
 
 const controllerAgentName = "minio-operator"
+const discoSvcName = "minio-disco"
 
 const (
 	// SuccessSynced is used as part of the Event 'reason' when a MinIOInstance is synced
@@ -456,7 +457,7 @@ func (c *Controller) syncHandler(key string) error {
 			svc, err := c.kubeClientSet.
 				CoreV1().
 				Services(mi.Namespace).
-				Get(context.Background(), "mindns", metav1.GetOptions{})
+				Get(context.Background(), discoSvcName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -518,7 +519,7 @@ func (c *Controller) syncHandler(key string) error {
 			minsvc, err := c.kubeClientSet.
 				CoreV1().
 				Services(mi.Namespace).
-				Get(context.Background(), "mindns", metav1.GetOptions{})
+				Get(context.Background(), discoSvcName, metav1.GetOptions{})
 			if err != nil {
 				log.Println(err)
 			}

@@ -183,7 +183,7 @@ func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string, hostsTe
 			hosts = mi.TemplatedMinIOHosts(hostsTemplate)
 		}
 		for _, h := range hosts {
-			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, mi.VolumePath()))
+			args = append(args, fmt.Sprintf("%s://"+h+"%s.minio.local", miniov1.Scheme, mi.VolumePath()))
 		}
 	}
 
@@ -235,7 +235,7 @@ func getVolumesForContainer(mi *miniov1.MinIOInstance) []corev1.Volume {
 }
 
 // NewForMinIO creates a new StatefulSet for the given Cluster.
-func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string, minDNSIP string) *appsv1.StatefulSet {
+func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string, discoIP string) *appsv1.StatefulSet {
 	// If a PV isn't specified just use a EmptyDir volume
 	var podVolumes = getVolumesForContainer(mi)
 	var replicas = mi.MinIOReplicas()
@@ -393,11 +393,12 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 
 	// if the instance has io.min.disco annotation, then we know we should configure the dns for the pods as well
 	if _, ok := ss.Spec.Template.ObjectMeta.Annotations["io.min.disco"]; ok {
-		// get the IP of the MinDNS if it's deployed
-		ss.Spec.Template.ObjectMeta.Annotations["io.min.disco"] = fmt.Sprintf("{.metadata.name}.%s", mi.MinIOHLServiceName())
+		// configure the pod to register into disco
+		ss.Spec.Template.ObjectMeta.Annotations["io.min.disco"] = fmt.Sprintf("{.metadata.name}.%s.minio.local", mi.MinIOHLServiceName())
+		// set the DNS policy for the pod, this is not needed if disco is configured for the whole cluster
 		ss.Spec.Template.Spec.DNSPolicy = corev1.DNSNone
 		ss.Spec.Template.Spec.DNSConfig = &corev1.PodDNSConfig{
-			Nameservers: []string{minDNSIP},
+			Nameservers: []string{discoIP},
 		}
 
 	}
