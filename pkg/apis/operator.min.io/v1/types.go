@@ -103,9 +103,6 @@ type MinIOInstanceSpec struct {
 	// Liveness Probe for container liveness. Container will be restarted if the probe fails.
 	// +optional
 	Liveness *Liveness `json:"liveness,omitempty"`
-	// Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
-	// +optional
-	Readiness *Readiness `json:"readiness,omitempty"`
 	// RequestAutoCert allows user to enable Kubernetes based TLS cert generation and signing as explained here:
 	// https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
 	// +optional
@@ -161,13 +158,6 @@ type Zone struct {
 
 // Liveness specifies the spec for liveness probe
 type Liveness struct {
-	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
-	PeriodSeconds       int32 `json:"periodSeconds"`
-	TimeoutSeconds      int32 `json:"timeoutSeconds"`
-}
-
-// Readiness specifies the spec for liveness probe
-type Readiness struct {
 	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
 	PeriodSeconds       int32 `json:"periodSeconds"`
 	TimeoutSeconds      int32 `json:"timeoutSeconds"`

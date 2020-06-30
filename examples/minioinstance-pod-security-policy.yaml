@@ -53,11 +53,11 @@ kind: ClusterRole
 metadata:
   name: minio-pods-role
 rules:
-- apiGroups: 
+- apiGroups:
   - "policy"
-  resources: 
+  resources:
   - "podsecuritypolicies"
-  verbs: 
+  verbs:
   - "use"
   resourceNames:
   - "minio-pods-policy"
@@ -129,8 +129,6 @@ spec:
   ## PodManagement policy for pods created by StatefulSet. Can be "OrderedReady" or "Parallel"
   ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
   ## for details. Defaults to "Parallel"
-  ## If set to "OrderedReady", then disable Readiness checks below. Readiness check will only
-  ## work if PodManagementPolicy is set to "Parallel".
   podManagementPolicy: Parallel
   ## Secret with certificates to configure TLS for MinIO certs. Create secrets as explained
   ## here: https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
@@ -166,16 +164,8 @@ spec:
   ## is not working properly and needs restart. Kubernetes automatically
   ## restarts the pods if liveness checks fail.
   liveness:
-    initialDelaySeconds: 120
-    periodSeconds: 60
-  ## Readiness probe detects situations when MinIO server instance
-  ## is not ready to accept traffic. Kubernetes doesn't forward
-  ## traffic to the pod while readiness checks fail.
-  ## Readiness check will only work if PodManagementPolicy is set to "Parallel".
-  ## Disable this check if you're setting PodManagementPolicy to "OrderedReady".
-  readiness:
-    initialDelaySeconds: 120
-    periodSeconds: 60
+    initialDelaySeconds: 10
+    periodSeconds: 1
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.
