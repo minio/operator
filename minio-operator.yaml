@@ -174,7 +174,7 @@ spec:
             - /disco
             - server
           image: minio/disco:v0.0.1
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: minio-disco
           ports:
             - containerPort: 53
