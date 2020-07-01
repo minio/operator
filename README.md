@@ -94,7 +94,7 @@ data:
 ```
 Afterwards, restart the coredns pods on the `kube-system` namespace
 ```bash
-$ kubectl -n kube-system delete pod $(kubectl -n kube-system get pods  | grep coredns | awk '{print $1}')
+$ kubectl rollout restart -n kube-system deployment coredns
 ```
 
 Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kustomize) to customize operator configuration
