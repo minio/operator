@@ -256,8 +256,6 @@ func (mi *MinIOInstance) TemplatedMinIOHosts(hostsTemplate string) []string {
 		if err = tmpl.Execute(output, data); err != nil {
 			continue
 		}
-		fmt.Println("output.String()")
-		fmt.Println(output.String())
 		hosts = append(hosts, output.String())
 		index = max
 	}
