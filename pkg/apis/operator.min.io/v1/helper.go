@@ -264,7 +264,7 @@ func (mi *MinIOInstance) TemplatedMinIOHosts(hostsTemplate string) []string {
 
 // HostPostfix returns the last part of the host `service.minio.local` used ie: `instance.service.minio.local`
 func (mi *MinIOInstance) HostPostfix() string {
-	return fmt.Sprintf("%s.%s", mi.MinIOHLServiceName(), ClusterDomain)
+	return fmt.Sprintf("%s.%s.%s", mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain)
 }
 
 // AllMinIOHosts returns the all the individual domain names relevant for current MinIOInstance
