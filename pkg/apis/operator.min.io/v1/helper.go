@@ -262,16 +262,8 @@ func (mi *MinIOInstance) TemplatedMinIOHosts(hostsTemplate string) []string {
 // AllMinIOHosts returns the all the individual domain names relevant for current MinIOInstance
 func (mi *MinIOInstance) AllMinIOHosts() []string {
 	hosts := make([]string, 0)
-	var max, index int32
-	for _, z := range mi.Spec.Zones {
-		max = max + z.Servers
-		for index < max {
-			hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(index))+".%s.%s.svc.%s", mi.MinIOStatefulSetName(), mi.MinIOHLServiceName(), mi.Namespace, ClusterDomain))
-			index++
-		}
-	}
 	hosts = append(hosts, mi.MinIOCIServiceHost())
-	hosts = append(hosts, mi.MinIOHeadlessServiceHost())
+	hosts = append(hosts, "*."+mi.MinIOHeadlessServiceHost())
 	return hosts
 }
 
