@@ -51,16 +51,6 @@ kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/e
 
 Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in MinIOInstance definition to enable Service based access to the MinIOInstance pods. Refer [the example here](https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml?raw=true) for details on how to setup service based access for MinIOInstance pods.
 
-### Advanced: Expose MinIO via Istio
-
-Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO instance, you can also directly target the headless Service that is created by the operator.
-
-For example, to expose the created headless Service `minio-hl-svc` on http://minio.example.com:
-
-```
-kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/expose-via-istio.yaml
-```
-
 ### Environment variables
 
 These variables may be passed to operator Deployment in order to modify some of its parameters
@@ -76,3 +66,4 @@ These variables may be passed to operator Deployment in order to modify some of 
 - [Use `mc` with MinIO Server](https://docs.min.io/docs/minio-client-quickstart-guide)
 - [Use `aws-cli` with MinIO Server](https://docs.min.io/docs/aws-cli-with-minio)
 - [The MinIO documentation website](https://docs.min.io)
+- Expose MinIO via Istio: Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO instance, you can also directly target the headless Service that is created by the operator. Use [Istio Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) to configure Istio to expose the MinIO service outside of the service mesh.
