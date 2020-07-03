@@ -47,11 +47,4 @@ KES uses CSR for self signed certificate generation. KES requires three certific
 - X.509 certificate for the MinIO server and the corresponding private key.
 - X.509 certificate for the KES client (MinIO is the KES client in this case) and the corresponding private key.
 
-Accordingly, you'll need to approve three CSR requests, using below approach
-
-```
-kubectl get csr
-kubectl certificate approve <csr-name>
-```
-
-Once all the CSRs are approved, MinIO Operator will deploy KES Pods and start MinIO Server with KES integration.
+If `requestAutoCert` is enabled, Operator automatically creates the relevant CSRs and Certificates.
