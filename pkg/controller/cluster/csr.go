@@ -82,8 +82,6 @@ func generateCryptoData(mi *miniov1.MinIOInstance, hostsTemplate string) ([]byte
 		return nil, nil, err
 	}
 
-	klog.V(0).Infof("Generating CSR with CN=%s", mi.Spec.CertConfig.CommonName)
-
 	hosts := mi.AllMinIOHosts()
 	if hostsTemplate != "" {
 		hosts = mi.TemplatedMinIOHosts(hostsTemplate)
