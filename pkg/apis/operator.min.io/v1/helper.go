@@ -418,6 +418,12 @@ func (mi *MinIOInstance) Validate() error {
 	if mi.Spec.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() <= 0 {
 		return errors.New("volume size must be greater than 0")
 	}
+	if mi.Spec.Zones == nil {
+		return errors.New("please provide a zone for MinIOInstance")
+	}
+	if mi.Spec.CredsSecret == nil {
+		return errors.New("please set credsSecret secret with credentials for MinIOInstance")
+	}
 	// Make sure the replicas are not 0 on any zone
 	for _, z := range mi.Spec.Zones {
 		if z.Servers == 0 {
