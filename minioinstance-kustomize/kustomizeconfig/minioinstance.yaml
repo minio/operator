@@ -1,0 +1,19 @@
+images:
+- path: spec/mcs/image
+  kind: MinIOInstance
+- path: spec/kes/image
+  kind: MinIOInstance
+- path: spec/image
+  kind: MinIOInstance
+
+varReference:
+- path: metadata/name
+  kind: MinIOInstance
+- path: spec/volumesPerServer
+  kind: MinIOInstance
+- path: spec/volumeClaimTemplate/spec/resources/requests/storage
+  kind: MinIOInstance
+- path: spec/volumeClaimTemplate/spec/storageClassName
+  kind: MinIOInstance
+- path: spec/zones
+  kind: MinIOInstance
