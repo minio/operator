@@ -290,11 +290,6 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(corev1.PodSecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Zones != nil {
-		in, out := &in.Zones, &out.Zones
-		*out = make([]Zone, len(*in))
-		copy(*out, *in)
-	}
 	if in.MCS != nil {
 		in, out := &in.MCS, &out.MCS
 		*out = new(MCSConfig)

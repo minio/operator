@@ -121,13 +121,14 @@ func volumeMounts(t *miniov1.Tenant) (mounts []corev1.VolumeMount) {
 		name = t.Spec.VolumeClaimTemplate.Name
 	}
 
-	if t.Spec.VolumesPerServer == 1 {
+	v, _ := strconv.Atoi(t.Spec.VolumesPerServer)
+	if v == 1 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      name + strconv.Itoa(0),
 			MountPath: t.Spec.Mountpath,
 		})
 	} else {
-		for i := 0; i < t.Spec.VolumesPerServer; i++ {
+		for i := 0; i < v; i++ {
 			mounts = append(mounts, corev1.VolumeMount{
 				Name:      name + strconv.Itoa(i),
 				MountPath: t.Spec.Mountpath + strconv.Itoa(i),
@@ -170,10 +171,10 @@ func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
 }
 
 // Builds the MinIO container for a Tenant.
-func minioServerContainer(t *miniov1.Tenant, serviceName string, hostsTemplate string) corev1.Container {
+func minioServerContainer(t *miniov1.Tenant, serviceName string, hostsTemplate string, zones []miniov1.Zone) corev1.Container {
 	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
 
-	if t.Spec.Zones[0].Servers == 1 {
+	if zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
 		args = append(args, t.VolumePath())
 	} else {
@@ -324,9 +325,8 @@ func NewForMinIO(t *miniov1.Tenant, serviceName string, hostsTemplate string) *a
 			},
 		})
 	}
-
-	containers := []corev1.Container{minioServerContainer(t, serviceName, hostsTemplate)}
-
+	zones, _ := t.Zones()
+	containers := []corev1.Container{minioServerContainer(t, serviceName, hostsTemplate, zones)}
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: t.Namespace,
@@ -371,7 +371,8 @@ func NewForMinIO(t *miniov1.Tenant, serviceName string, hostsTemplate string) *a
 	if t.Spec.VolumeClaimTemplate != nil {
 		pvClaim := *t.Spec.VolumeClaimTemplate
 		name := pvClaim.Name
-		for i := 0; i < t.Spec.VolumesPerServer; i++ {
+		v, _ := strconv.Atoi(t.Spec.VolumesPerServer)
+		for i := 0; i < v; i++ {
 			pvClaim.Name = name + strconv.Itoa(i)
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvClaim)
 		}

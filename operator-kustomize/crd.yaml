@@ -33,7 +33,7 @@ spec:
                 serviceName:
                   type: string
                 volumesPerServer:
-                  type: integer
+                  type: string
                 mountPath:
                   type: string
                 podManagementPolicy:

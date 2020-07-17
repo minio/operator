@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"path"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -100,17 +101,19 @@ func (t *Tenant) AutoCert() bool {
 // VolumePath returns the paths for MinIO mounts based on
 // total number of volumes per MinIO server
 func (t *Tenant) VolumePath() string {
-	if t.Spec.VolumesPerServer == 1 {
+	v, _ := strconv.Atoi(t.Spec.VolumesPerServer)
+	if v == 1 {
 		return path.Join(t.Spec.Mountpath, t.Spec.Subpath)
 	}
-	return path.Join(t.Spec.Mountpath+ellipsis(0, t.Spec.VolumesPerServer-1), t.Spec.Subpath)
+	return path.Join(t.Spec.Mountpath+ellipsis(0, v-1), t.Spec.Subpath)
 }
 
 // MinIOReplicas returns the number of total replicas
 // required for this cluster
 func (t *Tenant) MinIOReplicas() int32 {
 	var replicas int32
-	for _, z := range t.Spec.Zones {
+	zones, _ := t.Zones()
+	for _, z := range zones {
 		replicas = replicas + z.Servers
 	}
 	return replicas
@@ -145,13 +148,11 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.ServiceName = t.Name
 	}
 
-	for _, z := range t.Spec.Zones {
-		if z.Servers == 0 {
-			z.Servers = DefaultServers
-		}
+	if t.Spec.Zones == "" {
+		t.Spec.Zones = DefaultZones
 	}
 
-	if t.Spec.VolumesPerServer == 0 {
+	if t.Spec.VolumesPerServer == "" {
 		t.Spec.VolumesPerServer = DefaultVolumesPerServer
 	}
 
@@ -221,7 +222,8 @@ func (t *Tenant) MinIOHosts() []string {
 	hosts := make([]string, 0)
 	var max, index int32
 	// Create the ellipses style URL
-	for _, z := range t.Spec.Zones {
+	zones, _ := t.Zones()
+	for _, z := range zones {
 		max = max + z.Servers
 		hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetName(), ellipsis(int(index), int(max)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
 		index = max
@@ -240,7 +242,8 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) []string {
 	}
 	var max, index int32
 	// Create the ellipses style URL
-	for _, z := range t.Spec.Zones {
+	zones, _ := t.Zones()
+	for _, z := range zones {
 		max = max + z.Servers
 		data := hostsTemplateValues{
 			StatefulSet: t.MinIOStatefulSetName(),
@@ -269,21 +272,11 @@ func (t *Tenant) AllMinIOHosts() []string {
 
 // MinIOCIServiceHost returns ClusterIP service Host for current Tenant
 func (t *Tenant) MinIOCIServiceHost() string {
-	if t.Spec.Zones[0].Servers == 1 {
-		msg := "Please set the server count > 1"
-		klog.V(2).Infof(msg)
-		return ""
-	}
 	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
 }
 
 // MinIOHeadlessServiceHost returns headless service Host for current Tenant
 func (t *Tenant) MinIOHeadlessServiceHost() string {
-	if t.Spec.Zones[0].Servers == 1 {
-		msg := "Please set the server count > 1"
-		klog.V(2).Infof(msg)
-		return ""
-	}
 	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, ClusterDomain)
 }
 
@@ -330,6 +323,33 @@ func (t *Tenant) HasMCSMetadata() bool {
 // for a Tenant else false
 func (t *Tenant) HasKESMetadata() bool {
 	return t.Spec.KES != nil && t.Spec.KES.Metadata != nil
+}
+
+// Zones returns formatted slice of Zones
+func (t *Tenant) Zones() ([]Zone, error) {
+	zones := strings.Split(t.Spec.Zones, ",")
+	Zones := make([]Zone, len(zones))
+	for i, z := range zones {
+		s := strings.Split(z, ":")
+		if len(s) != 2 {
+			return nil, fmt.Errorf("please provide a valid zone field for zone %d", i+1)
+		}
+		// s[0] is the zone name - can't be empty
+		if s[0] == "" {
+			return nil, fmt.Errorf("please provide a zone name for zone %d", i+1)
+		}
+		// s[1] is the count of servers in this zone - can't be zero
+		c, err := strconv.Atoi(s[1])
+		if err != nil {
+			return nil, err
+		}
+		if c == 0 {
+			return nil, fmt.Errorf("please provide non-zero server count for zone %d", i+1)
+		}
+		Zones[i].Name = s[0]
+		Zones[i].Servers = int32(c)
+	}
+	return Zones, nil
 }
 
 // CreateMCSUser function creates an admin user
@@ -430,19 +450,22 @@ func (t *Tenant) Validate() error {
 	if t.Spec.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() <= 0 {
 		return errors.New("volume size must be greater than 0")
 	}
-	if t.Spec.Zones == nil {
-		return errors.New("please provide a zone for Tenant")
+
+	if t.Spec.Zones == "" {
+		return errors.New("please provide zones for Tenant")
 	}
 	if t.Spec.CredsSecret == nil {
 		return errors.New("please set credsSecret secret with credentials for Tenant")
 	}
-	// Make sure the replicas are not 0 on any zone
-	for _, z := range t.Spec.Zones {
-		if z.Servers == 0 {
-			return fmt.Errorf("zone '%s' cannot have 0 servers", z.Name)
-		}
+	if t.Spec.VolumesPerServer == "" {
+		return errors.New("please set VolumesPerServer for MinIOInstance")
 	}
-
+	if _, err := t.Zones(); err != nil {
+		return err
+	}
+	if _, err := strconv.Atoi(t.Spec.VolumesPerServer); err != nil {
+		return fmt.Errorf("failed to parse VolumesPerServer, error: %s", err.Error())
+	}
 	return nil
 }
 

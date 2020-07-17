@@ -85,10 +85,10 @@ const MinIOHLSvcNameSuffix = "-hl-svc"
 const DefaultServers = 1
 
 // DefaultVolumesPerServer specifies the default number of volumes per MinIO instance
-const DefaultVolumesPerServer = 1
+const DefaultVolumesPerServer = "4"
 
-// DefaultZoneName specifies the default zone name
-const DefaultZoneName = "zone-0"
+// DefaultZones specifies the default zone name
+const DefaultZones = "zone-0:4"
 
 // LivenessPath specifies the endpoint for liveness check
 const LivenessPath = "/minio/health/live"

@@ -74,7 +74,7 @@ type TenantSpec struct {
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// VolumesPerServer allows a user to specify how many volumes per MinIO Server/Pod instance
 	// +optional
-	VolumesPerServer int `json:"volumesPerServer"`
+	VolumesPerServer string `json:"volumesPerServer"`
 	// VolumeClaimTemplate allows a user to specify how volumes inside a Tenant
 	// +optional
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
@@ -118,7 +118,7 @@ type TenantSpec struct {
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 	// Definition for Cluster in given MinIO cluster
 	// +optional
-	Zones []Zone `json:"zones"`
+	Zones string `json:"zones"`
 	// MCSConfig is for setting up minio/mcs for graphical user interface
 	//+optional
 	MCS *MCSConfig `json:"mcs,omitempty"`
@@ -150,7 +150,8 @@ type LocalCertificateReference struct {
 	Type string `json:"type,omitempty"`
 }
 
-// Zone defines the spec for a MinIO Zone
+// Zone is the internal definition for Cluster in given MinIO cluster.
+// Zones string is parsed into this field at the time of validation
 type Zone struct {
 	Name    string `json:"name"`
 	Servers int32  `json:"servers"`
