@@ -221,23 +221,9 @@ func minioSecurityContext(mi *miniov1.MinIOInstance) *corev1.PodSecurityContext 
 	return &securityContext
 }
 
-func getVolumesForContainer(mi *miniov1.MinIOInstance) []corev1.Volume {
-	var podVolumes = []corev1.Volume{}
-	// This is the case where user didn't provide a volume claim template and we deploy a
-	// EmptyDir based MinIO deployment
-	if mi.Spec.VolumeClaimTemplate == nil {
-		for _, z := range mi.Spec.Zones {
-			podVolumes = append(podVolumes, corev1.Volume{Name: z.Name,
-				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{Medium: ""}}})
-		}
-	}
-	return podVolumes
-}
-
 // NewForMinIO creates a new StatefulSet for the given Cluster.
 func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
-	// If a PV isn't specified just use a EmptyDir volume
-	var podVolumes = getVolumesForContainer(mi)
+	var podVolumes []corev1.Volume
 	var replicas = mi.MinIOReplicas()
 	var serverCertSecret string
 	var serverCertPaths = []corev1.KeyToPath{
