@@ -420,7 +420,7 @@ func (mi *MinIOInstance) Validate() error {
 	}
 	// Mandate a resource request
 	if mi.Spec.VolumeClaimTemplate.Spec.Resources.Requests == nil {
-		return errors.New("volume claim template must specify request")
+		return errors.New("volume claim must specify resource request")
 	}
 	// Mandate a request of storage
 	if mi.Spec.VolumeClaimTemplate.Spec.Resources.Requests.Storage() == nil {
