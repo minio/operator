@@ -177,6 +177,11 @@ type MCSConfig struct {
 	Metadata  *metav1.ObjectMeta           `json:"metadata,omitempty"`
 }
 
+// EqualImage returns true if config image and current input image are same
+func (c MCSConfig) EqualImage(currentImage string) bool {
+	return c.Image == currentImage
+}
+
 // KESConfig defines the specifications for KES StatefulSet
 type KESConfig struct {
 	// Replicas defines number of pods for KES StatefulSet.
