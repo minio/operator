@@ -114,7 +114,7 @@ func main() {
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Batch().V1().Jobs(),
-		minioInformerFactory.Operator().V1().MinIOInstances(),
+		minioInformerFactory.Minio().V1().Tenants(),
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate)
 

@@ -15,7 +15,7 @@ This document explains how to enable KES with MinIO Operator.
 
 ### Enable KES Configuration
 
-KES Configuration is a part of MinIOInstance yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance-kes.yaml). The config offers below options
+KES Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-kes.yaml). The config offers below options
 
 #### KES Fields
 
@@ -32,13 +32,13 @@ KES Configuration is a part of MinIOInstance yaml file. Check the sample file [a
 Once you have updated the yaml file per your requirement, use `kubectl` to create the MinIO instance like
 
 ```
-kubectl create -f examples/minioinstance-kes.yaml
+kubectl create -f examples/tenant-kes.yaml
 ```
 
 Alternatively, you can deploy the example like this
 
 ```
-kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance-kes.yaml
+kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-kes.yaml
 ```
 
 KES uses CSR for self signed certificate generation. KES requires three certificates/key pairs for working

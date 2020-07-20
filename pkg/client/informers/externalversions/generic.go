@@ -21,7 +21,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	v1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -52,9 +52,9 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=operator.min.io, Version=v1
-	case v1.SchemeGroupVersion.WithResource("minioinstances"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Operator().V1().MinIOInstances().Informer()}, nil
+	// Group=minio.min.io, Version=v1
+	case v1.SchemeGroupVersion.WithResource("tenants"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Minio().V1().Tenants().Informer()}, nil
 
 	}
 

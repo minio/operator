@@ -36,7 +36,7 @@ import (
 
 	"k8s.io/klog"
 
-	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 
 	certificates "k8s.io/api/certificates/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -67,7 +67,7 @@ func isEqual(a, b []string) bool {
 	return true
 }
 
-func generateCryptoData(mi *miniov1.MinIOInstance, hostsTemplate string) ([]byte, []byte, error) {
+func generateCryptoData(mi *miniov1.Tenant, hostsTemplate string) ([]byte, []byte, error) {
 	var dnsNames []string
 	klog.V(0).Infof("Generating private key")
 	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
@@ -115,7 +115,7 @@ func generateCryptoData(mi *miniov1.MinIOInstance, hostsTemplate string) ([]byte
 // createCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that MinIO statefulset will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createCSR(ctx context.Context, mi *miniov1.MinIOInstance) error {
+func (c *Controller) createCSR(ctx context.Context, mi *miniov1.Tenant) error {
 	privKeysBytes, csrBytes, err := generateCryptoData(mi, c.hostsTemplate)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
@@ -149,7 +149,7 @@ func (c *Controller) createCSR(ctx context.Context, mi *miniov1.MinIOInstance) e
 }
 
 // createCertificate is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, mi *miniov1.MinIOInstance) error {
+func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, mi *miniov1.Tenant) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 
 	kubeCSR := &certificates.CertificateSigningRequest{
@@ -251,7 +251,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 	}
 }
 
-func (c *Controller) createSecret(ctx context.Context, mi *miniov1.MinIOInstance, labels map[string]string, name, namespace string, pkBytes, certBytes []byte) error {
+func (c *Controller) createSecret(ctx context.Context, mi *miniov1.Tenant, labels map[string]string, name, namespace string, pkBytes, certBytes []byte) error {
 	secret := &corev1.Secret{
 		Type: "Opaque",
 		TypeMeta: metav1.TypeMeta{

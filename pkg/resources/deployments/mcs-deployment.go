@@ -21,18 +21,18 @@ import (
 	"net"
 	"strconv"
 
-	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Adds required MCS environment variables
-func mcsEnvVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
+func mcsEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{
 		{
 			Name:  "MCS_MINIO_SERVER",
-			Value: miniov1.Scheme + "://" + net.JoinHostPort(mi.MinIOCIServiceHost(), strconv.Itoa(miniov1.MinIOPort)),
+			Value: miniov1.Scheme + "://" + net.JoinHostPort(t.MinIOCIServiceHost(), strconv.Itoa(miniov1.MinIOPort)),
 		},
 	}
 	if miniov1.Scheme == "https" {
@@ -45,12 +45,12 @@ func mcsEnvVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 }
 
 // Returns the MCS environment variables set in configuration.
-func mcsSecretEnvVars(mi *miniov1.MinIOInstance) []corev1.EnvFromSource {
+func mcsSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
 	envVars := []corev1.EnvFromSource{
 		{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: mi.Spec.MCS.MCSSecret.Name,
+					Name: t.Spec.MCS.MCSSecret.Name,
 				},
 			},
 		},
@@ -58,34 +58,34 @@ func mcsSecretEnvVars(mi *miniov1.MinIOInstance) []corev1.EnvFromSource {
 	return envVars
 }
 
-func mcsMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
+func mcsMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if mi.HasMCSMetadata() {
-		meta = *mi.Spec.MCS.Metadata
+	if t.HasMCSMetadata() {
+		meta = *t.Spec.MCS.Metadata
 	}
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
-	for k, v := range mi.MCSPodLabels() {
+	for k, v := range t.MCSPodLabels() {
 		meta.Labels[k] = v
 	}
 	return meta
 }
 
 // mcsSelector Returns the MCS pods selector
-func mcsSelector(mi *miniov1.MinIOInstance) *metav1.LabelSelector {
+func mcsSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
-		MatchLabels: mi.MCSPodLabels(),
+		MatchLabels: t.MCSPodLabels(),
 	}
 }
 
-// Builds the MCS container for a MinIOInstance.
-func mcsContainer(mi *miniov1.MinIOInstance) corev1.Container {
+// Builds the MCS container for a Tenant.
+func mcsContainer(t *miniov1.Tenant) corev1.Container {
 	args := []string{"server"}
 
 	return corev1.Container{
 		Name:  miniov1.MCSContainerName,
-		Image: mi.Spec.MCS.Image,
+		Image: t.Spec.MCS.Image,
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: miniov1.MCSPort,
@@ -93,29 +93,29 @@ func mcsContainer(mi *miniov1.MinIOInstance) corev1.Container {
 		},
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
 		Args:            args,
-		Env:             mcsEnvVars(mi),
-		EnvFrom:         mcsSecretEnvVars(mi),
-		Resources:       mi.Spec.Resources,
+		Env:             mcsEnvVars(t),
+		EnvFrom:         mcsSecretEnvVars(t),
+		Resources:       t.Spec.Resources,
 	}
 }
 
 // NewForMCS creates a new Deployment for the given MinIO instance.
-func NewForMCS(mi *miniov1.MinIOInstance) *appsv1.Deployment {
+func NewForMCS(t *miniov1.Tenant) *appsv1.Deployment {
 
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       mi.Namespace,
-			Name:            mi.MCSDeploymentName(),
-			OwnerReferences: mi.OwnerRef(),
+			Namespace:       t.Namespace,
+			Name:            t.MCSDeploymentName(),
+			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &mi.Spec.MCS.Replicas,
-			// MCS is always matched via MinIOInstance Name + mcs prefix
-			Selector: mcsSelector(mi),
+			Replicas: &t.Spec.MCS.Replicas,
+			// MCS is always matched via Tenant Name + mcs prefix
+			Selector: mcsSelector(t),
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: mcsMetadata(mi),
+				ObjectMeta: mcsMetadata(t),
 				Spec: corev1.PodSpec{
-					Containers:    []corev1.Container{mcsContainer(mi)},
+					Containers:    []corev1.Container{mcsContainer(t)},
 					RestartPolicy: miniov1.MCSRestartPolicy,
 				},
 			},

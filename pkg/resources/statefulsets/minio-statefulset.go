@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,14 +34,14 @@ import (
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
-func minioEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
+func minioEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
-	envVars = append(envVars, mi.Spec.Env...)
+	envVars = append(envVars, t.Spec.Env...)
 	// Add env variables from credentials secret, if no secret provided, dont use
 	// env vars. MinIO server automatically creates default credentials
-	if mi.HasCredsSecret() {
-		secretName := mi.Spec.CredsSecret.Name
+	if t.HasCredsSecret() {
+		secretName := t.Spec.CredsSecret.Name
 		envVars = append(envVars, corev1.EnvVar{
 			Name: "MINIO_ACCESS_KEY",
 			ValueFrom: &corev1.EnvVarSource{
@@ -64,10 +64,10 @@ func minioEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 			},
 		})
 	}
-	if mi.HasKESEnabled() {
+	if t.HasKESEnabled() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_ENDPOINT",
-			Value: "https://" + net.JoinHostPort(mi.KESServiceHost(), strconv.Itoa(miniov1.KESPort)),
+			Value: "https://" + net.JoinHostPort(t.KESServiceHost(), strconv.Itoa(miniov1.KESPort)),
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CERT_FILE",
 			Value: miniov1.MinIOCertPath + "/client.crt",
@@ -90,54 +90,54 @@ func minioEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 // Returns the MinIO pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func minioMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
+func minioMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if mi.HasMetadata() {
-		meta = *mi.Spec.Metadata
+	if t.HasMetadata() {
+		meta = *t.Spec.Metadata
 	}
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
 	// Add the additional label used by StatefulSet spec selector
-	for k, v := range mi.MinIOPodLabels() {
+	for k, v := range t.MinIOPodLabels() {
 		meta.Labels[k] = v
 	}
 	return meta
 }
 
 // MinIOSelector Returns the MinIO pods selector set in configuration.
-func MinIOSelector(mi *miniov1.MinIOInstance) *metav1.LabelSelector {
+func MinIOSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
-		MatchLabels: mi.MinIOPodLabels(),
+		MatchLabels: t.MinIOPodLabels(),
 	}
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(mi *miniov1.MinIOInstance) (mounts []corev1.VolumeMount) {
+func volumeMounts(t *miniov1.Tenant) (mounts []corev1.VolumeMount) {
 	// This is the case where user didn't provide a zone and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
 	name := miniov1.MinIOVolumeName
-	if mi.Spec.VolumeClaimTemplate != nil {
-		name = mi.Spec.VolumeClaimTemplate.Name
+	if t.Spec.VolumeClaimTemplate != nil {
+		name = t.Spec.VolumeClaimTemplate.Name
 	}
 
-	if mi.Spec.VolumesPerServer == 1 {
+	if t.Spec.VolumesPerServer == 1 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      name + strconv.Itoa(0),
-			MountPath: mi.Spec.Mountpath,
+			MountPath: t.Spec.Mountpath,
 		})
 	} else {
-		for i := 0; i < mi.Spec.VolumesPerServer; i++ {
+		for i := 0; i < t.Spec.VolumesPerServer; i++ {
 			mounts = append(mounts, corev1.VolumeMount{
 				Name:      name + strconv.Itoa(i),
-				MountPath: mi.Spec.Mountpath + strconv.Itoa(i),
+				MountPath: t.Spec.Mountpath + strconv.Itoa(i),
 			})
 		}
 	}
 
-	if mi.AutoCert() || mi.ExternalCert() {
+	if t.AutoCert() || t.ExternalCert() {
 		mounts = append(mounts, corev1.VolumeMount{
-			Name:      mi.MinIOTLSSecretName(),
+			Name:      t.MinIOTLSSecretName(),
 			MountPath: miniov1.MinIOCertPath,
 		})
 	}
@@ -145,13 +145,13 @@ func volumeMounts(mi *miniov1.MinIOInstance) (mounts []corev1.VolumeMount) {
 	return mounts
 }
 
-func probes(mi *miniov1.MinIOInstance) (liveness *corev1.Probe) {
+func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
 	scheme := corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
 	port := intstr.IntOrString{
 		IntVal: int32(miniov1.MinIOPort),
 	}
 
-	if mi.Spec.Liveness != nil {
+	if t.Spec.Liveness != nil {
 		liveness = &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
@@ -160,71 +160,71 @@ func probes(mi *miniov1.MinIOInstance) (liveness *corev1.Probe) {
 					Scheme: scheme,
 				},
 			},
-			InitialDelaySeconds: mi.Spec.Liveness.InitialDelaySeconds,
-			PeriodSeconds:       mi.Spec.Liveness.PeriodSeconds,
-			TimeoutSeconds:      mi.Spec.Liveness.TimeoutSeconds,
+			InitialDelaySeconds: t.Spec.Liveness.InitialDelaySeconds,
+			PeriodSeconds:       t.Spec.Liveness.PeriodSeconds,
+			TimeoutSeconds:      t.Spec.Liveness.TimeoutSeconds,
 		}
 	}
 
 	return liveness
 }
 
-// Builds the MinIO container for a MinIOInstance.
-func minioServerContainer(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string) corev1.Container {
+// Builds the MinIO container for a Tenant.
+func minioServerContainer(t *miniov1.Tenant, serviceName string, hostsTemplate string) corev1.Container {
 	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
 
-	if mi.Spec.Zones[0].Servers == 1 {
+	if t.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
-		args = append(args, mi.VolumePath())
+		args = append(args, t.VolumePath())
 	} else {
-		// append all the MinIOInstance replica URLs
-		hosts := mi.MinIOHosts()
+		// append all the Tenant replica URLs
+		hosts := t.MinIOHosts()
 		if hostsTemplate != "" {
-			hosts = mi.TemplatedMinIOHosts(hostsTemplate)
+			hosts = t.TemplatedMinIOHosts(hostsTemplate)
 		}
 		for _, h := range hosts {
-			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, mi.VolumePath()))
+			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, t.VolumePath()))
 		}
 	}
 
-	liveProbe := probes(mi)
+	liveProbe := probes(t)
 
 	return corev1.Container{
 		Name:  miniov1.MinIOServerName,
-		Image: mi.Spec.Image,
+		Image: t.Spec.Image,
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: miniov1.MinIOPort,
 			},
 		},
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
-		VolumeMounts:    volumeMounts(mi),
+		VolumeMounts:    volumeMounts(t),
 		Args:            args,
-		Env:             minioEnvironmentVars(mi),
-		Resources:       mi.Spec.Resources,
+		Env:             minioEnvironmentVars(t),
+		Resources:       t.Spec.Resources,
 		LivenessProbe:   liveProbe,
 	}
 }
 
-// Builds the tolerations for a MinIOInstance.
-func minioTolerations(mi *miniov1.MinIOInstance) []corev1.Toleration {
+// Builds the tolerations for a Tenant.
+func minioTolerations(t *miniov1.Tenant) []corev1.Toleration {
 	var tolerations []corev1.Toleration
-	return append(tolerations, mi.Spec.Tolerations...)
+	return append(tolerations, t.Spec.Tolerations...)
 }
 
-// Builds the security context for a MinIOInstance
-func minioSecurityContext(mi *miniov1.MinIOInstance) *corev1.PodSecurityContext {
+// Builds the security context for a Tenant
+func minioSecurityContext(t *miniov1.Tenant) *corev1.PodSecurityContext {
 	var securityContext = corev1.PodSecurityContext{}
-	if mi.Spec.SecurityContext != nil {
-		securityContext = *mi.Spec.SecurityContext
+	if t.Spec.SecurityContext != nil {
+		securityContext = *t.Spec.SecurityContext
 	}
 	return &securityContext
 }
 
 // NewForMinIO creates a new StatefulSet for the given Cluster.
-func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
+func NewForMinIO(t *miniov1.Tenant, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
-	var replicas = mi.MinIOReplicas()
+	var replicas = t.MinIOReplicas()
 	var serverCertSecret string
 	var serverCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "public.crt"},
@@ -241,41 +241,41 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 		{Key: "public.crt", Path: "CAs/kes.crt"},
 	}
 
-	if mi.AutoCert() {
-		serverCertSecret = mi.MinIOTLSSecretName()
-		clientCertSecret = mi.MinIOClientTLSSecretName()
-		kesCertSecret = mi.KESTLSSecretName()
-	} else if mi.ExternalCert() {
-		serverCertSecret = mi.Spec.ExternalCertSecret.Name
-		if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" {
+	if t.AutoCert() {
+		serverCertSecret = t.MinIOTLSSecretName()
+		clientCertSecret = t.MinIOClientTLSSecretName()
+		kesCertSecret = t.KESTLSSecretName()
+	} else if t.ExternalCert() {
+		serverCertSecret = t.Spec.ExternalCertSecret.Name
+		if t.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" {
 			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: "public.crt"},
 				{Key: "tls.key", Path: "private.key"},
 				{Key: "tls.crt", Path: "CAs/public.crt"},
 			}
-		} else if mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+		} else if t.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
 			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: "public.crt"},
 				{Key: "tls.key", Path: "private.key"},
 				{Key: "ca.crt", Path: "CAs/public.crt"},
 			}
 		}
-		if mi.ExternalClientCert() {
-			clientCertSecret = mi.Spec.ExternalClientCertSecret.Name
+		if t.ExternalClientCert() {
+			clientCertSecret = t.Spec.ExternalClientCertSecret.Name
 			// This covers both secrets of type "kubernetes.io/tls" and
 			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			if t.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
 				clientCertPaths = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: "client.crt"},
 					{Key: "tls.key", Path: "client.key"},
 				}
 			}
 		}
-		if mi.KESExternalCert() {
-			kesCertSecret = mi.Spec.KES.ExternalCertSecret.Name
+		if t.KESExternalCert() {
+			kesCertSecret = t.Spec.KES.ExternalCertSecret.Name
 			// This covers both secrets of type "kubernetes.io/tls" and
 			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			if t.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
 				KESCertPath = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: "CAs/kes.crt"},
 				}
@@ -284,7 +284,7 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 	}
 
 	// Add SSL volume from SSL secret to the podVolumes
-	if mi.AutoCert() || mi.ExternalCert() {
+	if t.AutoCert() || t.ExternalCert() {
 		sources := []corev1.VolumeProjection{
 			{
 				Secret: &corev1.SecretProjection{
@@ -295,7 +295,7 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 				},
 			},
 		}
-		if mi.HasKESEnabled() {
+		if t.HasKESEnabled() {
 			sources = append(sources, []corev1.VolumeProjection{
 				{
 					Secret: &corev1.SecretProjection{
@@ -316,7 +316,7 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 			}...)
 		}
 		podVolumes = append(podVolumes, corev1.Volume{
-			Name: mi.MinIOTLSSecretName(),
+			Name: t.MinIOTLSSecretName(),
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
 					Sources: sources,
@@ -325,14 +325,14 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 		})
 	}
 
-	containers := []corev1.Container{minioServerContainer(mi, serviceName, hostsTemplate)}
+	containers := []corev1.Container{minioServerContainer(t, serviceName, hostsTemplate)}
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: mi.Namespace,
-			Name:      mi.Name,
+			Namespace: t.Namespace,
+			Name:      t.Name,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
+				*metav1.NewControllerRef(t, schema.GroupVersionKind{
 					Group:   miniov1.SchemeGroupVersion.Group,
 					Version: miniov1.SchemeGroupVersion.Version,
 					Kind:    miniov1.MinIOCRDResourceKind,
@@ -343,35 +343,35 @@ func NewForMinIO(mi *miniov1.MinIOInstance, serviceName string, hostsTemplate st
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: miniov1.DefaultUpdateStrategy,
 			},
-			PodManagementPolicy: mi.Spec.PodManagementPolicy,
-			Selector:            MinIOSelector(mi),
+			PodManagementPolicy: t.Spec.PodManagementPolicy,
+			Selector:            MinIOSelector(t),
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: minioMetadata(mi),
+				ObjectMeta: minioMetadata(t),
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					Volumes:            podVolumes,
 					RestartPolicy:      corev1.RestartPolicyAlways,
-					Affinity:           mi.Spec.Affinity,
-					SchedulerName:      mi.Scheduler.Name,
-					Tolerations:        minioTolerations(mi),
-					SecurityContext:    minioSecurityContext(mi),
-					ServiceAccountName: mi.Spec.ServiceAccountName,
+					Affinity:           t.Spec.Affinity,
+					SchedulerName:      t.Scheduler.Name,
+					Tolerations:        minioTolerations(t),
+					SecurityContext:    minioSecurityContext(t),
+					ServiceAccountName: t.Spec.ServiceAccountName,
 				},
 			},
 		},
 	}
 
 	// Address issue https://github.com/kubernetes/kubernetes/issues/85332
-	if mi.Spec.ImagePullSecret.Name != "" {
-		ss.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{mi.Spec.ImagePullSecret}
+	if t.Spec.ImagePullSecret.Name != "" {
+		ss.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{t.Spec.ImagePullSecret}
 	}
 
-	if mi.Spec.VolumeClaimTemplate != nil {
-		pvClaim := *mi.Spec.VolumeClaimTemplate
+	if t.Spec.VolumeClaimTemplate != nil {
+		pvClaim := *t.Spec.VolumeClaimTemplate
 		name := pvClaim.Name
-		for i := 0; i < mi.Spec.VolumesPerServer; i++ {
+		for i := 0; i < t.Spec.VolumesPerServer; i++ {
 			pvClaim.Name = name + strconv.Itoa(i)
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvClaim)
 		}

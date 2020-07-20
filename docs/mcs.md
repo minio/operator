@@ -13,7 +13,7 @@ This document explains how to enable MCS with MinIO Operator.
 
 ### Enable MCS Configuration
 
-MCS Configuration is a part of MinIOInstance yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance-mcs.yaml). The config offers below options
+MCS Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-mcs.yaml). The config offers below options
 
 #### MCS Fields
 
@@ -22,7 +22,7 @@ MCS Configuration is a part of MinIOInstance yaml file. Check the sample file [a
 | spec.mcs | Defines the mcs configuration. mcs is a graphical user interface for MinIO. Refer [this](https://github.com/minio/mcs) |
 | spec.mcs.image | Defines the mcs image |
 | spec.mcs.replicas | Number of MCS pods to be created. |
-| spec.mcs.mcsSecret | Use this secret to assign mcs credentials to MinIOInstance. |
+| spec.mcs.mcsSecret | Use this secret to assign mcs credentials to Tenant. |
 | spec.mcs.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
 
 ### Create MinIO Instance
@@ -30,13 +30,13 @@ MCS Configuration is a part of MinIOInstance yaml file. Check the sample file [a
 Once you have updated the yaml file per your requirement, use `kubectl` to create the MinIO instance like
 
 ```
-kubectl create -f examples/minioinstance-mcs.yaml
+kubectl create -f examples/tenant-mcs.yaml
 ```
 
 Alternatively, you can deploy the example like this
 
 ```
-kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance-mcs.yaml
+kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-mcs.yaml
 ```
 
 Above example file uses CSR for self signed certificate generation. MinIO requires one certificates/key pair 

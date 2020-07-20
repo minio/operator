@@ -12,7 +12,7 @@ Read more about MinIO Zones design in [MinIO Docs](https://github.com/minio/mini
 Assuming you have a MinIO cluster with single zone, `zone-0` with 4 drives (as shown in [examples](https://github.com/minio/minio-operator/tree/master/examples)). You can dd a new zone `zone-1` with 4 drives using `kubectl patch` command.
 
 ```
-kubectl patch minioinstances.operator.min.io minio --patch "$(cat examples/patch.yaml)" --type=merge
+kubectl patch tenants.minio.min.io minio --patch "$(cat examples/patch.yaml)" --type=merge
 ```
 
 If you're using a custom configuration (e.g. multiple zones or higher number of drives per zone), make sure to change `patch.yaml` accordingly.
@@ -37,7 +37,7 @@ If your MinIO Operator configuration has [KES](https://github.com/minio/minio-op
 
 - When new zones are added, Operator invalidates older self signed TLS certificates and the related secrets. Operator then creates new certificate signing requests (CSR). This is because there are new MinIO nodes that must be added in certificate DNS names. The administrator must approve these CSRs for MinIO server to be deployed again. Unless the CSR are approved, Operator will not create MinIO StatefulSet pods.
 
-- If you're using your own certificates, as explained [here](https://github.com/minio/minio-operator/blob/master/docs/tls.md#pass-certificate-secret-to-minioinstance), please ensure to use/update proper certificates that allow older and new MinIO nodes.
+- If you're using your own certificates, as explained [here](https://github.com/minio/minio-operator/blob/master/docs/tls.md#pass-certificate-secret-to-tenant), please ensure to use/update proper certificates that allow older and new MinIO nodes.
 
 ## Downtime
 
