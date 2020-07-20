@@ -70,7 +70,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2020-07-13T18-09-56Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2020-07-14T19-14-30Z"
 
 // DefaultMinIOAccessKey specifies default access key for MinIOInstance
 const DefaultMinIOAccessKey = "AKIAIOSFODNN7EXAMPLE"
@@ -105,7 +105,7 @@ const LivenessTimeout = 1
 // MCS Related Constants
 
 // DefaultMCSImage specifies the latest MCS Docker hub image
-const DefaultMCSImage = "minio/mcs:v0.1.0"
+const DefaultMCSImage = "minio/mcs:v0.2.0"
 
 // MCSInstanceLabel is applied to the MCS pods of a MinIOInstance cluster
 const MCSInstanceLabel = "v1.min.io/mcs"
