@@ -20,7 +20,7 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KE
 
 - Kubernetes version v1.17.0 and above for compatibility. MinIO Operator uses `k8s/client-go` v0.18.0.
 - `kubectl` configured to refer to a Kubernetes cluster.
-- Create the required PVs as [explained here](https://github.com/minio/minio-operator/blob/master/docs/creating-pv-manually.md).
+- Create the required PVs using [direct CSI driver](https://github.com/minio/minio-operator/blob/master/docs/using-direct-csi.md).
 - Optional: `kustomize` installed as [explained here](https://github.com/kubernetes-sigs/kustomize/blob/master/docs/INSTALL.md#installation).
 
 ### Create Operator Deployment
