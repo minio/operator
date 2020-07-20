@@ -416,7 +416,7 @@ func (mi *MinIOInstance) CreateMCSUser(minioSecret, mcsSecret map[string][]byte)
 func (mi *MinIOInstance) Validate() error {
 	// Mandate a VolumeClaimTemplate
 	if mi.Spec.VolumeClaimTemplate == nil {
-		return errors.New("volume configuration must be specified")
+		return errors.New("volume claim must be specified")
 	}
 	// Mandate a resource request
 	if mi.Spec.VolumeClaimTemplate.Spec.Resources.Requests == nil {
