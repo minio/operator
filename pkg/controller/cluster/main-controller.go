@@ -237,7 +237,7 @@ func NewController(
 
 // Start will set up the event handlers for types we are interested in, as well
 // as syncing informer caches and starting workers. It will block until stopCh
-// is closed, at which point it w	ill shutdown the workqueue and wait for
+// is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
@@ -278,12 +278,12 @@ func (c *Controller) runWorker() {
 // attempt to process it, by calling the syncHandler.
 func (c *Controller) processNextWorkItem() bool {
 	obj, shutdown := c.workqueue.Get()
-
 	if shutdown {
 		return false
 	}
+
 	// We wrap this block in a func so we can defer c.workqueue.Done.
-	err := func(obj interface{}) error {
+	processItem := func(obj interface{}) error {
 		// We call Done here so the workqueue knows we have finished
 		// processing this item. We also must remember to call Forget if we
 		// do not want this work item being re-queued. For example, we do
@@ -317,9 +317,9 @@ func (c *Controller) processNextWorkItem() bool {
 		c.workqueue.Forget(obj)
 		klog.Infof("Successfully synced '%s'", key)
 		return nil
-	}(obj)
+	}
 
-	if err != nil {
+	if err := processItem(obj); err != nil {
 		runtime.HandleError(err)
 		return true
 	}
@@ -335,7 +335,7 @@ func (c *Controller) syncHandler(key string) error {
 	uOpts := metav1.UpdateOptions{}
 	gOpts := metav1.GetOptions{}
 
-	var d *appsv1.Deployment
+	var mcsDeployment *appsv1.Deployment
 
 	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
@@ -528,8 +528,8 @@ func (c *Controller) syncHandler(key string) error {
 						return pErr
 					}
 					// Create MCS Deployment
-					d = deployments.NewForMCS(mi)
-					_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, d, cOpts)
+					mcsDeployment = deployments.NewForMCS(mi)
+					_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, mcsDeployment, cOpts)
 					if err != nil {
 						klog.V(2).Infof(err.Error())
 						return err
@@ -617,14 +617,15 @@ func (c *Controller) syncHandler(key string) error {
 		return fmt.Errorf(msg)
 	}
 
-	if mi.HasMCSEnabled() && d != nil && mi.Spec.MCS.Image != d.Spec.Template.Spec.Containers[0].Image {
+	if mi.HasMCSEnabled() && mcsDeployment != nil && !mi.Spec.MCS.EqualImage(mcsDeployment.Spec.Template.Spec.Containers[0].Image) {
 		mi, err = c.updateMinIOInstanceStatus(ctx, mi, updatingMCSVersion, ss.Status.Replicas)
 		if err != nil {
 			return err
 		}
-		klog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name, mi.Spec.MCS.Image, d.Spec.Template.Spec.Containers[0].Image)
-		d = deployments.NewForMCS(mi)
-		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, d, uOpts)
+		klog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name,
+			mi.Spec.MCS.Image, mcsDeployment.Spec.Template.Spec.Containers[0].Image)
+		mcsDeployment = deployments.NewForMCS(mi)
+		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, mcsDeployment, uOpts)
 		// If an error occurs during Update, we'll requeue the item so we can
 		// attempt processing again later. This could have been caused by a
 		// temporary network failure, or any other transient reason.
@@ -636,10 +637,7 @@ func (c *Controller) syncHandler(key string) error {
 	// Finally, we update the status block of the MinIOInstance resource to reflect the
 	// current state of the world
 	_, err = c.updateMinIOInstanceStatus(ctx, mi, ready, ss.Status.Replicas)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.MinIOInstance, createClientCert bool) error {
@@ -733,22 +731,19 @@ func (c *Controller) updateMinIOInstanceStatus(ctx context.Context, minioInstanc
 	minioInstanceCopy := minioInstance.DeepCopy()
 	minioInstanceCopy.Status.AvailableReplicas = availableReplicas
 	minioInstanceCopy.Status.CurrentState = currentState
-	// If the CustomResourceSubresources feature gate is not enabled,		// If the CustomResourceSubresources feature gate is not enabled,
-	// we must use Update instead of UpdateStatus to update the Status block of the MinIOInstance resource.		// we must use Update instead of UpdateStatus to update the Status block of the MinIOInstance resource.
-	// UpdateStatus will not allow changes to the Spec of the resource,		// UpdateStatus will not allow changes to the Spec of the resource,
-	// which is ideal for ensuring nothing other than resource status has been updated.		// which is ideal for ensuring nothing other than resource status has been updated.
-	mi, err := c.minioClientSet.OperatorV1().MinIOInstances(minioInstance.Namespace).UpdateStatus(ctx, minioInstanceCopy, opts)
-	time.Sleep(time.Second * 2)
-	return mi, err
+	// If the CustomResourceSubresources feature gate is not enabled,
+	// we must use Update instead of UpdateStatus to update the Status block of the MinIOInstance resource.
+	// UpdateStatus will not allow changes to the Spec of the resource,
+	// which is ideal for ensuring nothing other than resource status has been updated.
+	return c.minioClientSet.OperatorV1().MinIOInstances(minioInstance.Namespace).UpdateStatus(ctx, minioInstanceCopy, opts)
 }
 
 // enqueueMinIOInstance takes a MinIOInstance resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
 // passed resources of any type other than MinIOInstance.
 func (c *Controller) enqueueMinIOInstance(obj interface{}) {
-	var key string
-	var err error
-	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
+	key, err := cache.MetaNamespaceKeyFunc(obj)
+	if err != nil {
 		runtime.HandleError(err)
 		return
 	}
