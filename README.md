@@ -7,9 +7,9 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KE
 | Feature                 | Reference Document |
 |-------------------------|--------------------|
 | Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/minio-operator#create-a-minio-instance). |
-| Automatic TLS for MinIO                                        | [Automatic TLS for MinIO Instance](https://github.com/minio/minio-operator/blob/master/docs/tls.md#automatic-csr-generation). |
-| Expand an existing MinIO cluster                               | [Expand a MinIO Cluster](https://github.com/minio/minio-operator/blob/master/docs/adding-zones.md). |
-| Use a custom template for hostname discovery                   | [Custom Hostname Discovery](https://github.com/minio/minio-operator/blob/master/docs/custom-name-templates.md). |
+| TLS Configuration  | [TLS for MinIO Instance](https://github.com/minio/minio-operator/blob/master/docs/tls.md). |
+| Expand an existing MinIO cluster | [Expand a MinIO Cluster](https://github.com/minio/minio-operator/blob/master/docs/adding-zones.md). |
+| Use a custom template for hostname discovery | [Custom Hostname Discovery](https://github.com/minio/minio-operator/blob/master/docs/custom-name-templates.md). |
 | Use PodSecurityPolicy for MinIO Pods | [Apply PodSecurityPolicy](https://github.com/minio/minio-operator/blob/master/docs/pod-security-policy.md). |
 | Deploy MCS with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/minio-operator/blob/master/docs/mcs.md). |
 | Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/minio-operator/blob/master/docs/kes.md). |
@@ -35,7 +35,6 @@ Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kusto
 
 ```bash
 git clone https://github.com/minio/minio-operator
-cd operator-deployment
 kustomize build | kubectl apply -f -
 ```
 
@@ -57,8 +56,8 @@ These variables may be passed to operator Deployment in order to modify some of 
 
 | Name                | Default | Description                                                                                                                   |
 | ---                 | ---     | ---                                                                                                                           |
-| `WATCHED_NAMESPACE` |         | If set, the operator will watch only MinIO resources deployed in the specified namespace. All namespaces are watched if empty |
-| `CLUSTER_DOMAIN`    | cluster.local | Cluster Domain of the Kubernetes cluster |
+| `CLUSTER_DOMAIN`    | `cluster.local` | Cluster Domain of the Kubernetes cluster |
+| `WATCHED_NAMESPACE` | `-` | If set, the operator will watch MinIOInstance resources in specified namespace only. If empty, operator will watch all namespaces. |
 
 ## Explore Further
 

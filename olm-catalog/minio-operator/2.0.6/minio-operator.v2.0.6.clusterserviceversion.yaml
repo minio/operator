@@ -7,7 +7,7 @@ metadata:
     categories: 'Storage,    Big Data, AI/Machine Learning'
     certified: 'false'
     description: ' MinIO Operator allows creating distributed MinIO Clusters and manage their lifecycle'
-    containerImage: 'minio/k8s-operator:2.0.6'
+    containerImage: 'minio/k8s-operator:2.0.9'
     support: 'MinIO, Inc.'
     capabilities: Full Lifecycle
     repository: 'https://github.com/minio/minio-operator'
@@ -262,7 +262,7 @@ spec:
                 serviceAccountName: minio-operator-sa
                 containers:
                   - name: minio-operator
-                    image: 'minio/k8s-operator:2.0.6'
+                    image: 'minio/k8s-operator:2.0.9'
   installModes:
     - type: OwnNamespace
       supported: true

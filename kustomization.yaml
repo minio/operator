@@ -1,6 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: minio-operator
 
 # Configure number of MinIO Operator Deployment Replicas
 replicas:
@@ -11,7 +10,7 @@ replicas:
 images:
   - name: minio/k8s-operator
     newName: minio/k8s-operator
-    newTag: 2.0.6
+    newTag: 2.0.9
 
 # Configure the Cluster Domain and NameSpace to Watch
 configMapGenerator:
@@ -39,6 +38,8 @@ patchesJson6902:
         path: /metadata/name
         value: "minio-operator"
 
+namespace: minio-operator
+
 vars:
   - name: CLUSTER_DOMAIN
     objref:
@@ -56,8 +57,8 @@ vars:
       fieldpath: data.WATCHED_NAMESPACE
 
 resources:
-  - namespace.yaml
-  - service-account.yaml
-  - crd.yaml
-  - rbac.yaml
-  - deployment.yaml
+  - operator-kustomize/namespace.yaml
+  - operator-kustomize/service-account.yaml
+  - operator-kustomize/crd.yaml
+  - operator-kustomize/rbac.yaml
+  - operator-kustomize/deployment.yaml
