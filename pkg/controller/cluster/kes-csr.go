@@ -48,7 +48,7 @@ func generateKESCryptoData(mi *miniov1.MinIOInstance) ([]byte, []byte, error) {
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
 			CommonName:   mi.KESWildCardName(),
-			Organization: miniov1.DefaultOrgName,
+			Organization: mi.Spec.CertConfig.OrganizationName,
 		},
 		SignatureAlgorithm: x509.ECDSAWithSHA512,
 		DNSNames:           mi.KESHosts(),
