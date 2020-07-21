@@ -65,6 +65,11 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 		*out = new(metav1.ObjectMeta)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.ExternalCertSecret != nil {
+		in, out := &in.ExternalCertSecret, &out.ExternalCertSecret
+		*out = new(LocalCertificateReference)
+		**out = **in
+	}
 	return
 }
 
@@ -255,6 +260,11 @@ func (in *MinIOInstanceSpec) DeepCopyInto(out *MinIOInstanceSpec) {
 	}
 	if in.ExternalCertSecret != nil {
 		in, out := &in.ExternalCertSecret, &out.ExternalCertSecret
+		*out = new(LocalCertificateReference)
+		**out = **in
+	}
+	if in.ExternalClientCertSecret != nil {
+		in, out := &in.ExternalClientCertSecret, &out.ExternalClientCertSecret
 		*out = new(LocalCertificateReference)
 		**out = **in
 	}
