@@ -6,9 +6,8 @@
 
 ```sh
 cat << EOF > default.env
-DIRECT_CSI_DRIVER_PATHS=/var/lib/direct-csi-driver/data{1...4}
-DIRECT_CSI_DRIVER_COMMON_CONTAINER_ROOT=/var/lib/direct-csi-driver
-DIRECT_CSI_DRIVER_COMMON_HOST_ROOT=/var/lib/direct-csi-driver
+DIRECT_CSI_DRIVES=data{1...4}
+DIRECT_CSI_DRIVES_DIR=/mnt
 EOF
 
 export $(cat default.env)
@@ -16,7 +15,7 @@ export $(cat default.env)
 
 ### Create the namespace for the driver
 ```
-kubectl apply -k github.com/minio/direct-csi-driver
+kubectl apply -k github.com/minio/direct-csi
 ```
 
 ### Utilize the CSI with MinIO operator
@@ -27,12 +26,12 @@ kubectl apply -k github.com/minio/direct-csi-driver
   ## lead to unbound PVCs and missing data
   volumeClaimTemplate:
     metadata:
-      name: direct-csi-driver-min-io-volume
+      name: data
     spec:
       accessModes:
         - ReadWriteOnce
       resources:
         requests:
           storage: 1Ti
-      storageClassName: direct.csi.driver.min.io # This field references the existing StorageClass
+      storageClassName: direct.csi.min.io # This field references the existing StorageClass
 ```
