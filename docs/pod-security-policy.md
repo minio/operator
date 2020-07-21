@@ -10,7 +10,7 @@ This document explains how to apply `PodSecurityPolicy` to MinIO Pods created by
 You can create a MinIO cluster with single zone, `zone-0` with 4 drives, with a custom `PodSecurityPolicy` applied to all the MinIO Pods created by the Operator.
 
 ```
-kubectl create -f https://github.com/minio/minio-operator/tree/master/examples/minioinstance-pod-security-policy.yaml
+kubectl create -f https://github.com/minio/minio-operator/tree/master/examples/tenant-pod-security-policy.yaml
 ```
 
 This file creates a custom PodSecurityPolicy with these fields:

@@ -25,7 +25,7 @@ import (
 
 	versioned "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/minio/minio-operator/pkg/client/informers/externalversions/internalinterfaces"
-	operatorminio "github.com/minio/minio-operator/pkg/client/informers/externalversions/operator.min.io"
+	miniominio "github.com/minio/minio-operator/pkg/client/informers/externalversions/minio.min.io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -172,9 +172,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Operator() operatorminio.Interface
+	Minio() miniominio.Interface
 }
 
-func (f *sharedInformerFactory) Operator() operatorminio.Interface {
-	return operatorminio.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Minio() miniominio.Interface {
+	return miniominio.New(f, f.namespace, f.tweakListOptions)
 }

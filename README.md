@@ -43,12 +43,12 @@ kustomize build | kubectl apply -f -
 Once MinIO-Operator deployment is running, you can create MinIO instances using the below command
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/minioinstance.yaml
+kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant.yaml
 ```
 
-### Access MinIOInstance via Service
+### Access Tenant via Service
 
-Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in MinIOInstance definition to enable Service based access to the MinIOInstance pods. Refer [the example here](https://github.com/minio/minio-operator/blob/master/examples/minioinstance.yaml?raw=true) for details on how to setup service based access for MinIOInstance pods.
+Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in Tenant definition to enable Service based access to the Tenant pods. Refer [the example here](https://github.com/minio/minio-operator/blob/master/examples/tenant.yaml?raw=true) for details on how to setup service based access for Tenant pods.
 
 ### Environment variables
 

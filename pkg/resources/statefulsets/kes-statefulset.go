@@ -18,7 +18,7 @@
 package statefulsets
 
 import (
-	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,39 +27,39 @@ import (
 // KESMetadata Returns the KES pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func KESMetadata(mi *miniov1.MinIOInstance) metav1.ObjectMeta {
+func KESMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if mi.HasKESMetadata() {
-		meta = *mi.Spec.KES.Metadata
+	if t.HasKESMetadata() {
+		meta = *t.Spec.KES.Metadata
 	}
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
-	for k, v := range mi.KESPodLabels() {
+	for k, v := range t.KESPodLabels() {
 		meta.Labels[k] = v
 	}
 	return meta
 }
 
 // KESSelector Returns the KES pods selector set in configuration.
-func KESSelector(mi *miniov1.MinIOInstance) *metav1.LabelSelector {
+func KESSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
-		MatchLabels: mi.KESPodLabels(),
+		MatchLabels: t.KESPodLabels(),
 	}
 }
 
 // KESVolumeMounts builds the volume mounts for MinIO container.
-func KESVolumeMounts(mi *miniov1.MinIOInstance) []corev1.VolumeMount {
+func KESVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
-			Name:      mi.KESVolMountName(),
+			Name:      t.KESVolMountName(),
 			MountPath: miniov1.KESConfigMountPath,
 		},
 	}
 }
 
 // KESEnvironmentVars returns the KES environment variables set in configuration.
-func KESEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
+func KESEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 	// pass the identity created while generating the MinIO client cert
 	return []corev1.EnvVar{
 		{
@@ -70,29 +70,29 @@ func KESEnvironmentVars(mi *miniov1.MinIOInstance) []corev1.EnvVar {
 }
 
 // KESServerContainer returns the KES container for a KES StatefulSet.
-func KESServerContainer(mi *miniov1.MinIOInstance) corev1.Container {
+func KESServerContainer(t *miniov1.Tenant) corev1.Container {
 
 	// Args to start KES with config mounted at miniov1.KESConfigMountPath and require but don't verify mTLS authentication
 	args := []string{"server", "--config=" + miniov1.KESConfigMountPath + "/server-config.yaml", "--auth=off"}
 
 	return corev1.Container{
 		Name:  miniov1.KESContainerName,
-		Image: mi.Spec.KES.Image,
+		Image: t.Spec.KES.Image,
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: miniov1.KESPort,
 			},
 		},
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
-		VolumeMounts:    KESVolumeMounts(mi),
+		VolumeMounts:    KESVolumeMounts(t),
 		Args:            args,
-		Env:             KESEnvironmentVars(mi),
+		Env:             KESEnvironmentVars(t),
 	}
 }
 
 // NewForKES creates a new KES StatefulSet for the given Cluster.
-func NewForKES(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSet {
-	var replicas = mi.KESReplicas()
+func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
+	var replicas = t.KESReplicas()
 	var certPath = "server.crt"
 	var keyPath = "server.key"
 	var serverCertSecret string
@@ -105,13 +105,13 @@ func NewForKES(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSe
 		{Key: "server-config.yaml", Path: "server-config.yaml"},
 	}
 
-	if mi.AutoCert() {
-		serverCertSecret = mi.KESTLSSecretName()
-	} else if mi.KESExternalCert() {
-		serverCertSecret = mi.Spec.KES.ExternalCertSecret.Name
+	if t.AutoCert() {
+		serverCertSecret = t.KESTLSSecretName()
+	} else if t.KESExternalCert() {
+		serverCertSecret = t.Spec.KES.ExternalCertSecret.Name
 		// This covers both secrets of type "kubernetes.io/tls" and
 		// "cert-manager.io/v1alpha2" because of same keys in both.
-		if mi.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || mi.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+		if t.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
 			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: certPath},
 				{Key: "tls.key", Path: keyPath},
@@ -121,7 +121,7 @@ func NewForKES(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSe
 
 	podVolumes := []corev1.Volume{
 		{
-			Name: mi.KESVolMountName(),
+			Name: t.KESVolMountName(),
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
 					Sources: []corev1.VolumeProjection{
@@ -136,7 +136,7 @@ func NewForKES(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSe
 						{
 							Secret: &corev1.SecretProjection{
 								LocalObjectReference: corev1.LocalObjectReference{
-									Name: mi.Spec.KES.Configuration.Name,
+									Name: t.Spec.KES.Configuration.Name,
 								},
 								Items: configPath,
 							},
@@ -147,31 +147,31 @@ func NewForKES(mi *miniov1.MinIOInstance, serviceName string) *appsv1.StatefulSe
 		},
 	}
 
-	containers := []corev1.Container{KESServerContainer(mi)}
+	containers := []corev1.Container{KESServerContainer(t)}
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       mi.Namespace,
-			Name:            mi.KESStatefulSetName(),
-			OwnerReferences: mi.OwnerRef(),
+			Namespace:       t.Namespace,
+			Name:            t.KESStatefulSetName(),
+			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: miniov1.DefaultUpdateStrategy,
 			},
-			PodManagementPolicy: mi.Spec.PodManagementPolicy,
-			// KES is always matched via MinIOInstance Name + KES prefix
-			Selector:    KESSelector(mi),
+			PodManagementPolicy: t.Spec.PodManagementPolicy,
+			// KES is always matched via Tenant Name + KES prefix
+			Selector:    KESSelector(t),
 			ServiceName: serviceName,
 			Replicas:    &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: KESMetadata(mi),
+				ObjectMeta: KESMetadata(t),
 				Spec: corev1.PodSpec{
 					Containers:       containers,
 					Volumes:          podVolumes,
-					ImagePullSecrets: []corev1.LocalObjectReference{mi.Spec.ImagePullSecret},
+					ImagePullSecrets: []corev1.LocalObjectReference{t.Spec.ImagePullSecret},
 					RestartPolicy:    corev1.RestartPolicyAlways,
-					SchedulerName:    mi.Scheduler.Name,
+					SchedulerName:    t.Scheduler.Name,
 				},
 			},
 		},

@@ -1,5 +1,5 @@
-apiVersion: operator.min.io/v1
-kind: MinIOInstance
+apiVersion: minio.min.io/v1
+kind: Tenant
 metadata:
   name: minio
 spec:

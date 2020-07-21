@@ -49,11 +49,11 @@ import (
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
 
-	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
-	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/operator.min.io/v1"
-	listers "github.com/minio/minio-operator/pkg/client/listers/operator.min.io/v1"
+	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions/minio.min.io/v1"
+	listers "github.com/minio/minio-operator/pkg/client/listers/minio.min.io/v1"
 	"github.com/minio/minio-operator/pkg/resources/deployments"
 	"github.com/minio/minio-operator/pkg/resources/jobs"
 	"github.com/minio/minio-operator/pkg/resources/services"
@@ -63,18 +63,18 @@ import (
 const controllerAgentName = "minio-operator"
 
 const (
-	// SuccessSynced is used as part of the Event 'reason' when a MinIOInstance is synced
+	// SuccessSynced is used as part of the Event 'reason' when a Tenant is synced
 	SuccessSynced = "Synced"
-	// ErrResourceExists is used as part of the Event 'reason' when a MinIOInstance fails
+	// ErrResourceExists is used as part of the Event 'reason' when a Tenant fails
 	// to sync due to a StatefulSet of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
-	// MessageResourceExists is the message used for Events when a MinIOInstance
+	// MessageResourceExists is the message used for Events when a Tenant
 	// fails to sync due to a StatefulSet already existing
 	MessageResourceExists = "Resource %q already exists and is not managed by MinIO Operator"
-	// MessageResourceSynced is the message used for an Event fired when a MinIOInstance
+	// MessageResourceSynced is the message used for an Event fired when a Tenant
 	// is synced successfully
-	MessageResourceSynced = "MinIOInstance synced successfully"
-	// Standard Status messages for MinIOInstance
+	MessageResourceSynced = "Tenant synced successfully"
+	// Standard Status messages for Tenant
 	ready                      = "Ready"
 	addingZone                 = "Adding New MinIO Zone"
 	provisioningCIService      = "Provisioning MinIO Cluster IP Service"
@@ -91,7 +91,7 @@ const (
 	notOwned                   = "Statefulset not controlled by operator"
 )
 
-// Controller struct watches the Kubernetes API for changes to MinIOInstance resources
+// Controller struct watches the Kubernetes API for changes to Tenant resources
 type Controller struct {
 	// kubeClientSet is a standard kubernetes clientset
 	kubeClientSet kubernetes.Interface
@@ -120,12 +120,12 @@ type Controller struct {
 	// has synced at least once.
 	jobListerSynced cache.InformerSynced
 
-	// minioInstancesLister lists MinIOInstance from a shared informer's
+	// tenantsLister lists Tenant from a shared informer's
 	// store.
-	minioInstancesLister listers.MinIOInstanceLister
-	// minioInstancesSynced returns true if the StatefulSet shared informer
+	tenantsLister listers.TenantLister
+	// tenantsSynced returns true if the StatefulSet shared informer
 	// has synced at least once.
-	minioInstancesSynced cache.InformerSynced
+	tenantsSynced cache.InformerSynced
 
 	// serviceLister is able to list/get Services from a shared informer's
 	// store.
@@ -156,7 +156,7 @@ func NewController(
 	statefulSetInformer appsinformers.StatefulSetInformer,
 	deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer batchinformers.JobInformer,
-	minioInstanceInformer informers.MinIOInstanceInformer,
+	tenantInformer informers.TenantInformer,
 	serviceInformer coreinformers.ServiceInformer,
 	hostsTemplate string) *Controller {
 
@@ -180,26 +180,26 @@ func NewController(
 		deploymentListerSynced:  statefulSetInformer.Informer().HasSynced,
 		jobLister:               jobInformer.Lister(),
 		jobListerSynced:         jobInformer.Informer().HasSynced,
-		minioInstancesLister:    minioInstanceInformer.Lister(),
-		minioInstancesSynced:    minioInstanceInformer.Informer().HasSynced,
+		tenantsLister:           tenantInformer.Lister(),
+		tenantsSynced:           tenantInformer.Informer().HasSynced,
 		serviceLister:           serviceInformer.Lister(),
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
-		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "MinIOInstances"),
+		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "Tenants"),
 		recorder:                recorder,
 		hostsTemplate:           hostsTemplate,
 	}
 
 	klog.Info("Setting up event handlers")
-	// Set up an event handler for when MinIOInstance resources change
-	minioInstanceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueMinIOInstance,
+	// Set up an event handler for when Tenant resources change
+	tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.enqueueTenant,
 		UpdateFunc: func(old, new interface{}) {
-			controller.enqueueMinIOInstance(new)
+			controller.enqueueTenant(new)
 		},
 	})
 	// Set up an event handler for when StatefulSet resources change. This
 	// handler will lookup the owner of the given StatefulSet, and if it is
-	// owned by a MinIOInstance resource will enqueue that MinIOInstance resource for
+	// owned by a Tenant resource will enqueue that Tenant resource for
 	// processing. This way, we don't need to implement custom logic for
 	// handling StatefulSet resources. More info on this pattern:
 	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md
@@ -242,16 +242,16 @@ func NewController(
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 	// Start the informer factories to begin populating the informer caches
-	klog.Info("Starting MinIOInstance controller")
+	klog.Info("Starting Tenant controller")
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.minioInstancesSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced); !ok {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
 	klog.Info("Starting workers")
-	// Launch two workers to process MinIOInstance resources
+	// Launch two workers to process Tenant resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
@@ -308,7 +308,7 @@ func (c *Controller) processNextWorkItem() bool {
 		}
 		klog.V(2).Infof("Key from workqueue: %s", key)
 		// Run the syncHandler, passing it the namespace/name string of the
-		// MinIOInstance resource to be synced.
+		// Tenant resource to be synced.
 		if err := c.syncHandler(key); err != nil {
 			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
 		}
@@ -327,7 +327,7 @@ func (c *Controller) processNextWorkItem() bool {
 }
 
 // syncHandler compares the actual state with the desired, and attempts to
-// converge the two. It then updates the Status block of the MinIOInstance resource
+// converge the two. It then updates the Status block of the Tenant resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(key string) error {
 	ctx := context.Background()
@@ -344,12 +344,12 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
-	// Get the MinIOInstance resource with this namespace/name
-	mi, err := c.minioInstancesLister.MinIOInstances(namespace).Get(name)
+	// Get the Tenant resource with this namespace/name
+	mi, err := c.tenantsLister.Tenants(namespace).Get(name)
 	if err != nil {
-		// The MinIOInstance resource may no longer exist, in which case we stop processing.
+		// The Tenant resource may no longer exist, in which case we stop processing.
 		if errors.IsNotFound(err) {
-			runtime.HandleError(fmt.Errorf("MinIOInstance '%s' in work queue no longer exists", key))
+			runtime.HandleError(fmt.Errorf("Tenant '%s' in work queue no longer exists", key))
 			return nil
 		}
 		return err
@@ -364,7 +364,7 @@ func (c *Controller) syncHandler(key string) error {
 	if err = mi.Validate(); err != nil {
 		klog.V(2).Infof(err.Error())
 		var err2 error
-		mi, err2 = c.updateMinIOInstanceStatus(ctx, mi, err.Error(), 0)
+		mi, err2 = c.updateTenantStatus(ctx, mi, err.Error(), 0)
 		if err2 != nil {
 			klog.V(2).Infof(err2.Error())
 		}
@@ -372,9 +372,9 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// check if both auto certificate creation and external secret with certificate is passed,
-	// this is an error as only one of this is allowed in one MinIOInstance
+	// this is an error as only one of this is allowed in one Tenant
 	if mi.AutoCert() && (mi.ExternalCert() || mi.ExternalClientCert() || mi.KESExternalCert()) {
-		msg := "Please set either externalCertSecret or requestAutoCert in MinIOInstance config"
+		msg := "Please set either externalCertSecret or requestAutoCert in Tenant config"
 		klog.V(2).Infof(msg)
 		return fmt.Errorf(msg)
 	}
@@ -391,11 +391,11 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// Handle the Internal ClusterIP Service for MinIOInstance
+	// Handle the Internal ClusterIP Service for Tenant
 	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.MinIOCIServiceName())
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			mi, err = c.updateMinIOInstanceStatus(ctx, mi, provisioningCIService, 0)
+			mi, err = c.updateTenantStatus(ctx, mi, provisioningCIService, 0)
 			if err != nil {
 				return err
 			}
@@ -410,11 +410,11 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// Handle the Internal Headless Service for MinIOInstance StatefulSet
+	// Handle the Internal Headless Service for Tenant StatefulSet
 	hlSvc, err := c.serviceLister.Services(mi.Namespace).Get(mi.MinIOHLServiceName())
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			mi, err = c.updateMinIOInstanceStatus(ctx, mi, provisioningHLService, 0)
+			mi, err = c.updateTenantStatus(ctx, mi, provisioningHLService, 0)
 			if err != nil {
 				return err
 			}
@@ -429,7 +429,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// Get the StatefulSet with the name specified in MinIOInstance.spec
+	// Get the StatefulSet with the name specified in Tenant.spec
 	ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.Name)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -446,7 +446,7 @@ func (c *Controller) syncHandler(key string) error {
 					}
 				}
 			}
-			mi, err = c.updateMinIOInstanceStatus(ctx, mi, provisioningStatefulSet, 0)
+			mi, err = c.updateTenantStatus(ctx, mi, provisioningStatefulSet, 0)
 			if err != nil {
 				return err
 			}
@@ -459,7 +459,7 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 	} else {
-		// If the number of the replicas on the MinIOInstance resource is specified, and the
+		// If the number of the replicas on the Tenant resource is specified, and the
 		// number does not equal the current desired replicas on the StatefulSet, we
 		// should update the StatefulSet resource.
 		// If the status already indicates "addingZone", no need for another
@@ -467,7 +467,7 @@ func (c *Controller) syncHandler(key string) error {
 		if mi.MinIOReplicas() != *ss.Spec.Replicas && mi.Status.CurrentState != addingZone {
 			// save current replicas before creating new statefulset
 			// this is used later to delete only the older pods in statefulset
-			mi, err = c.updateMinIOInstanceStatus(ctx, mi, addingZone, 0)
+			mi, err = c.updateTenantStatus(ctx, mi, addingZone, 0)
 			if err != nil {
 				return err
 			}
@@ -480,15 +480,15 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		}
 
-		// If this container version on the MinIOInstance resource is specified, and the
+		// If this container version on the Tenant resource is specified, and the
 		// version does not equal the current desired version in the StatefulSet, we
 		// should update the StatefulSet resource.
 		if mi.Spec.Image != ss.Spec.Template.Spec.Containers[0].Image {
-			mi, err = c.updateMinIOInstanceStatus(ctx, mi, updatingMinIOVersion, ss.Status.Replicas)
+			mi, err = c.updateTenantStatus(ctx, mi, updatingMinIOVersion, ss.Status.Replicas)
 			if err != nil {
 				return err
 			}
-			klog.V(4).Infof("Updating MinIOInstance %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
+			klog.V(4).Infof("Updating Tenant %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
 			ss = statefulsets.NewForMinIO(mi, hlSvc.Name, c.hostsTemplate)
 			if _, err := c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
@@ -519,7 +519,7 @@ func (c *Controller) syncHandler(key string) error {
 				}
 				// Check if any one replica is READY
 				if ss.Status.ReadyReplicas > 0 {
-					mi, err = c.updateMinIOInstanceStatus(ctx, mi, provisioningMCSDeployment, ss.Status.Replicas)
+					mi, err = c.updateTenantStatus(ctx, mi, provisioningMCSDeployment, ss.Status.Replicas)
 					if err != nil {
 						return err
 					}
@@ -542,7 +542,7 @@ func (c *Controller) syncHandler(key string) error {
 						return err
 					}
 				} else {
-					mi, err = c.updateMinIOInstanceStatus(ctx, mi, waitingForReadyState, ss.Status.Replicas)
+					mi, err = c.updateTenantStatus(ctx, mi, waitingForReadyState, ss.Status.Replicas)
 					if err != nil {
 						return err
 					}
@@ -575,7 +575,7 @@ func (c *Controller) syncHandler(key string) error {
 		// Get the StatefulSet with the name specified in spec
 		if _, err = c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.KESStatefulSetName()); err != nil {
 			if apierrors.IsNotFound(err) {
-				mi, err = c.updateMinIOInstanceStatus(ctx, mi, provisioningKESStatefulSet, 0)
+				mi, err = c.updateTenantStatus(ctx, mi, provisioningKESStatefulSet, 0)
 				if err != nil {
 					return err
 				}
@@ -605,10 +605,10 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// If the StatefulSet is not controlled by this MinIOInstance resource, we should log
+	// If the StatefulSet is not controlled by this Tenant resource, we should log
 	// a warning to the event recorder and ret
 	if !metav1.IsControlledBy(ss, mi) {
-		mi, err = c.updateMinIOInstanceStatus(ctx, mi, notOwned, ss.Status.Replicas)
+		mi, err = c.updateTenantStatus(ctx, mi, notOwned, ss.Status.Replicas)
 		if err != nil {
 			return err
 		}
@@ -618,11 +618,11 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if mi.HasMCSEnabled() && mcsDeployment != nil && !mi.Spec.MCS.EqualImage(mcsDeployment.Spec.Template.Spec.Containers[0].Image) {
-		mi, err = c.updateMinIOInstanceStatus(ctx, mi, updatingMCSVersion, ss.Status.Replicas)
+		mi, err = c.updateTenantStatus(ctx, mi, updatingMCSVersion, ss.Status.Replicas)
 		if err != nil {
 			return err
 		}
-		klog.V(4).Infof("Updating MinIOInstance %s mcs version %s, to: %s", name,
+		klog.V(4).Infof("Updating Tenant %s mcs version %s, to: %s", name,
 			mi.Spec.MCS.Image, mcsDeployment.Spec.Template.Spec.Containers[0].Image)
 		mcsDeployment = deployments.NewForMCS(mi)
 		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, mcsDeployment, uOpts)
@@ -634,16 +634,16 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// Finally, we update the status block of the MinIOInstance resource to reflect the
+	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
-	_, err = c.updateMinIOInstanceStatus(ctx, mi, ready, ss.Status.Replicas)
+	_, err = c.updateTenantStatus(ctx, mi, ready, ss.Status.Replicas)
 	return err
 }
 
-func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.MinIOInstance, createClientCert bool) error {
+func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.Tenant, createClientCert bool) error {
 	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOCSRName(), metav1.GetOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
-			mi, err = c.updateMinIOInstanceStatus(ctx, mi, waitingMinIOCert, 0)
+			mi, err = c.updateTenantStatus(ctx, mi, waitingMinIOCert, 0)
 			if err != nil {
 				return err
 			}
@@ -658,7 +658,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 	if createClientCert {
 		if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOClientCSRName(), metav1.GetOptions{}); err != nil {
 			if apierrors.IsNotFound(err) {
-				mi, err = c.updateMinIOInstanceStatus(ctx, mi, waitingMinIOClientCert, 0)
+				mi, err = c.updateTenantStatus(ctx, mi, waitingMinIOClientCert, 0)
 				if err != nil {
 					return err
 				}
@@ -674,10 +674,10 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 	return nil
 }
 
-func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.MinIOInstance) error {
+func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.Tenant) error {
 	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.KESCSRName(), metav1.GetOptions{}); err != nil {
 		if apierrors.IsNotFound(err) {
-			mi, err = c.updateMinIOInstanceStatus(ctx, mi, waitingKESCert, 0)
+			mi, err = c.updateTenantStatus(ctx, mi, waitingKESCert, 0)
 			if err != nil {
 				return err
 			}
@@ -723,25 +723,25 @@ func (c *Controller) getCertIdentity(ns string, cert *miniov1.LocalCertificateRe
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-func (c *Controller) updateMinIOInstanceStatus(ctx context.Context, minioInstance *miniov1.MinIOInstance, currentState string, availableReplicas int32) (*miniov1.MinIOInstance, error) {
+func (c *Controller) updateTenantStatus(ctx context.Context, tenant *miniov1.Tenant, currentState string, availableReplicas int32) (*miniov1.Tenant, error) {
 	opts := metav1.UpdateOptions{}
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
-	minioInstanceCopy := minioInstance.DeepCopy()
-	minioInstanceCopy.Status.AvailableReplicas = availableReplicas
-	minioInstanceCopy.Status.CurrentState = currentState
+	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Status.AvailableReplicas = availableReplicas
+	tenantCopy.Status.CurrentState = currentState
 	// If the CustomResourceSubresources feature gate is not enabled,
-	// we must use Update instead of UpdateStatus to update the Status block of the MinIOInstance resource.
+	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
-	return c.minioClientSet.OperatorV1().MinIOInstances(minioInstance.Namespace).UpdateStatus(ctx, minioInstanceCopy, opts)
+	return c.minioClientSet.MinioV1().Tenants(tenant.Namespace).UpdateStatus(ctx, tenantCopy, opts)
 }
 
-// enqueueMinIOInstance takes a MinIOInstance resource and converts it into a namespace/name
+// enqueueTenant takes a Tenant resource and converts it into a namespace/name
 // string which is then put onto the work queue. This method should *not* be
-// passed resources of any type other than MinIOInstance.
-func (c *Controller) enqueueMinIOInstance(obj interface{}) {
+// passed resources of any type other than Tenant.
+func (c *Controller) enqueueTenant(obj interface{}) {
 	key, err := cache.MetaNamespaceKeyFunc(obj)
 	if err != nil {
 		runtime.HandleError(err)
@@ -751,9 +751,9 @@ func (c *Controller) enqueueMinIOInstance(obj interface{}) {
 }
 
 // handleObject will take any resource implementing metav1.Object and attempt
-// to find the MinIOInstance resource that 'owns' it. It does this by looking at the
+// to find the Tenant resource that 'owns' it. It does this by looking at the
 // objects metadata.ownerReferences field for an appropriate OwnerReference.
-// It then enqueues that MinIOInstance resource to be processed. If the object does not
+// It then enqueues that Tenant resource to be processed. If the object does not
 // have an appropriate OwnerReference, it will simply be skipped.
 func (c *Controller) handleObject(obj interface{}) {
 	var object metav1.Object
@@ -773,19 +773,19 @@ func (c *Controller) handleObject(obj interface{}) {
 	}
 	klog.V(4).Infof("Processing object: %s", object.GetName())
 	if ownerRef := metav1.GetControllerOf(object); ownerRef != nil {
-		// If this object is not owned by a MinIOInstance, we should not do anything more
+		// If this object is not owned by a Tenant, we should not do anything more
 		// with it.
-		if ownerRef.Kind != "MinIOInstance" {
+		if ownerRef.Kind != "Tenant" {
 			return
 		}
 
-		minioInstance, err := c.minioInstancesLister.MinIOInstances(object.GetNamespace()).Get(ownerRef.Name)
+		tenant, err := c.tenantsLister.Tenants(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
-			klog.V(4).Infof("ignoring orphaned object '%s' of minioInstance '%s'", object.GetSelfLink(), ownerRef.Name)
+			klog.V(4).Infof("ignoring orphaned object '%s' of tenant '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
 		}
 
-		c.enqueueMinIOInstance(minioInstance)
+		c.enqueueTenant(tenant)
 		return
 	}
 }

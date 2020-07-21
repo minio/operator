@@ -29,10 +29,10 @@ import (
 
 	"k8s.io/klog"
 
-	miniov1 "github.com/minio/minio-operator/pkg/apis/operator.min.io/v1"
+	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 )
 
-func generateKESCryptoData(mi *miniov1.MinIOInstance) ([]byte, []byte, error) {
+func generateKESCryptoData(mi *miniov1.Tenant) ([]byte, []byte, error) {
 	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
 	if err != nil {
 		klog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
@@ -65,7 +65,7 @@ func generateKESCryptoData(mi *miniov1.MinIOInstance) ([]byte, []byte, error) {
 // createKESTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that KES Statefulset will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createKESTLSCSR(ctx context.Context, mi *miniov1.MinIOInstance) error {
+func (c *Controller) createKESTLSCSR(ctx context.Context, mi *miniov1.Tenant) error {
 	privKeysBytes, csrBytes, err := generateKESCryptoData(mi)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
@@ -100,7 +100,7 @@ func (c *Controller) createKESTLSCSR(ctx context.Context, mi *miniov1.MinIOInsta
 
 // createMinIOClientTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that KES Statefulset will use for MinIO Client Auth
-func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, mi *miniov1.MinIOInstance) error {
+func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, mi *miniov1.Tenant) error {
 	privKeysBytes, csrBytes, err := generateCryptoData(mi, c.hostsTemplate)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)

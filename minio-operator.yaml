@@ -1,22 +1,22 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: minioinstances.operator.min.io
+  name: tenants.minio.min.io
 spec:
-  group: operator.min.io
+  group: minio.min.io
   scope: Namespaced
   names:
-    kind: MinIOInstance
-    singular: minioinstance
-    plural: minioinstances
+    kind: Tenant
+    singular: tenant
+    plural: tenants
   versions:
     - name: v1
       served: true
       storage: true
       schema:
-      # openAPIV3Schema is the schema for validating custom objects.
-      # Refer https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#specifying-a-structural-schema
-      # for more details
+        # openAPIV3Schema is the schema for validating custom objects.
+        # Refer https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#specifying-a-structural-schema
+        # for more details
         openAPIV3Schema:
           type: object
           properties:
@@ -49,7 +49,7 @@ spec:
                   type: string
                 subpath:
                   type: string
-                mcs:
+                console:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                   properties:
@@ -77,6 +77,12 @@ spec:
                       properties:
                         name:
                           type: string
+                credsSecret:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                zones:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
             status:
               type: object
               properties:
@@ -146,7 +152,7 @@ rules:
   - get
   - delete
 - apiGroups:
-  - operator.min.io
+  - minio.min.io
   resources:
   - "*"
   verbs:
