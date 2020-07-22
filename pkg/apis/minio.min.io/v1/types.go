@@ -27,7 +27,7 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:defaulter-gen=true
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Namespaced,shortName=tenant,singular=tenants
+// +kubebuilder:resource:scope=Namespaced,shortName=tenant,singular=tenant
 
 // Tenant is a specification for a MinIO resource
 type Tenant struct {
