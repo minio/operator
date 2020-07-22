@@ -1,0 +1,15 @@
+apiVersion: minio.min.io/v1
+kind: Tenant
+metadata:
+  name: one-zone-vct-no-access-mode
+spec:
+  zones:
+    - servers: 1
+      volumesPerServer: 1
+      volumeClaimTemplate:
+        metadata:
+          name: disk1
+        spec:
+          resources:
+            requests:
+              storage: 2Gi

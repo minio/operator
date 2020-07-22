@@ -47,6 +47,8 @@ type TenantScheduler struct {
 
 // TenantSpec is the spec for a Tenant resource
 type TenantSpec struct {
+	// Definition for Cluster in given MinIO cluster
+	Zones []Zone `json:"zones"`
 	// Image defines the Tenant Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`
@@ -69,23 +71,6 @@ type TenantSpec struct {
 	// If provided, use these environment variables for Tenant resource
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
-	// If provided, use these requests and limit for cpu/memory resource allocation
-	// +optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-	// VolumesPerServer allows a user to specify how many volumes per MinIO Server/Pod instance
-	// +optional
-	VolumesPerServer int `json:"volumesPerServer"`
-	// VolumeClaimTemplate allows a user to specify how volumes inside a Tenant
-	// +optional
-	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate,omitempty"`
-	// NodeSelector is a selector which must be true for the pod to fit on a node.
-	// Selector which must match a node's labels for the pod to be scheduled on that node.
-	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// If specified, affinity will define the pod's scheduling constraints
-	// +optional
-	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// ExternalCertSecret allows a user to specify custom CA certificate, and private key. This is
 	// used for enabling TLS support on MinIO Pods.
 	// +optional
@@ -110,18 +95,12 @@ type TenantSpec struct {
 	// CertConfig allows users to set entries like CommonName, Organization, etc for the certificate
 	// +optional
 	CertConfig *CertificateConfig `json:"certConfig,omitempty"`
-	// Tolerations allows users to set entries like effect, key, operator, value.
-	// +optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
-	// Definition for Cluster in given MinIO cluster
-	// +optional
-	Zones []Zone `json:"zones"`
-	// MCSConfig is for setting up minio/mcs for graphical user interface
+	// ConsoleConfiguration is for setting up minio/mcs for graphical user interface
 	//+optional
-	MCS *MCSConfig `json:"mcs,omitempty"`
+	Console *ConsoleConfiguration `json:"console,omitempty"`
 	// KES is for setting up minio/kes as MinIO KMS
 	//+optional
 	KES *KESConfig `json:"kes,omitempty"`
@@ -152,8 +131,29 @@ type LocalCertificateReference struct {
 
 // Zone defines the spec for a MinIO Zone
 type Zone struct {
-	Name    string `json:"name"`
-	Servers int32  `json:"servers"`
+	// Name of the zone
+	// +optional
+	Name string `json:"name,omitempty"`
+	// Number of Servers in the zone
+	Servers int32 `json:"servers"`
+	// Number of persistent volumes that will be attached per server
+	VolumesPerServer int32 `json:"volumesPerServer"`
+	// VolumeClaimTemplate allows a user to specify how volumes inside a Tenant
+	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
+	// If provided, use these requests and limit for cpu/memory resource allocation
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If specified, affinity will define the pod's scheduling constraints
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// Tolerations allows users to set entries like effect, key, operator, value.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // Liveness specifies the spec for liveness probe
@@ -163,8 +163,8 @@ type Liveness struct {
 	TimeoutSeconds      int32 `json:"timeoutSeconds"`
 }
 
-// MCSConfig defines the specifications for MCS Deployment
-type MCSConfig struct {
+// ConsoleConfiguration defines the specifications for Console Deployment
+type ConsoleConfiguration struct {
 	// Replicas defines number of pods for KES StatefulSet.
 	// +optional
 	Replicas int32 `json:"replicas,omitempty"`
@@ -173,12 +173,18 @@ type MCSConfig struct {
 	Image string `json:"image,omitempty"`
 	// This secret provides all environment variables for KES
 	// This is a mandatory field
-	MCSSecret *corev1.LocalObjectReference `json:"mcsSecret"`
-	Metadata  *metav1.ObjectMeta           `json:"metadata,omitempty"`
+	ConsoleSecret *corev1.LocalObjectReference `json:"consoleSecret"`
+	Metadata      *metav1.ObjectMeta           `json:"metadata,omitempty"`
+	// If provided, use these environment variables for Console resource
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+	// If provided, use these requests and limit for cpu/memory resource allocation
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same
-func (c MCSConfig) EqualImage(currentImage string) bool {
+func (c ConsoleConfiguration) EqualImage(currentImage string) bool {
 	return c.Image == currentImage
 }
 

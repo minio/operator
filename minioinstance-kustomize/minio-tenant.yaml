@@ -28,10 +28,10 @@ spec:
       resources:
         requests:
           storage: $(CAPACITY)
-  mcs:
+  console:
     image: minio/mcs:v0.2.0
     replicas: 2
-    mcsSecret:
+    consoleSecret:
       name: mcs-secret
     metadata:
       labels:

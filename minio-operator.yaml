@@ -1,3 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio-operator
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -24,16 +29,42 @@ spec:
               type: object
               x-kubernetes-preserve-unknown-fields: true
               properties:
-                replicas:
-                  type: integer
-                  minimum: 1
-                  maximum: 32
+                metadata:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 image:
                   type: string
                 serviceName:
                   type: string
-                volumesPerServer:
-                  type: integer
+                serviceAccountName:
+                  type: string
+                zones:
+                  type: array
+                  items:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                    properties:
+                      name:
+                        type: string
+                      servers:
+                        type: integer
+                      volumesPerServer:
+                        type: integer
+                      volumeClaimTemplate:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      resources:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      nodeSelector:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      affinity:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      tolerations:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                 mountPath:
                   type: string
                 podManagementPolicy:
@@ -43,30 +74,64 @@ spec:
                 requestAutoCert:
                   type: boolean
                   default: false
+                certConfig:
+                  type: object
+                  properties:
+                    commonName:
+                      type: string
+                    organizationName:
+                      type: array
+                      items:
+                        type: string
+                    dnsNames:
+                      type: array
+                      items:
+                        type: string
                 version:
                   type: string
                 mountpath:
                   type: string
                 subpath:
                   type: string
+                nodeSelector:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                credsSecret:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                env:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 console:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                   properties:
+                    metadata:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     image:
                       type: string
                     replicas:
                       type: integer
                       default: 2
-                    mcsSecret:
+                    consoleSecret:
                       type: object
                       properties:
                         name:
                           type: string
+                    resources:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    env:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                 kes:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                   properties:
+                    metadata:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     image:
                       type: string
                     replicas:
@@ -77,12 +142,15 @@ spec:
                       properties:
                         name:
                           type: string
-                credsSecret:
+                liveness:
                   type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                zones:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
+                  properties:
+                    initialDelaySeconds:
+                      type: integer
+                    periodSeconds:
+                      type: integer
+                    timeoutSeconds:
+                      type: integer
             status:
               type: object
               properties:
@@ -96,82 +164,82 @@ spec:
           type: string
           jsonPath: ".status.currentState"
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRole
-metadata:
-  name: minio-operator-role
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  - secrets
-  - pods
-  - services
-  - events
-  verbs:
-  - get
-  - watch
-  - create
-  - list
-  - delete
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  - deployments
-  verbs:
-  - get
-  - create
-  - list
-  - patch
-  - watch
-  - update
-  - delete
-- apiGroups:
-  - batch
-  resources:
-  - jobs
-  verbs:
-  - get
-  - create
-  - list
-  - patch
-  - watch
-  - update
-  - delete
-- apiGroups:
-  - "certificates.k8s.io"
-  resources:
-  - "certificatesigningrequests"
-  - "certificatesigningrequests/approval"
-  - "certificatesigningrequests/status"
-  verbs:
-  - update
-  - create
-  - get
-  - delete
-- apiGroups:
-  - minio.min.io
-  resources:
-  - "*"
-  verbs:
-  - "*"
-- apiGroups:
-  - min.io
-  resources:
-  - "*"
-  verbs:
-  - "*"
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: minio-operator
   namespace: default
 ---
-kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: minio-operator-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - secrets
+      - pods
+      - services
+      - events
+    verbs:
+      - get
+      - watch
+      - create
+      - list
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+      - deployments
+    verbs:
+      - get
+      - create
+      - list
+      - patch
+      - watch
+      - update
+      - delete
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - get
+      - create
+      - list
+      - patch
+      - watch
+      - update
+      - delete
+  - apiGroups:
+      - certificates.k8s.io
+    resources:
+      - certificatesigningrequests
+      - certificatesigningrequests/approval
+      - certificatesigningrequests/status
+    verbs:
+      - update
+      - create
+      - get
+      - delete
+  - apiGroups:
+      - minio.min.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - min.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
 metadata:
   name: minio-operator-binding
 roleRef:
@@ -179,9 +247,9 @@ roleRef:
   kind: ClusterRole
   name: minio-operator-role
 subjects:
-- kind: ServiceAccount
-  name: minio-operator
-  namespace: default
+  - kind: ServiceAccount
+    name: minio-operator
+    namespace: default
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -198,12 +266,8 @@ spec:
       labels:
         name: minio-operator
     spec:
-      serviceAccountName: minio-operator
       containers:
-        - name: minio-operator
-          image: minio/k8s-operator:2.0.9
+        - image: minio/k8s-operator:3.0.0
           imagePullPolicy: IfNotPresent
-          # To specify cluster domain, un comment the following:
-          # env:
-          #   - name: CLUSTER_DOMAIN
-          #     value: mycluster.mydomain
+          name: minio-operator
+      serviceAccountName: minio-operator

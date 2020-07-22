@@ -113,21 +113,21 @@ func MinIOSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(t *miniov1.Tenant) (mounts []corev1.VolumeMount) {
+func volumeMounts(t *miniov1.Tenant, zone *miniov1.Zone) (mounts []corev1.VolumeMount) {
 	// This is the case where user didn't provide a zone and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
 	name := miniov1.MinIOVolumeName
-	if t.Spec.VolumeClaimTemplate != nil {
-		name = t.Spec.VolumeClaimTemplate.Name
+	if zone.VolumeClaimTemplate != nil {
+		name = zone.VolumeClaimTemplate.Name
 	}
 
-	if t.Spec.VolumesPerServer == 1 {
+	if zone.VolumesPerServer == 1 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      name + strconv.Itoa(0),
 			MountPath: t.Spec.Mountpath,
 		})
 	} else {
-		for i := 0; i < t.Spec.VolumesPerServer; i++ {
+		for i := 0; i < int(zone.VolumesPerServer); i++ {
 			mounts = append(mounts, corev1.VolumeMount{
 				Name:      name + strconv.Itoa(i),
 				MountPath: t.Spec.Mountpath + strconv.Itoa(i),
@@ -170,22 +170,8 @@ func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
 }
 
 // Builds the MinIO container for a Tenant.
-func minioServerContainer(t *miniov1.Tenant, serviceName string, hostsTemplate string) corev1.Container {
-	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
-
-	if t.Spec.Zones[0].Servers == 1 {
-		// to run in standalone mode we must pass the path
-		args = append(args, t.VolumePath())
-	} else {
-		// append all the Tenant replica URLs
-		hosts := t.MinIOHosts()
-		if hostsTemplate != "" {
-			hosts = t.TemplatedMinIOHosts(hostsTemplate)
-		}
-		for _, h := range hosts {
-			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, t.VolumePath()))
-		}
-	}
+func zoneMinioServerContainer(t *miniov1.Tenant, zone *miniov1.Zone, hostsTemplate string) corev1.Container {
+	args := GetContainerArgs(t, hostsTemplate)
 
 	liveProbe := probes(t)
 
@@ -198,18 +184,38 @@ func minioServerContainer(t *miniov1.Tenant, serviceName string, hostsTemplate s
 			},
 		},
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
-		VolumeMounts:    volumeMounts(t),
+		VolumeMounts:    volumeMounts(t, zone),
 		Args:            args,
 		Env:             minioEnvironmentVars(t),
-		Resources:       t.Spec.Resources,
+		Resources:       zone.Resources,
 		LivenessProbe:   liveProbe,
 	}
 }
 
-// Builds the tolerations for a Tenant.
-func minioTolerations(t *miniov1.Tenant) []corev1.Toleration {
+// GetContainerArgs returns the arguments that the MinIO container receives
+func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
+	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
+
+	if len(t.Spec.Zones) == 1 && t.Spec.Zones[0].Servers == 1 {
+		// to run in standalone mode we must pass the path
+		args = append(args, t.VolumePathForZone(&t.Spec.Zones[0]))
+	} else {
+		// append all the Tenant replica URLs
+		hosts := t.MinIOHosts()
+		if hostsTemplate != "" {
+			hosts = t.TemplatedMinIOHosts(hostsTemplate)
+		}
+		for hi, h := range hosts {
+			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, t.VolumePathForZone(&t.Spec.Zones[hi])))
+		}
+	}
+	return args
+}
+
+// Builds the tolerations for a Zone.
+func minioZoneTolerations(z *miniov1.Zone) []corev1.Toleration {
 	var tolerations []corev1.Toleration
-	return append(tolerations, t.Spec.Tolerations...)
+	return append(tolerations, z.Tolerations...)
 }
 
 // Builds the security context for a Tenant
@@ -221,10 +227,10 @@ func minioSecurityContext(t *miniov1.Tenant) *corev1.PodSecurityContext {
 	return &securityContext
 }
 
-// NewForMinIO creates a new StatefulSet for the given Cluster.
-func NewForMinIO(t *miniov1.Tenant, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
+// NewForMinIOZone creates a new StatefulSet for the given Cluster.
+func NewForMinIOZone(t *miniov1.Tenant, zone *miniov1.Zone, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
-	var replicas = t.MinIOReplicas()
+	var replicas = zone.Servers
 	var serverCertSecret string
 	var serverCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "public.crt"},
@@ -325,12 +331,12 @@ func NewForMinIO(t *miniov1.Tenant, serviceName string, hostsTemplate string) *a
 		})
 	}
 
-	containers := []corev1.Container{minioServerContainer(t, serviceName, hostsTemplate)}
+	containers := []corev1.Container{zoneMinioServerContainer(t, zone, hostsTemplate)}
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: t.Namespace,
-			Name:      t.Name,
+			Name:      t.ZoneStatefulsetName(zone),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(t, schema.GroupVersionKind{
 					Group:   miniov1.SchemeGroupVersion.Group,
@@ -353,9 +359,9 @@ func NewForMinIO(t *miniov1.Tenant, serviceName string, hostsTemplate string) *a
 					Containers:         containers,
 					Volumes:            podVolumes,
 					RestartPolicy:      corev1.RestartPolicyAlways,
-					Affinity:           t.Spec.Affinity,
+					Affinity:           zone.Affinity,
 					SchedulerName:      t.Scheduler.Name,
-					Tolerations:        minioTolerations(t),
+					Tolerations:        minioZoneTolerations(zone),
 					SecurityContext:    minioSecurityContext(t),
 					ServiceAccountName: t.Spec.ServiceAccountName,
 				},
@@ -368,10 +374,10 @@ func NewForMinIO(t *miniov1.Tenant, serviceName string, hostsTemplate string) *a
 		ss.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{t.Spec.ImagePullSecret}
 	}
 
-	if t.Spec.VolumeClaimTemplate != nil {
-		pvClaim := *t.Spec.VolumeClaimTemplate
+	if zone.VolumeClaimTemplate != nil {
+		pvClaim := *zone.VolumeClaimTemplate
 		name := pvClaim.Name
-		for i := 0; i < t.Spec.VolumesPerServer; i++ {
+		for i := 0; i < int(zone.VolumesPerServer); i++ {
 			pvClaim.Name = name + strconv.Itoa(i)
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvClaim)
 		}

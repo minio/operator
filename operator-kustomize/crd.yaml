@@ -24,16 +24,42 @@ spec:
               type: object
               x-kubernetes-preserve-unknown-fields: true
               properties:
-                replicas:
-                  type: integer
-                  minimum: 1
-                  maximum: 32
+                metadata:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
                 image:
                   type: string
                 serviceName:
                   type: string
-                volumesPerServer:
-                  type: integer
+                serviceAccountName:
+                  type: string
+                zones:
+                  type: array
+                  items:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                    properties:
+                      name:
+                        type: string
+                      servers:
+                        type: integer
+                      volumesPerServer:
+                        type: integer
+                      volumeClaimTemplate:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      resources:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      nodeSelector:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      affinity:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+                      tolerations:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
                 mountPath:
                   type: string
                 podManagementPolicy:
@@ -43,30 +69,64 @@ spec:
                 requestAutoCert:
                   type: boolean
                   default: false
+                certConfig:
+                  type: object
+                  properties:
+                    commonName:
+                      type: string
+                    organizationName:
+                      type: array
+                      items:
+                        type: string
+                    dnsNames:
+                      type: array
+                      items:
+                        type: string
                 version:
                   type: string
                 mountpath:
                   type: string
                 subpath:
                   type: string
-                mcs:
+                nodeSelector:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                credsSecret:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                env:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                console:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                   properties:
+                    metadata:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     image:
                       type: string
                     replicas:
                       type: integer
                       default: 2
-                    mcsSecret:
+                    consoleSecret:
                       type: object
                       properties:
                         name:
                           type: string
+                    resources:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    env:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                 kes:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                   properties:
+                    metadata:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
                     image:
                       type: string
                     replicas:
@@ -77,6 +137,15 @@ spec:
                       properties:
                         name:
                           type: string
+                liveness:
+                  type: object
+                  properties:
+                    initialDelaySeconds:
+                      type: integer
+                    periodSeconds:
+                      type: integer
+                    timeoutSeconds:
+                      type: integer
             status:
               type: object
               properties:

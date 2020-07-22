@@ -3,6 +3,8 @@ package v1
 import (
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,14 +51,25 @@ func TestTemplateVariables(t *testing.T) {
 	mt := Tenant{
 		ObjectMeta: metav1.ObjectMeta{Name: "test"},
 		Spec: TenantSpec{
-			Zones: []Zone{{"single", int32(servers)}},
+			Zones: []Zone{
+				{
+					Name:                "single",
+					Servers:             int32(servers),
+					VolumesPerServer:    4,
+					VolumeClaimTemplate: nil,
+					Resources:           corev1.ResourceRequirements{},
+					NodeSelector:        nil,
+					Affinity:            nil,
+					Tolerations:         nil,
+				},
+			},
 		},
 	}
 	mt.EnsureDefaults()
 
 	t.Run("StatefulSet", func(t *testing.T) {
 		hosts := mt.TemplatedMinIOHosts("{{.StatefulSet}}")
-		assert.Contains(t, hosts, mt.MinIOStatefulSetName())
+		assert.Contains(t, hosts, mt.MinIOStatefulSetNameForZone(&mt.Spec.Zones[0]))
 	})
 
 	t.Run("CIService", func(t *testing.T) {

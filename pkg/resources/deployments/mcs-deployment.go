@@ -27,8 +27,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Adds required MCS environment variables
-func mcsEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
+// Adds required Console environment variables
+func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{
 		{
 			Name:  "MCS_MINIO_SERVER",
@@ -41,16 +41,18 @@ func mcsEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 			Value: "on",
 		})
 	}
+	// Add all the environment variables
+	envVars = append(envVars, t.Spec.Console.Env...)
 	return envVars
 }
 
-// Returns the MCS environment variables set in configuration.
-func mcsSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
+// Returns the Console environment variables set in configuration.
+func consoleSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
 	envVars := []corev1.EnvFromSource{
 		{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: t.Spec.MCS.MCSSecret.Name,
+					Name: t.Spec.Console.ConsoleSecret.Name,
 				},
 			},
 		},
@@ -60,8 +62,8 @@ func mcsSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
 
 func mcsMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if t.HasMCSMetadata() {
-		meta = *t.Spec.MCS.Metadata
+	if t.HasConsoleMetadata() {
+		meta = *t.Spec.Console.Metadata
 	}
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
@@ -72,20 +74,20 @@ func mcsMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	return meta
 }
 
-// mcsSelector Returns the MCS pods selector
+// mcsSelector Returns the Console pods selector
 func mcsSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: t.MCSPodLabels(),
 	}
 }
 
-// Builds the MCS container for a Tenant.
+// Builds the Console container for a Tenant.
 func mcsContainer(t *miniov1.Tenant) corev1.Container {
 	args := []string{"server"}
 
 	return corev1.Container{
 		Name:  miniov1.MCSContainerName,
-		Image: t.Spec.MCS.Image,
+		Image: t.Spec.Console.Image,
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: miniov1.MCSPort,
@@ -93,9 +95,9 @@ func mcsContainer(t *miniov1.Tenant) corev1.Container {
 		},
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
 		Args:            args,
-		Env:             mcsEnvVars(t),
-		EnvFrom:         mcsSecretEnvVars(t),
-		Resources:       t.Spec.Resources,
+		Env:             consoleEnvVars(t),
+		EnvFrom:         consoleSecretEnvVars(t),
+		Resources:       t.Spec.Console.Resources,
 	}
 }
 
@@ -109,8 +111,8 @@ func NewForMCS(t *miniov1.Tenant) *appsv1.Deployment {
 			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &t.Spec.MCS.Replicas,
-			// MCS is always matched via Tenant Name + mcs prefix
+			Replicas: &t.Spec.Console.Replicas,
+			// Console is always matched via Tenant Name + mcs prefix
 			Selector: mcsSelector(t),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: mcsMetadata(t),
