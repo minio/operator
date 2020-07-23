@@ -226,6 +226,15 @@ rules:
       - get
       - delete
   - apiGroups:
+      - certificates.k8s.io
+    resourceNames:
+      - kubernetes.io/legacy-unknown
+    resources:
+      - signers
+    verbs:
+      - approve
+      - sign
+  - apiGroups:
       - minio.min.io
     resources:
       - '*'
