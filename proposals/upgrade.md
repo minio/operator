@@ -17,7 +17,7 @@ upgrade while minimizing the time window in which minio quorum needs to run in a
     2. Ensure the container image and tag as signed and newer than the existing image and above the minimum version for minio that supports this upgrade.
     3. Extract the binary locally within the operator pod and validate the binary is consistent with the container image.
     4. Failure:
-        1. OperatorPodRestart: Pod checks if the container image is downloaded locally and resumes with verification
+        1. Operator pod restart: Pod checks if the container image is downloaded locally and resumes with verification
 2. Ensure that pods do not restart due to changing of the container image in yaml.
     1. Goals:
         1. Make sure any pod restarts during upgrade start up with the newer version.
@@ -27,7 +27,7 @@ upgrade while minimizing the time window in which minio quorum needs to run in a
         2. Operator applies the label for new and old version of container image
         3. Operator applies the new container image to stateful set.
     4. Failures:
-        1. OperatorPodRestart: Steps above are idempotent, operator can resume 2.
+        1. Operator pod restart: Steps above are idempotent, operator can resume 2.
 3. Operator detects the ongoing upgrade and triggers the API to have minio fetch the binary from the operator.
     1. Goals:
         1. Establish the step the operator resumes from on accidental operator pod restart
@@ -37,8 +37,8 @@ upgrade while minimizing the time window in which minio quorum needs to run in a
         2. If no pod is running the older version operator jumps to step 5
     3. Minio uses the Operator APIs to fetch the binary image
     4. Failures:
-        1. OperatorPodRestart: Goes back to step 3
-        2. Minio Pod Restart:
+        1. Operator pod restart: Goes back to step 3
+        2. Minio pod restart:
             1. New pod runs new version
             2. Either quorum will run the new version or old.
 4. Operator issues the command to switch binary once all the minio pods have the new binary.
@@ -48,10 +48,10 @@ upgrade while minimizing the time window in which minio quorum needs to run in a
     2. Minio validates the binary signature.
     3. Minio restarts with the new binary
     4. Failures:
-        1. Minio Pod Restart:
+        1. Minio pod restart:
             1. The new pod runs the new version.
             2. Either quorum will run the new version or old.
-        2. OperatorPodRestart: Goes back to step 3
+        2. Operator pod restart: Goes back to step 3
 5. Operator changes back to `RollingUpdate`
     1. Goals:
         1. Check if the pod instances are all ready to be updated to the latest version of the stateful set.
@@ -61,7 +61,7 @@ upgrade while minimizing the time window in which minio quorum needs to run in a
         1. Remove upgrade labels
         d. changes `UpdateStrategy` to `RollingUpdate`. This triggers a rolling restart
     4. Failures:
-        1. Minio Pod Restart:
+        1. Minio pod restart:
             1. The new pod runs the new version.
             2. Either quorum will run the new version or old.
-        2. OperatorPodRestart: Goes back to step 3, if stateful set has not been updated.
+        2. Operator pod restart: Goes back to step 3, if stateful set has not been updated.
