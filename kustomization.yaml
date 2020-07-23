@@ -59,6 +59,7 @@ vars:
 resources:
   - operator-kustomize/namespace.yaml
   - operator-kustomize/service-account.yaml
+  - operator-kustomize/cluster-role.yaml
+  - operator-kustomize/cluster-role-binding.yaml
   - operator-kustomize/crd.yaml
-  - operator-kustomize/rbac.yaml
   - operator-kustomize/deployment.yaml
