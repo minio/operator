@@ -54,7 +54,7 @@ upgrade while minimizing the time window in which minio quorum needs to run in a
         2. OperatorPodRestart: Goes back to step 3
 5. Operator changes back to `RollingUpdate`
     1. Goals:
-        1. Check if the stateful set is ready to be upgraded (yaml)
+        1. Check if the pod instances are all ready to be updated to the latest version of the stateful set.
         2. Issue the rolling update to upgrade the stateful set yaml. This is needed to update each pod instance to pick up the latest yaml. So far only the stateful set has the latest yaml not the pod instance of the stateful set.
     2. Operator checks the version of minio in all the pods.
     3. Operator updates stateful set (Final step)
