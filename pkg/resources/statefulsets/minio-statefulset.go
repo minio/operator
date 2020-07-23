@@ -38,6 +38,18 @@ func minioEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Env...)
+
+	// Enable `mc admin update` style updates to MinIO binaries
+	// within the container, only operator is supposed to perform
+	// these operations.
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "MINIO_UPDATE",
+		Value: "on",
+	}, corev1.EnvVar{
+		Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
+		Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
+	})
+
 	// Add env variables from credentials secret, if no secret provided, dont use
 	// env vars. MinIO server automatically creates default credentials
 	if t.HasCredsSecret() {

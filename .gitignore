@@ -2,3 +2,4 @@ minio-operator
 !minio-operator/
 .idea/
 dist/
+*.test

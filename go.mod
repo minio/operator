@@ -3,13 +3,11 @@ module github.com/minio/minio-operator
 go 1.13
 
 require (
-	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
-	github.com/golang/protobuf v1.3.3 // indirect
-	github.com/imdario/mergo v0.3.6 // indirect
-	github.com/minio/minio v0.0.0-20200501124117-09571d03a531
+	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/minio/minio v0.0.0-20200723003940-b9be841fd222
 	github.com/minio/minio-go/v7 v7.0.1
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/net v0.0.0-20200505041828-1ed23360d12c // indirect
 	k8s.io/api v0.18.0
 	k8s.io/apimachinery v0.18.0
 	k8s.io/client-go v0.18.0

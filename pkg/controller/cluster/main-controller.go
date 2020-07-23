@@ -23,6 +23,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"k8s.io/klog"
@@ -92,7 +93,8 @@ const (
 	statusUpdatingContainerArguments = "Updating Container Arguments"
 	statusUpdatingConsoleVersion     = "Updating Console Version"
 	statusNotOwned                   = "Statefulset not controlled by operator"
-	statusFailedAlreadyExists        = "Failed: Another MinIO Tenant already exists in the namespace"
+	statusFailedAlreadyExists        = "Another MinIO Tenant already exists in the namespace"
+	statusInconsistentMinIOVersions  = "Different versions across MinIO Zones"
 )
 
 // Controller struct watches the Kubernetes API for changes to Tenant resources
@@ -167,7 +169,7 @@ func NewController(
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
-	minioscheme.AddToScheme(scheme.Scheme)
+	minioscheme.AddToScheme(scheme.Scheme) //nolint:errcheck
 	klog.V(4).Info("Creating event broadcaster")
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartLogging(klog.Infof)
@@ -362,14 +364,15 @@ func (c *Controller) syncHandler(key string) error {
 	nsName := types.NamespacedName{Namespace: namespace, Name: name}
 	mi.EnsureDefaults()
 	miniov1.InitGlobals(mi)
+
 	// Validate the MinIO Instance
 	if err = mi.Validate(); err != nil {
 		klog.V(2).Infof(err.Error())
 		var err2 error
-		if mi, err2 = c.updateTenantStatus(ctx, mi, err.Error(), 0); err2 != nil {
+		if _, err2 = c.updateTenantStatus(ctx, mi, err.Error(), 0); err2 != nil {
 			klog.V(2).Infof(err2.Error())
 		}
-		return nil
+		return err
 	}
 
 	// check if both auto certificate creation and external secret with certificate is passed,
@@ -377,11 +380,10 @@ func (c *Controller) syncHandler(key string) error {
 	if mi.AutoCert() && (mi.ExternalCert() || mi.ExternalClientCert() || mi.KESExternalCert()) {
 		msg := "Please set either externalCertSecret or requestAutoCert in Tenant config"
 		klog.V(2).Infof(msg)
-		var err2 error
-		if mi, err2 = c.updateTenantStatus(ctx, mi, msg, 0); err2 != nil {
-			klog.V(2).Infof(err2.Error())
+		if _, err = c.updateTenantStatus(ctx, mi, msg, 0); err != nil {
+			klog.V(2).Infof(err.Error())
 		}
-		return nil
+		return fmt.Errorf(msg)
 	}
 
 	// TLS is mandatory if KES is enabled
@@ -392,11 +394,10 @@ func (c *Controller) syncHandler(key string) error {
 		if !(mi.ExternalCert() && mi.ExternalClientCert() && mi.KESExternalCert()) {
 			msg := "Please provide certificate secrets for MinIO and KES, since automatic TLS is disabled"
 			klog.V(2).Infof(msg)
-			var err2 error
-			if mi, err2 = c.updateTenantStatus(ctx, mi, msg, 0); err2 != nil {
-				klog.V(2).Infof(err2.Error())
+			if _, err = c.updateTenantStatus(ctx, mi, msg, 0); err != nil {
+				klog.V(2).Infof(err.Error())
 			}
-			return nil
+			return fmt.Errorf(msg)
 		}
 	}
 
@@ -452,7 +453,20 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// For each zone check it's stateful set
+	minioSecretName := mi.Spec.CredsSecret.Name
+	minioSecret, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, minioSecretName, gOpts)
+	if err != nil {
+		return err
+	}
+
+	adminClnt, err := mi.NewMinIOAdmin(minioSecret.Data)
+	if err != nil {
+		return err
+	}
+
+	// For each zone check if it's a stateful set
 	var totalReplicas int32
+	var images []string
 	for _, zone := range mi.Spec.Zones {
 		// Get the StatefulSet with the name specified in Tenant.spec
 		ss, err := c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.ZoneStatefulsetName(&zone))
@@ -495,19 +509,6 @@ func (c *Controller) syncHandler(key string) error {
 				}
 			}
 
-			// If this container version on the Tenant resource is specified, and the
-			// version does not equal the current desired version in the StatefulSet, we
-			// should update the StatefulSet resource.
-			if mi.Spec.Image != ss.Spec.Template.Spec.Containers[0].Image {
-				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingMinIOVersion, ss.Status.Replicas); err != nil {
-					return err
-				}
-				klog.V(4).Infof("Updating Tenant %s MinIO server version %s, to: %s", name, mi.Spec.Image, ss.Spec.Template.Spec.Containers[0].Image)
-				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
-				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
-					return err
-				}
-			}
 			// verify the container arguments
 			currentArgsSet := set.CreateStringSet(ss.Spec.Template.Spec.Containers[0].Args...)
 			newArgsSet := set.CreateStringSet(statefulsets.GetContainerArgs(mi, c.hostsTemplate)...)
@@ -533,8 +534,92 @@ func (c *Controller) syncHandler(key string) error {
 			c.recorder.Event(mi, corev1.EventTypeWarning, ErrResourceExists, msg)
 			return fmt.Errorf(msg)
 		}
+
 		// keep track of all replicas
 		totalReplicas += ss.Status.Replicas
+		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
+	}
+
+	// compare all the images across all zones, they should always be the same.
+	for _, image := range images {
+		for i := 0; i < len(images); i++ {
+			if image != images[i] {
+				if _, err = c.updateTenantStatus(ctx, mi, statusInconsistentMinIOVersions, totalReplicas); err != nil {
+					return err
+				}
+				return fmt.Errorf("Zone %d is running incorrect image version, all zones are required to be on the same MinIO version. Attempting update of the inconsistent zone",
+					i+1)
+			}
+		}
+	}
+
+	// In loop above we compared all the versions in all zones.
+	// So comparing mi.Spec.Image (version to update to) against one value from images slice is fine.
+	if mi.Spec.Image != images[0] && mi.Status.CurrentState != statusUpdatingMinIOVersion {
+		klog.Infof("Attempting Tenant %s MinIO server version %s, to: %s", name, images[0], mi.Spec.Image)
+
+		// Images different with the newer state change, continue to verify
+		// if upgrade is possible
+		mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingMinIOVersion, totalReplicas)
+		if err != nil {
+			return err
+		}
+
+		imageSplits := strings.Split(mi.Spec.Image, ":")
+		if len(imageSplits) == 1 {
+			return fmt.Errorf("MinIO operator does not allow images without RELEASE tags")
+		}
+
+		latest, err := miniov1.ReleaseTagToReleaseTime(imageSplits[1])
+		if err != nil {
+			return fmt.Errorf("Unsupported release tag, unable to apply requested update %w", err)
+		}
+
+		currentImageSplits := strings.Split(images[0], ":")
+		if len(currentImageSplits) == 1 {
+			return fmt.Errorf("MinIO operator already deployed container with RELEASE tags, update not allowed please manually fix this using 'kubectl patch --help'")
+		}
+
+		current, err := miniov1.ReleaseTagToReleaseTime(currentImageSplits[1])
+		if err != nil {
+			return fmt.Errorf("Unsupported release tag on current image, non-disruptive update not allowed %w", err)
+		}
+
+		// Verify if the new release tag is latest, if its not latest refuse to apply the new config.
+		if latest.Before(current) {
+			return fmt.Errorf("Refusing to downgrade the tenant %s to version %s, from %s",
+				name, mi.Spec.Image, images[0])
+		}
+
+		klog.V(4).Infof("Updating Tenant %s MinIO server version from: %s, to: %s",
+			name, images[0], mi.Spec.Image)
+
+		// FIXME: add provisions to provide a custom update URL for private environments.
+		updateURL, err := mi.UpdateURL(latest, "")
+		if err != nil {
+			// Correct URL could not be obtained, not proceeding to update.
+			return fmt.Errorf("Unable to get canonical update URL, failed with %w", err)
+		}
+
+		klog.V(4).Infof("Updating Tenant %s MinIO server version from: %s, to: %s -> URL: %s",
+			name, mi.Spec.Image, images[0], updateURL)
+
+		us, err := adminClnt.ServerUpdate(ctx, updateURL)
+		if err != nil {
+			// Update failed, nothing needs to be changed in the container
+			return fmt.Errorf("MinIO Server binary update failed with %w", err)
+		}
+
+		klog.Infof("Applied MinIO server binary update to the tenant %s from: %s, to: %s successfully",
+			name, us.CurrentVersion, us.UpdatedVersion)
+
+		for _, zone := range mi.Spec.Zones {
+			// Now proceed to make the yaml changes for the tenant statefulset.
+			ss := statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
+			if _, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
+				return err
+			}
+		}
 	}
 
 	if mi.HasConsoleEnabled() {
@@ -547,23 +632,19 @@ func (c *Controller) syncHandler(key string) error {
 					return fmt.Errorf(msg)
 				}
 
-				minioSecretName := mi.Spec.CredsSecret.Name
-				minioSecret, sErr := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, minioSecretName, gOpts)
-				if sErr != nil {
-					return sErr
-				}
-
 				consoleSecretName := mi.Spec.Console.ConsoleSecret.Name
 				consoleSecret, sErr := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, consoleSecretName, gOpts)
 				if sErr != nil {
 					return sErr
 				}
+
 				// Check if any one replica is READY
 				if totalReplicas > 0 {
 					if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningMCSDeployment, totalReplicas); err != nil {
 						return err
 					}
-					if pErr := mi.CreateMCSUser(minioSecret.Data, consoleSecret.Data); pErr != nil {
+
+					if pErr := mi.CreateMCSUser(adminClnt, consoleSecret.Data); pErr != nil {
 						klog.V(2).Infof(pErr.Error())
 						return pErr
 					}
@@ -600,23 +681,28 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 		}
+
 		svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.KESHLServiceName())
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
 				svc = services.NewHeadlessForKES(mi)
-				_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts)
+				if _, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts); err != nil {
+					return err
+				}
 			} else {
 				return err
 			}
 		}
 
 		// Get the StatefulSet with the name specified in spec
-		if _, err = c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.KESStatefulSetName()); err != nil {
+		_, err = c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.KESStatefulSetName())
+		if err != nil {
 			if apierrors.IsNotFound(err) {
 				if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningKESStatefulSet, 0); err != nil {
 					return err
 				}
+
 				ks := statefulsets.NewForKES(mi, svc.Name)
 				klog.V(2).Infof("Creating a new StatefulSet for cluster %q", nsName)
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ks, cOpts); err != nil {
@@ -629,7 +715,8 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		// After KES and MinIO are deployed successfully, create the MinIO Key on KES KMS Backend
-		if _, err = c.jobLister.Jobs(mi.Namespace).Get(mi.KESJobName()); err != nil {
+		_, err = c.jobLister.Jobs(mi.Namespace).Get(mi.KESJobName())
+		if err != nil {
 			if apierrors.IsNotFound(err) {
 				j := jobs.NewForKES(mi)
 				klog.V(2).Infof("Creating a new Job for cluster %q", nsName)
