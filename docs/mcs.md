@@ -15,15 +15,15 @@ This document explains how to enable MCS with MinIO Operator.
 
 MCS Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-mcs.yaml). The config offers below options
 
-#### MCS Fields
+#### Console Fields
 
 | Field                 | Description |
 |-----------------------|-------------|
-| spec.mcs | Defines the mcs configuration. mcs is a graphical user interface for MinIO. Refer [this](https://github.com/minio/mcs) |
-| spec.mcs.image | Defines the mcs image |
-| spec.mcs.replicas | Number of MCS pods to be created. |
-| spec.mcs.mcsSecret | Use this secret to assign mcs credentials to Tenant. |
-| spec.mcs.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
+| spec.console | Defines the console configuration. mcs is a graphical user interface for MinIO. Refer [this](https://github.com/minio/mcs) |
+| spec.console.image | Defines the MinIO Console image |
+| spec.console.replicas | Number of MinIO Console pods to be created. |
+| spec.console.consoleSecret | Use this secret to assign console credentials to Tenant. |
+| spec.console.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
 
 ### Create MinIO Instance
 

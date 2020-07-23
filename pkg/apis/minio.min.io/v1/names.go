@@ -27,14 +27,14 @@ const MinIOServerName = "tnio"
 // KESContainerName specifies the default container name for KES
 const KESContainerName = "kes"
 
-// MCSContainerName specifies the default container name for MCS
+// MCSContainerName specifies the default container name for Console
 const MCSContainerName = "mcs"
 
 // MinIO Related Names
 
-// MinIOStatefulSetName returns the name for MinIO StatefulSet
-func (t *Tenant) MinIOStatefulSetName() string {
-	return t.Name
+// MinIOStatefulSetNameForZone returns the name for MinIO StatefulSet
+func (t *Tenant) MinIOStatefulSetNameForZone(z *Zone) string {
+	return fmt.Sprintf("%s-%s", t.Name, z.Name)
 }
 
 // MinIOWildCardName returns the wild card name for all MinIO Pods in current StatefulSet
@@ -115,14 +115,19 @@ func (t *Tenant) KESCSRName() string {
 	return t.KESStatefulSetName() + CSRNameSuffix
 }
 
-// MCS Related Names
+// Console Related Names
 
-// MCSDeploymentName returns the name for MCS Deployment
+// MCSDeploymentName returns the name for Console Deployment
 func (t *Tenant) MCSDeploymentName() string {
 	return t.Name + MCSName
 }
 
-// MCSCIServiceName returns the name for MCS Cluster IP Service
+// MCSCIServiceName returns the name for Console Cluster IP Service
 func (t *Tenant) MCSCIServiceName() string {
 	return t.Name + MCSName
+}
+
+// ZoneStatefulsetName returns the name of a statefulset for a given zone
+func (t *Tenant) ZoneStatefulsetName(zone *Zone) string {
+	return fmt.Sprintf("%s-%s", t.Name, zone.Name)
 }

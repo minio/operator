@@ -97,23 +97,13 @@ func (t *Tenant) AutoCert() bool {
 	return t.Spec.RequestAutoCert
 }
 
-// VolumePath returns the paths for MinIO mounts based on
-// total number of volumes per MinIO server
-func (t *Tenant) VolumePath() string {
-	if t.Spec.VolumesPerServer == 1 {
+// VolumePathForZone returns the paths for MinIO mounts based on
+// total number of volumes on a given zone
+func (t *Tenant) VolumePathForZone(zone *Zone) string {
+	if zone.VolumesPerServer == 1 {
 		return path.Join(t.Spec.Mountpath, t.Spec.Subpath)
 	}
-	return path.Join(t.Spec.Mountpath+ellipsis(0, t.Spec.VolumesPerServer-1), t.Spec.Subpath)
-}
-
-// MinIOReplicas returns the number of total replicas
-// required for this cluster
-func (t *Tenant) MinIOReplicas() int32 {
-	var replicas int32
-	for _, z := range t.Spec.Zones {
-		replicas = replicas + z.Servers
-	}
-	return replicas
+	return path.Join(t.Spec.Mountpath+ellipsis(0, int(zone.VolumesPerServer-1)), t.Spec.Subpath)
 }
 
 // KESReplicas returns the number of total KES replicas
@@ -145,14 +135,11 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.ServiceName = t.Name
 	}
 
-	for _, z := range t.Spec.Zones {
-		if z.Servers == 0 {
-			z.Servers = DefaultServers
+	for zi, z := range t.Spec.Zones {
+		if z.Name == "" {
+			z.Name = fmt.Sprintf("zone-%d", zi)
 		}
-	}
-
-	if t.Spec.VolumesPerServer == 0 {
-		t.Spec.VolumesPerServer = DefaultVolumesPerServer
+		t.Spec.Zones[zi] = z
 	}
 
 	if t.Spec.Mountpath == "" {
@@ -195,12 +182,12 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 	}
 
-	if t.HasMCSEnabled() {
-		if t.Spec.MCS.Image == "" {
-			t.Spec.MCS.Image = DefaultMCSImage
+	if t.HasConsoleEnabled() {
+		if t.Spec.Console.Image == "" {
+			t.Spec.Console.Image = DefaultConsoleImage
 		}
-		if t.Spec.MCS.Replicas == 0 {
-			t.Spec.MCS.Replicas = DefaultMCSReplicas
+		if t.Spec.Console.Replicas == 0 {
+			t.Spec.Console.Replicas = DefaultMCSReplicas
 		}
 	}
 
@@ -219,12 +206,13 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 // MinIOHosts returns the domain names in ellipses format created for current Tenant
 func (t *Tenant) MinIOHosts() []string {
 	hosts := make([]string, 0)
-	var max, index int32
 	// Create the ellipses style URL
 	for _, z := range t.Spec.Zones {
-		max = max + z.Servers
-		hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetName(), ellipsis(int(index), int(max)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
-		index = max
+		if z.Servers == 1 {
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), "0", t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
+		} else {
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), ellipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
+		}
 	}
 	return hosts
 }
@@ -243,7 +231,7 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) []string {
 	for _, z := range t.Spec.Zones {
 		max = max + z.Servers
 		data := hostsTemplateValues{
-			StatefulSet: t.MinIOStatefulSetName(),
+			StatefulSet: t.MinIOStatefulSetNameForZone(&z),
 			CIService:   t.MinIOCIServiceName(),
 			HLService:   t.MinIOHLServiceName(),
 			Ellipsis:    ellipsis(int(index), int(max)-1),
@@ -309,21 +297,21 @@ func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
 }
 
-// HasMCSEnabled checks if the mcs has been enabled by the user
-func (t *Tenant) HasMCSEnabled() bool {
-	return t.Spec.MCS != nil
+// HasConsoleEnabled checks if the mcs has been enabled by the user
+func (t *Tenant) HasConsoleEnabled() bool {
+	return t.Spec.Console != nil
 }
 
-// HasMCSSecret returns true if the user has provided an mcs secret
+// HasConsoleSecret returns true if the user has provided an mcs secret
 // for a Tenant else false
-func (t *Tenant) HasMCSSecret() bool {
-	return t.Spec.MCS != nil && t.Spec.MCS.MCSSecret != nil
+func (t *Tenant) HasConsoleSecret() bool {
+	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
 }
 
-// HasMCSMetadata returns true if the user has provided a mcs metadata
+// HasConsoleMetadata returns true if the user has provided a mcs metadata
 // for a Tenant else false
-func (t *Tenant) HasMCSMetadata() bool {
-	return t.Spec.MCS != nil && t.Spec.MCS.Metadata != nil
+func (t *Tenant) HasConsoleMetadata() bool {
+	return t.Spec.Console != nil && t.Spec.Console.Metadata != nil
 }
 
 // HasKESMetadata returns true if the user has provided KES metadata
@@ -340,7 +328,7 @@ func (t *Tenant) CreateMCSUser(minioSecret, mcsSecret map[string][]byte) error {
 
 	host := net.JoinHostPort(t.MinIOCIServiceHost(), strconv.Itoa(MinIOPort))
 	if host == "" {
-		return errors.New("MCS MINIO SERVER is empty")
+		return errors.New("Console MINIO SERVER is empty")
 	}
 
 	accessKey, ok = minioSecret["accesskey"]
@@ -414,33 +402,47 @@ func (t *Tenant) CreateMCSUser(minioSecret, mcsSecret map[string][]byte) error {
 
 // Validate returns an error if any configuration of the MinIO instance is invalid
 func (t *Tenant) Validate() error {
-	// Mandate a VolumeClaimTemplate
-	if t.Spec.VolumeClaimTemplate == nil {
-		return errors.New("volume claim must be specified")
-	}
-	// Mandate a resource request
-	if t.Spec.VolumeClaimTemplate.Spec.Resources.Requests == nil {
-		return errors.New("volume claim must specify resource request")
-	}
-	// Mandate a request of storage
-	if t.Spec.VolumeClaimTemplate.Spec.Resources.Requests.Storage() == nil {
-		return errors.New("volume claim must specify resource storage request")
-	}
-	// Make sure the storage request is not 0
-	if t.Spec.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() <= 0 {
-		return errors.New("volume size must be greater than 0")
-	}
 	if t.Spec.Zones == nil {
-		return errors.New("please provide a zone for Tenant")
+		return errors.New("zones must be configured")
 	}
+	// every zone must contain a Volume Claim Template
+	for zi, zone := range t.Spec.Zones {
+		// Make sure the replicas are not 0 on any zone
+		if zone.Servers == 0 {
+			return fmt.Errorf("zone #%d cannot have 0 servers", zi)
+		}
+		// Make sure the zones don't have 0 volumes
+		if zone.VolumesPerServer == 0 {
+			return fmt.Errorf("zone #%d cannot have 0 volumes per server", zi)
+		}
+		// Distributed Setup can't have 2 or 3 disks only. Either 1 or 4+ volumes
+		if zone.Servers == 1 && (zone.VolumesPerServer == 2 || zone.VolumesPerServer == 3) {
+			return fmt.Errorf("distributed setup must have 4 or more volumes")
+		}
+		// Mandate a VolumeClaimTemplate
+		if zone.VolumeClaimTemplate == nil {
+			return errors.New("a volume claim template must be specified")
+		}
+		// Mandate a resource request
+		if zone.VolumeClaimTemplate.Spec.Resources.Requests == nil {
+			return errors.New("volume claim template must specify resource request")
+		}
+		// Mandate a request of storage
+		if zone.VolumeClaimTemplate.Spec.Resources.Requests.Storage() == nil {
+			return errors.New("volume claim template must specify resource storage request")
+		}
+		// Make sure the storage request is not 0
+		if zone.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() <= 0 {
+			return errors.New("volume size must be greater than 0")
+		}
+		// Make sure access mode is provided
+		if len(zone.VolumeClaimTemplate.Spec.AccessModes) == 0 {
+			return errors.New("volume access mode must be specified")
+		}
+	}
+
 	if t.Spec.CredsSecret == nil {
 		return errors.New("please set credsSecret secret with credentials for Tenant")
-	}
-	// Make sure the replicas are not 0 on any zone
-	for _, z := range t.Spec.Zones {
-		if z.Servers == 0 {
-			return fmt.Errorf("zone '%s' cannot have 0 servers", z.Name)
-		}
 	}
 
 	return nil

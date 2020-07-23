@@ -1,0 +1,28 @@
+apiVersion: minio.min.io/v1
+kind: Tenant
+metadata:
+  name: two-zones-two-volumes-total
+spec:
+  zones:
+    - servers: 1
+      volumesPerServer: 1
+      volumeClaimTemplate:
+        metadata:
+          name: disk1
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - servers: 1
+      volumesPerServer: 1
+      volumeClaimTemplate:
+        metadata:
+          name: disk1
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
