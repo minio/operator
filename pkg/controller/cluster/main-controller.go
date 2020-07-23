@@ -442,8 +442,7 @@ func (c *Controller) syncHandler(key string) error {
 	if err != nil {
 		return err
 	}
-	// If there is another MinIO instance in the namespace, we don't allow creating another
-	// MinIOInstance in this namespace
+	// Only 1 minio tenant per namespace allowed.
 	if len(li) > 1 {
 		if _, err = c.updateTenantStatus(ctx, mi, statusFailedAlreadyExists, 0); err != nil {
 			return err
