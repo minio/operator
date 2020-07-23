@@ -40,10 +40,10 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Te
 | spec.securityContext | Define a security context for the Tenant pod. Refer [this document](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) for details. |
 | spec.serviceAccountName | Define a ServiceAccountName for the ServiceAccount to use to run MinIO pods created for this Tenant. Refer [this document](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) for details. |
 | spec.mcs | Defines the mcs configuration. mcs is a graphical user interface for MinIO. Refer [this](https://github.com/minio/mcs) |
-| spec.mcs.image | Defines the mcs image. |
-| spec.mcs.replicas | Number of MCS pods to be created. |
-| spec.mcs.mcsSecret | Use this secret to assign mcs credentials to Tenant. |
-| spec.mcs.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
+| spec.console.image | Defines the mcs image. |
+| spec.console.replicas | Number of MCS pods to be created. |
+| spec.console.consoleSecret | Use this secret to assign mcs credentials to Tenant. |
+| spec.console.metadata | This allows a way to map metadata to the mcs container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
 | spec.kes | Defines the KES configuration. Refer [this](https://github.com/minio/kes) |
 | spec.kes.replicas | Number of KES pods to be created. |
 | spec.kes.image | Defines the KES image. |

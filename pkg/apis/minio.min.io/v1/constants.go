@@ -51,8 +51,8 @@ const CSRNameSuffix = "-csr"
 // MinIOCertPath is the path where all MinIO certs are mounted
 const MinIOCertPath = "/tmp/certs"
 
-// InstanceLabel is applied to all components of a Tenant cluster
-const InstanceLabel = "v1.min.io/instance"
+// TenantLabel is applied to all components of a Tenant cluster
+const TenantLabel = "v1.min.io/tenant"
 
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
@@ -70,7 +70,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2020-07-14T19-14-30Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2020-07-22T00-26-33Z"
 
 // DefaultMinIOAccessKey specifies default access key for Tenant
 const DefaultMinIOAccessKey = "AKIAIOSFODNN7EXAMPLE"
@@ -79,7 +79,7 @@ const DefaultMinIOAccessKey = "AKIAIOSFODNN7EXAMPLE"
 const DefaultMinIOSecretKey = "wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEY"
 
 // MinIOHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service
-const MinIOHLSvcNameSuffix = "-hl-svc"
+const MinIOHLSvcNameSuffix = "-hl"
 
 // DefaultServers specifies the default MinIO replicas to use for distributed deployment if not specified explicitly by user
 const DefaultServers = 1
@@ -102,33 +102,33 @@ const LivenessPeriod = 1
 // LivenessTimeout specifies the timeout for the liveness probe to expect a response
 const LivenessTimeout = 1
 
-// MCS Related Constants
+// Console Related Constants
 
-// DefaultMCSImage specifies the latest MCS Docker hub image
-const DefaultMCSImage = "minio/mcs:v0.2.0"
+// DefaultConsoleImage specifies the latest Console Docker hub image
+const DefaultConsoleImage = "minio/mcs:v0.2.0"
 
-// MCSInstanceLabel is applied to the MCS pods of a Tenant cluster
-const MCSInstanceLabel = "v1.min.io/mcs"
+// ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
+const ConsoleTenantLabel = "v1.min.io/console"
 
-// MCSPort specifies the default MCS port number.
+// MCSPort specifies the default Console port number.
 const MCSPort = 9090
 
-// MCSServicePortName specifies the default MCS Service's port name.
+// MCSServicePortName specifies the default Console Service's port name.
 const MCSServicePortName = "http-mcs"
 
 // MCSServiceNameSuffix specifies the suffix added to Tenant service name to create a service for mcs
 const MCSServiceNameSuffix = "-ui"
 
-// MCSName specifies the default container name for MCS
+// MCSName specifies the default container name for Console
 const MCSName = "-mcs"
 
-// MCSAdminPolicyName denotes the policy name for MCS user
+// MCSAdminPolicyName denotes the policy name for Console user
 const MCSAdminPolicyName = "mcsAdmin"
 
-// MCSRestartPolicy defines the default restart policy for MCS Containers
+// MCSRestartPolicy defines the default restart policy for Console Containers
 const MCSRestartPolicy = corev1.RestartPolicyAlways
 
-// DefaultMCSReplicas specifies the default number of MCS pods to be created if not specified
+// DefaultMCSReplicas specifies the default number of Console pods to be created if not specified
 const DefaultMCSReplicas = 2
 
 // KES Related Constants

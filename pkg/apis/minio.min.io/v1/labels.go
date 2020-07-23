@@ -20,7 +20,7 @@ package v1
 // MinIOPodLabels returns the default labels for MinIO Pod
 func (t *Tenant) MinIOPodLabels() map[string]string {
 	m := make(map[string]string, 1)
-	m[InstanceLabel] = t.MinIOStatefulSetName()
+	m[TenantLabel] = t.Name
 	return m
 }
 
@@ -31,9 +31,9 @@ func (t *Tenant) KESPodLabels() map[string]string {
 	return m
 }
 
-// MCSPodLabels returns the default labels for MCS Pod
+// MCSPodLabels returns the default labels for Console Pod
 func (t *Tenant) MCSPodLabels() map[string]string {
 	m := make(map[string]string, 1)
-	m[MCSInstanceLabel] = t.MCSDeploymentName()
+	m[ConsoleTenantLabel] = t.MCSDeploymentName()
 	return m
 }

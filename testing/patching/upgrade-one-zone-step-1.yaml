@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: test-minio-creds-secret
+type: Opaque
+data:
+  accesskey: bWluaW8= # base 64 encoded "minio" (echo -n 'minio' | base64)
+  secretkey: bWluaW8xMjM= # based 64 encoded "minio123" (echo -n 'minio123' | base64)
+---
+apiVersion: minio.min.io/v1
+kind: Tenant
+metadata:
+  name: upgrade-one-zone
+spec:
+  image: minio/minio:RELEASE.2020-07-20T02-25-16Z
+  zones:
+    - servers: 1
+      volumesPerServer: 4
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          resources:
+            requests:
+              storage: 2Gi
+          accessModes:
+            - ReadWriteOnce
+  credsSecret:
+    name: test-minio-creds-secret
+
