@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -91,6 +92,7 @@ const (
 	statusUpdatingContainerArguments = "Updating Container Arguments"
 	statusUpdatingConsoleVersion     = "Updating Console Version"
 	statusNotOwned                   = "Statefulset not controlled by operator"
+	statusFailedAlreadyExists        = "Failed: Another MinIO Tenant already exists in the namespace"
 )
 
 // Controller struct watches the Kubernetes API for changes to Tenant resources
@@ -434,6 +436,19 @@ func (c *Controller) syncHandler(key string) error {
 		} else {
 			return err
 		}
+	}
+
+	// List all MinIO instances in this namespace.
+	li, err := c.tenantsLister.Tenants(mi.Namespace).List(labels.NewSelector())
+	if err != nil {
+		return err
+	}
+	// Only 1 minio tenant per namespace allowed.
+	if len(li) > 1 {
+		if _, err = c.updateTenantStatus(ctx, mi, statusFailedAlreadyExists, 0); err != nil {
+			return err
+		}
+		return fmt.Errorf("Failed creating MinIO Tenant '%s' because another MinIO Tenant '%s' already exists in the namespace '%s'", mi.Name, li[0].Name, mi.Namespace)
 	}
 
 	// For each zone check it's stateful set
