@@ -50,6 +50,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
 
+	"github.com/minio/minio-go/v7/pkg/set"
 	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/minio-operator/pkg/client/clientset/versioned/scheme"
@@ -508,8 +509,9 @@ func (c *Controller) syncHandler(key string) error {
 				}
 			}
 			// verify the container arguments
-			args := statefulsets.GetContainerArgs(mi, c.hostsTemplate)
-			if !strSliceEq(ss.Spec.Template.Spec.Containers[0].Args, args) {
+			currentArgsSet := set.CreateStringSet(ss.Spec.Template.Spec.Containers[0].Args...)
+			newArgsSet := set.CreateStringSet(statefulsets.GetContainerArgs(mi, c.hostsTemplate)...)
+			if !currentArgsSet.Equals(newArgsSet) {
 				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingContainerArguments, ss.Status.Replicas); err != nil {
 					return err
 				}
