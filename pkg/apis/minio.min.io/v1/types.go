@@ -36,7 +36,9 @@ type Tenant struct {
 
 	Scheduler TenantScheduler `json:"scheduler,omitempty"`
 	Spec      TenantSpec      `json:"spec"`
-	Status    TenantStatus    `json:"status"`
+	// Status provides details of the state of the Tenant
+	// +optional
+	Status TenantStatus `json:"status"`
 }
 
 // TenantScheduler is the spec for a Tenant scheduler
