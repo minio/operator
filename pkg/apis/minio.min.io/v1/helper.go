@@ -208,7 +208,7 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 			t.Spec.Console.Image = DefaultConsoleImage
 		}
 		if t.Spec.Console.Replicas == 0 {
-			t.Spec.Console.Replicas = DefaultMCSReplicas
+			t.Spec.Console.Replicas = DefaultConsoleReplicas
 		}
 	}
 
@@ -425,11 +425,11 @@ func (t *Tenant) CreateMCSUser(madmClnt *madmin.AdminClient, mcsSecret map[strin
 		},
 	}
 
-	if err := madmClnt.AddCannedPolicy(context.Background(), MCSAdminPolicyName, &p); err != nil {
+	if err := madmClnt.AddCannedPolicy(context.Background(), ConsoleAdminPolicyName, &p); err != nil {
 		return err
 	}
 
-	return madmClnt.SetPolicy(context.Background(), MCSAdminPolicyName, string(mcsAccessKey), false)
+	return madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(mcsAccessKey), false)
 }
 
 // Validate returns an error if any configuration of the MinIO instance is invalid

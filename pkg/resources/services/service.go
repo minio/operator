@@ -88,17 +88,17 @@ func NewHeadlessForKES(t *miniov1.Tenant) *corev1.Service {
 
 // NewClusterIPForMCS will return a new cluster IP service for Console Deployment
 func NewClusterIPForMCS(t *miniov1.Tenant) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: miniov1.MCSPort, Name: miniov1.MCSServicePortName}
+	minioPort := corev1.ServicePort{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:          t.MCSPodLabels(),
-			Name:            t.MCSCIServiceName(),
+			Labels:          t.ConsolePodLabels(),
+			Name:            t.ConsoleCIServiceName(),
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:    []corev1.ServicePort{minioPort},
-			Selector: t.MCSPodLabels(),
+			Selector: t.ConsolePodLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}

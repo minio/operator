@@ -22,13 +22,13 @@ import (
 )
 
 // MinIOServerName specifies the default container name for Tenant
-const MinIOServerName = "tnio"
+const MinIOServerName = "minio"
 
 // KESContainerName specifies the default container name for KES
 const KESContainerName = "kes"
 
-// MCSContainerName specifies the default container name for Console
-const MCSContainerName = "mcs"
+// ConsoleContainerName specifies the default container name for Console
+const ConsoleContainerName = "console"
 
 // MinIO Related Names
 
@@ -117,14 +117,14 @@ func (t *Tenant) KESCSRName() string {
 
 // Console Related Names
 
-// MCSDeploymentName returns the name for Console Deployment
-func (t *Tenant) MCSDeploymentName() string {
-	return t.Name + MCSName
+// ConsoleDeploymentName returns the name for Console Deployment
+func (t *Tenant) ConsoleDeploymentName() string {
+	return t.Name + ConsoleName
 }
 
-// MCSCIServiceName returns the name for Console Cluster IP Service
-func (t *Tenant) MCSCIServiceName() string {
-	return t.Name + MCSName
+// ConsoleCIServiceName returns the name for Console Cluster IP Service
+func (t *Tenant) ConsoleCIServiceName() string {
+	return t.Name + ConsoleName
 }
 
 // ZoneStatefulsetName returns the name of a statefulset for a given zone
