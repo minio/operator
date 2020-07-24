@@ -278,11 +278,6 @@ func (t *Tenant) AllMinIOHosts() []string {
 
 // MinIOCIServiceHost returns ClusterIP service Host for current Tenant
 func (t *Tenant) MinIOCIServiceHost() string {
-	if t.Spec.Zones[0].Servers == 1 {
-		msg := "Please set the server count > 1"
-		klog.V(2).Infof(msg)
-		return ""
-	}
 	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
 }
 
