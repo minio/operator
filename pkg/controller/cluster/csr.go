@@ -216,7 +216,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 	timeout := time.NewTimer(miniov1.DefaultQueryTimeout)
 	defer tick.Stop()
 
-	ch := make(chan os.Signal)
+	ch := make(chan os.Signal, 1) // should be always un-buffered SA1017
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(ch)
 

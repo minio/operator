@@ -6,7 +6,6 @@ linters-settings:
     locale: US
 
 linters:
-  disable-all: true
   enable:
     - typecheck
     - goimports
@@ -29,6 +28,6 @@ issues:
       linters:
         - golint
         - deadcode
-    
+
 service:
-  golangci-lint-version: 1.20.0 # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.27.0 # use the fixed version to not introduce new linters unexpectedly

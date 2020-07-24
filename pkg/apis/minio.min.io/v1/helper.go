@@ -25,8 +25,10 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"path"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -35,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog"
 
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/minio/minio/pkg/bucket/policy"
 	"github.com/minio/minio/pkg/bucket/policy/condition"
 	iampolicy "github.com/minio/minio/pkg/iam/policy"
@@ -114,6 +117,24 @@ func (t *Tenant) KESReplicas() int32 {
 		replicas = t.Spec.KES.Replicas
 	}
 	return replicas
+}
+
+const (
+	minioReleaseTagTimeLayout = "2006-01-02T15-04-05Z"
+	releasePrefix             = "RELEASE"
+)
+
+// ReleaseTagToReleaseTime - converts a 'RELEASE.2017-09-29T19-16-56Z.hotfix'
+// into the build time
+func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err error) {
+	fields := strings.Split(releaseTag, ".")
+	if len(fields) < 2 || len(fields) > 3 {
+		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
+	}
+	if fields[0] != releasePrefix {
+		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
+	}
+	return time.Parse(minioReleaseTagTimeLayout, fields[1])
 }
 
 // EnsureDefaults will ensure that if a user omits and fields in the
@@ -320,51 +341,71 @@ func (t *Tenant) HasKESMetadata() bool {
 	return t.Spec.KES != nil && t.Spec.KES.Metadata != nil
 }
 
-// CreateMCSUser function creates an admin user
-func (t *Tenant) CreateMCSUser(minioSecret, mcsSecret map[string][]byte) error {
+// UpdateURL returns the URL for the sha256sum location of the new binary
+func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error) {
+	if overrideURL == "" {
+		overrideURL = DefaultMinIOUpdateURL
+	}
+	u, err := url.Parse(overrideURL)
+	if err != nil {
+		return "", err
+	}
+	u.Path = path.Dir(u.Path) + "/minio." + releasePrefix + "." + lrTime.Format(minioReleaseTagTimeLayout) + ".sha256sum"
+	return u.String(), nil
+}
 
-	var accessKey, secretKey, mcsAccessKey, mcsSecretKey []byte
-	var ok bool
-
+// NewMinIOAdmin initializes a new madmin.Client for operator interaction
+func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClient, error) {
 	host := net.JoinHostPort(t.MinIOCIServiceHost(), strconv.Itoa(MinIOPort))
 	if host == "" {
-		return errors.New("Console MINIO SERVER is empty")
+		return nil, errors.New("MinIO server host is empty")
 	}
 
-	accessKey, ok = minioSecret["accesskey"]
+	accessKey, ok := minioSecret["accesskey"]
 	if !ok {
-		return errors.New("accesskey not provided")
+		return nil, errors.New("MinIO server accesskey not set")
 	}
 
-	secretKey, ok = minioSecret["secretkey"]
+	secretKey, ok := minioSecret["secretkey"]
 	if !ok {
-		return errors.New("secretkey not provided")
+		return nil, errors.New("MinIO server secretkey not set")
 	}
 
-	mcsAccessKey, ok = mcsSecret["MCS_ACCESS_KEY"]
+	opts := &madmin.Options{
+		Secure: Scheme == "https",
+		Creds:  credentials.NewStaticV4(string(accessKey), string(secretKey), ""),
+	}
+
+	madmClnt, err := madmin.NewWithOptions(host, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if opts.Secure {
+		// FIXME: add trusted CA
+		madmClnt = setUpInsecureTLS(madmClnt)
+	}
+
+	return madmClnt, nil
+}
+
+// CreateMCSUser function creates an admin user
+func (t *Tenant) CreateMCSUser(madmClnt *madmin.AdminClient, mcsSecret map[string][]byte) error {
+	mcsAccessKey, ok := mcsSecret["MCS_ACCESS_KEY"]
 	if !ok {
 		return errors.New("MCS_ACCESS_KEY not provided")
 	}
 
-	mcsSecretKey, ok = mcsSecret["MCS_SECRET_KEY"]
+	mcsSecretKey, ok := mcsSecret["MCS_SECRET_KEY"]
 	if !ok {
 		return errors.New("MCS_SECRET_KEY not provided")
-	}
-
-	madmClnt, err := madmin.New(host, string(accessKey), string(secretKey), Scheme == "https")
-	if err != nil {
-		return err
-	}
-
-	if Scheme == "https" {
-		madmClnt = setUpInsecureTLS(madmClnt)
 	}
 
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 
-	if err = madmClnt.AddUser(ctx, string(mcsAccessKey), string(mcsSecretKey)); err != nil {
+	if err := madmClnt.AddUser(ctx, string(mcsAccessKey), string(mcsSecretKey)); err != nil {
 		return err
 	}
 
@@ -389,15 +430,11 @@ func (t *Tenant) CreateMCSUser(minioSecret, mcsSecret map[string][]byte) error {
 		},
 	}
 
-	if err = madmClnt.AddCannedPolicy(context.Background(), MCSAdminPolicyName, &p); err != nil {
+	if err := madmClnt.AddCannedPolicy(context.Background(), MCSAdminPolicyName, &p); err != nil {
 		return err
 	}
 
-	if err = madmClnt.SetPolicy(context.Background(), MCSAdminPolicyName, string(mcsAccessKey), false); err != nil {
-		return err
-	}
-
-	return nil
+	return madmClnt.SetPolicy(context.Background(), MCSAdminPolicyName, string(mcsAccessKey), false)
 }
 
 // Validate returns an error if any configuration of the MinIO instance is invalid
