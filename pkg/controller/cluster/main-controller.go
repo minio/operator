@@ -624,7 +624,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	if mi.HasConsoleEnabled() {
 		// Get the Deployment with the name specified in MirrorInstace.spec
-		if _, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.MCSDeploymentName()); err != nil {
+		if _, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.ConsoleDeploymentName()); err != nil {
 			if apierrors.IsNotFound(err) {
 				if !mi.HasCredsSecret() || !mi.HasConsoleSecret() {
 					msg := "Please set the credentials"
@@ -649,7 +649,7 @@ func (c *Controller) syncHandler(key string) error {
 						return pErr
 					}
 					// Create Console Deployment
-					mcsDeployment = deployments.NewForMCS(mi)
+					mcsDeployment = deployments.NewConsole(mi)
 					_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, mcsDeployment, cOpts)
 					if err != nil {
 						klog.V(2).Infof(err.Error())
@@ -736,7 +736,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 		klog.V(4).Infof("Updating Tenant %s console version %s, to: %s", name,
 			mi.Spec.Console.Image, mcsDeployment.Spec.Template.Spec.Containers[0].Image)
-		mcsDeployment = deployments.NewForMCS(mi)
+		mcsDeployment = deployments.NewConsole(mi)
 		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, mcsDeployment, uOpts)
 		// If an error occurs during Update, we'll requeue the item so we can
 		// attempt processing again later. This could have been caused by a

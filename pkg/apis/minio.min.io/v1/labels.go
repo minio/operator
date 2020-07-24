@@ -31,9 +31,9 @@ func (t *Tenant) KESPodLabels() map[string]string {
 	return m
 }
 
-// MCSPodLabels returns the default labels for Console Pod
-func (t *Tenant) MCSPodLabels() map[string]string {
+// ConsolePodLabels returns the default labels for Console Pod
+func (t *Tenant) ConsolePodLabels() map[string]string {
 	m := make(map[string]string, 1)
-	m[ConsoleTenantLabel] = t.MCSDeploymentName()
+	m[ConsoleTenantLabel] = t.ConsoleDeploymentName()
 	return m
 }

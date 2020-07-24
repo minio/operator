@@ -109,26 +109,26 @@ const DefaultConsoleImage = "minio/mcs:v0.2.0"
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
 
-// MCSPort specifies the default Console port number.
-const MCSPort = 9090
+// ConsolePort specifies the default Console port number.
+const ConsolePort = 9090
 
-// MCSServicePortName specifies the default Console Service's port name.
-const MCSServicePortName = "http-mcs"
+// ConsoleServicePortName specifies the default Console Service's port name.
+const ConsoleServicePortName = "http-console"
 
-// MCSServiceNameSuffix specifies the suffix added to Tenant service name to create a service for mcs
-const MCSServiceNameSuffix = "-ui"
+// ConsoleServiceNameSuffix specifies the suffix added to Tenant service name to create a service for console
+const ConsoleServiceNameSuffix = "-ui"
 
-// MCSName specifies the default container name for Console
-const MCSName = "-mcs"
+// ConsoleName specifies the default container name for Console
+const ConsoleName = "-console"
 
-// MCSAdminPolicyName denotes the policy name for Console user
-const MCSAdminPolicyName = "mcsAdmin"
+// ConsoleAdminPolicyName denotes the policy name for Console user
+const ConsoleAdminPolicyName = "consoleAdmin"
 
-// MCSRestartPolicy defines the default restart policy for Console Containers
-const MCSRestartPolicy = corev1.RestartPolicyAlways
+// ConsoleRestartPolicy defines the default restart policy for Console Containers
+const ConsoleRestartPolicy = corev1.RestartPolicyAlways
 
-// DefaultMCSReplicas specifies the default number of Console pods to be created if not specified
-const DefaultMCSReplicas = 2
+// DefaultConsoleReplicas specifies the default number of Console pods to be created if not specified
+const DefaultConsoleReplicas = 2
 
 // KES Related Constants
 

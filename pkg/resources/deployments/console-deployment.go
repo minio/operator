@@ -60,7 +60,7 @@ func consoleSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
 	return envVars
 }
 
-func mcsMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+func consoleMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	if t.HasConsoleMetadata() {
 		meta = *t.Spec.Console.Metadata
@@ -68,29 +68,29 @@ func mcsMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
-	for k, v := range t.MCSPodLabels() {
+	for k, v := range t.ConsolePodLabels() {
 		meta.Labels[k] = v
 	}
 	return meta
 }
 
-// mcsSelector Returns the Console pods selector
-func mcsSelector(t *miniov1.Tenant) *metav1.LabelSelector {
+// consoleSelector Returns the Console pods selector
+func consoleSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
-		MatchLabels: t.MCSPodLabels(),
+		MatchLabels: t.ConsolePodLabels(),
 	}
 }
 
 // Builds the Console container for a Tenant.
-func mcsContainer(t *miniov1.Tenant) corev1.Container {
+func consoleContainer(t *miniov1.Tenant) corev1.Container {
 	args := []string{"server"}
 
 	return corev1.Container{
-		Name:  miniov1.MCSContainerName,
+		Name:  miniov1.ConsoleContainerName,
 		Image: t.Spec.Console.Image,
 		Ports: []corev1.ContainerPort{
 			{
-				ContainerPort: miniov1.MCSPort,
+				ContainerPort: miniov1.ConsolePort,
 			},
 		},
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
@@ -101,24 +101,24 @@ func mcsContainer(t *miniov1.Tenant) corev1.Container {
 	}
 }
 
-// NewForMCS creates a new Deployment for the given MinIO instance.
-func NewForMCS(t *miniov1.Tenant) *appsv1.Deployment {
+// NewConsole creates a new Deployment for the given MinIO instance.
+func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:       t.Namespace,
-			Name:            t.MCSDeploymentName(),
+			Name:            t.ConsoleDeploymentName(),
 			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &t.Spec.Console.Replicas,
 			// Console is always matched via Tenant Name + mcs prefix
-			Selector: mcsSelector(t),
+			Selector: consoleSelector(t),
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: mcsMetadata(t),
+				ObjectMeta: consoleMetadata(t),
 				Spec: corev1.PodSpec{
-					Containers:    []corev1.Container{mcsContainer(t)},
-					RestartPolicy: miniov1.MCSRestartPolicy,
+					Containers:    []corev1.Container{consoleContainer(t)},
+					RestartPolicy: miniov1.ConsoleRestartPolicy,
 				},
 			},
 		},
