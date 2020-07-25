@@ -29,13 +29,17 @@ import (
 
 // Adds required Console environment variables
 func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
+	scheme := "http"
+	if t.TLS() {
+		scheme = "https"
+	}
 	envVars := []corev1.EnvVar{
 		{
 			Name:  "MCS_MINIO_SERVER",
-			Value: miniov1.Scheme + "://" + net.JoinHostPort(t.MinIOCIServiceHost(), strconv.Itoa(miniov1.MinIOPort)),
+			Value: scheme + "://" + net.JoinHostPort(t.MinIOCIServiceHost(), strconv.Itoa(miniov1.MinIOPort)),
 		},
 	}
-	if miniov1.Scheme == "https" {
+	if scheme == "https" {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MCS_MINIO_SERVER_TLS_SKIP_VERIFICATION",
 			Value: "on",

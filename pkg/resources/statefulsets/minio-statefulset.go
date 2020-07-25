@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"net"
 	"strconv"
-	"strings"
 
 	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -158,7 +157,10 @@ func volumeMounts(t *miniov1.Tenant, zone *miniov1.Zone) (mounts []corev1.Volume
 }
 
 func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
-	scheme := corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
+	scheme := corev1.URIScheme("HTTP")
+	if t.TLS() {
+		scheme = corev1.URIScheme("HTTPS")
+	}
 	port := intstr.IntOrString{
 		IntVal: int32(miniov1.MinIOPort),
 	}
@@ -175,6 +177,7 @@ func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
 			InitialDelaySeconds: t.Spec.Liveness.InitialDelaySeconds,
 			PeriodSeconds:       t.Spec.Liveness.PeriodSeconds,
 			TimeoutSeconds:      t.Spec.Liveness.TimeoutSeconds,
+			FailureThreshold:    miniov1.LivenessFailureThreshold,
 		}
 	}
 
@@ -207,7 +210,10 @@ func zoneMinioServerContainer(t *miniov1.Tenant, zone *miniov1.Zone, hostsTempla
 // GetContainerArgs returns the arguments that the MinIO container receives
 func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
 	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
-
+	scheme := "http"
+	if t.TLS() {
+		scheme = "https"
+	}
 	if len(t.Spec.Zones) == 1 && t.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
 		args = append(args, t.VolumePathForZone(&t.Spec.Zones[0]))
@@ -218,7 +224,7 @@ func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
 			hosts = t.TemplatedMinIOHosts(hostsTemplate)
 		}
 		for hi, h := range hosts {
-			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, t.VolumePathForZone(&t.Spec.Zones[hi])))
+			args = append(args, fmt.Sprintf("%s://"+h+"%s", scheme, t.VolumePathForZone(&t.Spec.Zones[hi])))
 		}
 	}
 	return args

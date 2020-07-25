@@ -24,9 +24,6 @@ import (
 // ClusterDomain is used to store the Kubernetes cluster domain
 var ClusterDomain string
 
-// Scheme indicates communication over http or https
-var Scheme string
-
 // Identity is the public identity generated for MinIO Server based on
 // Used only during KES Deployments
 var Identity string
@@ -39,16 +36,7 @@ func getEnv(key string) string {
 	return value
 }
 
-func identifyScheme(t *Tenant) string {
-	scheme := "http"
-	if t.AutoCert() || t.ExternalCert() {
-		scheme = "https"
-	}
-	return scheme
-}
-
 // InitGlobals initiates the global variables while Operator starts
 func InitGlobals(t *Tenant) {
 	ClusterDomain = getEnv("CLUSTER_DOMAIN")
-	Scheme = identifyScheme(t)
 }

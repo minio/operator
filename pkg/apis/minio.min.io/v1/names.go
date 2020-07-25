@@ -66,8 +66,9 @@ func (t *Tenant) MinIOCIServiceName() string {
 }
 
 // MinIOCSRName returns the name of CSR that is generated if AutoTLS is enabled
+// Namespace adds uniqueness to the CSR name (single MinIO tenant per namsepace) since, CSR is not a namespaced resource
 func (t *Tenant) MinIOCSRName() string {
-	return t.Name + CSRNameSuffix
+	return t.Name + t.Namespace + CSRNameSuffix
 }
 
 // MinIOClientCSRName returns the name of CSR that is generated for Client side authentication
@@ -111,8 +112,9 @@ func (t *Tenant) KESTLSSecretName() string {
 }
 
 // KESCSRName returns the name of CSR that generated if AutoTLS is enabled for KES
+// Namespace adds uniqueness to the CSR name (single KES tenant per namsepace) since, CSR is not a namespaced resource
 func (t *Tenant) KESCSRName() string {
-	return t.KESStatefulSetName() + CSRNameSuffix
+	return t.KESStatefulSetName() + t.Namespace + CSRNameSuffix
 }
 
 // Console Related Names

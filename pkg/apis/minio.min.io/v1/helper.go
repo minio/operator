@@ -367,7 +367,7 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 	}
 
 	opts := &madmin.Options{
-		Secure: Scheme == "https",
+		Secure: t.TLS(),
 		Creds:  credentials.NewStaticV4(string(accessKey), string(secretKey), ""),
 	}
 
@@ -537,4 +537,9 @@ func (t *Tenant) OwnerRef() []metav1.OwnerReference {
 			Kind:    MinIOCRDResourceKind,
 		}),
 	}
+}
+
+// TLS indicates whether TLS is enabled for this tenant
+func (t *Tenant) TLS() bool {
+	return t.AutoCert() || t.ExternalCert()
 }
