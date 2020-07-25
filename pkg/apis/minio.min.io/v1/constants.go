@@ -104,7 +104,7 @@ const LivenessTimeout = 1
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/mcs:v0.2.0"
+const DefaultConsoleImage = "minio/console:v0.3.0"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"

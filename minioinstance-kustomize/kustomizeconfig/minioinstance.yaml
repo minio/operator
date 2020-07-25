@@ -1,5 +1,5 @@
 images:
-- path: spec/mcs/image
+- path: spec/console/image
   kind: MinIOInstance
 - path: spec/kes/image
   kind: MinIOInstance

@@ -78,23 +78,23 @@ const (
 	// is synced successfully
 	MessageResourceSynced = "Tenant synced successfully"
 	// Standard Status messages for Tenant
-	statusReady                      = "Ready"
-	statusAddingZone                 = "Adding New MinIO Zone"
-	statusProvisioningCIService      = "Provisioning MinIO Cluster IP Service"
-	statusProvisioningHLService      = "Provisioning MinIO Headless Service"
-	statusProvisioningStatefulSet    = "Provisioning MinIO Statefulset"
-	statusProvisioningMCSDeployment  = "Provisioning Console Deployment"
-	statusProvisioningKESStatefulSet = "Provisioning KES StatefulSet"
-	statusWaitingForReadyState       = "Waiting for Pods to be ready"
-	statusWaitingMinIOCert           = "Waiting for MinIO TLS Certificate"
-	statusWaitingMinIOClientCert     = "Waiting for MinIO TLS Client Certificate"
-	statusWaitingKESCert             = "Waiting for KES TLS Certificate"
-	statusUpdatingMinIOVersion       = "Updating MinIO Version"
-	statusUpdatingContainerArguments = "Updating Container Arguments"
-	statusUpdatingConsoleVersion     = "Updating Console Version"
-	statusNotOwned                   = "Statefulset not controlled by operator"
-	statusFailedAlreadyExists        = "Another MinIO Tenant already exists in the namespace"
-	statusInconsistentMinIOVersions  = "Different versions across MinIO Zones"
+	statusReady                         = "Ready"
+	statusAddingZone                    = "Adding New MinIO Zone"
+	statusProvisioningCIService         = "Provisioning MinIO Cluster IP Service"
+	statusProvisioningHLService         = "Provisioning MinIO Headless Service"
+	statusProvisioningStatefulSet       = "Provisioning MinIO Statefulset"
+	statusProvisioningConsoleDeployment = "Provisioning Console Deployment"
+	statusProvisioningKESStatefulSet    = "Provisioning KES StatefulSet"
+	statusWaitingForReadyState          = "Waiting for Pods to be ready"
+	statusWaitingMinIOCert              = "Waiting for MinIO TLS Certificate"
+	statusWaitingMinIOClientCert        = "Waiting for MinIO TLS Client Certificate"
+	statusWaitingKESCert                = "Waiting for KES TLS Certificate"
+	statusUpdatingMinIOVersion          = "Updating MinIO Version"
+	statusUpdatingContainerArguments    = "Updating Container Arguments"
+	statusUpdatingConsoleVersion        = "Updating Console Version"
+	statusNotOwned                      = "Statefulset not controlled by operator"
+	statusFailedAlreadyExists           = "Another MinIO Tenant already exists in the namespace"
+	statusInconsistentMinIOVersions     = "Different versions across MinIO Zones"
 )
 
 // Controller struct watches the Kubernetes API for changes to Tenant resources
@@ -341,7 +341,7 @@ func (c *Controller) syncHandler(key string) error {
 	uOpts := metav1.UpdateOptions{}
 	gOpts := metav1.GetOptions{}
 
-	var mcsDeployment *appsv1.Deployment
+	var consoleDeployment *appsv1.Deployment
 
 	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
@@ -640,24 +640,24 @@ func (c *Controller) syncHandler(key string) error {
 
 				// Check if any one replica is READY
 				if totalReplicas > 0 {
-					if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningMCSDeployment, totalReplicas); err != nil {
+					if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningConsoleDeployment, totalReplicas); err != nil {
 						return err
 					}
 
-					if pErr := mi.CreateMCSUser(adminClnt, consoleSecret.Data); pErr != nil {
+					if pErr := mi.CreateConsoleUser(adminClnt, consoleSecret.Data); pErr != nil {
 						klog.V(2).Infof(pErr.Error())
 						return pErr
 					}
 					// Create Console Deployment
-					mcsDeployment = deployments.NewConsole(mi)
-					_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, mcsDeployment, cOpts)
+					consoleDeployment = deployments.NewConsole(mi)
+					_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, consoleDeployment, cOpts)
 					if err != nil {
 						klog.V(2).Infof(err.Error())
 						return err
 					}
 					// Create Console service
-					mcsSvc := services.NewClusterIPForMCS(mi)
-					_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, mcsSvc, cOpts)
+					consoleSvc := services.NewClusterIPForConsole(mi)
+					_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, consoleSvc, cOpts)
 					if err != nil {
 						klog.V(2).Infof(err.Error())
 						return err
@@ -730,14 +730,14 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if mi.HasConsoleEnabled() && mcsDeployment != nil && !mi.Spec.Console.EqualImage(mcsDeployment.Spec.Template.Spec.Containers[0].Image) {
+	if mi.HasConsoleEnabled() && consoleDeployment != nil && !mi.Spec.Console.EqualImage(consoleDeployment.Spec.Template.Spec.Containers[0].Image) {
 		if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingConsoleVersion, totalReplicas); err != nil {
 			return err
 		}
 		klog.V(4).Infof("Updating Tenant %s console version %s, to: %s", name,
-			mi.Spec.Console.Image, mcsDeployment.Spec.Template.Spec.Containers[0].Image)
-		mcsDeployment = deployments.NewConsole(mi)
-		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, mcsDeployment, uOpts)
+			mi.Spec.Console.Image, consoleDeployment.Spec.Template.Spec.Containers[0].Image)
+		consoleDeployment = deployments.NewConsole(mi)
+		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, consoleDeployment, uOpts)
 		// If an error occurs during Update, we'll requeue the item so we can
 		// attempt processing again later. This could have been caused by a
 		// temporary network failure, or any other transient reason.

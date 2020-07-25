@@ -313,18 +313,18 @@ func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
 }
 
-// HasConsoleEnabled checks if the mcs has been enabled by the user
+// HasConsoleEnabled checks if the console has been enabled by the user
 func (t *Tenant) HasConsoleEnabled() bool {
 	return t.Spec.Console != nil
 }
 
-// HasConsoleSecret returns true if the user has provided an mcs secret
+// HasConsoleSecret returns true if the user has provided an console secret
 // for a Tenant else false
 func (t *Tenant) HasConsoleSecret() bool {
 	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
 }
 
-// HasConsoleMetadata returns true if the user has provided a mcs metadata
+// HasConsoleMetadata returns true if the user has provided a console metadata
 // for a Tenant else false
 func (t *Tenant) HasConsoleMetadata() bool {
 	return t.Spec.Console != nil && t.Spec.Console.Metadata != nil
@@ -384,23 +384,23 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 	return madmClnt, nil
 }
 
-// CreateMCSUser function creates an admin user
-func (t *Tenant) CreateMCSUser(madmClnt *madmin.AdminClient, mcsSecret map[string][]byte) error {
-	mcsAccessKey, ok := mcsSecret["MCS_ACCESS_KEY"]
+// CreateConsoleUser function creates an admin user
+func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret map[string][]byte) error {
+	consoleAccessKey, ok := consoleSecret["CONSOLE_ACCESS_KEY"]
 	if !ok {
-		return errors.New("MCS_ACCESS_KEY not provided")
+		return errors.New("CONSOLE_ACCESS_KEY not provided")
 	}
 
-	mcsSecretKey, ok := mcsSecret["MCS_SECRET_KEY"]
+	consoleSecretKey, ok := consoleSecret["CONSOLE_SECRET_KEY"]
 	if !ok {
-		return errors.New("MCS_SECRET_KEY not provided")
+		return errors.New("CONSOLE_SECRET_KEY not provided")
 	}
 
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 
-	if err := madmClnt.AddUser(ctx, string(mcsAccessKey), string(mcsSecretKey)); err != nil {
+	if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 		return err
 	}
 
@@ -429,7 +429,7 @@ func (t *Tenant) CreateMCSUser(madmClnt *madmin.AdminClient, mcsSecret map[strin
 		return err
 	}
 
-	return madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(mcsAccessKey), false)
+	return madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false)
 }
 
 // Validate validate single zone as per MinIO deployment requirements

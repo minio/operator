@@ -31,13 +31,13 @@ import (
 func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{
 		{
-			Name:  "MCS_MINIO_SERVER",
+			Name:  "CONSOLE_MINIO_SERVER",
 			Value: miniov1.Scheme + "://" + net.JoinHostPort(t.MinIOCIServiceHost(), strconv.Itoa(miniov1.MinIOPort)),
 		},
 	}
 	if miniov1.Scheme == "https" {
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  "MCS_MINIO_SERVER_TLS_SKIP_VERIFICATION",
+			Name:  "CONSOLE_MINIO_SERVER_TLS_SKIP_VERIFICATION",
 			Value: "on",
 		})
 	}
@@ -112,7 +112,7 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &t.Spec.Console.Replicas,
-			// Console is always matched via Tenant Name + mcs prefix
+			// Console is always matched via Tenant Name + console prefix
 			Selector: consoleSelector(t),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: consoleMetadata(t),

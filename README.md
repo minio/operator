@@ -2,7 +2,7 @@
 
 MinIO is a high performance distributed object storage server, designed for large-scale private cloud infrastructure. MinIO is designed in a cloud-native manner to scale sustainably in multi-tenant environments. Orchestration platforms like Kubernetes provide perfect launchpad for MinIO to scale.
 
-MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KES](https://github.com/minio/kes) support to Kubernetes. MinIO-Operator currently supports following features:
+MinIO-Operator brings native MinIO, [Console](https://github.com/minio/console), and [KES](https://github.com/minio/kes) support to Kubernetes. MinIO-Operator currently supports following features:
 
 | Feature                 | Reference Document |
 |-------------------------|--------------------|
@@ -11,7 +11,7 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KE
 | Expand an existing MinIO cluster | [Expand a MinIO Cluster](https://github.com/minio/operator/blob/master/docs/adding-zones.md). |
 | Use a custom template for hostname discovery | [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md). |
 | Use PodSecurityPolicy for MinIO Pods | [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md). |
-| Deploy MCS with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/operator/blob/master/docs/mcs.md). |
+| Deploy Console with MinIO cluster  | [Deploy MinIO Instance with Console](https://github.com/minio/operator/blob/master/docs/console.md). |
 | Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/operator/blob/master/docs/kes.md). |
 
 ## Getting Started
