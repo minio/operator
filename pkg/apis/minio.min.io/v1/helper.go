@@ -432,49 +432,73 @@ func (t *Tenant) CreateMCSUser(madmClnt *madmin.AdminClient, mcsSecret map[strin
 	return madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(mcsAccessKey), false)
 }
 
+// Validate validate single zone as per MinIO deployment requirements
+func (z *Zone) Validate(zi int) error {
+	// Make sure the replicas are not 0 on any zone
+	if z.Servers <= 0 {
+		return fmt.Errorf("zone #%d cannot have 0 servers", zi)
+	}
+
+	// Make sure the zones don't have 0 volumes
+	if z.VolumesPerServer <= 0 {
+		return fmt.Errorf("zone #%d cannot have 0 volumes per server", zi)
+	}
+
+	if z.Servers*z.VolumesPerServer < 4 {
+		// Erasure coding has few requirements.
+		switch z.Servers {
+		case 1:
+			return fmt.Errorf("zone #%d setup must have a minimum of 4 volumes per server", zi)
+		case 2:
+			return fmt.Errorf("zone #%d setup must have a minimum of 2 volumes per server", zi)
+		case 3:
+			return fmt.Errorf("zone #%d setup must have a minimum of 2 volumes per server", zi)
+		}
+	}
+
+	// Mandate a VolumeClaimTemplate
+	if z.VolumeClaimTemplate == nil {
+		return errors.New("a volume claim template must be specified")
+	}
+
+	// Mandate a resource request
+	if z.VolumeClaimTemplate.Spec.Resources.Requests == nil {
+		return errors.New("volume claim template must specify resource request")
+	}
+
+	// Mandate a request of storage
+	if z.VolumeClaimTemplate.Spec.Resources.Requests.Storage() == nil {
+		return errors.New("volume claim template must specify resource storage request")
+	}
+
+	// Make sure the storage request is not 0
+	if z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() <= 0 {
+		return errors.New("volume size must be greater than 0")
+	}
+
+	// Make sure access mode is provided
+	if len(z.VolumeClaimTemplate.Spec.AccessModes) == 0 {
+		return errors.New("volume access mode must be specified")
+	}
+
+	return nil
+}
+
 // Validate returns an error if any configuration of the MinIO instance is invalid
 func (t *Tenant) Validate() error {
 	if t.Spec.Zones == nil {
 		return errors.New("zones must be configured")
 	}
-	// every zone must contain a Volume Claim Template
-	for zi, zone := range t.Spec.Zones {
-		// Make sure the replicas are not 0 on any zone
-		if zone.Servers == 0 {
-			return fmt.Errorf("zone #%d cannot have 0 servers", zi)
-		}
-		// Make sure the zones don't have 0 volumes
-		if zone.VolumesPerServer == 0 {
-			return fmt.Errorf("zone #%d cannot have 0 volumes per server", zi)
-		}
-		// Distributed Setup can't have 2 or 3 disks only. Either 1 or 4+ volumes
-		if zone.Servers == 1 && (zone.VolumesPerServer == 2 || zone.VolumesPerServer == 3) {
-			return fmt.Errorf("distributed setup must have 4 or more volumes")
-		}
-		// Mandate a VolumeClaimTemplate
-		if zone.VolumeClaimTemplate == nil {
-			return errors.New("a volume claim template must be specified")
-		}
-		// Mandate a resource request
-		if zone.VolumeClaimTemplate.Spec.Resources.Requests == nil {
-			return errors.New("volume claim template must specify resource request")
-		}
-		// Mandate a request of storage
-		if zone.VolumeClaimTemplate.Spec.Resources.Requests.Storage() == nil {
-			return errors.New("volume claim template must specify resource storage request")
-		}
-		// Make sure the storage request is not 0
-		if zone.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value() <= 0 {
-			return errors.New("volume size must be greater than 0")
-		}
-		// Make sure access mode is provided
-		if len(zone.VolumeClaimTemplate.Spec.AccessModes) == 0 {
-			return errors.New("volume access mode must be specified")
-		}
-	}
 
 	if t.Spec.CredsSecret == nil {
 		return errors.New("please set credsSecret secret with credentials for Tenant")
+	}
+
+	// Every zone must contain a Volume Claim Template
+	for zi, zone := range t.Spec.Zones {
+		if err := zone.Validate(zi); err != nil {
+			return err
+		}
 	}
 
 	return nil
