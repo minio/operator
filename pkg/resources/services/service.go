@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 )
 
 // NewClusterIPForMinIO will return a new headless Kubernetes service for a Tenant

@@ -31,16 +31,16 @@ import (
 
 	"k8s.io/klog"
 
-	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
-	informers "github.com/minio/minio-operator/pkg/client/informers/externalversions"
-	"github.com/minio/minio-operator/pkg/controller/cluster"
+	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
+	informers "github.com/minio/operator/pkg/client/informers/externalversions"
+	"github.com/minio/operator/pkg/controller/cluster"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	"k8s.io/client-go/rest"
 )
 
-// Version provides the version of this minio-operator
+// Version provides the version of this operator
 var Version = "DEVELOPMENT.GOGET"
 
 var (

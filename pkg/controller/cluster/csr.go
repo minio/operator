@@ -36,7 +36,7 @@ import (
 
 	"k8s.io/klog"
 
-	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 
 	certificates "k8s.io/api/certificates/v1beta1"
 	corev1 "k8s.io/api/core/v1"

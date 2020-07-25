@@ -19,9 +19,9 @@
 package fake
 
 import (
-	clientset "github.com/minio/minio-operator/pkg/client/clientset/versioned"
-	miniov1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/minio.min.io/v1"
-	fakeminiov1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/minio.min.io/v1/fake"
+	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
+	miniov1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v1"
+	fakeminiov1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

@@ -6,13 +6,13 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KE
 
 | Feature                 | Reference Document |
 |-------------------------|--------------------|
-| Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/minio-operator#create-a-minio-instance). |
-| TLS Configuration  | [TLS for MinIO Instance](https://github.com/minio/minio-operator/blob/master/docs/tls.md). |
-| Expand an existing MinIO cluster | [Expand a MinIO Cluster](https://github.com/minio/minio-operator/blob/master/docs/adding-zones.md). |
-| Use a custom template for hostname discovery | [Custom Hostname Discovery](https://github.com/minio/minio-operator/blob/master/docs/custom-name-templates.md). |
-| Use PodSecurityPolicy for MinIO Pods | [Apply PodSecurityPolicy](https://github.com/minio/minio-operator/blob/master/docs/pod-security-policy.md). |
-| Deploy MCS with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/minio-operator/blob/master/docs/mcs.md). |
-| Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/minio-operator/blob/master/docs/kes.md). |
+| Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/operator#create-a-minio-instance). |
+| TLS Configuration  | [TLS for MinIO Instance](https://github.com/minio/operator/blob/master/docs/tls.md). |
+| Expand an existing MinIO cluster | [Expand a MinIO Cluster](https://github.com/minio/operator/blob/master/docs/adding-zones.md). |
+| Use a custom template for hostname discovery | [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md). |
+| Use PodSecurityPolicy for MinIO Pods | [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md). |
+| Deploy MCS with MinIO cluster  | [Deploy MinIO Instance with MCS](https://github.com/minio/operator/blob/master/docs/mcs.md). |
+| Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/operator/blob/master/docs/kes.md). |
 
 ## Getting Started
 
@@ -20,21 +20,21 @@ MinIO-Operator brings native MinIO, [MCS](https://github.com/minio/mcs), and [KE
 
 - Kubernetes version v1.17.0 and above for compatibility. MinIO Operator uses `k8s/client-go` v0.18.0.
 - `kubectl` configured to refer to a Kubernetes cluster.
-- Create the required PVs using [direct CSI driver](https://github.com/minio/minio-operator/blob/master/docs/using-direct-csi.md).
+- Create the required PVs using [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md).
 - Optional: `kustomize` installed as [explained here](https://github.com/kubernetes-sigs/kustomize/blob/master/docs/INSTALL.md#installation).
 
 ### Create Operator Deployment
 
-To start MinIO-Operator with default configuration, use the `minio-operator.yaml` file.
+To start MinIO-Operator with default configuration, use the `operator.yaml` file.
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/minio-operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/operator.yaml
 ```
 
 Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kustomize) to customize operator configuration
 
 ```bash
-git clone https://github.com/minio/minio-operator
+git clone https://github.com/minio/operator
 kustomize build | kubectl apply -f -
 ```
 
@@ -43,12 +43,12 @@ kustomize build | kubectl apply -f -
 Once MinIO-Operator deployment is running, you can create MinIO instances using the below command
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant.yaml
+kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/examples/tenant.yaml
 ```
 
 ### Access Tenant via Service
 
-Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in Tenant definition to enable Service based access to the Tenant pods. Refer [the example here](https://github.com/minio/minio-operator/blob/master/examples/tenant.yaml?raw=true) for details on how to setup service based access for Tenant pods.
+Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in Tenant definition to enable Service based access to the Tenant pods. Refer [the example here](https://github.com/minio/operator/blob/master/examples/tenant.yaml?raw=true) for details on how to setup service based access for Tenant pods.
 
 ### Environment variables
 
