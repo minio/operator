@@ -2,6 +2,12 @@
 # Make sure to check the documentation at http://goreleaser.com
 project_name: minio-operator
 
+release:
+   name_template: "Version {{.Version}}"
+   github:
+    owner: minio
+    name: operator
+
 before:
   hooks:
     - go mod tidy

@@ -19,7 +19,7 @@
 package scheme
 
 import (
-	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

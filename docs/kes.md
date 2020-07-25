@@ -9,13 +9,13 @@ This document explains how to enable KES with MinIO Operator.
 
 ### Prerequisites
 
-- MinIO Operator up and running as explained in the [document here](https://github.com/minio/minio-operator#create-operator-and-related-resources).
-- KES requires TLS enabled for MinIO. Make sure TLS is enabled as explained in the [document here](https://github.com/minio/minio-operator/blob/master/docs/tls.md).
-- KES requires a KMS backend in [configuration](https://raw.githubusercontent.com/minio/minio-operator/master/examples/kes-config-secret.yaml). Currently KES supports [AWS Secrets Manager](https://github.com/minio/kes/wiki/AWS-SecretsManager) and [Hashicorp Vault](https://github.com/minio/kes/wiki/Hashicorp-Vault-Keystore) as KMS backend for production. We recommend setting up one of these as the KMS backend before setting up KES.
+- MinIO Operator up and running as explained in the [document here](https://github.com/minio/operator#create-operator-and-related-resources).
+- KES requires TLS enabled for MinIO. Make sure TLS is enabled as explained in the [document here](https://github.com/minio/operator/blob/master/docs/tls.md).
+- KES requires a KMS backend in [configuration](https://raw.githubusercontent.com/minio/operator/master/examples/kes-config-secret.yaml). Currently KES supports [AWS Secrets Manager](https://github.com/minio/kes/wiki/AWS-SecretsManager) and [Hashicorp Vault](https://github.com/minio/kes/wiki/Hashicorp-Vault-Keystore) as KMS backend for production. We recommend setting up one of these as the KMS backend before setting up KES.
 
 ### Enable KES Configuration
 
-KES Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-kes.yaml). The config offers below options
+KES Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/operator/master/examples/tenant-kes.yaml). The config offers below options
 
 #### KES Fields
 
@@ -38,7 +38,7 @@ kubectl create -f examples/tenant-kes.yaml
 Alternatively, you can deploy the example like this
 
 ```
-kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-kes.yaml
+kubectl create -f https://raw.githubusercontent.com/minio/operator/master/examples/tenant-kes.yaml
 ```
 
 KES uses CSR for self signed certificate generation. KES requires three certificates/key pairs for working

@@ -18,7 +18,7 @@
 package v1
 
 import (
-	operator "github.com/minio/minio-operator/pkg/apis/minio.min.io"
+	operator "github.com/minio/operator/pkg/apis/minio.min.io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

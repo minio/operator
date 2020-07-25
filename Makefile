@@ -16,7 +16,7 @@ getdeps:
 verify: govet gotest lint
 
 build: verify
-	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS)
+	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator
 	@docker build -t $(TAG) .
 
 install: all

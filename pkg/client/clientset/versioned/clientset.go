@@ -21,7 +21,7 @@ package versioned
 import (
 	"fmt"
 
-	miniov1 "github.com/minio/minio-operator/pkg/client/clientset/versioned/typed/minio.min.io/v1"
+	miniov1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

@@ -7,14 +7,14 @@ This document explains how to control the names used for host discovery.  This a
 
 ## Getting Started
 
-Assuming you have a MinIO cluster with single zone, `zone-0` with 4 drives (as shown in [examples](https://github.com/minio/minio-operator/tree/master/examples)). You can dd a new zone `zone-1` with 4 drives using `kubectl patch` command.
+Assuming you have a MinIO cluster with single zone, `zone-0` with 4 drives (as shown in [examples](https://github.com/minio/operator/tree/master/examples)). You can dd a new zone `zone-1` with 4 drives using `kubectl patch` command.
 
 The example cluster is named minio, so the four servers will be called `minio-0`, `minio-1`, `minio-2`, and `minio-3`.  If all of your hosts are available at the domain `example.com` then you can use the `--hosts-template` flag to update discovery:
 
 ```
   containers:
   - command:
-    - /minio-operator
+    - /operator
     - --hosts-template
     - '{{.StatefulSet}}-{{.Ellipsis}}.example.com'
 ```

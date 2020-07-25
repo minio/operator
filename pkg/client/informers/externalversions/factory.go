@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/minio/minio-operator/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/minio/minio-operator/pkg/client/informers/externalversions/internalinterfaces"
-	miniominio "github.com/minio/minio-operator/pkg/client/informers/externalversions/minio.min.io"
+	versioned "github.com/minio/operator/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/minio/operator/pkg/client/informers/externalversions/internalinterfaces"
+	miniominio "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

@@ -19,8 +19,8 @@
 package minio
 
 import (
-	internalinterfaces "github.com/minio/minio-operator/pkg/client/informers/externalversions/internalinterfaces"
-	v1 "github.com/minio/minio-operator/pkg/client/informers/externalversions/minio.min.io/v1"
+	internalinterfaces "github.com/minio/operator/pkg/client/informers/externalversions/internalinterfaces"
+	v1 "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v1"
 )
 
 // Interface provides access to each of this group's versions.

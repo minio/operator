@@ -9,11 +9,11 @@ This document explains how to enable MCS with MinIO Operator.
 
 ### Prerequisites
 
-- MinIO Operator up and running as explained in the [document here](https://github.com/minio/minio-operator#create-operator-and-related-resources).
+- MinIO Operator up and running as explained in the [document here](https://github.com/minio/operator#create-operator-and-related-resources).
 
 ### Enable MCS Configuration
 
-MCS Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-mcs.yaml). The config offers below options
+MCS Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/operator/master/examples/tenant-mcs.yaml). The config offers below options
 
 #### Console Fields
 
@@ -36,7 +36,7 @@ kubectl create -f examples/tenant-mcs.yaml
 Alternatively, you can deploy the example like this
 
 ```
-kubectl create -f https://raw.githubusercontent.com/minio/minio-operator/master/examples/tenant-mcs.yaml
+kubectl create -f https://raw.githubusercontent.com/minio/operator/master/examples/tenant-mcs.yaml
 ```
 
 Above example file uses CSR for self signed certificate generation. MinIO requires one certificates/key pair 

@@ -29,7 +29,7 @@ import (
 
 	"k8s.io/klog"
 
-	miniov1 "github.com/minio/minio-operator/pkg/apis/minio.min.io/v1"
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 )
 
 func generateKESCryptoData(mi *miniov1.Tenant) ([]byte, []byte, error) {
