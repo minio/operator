@@ -14,14 +14,14 @@ configMapGenerator:
     - storageClass=""
     - zones="rack1:4"
 
-# Configure repo and tag of MinIO, MCS & KES Image
+# Configure repo and tag of MinIO, Console & KES Image
 images:
   - name: minio/minio
     newName: minio/minio
     newTag: RELEASE.2020-07-22T00-26-33Z
-  - name: minio/mcs
-    newName: minio/mcs
-    newTag: v0.2.0
+  - name: minio/console
+    newName: minio/console
+    newTag: v0.3.0
   - name: minio/kes
     newName: minio/kes
     newTag: v0.10.1
@@ -77,7 +77,7 @@ vars:
 
 resources:
   - namespace.yaml
-  - mcs-secret.yaml
+  - console-secret.yaml
   - kes-secret.yaml
   - minio-secret.yaml
   - minio-service.yaml

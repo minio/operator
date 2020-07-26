@@ -63,7 +63,7 @@ spec:
                       type: array
                   type: object
                 console:
-                  description: ConsoleConfiguration is for setting up minio/mcs for graphical
+                  description: ConsoleConfiguration is for setting up minio/console for graphical
                     user interface
                   properties:
                     consoleSecret:

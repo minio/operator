@@ -10,14 +10,14 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: mcs-secret
+  name: console-secret
 type: Opaque
 data:
-  MCS_HMAC_JWT_SECRET: WU9VUkpXVFNJR05JTkdTRUNSRVQ= # base 64 encoded "YOURJWTSIGNINGSECRET" (echo -n 'YOURJWTSIGNINGSECRET' | base64)
-  MCS_PBKDF_PASSPHRASE: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
-  MCS_PBKDF_SALT: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
-  MCS_ACCESS_KEY: WU9VUk1DU0FDQ0VTUw== # base 64 encoded "YOURMCSACCESS" (echo -n 'YOURMCSACCESS' | base64)
-  MCS_SECRET_KEY: WU9VUk1DU1NFQ1JFVA== # base 64 encoded "YOURMCSSECRET" (echo -n 'YOURMCSSECRET' | base64)
+  CONSOLE_HMAC_JWT_SECRET: WU9VUkpXVFNJR05JTkdTRUNSRVQ= # base 64 encoded "YOURJWTSIGNINGSECRET" (echo -n 'YOURJWTSIGNINGSECRET' | base64)
+  CONSOLE_PBKDF_PASSPHRASE: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
+  CONSOLE_PBKDF_SALT: U0VDUkVU # base 64 encoded "SECRET" (echo -n 'SECRET' | base64)
+  CONSOLE_ACCESS_KEY: WU9VUkNPTlNPTEVBQ0NFU1M=  # base 64 encoded "YOURCONSOLEACCESS" (echo -n 'YOURCONSOLEACCESS' | base64)
+  CONSOLE_SECRET_KEY: WU9VUkNPTlNPTEVTRUNSRVQ=  # base 64 encoded "YOURCONSOLESECRET" (echo -n 'YOURCONSOLESECRET' | base64)
 ---
 apiVersion: v1
 kind: Service
@@ -83,15 +83,15 @@ spec:
   ## Sub path inside Mount path where MinIO starts. Defaults to "".
   # subPath: /data
 
-  ## Define configuration for MCS (Graphical user interface for MinIO)
+  ## Define configuration for Console (Graphical user interface for MinIO)
   console:
-    image: minio/mcs:v0.2.0
+    image: minio/console:v0.3.0
     replicas: 2
     consoleSecret:
-      name: mcs-secret
+      name: console-secret
     metadata:
       labels:
-        app: mcs
+        app: console
   ## Define configuration for KES (stateless and distributed key-management system)
   kes:
     image: minio/kes:v0.10.1

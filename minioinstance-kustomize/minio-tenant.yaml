@@ -29,13 +29,13 @@ spec:
         requests:
           storage: $(CAPACITY)
   console:
-    image: minio/mcs:v0.2.0
+    image: minio/console:v0.3.0
     replicas: 2
     consoleSecret:
-      name: mcs-secret
+      name: console-secret
     metadata:
       labels:
-        app: mcs
+        app: console
   kes:
     image: minio/kes:v0.10.1
     replicas: 2
