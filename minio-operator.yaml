@@ -276,7 +276,7 @@ spec:
         name: minio-operator
     spec:
       containers:
-        - image: minio/k8s-operator:v3.0.1
+        - image: minio/k8s-operator:v3.0.2
           imagePullPolicy: IfNotPresent
           name: minio-operator
       serviceAccountName: minio-operator
