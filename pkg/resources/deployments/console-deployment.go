@@ -18,9 +18,6 @@
 package deployments
 
 import (
-	"net"
-	"strconv"
-
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,13 +29,13 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{
 		{
 			Name:  "CONSOLE_MINIO_SERVER",
-			Value: miniov1.Scheme + "://" + net.JoinHostPort(t.MinIOCIServiceHost(), strconv.Itoa(miniov1.MinIOPort)),
+			Value: t.MinIOServerEndpoint(),
 		},
 	}
-	if miniov1.Scheme == "https" {
+	if miniov1.ClusterSecure {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "CONSOLE_MINIO_SERVER_TLS_SKIP_VERIFICATION",
-			Value: "on",
+			Value: "on", // FIXME: should be trusted
 		})
 	}
 	// Add all the environment variables

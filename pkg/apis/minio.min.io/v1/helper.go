@@ -53,7 +53,7 @@ type hostsTemplateValues struct {
 }
 
 // ellipsis returns the host range string
-func ellipsis(start, end int) string {
+func genEllipsis(start, end int) string {
 	return "{" + strconv.Itoa(start) + "..." + strconv.Itoa(end) + "}"
 }
 
@@ -104,9 +104,11 @@ func (t *Tenant) AutoCert() bool {
 // total number of volumes on a given zone
 func (t *Tenant) VolumePathForZone(zone *Zone) string {
 	if zone.VolumesPerServer == 1 {
-		return path.Join(t.Spec.Mountpath, t.Spec.Subpath)
+		// Add an extra "/" to make sure relative paths are avoided.
+		return path.Join("/", t.Spec.Mountpath, "/", t.Spec.Subpath)
 	}
-	return path.Join(t.Spec.Mountpath+ellipsis(0, int(zone.VolumesPerServer-1)), t.Spec.Subpath)
+	// Add an extra "/" to make sure relative paths are avoided.
+	return path.Join("/", t.Spec.Mountpath+genEllipsis(0, int(zone.VolumesPerServer-1)), "/", t.Spec.Subpath)
 }
 
 // KESReplicas returns the number of total KES replicas
@@ -224,23 +226,39 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 	return t
 }
 
+// MinIOEndpoints similar to MinIOHosts but as URLs
+func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
+	hosts := t.MinIOHosts()
+	if hostsTemplate != "" {
+		hosts = t.TemplatedMinIOHosts(hostsTemplate)
+	}
+
+	for _, host := range hosts {
+		if ClusterSecure {
+			endpoints = append(endpoints, "https://%s", host)
+		} else {
+			endpoints = append(endpoints, "http://%s", host)
+		}
+	}
+
+	return endpoints
+}
+
 // MinIOHosts returns the domain names in ellipses format created for current Tenant
-func (t *Tenant) MinIOHosts() []string {
-	hosts := make([]string, 0)
+func (t *Tenant) MinIOHosts() (hosts []string) {
 	// Create the ellipses style URL
 	for _, z := range t.Spec.Zones {
 		if z.Servers == 1 {
 			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), "0", t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
 		} else {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), ellipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), genEllipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
 		}
 	}
 	return hosts
 }
 
 // TemplatedMinIOHosts returns the domain names in ellipses format created for current Tenant without the service part
-func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) []string {
-	hosts := make([]string, 0)
+func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 	tmpl, err := template.New("hosts").Parse(hostsTemplate)
 	if err != nil {
 		msg := "Invalid go template for hosts"
@@ -255,7 +273,7 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) []string {
 			StatefulSet: t.MinIOStatefulSetNameForZone(&z),
 			CIService:   t.MinIOCIServiceName(),
 			HLService:   t.MinIOHLServiceName(),
-			Ellipsis:    ellipsis(int(index), int(max)-1),
+			Ellipsis:    genEllipsis(int(index), int(max)-1),
 			Domain:      ClusterDomain,
 		}
 		output := new(bytes.Buffer)
@@ -271,13 +289,13 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) []string {
 // AllMinIOHosts returns the all the individual domain names relevant for current Tenant
 func (t *Tenant) AllMinIOHosts() []string {
 	hosts := make([]string, 0)
-	hosts = append(hosts, t.MinIOCIServiceHost())
+	hosts = append(hosts, t.MinIOServerHost())
 	hosts = append(hosts, "*."+t.MinIOHeadlessServiceHost())
 	return hosts
 }
 
-// MinIOCIServiceHost returns ClusterIP service Host for current Tenant
-func (t *Tenant) MinIOCIServiceHost() string {
+// MinIOServerHost returns ClusterIP service Host for current Tenant
+func (t *Tenant) MinIOServerHost() string {
 	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
 }
 
@@ -301,6 +319,19 @@ func (t *Tenant) KESHosts() []string {
 	}
 	hosts = append(hosts, t.KESServiceHost())
 	return hosts
+}
+
+// KESServiceEndpoint similar to KESServiceHost but a URL with current scheme
+func (t *Tenant) KESServiceEndpoint() string {
+	scheme := "http"
+	if ClusterSecure {
+		scheme = "https"
+	}
+	u := &url.URL{
+		Scheme: scheme,
+		Host:   t.KESServiceHost(),
+	}
+	return u.String()
 }
 
 // KESServiceHost returns headless service Host for KES in current Tenant
@@ -349,9 +380,73 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 	return u.String(), nil
 }
 
+// MinIOServerHostAddress similar to MinIOServerHost but returns host with port
+func (t *Tenant) MinIOServerHostAddress() string {
+	return net.JoinHostPort(t.MinIOServerHost(), strconv.Itoa(MinIOPort))
+}
+
+// MinIOServerEndpoint similar to MinIOServerHostAddress but a URL with current scheme
+func (t *Tenant) MinIOServerEndpoint() string {
+	scheme := "http"
+	if ClusterSecure {
+		scheme = "https"
+	}
+	u := &url.URL{
+		Scheme: scheme,
+		Host:   t.MinIOServerHostAddress(),
+	}
+	return u.String()
+}
+
+// MinIOHealthCheck check MinIO cluster health
+func (t *Tenant) MinIOHealthCheck() bool {
+	// Keep TLS config.
+	tlsConfig := &tls.Config{
+		// Can't use SSLv3 because of POODLE and BEAST
+		// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
+		// Can't use TLSv1.1 because of RC4 cipher usage
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: true, // FIXME: use trusted CA
+	}
+
+	req, err := http.NewRequest(http.MethodGet, t.MinIOServerEndpoint()+"/minio/health/cluster", nil)
+	if err != nil {
+		return false
+	}
+
+	httpClient := &http.Client{
+		Transport:
+		// For more details about various values used here refer
+		// https://golang.org/pkg/net/http/#Transport documentation
+		&http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   2 * time.Second,
+				KeepAlive: 10 * time.Second,
+			}).DialContext,
+			ResponseHeaderTimeout: 5 * time.Second,
+			TLSHandshakeTimeout:   5 * time.Second,
+			ExpectContinueTimeout: 5 * time.Second,
+			TLSClientConfig:       tlsConfig,
+			// Go net/http automatically unzip if content-type is
+			// gzip disable this feature, as we are always interested
+			// in raw stream.
+			DisableCompression: true,
+		},
+	}
+	defer httpClient.CloseIdleConnections()
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return false
+	}
+
+	return resp.StatusCode == http.StatusOK
+}
+
 // NewMinIOAdmin initializes a new madmin.Client for operator interaction
 func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClient, error) {
-	host := net.JoinHostPort(t.MinIOCIServiceHost(), strconv.Itoa(MinIOPort))
+	host := t.MinIOServerHostAddress()
 	if host == "" {
 		return nil, errors.New("MinIO server host is empty")
 	}
@@ -367,7 +462,7 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 	}
 
 	opts := &madmin.Options{
-		Secure: Scheme == "https",
+		Secure: ClusterSecure,
 		Creds:  credentials.NewStaticV4(string(accessKey), string(secretKey), ""),
 	}
 

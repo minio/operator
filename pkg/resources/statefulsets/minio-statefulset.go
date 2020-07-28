@@ -19,9 +19,7 @@ package statefulsets
 
 import (
 	"fmt"
-	"net"
 	"strconv"
-	"strings"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -79,7 +77,7 @@ func minioEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 	if t.HasKESEnabled() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_ENDPOINT",
-			Value: "https://" + net.JoinHostPort(t.KESServiceHost(), strconv.Itoa(miniov1.KESPort)),
+			Value: t.KESServiceEndpoint(),
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CERT_FILE",
 			Value: miniov1.MinIOCertPath + "/client.crt",
@@ -158,7 +156,10 @@ func volumeMounts(t *miniov1.Tenant, zone *miniov1.Zone) (mounts []corev1.Volume
 }
 
 func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
-	scheme := corev1.URIScheme(strings.ToUpper(miniov1.Scheme))
+	scheme := corev1.URISchemeHTTP
+	if miniov1.ClusterSecure {
+		scheme = corev1.URISchemeHTTPS
+	}
 	port := intstr.IntOrString{
 		IntVal: int32(miniov1.MinIOPort),
 	}
@@ -212,13 +213,8 @@ func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
 		// to run in standalone mode we must pass the path
 		args = append(args, t.VolumePathForZone(&t.Spec.Zones[0]))
 	} else {
-		// append all the Tenant replica URLs
-		hosts := t.MinIOHosts()
-		if hostsTemplate != "" {
-			hosts = t.TemplatedMinIOHosts(hostsTemplate)
-		}
-		for hi, h := range hosts {
-			args = append(args, fmt.Sprintf("%s://"+h+"%s", miniov1.Scheme, t.VolumePathForZone(&t.Spec.Zones[hi])))
+		for index, endpoint := range t.MinIOEndpoints(hostsTemplate) {
+			args = append(args, fmt.Sprintf("%s%s", endpoint, t.VolumePathForZone(&t.Spec.Zones[index])))
 		}
 	}
 	return args

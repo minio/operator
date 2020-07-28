@@ -63,8 +63,8 @@ func KESEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 	// pass the identity created while generating the MinIO client cert
 	return []corev1.EnvVar{
 		{
-			Name:  "MINIO_ID",
-			Value: miniov1.Identity,
+			Name:  "MINIO_KES_IDENTITY",
+			Value: miniov1.KESIdentity,
 		},
 	}
 }
