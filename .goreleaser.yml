@@ -10,7 +10,11 @@ release:
 
 before:
   hooks:
+    - make clean
+    - go generate ./...
     - go mod tidy
+    - go mod download
+
 builds:
   -
     goos:
@@ -23,6 +27,7 @@ builds:
       - -s -w -X main.Version={{.Tag}}
     flags:
       - -trimpath
+
 dockers:
   -
     # GOOS of the built binary that should be used.

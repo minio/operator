@@ -136,7 +136,7 @@ func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, mi *miniov1.Te
 	}
 
 	// Store the Identity to be used later during KES container creation
-	miniov1.Identity = hex.EncodeToString(h.Sum(nil))
+	miniov1.KESIdentity = hex.EncodeToString(h.Sum(nil))
 
 	// PEM encode private ECDSA key
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
