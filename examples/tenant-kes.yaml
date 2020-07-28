@@ -19,22 +19,6 @@ data:
   CONSOLE_ACCESS_KEY: WU9VUkNPTlNPTEVBQ0NFU1M=  # base 64 encoded "YOURCONSOLEACCESS" (echo -n 'YOURCONSOLEACCESS' | base64)
   CONSOLE_SECRET_KEY: WU9VUkNPTlNPTEVTRUNSRVQ=  # base 64 encoded "YOURCONSOLESECRET" (echo -n 'YOURCONSOLESECRET' | base64)
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: minio-service
-spec:
-  type: ClusterIP
-  ports:
-    - port: 9000
-      targetPort: 9000
-      protocol: TCP
-      # Optional field
-      # By default and for convenience, the Kubernetes control plane will allocate a port from a range (default: 30000-32767)
-      # nodePort: 30007
-  selector:
-    app: minio
----
 apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
@@ -54,8 +38,6 @@ spec:
       prometheus.io/scrape: "true"
   ## Registry location and Tag to download MinIO Server image
   image: minio/minio:RELEASE.2020-07-22T00-26-33Z
-  ## A ClusterIP Service will be created with the given name
-  serviceName: minio-internal-service
   ## Secret with credentials to be used by MinIO instance.
   credsSecret:
     name: minio-creds-secret
