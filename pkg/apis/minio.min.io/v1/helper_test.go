@@ -84,7 +84,7 @@ func TestTemplateVariables(t *testing.T) {
 
 	t.Run("Ellipsis", func(t *testing.T) {
 		hosts := mt.TemplatedMinIOHosts("{{.Ellipsis}}")
-		assert.Contains(t, hosts, ellipsis(0, servers-1))
+		assert.Contains(t, hosts, genEllipsis(0, servers-1))
 	})
 
 	t.Run("Domain", func(t *testing.T) {

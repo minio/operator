@@ -556,6 +556,10 @@ func (c *Controller) syncHandler(key string) error {
 	// In loop above we compared all the versions in all zones.
 	// So comparing mi.Spec.Image (version to update to) against one value from images slice is fine.
 	if mi.Spec.Image != images[0] && mi.Status.CurrentState != statusUpdatingMinIOVersion {
+		if !mi.MinIOHealthCheck() {
+			return fmt.Errorf("MinIO doesn't seem to have enough quorum to proceed with binary update")
+		}
+
 		klog.Infof("Attempting Tenant %s MinIO server version %s, to: %s", name, images[0], mi.Spec.Image)
 
 		// Images different with the newer state change, continue to verify
@@ -638,8 +642,8 @@ func (c *Controller) syncHandler(key string) error {
 					return sErr
 				}
 
-				// Check if any one replica is READY
-				if totalReplicas > 0 {
+				// Make sure that MinIO is up and running to enable MinIO console user.
+				if mi.MinIOHealthCheck() {
 					if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningConsoleDeployment, totalReplicas); err != nil {
 						return err
 					}
@@ -676,7 +680,7 @@ func (c *Controller) syncHandler(key string) error {
 	if mi.HasKESEnabled() && (mi.AutoCert() || mi.ExternalCert()) {
 		if mi.ExternalClientCert() {
 			// Since we're using external secret, store the identity for later use
-			miniov1.Identity, err = c.getCertIdentity(mi.Namespace, mi.Spec.ExternalClientCertSecret)
+			miniov1.KESIdentity, err = c.getCertIdentity(mi.Namespace, mi.Spec.ExternalClientCertSecret)
 			if err != nil {
 				return err
 			}
