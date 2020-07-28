@@ -55,6 +55,9 @@ const MinIOCertPath = "/tmp/certs"
 // TenantLabel is applied to all components of a Tenant cluster
 const TenantLabel = "v1.min.io/tenant"
 
+// ZoneLabel is applied to all components in a Zone of a Tenant cluster
+const ZoneLabel = "v1.min.io/zone"
+
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
 
