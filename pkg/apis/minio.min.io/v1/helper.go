@@ -155,7 +155,7 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 
 	// Default an empty service name to the instance name
 	if t.Spec.ServiceName == "" {
-		t.Spec.ServiceName = t.Name
+		t.Spec.ServiceName = "minio" // Default service name for an instance in a namespace
 	}
 
 	for zi, z := range t.Spec.Zones {
