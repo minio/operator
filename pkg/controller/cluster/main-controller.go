@@ -499,6 +499,15 @@ func (c *Controller) syncHandler(key string) error {
 				if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningStatefulSet, 0); err != nil {
 					return err
 				}
+				var operatorSecret *corev1.Secret
+				operatorSecret, err = statefulsets.CreateOperatorJWTToken(mi.Namespace, "minio", "operator")
+				if err != nil {
+					return err
+				}
+				operatorSecret, err = c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, operatorSecret, metav1.CreateOptions{})
+				if err != nil {
+					return err
+				}
 				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
 				ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 				if err != nil {

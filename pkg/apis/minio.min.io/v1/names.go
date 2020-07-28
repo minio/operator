@@ -157,3 +157,9 @@ func (t *Tenant) ConsoleTLSSecretName() string {
 func (t *Tenant) ConsoleCSRName() string {
 	return t.ConsoleDeploymentName() + "-" + t.Namespace + CSRNameSuffix
 }
+
+// Tenant to operator communication
+// OperatorJWTSecretName returns the name of the JWT secret for minio to operator communication.
+func OperatorJWTSecretName(operator string, tenant string) string {
+	return operator + "-" + OperatorJWTSecretSuffix
+}

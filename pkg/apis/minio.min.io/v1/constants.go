@@ -196,3 +196,6 @@ var DefaultQueryTimeout = time.Minute * 20
 
 // TLSSecretSuffix is the suffix applied to Tenant name to create the TLS secret
 var TLSSecretSuffix = "-tls"
+
+// OperatorJWTSecretSuffix is the suffix applied to the JWT token used by minio instance to talk to operator
+var OperatorJWTSecretSuffix = "-jwt"
