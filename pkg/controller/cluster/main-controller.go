@@ -92,6 +92,8 @@ const (
 	statusUpdatingMinIOVersion          = "Updating MinIO Version"
 	statusUpdatingContainerArguments    = "Updating Container Arguments"
 	statusUpdatingConsoleVersion        = "Updating Console Version"
+	statusUpdatingResourceRequirements  = "Updating Resource Requirements"
+	statusUpdatingAffinity              = "Updating Pod Affinity"
 	statusNotOwned                      = "Statefulset not controlled by operator"
 	statusFailedAlreadyExists           = "Another MinIO Tenant already exists in the namespace"
 	statusInconsistentMinIOVersions     = "Different versions across MinIO Zones"
@@ -517,6 +519,28 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 				klog.V(4).Infof("container arguments updates for zone %s", zone.Name)
+				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
+				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
+					return err
+				}
+			}
+
+			if zone.Resources.String() != ss.Spec.Template.Spec.Containers[0].Resources.String() {
+				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingResourceRequirements, ss.Status.Replicas); err != nil {
+					return err
+				}
+				klog.V(4).Infof("resource requirements updates for zone %s", zone.Name)
+				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
+				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
+					return err
+				}
+			}
+
+			if zone.Affinity.String() != ss.Spec.Template.Spec.Affinity.String() {
+				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingAffinity, ss.Status.Replicas); err != nil {
+					return err
+				}
+				klog.V(4).Infof("affinity update for zone %s", zone.Name)
 				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
