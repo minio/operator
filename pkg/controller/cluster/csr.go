@@ -254,10 +254,6 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 func (c *Controller) createSecret(ctx context.Context, mi *miniov1.Tenant, labels map[string]string, name, namespace string, pkBytes, certBytes []byte) error {
 	secret := &corev1.Secret{
 		Type: "Opaque",
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: "apps/v1beta1",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
