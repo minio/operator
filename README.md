@@ -28,7 +28,7 @@ MinIO-Operator brings native MinIO, [Console](https://github.com/minio/console),
 To start MinIO-Operator with default configuration, use the `operator.yaml` file.
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/minio-operator.yaml
 ```
 
 Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kustomize) to customize operator configuration
