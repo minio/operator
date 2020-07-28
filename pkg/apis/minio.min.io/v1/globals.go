@@ -22,9 +22,6 @@ import "github.com/minio/minio/pkg/env"
 // ClusterDomain is used to store the Kubernetes cluster domain
 var ClusterDomain string
 
-// ClusterSecure indicates if TLS based deployment
-var ClusterSecure bool
-
 // KESIdentity is the public identity generated for MinIO Server based on
 // Used only during KES Deployments
 var KESIdentity string
@@ -32,5 +29,4 @@ var KESIdentity string
 // InitGlobals initiates the global variables while Operator starts
 func InitGlobals(t *Tenant) {
 	ClusterDomain = env.Get("CLUSTER_DOMAIN", "cluster.local")
-	ClusterSecure = t.AutoCert() || t.ExternalCert()
 }
