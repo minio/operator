@@ -234,10 +234,10 @@ func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
 	}
 
 	for _, host := range hosts {
-		if ClusterSecure {
-			endpoints = append(endpoints, "https://%s", host)
+		if t.TLS() {
+			endpoints = append(endpoints, "https://"+host)
 		} else {
-			endpoints = append(endpoints, "http://%s", host)
+			endpoints = append(endpoints, "http://"+host)
 		}
 	}
 
@@ -324,7 +324,7 @@ func (t *Tenant) KESHosts() []string {
 // KESServiceEndpoint similar to KESServiceHost but a URL with current scheme
 func (t *Tenant) KESServiceEndpoint() string {
 	scheme := "http"
-	if ClusterSecure {
+	if t.TLS() {
 		scheme = "https"
 	}
 	u := &url.URL{
@@ -388,7 +388,7 @@ func (t *Tenant) MinIOServerHostAddress() string {
 // MinIOServerEndpoint similar to MinIOServerHostAddress but a URL with current scheme
 func (t *Tenant) MinIOServerEndpoint() string {
 	scheme := "http"
-	if ClusterSecure {
+	if t.TLS() {
 		scheme = "https"
 	}
 	u := &url.URL{
@@ -462,7 +462,7 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 	}
 
 	opts := &madmin.Options{
-		Secure: ClusterSecure,
+		Secure: t.TLS(),
 		Creds:  credentials.NewStaticV4(string(accessKey), string(secretKey), ""),
 	}
 
@@ -632,4 +632,9 @@ func (t *Tenant) OwnerRef() []metav1.OwnerReference {
 			Kind:    MinIOCRDResourceKind,
 		}),
 	}
+}
+
+// TLS indicates whether TLS is enabled for this tenant
+func (t *Tenant) TLS() bool {
+	return t.AutoCert() || t.ExternalCert()
 }

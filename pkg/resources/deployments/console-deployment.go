@@ -32,7 +32,7 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 			Value: t.MinIOServerEndpoint(),
 		},
 	}
-	if miniov1.ClusterSecure {
+	if t.TLS() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "CONSOLE_MINIO_SERVER_TLS_SKIP_VERIFICATION",
 			Value: "on", // FIXME: should be trusted

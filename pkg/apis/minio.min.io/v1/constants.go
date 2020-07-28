@@ -101,6 +101,10 @@ const LivenessPeriod = 1
 // LivenessTimeout specifies the timeout for the liveness probe to expect a response
 const LivenessTimeout = 1
 
+// LivenessFailureThreshold specifies the number of times the liveness probe can fail before
+// the probe to be considered failed.
+const LivenessFailureThreshold = 1
+
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image

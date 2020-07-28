@@ -157,7 +157,7 @@ func volumeMounts(t *miniov1.Tenant, zone *miniov1.Zone) (mounts []corev1.Volume
 
 func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
 	scheme := corev1.URISchemeHTTP
-	if miniov1.ClusterSecure {
+	if t.TLS() {
 		scheme = corev1.URISchemeHTTPS
 	}
 	port := intstr.IntOrString{
@@ -176,6 +176,7 @@ func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
 			InitialDelaySeconds: t.Spec.Liveness.InitialDelaySeconds,
 			PeriodSeconds:       t.Spec.Liveness.PeriodSeconds,
 			TimeoutSeconds:      t.Spec.Liveness.TimeoutSeconds,
+			FailureThreshold:    miniov1.LivenessFailureThreshold,
 		}
 	}
 

@@ -1,4 +1,4 @@
-minio-operator
+operator
 !minio-operator/
 .idea/
 dist/
