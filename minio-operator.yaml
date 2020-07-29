@@ -276,7 +276,7 @@ spec:
         name: minio-operator
     spec:
       containers:
-        - image: minio/k8s-operator:v3.0.2
+        - image: minio/k8s-operator:v3.0.3
           env:
             # Change value for CLUSTER_DOMAIN based on your deployment. It is required to correctly calculate the
             # FQDN for hosts, services and certificates. https://kubernetes.io/docs/tasks/administer-cluster/dns-custom-nameservers/#introduction

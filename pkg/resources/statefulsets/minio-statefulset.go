@@ -100,7 +100,7 @@ func minioEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 // Returns the MinIO pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func minioMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+func minioMetadata(t *miniov1.Tenant, zone *miniov1.Zone) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	if t.HasMetadata() {
 		meta = *t.Spec.Metadata
@@ -112,6 +112,8 @@ func minioMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	for k, v := range t.MinIOPodLabels() {
 		meta.Labels[k] = v
 	}
+	// Add information labels, such as which zone we are building this pod about
+	meta.Labels[miniov1.ZoneLabel] = zone.Name
 	return meta
 }
 
@@ -363,7 +365,7 @@ func NewForMinIOZone(t *miniov1.Tenant, zone *miniov1.Zone, serviceName string, 
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: minioMetadata(t),
+				ObjectMeta: minioMetadata(t, zone),
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					Volumes:            podVolumes,
