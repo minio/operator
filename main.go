@@ -29,7 +29,7 @@ import (
 
 	"k8s.io/client-go/tools/clientcmd"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
