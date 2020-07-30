@@ -16,7 +16,7 @@ spec:
       serviceAccountName: minio-operator
       containers:
         - name: minio-operator
-          image: minio/k8s-operator:v3.0.3
+          image: minio/k8s-operator:v3.0.4
           imagePullPolicy: IfNotPresent
           env:
             - name: CLUSTER_DOMAIN
