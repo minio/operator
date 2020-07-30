@@ -37,3 +37,6 @@ clean:
 	@echo "Cleaning up all the generated files"
 	@find . -name '*.test' | xargs rm -fv
 	@find . -name '*~' | xargs rm -fv
+
+regen-crd:
+	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=operator-kustomize/crds/

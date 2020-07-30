@@ -18,8 +18,3 @@ spec:
         - name: minio-operator
           image: minio/k8s-operator:v3.0.4
           imagePullPolicy: IfNotPresent
-          env:
-            - name: CLUSTER_DOMAIN
-              value: $(CLUSTER_DOMAIN)
-            - name: WATCHED_NAMESPACE
-              value: $(WATCHED_NAMESPACE)
