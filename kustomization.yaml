@@ -1,65 +1,19 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Configure number of MinIO Operator Deployment Replicas
-replicas:
-  - name: minio-operator
-    count: 1
-
 # Configure repo and tag of MinIO Operator Image
 images:
   - name: minio/k8s-operator
     newName: minio/k8s-operator
     newTag: v3.0.4
 
-# Configure the Cluster Domain and NameSpace to Watch
-configMapGenerator:
-  - name: operator-env
-    literals:
-    - CLUSTER_DOMAIN="cluster.local"
-    - WATCHED_NAMESPACE="default"
-
-# Configure the Namespace and ServiceAccount name
-patchesJson6902:
-  - target:
-      version: v1
-      kind: ServiceAccount
-      name: minio-operator
-    patch: |-
-      - op: replace
-        path: /metadata/name
-        value: "minio-operator"
-  - target:
-      version: v1
-      kind: Namespace
-      name: minio-operator
-    patch: |-
-      - op: replace
-        path: /metadata/name
-        value: "minio-operator"
 
 namespace: minio-operator
-
-vars:
-  - name: CLUSTER_DOMAIN
-    objref:
-      kind: ConfigMap
-      name: operator-env
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.CLUSTER_DOMAIN
-  - name: WATCHED_NAMESPACE
-    objref:
-      kind: ConfigMap
-      name: operator-env
-      apiVersion: v1
-    fieldref:
-      fieldpath: data.WATCHED_NAMESPACE
 
 resources:
   - operator-kustomize/namespace.yaml
   - operator-kustomize/service-account.yaml
   - operator-kustomize/cluster-role.yaml
   - operator-kustomize/cluster-role-binding.yaml
-  - operator-kustomize/crd.yaml
+  - operator-kustomize/crds/minio.min.io_tenants.yaml
   - operator-kustomize/deployment.yaml
