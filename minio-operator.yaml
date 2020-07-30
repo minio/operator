@@ -55,7 +55,35 @@ spec:
                         x-kubernetes-preserve-unknown-fields: true
                       resources:
                         type: object
-                        x-kubernetes-preserve-unknown-fields: true
+                        required:
+                          - requests
+                          - limits
+                        properties:
+                          limits:
+                            type: object
+                            required:
+                              - cpu
+                              - memory
+                            properties:
+                              cpu:
+                                type: string
+                                pattern: '^(\d+m|\d+(\.\d{1,3})?)$'
+                              memory:
+                                type: string
+                                pattern: '^(\d+(e\d+)?|\d+(\.\d+)?(e\d+)?[EPTGMK]i?)$'
+                          requests:
+                            type: object
+                            required:
+                              - cpu
+                              - memory
+                            properties:
+                              cpu:
+                                type: string
+                                pattern: '^(\d+m|\d+(\.\d{1,3})?)$'
+                              memory:
+                                type: string
+                                pattern: '^(\d+(e\d+)?|\d+(\.\d+)?(e\d+)?[EPTGMK]i?)$'
+
                       nodeSelector:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
@@ -63,8 +91,32 @@ spec:
                         type: object
                         x-kubernetes-preserve-unknown-fields: true
                       tolerations:
-                        type: object
-                        x-kubernetes-preserve-unknown-fields: true
+                        type: array
+                        items:
+                          type: object
+                        required:
+                          - key
+                          - operator
+                          - effect
+                        properties:
+                          key:
+                            type: string
+                          operator:
+                            type: string
+                            enum:
+                              - Equal
+                              - Exists
+                          value:
+                            type: string
+                          effect:
+                            type: string
+                            enum:
+                              - NoExecute
+                              - NoSchedule
+                              - PreferNoSchedule
+                          tolerationSeconds:
+                            type: integer
+
                 mountPath:
                   type: string
                 podManagementPolicy:
@@ -100,8 +152,10 @@ spec:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
                 env:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
+                  type: array
+                  items:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                 console:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
@@ -121,10 +175,40 @@ spec:
                           type: string
                     resources:
                       type: object
-                      x-kubernetes-preserve-unknown-fields: true
+                      required:
+                        - requests
+                        - limits
+                      properties:
+                        limits:
+                          type: object
+                          required:
+                            - cpu
+                            - memory
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '^(\d+m|\d+(\.\d{1,3})?)$'
+                            memory:
+                              type: string
+                              pattern: '^(\d+(e\d+)?|\d+(\.\d+)?(e\d+)?[EPTGMK]i?)$'
+                        requests:
+                          type: object
+                          required:
+                            - cpu
+                            - memory
+                          properties:
+                            cpu:
+                              type: string
+                              pattern: '^(\d+m|\d+(\.\d{1,3})?)$'
+                            memory:
+                              type: string
+                              pattern: '^(\d+(e\d+)?|\d+(\.\d+)?(e\d+)?[EPTGMK]i?)$'
                     env:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
+                      type: array
+                      items:
+                        type: object
+                        x-kubernetes-preserve-unknown-fields: true
+
                 kes:
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
