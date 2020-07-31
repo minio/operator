@@ -21,7 +21,6 @@ set -o pipefail
 
 SCRIPT_ROOT=$(dirname ${BASH_SOURCE})/..
 
-GO111MODULE=off go get -d k8s.io/code-generator/...
 
 REPOSITORY=github.com/minio/operator
 $GOPATH/src/k8s.io/code-generator/generate-groups.sh all \

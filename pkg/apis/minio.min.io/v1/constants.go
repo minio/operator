@@ -55,6 +55,9 @@ const MinIOCertPath = "/tmp/certs"
 // TenantLabel is applied to all components of a Tenant cluster
 const TenantLabel = "v1.min.io/tenant"
 
+// ZoneLabel is applied to all components in a Zone of a Tenant cluster
+const ZoneLabel = "v1.min.io/zone"
+
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
 
@@ -71,7 +74,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2020-07-22T00-26-33Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2020-07-27T18-37-02Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades

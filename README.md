@@ -6,13 +6,13 @@ MinIO-Operator brings native MinIO, [Console](https://github.com/minio/console),
 
 | Feature                 | Reference Document |
 |-------------------------|--------------------|
-| Create and delete highly available distributed MinIO clusters  | [Create a MinIO Instance](https://github.com/minio/operator#create-a-minio-instance). |
-| TLS Configuration  | [TLS for MinIO Instance](https://github.com/minio/operator/blob/master/docs/tls.md). |
+| Create and delete highly available distributed MinIO clusters  | [Create a MinIO Tenant](https://github.com/minio/operator#create-a-minio-tenant). |
+| TLS Configuration  | [TLS for MinIO Tenant](https://github.com/minio/operator/blob/master/docs/tls.md). |
 | Expand an existing MinIO cluster | [Expand a MinIO Cluster](https://github.com/minio/operator/blob/master/docs/adding-zones.md). |
 | Use a custom template for hostname discovery | [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md). |
 | Use PodSecurityPolicy for MinIO Pods | [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md). |
-| Deploy Console with MinIO cluster  | [Deploy MinIO Instance with Console](https://github.com/minio/operator/blob/master/docs/console.md). |
-| Deploy KES with MinIO cluster  | [Deploy MinIO Instance with KES](https://github.com/minio/operator/blob/master/docs/kes.md). |
+| Deploy Console with MinIO cluster  | [Deploy MinIO Tenant with Console](https://github.com/minio/operator/blob/master/docs/console.md). |
+| Deploy KES with MinIO cluster  | [Deploy MinIO Tenant with KES](https://github.com/minio/operator/blob/master/docs/kes.md). |
 
 ## Getting Started
 
@@ -25,22 +25,22 @@ MinIO-Operator brings native MinIO, [Console](https://github.com/minio/console),
 
 ### Create Operator Deployment
 
-To start MinIO-Operator with default configuration, use the `operator.yaml` file.
+To start MinIO-Operator with default configuration, use the `kubectl apply -k` on this repository.
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/minio-operator.yaml
+kubectl apply -k github.com/minio/operator
 ```
 
-Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kustomize) to customize operator configuration
+Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kustomize) to customize operator configuration via overlays.
 
 ```bash
 git clone https://github.com/minio/operator
 kustomize build | kubectl apply -f -
 ```
 
-### Create a MinIO instance
+### Create a MinIO Tenant
 
-Once MinIO-Operator deployment is running, you can create MinIO instances using the below command
+Once MinIO-Operator deployment is running, you can create MinIO Tenants using the below command
 
 ```
 kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/examples/tenant.yaml
@@ -57,7 +57,7 @@ These variables may be passed to operator Deployment in order to modify some of 
 | Name                | Default | Description                                                                                                                   |
 | ---                 | ---     | ---                                                                                                                           |
 | `CLUSTER_DOMAIN`    | `cluster.local` | Cluster Domain of the Kubernetes cluster |
-| `WATCHED_NAMESPACE` | `-` | If set, the operator will watch MinIOInstance resources in specified namespace only. If empty, operator will watch all namespaces. |
+| `WATCHED_NAMESPACE` | `-` | If set, the operator will watch for Tenant (tenant.minio.min.io) resources in specified namespace only. If empty, operator will watch all namespaces. |
 
 ## Explore Further
 
@@ -65,4 +65,4 @@ These variables may be passed to operator Deployment in order to modify some of 
 - [Use `mc` with MinIO Server](https://docs.min.io/docs/minio-client-quickstart-guide)
 - [Use `aws-cli` with MinIO Server](https://docs.min.io/docs/aws-cli-with-minio)
 - [The MinIO documentation website](https://docs.min.io)
-- Expose MinIO via Istio: Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO instance, you can also directly target the headless Service that is created by the operator. Use [Istio Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) to configure Istio to expose the MinIO service outside of the service mesh.
+- Expose MinIO via Istio: Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO Tenant, you can also directly target the headless Service that is created by the operator. Use [Istio Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) to configure Istio to expose the MinIO service outside of the service mesh.

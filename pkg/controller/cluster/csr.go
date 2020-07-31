@@ -34,7 +34,7 @@ import (
 	"syscall"
 	"time"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 

@@ -18,7 +18,7 @@ configMapGenerator:
 images:
   - name: minio/minio
     newName: minio/minio
-    newTag: RELEASE.2020-07-22T00-26-33Z
+    newTag: RELEASE.2020-07-27T18-37-02Z
   - name: minio/console
     newName: minio/console
     newTag: v0.3.0
