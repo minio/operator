@@ -111,7 +111,7 @@ const LivenessFailureThreshold = 1
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.3.0"
+const DefaultConsoleImage = "minio/console:v0.3.4"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -136,6 +136,16 @@ const ConsoleRestartPolicy = corev1.RestartPolicyAlways
 
 // DefaultConsoleReplicas specifies the default number of Console pods to be created if not specified
 const DefaultConsoleReplicas = 2
+
+// DefaultConsoleAccessKey specifies the default access key, to be changed on first login
+const DefaultConsoleAccessKey = "consoleAdmin"
+
+// DefaultConsoleSecretKey specifies the default secret key, to be changed on first login
+const DefaultConsoleSecretKey = "consoleAdmin"
+
+// ConsoleConfigMountPath specifies the path where console MinIO CA Cert is mounted
+// We keep this to /tmp so it doesn't require any special permissions
+const ConsoleConfigMountPath = "/tmp/certs"
 
 // KES Related Constants
 

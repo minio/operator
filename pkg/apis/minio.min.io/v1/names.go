@@ -47,6 +47,11 @@ func (t *Tenant) MinIOTLSSecretName() string {
 	return t.Name + TLSSecretSuffix
 }
 
+// MinIOCACertSecretName returns the name of Secret that has TLS related Info (Cert & Private Key)
+func (t *Tenant) MinIOCACertSecretName() string {
+	return t.Name + "-public" + TLSSecretSuffix
+}
+
 // MinIOClientTLSSecretName returns the name of Secret that has TLS related Info (Cert & Private Key)
 // for MinIO <-> KES client side authentication.
 func (t *Tenant) MinIOClientTLSSecretName() string {
@@ -128,6 +133,11 @@ func (t *Tenant) ConsoleDeploymentName() string {
 
 // ConsoleCIServiceName returns the name for Console Cluster IP Service
 func (t *Tenant) ConsoleCIServiceName() string {
+	return t.Name + ConsoleName
+}
+
+// ConsoleVolMountName returns the name of Secret that has TLS related Info (Cert)
+func (t *Tenant) ConsoleVolMountName() string {
 	return t.Name + ConsoleName
 }
 

@@ -100,9 +100,6 @@ type TenantSpec struct {
 	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
-	// ConsoleConfiguration is for setting up minio/console for graphical user interface
-	//+optional
-	Console *ConsoleConfiguration `json:"console,omitempty"`
 	// KES is for setting up minio/kes as MinIO KMS
 	//+optional
 	KES *KESConfig `json:"kes,omitempty"`
@@ -163,31 +160,6 @@ type Liveness struct {
 	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
 	PeriodSeconds       int32 `json:"periodSeconds"`
 	TimeoutSeconds      int32 `json:"timeoutSeconds"`
-}
-
-// ConsoleConfiguration defines the specifications for Console Deployment
-type ConsoleConfiguration struct {
-	// Replicas defines number of pods for KES StatefulSet.
-	// +optional
-	Replicas int32 `json:"replicas,omitempty"`
-	// Image defines the Tenant Console Docker image.
-	// +optional
-	Image string `json:"image,omitempty"`
-	// This secret provides all environment variables for KES
-	// This is a mandatory field
-	ConsoleSecret *corev1.LocalObjectReference `json:"consoleSecret"`
-	Metadata      *metav1.ObjectMeta           `json:"metadata,omitempty"`
-	// If provided, use these environment variables for Console resource
-	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty"`
-	// If provided, use these requests and limit for cpu/memory resource allocation
-	// +optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-}
-
-// EqualImage returns true if config image and current input image are same
-func (c ConsoleConfiguration) EqualImage(currentImage string) bool {
-	return c.Image == currentImage
 }
 
 // KESConfig defines the specifications for KES StatefulSet

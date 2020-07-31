@@ -11,7 +11,6 @@ MinIO-Operator brings native MinIO, [Console](https://github.com/minio/console),
 | Expand an existing MinIO cluster | [Expand a MinIO Cluster](https://github.com/minio/operator/blob/master/docs/adding-zones.md). |
 | Use a custom template for hostname discovery | [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md). |
 | Use PodSecurityPolicy for MinIO Pods | [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md). |
-| Deploy Console with MinIO cluster  | [Deploy MinIO Tenant with Console](https://github.com/minio/operator/blob/master/docs/console.md). |
 | Deploy KES with MinIO cluster  | [Deploy MinIO Tenant with KES](https://github.com/minio/operator/blob/master/docs/kes.md). |
 
 ## Getting Started

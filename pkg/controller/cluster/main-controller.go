@@ -91,7 +91,6 @@ const (
 	statusWaitingKESCert                = "Waiting for KES TLS Certificate"
 	statusUpdatingMinIOVersion          = "Updating MinIO Version"
 	statusUpdatingContainerArguments    = "Updating Container Arguments"
-	statusUpdatingConsoleVersion        = "Updating Console Version"
 	statusUpdatingResourceRequirements  = "Updating Resource Requirements"
 	statusUpdatingAffinity              = "Updating Pod Affinity"
 	statusNotOwned                      = "Statefulset not controlled by operator"
@@ -650,54 +649,39 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if mi.HasConsoleEnabled() {
-		// Get the Deployment with the name specified in MirrorInstace.spec
-		if _, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.ConsoleDeploymentName()); err != nil {
-			if apierrors.IsNotFound(err) {
-				if !mi.HasCredsSecret() || !mi.HasConsoleSecret() {
-					msg := "Please set the credentials"
-					klog.V(2).Infof(msg)
-					return fmt.Errorf(msg)
+	// Get the Deployment with the console name
+	if _, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.ConsoleDeploymentName()); err != nil {
+		if apierrors.IsNotFound(err) {
+			// Make sure that MinIO is up and running to enable MinIO console user.
+			if mi.MinIOHealthCheck() {
+				if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningConsoleDeployment, totalReplicas); err != nil {
+					return err
 				}
-
-				consoleSecretName := mi.Spec.Console.ConsoleSecret.Name
-				consoleSecret, sErr := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, consoleSecretName, gOpts)
-				if sErr != nil {
-					return sErr
+				if pErr := mi.CreateConsoleUser(adminClnt, miniov1.DefaultConsoleAccessKey, miniov1.DefaultConsoleSecretKey); pErr != nil {
+					klog.V(2).Infof(pErr.Error())
+					return pErr
 				}
-
-				// Make sure that MinIO is up and running to enable MinIO console user.
-				if mi.MinIOHealthCheck() {
-					if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningConsoleDeployment, totalReplicas); err != nil {
-						return err
-					}
-
-					if pErr := mi.CreateConsoleUser(adminClnt, consoleSecret.Data); pErr != nil {
-						klog.V(2).Infof(pErr.Error())
-						return pErr
-					}
-					// Create Console Deployment
-					consoleDeployment = deployments.NewConsole(mi)
-					_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, consoleDeployment, cOpts)
-					if err != nil {
-						klog.V(2).Infof(err.Error())
-						return err
-					}
-					// Create Console service
-					consoleSvc := services.NewClusterIPForConsole(mi)
-					_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, consoleSvc, cOpts)
-					if err != nil {
-						klog.V(2).Infof(err.Error())
-						return err
-					}
-				} else {
-					if mi, err = c.updateTenantStatus(ctx, mi, statusWaitingForReadyState, totalReplicas); err != nil {
-						return err
-					}
+				// Create Console Deployment
+				consoleDeployment = deployments.NewConsole(mi)
+				_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Create(ctx, consoleDeployment, cOpts)
+				if err != nil {
+					klog.V(2).Infof(err.Error())
+					return err
+				}
+				// Create Console service
+				consoleSvc := services.NewClusterIPForConsole(mi)
+				_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, consoleSvc, cOpts)
+				if err != nil {
+					klog.V(2).Infof(err.Error())
+					return err
 				}
 			} else {
-				return err
+				if mi, err = c.updateTenantStatus(ctx, mi, statusWaitingForReadyState, totalReplicas); err != nil {
+					return err
+				}
 			}
+		} else {
+			return err
 		}
 	}
 
@@ -755,22 +739,6 @@ func (c *Controller) syncHandler(key string) error {
 			} else {
 				return err
 			}
-		}
-	}
-
-	if mi.HasConsoleEnabled() && consoleDeployment != nil && !mi.Spec.Console.EqualImage(consoleDeployment.Spec.Template.Spec.Containers[0].Image) {
-		if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingConsoleVersion, totalReplicas); err != nil {
-			return err
-		}
-		klog.V(4).Infof("Updating Tenant %s console version %s, to: %s", name,
-			mi.Spec.Console.Image, consoleDeployment.Spec.Template.Spec.Containers[0].Image)
-		consoleDeployment = deployments.NewConsole(mi)
-		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, consoleDeployment, uOpts)
-		// If an error occurs during Update, we'll requeue the item so we can
-		// attempt processing again later. This could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
-			return err
 		}
 	}
 

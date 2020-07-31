@@ -205,15 +205,6 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 	}
 
-	if t.HasConsoleEnabled() {
-		if t.Spec.Console.Image == "" {
-			t.Spec.Console.Image = DefaultConsoleImage
-		}
-		if t.Spec.Console.Replicas == 0 {
-			t.Spec.Console.Replicas = DefaultConsoleReplicas
-		}
-	}
-
 	if t.HasKESEnabled() {
 		if t.Spec.KES.Image == "" {
 			t.Spec.KES.Image = DefaultKESImage
@@ -344,23 +335,6 @@ func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
 }
 
-// HasConsoleEnabled checks if the console has been enabled by the user
-func (t *Tenant) HasConsoleEnabled() bool {
-	return t.Spec.Console != nil
-}
-
-// HasConsoleSecret returns true if the user has provided an console secret
-// for a Tenant else false
-func (t *Tenant) HasConsoleSecret() bool {
-	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
-}
-
-// HasConsoleMetadata returns true if the user has provided a console metadata
-// for a Tenant else false
-func (t *Tenant) HasConsoleMetadata() bool {
-	return t.Spec.Console != nil && t.Spec.Console.Metadata != nil
-}
-
 // HasKESMetadata returns true if the user has provided KES metadata
 // for a Tenant else false
 func (t *Tenant) HasKESMetadata() bool {
@@ -480,22 +454,12 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 }
 
 // CreateConsoleUser function creates an admin user
-func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret map[string][]byte) error {
-	consoleAccessKey, ok := consoleSecret["CONSOLE_ACCESS_KEY"]
-	if !ok {
-		return errors.New("CONSOLE_ACCESS_KEY not provided")
-	}
-
-	consoleSecretKey, ok := consoleSecret["CONSOLE_SECRET_KEY"]
-	if !ok {
-		return errors.New("CONSOLE_SECRET_KEY not provided")
-	}
-
+func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleAccessKey, consoleSecretKey string) error {
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 
-	if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
+	if err := madmClnt.AddUser(ctx, consoleAccessKey, consoleSecretKey); err != nil {
 		return err
 	}
 

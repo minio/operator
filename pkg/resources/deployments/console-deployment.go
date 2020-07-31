@@ -18,6 +18,7 @@
 package deployments
 
 import (
+	"github.com/google/uuid"
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -26,42 +27,46 @@ import (
 
 // Adds required Console environment variables
 func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
+	jwtSecret := uuid.New().String()
+	pkdfPass := uuid.New().String()
+	pkdfSalt := uuid.New().String()
 	envVars := []corev1.EnvVar{
 		{
 			Name:  "CONSOLE_MINIO_SERVER",
 			Value: t.MinIOServerEndpoint(),
 		},
+		{
+			Name:  "CONSOLE_HMAC_JWT_SECRET",
+			Value: jwtSecret,
+		},
+		{
+			Name:  "CONSOLE_PBKDF_PASSPHRASE",
+			Value: pkdfPass,
+		},
+		{
+			Name:  "CONSOLE_PBKDF_SALT",
+			Value: pkdfSalt,
+		},
+		{
+			Name:  "CONSOLE_ACCESS_KEY",
+			Value: miniov1.DefaultConsoleAccessKey,
+		},
+		{
+			Name:  "CONSOLE_SECRET_KEY",
+			Value: miniov1.DefaultConsoleSecretKey,
+		},
 	}
 	if t.TLS() {
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  "CONSOLE_MINIO_SERVER_TLS_SKIP_VERIFICATION",
-			Value: "on", // FIXME: should be trusted
+			Name:  "CONSOLE_MINIO_SERVER_TLS_ROOT_CAS",
+			Value: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt," + miniov1.ConsoleConfigMountPath + "/public.crt",
 		})
-	}
-	// Add all the environment variables
-	envVars = append(envVars, t.Spec.Console.Env...)
-	return envVars
-}
-
-// Returns the Console environment variables set in configuration.
-func consoleSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
-	envVars := []corev1.EnvFromSource{
-		{
-			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: t.Spec.Console.ConsoleSecret.Name,
-				},
-			},
-		},
 	}
 	return envVars
 }
 
 func consoleMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if t.HasConsoleMetadata() {
-		meta = *t.Spec.Console.Metadata
-	}
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
@@ -84,7 +89,7 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 
 	return corev1.Container{
 		Name:  miniov1.ConsoleContainerName,
-		Image: t.Spec.Console.Image,
+		Image: miniov1.DefaultConsoleImage,
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: miniov1.ConsolePort,
@@ -93,13 +98,46 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
 		Args:            args,
 		Env:             consoleEnvVars(t),
-		EnvFrom:         consoleSecretEnvVars(t),
-		Resources:       t.Spec.Console.Resources,
+		VolumeMounts:    consoleVolumeMounts(t),
+	}
+}
+
+// ConsoleVolumeMounts builds the volume mounts for Console container.
+func consoleVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      t.ConsoleVolMountName(),
+			MountPath: miniov1.ConsoleConfigMountPath,
+		},
 	}
 }
 
 // NewConsole creates a new Deployment for the given MinIO instance.
 func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
+	r := int32(miniov1.DefaultConsoleReplicas)
+	var minioCertPaths = []corev1.KeyToPath{
+		{Key: "public.crt", Path: "public.crt"},
+	}
+
+	podVolumes := []corev1.Volume{
+		{
+			Name: t.ConsoleVolMountName(),
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: t.MinIOCACertSecretName(),
+								},
+								Items: minioCertPaths,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -108,7 +146,7 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &t.Spec.Console.Replicas,
+			Replicas: &r,
 			// Console is always matched via Tenant Name + console prefix
 			Selector: consoleSelector(t),
 			Template: corev1.PodTemplateSpec{
@@ -116,6 +154,7 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					Containers:    []corev1.Container{consoleContainer(t)},
 					RestartPolicy: miniov1.ConsoleRestartPolicy,
+					Volumes:       podVolumes,
 				},
 			},
 		},

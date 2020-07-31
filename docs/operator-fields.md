@@ -39,11 +39,6 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Te
 | spec.tolerations | Define a toleration for the Tenant pod to match on a taint. Refer [this document](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/) for details. |
 | spec.securityContext | Define a security context for the Tenant pod. Refer [this document](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) for details. |
 | spec.serviceAccountName | Define a ServiceAccountName for the ServiceAccount to use to run MinIO pods created for this Tenant. Refer [this document](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) for details. |
-| spec.console | Defines the console configuration. Console is a graphical user interface for MinIO. Refer [this](https://github.com/minio/console) |
-| spec.console.image | Defines the console image. |
-| spec.console.replicas | Number of Console pods to be created. |
-| spec.console.consoleSecret | Use this secret to assign console credentials to Tenant. |
-| spec.console.metadata | This allows a way to map metadata to the console container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
 | spec.kes | Defines the KES configuration. Refer [this](https://github.com/minio/kes) |
 | spec.kes.replicas | Number of KES pods to be created. |
 | spec.kes.image | Defines the KES image. |

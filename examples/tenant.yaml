@@ -63,7 +63,7 @@ spec:
   # name: tls-ssl-minio
   ## Enable Kubernetes based certificate generation and signing as explained in
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
-  requestAutoCert: false
+  requestAutoCert: true
 
   ## Used when "requestAutoCert" is set to true. Set CommonName for the auto-generated certificate.
   ## Internal DNS name for the pod will be used if CommonName is not provided.

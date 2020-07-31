@@ -145,6 +145,13 @@ func (c *Controller) createCSR(ctx context.Context, mi *miniov1.Tenant) error {
 		return err
 	}
 
+	// Create another secret with only public cert to be used by MinIO Client applications like Console
+	err = c.createSecret(ctx, mi, mi.MinIOPodLabels(), mi.MinIOCACertSecretName(), mi.Namespace, nil, certbytes)
+	if err != nil {
+		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.MinIOTLSSecretName(), err)
+		return err
+	}
+
 	return nil
 }
 
@@ -266,10 +273,16 @@ func (c *Controller) createSecret(ctx context.Context, mi *miniov1.Tenant, label
 				}),
 			},
 		},
-		Data: map[string][]byte{
+	}
+	if pkBytes != nil {
+		secret.Data = map[string][]byte{
 			"private.key": pkBytes,
 			"public.crt":  certBytes,
-		},
+		}
+	} else {
+		secret.Data = map[string][]byte{
+			"public.crt": certBytes,
+		}
 	}
 	if _, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, secret, metav1.CreateOptions{}); err != nil {
 		return err
