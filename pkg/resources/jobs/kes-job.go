@@ -82,13 +82,16 @@ func NewForKES(t *miniov1.Tenant) *batchv1.Job {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: kesMetadata(t),
 				Spec: corev1.PodSpec{
-					RestartPolicy:    miniov1.KESJobRestartPolicy,
-					Containers:       containers,
-					ImagePullSecrets: []corev1.LocalObjectReference{t.Spec.ImagePullSecret},
-					Volumes:          podVolumes,
+					RestartPolicy: miniov1.KESJobRestartPolicy,
+					Containers:    containers,
+					Volumes:       podVolumes,
 				},
 			},
 		},
+	}
+	// Address issue https://github.com/kubernetes/kubernetes/issues/85332
+	if t.Spec.ImagePullSecret.Name != "" {
+		d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{t.Spec.ImagePullSecret}
 	}
 
 	return d
