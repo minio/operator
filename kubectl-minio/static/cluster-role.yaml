@@ -1,0 +1,76 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: minio-operator-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - secrets
+      - pods
+      - services
+      - events
+    verbs:
+      - get
+      - watch
+      - create
+      - list
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+      - deployments
+    verbs:
+      - get
+      - create
+      - list
+      - patch
+      - watch
+      - update
+      - delete
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - get
+      - create
+      - list
+      - patch
+      - watch
+      - update
+      - delete
+  - apiGroups:
+      - "certificates.k8s.io"
+    resources:
+      - "certificatesigningrequests"
+      - "certificatesigningrequests/approval"
+      - "certificatesigningrequests/status"
+    verbs:
+      - update
+      - create
+      - get
+      - delete
+  - apiGroups:
+      - certificates.k8s.io
+    resourceNames:
+      - kubernetes.io/legacy-unknown
+    resources:
+      - signers
+    verbs:
+      - approve
+      - sign
+  - apiGroups:
+      - minio.min.io
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+      - min.io
+    resources:
+      - "*"
+    verbs:
+      - "*"
