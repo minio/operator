@@ -45,7 +45,7 @@ import (
 
 const (
 	operatorCreateDesc = `
-'create' command creates MinIO Operator deployment alongwith all the dependencies.`
+'create' command creates MinIO Operator deployment along with all the dependencies.`
 )
 
 type operatorCreateCmd struct {
