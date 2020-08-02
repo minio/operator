@@ -167,14 +167,17 @@ func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: KESMetadata(t),
 				Spec: corev1.PodSpec{
-					Containers:       containers,
-					Volumes:          podVolumes,
-					ImagePullSecrets: []corev1.LocalObjectReference{t.Spec.ImagePullSecret},
-					RestartPolicy:    corev1.RestartPolicyAlways,
-					SchedulerName:    t.Scheduler.Name,
+					Containers:    containers,
+					Volumes:       podVolumes,
+					RestartPolicy: corev1.RestartPolicyAlways,
+					SchedulerName: t.Scheduler.Name,
 				},
 			},
 		},
+	}
+	// Address issue https://github.com/kubernetes/kubernetes/issues/85332
+	if t.Spec.ImagePullSecret.Name != "" {
+		ss.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{t.Spec.ImagePullSecret}
 	}
 
 	return ss
