@@ -93,6 +93,12 @@ func (t *Tenant) KESExternalCert() bool {
 	return t.Spec.KES != nil && t.Spec.KES.ExternalCertSecret != nil
 }
 
+// ConsoleExternalCert returns true is the user has provided a secret
+// that contains CA cert, server cert and server key for Console pods
+func (t *Tenant) ConsoleExternalCert() bool {
+	return t.Spec.Console != nil && t.Spec.Console.ExternalCertSecret != nil
+}
+
 // AutoCert returns true is the user has provided a secret
 // that contains CA cert, server cert and server key for group replication
 // SSL support
