@@ -329,7 +329,7 @@ func (t *Tenant) KESServiceEndpoint() string {
 	}
 	u := &url.URL{
 		Scheme: scheme,
-		Host:   t.KESServiceHost(),
+		Host:   net.JoinHostPort(t.KESServiceHost(), strconv.Itoa(KESPort)),
 	}
 	return u.String()
 }
