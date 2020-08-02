@@ -78,9 +78,26 @@ func consoleSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	}
 }
 
+// ConsoleVolumeMounts builds the volume mounts for Console container.
+func ConsoleVolumeMounts(t *miniov1.Tenant) (mounts []corev1.VolumeMount) {
+	if t.AutoCert() || t.ConsoleExternalCert() {
+		mounts = []corev1.VolumeMount{
+			{
+				Name:      t.ConsoleVolMountName(),
+				MountPath: miniov1.ConsoleConfigMountPath,
+			},
+		}
+	}
+	return
+}
+
 // Builds the Console container for a Tenant.
 func consoleContainer(t *miniov1.Tenant) corev1.Container {
 	args := []string{"server"}
+
+	if t.AutoCert() || t.ConsoleExternalCert() {
+		args = append(args, "--tls-certificate=server.crt", "--tls-certificate=server.key")
+	}
 
 	return corev1.Container{
 		Name:  miniov1.ConsoleContainerName,
@@ -95,11 +112,53 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 		Env:             consoleEnvVars(t),
 		EnvFrom:         consoleSecretEnvVars(t),
 		Resources:       t.Spec.Console.Resources,
+		VolumeMounts:    ConsoleVolumeMounts(t),
 	}
 }
 
 // NewConsole creates a new Deployment for the given MinIO instance.
 func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
+	var certPath = "server.crt"
+	var keyPath = "server.key"
+	var serverCertSecret string
+	var serverCertPaths = []corev1.KeyToPath{
+		{Key: "public.crt", Path: certPath},
+		{Key: "private.key", Path: keyPath},
+	}
+
+	if t.AutoCert() {
+		serverCertSecret = t.ConsoleTLSSecretName()
+	} else if t.ConsoleExternalCert() {
+		serverCertSecret = t.Spec.Console.ExternalCertSecret.Name
+		// This covers both secrets of type "kubernetes.io/tls" and
+		// "cert-manager.io/v1alpha2" because of same keys in both.
+		if t.Spec.Console.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.Console.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			serverCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: certPath},
+				{Key: "tls.key", Path: keyPath},
+			}
+		}
+	}
+
+	podVolumes := []corev1.Volume{
+		{
+			Name: t.ConsoleVolMountName(),
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: serverCertSecret,
+								},
+								Items: serverCertPaths,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -116,9 +175,14 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					Containers:    []corev1.Container{consoleContainer(t)},
 					RestartPolicy: miniov1.ConsoleRestartPolicy,
+					Volumes:       podVolumes,
 				},
 			},
 		},
+	}
+
+	if t.Spec.ImagePullSecret.Name != "" {
+		d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{t.Spec.ImagePullSecret}
 	}
 
 	return d

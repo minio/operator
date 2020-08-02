@@ -135,3 +135,13 @@ func (t *Tenant) ConsoleCIServiceName() string {
 func (t *Tenant) ZoneStatefulsetName(zone *Zone) string {
 	return fmt.Sprintf("%s-%s", t.Name, zone.Name)
 }
+
+// ConsoleVolMountName returns the name of Secret that has TLS related Info (Cert & Private Key)
+func (t *Tenant) ConsoleVolMountName() string {
+	return t.Name + ConsoleName
+}
+
+// ConsoleTLSSecretName returns the name of Secret that has Console TLS related Info (Cert & Private Key)
+func (t *Tenant) ConsoleTLSSecretName() string {
+	return t.ConsoleDeploymentName() + TLSSecretSuffix
+}
