@@ -4,3 +4,4 @@ minio-operator
 .idea/
 dist/
 *.test
+*.minisig

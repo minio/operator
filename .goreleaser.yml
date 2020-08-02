@@ -27,6 +27,12 @@ builds:
       - -s -w -X main.Version={{.Tag}}
     flags:
       - -trimpath
+    hooks:
+      post: ./minisign.sh {{ .Path }}
+
+archives:
+  -
+    format: binary
 
 dockers:
   -
@@ -34,11 +40,13 @@ dockers:
     goos: linux
     # GOARCH of the built binary that should be used.
     goarch: amd64
-    dockerfile: Dockerfile
+    dockerfile: Dockerfile.release
     image_templates:
       - "minio/k8s-operator:{{ .Tag }}"
       - "minio/k8s-operator:latest"
     extra_files:
       - LICENSE
       - README.md
+      - CREDITS
+      - minio-operator.minisig
       - ca-certificates.crt
