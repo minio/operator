@@ -122,6 +122,12 @@ const ConsolePort = 9090
 // ConsoleServicePortName specifies the default Console Service's port name.
 const ConsoleServicePortName = "http-console"
 
+// ConsoleTLSPort specifies the default Console port number for HTTPS.
+const ConsoleTLSPort = 9443
+
+// ConsoleServiceTLSPortName specifies the default Console Service's port name.
+const ConsoleServiceTLSPortName = "https-console"
+
 // ConsoleServiceNameSuffix specifies the suffix added to Tenant service name to create a service for console
 const ConsoleServiceNameSuffix = "-ui"
 
@@ -133,6 +139,10 @@ const ConsoleAdminPolicyName = "consoleAdmin"
 
 // ConsoleRestartPolicy defines the default restart policy for Console Containers
 const ConsoleRestartPolicy = corev1.RestartPolicyAlways
+
+// ConsoleConfigMountPath specifies the path where Console config file and all secrets are mounted
+// We keep this to /tmp so it doesn't require any special permissions
+const ConsoleConfigMountPath = "/tmp/console"
 
 // DefaultConsoleReplicas specifies the default number of Console pods to be created if not specified
 const DefaultConsoleReplicas = 2

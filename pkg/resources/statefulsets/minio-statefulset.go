@@ -292,7 +292,7 @@ func NewForMinIOZone(t *miniov1.Tenant, zone *miniov1.Zone, serviceName string, 
 			kesCertSecret = t.Spec.KES.ExternalCertSecret.Name
 			// This covers both secrets of type "kubernetes.io/tls" and
 			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if t.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
 				KESCertPath = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: "CAs/kes.crt"},
 				}

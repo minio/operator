@@ -88,7 +88,8 @@ func NewHeadlessForKES(t *miniov1.Tenant) *corev1.Service {
 
 // NewClusterIPForConsole will return a new cluster IP service for Console Deployment
 func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName}
+	consolePort := corev1.ServicePort{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName}
+	consoleTLSPort := corev1.ServicePort{Port: miniov1.ConsoleTLSPort, Name: miniov1.ConsoleServiceTLSPortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.ConsolePodLabels(),
@@ -97,7 +98,10 @@ func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
 			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:    []corev1.ServicePort{minioPort},
+			Ports: []corev1.ServicePort{
+				consolePort,
+				consoleTLSPort,
+			},
 			Selector: t.ConsolePodLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},

@@ -183,6 +183,10 @@ type ConsoleConfiguration struct {
 	// If provided, use these requests and limit for cpu/memory resource allocation
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// ExternalCertSecret allows a user to specify custom CA certificate, and private key. This is
+	// used for enabling TLS support on Console Pods.
+	// +optional
+	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same
