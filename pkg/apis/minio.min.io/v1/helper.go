@@ -305,6 +305,11 @@ func (t *Tenant) MinIOServerHost() string {
 	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
 }
 
+// ConsoleServerHost returns ClusterIP service Host for current Console Tenant
+func (t *Tenant) ConsoleServerHost() string {
+	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, ClusterDomain)
+}
+
 // MinIOHeadlessServiceHost returns headless service Host for current Tenant
 func (t *Tenant) MinIOHeadlessServiceHost() string {
 	if t.Spec.Zones[0].Servers == 1 {
