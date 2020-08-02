@@ -92,3 +92,47 @@ func TestTemplateVariables(t *testing.T) {
 		assert.Contains(t, hosts, ClusterDomain)
 	})
 }
+
+func TestTenant_KESServiceEndpoint(t1 *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Scheduler  TenantScheduler
+		Spec       TenantSpec
+		Status     TenantStatus
+	}
+	ClusterDomain = "cluster.local"
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "Success",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "kes",
+					Namespace: "namespace",
+				},
+				Spec: TenantSpec{
+					RequestAutoCert: true,
+				},
+			},
+			want: "https://kes" + KESHLSvcNameSuffix + ".namespace.svc.cluster.local:7373",
+		},
+	}
+	for _, tt := range tests {
+		t1.Run(tt.name, func(t1 *testing.T) {
+			t := &Tenant{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Scheduler:  tt.fields.Scheduler,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			if got := t.KESServiceEndpoint(); got != tt.want {
+				t1.Errorf("KESServiceEndpoint() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

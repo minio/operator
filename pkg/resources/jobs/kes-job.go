@@ -18,9 +18,6 @@
 package jobs
 
 import (
-	"net"
-	"strconv"
-
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -116,7 +113,7 @@ func kesEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  "KES_SERVER",
-			Value: "https://" + net.JoinHostPort(t.KESServiceHost(), strconv.Itoa(miniov1.KESPort)),
+			Value: t.KESServiceEndpoint(),
 		},
 		{
 			Name:  "KES_CLIENT_CERT",

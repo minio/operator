@@ -331,7 +331,7 @@ func (t *Tenant) KESServiceEndpoint() string {
 		Scheme: scheme,
 		Host:   t.KESServiceHost(),
 	}
-	return u.String()
+	return u.String() + ":" + fmt.Sprint(KESPort)
 }
 
 // KESServiceHost returns headless service Host for KES in current Tenant
