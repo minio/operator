@@ -20,7 +20,7 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              memory: 64Mi
+              memory: 256Mi
           securityContext:
             runAsUser: 1000
             runAsNonRoot: true
