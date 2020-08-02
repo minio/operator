@@ -183,6 +183,18 @@ spec:
                     - name
                     type: object
                   type: array
+                externalCertSecret:
+                  description: ExternalCertSecret allows a user to specify custom
+                    CA certificate, and private key. This is used for enabling TLS
+                    support on Console Pods.
+                  properties:
+                    name:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - name
+                  type: object
                 image:
                   description: Image defines the Tenant Console Docker image.
                   type: string
