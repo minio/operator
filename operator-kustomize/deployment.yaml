@@ -18,6 +18,9 @@ spec:
         - name: minio-operator
           image: minio/k8s-operator:v3.0.5
           imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              memory: 256Mi
           securityContext:
             runAsUser: 1000
             runAsNonRoot: true
