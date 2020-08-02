@@ -18,6 +18,8 @@
 package deployments
 
 import (
+	"fmt"
+
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,8 +36,8 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 	}
 	if t.TLS() {
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  "CONSOLE_MINIO_SERVER_TLS_SKIP_VERIFICATION",
-			Value: "on", // FIXME: should be trusted
+			Name:  "CONSOLE_MINIO_SERVER_TLS_ROOT_CAS",
+			Value: fmt.Sprintf("%s/CAs/minio.crt", miniov1.ConsoleConfigMountPath),
 		})
 	}
 	// Add all the environment variables
@@ -96,7 +98,7 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 	args := []string{"server"}
 
 	if t.AutoCert() || t.ConsoleExternalCert() {
-		args = append(args, "--tls-certificate=server.crt", "--tls-certificate=server.key")
+		args = append(args, "--tls-certificate=/tmp/console/server.crt", "--tls-key=/tmp/console/server.key")
 	}
 
 	return corev1.Container{
@@ -121,13 +123,19 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 	var certPath = "server.crt"
 	var keyPath = "server.key"
 	var serverCertSecret string
+	var tenantCertSecret string
 	var serverCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: certPath},
 		{Key: "private.key", Path: keyPath},
 	}
+	var tenantCertPath = "CAs/minio.crt"
+	var tenantCertPaths = []corev1.KeyToPath{
+		{Key: "public.crt", Path: tenantCertPath},
+	}
 
 	if t.AutoCert() {
 		serverCertSecret = t.ConsoleTLSSecretName()
+		tenantCertSecret = t.MinIOTLSSecretName()
 	} else if t.ConsoleExternalCert() {
 		serverCertSecret = t.Spec.Console.ExternalCertSecret.Name
 		// This covers both secrets of type "kubernetes.io/tls" and
@@ -136,6 +144,18 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: certPath},
 				{Key: "tls.key", Path: keyPath},
+			}
+		}
+	}
+
+	// Add MinIO certificate to the CAs pool of Console
+	if t.ExternalCert() {
+		tenantCertSecret = t.Spec.ExternalCertSecret.Name
+		// This covers both secrets of type "kubernetes.io/tls" and
+		// "cert-manager.io/v1alpha2" because of same keys in both.
+		if t.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			tenantCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: tenantCertPath},
 			}
 		}
 	}
@@ -152,6 +172,14 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 									Name: serverCertSecret,
 								},
 								Items: serverCertPaths,
+							},
+						},
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: tenantCertSecret,
+								},
+								Items: tenantCertPaths,
 							},
 						},
 					},

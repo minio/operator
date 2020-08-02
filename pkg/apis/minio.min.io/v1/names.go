@@ -141,7 +141,19 @@ func (t *Tenant) ConsoleVolMountName() string {
 	return t.Name + ConsoleName
 }
 
+// ConsoleCommonName returns the CommonName to be used in the csr template
+func (t *Tenant) ConsoleCommonName() string {
+	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, ClusterDomain)
+}
+
 // ConsoleTLSSecretName returns the name of Secret that has Console TLS related Info (Cert & Private Key)
 func (t *Tenant) ConsoleTLSSecretName() string {
 	return t.ConsoleDeploymentName() + TLSSecretSuffix
+}
+
+// ConsoleCSRName returns the name of CSR that generated if AutoTLS is enabled for Console
+// Namespace adds uniqueness to the CSR name (single Console tenant per namsepace)
+// since CSR is not a namespaced resource
+func (t *Tenant) ConsoleCSRName() string {
+	return t.ConsoleDeploymentName() + "-" + t.Namespace + CSRNameSuffix
 }

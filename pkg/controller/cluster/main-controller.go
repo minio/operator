@@ -89,6 +89,7 @@ const (
 	statusWaitingMinIOCert              = "Waiting for MinIO TLS Certificate"
 	statusWaitingMinIOClientCert        = "Waiting for MinIO TLS Client Certificate"
 	statusWaitingKESCert                = "Waiting for KES TLS Certificate"
+	statusWaitingConsoleCert            = "Waiting for Console TLS Certificate"
 	statusUpdatingMinIOVersion          = "Updating MinIO Version"
 	statusUpdatingContainerArguments    = "Updating Container Arguments"
 	statusUpdatingConsoleVersion        = "Updating Console Version"
@@ -379,7 +380,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	// check if both auto certificate creation and external secret with certificate is passed,
 	// this is an error as only one of this is allowed in one Tenant
-	if mi.AutoCert() && (mi.ExternalCert() || mi.ExternalClientCert() || mi.KESExternalCert()) {
+	if mi.AutoCert() && (mi.ExternalCert() || mi.ExternalClientCert() || mi.KESExternalCert() || mi.ConsoleExternalCert()) {
 		msg := "Please set either externalCertSecret or requestAutoCert in Tenant config"
 		klog.V(2).Infof(msg)
 		if _, err = c.updateTenantStatus(ctx, mi, msg, 0); err != nil {
@@ -483,6 +484,11 @@ func (c *Controller) syncHandler(key string) error {
 					}
 					if mi.HasKESEnabled() {
 						if err = c.checkAndCreateKESCSR(ctx, nsName, mi); err != nil {
+							return err
+						}
+					}
+					if mi.HasConsoleEnabled() {
+						if err = c.checkAndCreateConsoleCSR(ctx, nsName, mi); err != nil {
 							return err
 						}
 					}
@@ -927,4 +933,21 @@ func (c *Controller) handleObject(obj interface{}) {
 		c.enqueueTenant(tenant)
 		return
 	}
+}
+
+func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.Tenant) error {
+	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.ConsoleCSRName(), metav1.GetOptions{}); err != nil {
+		if apierrors.IsNotFound(err) {
+			if mi, err = c.updateTenantStatus(ctx, mi, statusWaitingConsoleCert, 0); err != nil {
+				return err
+			}
+			klog.V(2).Infof("Creating a new Certificate Signing Request for Console Server Certs, cluster %q", nsName)
+			if err = c.createConsoleTLSCSR(ctx, mi); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
 }

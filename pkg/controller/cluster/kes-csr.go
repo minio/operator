@@ -91,7 +91,7 @@ func (c *Controller) createKESTLSCSR(ctx context.Context, mi *miniov1.Tenant) er
 	// Create secret for KES Statefulset to use
 	err = c.createSecret(ctx, mi, mi.KESPodLabels(), mi.KESTLSSecretName(), mi.Namespace, encodedPrivKey, certbytes)
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.MinIOTLSSecretName(), err)
+		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.KESTLSSecretName(), err)
 		return err
 	}
 
