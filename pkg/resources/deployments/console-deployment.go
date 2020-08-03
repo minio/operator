@@ -124,6 +124,7 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 	var keyPath = "server.key"
 	var serverCertSecret string
 	var tenantCertSecret string
+	var podVolumeSources []corev1.VolumeProjection
 	var serverCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: certPath},
 		{Key: "private.key", Path: keyPath},
@@ -160,29 +161,34 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 		}
 	}
 
+	if serverCertSecret != "" {
+		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: serverCertSecret,
+				},
+				Items: serverCertPaths,
+			},
+		})
+	}
+
+	if tenantCertSecret != "" {
+		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: tenantCertSecret,
+				},
+				Items: tenantCertPaths,
+			},
+		})
+	}
+
 	podVolumes := []corev1.Volume{
 		{
 			Name: t.ConsoleVolMountName(),
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					Sources: []corev1.VolumeProjection{
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: serverCertSecret,
-								},
-								Items: serverCertPaths,
-							},
-						},
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: tenantCertSecret,
-								},
-								Items: tenantCertPaths,
-							},
-						},
-					},
+					Sources: podVolumeSources,
 				},
 			},
 		},
