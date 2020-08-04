@@ -26,20 +26,24 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
+	"gopkg.in/yaml.v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 )
 
 const (
 	createDesc = `
-'create' command creates a new MinIO Tenant`
+'create' command creates a new MinIO tenant`
+	createExample = `  kubectl minio tenant create --name tenant1 --secret tenant1-creds --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
 )
 
 type createCmd struct {
 	out        io.Writer
 	errOut     io.Writer
+	output     bool
 	tenantOpts resources.TenantOptions
 }
 
@@ -47,9 +51,10 @@ func newCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &createCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:   "create --name TENANT_NAME --secret SECRET_NAME --server SERVERS --volumes VOLUMES --capacity VOLUME_CAPACITY",
-		Short: "Create a MinIO Tenant",
-		Long:  createDesc,
+		Use:     "create",
+		Short:   "Create a MinIO tenant",
+		Long:    createDesc,
+		Example: createExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := c.validate(); err != nil {
 				return err
@@ -59,39 +64,29 @@ func newCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	f := cmd.Flags()
-	f.StringVar(&c.tenantOpts.Name, "name", "", "Name of the MinIO Tenant to be created, e.g. Tenant1")
-	f.StringVar(&c.tenantOpts.SecretName, "secret", "", "Name of the Secret object to be used as credentials for MinIO Tenant, e.g. minio-secret")
-	f.Int32Var(&c.tenantOpts.Servers, "servers", 0, "Number of pods in the MinIO Tenant, e.g. 4")
-	f.Int32Var(&c.tenantOpts.Volumes, "volumes", 0, "Number of volumes per pod in the MinIO Tenant, e.g. 4")
-	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "Capacity for each volume, e.g. 1Ti")
-	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "If present, the namespace scope for this request")
-	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "MinIO Server image")
-	f.StringVarP(&c.tenantOpts.StorageClass, "storage-class", "s", "", "Storage Class to be used while PVC creation")
-	f.StringVar(&c.tenantOpts.KmsSecret, "kms-secret", "", "Secret with details for KES deployment")
-	f.StringVar(&c.tenantOpts.ConsoleSecret, "console-secret", "", "Secret with details for MinIO console deployment")
-	f.StringVar(&c.tenantOpts.CertSecret, "cert-secret", "", "Secret with external certificates for MinIO deployment")
-	f.BoolVar(&c.tenantOpts.DisableTLS, "disable-tls", false, "Disable automatic certificate creation for MinIO peer connection")
+	f.StringVar(&c.tenantOpts.Name, "name", "", "name of the MinIO tenant to create")
+	f.StringVar(&c.tenantOpts.SecretName, "secret", "", "secret name used for tenant credentials")
+	f.Int32Var(&c.tenantOpts.Servers, "servers", 0, "total number of pods in MinIO tenant")
+	f.Int32Var(&c.tenantOpts.Volumes, "volumes", 0, "total number of volumes in the MinIO tenant")
+	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this zone, e.g. 16Ti")
+	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "image to be used for MinIO")
+	f.StringVarP(&c.tenantOpts.StorageClass, "storage-class", "s", "", "storage class to be used while PVC creation")
+	f.StringVar(&c.tenantOpts.KmsSecret, "kms-secret", "", "secret with details for enabled encryption")
+	f.StringVar(&c.tenantOpts.ConsoleSecret, "console-secret", "", "secret with details for MinIO console deployment")
+	f.StringVar(&c.tenantOpts.CertSecret, "cert-secret", "", "secret with external certificates for MinIO deployment")
+	f.StringVar(&c.tenantOpts.ImagePullSecret, "image-pull-secrets", "", "image pull secret to be used for pulling MinIO image")
+	f.BoolVar(&c.tenantOpts.DisableTLS, "disable-tls", false, "disable automatic certificate creation for MinIO peer connection")
+	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	return cmd
 }
 
 func (c *createCmd) validate() error {
-	if c.tenantOpts.Name == "" {
-		return errors.New("--name flag is required for tenant creation")
-	}
 	if c.tenantOpts.SecretName == "" {
 		return errors.New("--secret flag is required for tenant creation")
 	}
-	if c.tenantOpts.Servers == 0 {
-		return errors.New("--servers flag is required for tenant creation")
-	}
-	if c.tenantOpts.Volumes == 0 {
-		return errors.New("--volumes flag is required for tenant creation")
-	}
-	if c.tenantOpts.Capacity == "" {
-		return errors.New("--capacity flag is required for tenant creation")
-	}
-	return nil
+	return c.tenantOpts.Validate()
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
@@ -101,17 +96,28 @@ func (c *createCmd) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	return createTenant(oclient, c)
-}
 
-func createTenant(client *operatorv1.Clientset, c *createCmd) error {
 	t, err := resources.NewTenant(&c.tenantOpts)
 	if err != nil {
 		return err
 	}
-	// set name
 	t.ObjectMeta.Name = c.tenantOpts.Name
-	_, err = client.MinioV1().Tenants(c.tenantOpts.NS).Create(context.Background(), t, v1.CreateOptions{})
+	t.ObjectMeta.Namespace = c.tenantOpts.NS
+
+	if !c.output {
+		return createTenant(oclient, t)
+	}
+
+	o, err := yaml.Marshal(&t)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(o))
+	return nil
+}
+
+func createTenant(client *operatorv1.Clientset, t *miniov1.Tenant) error {
+	_, err := client.MinioV1().Tenants(t.Namespace).Create(context.Background(), t, v1.CreateOptions{})
 	if err != nil {
 		return err
 	}

@@ -26,13 +26,13 @@ import (
 
 const (
 	operatorDesc = `
-'operator' command allows creating a MinIO Operator deployment on Kubernetes cluster.`
+'operator' is the top level command for managing MinIO operator.`
 )
 
 func newOperatorCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "operator",
-		Short: "Create MinIO Operator",
+		Short: "Create MinIO operator",
 		Long:  operatorDesc,
 	}
 

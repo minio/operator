@@ -34,7 +34,8 @@ import (
 
 const (
 	deleteDesc = `
-'delete' command deletes a MinIO Tenant`
+'delete' command deletes a MinIO tenant`
+	deleteExample = `  kubectl minio tenant delete --name tenant1 --namespace tenant1-ns`
 )
 
 type deleteCmd struct {
@@ -48,9 +49,10 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &deleteCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:   "delete --name TENANT_NAME",
-		Short: "Delete a MinIO Tenant",
-		Long:  deleteDesc,
+		Use:     "delete",
+		Short:   "Delete a MinIO tenant",
+		Long:    deleteDesc,
+		Example: deleteExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := c.validate(); err != nil {
 				return err
@@ -60,8 +62,8 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	f := cmd.Flags()
-	f.StringVar(&c.name, "name", "", "Name of the MinIO Tenant to be deleted, e.g. Tenant1")
-	f.StringVarP(&c.ns, "namespace", "n", helpers.DefaultNamespace, "If present, the namespace scope for this request")
+	f.StringVar(&c.name, "name", "", "name of the MinIO tenant to delete")
+	f.StringVarP(&c.ns, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	return cmd
 }
 

@@ -25,6 +25,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// OperatorOptions encapsulates the CLI options for a MinIO Operator
+type OperatorOptions struct {
+	Name            string
+	Image           string
+	NS              string
+	NSToWatch       string
+	ClusterDomain   string
+	ServiceAccount  string
+	ImagePullSecret string
+}
+
 func operatorLabels() map[string]string {
 	m := make(map[string]string)
 	m["name"] = "minio-operator"
@@ -56,11 +67,11 @@ func container(img, clusterDomain, nsToWatch string) corev1.Container {
 }
 
 // NewDeploymentForOperator will return a new deployment for a MinIO Operator
-func NewDeploymentForOperator(ns, sa, img, clusterDomain, nsToWatch string) *appsv1.Deployment {
+func NewDeploymentForOperator(opts OperatorOptions) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      helpers.DeploymentName,
-			Namespace: ns,
+			Namespace: opts.NS,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &helpers.DeploymentReplicas,
@@ -72,8 +83,9 @@ func NewDeploymentForOperator(ns, sa, img, clusterDomain, nsToWatch string) *app
 					Labels: operatorLabels(),
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: sa,
-					Containers:         []corev1.Container{container(img, clusterDomain, nsToWatch)},
+					ServiceAccountName: opts.ServiceAccount,
+					Containers:         []corev1.Container{container(opts.Image, opts.ClusterDomain, opts.NSToWatch)},
+					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: opts.ImagePullSecret}},
 				},
 			},
 		},

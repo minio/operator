@@ -23,11 +23,10 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/klog"
 )
 
 func main() {
 	if err := cmd.NewCmdMinIO(genericclioptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}).Execute(); err != nil {
-		klog.Fatal(err)
+		os.Exit(1)
 	}
 }

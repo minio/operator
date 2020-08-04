@@ -19,21 +19,40 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
 	"io"
 
+	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/spf13/cobra"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	tenantDesc = `
-'tenant' command allows interaction with MinIO tenants created via MinIO Operator.`
+'tenant' is the top level command for managing MinIO tenants created via operator.`
 )
 
 func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tenant",
-		Short: "Manage MinIO Cluster Tenant",
+		Short: "Manage MinIO tenant",
 		Long:  tenantDesc,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			client, err := helpers.GetKubeExtensionClient()
+			if err != nil {
+				return err
+			}
+			_, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Get(context.Background(), crdObj.GetObjectMeta().GetName(), v1.GetOptions{})
+			if err != nil {
+				if kerrors.IsNotFound(err) {
+					return fmt.Errorf("CustomResourceDefinition %s: not found, please run 'kubectl minio operator create' before using tenant command", crdObj.ObjectMeta.Name)
+				}
+				return err
+			}
+			return nil
+		},
 	}
 
 	cmd.AddCommand(newCreateCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))

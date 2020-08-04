@@ -25,7 +25,10 @@ import (
 	"os/exec"
 
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
+	"gopkg.in/yaml.v2"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -105,9 +108,43 @@ func ServiceName(tenant string) string {
 	return tenant + DefaultServiceNameSuffix
 }
 
-// StreamToByte converts a given io.reader stream to a byte slice
-func StreamToByte(stream io.Reader) []byte {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
-	return buf.Bytes()
+// VolumesPerServer returns volumes per server
+// Volumes has total number of volumes in the tenant.
+// volume per server is total volumes / total servers.
+// we validate during input to ensure that volumes is a
+// multiple of servers.
+func VolumesPerServer(volumes, servers int32) int32 {
+	return volumes / servers
+}
+
+// CapacityPerVolume returns capacity per volume
+// capacity has total raw capacity required in MinIO tenant.
+// divide total capacity by total drives to extract capacity per
+// volume.
+func CapacityPerVolume(capacity string, volumes int32) (*resource.Quantity, error) {
+	totalQuantity, err := resource.ParseQuantity(capacity)
+	if err != nil {
+		return nil, err
+	}
+	totalBytes, ok := totalQuantity.AsInt64()
+	if !ok {
+		totalBytes = totalQuantity.AsDec().UnscaledBig().Int64()
+	}
+	bytesPerVolume := totalBytes / int64(volumes)
+	return resource.NewQuantity(bytesPerVolume, totalQuantity.Format), nil
+}
+
+// ToYaml takes a slice of values, and returns corresponding YAML
+// representation as a string slice
+func ToYaml(objs []runtime.Object) ([]string, error) {
+	manifests := make([]string, len(objs))
+	for i, obj := range objs {
+		o, err := yaml.Marshal(obj)
+		if err != nil {
+			return []string{}, err
+		}
+		manifests[i] = string(o)
+	}
+
+	return manifests, nil
 }

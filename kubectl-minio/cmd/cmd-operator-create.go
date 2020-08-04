@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/markbates/pkger"
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/spf13/cobra"
@@ -38,114 +37,98 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 const (
 	operatorCreateDesc = `
 'create' command creates MinIO Operator deployment along with all the dependencies.`
+	operatorCreateExample = `  kubectl minio operator create`
 )
 
 type operatorCreateCmd struct {
-	out            io.Writer
-	errOut         io.Writer
-	image          string
-	ns             string
-	nsToWatch      string
-	clusterDomain  string
-	serviceAccount string
+	out          io.Writer
+	errOut       io.Writer
+	output       bool
+	operatorOpts resources.OperatorOptions
+	steps        []runtime.Object
 }
 
 func newOperatorCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
-	i := &operatorCreateCmd{out: out, errOut: errOut}
+	o := &operatorCreateCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "Create MinIO Operator deployment",
-		Long:  operatorCreateDesc,
+		Use:     "create",
+		Short:   "Create MinIO Operator deployment",
+		Long:    operatorCreateDesc,
+		Example: operatorCreateExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 0 {
 				return errors.New("this command does not accept arguments")
 			}
-			return i.run()
+			return o.run()
 		},
 	}
 
 	f := cmd.Flags()
-	f.StringVarP(&i.image, "image", "i", helpers.DefaultOperatorImage, "MinIO Operator image")
-	f.StringVarP(&i.ns, "namespace", "n", helpers.DefaultNamespace, "If present, the namespace scope for this request ")
-	f.StringVarP(&i.serviceAccount, "service-account", "", helpers.DefaultServiceAccount, "ServiceAccount for MinIO Operator")
-	f.StringVarP(&i.clusterDomain, "cluster-domain", "d", helpers.DefaultClusterDomain, "Cluster domain of the Kubernetes cluster")
-	f.StringVarP(&i.nsToWatch, "namespace-to-watch", "", "", "Namespace where MinIO Operator looks for MinIO Instances, leave empty for all namespaces")
+	f.StringVarP(&o.operatorOpts.Image, "image", "i", helpers.DefaultOperatorImage, "operator image")
+	f.StringVarP(&o.operatorOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&o.operatorOpts.ClusterDomain, "cluster-domain", "d", helpers.DefaultClusterDomain, "cluster domain of the Kubernetes cluster")
+	f.StringVar(&o.operatorOpts.ServiceAccount, "service-account", helpers.DefaultServiceAccount, "service account for operator")
+	f.StringVar(&o.operatorOpts.NSToWatch, "namespace-to-watch", "", "namespace where operator looks for MinIO tenants, leave empty for all namespaces")
+	f.StringVar(&o.operatorOpts.ImagePullSecret, "image-pull-secret", "", "image pull secret to be used for pulling operator image")
+	f.BoolVarP(&o.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	return cmd
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (i *operatorCreateCmd) run() error {
-	sch := runtime.NewScheme()
-	_ = scheme.AddToScheme(sch)
-	_ = apiextensionv1.AddToScheme(sch)
-	decode := serializer.NewCodecFactory(sch).UniversalDeserializer().Decode
+func (o *operatorCreateCmd) run() error {
+	sa := resources.NewServiceAccountForOperator(o.operatorOpts.ServiceAccount, o.operatorOpts.NS)
+	crb := resources.NewCluterRoleBindingForOperator(o.operatorOpts.NS, o.operatorOpts.ServiceAccount)
+	d := resources.NewDeploymentForOperator(o.operatorOpts)
 
-	crd, err := pkger.Open("/static/crd.yaml")
-	if err != nil {
-		return err
-	}
-	defer crd.Close()
-	obj, _, err := decode(helpers.StreamToByte(crd), nil, nil)
-	if err != nil {
-		return err
+	if !o.output {
+		client, err := helpers.GetKubeClient()
+		if err != nil {
+			return err
+		}
+		extclient, err := helpers.GetKubeExtensionClient()
+		if err != nil {
+			return err
+		}
+		if err = createCRD(extclient, crdObj); err != nil {
+			return err
+		}
+		if err = createCR(client, crObj); err != nil {
+			return err
+		}
+		if err = createSA(client, sa); err != nil {
+			return err
+		}
+		if err = createClusterRB(client, crb); err != nil {
+			return err
+		}
+		return createDeployment(client, d)
 	}
 
-	crdObj := obj.(*apiextensionv1.CustomResourceDefinition)
-
-	cr, err := pkger.Open("/static/cluster-role.yaml")
+	o.steps = append(o.steps, crdObj, crObj, sa, crb, d)
+	op, err := helpers.ToYaml(o.steps)
 	if err != nil {
 		return err
 	}
-	defer cr.Close()
-	obj, _, err = decode(helpers.StreamToByte(cr), nil, nil)
-	if err != nil {
-		return err
+	for _, s := range op {
+		fmt.Printf(s)
+		fmt.Println("---")
 	}
-
-	crObj := obj.(*rbacv1.ClusterRole)
-	sa := resources.NewServiceAccountForOperator(i.serviceAccount, i.ns)
-	crb := resources.NewCluterRoleBindingForOperator(i.ns, i.serviceAccount)
-	d := resources.NewDeploymentForOperator(i.ns, i.serviceAccount, i.image, i.clusterDomain, i.nsToWatch)
-
-	client, err := helpers.GetKubeClient()
-	if err != nil {
-		return err
-	}
-	extclient, err := helpers.GetKubeExtensionClient()
-	if err != nil {
-		return err
-	}
-	if err = createCRD(extclient, crdObj); err != nil {
-		return err
-	}
-	if err = createCR(client, crObj); err != nil {
-		return err
-	}
-	if err = createSA(client, sa); err != nil {
-		return err
-	}
-	if err = createClusterRB(client, crb); err != nil {
-		return err
-	}
-	return createDeployment(client, d)
+	return nil
 }
 
 func createCRD(client *apiextension.Clientset, crd *apiextensionv1.CustomResourceDefinition) error {
 	_, err := client.ApiextensionsV1beta1().CustomResourceDefinitions().Create(context.Background(), crd, v1.CreateOptions{})
 	if err != nil {
 		if kerrors.IsAlreadyExists(err) {
-			fmt.Printf("CustomResourceDefinition %s: already present, skipped\n", crd.ObjectMeta.Name)
-			return nil
+			return fmt.Errorf("CustomResourceDefinition %s: already present, skipped", crd.ObjectMeta.Name)
 		}
 		return err
 	}
@@ -157,8 +140,7 @@ func createCR(client *kubernetes.Clientset, cr *rbacv1.ClusterRole) error {
 	_, err := client.RbacV1().ClusterRoles().Create(context.Background(), cr, v1.CreateOptions{})
 	if err != nil {
 		if kerrors.IsAlreadyExists(err) {
-			fmt.Printf("ClusterRole %s: already present, skipped\n", cr.ObjectMeta.Name)
-			return nil
+			return fmt.Errorf("ClusterRole %s: already present, skipped", cr.ObjectMeta.Name)
 		}
 		return err
 	}
@@ -170,8 +152,7 @@ func createSA(client *kubernetes.Clientset, sa *corev1.ServiceAccount) error {
 	_, err := client.CoreV1().ServiceAccounts(sa.ObjectMeta.Namespace).Create(context.Background(), sa, v1.CreateOptions{})
 	if err != nil {
 		if kerrors.IsAlreadyExists(err) {
-			fmt.Printf("ServiceAccount %s: already present, skipped\n", sa.ObjectMeta.Name)
-			return nil
+			return fmt.Errorf("ServiceAccount %s: already present, skipped", sa.ObjectMeta.Name)
 		}
 		return err
 	}
@@ -183,8 +164,7 @@ func createClusterRB(client *kubernetes.Clientset, crb *rbacv1.ClusterRoleBindin
 	_, err := client.RbacV1().ClusterRoleBindings().Create(context.Background(), crb, v1.CreateOptions{})
 	if err != nil {
 		if kerrors.IsAlreadyExists(err) {
-			fmt.Printf("ClusterRoleBinding %s: already present, skipped\n", crb.ObjectMeta.Name)
-			return nil
+			return fmt.Errorf("ClusterRoleBinding %s: already present, skipped", crb.ObjectMeta.Name)
 		}
 		return err
 	}
@@ -196,8 +176,7 @@ func createDeployment(client *kubernetes.Clientset, d *appsv1.Deployment) error 
 	_, err := client.AppsV1().Deployments(d.ObjectMeta.Namespace).Create(context.Background(), d, v1.CreateOptions{})
 	if err != nil {
 		if kerrors.IsAlreadyExists(err) {
-			fmt.Printf("MinIO Operator Deployment %s: already present, skipped\n", d.ObjectMeta.Name)
-			return nil
+			return fmt.Errorf("MinIO Operator Deployment %s: already present, skipped", d.ObjectMeta.Name)
 		}
 		return err
 	}

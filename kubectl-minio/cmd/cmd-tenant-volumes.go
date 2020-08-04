@@ -25,15 +25,15 @@ import (
 )
 
 const (
-	tenantVolumeDesc = `
-'tenant' command allows interaction with MinIO tenant's zones.`
+	volumeDesc = `
+'volume' is the top level command for managing a tenant's zones.`
 )
 
 func newVolumeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "volume",
-		Short: "Manage MinIO Tenant Volumes",
-		Long:  tenantVolumeDesc,
+		Short: "Manage tenant volumes",
+		Long:  volumeDesc,
 	}
 
 	cmd.AddCommand(newVolumeAddCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))

@@ -25,16 +25,18 @@ Options:
 - `--service-account=minio-operator`
 - `--cluster-domain=cluster.local`
 - `--namespace-to-watch=default`
+- `--image-pull-secret=`
+- `--output`
 
 ### Tenant
 
 #### MinIO Tenant Creation
 
-Command: `kubectl minio tenant create --name TENANT_NAME --secret SECRET_NAME --servers SERVERS --volumes VOLUMES --capacity DRIVE_CAPACITY [options]`
+Command: `kubectl minio tenant create --name TENANT_NAME --secret SECRET_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
 
 Creates a MinIO Tenant based on the passed values.
 
-example: `kubectl minio tenant create --name tenant1 --secret cred-secret --servers 4 --volumes 2 --capacity 1Ti`
+example: `kubectl minio tenant create --name tenant1 --secret cred-secret --servers 4 --volumes 16 --capacity 16Ti`
 
 Options:
 
@@ -44,19 +46,23 @@ Options:
 - `--kms-secret=secret-name`
 - `--console-secret=secret-name`
 - `--cert-secret=secret-name`
+- `--image-pull-secret=`
+- `--output`
 
 #### Add Tenant Zones
 
-Command: `kubectl minio tenant volumes add --name TENANT_NAME --servers SERVERS --volumes DRIVES --capacity DRIVE_CAPACITY [options]`
+Command: `kubectl minio tenant volumes add --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
 
-Add new drives (and nodes) to existing MinIO Tenant.
+Add new volumes (and nodes) to existing MinIO Tenant.
 
-example: `kubectl minio tenant volumes add --name cluster1 --servers 4 --volumes 4 --capacity 1Ti`
+example: `kubectl minio tenant volumes add --name cluster1 --servers 4 --volumes 16 --capacity 16Ti`
 
 Options:
 
 - `--namespace=minio`
 - `--storageClass=local`
+- `--image-pull-secret=`
+- `--output`
 
 #### List Tenant Zones
 
@@ -81,6 +87,8 @@ example: `kubectl minio tenant upgrade --name cluster1 --image minio/minio:edge`
 Options:
 
 - `--namespace=minio`
+- `--image-pull-secret=`
+- `--output`
 
 #### Remove Tenant
 

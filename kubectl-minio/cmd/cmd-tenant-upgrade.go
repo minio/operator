@@ -26,32 +26,34 @@ import (
 	"strings"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/minio/kubectl-minio/cmd/resources"
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	upgradeDesc = `
-'upgrade' command upgrades a MinIO Cluster tenant to the specified MinIO version`
+'upgrade' command upgrades a MinIO tenant to the specified MinIO version`
+	upgradeExample = `  kubectl minio tenant upgrade --name tenant1 --image minio/minio:RELEASE.2020-08-08T04-50-06Z --namespace tenant1-ns`
 )
 
 type upgradeCmd struct {
-	out    io.Writer
-	errOut io.Writer
-	name   string
-	image  string
-	ns     string
+	out        io.Writer
+	errOut     io.Writer
+	output     bool
+	tenantOpts resources.TenantOptions
 }
 
 func newUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &upgradeCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:   "upgrade --name TENANT_NAME --image MINIO_IMAGE",
-		Short: "Upgrade Container Image for existing MinIO Tenant ",
+		Use:   "upgrade",
+		Short: "Upgrade MinIO image for existing tenant",
 		Long:  upgradeDesc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := c.validate(); err != nil {
@@ -62,43 +64,38 @@ func newUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 
 	f := cmd.Flags()
-	f.StringVar(&c.name, "name", "", "Name of the MinIO Tenant to be upgraded, e.g. Tenant1")
-	f.StringVarP(&c.image, "image", "i", helpers.DefaultTenantImage, "Target container image to which MinIO Tenant is to be upgraded")
-	f.StringVarP(&c.ns, "namespace", "n", helpers.DefaultNamespace, "If present, the namespace scope for this request")
+	f.StringVar(&c.tenantOpts.Name, "name", "", "name of the MinIO tenant to upgrade")
+	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "image to which tenant is to be upgraded")
+	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVar(&c.tenantOpts.ImagePullSecret, "image-pull-secrets", "", "image pull secret to be used for pulling MinIO image")
+	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
+
 	return cmd
 }
 
-func (c *upgradeCmd) validate() error {
-	if c.name == "" {
+func (u *upgradeCmd) validate() error {
+	if u.tenantOpts.Name == "" {
 		return errors.New("--name flag is required for tenant upgrade")
 	}
-	if c.image == "" {
+	if u.tenantOpts.Image == "" {
 		return errors.New("--image flag is required for tenant upgrade")
 	}
 	return nil
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (c *upgradeCmd) run(args []string) error {
+func (u *upgradeCmd) run(args []string) error {
 	// Create operator client
-	oclient, err := helpers.GetKubeOperatorClient()
-	if err != nil {
-		return err
-	}
-	err = upgradeTenant(oclient, c)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func upgradeTenant(client *operatorv1.Clientset, c *upgradeCmd) error {
-	t, err := client.MinioV1().Tenants(c.ns).Get(context.Background(), c.name, v1.GetOptions{})
+	client, err := helpers.GetKubeOperatorClient()
 	if err != nil {
 		return err
 	}
 
-	imageSplits := strings.Split(c.image, ":")
+	t, err := client.MinioV1().Tenants(u.tenantOpts.NS).Get(context.Background(), u.tenantOpts.Name, v1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	imageSplits := strings.Split(u.tenantOpts.Image, ":")
 	if len(imageSplits) == 1 {
 		return fmt.Errorf("MinIO operator does not allow images without RELEASE tags")
 	}
@@ -121,12 +118,29 @@ func upgradeTenant(client *operatorv1.Clientset, c *upgradeCmd) error {
 	// Verify if the new release tag is latest, if its not latest refuse to apply the new config.
 	if latest.Before(current) {
 		return fmt.Errorf("Refusing to downgrade the tenant %s to version %s, from %s",
-			c.name, c.image, t.Spec.Image)
+			u.tenantOpts.Name, u.tenantOpts.Image, t.Spec.Image)
 	}
 
 	// update the image
-	t.Spec.Image = c.image
-	if _, err := client.MinioV1().Tenants(c.ns).Update(context.Background(), t, v1.UpdateOptions{}); err != nil {
+	t.Spec.Image = u.tenantOpts.Image
+	if u.tenantOpts.ImagePullSecret != "" {
+		t.Spec.ImagePullSecret = corev1.LocalObjectReference{Name: u.tenantOpts.ImagePullSecret}
+	}
+
+	if !u.output {
+		return upgradeTenant(client, t)
+	}
+
+	o, err := yaml.Marshal(&t)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(o))
+	return nil
+}
+
+func upgradeTenant(client *operatorv1.Clientset, t *miniov1.Tenant) error {
+	if _, err := client.MinioV1().Tenants(t.Namespace).Update(context.Background(), t, v1.UpdateOptions{}); err != nil {
 		return err
 	}
 	fmt.Printf("Upgrading MinIO Tenant %s to MinIO Image %s\n", t.ObjectMeta.Name, t.Spec.Image)

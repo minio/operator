@@ -18,7 +18,6 @@ all: build
 getdeps:
 	@mkdir -p ${GOPATH}/bin
 	@which golangci-lint 1>/dev/null || (echo "Installing golangci-lint" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.27.0)
-	@go get sigs.k8s.io/controller-tools/cmd/controller-gen
 
 verify: govet gotest lint
 
