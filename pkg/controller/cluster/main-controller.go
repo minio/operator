@@ -501,6 +501,11 @@ func (c *Controller) syncHandler(key string) error {
 				if err != nil {
 					return err
 				}
+				// Prepare for zone expansion by deleting existing pods,
+				// this help all the pods to synchronize faster.
+				if err := c.deleteTenantPods(ctx, mi); err != nil {
+					return err
+				}
 			} else {
 				return err
 			}
@@ -950,4 +955,12 @@ func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.
 		}
 	}
 	return nil
+}
+
+// deleteTenantPods deletes all the pods for a defined tenant.
+func (c *Controller) deleteTenantPods(ctx context.Context, tenant *miniov1.Tenant) error {
+	listOpts := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", miniov1.TenantLabel, tenant.Name),
+	}
+	return c.kubeClientSet.CoreV1().Pods(tenant.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOpts)
 }
