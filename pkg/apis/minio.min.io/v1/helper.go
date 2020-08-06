@@ -93,6 +93,12 @@ func (t *Tenant) KESExternalCert() bool {
 	return t.Spec.KES != nil && t.Spec.KES.ExternalCertSecret != nil
 }
 
+// KESClientCert returns true is the user has provided a secret
+// that contains CA cert, client cert and client key for KES pods
+func (t *Tenant) KESClientCert() bool {
+	return t.Spec.KES != nil && t.Spec.KES.ClientCertSecret != nil
+}
+
 // ConsoleExternalCert returns true is the user has provided a secret
 // that contains CA cert, server cert and server key for Console pods
 func (t *Tenant) ConsoleExternalCert() bool {

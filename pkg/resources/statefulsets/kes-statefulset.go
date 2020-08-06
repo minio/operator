@@ -93,9 +93,14 @@ func KESServerContainer(t *miniov1.Tenant) corev1.Container {
 // NewForKES creates a new KES StatefulSet for the given Cluster.
 func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 	var replicas = t.KESReplicas()
+	// certificate files used by the KES server
 	var certPath = "server.crt"
 	var keyPath = "server.key"
+
 	var serverCertSecret string
+	// clientCertSecret holds certificate files (public.crt, private.key and ca.crt) used by KES in mTLS with a KMS (eg: authentication with Vault)
+	var clientCertSecret string
+
 	var serverCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: certPath},
 		{Key: "private.key", Path: keyPath},
@@ -119,29 +124,50 @@ func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 		}
 	}
 
+	if t.KESClientCert() {
+		clientCertSecret = t.Spec.KES.ClientCertSecret.Name
+	}
+
+	var volumeProjections []corev1.VolumeProjection
+
+	if t.Spec.KES.Configuration.Name != "" {
+		volumeProjections = append(volumeProjections, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: t.Spec.KES.Configuration.Name,
+				},
+				Items: configPath,
+			},
+		})
+	}
+
+	if serverCertSecret != "" {
+		volumeProjections = append(volumeProjections, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: serverCertSecret,
+				},
+				Items: serverCertPaths,
+			},
+		})
+	}
+
+	if clientCertSecret != "" {
+		volumeProjections = append(volumeProjections, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: clientCertSecret,
+				},
+			},
+		})
+	}
+
 	podVolumes := []corev1.Volume{
 		{
 			Name: t.KESVolMountName(),
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					Sources: []corev1.VolumeProjection{
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: serverCertSecret,
-								},
-								Items: serverCertPaths,
-							},
-						},
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: t.Spec.KES.Configuration.Name,
-								},
-								Items: configPath,
-							},
-						},
-					},
+					Sources: volumeProjections,
 				},
 			},
 		},
