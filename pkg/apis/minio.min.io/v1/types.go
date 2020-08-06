@@ -209,6 +209,10 @@ type KESConfig struct {
 	// ExternalCertSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
 	// +optional
 	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
+	// ClientCertSecret allows a user to specify a custom root certificate, client certificate and client private key. This is
+	// used for adding client certificates on KES --> used for KES authentication against Vault or other KMS that supports mTLS.
+	// +optional
+	ClientCertSecret *LocalCertificateReference `json:"clientCertSecret,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
