@@ -76,7 +76,7 @@ spec:
         app: console
   ## Define configuration for KES (stateless and distributed key-management system)
   kes:
-    image: minio/kes:v0.10.1
+    image: minio/kes:v0.11.0
     replicas: 2
     kesSecret:
       name: kes-config
