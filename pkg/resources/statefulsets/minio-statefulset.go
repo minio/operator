@@ -117,10 +117,13 @@ func minioMetadata(t *miniov1.Tenant, zone *miniov1.Zone) metav1.ObjectMeta {
 	return meta
 }
 
-// MinIOSelector Returns the MinIO pods selector set in configuration.
-func MinIOSelector(t *miniov1.Tenant) *metav1.LabelSelector {
+// ContainerMatchLabels Returns the labels that match the Pods in the statefulset
+func ContainerMatchLabels(t *miniov1.Tenant, zone *miniov1.Zone) *metav1.LabelSelector {
+	labels := t.MinIOPodLabels()
+	// Add zone information so it's passed down to the underlying PVCs
+	labels[miniov1.ZoneLabel] = zone.Name
 	return &metav1.LabelSelector{
-		MatchLabels: t.MinIOPodLabels(),
+		MatchLabels: labels,
 	}
 }
 
@@ -361,7 +364,7 @@ func NewForMinIOZone(t *miniov1.Tenant, zone *miniov1.Zone, serviceName string, 
 				Type: miniov1.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: t.Spec.PodManagementPolicy,
-			Selector:            MinIOSelector(t),
+			Selector:            ContainerMatchLabels(t, zone),
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
