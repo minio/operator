@@ -17,6 +17,7 @@ rules:
       - create
       - list
       - delete
+      - deletecollection
   - apiGroups:
       - apps
     resources:
