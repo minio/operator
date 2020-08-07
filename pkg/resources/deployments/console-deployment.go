@@ -82,7 +82,7 @@ func consoleSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 
 // ConsoleVolumeMounts builds the volume mounts for Console container.
 func ConsoleVolumeMounts(t *miniov1.Tenant) (mounts []corev1.VolumeMount) {
-	if t.AutoCert() || t.ConsoleExternalCert() {
+	if t.TLS() || t.ConsoleExternalCert() {
 		mounts = []corev1.VolumeMount{
 			{
 				Name:      t.ConsoleVolMountName(),
@@ -90,7 +90,7 @@ func ConsoleVolumeMounts(t *miniov1.Tenant) (mounts []corev1.VolumeMount) {
 			},
 		}
 	}
-	return
+	return mounts
 }
 
 // Builds the Console container for a Tenant.
@@ -106,7 +106,12 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 		Image: t.Spec.Console.Image,
 		Ports: []corev1.ContainerPort{
 			{
+				Name:          "http",
 				ContainerPort: miniov1.ConsolePort,
+			},
+			{
+				Name:          "https",
+				ContainerPort: miniov1.ConsoleTLSPort,
 			},
 		},
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
