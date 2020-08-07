@@ -63,9 +63,8 @@ import (
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
 
-const controllerAgentName = "minio-operator"
-
 const (
+	controllerAgentName = "minio-operator"
 	// SuccessSynced is used as part of the Event 'reason' when a Tenant is synced
 	SuccessSynced = "Synced"
 	// ErrResourceExists is used as part of the Event 'reason' when a Tenant fails
@@ -447,12 +446,17 @@ func (c *Controller) syncHandler(key string) error {
 	if err != nil {
 		return err
 	}
+
 	// Only 1 minio tenant per namespace allowed.
 	if len(li) > 1 {
-		if _, err = c.updateTenantStatus(ctx, mi, statusFailedAlreadyExists, 0); err != nil {
-			return err
+		for _, t := range li {
+			if t.Status.CurrentState != statusReady {
+				if _, err = c.updateTenantStatus(ctx, t, statusFailedAlreadyExists, 0); err != nil {
+					return err
+				}
+				return fmt.Errorf("Failed creating MinIO Tenant '%s' because another MinIO Tenant already exists in the namespace '%s'", t.Name, mi.Namespace)
+			}
 		}
-		return fmt.Errorf("Failed creating MinIO Tenant '%s' because another MinIO Tenant '%s' already exists in the namespace '%s'", mi.Name, li[0].Name, mi.Namespace)
 	}
 
 	// For each zone check it's stateful set
