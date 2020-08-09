@@ -73,6 +73,11 @@ func (in *ConsoleConfiguration) DeepCopyInto(out *ConsoleConfiguration) {
 		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.ExternalCertSecret != nil {
+		in, out := &in.ExternalCertSecret, &out.ExternalCertSecret
+		*out = new(LocalCertificateReference)
+		**out = **in
+	}
 	return
 }
 
@@ -101,6 +106,11 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 	}
 	if in.ExternalCertSecret != nil {
 		in, out := &in.ExternalCertSecret, &out.ExternalCertSecret
+		*out = new(LocalCertificateReference)
+		**out = **in
+	}
+	if in.ClientCertSecret != nil {
+		in, out := &in.ClientCertSecret, &out.ClientCertSecret
 		*out = new(LocalCertificateReference)
 		**out = **in
 	}
