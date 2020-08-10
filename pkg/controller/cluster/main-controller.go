@@ -666,7 +666,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	if mi.HasConsoleEnabled() {
 		// Get the Deployment with the name specified in MirrorInstace.spec
-		if _, err := c.deploymentLister.Deployments(mi.Namespace).Get(mi.ConsoleDeploymentName()); err != nil {
+		if consoleDeployment, err = c.deploymentLister.Deployments(mi.Namespace).Get(mi.ConsoleDeploymentName()); err != nil {
 			if apierrors.IsNotFound(err) {
 				if !mi.HasCredsSecret() || !mi.HasConsoleSecret() {
 					msg := "Please set the credentials"
@@ -711,6 +711,22 @@ func (c *Controller) syncHandler(key string) error {
 				}
 			} else {
 				return err
+			}
+		} else {
+			if consoleDeployment != nil && !mi.Spec.Console.EqualImage(consoleDeployment.Spec.Template.Spec.Containers[0].Image) {
+				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingConsoleVersion, totalReplicas); err != nil {
+					return err
+				}
+				klog.V(2).Infof("Updating Tenant %s console version %s, to: %s", name,
+					mi.Spec.Console.Image, consoleDeployment.Spec.Template.Spec.Containers[0].Image)
+				consoleDeployment = deployments.NewConsole(mi)
+				_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, consoleDeployment, uOpts)
+				// If an error occurs during Update, we'll requeue the item so we can
+				// attempt processing again later. This could have been caused by a
+				// temporary network failure, or any other transient reason.
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -769,22 +785,6 @@ func (c *Controller) syncHandler(key string) error {
 			} else {
 				return err
 			}
-		}
-	}
-
-	if mi.HasConsoleEnabled() && consoleDeployment != nil && !mi.Spec.Console.EqualImage(consoleDeployment.Spec.Template.Spec.Containers[0].Image) {
-		if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingConsoleVersion, totalReplicas); err != nil {
-			return err
-		}
-		klog.V(4).Infof("Updating Tenant %s console version %s, to: %s", name,
-			mi.Spec.Console.Image, consoleDeployment.Spec.Template.Spec.Containers[0].Image)
-		consoleDeployment = deployments.NewConsole(mi)
-		_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, consoleDeployment, uOpts)
-		// If an error occurs during Update, we'll requeue the item so we can
-		// attempt processing again later. This could have been caused by a
-		// temporary network failure, or any other transient reason.
-		if err != nil {
-			return err
 		}
 	}
 
