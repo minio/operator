@@ -78,7 +78,6 @@ const (
 	MessageResourceSynced = "Tenant synced successfully"
 	// Standard Status messages for Tenant
 	statusReady                         = "Ready"
-	statusAddingZone                    = "Adding New MinIO Zone"
 	statusProvisioningCIService         = "Provisioning MinIO Cluster IP Service"
 	statusProvisioningHLService         = "Provisioning MinIO Headless Service"
 	statusProvisioningStatefulSet       = "Provisioning MinIO Statefulset"
@@ -517,9 +516,9 @@ func (c *Controller) syncHandler(key string) error {
 			// If the number of the replicas on the Tenant resource is specified, and the
 			// number does not equal the current desired replicas on the StatefulSet, we
 			// should update the StatefulSet resource.
-			// If the status already indicates "statusAddingZone", no need for another
+			// If the status already indicates "statusUpdatingContainerArguments", no need for another
 			// thread to enter this block - we don't want to get in a race for deletion and creation of CSRs
-			if zone.Servers != *ss.Spec.Replicas && mi.Status.CurrentState != statusAddingZone {
+			if zone.Servers != *ss.Spec.Replicas && mi.Status.CurrentState != statusUpdatingContainerArguments {
 				// warn the user that replica count of an existing zone can't be changed
 				if mi, err = c.updateTenantStatus(ctx, mi, fmt.Sprintf("Can't modify server count for zone %s", zone.Name), 0); err != nil {
 					return err
