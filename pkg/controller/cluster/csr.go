@@ -139,7 +139,7 @@ func (c *Controller) createCSR(ctx context.Context, mi *miniov1.Tenant) error {
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
 	// Create secret for MinIO Statefulset to use
-	err = c.createSecret(ctx, mi, mi.MinIOPodLabels(), mi.MinIOTLSSecretName(), mi.Namespace, encodedPrivKey, certbytes)
+	err = c.createSecret(ctx, mi, mi.MinIOPodLabels(), mi.MinIOTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.MinIOTLSSecretName(), err)
 		return err
@@ -251,12 +251,12 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 	}
 }
 
-func (c *Controller) createSecret(ctx context.Context, mi *miniov1.Tenant, labels map[string]string, name, namespace string, pkBytes, certBytes []byte) error {
+func (c *Controller) createSecret(ctx context.Context, mi *miniov1.Tenant, labels map[string]string, secretName string, pkBytes, certBytes []byte) error {
 	secret := &corev1.Secret{
 		Type: "Opaque",
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+			Name:      secretName,
+			Namespace: mi.Namespace,
 			Labels:    labels,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
@@ -271,10 +271,8 @@ func (c *Controller) createSecret(ctx context.Context, mi *miniov1.Tenant, label
 			"public.crt":  certBytes,
 		},
 	}
-	if _, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, secret, metav1.CreateOptions{}); err != nil {
-		return err
-	}
-	return nil
+	_, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+	return err
 }
 
 func parseCertificate(r io.Reader) (*x509.Certificate, error) {

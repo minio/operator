@@ -23,6 +23,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -30,10 +31,12 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -51,7 +54,10 @@ import (
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
 
-	"github.com/minio/minio-go/v7/pkg/set"
+	"github.com/dgrijalva/jwt-go"
+	jwtreq "github.com/dgrijalva/jwt-go/request"
+	"github.com/gorilla/mux"
+	"github.com/minio/minio/pkg/auth"
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
@@ -89,7 +95,6 @@ const (
 	statusWaitingKESCert                = "Waiting for KES TLS Certificate"
 	statusWaitingConsoleCert            = "Waiting for Console TLS Certificate"
 	statusUpdatingMinIOVersion          = "Updating MinIO Version"
-	statusUpdatingContainerArguments    = "Updating Container Arguments"
 	statusUpdatingConsoleVersion        = "Updating Console Version"
 	statusUpdatingResourceRequirements  = "Updating Resource Requirements"
 	statusUpdatingAffinity              = "Updating Pod Affinity"
@@ -153,6 +158,9 @@ type Controller struct {
 
 	// Use a go template to render the hosts string
 	hostsTemplate string
+
+	// Webhook server instance
+	ws *http.Server
 }
 
 // NewController returns a new sample controller
@@ -195,6 +203,9 @@ func NewController(
 		recorder:                recorder,
 		hostsTemplate:           hostsTemplate,
 	}
+
+	// Initialize operator webhook handlers
+	controller.ws = configureWebhookServer(controller)
 
 	klog.Info("Setting up event handlers")
 	// Set up an event handler for when Tenant resources change
@@ -242,11 +253,138 @@ func NewController(
 	return controller
 }
 
+func (c *Controller) validateRequest(r *http.Request, secret *v1.Secret) error {
+	tokenStr, err := jwtreq.AuthorizationHeaderExtractor.ExtractToken(r)
+	if err != nil {
+		return err
+	}
+
+	stdClaims := &jwt.StandardClaims{}
+	token, err := jwt.ParseWithClaims(tokenStr, stdClaims, func(token *jwt.Token) (interface{}, error) {
+		return secret.Data[miniov1.WebhookOperatorPassword], nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if !token.Valid {
+		return fmt.Errorf(http.StatusText(http.StatusForbidden))
+	}
+
+	if stdClaims.Issuer != string(secret.Data[miniov1.WebhookOperatorUsername]) {
+		return fmt.Errorf(http.StatusText(http.StatusForbidden))
+	}
+
+	return nil
+}
+
+func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1.Tenant) (*v1.Secret, error) {
+	secret, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, miniov1.WebhookOperatorSecret, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			cred, err := auth.GetNewCredentials()
+			if err != nil {
+				return nil, err
+			}
+			secret = &corev1.Secret{
+				Type: "Opaque",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      miniov1.WebhookOperatorSecret,
+					Namespace: mi.Namespace,
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(mi, schema.GroupVersionKind{
+							Group:   miniov1.SchemeGroupVersion.Group,
+							Version: miniov1.SchemeGroupVersion.Version,
+							Kind:    miniov1.MinIOCRDResourceKind,
+						}),
+					},
+				},
+				Data: map[string][]byte{
+					miniov1.WebhookOperatorUsername: []byte(cred.AccessKey),
+					miniov1.WebhookOperatorPassword: []byte(cred.SecretKey),
+				},
+			}
+			return c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+		}
+		return nil, err
+	}
+	return secret, nil
+}
+
+// Supported remote envs
+const (
+	envMinIOArgs = "MINIO_ARGS"
+)
+
+// BucketSrvHandler - POST /webhook/api/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
+func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
+}
+
+// GetenvHandler - GET /webhook/api/v1/getenv/{namespace}/{name}?key={env}
+func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	namespace := vars["namespace"]
+	name := vars["name"]
+	key := vars["key"]
+
+	secret, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(r.Context(),
+		miniov1.WebhookOperatorSecret, metav1.GetOptions{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	if err = c.validateRequest(r, secret); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	// Get the Tenant resource with this namespace/name
+	mi, err := c.tenantsLister.Tenants(namespace).Get(name)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// The Tenant resource may no longer exist, in which case we stop processing.
+			http.Error(w, fmt.Sprintf("Tenant '%s' in work queue no longer exists", key), http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	mi.EnsureDefaults()
+	miniov1.InitGlobals(mi)
+
+	// Validate the MinIO Instance
+	if err = mi.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	switch key {
+	case envMinIOArgs:
+		args := strings.Join(statefulsets.GetContainerArgs(mi, c.hostsTemplate), " ")
+		klog.Infof("%s value is %s", key, args)
+
+		_, _ = w.Write([]byte(args))
+		w.(http.Flusher).Flush()
+	default:
+		http.Error(w, fmt.Sprintf("%s env key is not supported yet", key), http.StatusBadRequest)
+		return
+	}
+}
+
 // Start will set up the event handlers for types we are interested in, as well
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
+	go func() {
+		if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
+			klog.Infof("HTTP server ListenAndServe: %v", err)
+			return
+		}
+	}()
 
 	// Start the informer factories to begin populating the informer caches
 	klog.Info("Starting Tenant controller")
@@ -268,6 +406,12 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 // Stop is called to shutdown the controller
 func (c *Controller) Stop() {
+	klog.Info("Stopping the minio controller webhook")
+	// Wait upto 5 secs and terminate all connections.
+	tctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	_ = c.ws.Shutdown(tctx)
+	cancel()
+
 	klog.Info("Stopping the minio controller")
 	c.workqueue.ShutDown()
 }
@@ -333,6 +477,17 @@ func (c *Controller) processNextWorkItem() bool {
 	return true
 }
 
+const slashSeparator = "/"
+
+func key2NamespaceName(key string) (namespace, name string) {
+	key = strings.TrimPrefix(key, slashSeparator)
+	m := strings.Index(key, slashSeparator)
+	if m < 0 {
+		return "", key
+	}
+	return key[:m], key[m+len(slashSeparator):]
+}
+
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the Tenant resource
 // with the current status of the resource.
@@ -345,11 +500,12 @@ func (c *Controller) syncHandler(key string) error {
 	var consoleDeployment *appsv1.Deployment
 
 	// Convert the namespace/name string into a distinct namespace and name
-	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	if err != nil {
+	if key == "" {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))
 		return nil
 	}
+
+	namespace, name := key2NamespaceName(key)
 
 	// Get the Tenant resource with this namespace/name
 	mi, err := c.tenantsLister.Tenants(namespace).Get(name)
@@ -373,6 +529,11 @@ func (c *Controller) syncHandler(key string) error {
 		if _, err2 = c.updateTenantStatus(ctx, mi, err.Error(), 0); err2 != nil {
 			klog.V(2).Infof(err2.Error())
 		}
+		return err
+	}
+
+	secret, err := c.applyOperatorWebhookSecret(ctx, mi)
+	if err != nil {
 		return err
 	}
 
@@ -499,42 +660,22 @@ func (c *Controller) syncHandler(key string) error {
 				if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningStatefulSet, 0); err != nil {
 					return err
 				}
-				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
+
+				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate)
 				ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 				if err != nil {
 					return err
 				}
-				// Prepare for zone expansion by deleting existing pods,
-				// this help all the pods to synchronize faster.
-				if err := c.deleteTenantPods(ctx, mi); err != nil {
-					return err
-				}
+
+				// Restart the services to fetch the new args, ignore any error.
+				_ = adminClnt.ServiceRestart(ctx)
 			} else {
 				return err
 			}
 		} else {
-			// If the number of the replicas on the Tenant resource is specified, and the
-			// number does not equal the current desired replicas on the StatefulSet, we
-			// should update the StatefulSet resource.
-			// If the status already indicates "statusUpdatingContainerArguments", no need for another
-			// thread to enter this block - we don't want to get in a race for deletion and creation of CSRs
-			if zone.Servers != *ss.Spec.Replicas && mi.Status.CurrentState != statusUpdatingContainerArguments {
+			if zone.Servers != *ss.Spec.Replicas {
 				// warn the user that replica count of an existing zone can't be changed
 				if mi, err = c.updateTenantStatus(ctx, mi, fmt.Sprintf("Can't modify server count for zone %s", zone.Name), 0); err != nil {
-					return err
-				}
-			}
-
-			// verify the container arguments
-			currentArgsSet := set.CreateStringSet(ss.Spec.Template.Spec.Containers[0].Args...)
-			newArgsSet := set.CreateStringSet(statefulsets.GetContainerArgs(mi, c.hostsTemplate)...)
-			if !currentArgsSet.Equals(newArgsSet) {
-				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingContainerArguments, ss.Status.Replicas); err != nil {
-					return err
-				}
-				klog.V(4).Infof("container arguments updates for zone %s", zone.Name)
-				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
-				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
 			}
@@ -544,7 +685,7 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 				klog.V(4).Infof("resource requirements updates for zone %s", zone.Name)
-				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
+				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
@@ -555,7 +696,7 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 				klog.V(4).Infof("affinity update for zone %s", zone.Name)
-				ss = statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
+				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
@@ -657,7 +798,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		for _, zone := range mi.Spec.Zones {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewForMinIOZone(mi, &zone, hlSvc.Name, c.hostsTemplate)
+			ss := statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate)
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
@@ -958,12 +1099,4 @@ func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.
 		}
 	}
 	return nil
-}
-
-// deleteTenantPods deletes all the pods for a defined tenant.
-func (c *Controller) deleteTenantPods(ctx context.Context, tenant *miniov1.Tenant) error {
-	listOpts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", miniov1.TenantLabel, tenant.Name),
-	}
-	return c.kubeClientSet.CoreV1().Pods(tenant.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOpts)
 }
