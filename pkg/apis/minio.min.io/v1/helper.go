@@ -44,6 +44,21 @@ import (
 	"github.com/minio/minio/pkg/madmin"
 )
 
+// Webhook API constants
+const (
+	WebhookAPIVersion       = "/webhook/v1"
+	WebhookDefaultPort      = "4222"
+	WebhookOperatorSecret   = "operator-webhook-secret"
+	WebhookOperatorUsername = "webhookUsername"
+	WebhookOperatorPassword = "webhookPassword"
+)
+
+// List of webhook APIs
+const (
+	WebhookAPIGetenv        = WebhookAPIVersion + "/getenv"
+	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
+)
+
 type hostsTemplateValues struct {
 	StatefulSet string
 	CIService   string

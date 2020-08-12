@@ -89,7 +89,7 @@ func (c *Controller) createKESTLSCSR(ctx context.Context, mi *miniov1.Tenant) er
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
 	// Create secret for KES Statefulset to use
-	err = c.createSecret(ctx, mi, mi.KESPodLabels(), mi.KESTLSSecretName(), mi.Namespace, encodedPrivKey, certbytes)
+	err = c.createSecret(ctx, mi, mi.KESPodLabels(), mi.KESTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.KESTLSSecretName(), err)
 		return err
@@ -142,7 +142,7 @@ func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, mi *miniov1.Te
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
 	// Create secret for KES Statefulset to use
-	err = c.createSecret(ctx, mi, mi.MinIOPodLabels(), mi.MinIOClientTLSSecretName(), mi.Namespace, encodedPrivKey, certbytes)
+	err = c.createSecret(ctx, mi, mi.MinIOPodLabels(), mi.MinIOClientTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.MinIOClientTLSSecretName(), err)
 		return err
