@@ -302,6 +302,16 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1
 				Data: map[string][]byte{
 					miniov1.WebhookOperatorUsername: []byte(cred.AccessKey),
 					miniov1.WebhookOperatorPassword: []byte(cred.SecretKey),
+					miniov1.WebhookMinIOArgs: []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
+						"env",
+						cred.AccessKey,
+						cred.SecretKey,
+						fmt.Sprintf("operator.minio-operator.svc.%s",
+							miniov1.ClusterDomain),
+						miniov1.WebhookDefaultPort,
+						miniov1.WebhookAPIGetenv,
+						mi.Namespace,
+						mi.Name)),
 				},
 			}
 			return c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, secret, metav1.CreateOptions{})

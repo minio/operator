@@ -38,8 +38,6 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret) []corev1.EnvVa
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Env...)
 
-	envScheme := "env"
-
 	// Enable `mc admin update` style updates to MinIO binaries
 	// within the container, only operator is supposed to perform
 	// these operations.
@@ -51,17 +49,14 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret) []corev1.EnvVa
 		Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
 	}, corev1.EnvVar{
 		Name: "MINIO_ARGS",
-		Value: fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
-			envScheme,
-			string(wsSecret.Data[miniov1.WebhookOperatorUsername]),
-			string(wsSecret.Data[miniov1.WebhookOperatorPassword]),
-			fmt.Sprintf("operator.minio-operator.svc.%s",
-				miniov1.ClusterDomain),
-			miniov1.WebhookDefaultPort,
-			miniov1.WebhookAPIGetenv,
-			t.Namespace,
-			t.Name,
-		),
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: miniov1.WebhookOperatorSecret,
+				},
+				Key: miniov1.WebhookMinIOArgs,
+			},
+		},
 	})
 
 	// Add env variables from credentials secret, if no secret provided, dont use
