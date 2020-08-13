@@ -37,7 +37,7 @@ spec:
       prometheus.io/port: "9000"
       prometheus.io/scrape: "true"
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2020-08-08T04-50-06Z
+  image: minio/minio:RELEASE.2020-08-13T02-39-50Z
   ## Secret with credentials to be used by MinIO instance.
   credsSecret:
     name: minio-creds-secret
@@ -147,3 +147,9 @@ spec:
   ## Affinity settings for MinIO pods. Read more about affinity
   ## here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity.
   # affinity:
+
+  ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
+  ## This is applied to MinIO pods only.
+  ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
+  # priorityClassName: high-priority
+  

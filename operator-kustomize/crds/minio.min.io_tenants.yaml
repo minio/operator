@@ -459,6 +459,11 @@ spec:
             podManagementPolicy:
               description: Pod Management Policy for pod created by StatefulSet
               type: string
+            priorityClassName:
+              description: PriorityClassName indicates the Pod priority and hence
+                importance of a Pod relative to other Pods. This is applied to MinIO
+                pods only. Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
+              type: string
             requestAutoCert:
               description: 'RequestAutoCert allows user to enable Kubernetes based
                 TLS cert generation and signing as explained here: https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/'
