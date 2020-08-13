@@ -12,7 +12,7 @@ kind: Tenant
 metadata:
   name: upgrade-one-zone
 spec:
-  image: minio/minio:RELEASE.2020-07-24T22-43-05Z
+  image: minio/minio:RELEASE.2020-08-08T04-50-06Z
   zones:
     - servers: 1
       volumesPerServer: 4
