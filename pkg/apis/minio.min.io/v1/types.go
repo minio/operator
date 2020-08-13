@@ -110,6 +110,11 @@ type TenantSpec struct {
 	// Pods created as a part of this Tenant.
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
+	// This is applied to MinIO pods only.
+	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
+	// +optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
 }
 
 // TenantStatus is the status for a Tenant resource
