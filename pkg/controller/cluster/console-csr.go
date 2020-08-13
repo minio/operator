@@ -86,7 +86,7 @@ func (c *Controller) createConsoleTLSCSR(ctx context.Context, mi *miniov1.Tenant
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
 	// Create secret for Console Deployment to use
-	err = c.createSecret(ctx, mi, mi.ConsolePodLabels(), mi.ConsoleTLSSecretName(), mi.Namespace, encodedPrivKey, certbytes)
+	err = c.createSecret(ctx, mi, mi.ConsolePodLabels(), mi.ConsoleTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.ConsoleTLSSecretName(), err)
 		return err

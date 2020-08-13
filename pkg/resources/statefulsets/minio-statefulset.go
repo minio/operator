@@ -24,6 +24,7 @@ import (
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -32,10 +33,12 @@ import (
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
-func minioEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
+func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Env...)
+
+	envScheme := "env"
 
 	// Enable `mc admin update` style updates to MinIO binaries
 	// within the container, only operator is supposed to perform
@@ -46,6 +49,19 @@ func minioEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 	}, corev1.EnvVar{
 		Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
 		Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
+	}, corev1.EnvVar{
+		Name: "MINIO_ARGS",
+		Value: fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
+			envScheme,
+			string(wsSecret.Data[miniov1.WebhookOperatorUsername]),
+			string(wsSecret.Data[miniov1.WebhookOperatorPassword]),
+			fmt.Sprintf("operator.minio-operator.svc.%s",
+				miniov1.ClusterDomain),
+			miniov1.WebhookDefaultPort,
+			miniov1.WebhookAPIGetenv,
+			t.Namespace,
+			t.Name,
+		),
 	})
 
 	// Add env variables from credentials secret, if no secret provided, dont use
@@ -189,8 +205,8 @@ func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
 }
 
 // Builds the MinIO container for a Tenant.
-func zoneMinioServerContainer(t *miniov1.Tenant, zone *miniov1.Zone, hostsTemplate string) corev1.Container {
-	args := GetContainerArgs(t, hostsTemplate)
+func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, hostsTemplate string) corev1.Container {
+	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
 
 	liveProbe := probes(t)
 
@@ -205,7 +221,7 @@ func zoneMinioServerContainer(t *miniov1.Tenant, zone *miniov1.Zone, hostsTempla
 		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, zone),
 		Args:            args,
-		Env:             minioEnvironmentVars(t),
+		Env:             minioEnvironmentVars(t, wsSecret),
 		Resources:       zone.Resources,
 		LivenessProbe:   liveProbe,
 	}
@@ -213,8 +229,7 @@ func zoneMinioServerContainer(t *miniov1.Tenant, zone *miniov1.Zone, hostsTempla
 
 // GetContainerArgs returns the arguments that the MinIO container receives
 func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
-	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
-
+	var args []string
 	if len(t.Spec.Zones) == 1 && t.Spec.Zones[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
 		args = append(args, t.VolumePathForZone(&t.Spec.Zones[0]))
@@ -242,7 +257,7 @@ func minioSecurityContext(t *miniov1.Tenant) *corev1.PodSecurityContext {
 }
 
 // NewForMinIOZone creates a new StatefulSet for the given Cluster.
-func NewForMinIOZone(t *miniov1.Tenant, zone *miniov1.Zone, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
+func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = zone.Servers
 	var serverCertSecret string
@@ -345,7 +360,7 @@ func NewForMinIOZone(t *miniov1.Tenant, zone *miniov1.Zone, serviceName string, 
 		})
 	}
 
-	containers := []corev1.Container{zoneMinioServerContainer(t, zone, hostsTemplate)}
+	containers := []corev1.Container{zoneMinioServerContainer(t, wsSecret, zone, hostsTemplate)}
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
