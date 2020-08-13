@@ -24,11 +24,20 @@ import (
 // MinIOServerName specifies the default container name for Tenant
 const MinIOServerName = "minio"
 
+// MinIODNSInitContainer Init Container for DNS
+const MinIODNSInitContainer = "minio-dns-wait"
+
+// MinIOVolumeInitContainer Init Container for DNS
+const MinIOVolumeInitContainer = "minio-vol-wait"
+
 // KESContainerName specifies the default container name for KES
 const KESContainerName = "kes"
 
 // ConsoleContainerName specifies the default container name for Console
 const ConsoleContainerName = "console"
+
+// InitContainerImage name for init container.
+const InitContainerImage = "busybox:1.32"
 
 // MinIO Related Names
 

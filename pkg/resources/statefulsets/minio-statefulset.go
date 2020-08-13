@@ -227,6 +227,48 @@ func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *mini
 	}
 }
 
+// Builds the MinIO init container to check for mounts.
+func zoneMinIOInitContainerValidateMounts(t *miniov1.Tenant, zone *miniov1.Zone, templates []v1.PersistentVolumeClaim, volumes []v1.Volume) v1.Container {
+	command := []string{"/bin/sh", "-c"}
+	mounts := volumeMounts(t, zone)
+	var s string
+	for _, m := range mounts {
+		s = s + fmt.Sprintf("until /bin/stat %s; do sleep 2; done;", m.MountPath)
+	}
+	//Explicitly check the certs/
+	if t.AutoCert() || t.ExternalCert() {
+		s = s + "echo Wait till certs can be read;"
+		s = s + "until /bin/cat /tmp/certs/private.key > /dev/null; do sleep 2; done;"
+		s = s + "until /bin/cat /tmp/certs/public.crt > /dev/null; do sleep 2; done;"
+		s = s + "until /bin/cat /tmp/certs/CAs/public.crt > /dev/null; do sleep 2; done;"
+	}
+
+	args := []string{s}
+
+	return corev1.Container{
+		Name:         miniov1.MinIOVolumeInitContainer,
+		Image:        miniov1.InitContainerImage,
+		Command:      command,
+		Args:         args,
+		VolumeMounts: volumeMounts(t, zone),
+	}
+}
+
+// Builds the MinIO init container to wait for DNS to be ready.
+func zoneMinIOInitContainerWaitForDNS(t *miniov1.Tenant, zone *appsv1.StatefulSet) v1.Container {
+	command := []string{"/bin/sh", "-c"}
+	args := []string{
+		fmt.Sprintf("echo Wait for service; until nslookup %[1]s ; do echo waiting for %[1]s; sleep 2; done; ",
+			t.MinIOServerHost()),
+	}
+	return corev1.Container{
+		Name:    miniov1.MinIODNSInitContainer,
+		Image:   miniov1.InitContainerImage,
+		Command: command,
+		Args:    args,
+	}
+}
+
 // GetContainerArgs returns the arguments that the MinIO container receives
 func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
 	var args []string
@@ -361,7 +403,6 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 	}
 
 	containers := []corev1.Container{zoneMinioServerContainer(t, wsSecret, zone, hostsTemplate)}
-
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: t.Namespace,
@@ -412,5 +453,10 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvClaim)
 		}
 	}
+	initContainers := []corev1.Container{
+		zoneMinIOInitContainerValidateMounts(t, zone, ss.Spec.VolumeClaimTemplates, ss.Spec.Template.Spec.Volumes),
+		zoneMinIOInitContainerWaitForDNS(t, ss),
+	}
+	ss.Spec.Template.Spec.InitContainers = initContainers
 	return ss
 }
