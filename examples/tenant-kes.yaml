@@ -38,6 +38,7 @@ spec:
       prometheus.io/scrape: "true"
   ## Registry location and Tag to download MinIO Server image
   image: minio/minio:RELEASE.2020-08-13T02-39-50Z
+  imagePullPolicy: Always
   ## Secret with credentials to be used by MinIO instance.
   credsSecret:
     name: minio-creds-secret
@@ -68,6 +69,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   console:
     image: minio/console:v0.3.0
+    imagePullPolicy: Always
     replicas: 2
     consoleSecret:
       name: console-secret
@@ -77,6 +79,7 @@ spec:
   ## Define configuration for KES (stateless and distributed key-management system)
   kes:
     image: minio/kes:v0.11.0
+    imagePullPolicy: Always
     replicas: 2
     kesSecret:
       name: kes-config

@@ -213,7 +213,7 @@ func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *mini
 				ContainerPort: miniov1.MinIOPort,
 			},
 		},
-		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
+		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, zone),
 		Args:            args,
 		Env:             minioEnvironmentVars(t, wsSecret),

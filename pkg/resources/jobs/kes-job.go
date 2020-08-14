@@ -101,7 +101,7 @@ func kesJobContainer(t *miniov1.Tenant) corev1.Container {
 	return corev1.Container{
 		Name:            miniov1.KESContainerName,
 		Image:           t.Spec.KES.Image,
-		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
+		ImagePullPolicy: t.Spec.KES.ImagePullPolicy,
 		Args:            args,
 		Env:             kesEnvironmentVars(t),
 		VolumeMounts:    kesVolumeMounts(t),
