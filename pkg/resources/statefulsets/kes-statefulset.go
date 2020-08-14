@@ -83,7 +83,7 @@ func KESServerContainer(t *miniov1.Tenant) corev1.Container {
 				ContainerPort: miniov1.KESPort,
 			},
 		},
-		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
+		ImagePullPolicy: t.Spec.KES.ImagePullPolicy,
 		VolumeMounts:    KESVolumeMounts(t),
 		Args:            args,
 		Env:             KESEnvironmentVars(t),

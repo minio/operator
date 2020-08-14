@@ -190,6 +190,10 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.ServiceName = t.Name
 	}
 
+	if t.Spec.ImagePullPolicy == "" {
+		t.Spec.ImagePullPolicy = DefaultImagePullPolicy
+	}
+
 	for zi, z := range t.Spec.Zones {
 		if z.Name == "" {
 			z.Name = fmt.Sprintf("zone-%d", zi)
@@ -244,6 +248,9 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		if t.Spec.Console.Replicas == 0 {
 			t.Spec.Console.Replicas = DefaultConsoleReplicas
 		}
+		if t.Spec.Console.ImagePullPolicy == "" {
+			t.Spec.Console.ImagePullPolicy = DefaultImagePullPolicy
+		}
 	}
 
 	if t.HasKESEnabled() {
@@ -252,6 +259,9 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 		if t.Spec.KES.Replicas == 0 {
 			t.Spec.KES.Replicas = DefaultKESReplicas
+		}
+		if t.Spec.KES.ImagePullPolicy == "" {
+			t.Spec.KES.ImagePullPolicy = DefaultImagePullPolicy
 		}
 	}
 

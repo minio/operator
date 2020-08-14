@@ -198,6 +198,11 @@ spec:
                 image:
                   description: Image defines the Tenant Console Docker image.
                   type: string
+                imagePullPolicy:
+                  description: Image pull policy. One of Always, Never, IfNotPresent.
+                    This is applied to MinIO Console pods only. Refer Kubernetes
+                    documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+                  type: string
                 metadata:
                   type: object
                 replicas:
@@ -374,6 +379,11 @@ spec:
             image:
               description: Image defines the Tenant Docker image.
               type: string
+            imagePullPolicy:
+              description: Image pull policy. One of Always, Never, IfNotPresent.
+                This is applied to MinIO pods only. Refer Kubernetes
+                documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+              type: string
             imagePullSecret:
               description: ImagePullSecret defines the secret to be used for pull
                 image from a private Docker image.
@@ -412,6 +422,11 @@ spec:
                   type: object
                 image:
                   description: Image defines the Tenant KES Docker image.
+                  type: string
+                imagePullPolicy:
+                  description: Image pull policy. One of Always, Never, IfNotPresent.
+                    This is applied to KES pods only. Refer Kubernetes
+                    documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
                   type: string
                 kesSecret:
                   description: This kesSecret serves as the configuration for KES

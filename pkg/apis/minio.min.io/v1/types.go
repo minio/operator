@@ -115,6 +115,10 @@ type TenantSpec struct {
 	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
 	// +optional
 	PriorityClassName string `json:"priorityClassName,omitempty"`
+	// Image pull policy. One of Always, Never, IfNotPresent.
+	// This is applied to MinIO pods only.
+	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 }
 
 // TenantStatus is the status for a Tenant resource
@@ -178,6 +182,10 @@ type ConsoleConfiguration struct {
 	// Image defines the Tenant Console Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// Image pull policy. One of Always, Never, IfNotPresent.
+	// This is applied to MinIO Console pods only.
+	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// This secret provides all environment variables for KES
 	// This is a mandatory field
 	ConsoleSecret *corev1.LocalObjectReference `json:"consoleSecret"`
@@ -207,6 +215,10 @@ type KESConfig struct {
 	// Image defines the Tenant KES Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`
+	// Image pull policy. One of Always, Never, IfNotPresent.
+	// This is applied to KES pods only.
+	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
 	// This kesSecret serves as the configuration for KES
 	// This is a mandatory field
 	Configuration *corev1.LocalObjectReference `json:"kesSecret"`

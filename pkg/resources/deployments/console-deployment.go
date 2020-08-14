@@ -114,7 +114,7 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 				ContainerPort: miniov1.ConsoleTLSPort,
 			},
 		},
-		ImagePullPolicy: miniov1.DefaultImagePullPolicy,
+		ImagePullPolicy: t.Spec.Console.ImagePullPolicy,
 		Args:            args,
 		Env:             consoleEnvVars(t),
 		EnvFrom:         consoleSecretEnvVars(t),
