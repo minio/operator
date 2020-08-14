@@ -20,6 +20,7 @@ package statefulsets
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,7 +34,7 @@ import (
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
-func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret) []corev1.EnvVar {
+func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate string) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Env...)
@@ -52,11 +53,15 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret) []corev1.EnvVa
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: miniov1.WebhookOperatorSecret,
+					Name: miniov1.WebhookMinIOArgsSecret,
 				},
 				Key: miniov1.WebhookMinIOArgs,
 			},
 		},
+	}, corev1.EnvVar{
+		// Add a fallback in-case operator is down.
+		Name:  "MINIO_ENDPOINTS",
+		Value: strings.Join(GetContainerArgs(t, hostsTemplate), " "),
 	})
 
 	// Add env variables from credentials secret, if no secret provided, dont use
@@ -216,7 +221,7 @@ func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *mini
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, zone),
 		Args:            args,
-		Env:             minioEnvironmentVars(t, wsSecret),
+		Env:             minioEnvironmentVars(t, wsSecret, hostsTemplate),
 		Resources:       zone.Resources,
 		LivenessProbe:   liveProbe,
 	}

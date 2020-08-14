@@ -23,6 +23,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -48,7 +49,7 @@ import (
 const (
 	WebhookAPIVersion       = "/webhook/v1"
 	WebhookDefaultPort      = "4222"
-	WebhookOperatorSecret   = "minio-operator-webhook-secret"
+	WebhookMinIOArgsSecret  = "minio-args-secret"
 	WebhookOperatorUsername = "webhookUsername"
 	WebhookOperatorPassword = "webhookPassword"
 )
@@ -70,6 +71,16 @@ type hostsTemplateValues struct {
 	HLService   string
 	Ellipsis    string
 	Domain      string
+}
+
+// GetNSFromFile assumes the operator is running inside a k8s pod and extract the
+// current namespace from the /var/run/secrets/kubernetes.io/serviceaccount/namespace file
+func GetNSFromFile() string {
+	namespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		return "minio-operator"
+	}
+	return string(namespace)
 }
 
 // ellipsis returns the host range string

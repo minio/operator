@@ -279,7 +279,8 @@ func (c *Controller) validateRequest(r *http.Request, secret *v1.Secret) error {
 }
 
 func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1.Tenant) (*v1.Secret, error) {
-	secret, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx, miniov1.WebhookOperatorSecret, metav1.GetOptions{})
+	secret, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx,
+		miniov1.WebhookMinIOArgsSecret, metav1.GetOptions{})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			cred, err := auth.GetNewCredentials()
@@ -289,7 +290,7 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1
 			secret = &corev1.Secret{
 				Type: "Opaque",
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      miniov1.WebhookOperatorSecret,
+					Name:      miniov1.WebhookMinIOArgsSecret,
 					Namespace: mi.Namespace,
 					OwnerReferences: []metav1.OwnerReference{
 						*metav1.NewControllerRef(mi, schema.GroupVersionKind{
@@ -306,7 +307,8 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1
 						"env",
 						cred.AccessKey,
 						cred.SecretKey,
-						fmt.Sprintf("operator.minio-operator.svc.%s",
+						fmt.Sprintf("operator.%s.svc.%s",
+							miniov1.GetNSFromFile(),
 							miniov1.ClusterDomain),
 						miniov1.WebhookDefaultPort,
 						miniov1.WebhookAPIGetenv,
@@ -339,7 +341,7 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 	key := vars["key"]
 
 	secret, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(r.Context(),
-		miniov1.WebhookOperatorSecret, metav1.GetOptions{})
+		miniov1.WebhookMinIOArgsSecret, metav1.GetOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
