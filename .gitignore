@@ -3,5 +3,5 @@ minio-operator
 !minio-operator/
 .idea/
 dist/
-*.test
-*.minisig
+kubectl-minio/kubectl-minio
+*.test*.minisig

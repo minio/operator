@@ -7,6 +7,12 @@ GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
+CRD_GEN_PATH=operator-kustomize/crds/
+OPERATOR_YAML=./operator-kustomize/
+TENANT_CRD=$(OPERATOR_YAML)crds/minio.min.io_tenants.yaml
+PLUGIN_HOME=./kubectl-minio
+PLUGIN_OPERATOR_YAML=$(PLUGIN_HOME)/static
+PLUGIN_CRD_COPY=$(PLUGIN_OPERATOR_YAML)/crd.yaml
 all: build
 
 getdeps:
@@ -39,4 +45,12 @@ clean:
 	@find . -name '*~' | xargs rm -fv
 
 regen-crd:
-	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=operator-kustomize/crds/
+	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=$(CRD_GEN_PATH)
+
+
+plugin: regen-crd
+	@rm -rf $(PLUGIN_OPERATOR_YAML)
+	@mkdir -p $(PLUGIN_OPERATOR_YAML)
+	@cp $(TENANT_CRD) $(PLUGIN_CRD_COPY)
+	@cp  $(OPERATOR_YAML)/*.yaml $(PLUGIN_OPERATOR_YAML)
+	@cd $(PLUGIN_HOME); go build -o kubectl-minio main.go
