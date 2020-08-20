@@ -90,9 +90,9 @@ func tenantKESLabels(name string) map[string]string {
 	return m
 }
 
-func tenantMCSLabels(name string) map[string]string {
+func tenantConsoleLabels(name string) map[string]string {
 	m := make(map[string]string, 1)
-	m["app"] = name + "-mcs"
+	m["app"] = name + "-console"
 	return m
 }
 
@@ -120,16 +120,16 @@ func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
 	return nil
 }
 
-func tenantMCSConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
+func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
 	if secret != "" {
 		return &miniov1.ConsoleConfiguration{
-			Replicas: helpers.MCSReplicas,
-			Image:    helpers.DefaultMCSImage,
+			Replicas: helpers.ConsoleReplicas,
+			Image:    helpers.DefaultConsoleImage,
 			ConsoleSecret: &v1.LocalObjectReference{
 				Name: secret,
 			},
 			Metadata: &metav1.ObjectMeta{
-				Labels: tenantMCSLabels(tenant),
+				Labels: tenantConsoleLabels(tenant),
 			},
 		}
 	}
@@ -182,7 +182,7 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 			Mountpath:          helpers.MinIOMountPath,
 			Liveness:           helpers.DefaultLivenessCheck,
 			KES:                tenantKESConfig(opts.Name, opts.KmsSecret),
-			Console:            tenantMCSConfig(opts.Name, opts.ConsoleSecret),
+			Console:            tenantConsoleConfig(opts.Name, opts.ConsoleSecret),
 			ExternalCertSecret: externalCertSecret(opts.CertSecret),
 			ImagePullSecret:    v1.LocalObjectReference{Name: opts.ImagePullSecret},
 		},

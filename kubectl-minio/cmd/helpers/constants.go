@@ -72,16 +72,16 @@ const (
 	DefaultImagePullPolicy = corev1.PullIfNotPresent
 
 	// DefaultOperatorImage is the default operator image to be used
-	DefaultOperatorImage = "minio/k8s-operator:v3.0.5"
+	DefaultOperatorImage = "minio/k8s-operator:v3.0.13"
 
 	// DefaultTenantImage is the default MinIO image used while creating tenant
-	DefaultTenantImage = "minio/minio:RELEASE.2020-07-31T03-39-05Z"
+	DefaultTenantImage = "minio/minio:RELEASE.2020-08-18T19-41-00Z"
 
 	// DefaultKESImage is the default KES image used while creating tenant
-	DefaultKESImage = "minio/kes:v0.10.1"
+	DefaultKESImage = "minio/kes:v0.11.0"
 
-	// DefaultMCSImage is the default MCS image used while creating tenant
-	DefaultMCSImage = "minio/mcs:v0.3.4"
+	// DefaultConsoleImage is the default console image used while creating tenant
+	DefaultConsoleImage = "minio/console:v0.3.14"
 )
 
 // DefaultLivenessCheck for MinIO tenants
@@ -97,5 +97,5 @@ var DeploymentReplicas int32 = 1
 // KESReplicas is the number of replicas for MinIO KES
 var KESReplicas int32 = 2
 
-// MCSReplicas is the number of replicas for MinIO MCS
-var MCSReplicas int32 = 2
+// ConsoleReplicas is the number of replicas for MinIO Console
+var ConsoleReplicas int32 = 2
