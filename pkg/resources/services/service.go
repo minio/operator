@@ -44,6 +44,24 @@ func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
 	return svc
 }
 
+// ServiceForBucket will return a external name based service
+func ServiceForBucket(t *miniov1.Tenant, bucket string) *corev1.Service {
+	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServicePortName}
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            bucket,
+			Namespace:       t.Namespace,
+			OwnerReferences: t.OwnerRef(),
+		},
+		Spec: corev1.ServiceSpec{
+			ExternalName: t.MinIOFQDNServiceName(),
+			Ports:        []corev1.ServicePort{minioPort},
+			Type:         corev1.ServiceTypeExternalName,
+		},
+	}
+	return svc
+}
+
 // NewHeadlessForMinIO will return a new headless Kubernetes service for a Tenant
 func NewHeadlessForMinIO(t *miniov1.Tenant) *corev1.Service {
 	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServicePortName}

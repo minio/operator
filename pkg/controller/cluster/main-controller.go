@@ -270,7 +270,6 @@ func (c *Controller) validateRequest(r *http.Request, secret *v1.Secret) error {
 	if !token.Valid {
 		return fmt.Errorf(http.StatusText(http.StatusForbidden))
 	}
-
 	if stdClaims.Issuer != string(secret.Data[miniov1.WebhookOperatorUsername]) {
 		return fmt.Errorf(http.StatusText(http.StatusForbidden))
 	}
@@ -330,12 +329,65 @@ const (
 
 // BucketSrvHandler - POST /webhook/api/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
 func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	v := r.URL.Query()
+
+	namespace := vars["namespace"]
+	bucket := vars["bucket"]
+	name := vars["name"]
+	deleteBucket := v.Get("delete")
+
+	secret, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(r.Context(),
+		miniov1.WebhookMinIOArgsSecret, metav1.GetOptions{})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	if err = c.validateRequest(r, secret); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	if deleteBucket == "true" {
+		err := c.kubeClientSet.CoreV1().Services(namespace).Delete(r.Context(), bucket, metav1.DeleteOptions{})
+		if err != nil {
+			klog.Errorf("failed to delete service:%s for tenant:%s/%s, err:%s", name, namespace, name, err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// Find the tenant
+	tenant, err := c.tenantsLister.Tenants(namespace).Get(name)
+	if err != nil {
+		klog.Errorf("could not get the tenant:%s/%s for the bucket:%s request. err:%s", namespace, name, bucket, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Create the service for the bucket name
+	service := services.ServiceForBucket(tenant, bucket)
+	_, err = c.kubeClientSet.CoreV1().Services(namespace).Create(r.Context(), service, metav1.CreateOptions{})
+	if err != nil && strings.Contains(err.Error(), "already exists") {
+		klog.Infof("Bucket:%s already exists for tenant:%s/%s err:%s ", bucket, namespace, name, err)
+		// This might be a previously failed bucket creation. The service is expected to the be the same as the one
+		// already in place so clear the error.
+		err = nil
+	}
+	if err != nil {
+		klog.Errorf("could not create the service for tenant:%s/%s for the bucket:%s request. err:%s", namespace, name, bucket, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // GetenvHandler - GET /webhook/api/v1/getenv/{namespace}/{name}?key={env}
 func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
 	namespace := vars["namespace"]
 	name := vars["name"]
 	key := vars["key"]

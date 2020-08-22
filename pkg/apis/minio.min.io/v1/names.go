@@ -74,6 +74,11 @@ func (t *Tenant) MinIOCIServiceName() string {
 	return t.Spec.ServiceName
 }
 
+// MinIOFQDNServiceName returns the name of the service created for the tenant.
+func (t *Tenant) MinIOFQDNServiceName() string {
+	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
+}
+
 // MinIOCSRName returns the name of CSR that is generated if AutoTLS is enabled
 // Namespace adds uniqueness to the CSR name (single MinIO tenant per namsepace)
 // since CSR is not a namespaced resource
