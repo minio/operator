@@ -43,12 +43,10 @@ func configureWebhookServer(c *Controller) *http.Server {
 		Path(miniov1.WebhookAPIGetenv + "/{namespace}/{name:.+}").
 		HandlerFunc(c.GetenvHandler).
 		Queries(restQueries("key")...)
-
 	router.Methods(http.MethodPost).
 		Path(miniov1.WebhookAPIBucketService + "/{namespace}/{name:.+}").
 		HandlerFunc(c.BucketSrvHandler).
 		Queries(restQueries("bucket")...)
-
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r)
 	})
