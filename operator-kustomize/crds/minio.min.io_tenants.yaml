@@ -200,8 +200,8 @@ spec:
                   type: string
                 imagePullPolicy:
                   description: Image pull policy. One of Always, Never, IfNotPresent.
-                    This is applied to MinIO Console pods only. Refer Kubernetes
-                    documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+                    This is applied to MinIO Console pods only. Refer Kubernetes documentation
+                    for details https://kubernetes.io/docs/concepts/containers/images#updating-images
                   type: string
                 metadata:
                   type: object
@@ -381,8 +381,8 @@ spec:
               type: string
             imagePullPolicy:
               description: Image pull policy. One of Always, Never, IfNotPresent.
-                This is applied to MinIO pods only. Refer Kubernetes
-                documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+                This is applied to MinIO pods only. Refer Kubernetes documentation
+                for details https://kubernetes.io/docs/concepts/containers/images#updating-images
               type: string
             imagePullSecret:
               description: ImagePullSecret defines the secret to be used for pull
@@ -425,8 +425,8 @@ spec:
                   type: string
                 imagePullPolicy:
                   description: Image pull policy. One of Always, Never, IfNotPresent.
-                    This is applied to KES pods only. Refer Kubernetes
-                    documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+                    This is applied to KES pods only. Refer Kubernetes documentation
+                    for details https://kubernetes.io/docs/concepts/containers/images#updating-images
                   type: string
                 kesSecret:
                   description: This kesSecret serves as the configuration for KES

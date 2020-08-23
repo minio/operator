@@ -4,4 +4,5 @@ minio-operator
 .idea/
 dist/
 kubectl-minio/kubectl-minio
-*.test*.minisig
+*.minisig
+kubectl-minio/crds

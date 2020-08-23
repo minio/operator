@@ -29,6 +29,22 @@ builds:
       - -trimpath
     hooks:
       post: ./minisign.sh {{ .Path }}
+  -
+    id: kubectl-minio
+    dir: kubectl-minio
+    binary: kubectl-minio
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.Version={{.Tag}}
+    flags:
+      - -trimpath
+    hooks:
+      post: ./minisign.sh {{ .Path }}
 
 archives:
   -

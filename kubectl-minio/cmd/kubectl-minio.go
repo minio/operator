@@ -19,7 +19,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"log"
 
 	"github.com/rakyll/statik/fs"
@@ -49,7 +48,8 @@ kubectl plugin to manage MinIO operator CRDs.`
 )
 
 func init() {
-	fs, err := fs.New()
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	emfs, err := fs.New()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,33 +59,37 @@ func init() {
 	rbacv1.AddToScheme(sch)
 	decode := serializer.NewCodecFactory(sch).UniversalDeserializer().Decode
 
-	crd, err := fs.Open("/crd.yaml")
+	contents, err := fs.ReadFile(emfs, "/crds/minio.min.io_tenants.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	contents, err := ioutil.ReadAll(crd)
-	if err != nil {
-		log.Fatal(err)
-	}
+
 	obj, _, err := decode(contents, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	crdObj = obj.(*apiextensionv1.CustomResourceDefinition)
 
-	cr, err := fs.Open("/cluster-role.yaml")
+	var ok bool
+	crdObj, ok = obj.(*apiextensionv1.CustomResourceDefinition)
+	if !ok {
+		log.Fatal("Unable to locate CustomResourceDefinition object")
+	}
+
+	contents, err = fs.ReadFile(emfs, "/cluster-role.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	contents, err = ioutil.ReadAll(cr)
-	if err != nil {
-		log.Fatal(err)
-	}
+
 	obj, _, err = decode(contents, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	crObj = obj.(*rbacv1.ClusterRole)
+
+	crObj, ok = obj.(*rbacv1.ClusterRole)
+	if !ok {
+		log.Fatal("Unable to locate ClusterRole object")
+	}
+
 }
 
 // NewCmdMinIO creates a new root command for kubectl-minio
