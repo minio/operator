@@ -356,7 +356,6 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 		return
 	}
 
@@ -382,7 +381,6 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
 
 // GetenvHandler - GET /webhook/api/v1/getenv/{namespace}/{name}?key={env}
