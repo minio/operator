@@ -7,21 +7,23 @@ GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
-CRD_GEN_PATH=operator-kustomize/crds/
-OPERATOR_YAML=./operator-kustomize/
-TENANT_CRD=$(OPERATOR_YAML)crds/minio.min.io_tenants.yaml
-PLUGIN_HOME=./kubectl-minio
-PLUGIN_OPERATOR_YAML=$(PLUGIN_HOME)/static
-PLUGIN_CRD_COPY=$(PLUGIN_OPERATOR_YAML)/crd.yaml
+KUSTOMIZE_HOME=operator-kustomize
+KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/crds/
+
+PLUGIN_HOME=kubectl-minio
+
 all: build
 
 getdeps:
+	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
 	@which golangci-lint 1>/dev/null || (echo "Installing golangci-lint" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.27.0)
+	@which controller-gen 1>/dev/null || (echo "Installing controller-gen" && GO111MODULE=off go get sigs.k8s.io/controller-tools/cmd/controller-gen)
+	@which statik 1>/dev/null || (echo "Installing statik" && GO111MODULE=off go get github.com/rakyll/statik)
 
-verify: govet gotest lint
+verify: getdeps govet gotest lint
 
-build: verify
+build: regen-crd verify plugin
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator
 	@docker build -t $(TAG) .
 
@@ -45,12 +47,12 @@ clean:
 	@find . -name '*~' | xargs rm -fv
 
 regen-crd:
-	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=$(CRD_GEN_PATH)
+	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 
+statik:
+	@echo "Building static assets"
+	@statik -src=$(KUSTOMIZE_HOME) -dest $(PLUGIN_HOME) -f
 
 plugin: regen-crd
-	@rm -rf $(PLUGIN_OPERATOR_YAML)
-	@mkdir -p $(PLUGIN_OPERATOR_YAML)
-	@cp $(TENANT_CRD) $(PLUGIN_CRD_COPY)
-	@cp  $(OPERATOR_YAML)/*.yaml $(PLUGIN_OPERATOR_YAML)
-	@cd $(PLUGIN_HOME); go build -o kubectl-minio main.go
+	@echo "Building 'kubectl-minio' binary"
+	@(cd $(PLUGIN_HOME); go build -o kubectl-minio main.go)

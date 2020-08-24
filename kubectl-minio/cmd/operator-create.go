@@ -34,7 +34,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -127,7 +127,7 @@ func (o *operatorCreateCmd) run() error {
 func createCRD(client *apiextension.Clientset, crd *apiextensionv1.CustomResourceDefinition) error {
 	_, err := client.ApiextensionsV1beta1().CustomResourceDefinitions().Create(context.Background(), crd, v1.CreateOptions{})
 	if err != nil {
-		if kerrors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			return fmt.Errorf("CustomResourceDefinition %s: already present, skipped", crd.ObjectMeta.Name)
 		}
 		return err
@@ -139,7 +139,7 @@ func createCRD(client *apiextension.Clientset, crd *apiextensionv1.CustomResourc
 func createCR(client *kubernetes.Clientset, cr *rbacv1.ClusterRole) error {
 	_, err := client.RbacV1().ClusterRoles().Create(context.Background(), cr, v1.CreateOptions{})
 	if err != nil {
-		if kerrors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			return fmt.Errorf("ClusterRole %s: already present, skipped", cr.ObjectMeta.Name)
 		}
 		return err
@@ -151,7 +151,7 @@ func createCR(client *kubernetes.Clientset, cr *rbacv1.ClusterRole) error {
 func createSA(client *kubernetes.Clientset, sa *corev1.ServiceAccount) error {
 	_, err := client.CoreV1().ServiceAccounts(sa.ObjectMeta.Namespace).Create(context.Background(), sa, v1.CreateOptions{})
 	if err != nil {
-		if kerrors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			return fmt.Errorf("ServiceAccount %s: already present, skipped", sa.ObjectMeta.Name)
 		}
 		return err
@@ -163,7 +163,7 @@ func createSA(client *kubernetes.Clientset, sa *corev1.ServiceAccount) error {
 func createClusterRB(client *kubernetes.Clientset, crb *rbacv1.ClusterRoleBinding) error {
 	_, err := client.RbacV1().ClusterRoleBindings().Create(context.Background(), crb, v1.CreateOptions{})
 	if err != nil {
-		if kerrors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			return fmt.Errorf("ClusterRoleBinding %s: already present, skipped", crb.ObjectMeta.Name)
 		}
 		return err
@@ -175,7 +175,7 @@ func createClusterRB(client *kubernetes.Clientset, crb *rbacv1.ClusterRoleBindin
 func createDeployment(client *kubernetes.Clientset, d *appsv1.Deployment) error {
 	_, err := client.AppsV1().Deployments(d.ObjectMeta.Namespace).Create(context.Background(), d, v1.CreateOptions{})
 	if err != nil {
-		if kerrors.IsAlreadyExists(err) {
+		if k8serrors.IsAlreadyExists(err) {
 			return fmt.Errorf("MinIO Operator Deployment %s: already present, skipped", d.ObjectMeta.Name)
 		}
 		return err
