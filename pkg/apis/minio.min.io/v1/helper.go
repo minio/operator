@@ -38,11 +38,14 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
+	dtypes "github.com/docker/docker/api/types"
+	dcontainer "github.com/docker/docker/api/types/container"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/minio/minio/pkg/bucket/policy"
 	"github.com/minio/minio/pkg/bucket/policy/condition"
 	iampolicy "github.com/minio/minio/pkg/iam/policy"
 	"github.com/minio/minio/pkg/madmin"
+	"github.com/moby/moby/client"
 )
 
 // Webhook API constants
@@ -63,6 +66,7 @@ const (
 const (
 	WebhookAPIGetenv        = WebhookAPIVersion + "/getenv"
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
+	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
 )
 
 type hostsTemplateValues struct {
@@ -81,6 +85,49 @@ func GetNSFromFile() string {
 		return "minio-operator"
 	}
 	return string(namespace)
+}
+
+// GetTagFromContainer returns the tag value as received from `minio -v` command
+func GetTagFromContainer(image string) (string, error) {
+	ctx := context.Background()
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		return "", nil
+	}
+	// Create a temp container, this is to run "docker run image -v"
+	// and generate the MinIO version output
+	resp, err := cli.ContainerCreate(ctx, &dcontainer.Config{
+		Image: image,
+		Cmd:   []string{"-v"},
+	}, nil, nil, "")
+	if err != nil {
+		return "", nil
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, dtypes.ContainerStartOptions{}); err != nil {
+		return "", nil
+	}
+
+	if _, err = cli.ContainerWait(ctx, resp.ID); err != nil {
+		return "", nil
+	}
+
+	out, err := cli.ContainerLogs(ctx, resp.ID, dtypes.ContainerLogsOptions{ShowStdout: true})
+	if err != nil {
+		return "", nil
+	}
+
+	// output is in the form "minio version DEVELOPMENT.GOGET"
+	// we're interested in the last field
+	buf := new(bytes.Buffer)
+	if _, err = buf.ReadFrom(out); err != nil {
+		return "", nil
+	}
+	op := strings.Fields(buf.String())
+	if len(op) != 3 {
+		return "", fmt.Errorf("incorrect output while fetching tag value - %d", len((op)))
+	}
+	return op[2], nil
 }
 
 // ellipsis returns the host range string
@@ -434,7 +481,7 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	u.Path = path.Dir(u.Path) + "/minio." + releasePrefix + "." + lrTime.Format(minioReleaseTagTimeLayout) + ".sha256sum"
+	u.Path = u.Path + "/minio." + releasePrefix + "." + lrTime.Format(minioReleaseTagTimeLayout) + ".sha256sum"
 	return u.String(), nil
 }
 

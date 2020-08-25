@@ -18,12 +18,16 @@
 package cluster
 
 import (
+	"archive/tar"
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -67,6 +71,10 @@ import (
 	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
+	"github.com/moby/moby/client"
+
+	dtypes "github.com/docker/docker/api/types"
+	dcontainer "github.com/docker/docker/api/types/container"
 )
 
 const (
@@ -325,9 +333,10 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1
 // Supported remote envs
 const (
 	envMinIOArgs = "MINIO_ARGS"
+	updatePath   = "/tmp" + miniov1.WebhookAPIUpdate + slashSeparator
 )
 
-// BucketSrvHandler - POST /webhook/api/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
+// BucketSrvHandler - POST /webhook/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
 func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -387,7 +396,7 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetenvHandler - GET /webhook/api/v1/getenv/{namespace}/{name}?key={env}
+// GetenvHandler - GET /webhook/v1/getenv/{namespace}/{name}?key={env}
 func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	namespace := vars["namespace"]
@@ -438,6 +447,84 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%s env key is not supported yet", key), http.StatusBadRequest)
 		return
 	}
+}
+
+// Attempts to fetch given image and then extracts and keeps relevant files (minio, minio.sha256sum & minio.minisig)
+// at a pre-defined location (/tmp/update)
+func (c *Controller) fetchImage(image string) error {
+	destBasePath := updatePath
+	// return if base path is already present
+	if _, err := os.Stat(destBasePath); err == nil {
+		return nil
+	}
+
+	ctx := context.Background()
+	srcBasePath := "/usr/bin/"
+	srcBinary := "minio"
+	srcShaSum := "minio.sha256sum"
+	srcSig := "minio.minisig"
+
+	tag, err := miniov1.GetTagFromContainer(image)
+	if err != nil {
+		return err
+	}
+
+	destBinary := "minio." + tag
+	destShaSum := "minio." + tag + ".sha256sum"
+	destSig := "minio." + tag + ".minisig"
+
+	filesToCopy := map[string]string{srcBinary: destBinary, srcShaSum: destShaSum, srcSig: destSig}
+
+	cli, err := client.NewEnvClient()
+	if err != nil {
+		return err
+	}
+	// Create a temp container, this is to copy the contents to operator container
+	info, err := cli.ContainerCreate(ctx, &dcontainer.Config{
+		Image: image,
+	}, nil, nil, "")
+	if err != nil {
+		return err
+	}
+	if err = os.MkdirAll(destBasePath, 0755); err != nil {
+		return err
+	}
+	// copy all files to operator container at copyDest path
+	for s, d := range filesToCopy {
+		ts, _, err := cli.CopyFromContainer(ctx, info.ID, srcBasePath+s)
+		if err != nil {
+			return err
+		}
+		tr := tar.NewReader(ts)
+		if _, err := tr.Next(); err != nil {
+			return err
+		}
+		f, err := os.Create(destBasePath + d)
+		if err != nil {
+			return err
+		}
+		// use a buffered writer to create the file
+		wr := bufio.NewWriter(f)
+		if _, err = io.Copy(wr, tr); err != nil {
+			return err
+		}
+		if err = wr.Flush(); err != nil {
+			return err
+		}
+		if err = f.Close(); err != nil {
+			return err
+		}
+	}
+	// remove the temp MinIO container
+	if err := cli.ContainerRemove(ctx, info.ID, dtypes.ContainerRemoveOptions{}); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Remove all the files created during upload process
+func (c *Controller) removeImage() error {
+	return os.RemoveAll(updatePath)
 }
 
 // Start will set up the event handlers for types we are interested in, as well
@@ -843,8 +930,13 @@ func (c *Controller) syncHandler(key string) error {
 		klog.V(4).Infof("Updating Tenant %s MinIO server version from: %s, to: %s",
 			name, images[0], mi.Spec.Image)
 
-		// FIXME: add provisions to provide a custom update URL for private environments.
-		updateURL, err := mi.UpdateURL(latest, "")
+		// fetch the image contents (binary and signature files) to a local location in the operator
+		// container and then serve it via webhook server for the `mc admin update` to pick it up
+		if err := c.fetchImage("docker.io/" + mi.Spec.Image); err != nil {
+			return err
+		}
+
+		updateURL, err := mi.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s", miniov1.GetNSFromFile(), miniov1.ClusterDomain, miniov1.WebhookDefaultPort, miniov1.WebhookAPIUpdate))
 		if err != nil {
 			// Correct URL could not be obtained, not proceeding to update.
 			return fmt.Errorf("Unable to get canonical update URL, failed with %w", err)
@@ -869,6 +961,9 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 		}
+
+		// clean the local directory
+		_ = c.removeImage()
 	}
 
 	if mi.HasConsoleEnabled() {
