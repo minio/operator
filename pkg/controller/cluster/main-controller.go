@@ -19,6 +19,7 @@ package cluster
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/sha256"
