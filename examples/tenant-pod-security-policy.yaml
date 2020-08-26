@@ -103,7 +103,7 @@ spec:
   mountPath: /export
   ## Sub path inside Mount path where MinIO starts. Defaults to "".
   # subPath: /data
-  ## Secret with credentials to be used by MinIO instance.
+  ## Secret with credentials to be used by MinIO Tenant.
   credsSecret:
     name: minio-creds-secret
   ## PodManagement policy for pods created by StatefulSet. Can be "OrderedReady" or "Parallel"

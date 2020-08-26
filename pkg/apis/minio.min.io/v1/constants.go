@@ -86,7 +86,7 @@ const MinIOHLSvcNameSuffix = "-hl"
 // DefaultServers specifies the default MinIO replicas to use for distributed deployment if not specified explicitly by user
 const DefaultServers = 1
 
-// DefaultVolumesPerServer specifies the default number of volumes per MinIO instance
+// DefaultVolumesPerServer specifies the default number of volumes per MinIO Tenant
 const DefaultVolumesPerServer = 1
 
 // DefaultZoneName specifies the default zone name

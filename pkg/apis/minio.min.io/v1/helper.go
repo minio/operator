@@ -702,7 +702,7 @@ func (z *Zone) Validate(zi int) error {
 	return nil
 }
 
-// Validate returns an error if any configuration of the MinIO instance is invalid
+// Validate returns an error if any configuration of the MinIO Tenant is invalid
 func (t *Tenant) Validate() error {
 	if t.Spec.Zones == nil {
 		return errors.New("zones must be configured")

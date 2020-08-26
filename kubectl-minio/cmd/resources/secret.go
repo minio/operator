@@ -30,7 +30,7 @@ func secretData(accessKey, secretKey string) map[string][]byte {
 	return m
 }
 
-// NewSecretForTenant will return a new secret a MinIO Cluster tenant
+// NewSecretForTenant will return a new secret a MinIO Tenant tenant
 func NewSecretForTenant(name, ns, accessKey, secretKey string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{

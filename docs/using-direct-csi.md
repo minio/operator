@@ -17,6 +17,7 @@ export $(cat default.env)
 If you are using microk8s `KUBELET_DIR_PATH` should be changed to `/var/snap/microk8s/common/var/lib/kubelet`
 
 ### Create the namespace for the driver
+
 ```
 kubectl apply -k github.com/minio/direct-csi
 ```
