@@ -16,6 +16,7 @@ require (
 	github.com/minio/minio v0.0.0-20200723003940-b9be841fd222
 	github.com/minio/minio-go/v7 v7.0.2
 	github.com/moby/moby v1.13.1
+	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/secure-io/sio-go v0.3.1 // indirect
 	github.com/shirou/gopsutil v2.20.6+incompatible // indirect
 	github.com/stretchr/testify v1.5.1

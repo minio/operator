@@ -21,10 +21,6 @@ spec:
           resources:
             requests:
               memory: 256Mi
-          volumeMounts:
-            - mountPath: /var/run/docker.sock
-              name: docker-access
-      volumes:
-        - name: docker-access
-          hostPath:
-            path: /var/run/docker.sock
+          securityContext:
+            runAsUser: 1000
+            runAsNonRoot: true

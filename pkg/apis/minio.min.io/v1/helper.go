@@ -18,15 +18,19 @@
 package v1
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -181,6 +185,62 @@ func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err erro
 		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
 	}
 	return time.Parse(minioReleaseTagTimeLayout, fields[1])
+}
+
+// ExtractTar extract tar files and puts it in the
+func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
+	tarFile, err := os.Open(basePath + tarFileName)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tarFile.Close()
+	}()
+
+	tr := tar.NewReader(tarFile)
+	if strings.HasSuffix(tarFileName, ".gz") {
+		gz, err := gzip.NewReader(tarFile)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			_ = gz.Close()
+		}()
+		tr = tar.NewReader(gz)
+	}
+
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("Tar file extraction failed: %s", err.Error())
+		}
+		if header.Typeflag == tar.TypeReg && find(filesToExtract, header.Name) {
+			name := strings.TrimPrefix(header.Name, "usr/bin/")
+			outFile, err := os.OpenFile(basePath+name, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+			if err != nil {
+				return fmt.Errorf("Tar file extraction failed: %s", err.Error())
+			}
+			defer func() {
+				_ = outFile.Close()
+			}()
+			if _, err := io.Copy(outFile, tr); err != nil {
+				return fmt.Errorf("Tar file extraction failed: %s", err.Error())
+			}
+		}
+	}
+	return nil
+}
+
+func find(slice []string, val string) bool {
+	for _, item := range slice {
+		if item == val {
+			return true
+		}
+	}
+	return false
 }
 
 // EnsureDefaults will ensure that if a user omits and fields in the

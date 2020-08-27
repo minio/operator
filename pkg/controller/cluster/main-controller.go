@@ -18,13 +18,11 @@
 package cluster
 
 import (
-	"archive/tar"
 	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -60,6 +58,10 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	jwtreq "github.com/dgrijalva/jwt-go/request"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/gorilla/mux"
 	"github.com/minio/minio/pkg/auth"
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
@@ -71,10 +73,6 @@ import (
 	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
-	"github.com/moby/moby/client"
-
-	dtypes "github.com/docker/docker/api/types"
-	dcontainer "github.com/docker/docker/api/types/container"
 )
 
 const (
@@ -450,7 +448,7 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) fetchTag(path string) (string, error) {
-	cmd := exec.Command("/tmp/minio", "--version")
+	cmd := exec.Command(path, "--version")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
@@ -465,58 +463,74 @@ func (c *Controller) fetchTag(path string) (string, error) {
 }
 
 // Attempts to fetch given image and then extracts and keeps relevant files (minio, minio.sha256sum & minio.minisig)
-// at a pre-defined location (/tmp/update/)
+// at a pre-defined location (/tmp/webhook/v1/update)
 func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) {
-	destBasePath := updatePath
+	basePath := updatePath
 	// return if base path is already present
-	if _, err = os.Stat(destBasePath); err == nil {
+	if _, err = os.Stat(basePath); err == nil {
 		return latest, err
 	}
 
-	if err = os.MkdirAll(destBasePath, 0755); err != nil {
+	if err = os.MkdirAll(basePath, 0755); err != nil {
 		return latest, err
 	}
 
-	ctx := context.Background()
-	srcBasePath := "/usr/bin/"
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		return latest, err
+	}
+
+	img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	if err != nil {
+		return latest, err
+	}
+
+	ls, err := img.Layers()
+	if err != nil {
+		return latest, err
+	}
+
+	// Find the file with largest size among all layers.
+	// This is the tar file with all minio relevant files.
+	maxSizeHash, _ := ls[0].Digest()
+	maxSize, _ := ls[0].Size()
+	for i := range ls {
+		s, _ := ls[i].Size()
+		if s > maxSize {
+			maxSize, _ = ls[i].Size()
+			maxSizeHash, _ = ls[i].Digest()
+		}
+	}
+
+	f, err := os.OpenFile(basePath+"image.tar", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		return latest, err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// Tarball writes a file called image.tar
+	// This file in turn has each container layer present inside in the form `<layer-hash>.tar.gz`
+	if err := tarball.Write(ref, img, f); err != nil {
+		return latest, err
+	}
+
+	// Extract the <layer-hash>.tar.gz file that has minio contents from `image.tar`
+	fileNameToExtract := strings.Split(maxSizeHash.String(), ":")[1] + ".tar.gz"
+	if err := miniov1.ExtractTar([]string{fileNameToExtract}, basePath, "image.tar"); err != nil {
+		return latest, err
+	}
+	// Extract the minio update related files (minio, minio.sha256sum and minio.minisig) from `<layer-hash>.tar.gz`
+	if err := miniov1.ExtractTar([]string{"usr/bin/minio", "usr/bin/minio.sha256sum", "usr/bin/minio.minisig"}, basePath, fileNameToExtract); err != nil {
+		return latest, err
+	}
+
 	srcBinary := "minio"
 	srcShaSum := "minio.sha256sum"
 	srcSig := "minio.minisig"
 
-	cli, err := client.NewEnvClient()
-	if err != nil {
-		return latest, err
-	}
-	// Create a temp container, this is to copy the contents to operator container
-	info, err := cli.ContainerCreate(ctx, &dcontainer.Config{
-		Image: image,
-	}, nil, nil, "")
-	if err != nil {
-		return latest, err
-	}
-
-	ts, _, err := cli.CopyFromContainer(ctx, info.ID, srcBasePath+srcBinary)
-	if err != nil {
-		return latest, err
-	}
-	tr := tar.NewReader(ts)
-	if _, err = tr.Next(); err != nil {
-		return latest, err
-	}
-
-	w, err := os.OpenFile("/tmp/"+srcBinary, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
-	if err != nil {
-		return latest, err
-	}
-
-	if _, err = io.Copy(w, tr); err != nil {
-		_ = w.Close()
-		return latest, err
-	}
-	_ = w.Sync()
-	_ = w.Close()
-
-	tag, err := c.fetchTag("/tmp/" + srcBinary)
+	tag, err := c.fetchTag(basePath + srcBinary)
 	if err != nil {
 		return latest, err
 	}
@@ -527,42 +541,17 @@ func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) 
 	}
 
 	destBinary := "minio." + tag
-	if err = os.Rename("/tmp/"+srcBinary, destBasePath+destBinary); err != nil {
-		return latest, err
-	}
-
 	destShaSum := "minio." + tag + ".sha256sum"
 	destSig := "minio." + tag + ".minisig"
-	filesToCopy := map[string]string{srcShaSum: destShaSum, srcSig: destSig}
+	filesToRename := map[string]string{srcBinary: destBinary, srcShaSum: destShaSum, srcSig: destSig}
 
-	// copy all files to operator container at copyDest path
-	for s, d := range filesToCopy {
-		ts, _, err = cli.CopyFromContainer(ctx, info.ID, srcBasePath+s)
-		if err != nil {
+	// rename all files to add tag specific values in the name.
+	// this is because minio updater looks for files in this name format.
+	for s, d := range filesToRename {
+		if err = os.Rename(basePath+s, basePath+d); err != nil {
 			return latest, err
 		}
-		tr = tar.NewReader(ts)
-		if _, err = tr.Next(); err != nil {
-			return latest, err
-		}
-
-		f, err := os.Create(destBasePath + d)
-		if err != nil {
-			return latest, err
-		}
-		if _, err = io.Copy(f, tr); err != nil {
-			_ = f.Close()
-			return latest, err
-		}
-		_ = f.Sync()
-		_ = f.Close()
 	}
-
-	// remove the temp MinIO container
-	if err = cli.ContainerRemove(ctx, info.ID, dtypes.ContainerRemoveOptions{}); err != nil {
-		return latest, err
-	}
-
 	return latest, nil
 }
 
@@ -946,15 +935,7 @@ func (c *Controller) syncHandler(key string) error {
 		klog.V(4).Infof("Collecting artifacts for Tenant '%s' to update MinIO from: %s, to: %s",
 			name, images[0], mi.Spec.Image)
 
-		// fetch the image contents (binary and signature files) to a local location in the operator
-		// container and then serve it via webhook server for the `mc admin update` to pick it up
-		image := mi.Spec.Image
-		components := strings.Split(mi.Spec.Image, slashSeparator)
-		if len(components) == 1 || len(components) == 0 {
-			image = "docker.io/" + mi.Spec.Image
-		}
-
-		latest, err := c.fetchArtifacts(image)
+		latest, err := c.fetchArtifacts(mi.Spec.Image)
 		if err != nil {
 			_ = c.removeArtifacts()
 			return err
