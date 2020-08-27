@@ -447,6 +447,15 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 
 	if zone.VolumeClaimTemplate != nil {
 		pvClaim := *zone.VolumeClaimTemplate
+		if t.Spec.PurgePVCOnTenantDelete {
+			pvClaim.OwnerReferences = []metav1.OwnerReference{
+				*metav1.NewControllerRef(t, schema.GroupVersionKind{
+					Group:   miniov1.SchemeGroupVersion.Group,
+					Version: miniov1.SchemeGroupVersion.Version,
+					Kind:    miniov1.MinIOCRDResourceKind,
+				}),
+			}
+		}
 		name := pvClaim.Name
 		for i := 0; i < int(zone.VolumesPerServer); i++ {
 			pvClaim.Name = name + strconv.Itoa(i)
