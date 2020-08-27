@@ -510,11 +510,11 @@ func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) 
 	}
 
 	if _, err = io.Copy(w, tr); err != nil {
-		w.Close()
+		_ = w.Close()
 		return latest, err
 	}
-	w.Sync()
-	w.Close()
+	_ = w.Sync()
+	_ = w.Close()
 
 	tag, err := c.fetchTag("/tmp/" + srcBinary)
 	if err != nil {
@@ -551,11 +551,11 @@ func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) 
 			return latest, err
 		}
 		if _, err = io.Copy(f, tr); err != nil {
-			f.Close()
+			_ = f.Close()
 			return latest, err
 		}
-		f.Sync()
-		f.Close()
+		_ = f.Sync()
+		_ = f.Close()
 	}
 
 	// remove the temp MinIO container
