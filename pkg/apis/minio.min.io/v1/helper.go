@@ -174,8 +174,7 @@ const (
 	releasePrefix             = "RELEASE"
 )
 
-// ReleaseTagToReleaseTime - converts a 'RELEASE.2017-09-29T19-16-56Z.hotfix'
-// into the build time
+// ReleaseTagToReleaseTime - converts a 'RELEASE.2017-09-29T19-16-56Z.hotfix' into the build time
 func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err error) {
 	fields := strings.Split(releaseTag, ".")
 	if len(fields) < 2 || len(fields) > 3 {
@@ -187,7 +186,7 @@ func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err erro
 	return time.Parse(minioReleaseTagTimeLayout, fields[1])
 }
 
-// ExtractTar extract tar files and puts it in the
+// ExtractTar extracts all tar files from the list `filesToExtract` and puts the files in the `basePath` location
 func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 	tarFile, err := os.Open(basePath + tarFileName)
 	if err != nil {
@@ -209,38 +208,43 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 		tr = tar.NewReader(gz)
 	}
 
+	var success = len(filesToExtract)
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
-			break
+			// only success if we have found all files
+			if success == 0 {
+				break
+			}
 		}
 		if err != nil {
-			return fmt.Errorf("Tar file extraction failed: %s", err.Error())
+			return fmt.Errorf("Tar file extraction failed: %w", err)
 		}
-		if header.Typeflag == tar.TypeReg && find(filesToExtract, header.Name) {
-			name := strings.TrimPrefix(header.Name, "usr/bin/")
-			outFile, err := os.OpenFile(basePath+name, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
-			if err != nil {
-				return fmt.Errorf("Tar file extraction failed: %s", err.Error())
-			}
-			defer func() {
+		if header.Typeflag == tar.TypeReg {
+			if name := find(filesToExtract, header.Name); name != "" {
+				outFile, err := os.OpenFile(basePath+path.Base(name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+				if err != nil {
+					return fmt.Errorf("Tar file extraction failed: %w", err)
+				}
+				if _, err := io.Copy(outFile, tr); err != nil {
+					_ = outFile.Close()
+					return fmt.Errorf("Tar file extraction failed: %w", err)
+				}
 				_ = outFile.Close()
-			}()
-			if _, err := io.Copy(outFile, tr); err != nil {
-				return fmt.Errorf("Tar file extraction failed: %s", err.Error())
+				success--
 			}
 		}
 	}
 	return nil
 }
 
-func find(slice []string, val string) bool {
+func find(slice []string, val string) string {
 	for _, item := range slice {
 		if item == val {
-			return true
+			return item
 		}
 	}
-	return false
+	return ""
 }
 
 // EnsureDefaults will ensure that if a user omits and fields in the

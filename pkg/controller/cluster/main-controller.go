@@ -462,16 +462,12 @@ func (c *Controller) fetchTag(path string) (string, error) {
 	return op[2], nil
 }
 
-// Attempts to fetch given image and then extracts and keeps relevant files (minio, minio.sha256sum & minio.minisig)
-// at a pre-defined location (/tmp/webhook/v1/update)
+// Attempts to fetch given image and then extracts and keeps relevant files
+// (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
 func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) {
 	basePath := updatePath
-	// return if base path is already present
-	if _, err = os.Stat(basePath); err == nil {
-		return latest, err
-	}
 
-	if err = os.MkdirAll(basePath, 0755); err != nil {
+	if err = os.MkdirAll(basePath, 1777); err != nil {
 		return latest, err
 	}
 
@@ -502,7 +498,7 @@ func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) 
 		}
 	}
 
-	f, err := os.OpenFile(basePath+"image.tar", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	f, err := os.OpenFile(basePath+"image.tar", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 	if err != nil {
 		return latest, err
 	}
@@ -512,17 +508,18 @@ func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) 
 
 	// Tarball writes a file called image.tar
 	// This file in turn has each container layer present inside in the form `<layer-hash>.tar.gz`
-	if err := tarball.Write(ref, img, f); err != nil {
+	if err = tarball.Write(ref, img, f); err != nil {
 		return latest, err
 	}
 
 	// Extract the <layer-hash>.tar.gz file that has minio contents from `image.tar`
 	fileNameToExtract := strings.Split(maxSizeHash.String(), ":")[1] + ".tar.gz"
-	if err := miniov1.ExtractTar([]string{fileNameToExtract}, basePath, "image.tar"); err != nil {
+	if err = miniov1.ExtractTar([]string{fileNameToExtract}, basePath, "image.tar"); err != nil {
 		return latest, err
 	}
+
 	// Extract the minio update related files (minio, minio.sha256sum and minio.minisig) from `<layer-hash>.tar.gz`
-	if err := miniov1.ExtractTar([]string{"usr/bin/minio", "usr/bin/minio.sha256sum", "usr/bin/minio.minisig"}, basePath, fileNameToExtract); err != nil {
+	if err = miniov1.ExtractTar([]string{"usr/bin/minio", "usr/bin/minio.sha256sum", "usr/bin/minio.minisig"}, basePath, fileNameToExtract); err != nil {
 		return latest, err
 	}
 
@@ -971,6 +968,7 @@ func (c *Controller) syncHandler(key string) error {
 			klog.Infof("Tenant '%s' MinIO is already running the most recent version of %s",
 				name,
 				us.CurrentVersion)
+			return nil
 		}
 
 		// clean the local directory
