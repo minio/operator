@@ -49,6 +49,9 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 		Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
 		Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
 	}, corev1.EnvVar{
+		Name:  "MINIO_DOMAIN",
+		Value: t.MinIOBucketBaseDomain(),
+	}, corev1.EnvVar{
 		Name: "MINIO_ARGS",
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
