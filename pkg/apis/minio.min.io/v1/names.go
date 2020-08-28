@@ -79,6 +79,11 @@ func (t *Tenant) MinIOBucketBaseDomain() string {
 	return fmt.Sprintf("%s.svc.%s", t.Namespace, ClusterDomain)
 }
 
+// MinIOBucketBaseWildcardDomain returns the base domain name for buckets
+func (t *Tenant) MinIOBucketBaseWildcardDomain() string {
+	return fmt.Sprintf("*.%s.svc.%s", t.Namespace, ClusterDomain)
+}
+
 // MinIOFQDNServiceName returns the name of the service created for the tenant.
 func (t *Tenant) MinIOFQDNServiceName() string {
 	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)

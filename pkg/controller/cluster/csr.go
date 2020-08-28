@@ -94,6 +94,7 @@ func generateCryptoData(mi *miniov1.Tenant, hostsTemplate string) ([]byte, []byt
 	} else {
 		dnsNames = append(mi.Spec.CertConfig.DNSNames, hosts...)
 	}
+	dnsNames = append(dnsNames, mi.MinIOBucketBaseWildcardDomain())
 
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
