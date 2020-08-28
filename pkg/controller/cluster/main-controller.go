@@ -24,6 +24,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -56,6 +58,10 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	jwtreq "github.com/dgrijalva/jwt-go/request"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/gorilla/mux"
 	"github.com/minio/minio/pkg/auth"
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
@@ -325,9 +331,10 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1
 // Supported remote envs
 const (
 	envMinIOArgs = "MINIO_ARGS"
+	updatePath   = "/tmp" + miniov1.WebhookAPIUpdate + slashSeparator
 )
 
-// BucketSrvHandler - POST /webhook/api/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
+// BucketSrvHandler - POST /webhook/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
 func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
@@ -387,7 +394,7 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetenvHandler - GET /webhook/api/v1/getenv/{namespace}/{name}?key={env}
+// GetenvHandler - GET /webhook/v1/getenv/{namespace}/{name}?key={env}
 func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	namespace := vars["namespace"]
@@ -438,6 +445,116 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("%s env key is not supported yet", key), http.StatusBadRequest)
 		return
 	}
+}
+
+func (c *Controller) fetchTag(path string) (string, error) {
+	cmd := exec.Command(path, "--version")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return "", err
+	}
+	op := strings.Fields(out.String())
+	if len(op) != 3 {
+		return "", fmt.Errorf("incorrect output while fetching tag value - %d", len((op)))
+	}
+	return op[2], nil
+}
+
+// Attempts to fetch given image and then extracts and keeps relevant files
+// (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
+func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) {
+	basePath := updatePath
+
+	if err = os.MkdirAll(basePath, 1777); err != nil {
+		return latest, err
+	}
+
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		return latest, err
+	}
+
+	img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	if err != nil {
+		return latest, err
+	}
+
+	ls, err := img.Layers()
+	if err != nil {
+		return latest, err
+	}
+
+	// Find the file with largest size among all layers.
+	// This is the tar file with all minio relevant files.
+	maxSizeHash, _ := ls[0].Digest()
+	maxSize, _ := ls[0].Size()
+	for i := range ls {
+		s, _ := ls[i].Size()
+		if s > maxSize {
+			maxSize, _ = ls[i].Size()
+			maxSizeHash, _ = ls[i].Digest()
+		}
+	}
+
+	f, err := os.OpenFile(basePath+"image.tar", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	if err != nil {
+		return latest, err
+	}
+	defer func() {
+		_ = f.Close()
+	}()
+
+	// Tarball writes a file called image.tar
+	// This file in turn has each container layer present inside in the form `<layer-hash>.tar.gz`
+	if err = tarball.Write(ref, img, f); err != nil {
+		return latest, err
+	}
+
+	// Extract the <layer-hash>.tar.gz file that has minio contents from `image.tar`
+	fileNameToExtract := strings.Split(maxSizeHash.String(), ":")[1] + ".tar.gz"
+	if err = miniov1.ExtractTar([]string{fileNameToExtract}, basePath, "image.tar"); err != nil {
+		return latest, err
+	}
+
+	// Extract the minio update related files (minio, minio.sha256sum and minio.minisig) from `<layer-hash>.tar.gz`
+	if err = miniov1.ExtractTar([]string{"usr/bin/minio", "usr/bin/minio.sha256sum", "usr/bin/minio.minisig"}, basePath, fileNameToExtract); err != nil {
+		return latest, err
+	}
+
+	srcBinary := "minio"
+	srcShaSum := "minio.sha256sum"
+	srcSig := "minio.minisig"
+
+	tag, err := c.fetchTag(basePath + srcBinary)
+	if err != nil {
+		return latest, err
+	}
+
+	latest, err = miniov1.ReleaseTagToReleaseTime(tag)
+	if err != nil {
+		return latest, err
+	}
+
+	destBinary := "minio." + tag
+	destShaSum := "minio." + tag + ".sha256sum"
+	destSig := "minio." + tag + ".minisig"
+	filesToRename := map[string]string{srcBinary: destBinary, srcShaSum: destShaSum, srcSig: destSig}
+
+	// rename all files to add tag specific values in the name.
+	// this is because minio updater looks for files in this name format.
+	for s, d := range filesToRename {
+		if err = os.Rename(basePath+s, basePath+d); err != nil {
+			return latest, err
+		}
+	}
+	return latest, nil
+}
+
+// Remove all the files created during upload process
+func (c *Controller) removeArtifacts() error {
+	return os.RemoveAll(updatePath)
 }
 
 // Start will set up the event handlers for types we are interested in, as well
@@ -805,8 +922,6 @@ func (c *Controller) syncHandler(key string) error {
 			return fmt.Errorf("MinIO doesn't seem to have enough quorum to proceed with binary update")
 		}
 
-		klog.Infof("Attempting Tenant %s MinIO server version %s, to: %s", name, images[0], mi.Spec.Image)
-
 		// Images different with the newer state change, continue to verify
 		// if upgrade is possible
 		mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingMinIOVersion, totalReplicas)
@@ -814,53 +929,50 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 
-		imageSplits := strings.Split(mi.Spec.Image, ":")
-		if len(imageSplits) == 1 {
-			return fmt.Errorf("MinIO operator does not allow images without RELEASE tags")
-		}
-
-		latest, err := miniov1.ReleaseTagToReleaseTime(imageSplits[1])
-		if err != nil {
-			return fmt.Errorf("Unsupported release tag, unable to apply requested update %w", err)
-		}
-
-		currentImageSplits := strings.Split(images[0], ":")
-		if len(currentImageSplits) == 1 {
-			return fmt.Errorf("MinIO operator already deployed container with RELEASE tags, update not allowed please manually fix this using 'kubectl patch --help'")
-		}
-
-		current, err := miniov1.ReleaseTagToReleaseTime(currentImageSplits[1])
-		if err != nil {
-			return fmt.Errorf("Unsupported release tag on current image, non-disruptive update not allowed %w", err)
-		}
-
-		// Verify if the new release tag is latest, if its not latest refuse to apply the new config.
-		if latest.Before(current) {
-			return fmt.Errorf("Refusing to downgrade the tenant %s to version %s, from %s",
-				name, mi.Spec.Image, images[0])
-		}
-
-		klog.V(4).Infof("Updating Tenant %s MinIO server version from: %s, to: %s",
+		klog.V(4).Infof("Collecting artifacts for Tenant '%s' to update MinIO from: %s, to: %s",
 			name, images[0], mi.Spec.Image)
 
-		// FIXME: add provisions to provide a custom update URL for private environments.
-		updateURL, err := mi.UpdateURL(latest, "")
+		latest, err := c.fetchArtifacts(mi.Spec.Image)
 		if err != nil {
-			// Correct URL could not be obtained, not proceeding to update.
-			return fmt.Errorf("Unable to get canonical update URL, failed with %w", err)
+			_ = c.removeArtifacts()
+			return err
 		}
 
-		klog.V(4).Infof("Updating Tenant %s MinIO server version from: %s, to: %s -> URL: %s",
+		// FIXME: we can make operator TLS configurable here.
+		updateURL, err := mi.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
+			miniov1.GetNSFromFile(), miniov1.ClusterDomain,
+			miniov1.WebhookDefaultPort, miniov1.WebhookAPIUpdate,
+		))
+		if err != nil {
+			_ = c.removeArtifacts()
+
+			// Correct URL could not be obtained, not proceeding to update.
+			return fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %w", name, err)
+		}
+
+		klog.V(4).Infof("Updating Tenant %s MinIO version from: %s, to: %s -> URL: %s",
 			name, mi.Spec.Image, images[0], updateURL)
 
 		us, err := adminClnt.ServerUpdate(ctx, updateURL)
 		if err != nil {
+			_ = c.removeArtifacts()
+
 			// Update failed, nothing needs to be changed in the container
-			return fmt.Errorf("MinIO Server binary update failed with %w", err)
+			return fmt.Errorf("Tenant '%s' MinIO update failed with %w", name, err)
 		}
 
-		klog.Infof("Applied MinIO server binary update to the tenant %s from: %s, to: %s successfully",
-			name, us.CurrentVersion, us.UpdatedVersion)
+		if us.CurrentVersion != us.UpdatedVersion {
+			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
+				name, us.CurrentVersion, us.UpdatedVersion)
+		} else {
+			klog.Infof("Tenant '%s' MinIO is already running the most recent version of %s",
+				name,
+				us.CurrentVersion)
+			return nil
+		}
+
+		// clean the local directory
+		_ = c.removeArtifacts()
 
 		for _, zone := range mi.Spec.Zones {
 			// Now proceed to make the yaml changes for the tenant statefulset.
@@ -869,6 +981,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 		}
+
 	}
 
 	if mi.HasConsoleEnabled() {

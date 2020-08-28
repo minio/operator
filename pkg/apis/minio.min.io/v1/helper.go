@@ -18,15 +18,19 @@
 package v1
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -63,6 +67,7 @@ const (
 const (
 	WebhookAPIGetenv        = WebhookAPIVersion + "/getenv"
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
+	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
 )
 
 type hostsTemplateValues struct {
@@ -169,8 +174,7 @@ const (
 	releasePrefix             = "RELEASE"
 )
 
-// ReleaseTagToReleaseTime - converts a 'RELEASE.2017-09-29T19-16-56Z.hotfix'
-// into the build time
+// ReleaseTagToReleaseTime - converts a 'RELEASE.2017-09-29T19-16-56Z.hotfix' into the build time
 func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err error) {
 	fields := strings.Split(releaseTag, ".")
 	if len(fields) < 2 || len(fields) > 3 {
@@ -180,6 +184,67 @@ func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err erro
 		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
 	}
 	return time.Parse(minioReleaseTagTimeLayout, fields[1])
+}
+
+// ExtractTar extracts all tar files from the list `filesToExtract` and puts the files in the `basePath` location
+func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
+	tarFile, err := os.Open(basePath + tarFileName)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = tarFile.Close()
+	}()
+
+	tr := tar.NewReader(tarFile)
+	if strings.HasSuffix(tarFileName, ".gz") {
+		gz, err := gzip.NewReader(tarFile)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			_ = gz.Close()
+		}()
+		tr = tar.NewReader(gz)
+	}
+
+	var success = len(filesToExtract)
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			// only success if we have found all files
+			if success == 0 {
+				break
+			}
+		}
+		if err != nil {
+			return fmt.Errorf("Tar file extraction failed: %w", err)
+		}
+		if header.Typeflag == tar.TypeReg {
+			if name := find(filesToExtract, header.Name); name != "" {
+				outFile, err := os.OpenFile(basePath+path.Base(name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+				if err != nil {
+					return fmt.Errorf("Tar file extraction failed: %w", err)
+				}
+				if _, err := io.Copy(outFile, tr); err != nil {
+					_ = outFile.Close()
+					return fmt.Errorf("Tar file extraction failed: %w", err)
+				}
+				_ = outFile.Close()
+				success--
+			}
+		}
+	}
+	return nil
+}
+
+func find(slice []string, val string) string {
+	for _, item := range slice {
+		if item == val {
+			return item
+		}
+	}
+	return ""
 }
 
 // EnsureDefaults will ensure that if a user omits and fields in the
@@ -434,7 +499,7 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	u.Path = path.Dir(u.Path) + "/minio." + releasePrefix + "." + lrTime.Format(minioReleaseTagTimeLayout) + ".sha256sum"
+	u.Path = u.Path + "/minio." + releasePrefix + "." + lrTime.Format(minioReleaseTagTimeLayout) + ".sha256sum"
 	return u.String(), nil
 }
 
