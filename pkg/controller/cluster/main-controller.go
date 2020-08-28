@@ -949,8 +949,13 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			_ = c.removeArtifacts()
 
+			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", name, err)
+			if _, terr := c.updateTenantStatus(ctx, mi, err.Error(), totalReplicas); terr != nil {
+				return terr
+			}
+
 			// Correct URL could not be obtained, not proceeding to update.
-			return fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %w", name, err)
+			return err
 		}
 
 		klog.V(4).Infof("Updating Tenant %s MinIO version from: %s, to: %s -> URL: %s",
@@ -960,17 +965,26 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			_ = c.removeArtifacts()
 
+			err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", name, err)
+			if _, terr := c.updateTenantStatus(ctx, mi, err.Error(), totalReplicas); terr != nil {
+				return terr
+			}
+
 			// Update failed, nothing needs to be changed in the container
-			return fmt.Errorf("Tenant '%s' MinIO update failed with %w", name, err)
+			return err
 		}
 
 		if us.CurrentVersion != us.UpdatedVersion {
 			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
 				name, us.CurrentVersion, us.UpdatedVersion)
 		} else {
-			klog.Infof("Tenant '%s' MinIO is already running the most recent version of %s",
+			msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
 				name,
 				us.CurrentVersion)
+			klog.Info(msg)
+			if _, terr := c.updateTenantStatus(ctx, mi, msg, totalReplicas); terr != nil {
+				return err
+			}
 			return nil
 		}
 
