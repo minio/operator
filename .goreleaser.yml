@@ -35,6 +35,7 @@ builds:
     binary: kubectl-minio
     goos:
       - linux
+      - darwin
     goarch:
       - amd64
     env:
