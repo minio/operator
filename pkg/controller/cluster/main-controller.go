@@ -88,25 +88,28 @@ const (
 	// MessageResourceSynced is the message used for an Event fired when a Tenant
 	// is synced successfully
 	MessageResourceSynced = "Tenant synced successfully"
-	// Standard Status messages for Tenant
-	statusReady                         = "Ready"
-	statusProvisioningCIService         = "Provisioning MinIO Tenant IP Service"
-	statusProvisioningHLService         = "Provisioning MinIO Headless Service"
-	statusProvisioningStatefulSet       = "Provisioning MinIO Statefulset"
-	statusProvisioningConsoleDeployment = "Provisioning Console Deployment"
-	statusProvisioningKESStatefulSet    = "Provisioning KES StatefulSet"
-	statusWaitingForReadyState          = "Waiting for Pods to be ready"
-	statusWaitingMinIOCert              = "Waiting for MinIO TLS Certificate"
-	statusWaitingMinIOClientCert        = "Waiting for MinIO TLS Client Certificate"
-	statusWaitingKESCert                = "Waiting for KES TLS Certificate"
-	statusWaitingConsoleCert            = "Waiting for Console TLS Certificate"
-	statusUpdatingMinIOVersion          = "Updating MinIO Version"
-	statusUpdatingConsoleVersion        = "Updating Console Version"
-	statusUpdatingResourceRequirements  = "Updating Resource Requirements"
-	statusUpdatingAffinity              = "Updating Pod Affinity"
-	statusNotOwned                      = "Statefulset not controlled by operator"
-	statusFailedAlreadyExists           = "Another MinIO Tenant already exists in the namespace"
-	statusInconsistentMinIOVersions     = "Different versions across MinIO Zones"
+)
+
+// Standard Status messages for Tenant
+const (
+	StatusReady                         = "Ready"
+	StatusProvisioningCIService         = "Provisioning MinIO Cluster IP Service"
+	StatusProvisioningHLService         = "Provisioning MinIO Headless Service"
+	StatusProvisioningStatefulSet       = "Provisioning MinIO Statefulset"
+	StatusProvisioningConsoleDeployment = "Provisioning Console Deployment"
+	StatusProvisioningKESStatefulSet    = "Provisioning KES StatefulSet"
+	StatusWaitingForReadyState          = "Waiting for Pods to be ready"
+	StatusWaitingMinIOCert              = "Waiting for MinIO TLS Certificate"
+	StatusWaitingMinIOClientCert        = "Waiting for MinIO TLS Client Certificate"
+	StatusWaitingKESCert                = "Waiting for KES TLS Certificate"
+	StatusWaitingConsoleCert            = "Waiting for Console TLS Certificate"
+	StatusUpdatingMinIOVersion          = "Updating MinIO Version"
+	StatusUpdatingConsoleVersion        = "Updating Console Version"
+	StatusUpdatingResourceRequirements  = "Updating Resource Requirements"
+	StatusUpdatingAffinity              = "Updating Pod Affinity"
+	StatusNotOwned                      = "Statefulset not controlled by operator"
+	StatusFailedAlreadyExists           = "Another MinIO Tenant already exists in the namespace"
+	StatusInconsistentMinIOVersions     = "Different versions across MinIO Zones"
 )
 
 // Controller struct watches the Kubernetes API for changes to Tenant resources
@@ -750,7 +753,7 @@ func (c *Controller) syncHandler(key string) error {
 	svc, err := c.serviceLister.Services(mi.Namespace).Get(mi.MinIOCIServiceName())
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningCIService, 0); err != nil {
+			if mi, err = c.updateTenantStatus(ctx, mi, StatusProvisioningCIService, 0); err != nil {
 				return err
 			}
 			klog.V(2).Infof("Creating a new Cluster IP Service for cluster %q", nsName)
@@ -769,7 +772,7 @@ func (c *Controller) syncHandler(key string) error {
 	hlSvc, err := c.serviceLister.Services(mi.Namespace).Get(mi.MinIOHLServiceName())
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningHLService, 0); err != nil {
+			if mi, err = c.updateTenantStatus(ctx, mi, StatusProvisioningHLService, 0); err != nil {
 				return err
 			}
 			klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
@@ -793,8 +796,8 @@ func (c *Controller) syncHandler(key string) error {
 	// Only 1 minio tenant per namespace allowed.
 	if len(li) > 1 {
 		for _, t := range li {
-			if t.Status.CurrentState != statusReady {
-				if _, err = c.updateTenantStatus(ctx, t, statusFailedAlreadyExists, 0); err != nil {
+			if t.Status.CurrentState != StatusReady {
+				if _, err = c.updateTenantStatus(ctx, t, StatusFailedAlreadyExists, 0); err != nil {
 					return err
 				}
 				return fmt.Errorf("Failed creating MinIO Tenant '%s' because another MinIO Tenant already exists in the namespace '%s'", t.Name, mi.Namespace)
@@ -840,7 +843,7 @@ func (c *Controller) syncHandler(key string) error {
 						}
 					}
 				}
-				if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningStatefulSet, 0); err != nil {
+				if mi, err = c.updateTenantStatus(ctx, mi, StatusProvisioningStatefulSet, 0); err != nil {
 					return err
 				}
 
@@ -864,7 +867,7 @@ func (c *Controller) syncHandler(key string) error {
 			}
 
 			if zone.Resources.String() != ss.Spec.Template.Spec.Containers[0].Resources.String() {
-				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingResourceRequirements, ss.Status.Replicas); err != nil {
+				if mi, err = c.updateTenantStatus(ctx, mi, StatusUpdatingResourceRequirements, ss.Status.Replicas); err != nil {
 					return err
 				}
 				klog.V(4).Infof("resource requirements updates for zone %s", zone.Name)
@@ -875,7 +878,7 @@ func (c *Controller) syncHandler(key string) error {
 			}
 
 			if zone.Affinity.String() != ss.Spec.Template.Spec.Affinity.String() {
-				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingAffinity, ss.Status.Replicas); err != nil {
+				if mi, err = c.updateTenantStatus(ctx, mi, StatusUpdatingAffinity, ss.Status.Replicas); err != nil {
 					return err
 				}
 				klog.V(4).Infof("affinity update for zone %s", zone.Name)
@@ -889,7 +892,7 @@ func (c *Controller) syncHandler(key string) error {
 		// If the StatefulSet is not controlled by this Tenant resource, we should log
 		// a warning to the event recorder and ret
 		if !metav1.IsControlledBy(ss, mi) {
-			if mi, err = c.updateTenantStatus(ctx, mi, statusNotOwned, ss.Status.Replicas); err != nil {
+			if mi, err = c.updateTenantStatus(ctx, mi, StatusNotOwned, ss.Status.Replicas); err != nil {
 				return err
 			}
 			msg := fmt.Sprintf(MessageResourceExists, ss.Name)
@@ -906,7 +909,7 @@ func (c *Controller) syncHandler(key string) error {
 	for _, image := range images {
 		for i := 0; i < len(images); i++ {
 			if image != images[i] {
-				if _, err = c.updateTenantStatus(ctx, mi, statusInconsistentMinIOVersions, totalReplicas); err != nil {
+				if _, err = c.updateTenantStatus(ctx, mi, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
 					return err
 				}
 				return fmt.Errorf("Zone %d is running incorrect image version, all zones are required to be on the same MinIO version. Attempting update of the inconsistent zone",
@@ -917,14 +920,14 @@ func (c *Controller) syncHandler(key string) error {
 
 	// In loop above we compared all the versions in all zones.
 	// So comparing mi.Spec.Image (version to update to) against one value from images slice is fine.
-	if mi.Spec.Image != images[0] && mi.Status.CurrentState != statusUpdatingMinIOVersion {
+	if mi.Spec.Image != images[0] && mi.Status.CurrentState != StatusUpdatingMinIOVersion {
 		if !mi.MinIOHealthCheck() {
 			return fmt.Errorf("MinIO doesn't seem to have enough quorum to proceed with binary update")
 		}
 
 		// Images different with the newer state change, continue to verify
 		// if upgrade is possible
-		mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingMinIOVersion, totalReplicas)
+		mi, err = c.updateTenantStatus(ctx, mi, StatusUpdatingMinIOVersion, totalReplicas)
 		if err != nil {
 			return err
 		}
@@ -946,8 +949,13 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			_ = c.removeArtifacts()
 
+			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", name, err)
+			if _, terr := c.updateTenantStatus(ctx, mi, err.Error(), totalReplicas); terr != nil {
+				return terr
+			}
+
 			// Correct URL could not be obtained, not proceeding to update.
-			return fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %w", name, err)
+			return err
 		}
 
 		klog.V(4).Infof("Updating Tenant %s MinIO version from: %s, to: %s -> URL: %s",
@@ -957,17 +965,26 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			_ = c.removeArtifacts()
 
+			err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", name, err)
+			if _, terr := c.updateTenantStatus(ctx, mi, err.Error(), totalReplicas); terr != nil {
+				return terr
+			}
+
 			// Update failed, nothing needs to be changed in the container
-			return fmt.Errorf("Tenant '%s' MinIO update failed with %w", name, err)
+			return err
 		}
 
 		if us.CurrentVersion != us.UpdatedVersion {
 			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
 				name, us.CurrentVersion, us.UpdatedVersion)
 		} else {
-			klog.Infof("Tenant '%s' MinIO is already running the most recent version of %s",
+			msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
 				name,
 				us.CurrentVersion)
+			klog.Info(msg)
+			if _, terr := c.updateTenantStatus(ctx, mi, msg, totalReplicas); terr != nil {
+				return err
+			}
 			return nil
 		}
 
@@ -1002,7 +1019,7 @@ func (c *Controller) syncHandler(key string) error {
 
 				// Make sure that MinIO is up and running to enable MinIO console user.
 				if mi.MinIOHealthCheck() {
-					if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningConsoleDeployment, totalReplicas); err != nil {
+					if mi, err = c.updateTenantStatus(ctx, mi, StatusProvisioningConsoleDeployment, totalReplicas); err != nil {
 						return err
 					}
 
@@ -1025,7 +1042,7 @@ func (c *Controller) syncHandler(key string) error {
 						return err
 					}
 				} else {
-					if mi, err = c.updateTenantStatus(ctx, mi, statusWaitingForReadyState, totalReplicas); err != nil {
+					if mi, err = c.updateTenantStatus(ctx, mi, StatusWaitingForReadyState, totalReplicas); err != nil {
 						return err
 					}
 				}
@@ -1034,7 +1051,7 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		} else {
 			if consoleDeployment != nil && !mi.Spec.Console.EqualImage(consoleDeployment.Spec.Template.Spec.Containers[0].Image) {
-				if mi, err = c.updateTenantStatus(ctx, mi, statusUpdatingConsoleVersion, totalReplicas); err != nil {
+				if mi, err = c.updateTenantStatus(ctx, mi, StatusUpdatingConsoleVersion, totalReplicas); err != nil {
 					return err
 				}
 				klog.V(2).Infof("Updating Tenant %s console version %s, to: %s", name,
@@ -1077,7 +1094,7 @@ func (c *Controller) syncHandler(key string) error {
 		_, err = c.statefulSetLister.StatefulSets(mi.Namespace).Get(mi.KESStatefulSetName())
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				if mi, err = c.updateTenantStatus(ctx, mi, statusProvisioningKESStatefulSet, 0); err != nil {
+				if mi, err = c.updateTenantStatus(ctx, mi, StatusProvisioningKESStatefulSet, 0); err != nil {
 					return err
 				}
 
@@ -1110,14 +1127,14 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
-	_, err = c.updateTenantStatus(ctx, mi, statusReady, totalReplicas)
+	_, err = c.updateTenantStatus(ctx, mi, StatusReady, totalReplicas)
 	return err
 }
 
 func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.Tenant, createClientCert bool) error {
 	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOCSRName(), metav1.GetOptions{}); err != nil {
 		if k8serrors.IsNotFound(err) {
-			if mi, err = c.updateTenantStatus(ctx, mi, statusWaitingMinIOCert, 0); err != nil {
+			if mi, err = c.updateTenantStatus(ctx, mi, StatusWaitingMinIOCert, 0); err != nil {
 				return err
 			}
 			klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Server Certs, cluster %q", nsName)
@@ -1131,7 +1148,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 	if createClientCert {
 		if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.MinIOClientCSRName(), metav1.GetOptions{}); err != nil {
 			if k8serrors.IsNotFound(err) {
-				if mi, err = c.updateTenantStatus(ctx, mi, statusWaitingMinIOClientCert, 0); err != nil {
+				if mi, err = c.updateTenantStatus(ctx, mi, StatusWaitingMinIOClientCert, 0); err != nil {
 					return err
 				}
 				klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Client Certs, cluster %q", nsName)
@@ -1149,7 +1166,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.Tenant) error {
 	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.KESCSRName(), metav1.GetOptions{}); err != nil {
 		if k8serrors.IsNotFound(err) {
-			if mi, err = c.updateTenantStatus(ctx, mi, statusWaitingKESCert, 0); err != nil {
+			if mi, err = c.updateTenantStatus(ctx, mi, StatusWaitingKESCert, 0); err != nil {
 				return err
 			}
 			klog.V(2).Infof("Creating a new Certificate Signing Request for KES Server Certs, cluster %q", nsName)
@@ -1266,7 +1283,7 @@ func (c *Controller) handleObject(obj interface{}) {
 func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.NamespacedName, mi *miniov1.Tenant) error {
 	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, mi.ConsoleCSRName(), metav1.GetOptions{}); err != nil {
 		if k8serrors.IsNotFound(err) {
-			if mi, err = c.updateTenantStatus(ctx, mi, statusWaitingConsoleCert, 0); err != nil {
+			if mi, err = c.updateTenantStatus(ctx, mi, StatusWaitingConsoleCert, 0); err != nil {
 				return err
 			}
 			klog.V(2).Infof("Creating a new Certificate Signing Request for Console Server Certs, cluster %q", nsName)
