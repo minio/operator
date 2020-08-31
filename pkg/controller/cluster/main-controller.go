@@ -90,7 +90,7 @@ const (
 	MessageResourceSynced = "Tenant synced successfully"
 	// Standard Status messages for Tenant
 	statusReady                         = "Ready"
-	statusProvisioningCIService         = "Provisioning MinIO Cluster IP Service"
+	statusProvisioningCIService         = "Provisioning MinIO Tenant IP Service"
 	statusProvisioningHLService         = "Provisioning MinIO Headless Service"
 	statusProvisioningStatefulSet       = "Provisioning MinIO Statefulset"
 	statusProvisioningConsoleDeployment = "Provisioning Console Deployment"
@@ -428,7 +428,7 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 	mi.EnsureDefaults()
 	miniov1.InitGlobals(mi)
 
-	// Validate the MinIO Instance
+	// Validate the MinIO Tenant
 	if err = mi.Validate(); err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -705,7 +705,7 @@ func (c *Controller) syncHandler(key string) error {
 	mi.EnsureDefaults()
 	miniov1.InitGlobals(mi)
 
-	// Validate the MinIO Instance
+	// Validate the MinIO Tenant
 	if err = mi.Validate(); err != nil {
 		klog.V(2).Infof(err.Error())
 		var err2 error
@@ -784,7 +784,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// List all MinIO instances in this namespace.
+	// List all MinIO Tenants in this namespace.
 	li, err := c.tenantsLister.Tenants(mi.Namespace).List(labels.NewSelector())
 	if err != nil {
 		return err
