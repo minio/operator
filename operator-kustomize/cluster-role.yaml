@@ -6,6 +6,14 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - persistentvolumeclaims
+    verbs:
+      - get
+      - update
+      - list
+  - apiGroups:
+      - ""
+    resources:
       - namespaces
       - secrets
       - pods

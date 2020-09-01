@@ -51,6 +51,10 @@ type TenantScheduler struct {
 type TenantSpec struct {
 	// Definition for Cluster in given MinIO cluster
 	Zones []Zone `json:"zones"`
+	// Delete PVCs on tenant deletion. Defaults to (false) preserving PVCs if tenant is deleted. PVCs will
+	// need cleanup post tenant deletion if not set to true. If set to true ALL PVs for the tenant will be deleted.
+	// +optional
+	PurgePVCOnTenantDelete bool `json:"purgePVCOnTenantDelete,omitempty"`
 	// Image defines the Tenant Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`

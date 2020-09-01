@@ -705,6 +705,13 @@ func (c *Controller) syncHandler(key string) error {
 	}
 	// Set any required default values and init Global variables
 	nsName := types.NamespacedName{Namespace: namespace, Name: name}
+
+	// Update tenant before setting defaults
+	mi, err = c.applyFinalizer(ctx, mi)
+	if err != nil {
+		return err
+	}
+
 	mi.EnsureDefaults()
 	miniov1.InitGlobals(mi)
 
@@ -720,6 +727,16 @@ func (c *Controller) syncHandler(key string) error {
 
 	secret, err := c.applyOperatorWebhookSecret(ctx, mi)
 	if err != nil {
+		return err
+	}
+
+	// Process deletion
+	if !mi.ObjectMeta.DeletionTimestamp.IsZero() {
+		klog.Infof("deleting tenant:%s/%s", mi.Namespace, mi.Name)
+		err = c.processDelete(ctx, mi)
+		if err != nil {
+			return err
+		}
 		return err
 	}
 
@@ -887,6 +904,13 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 			}
+
+			// Set the PVC purge  behavior needed.
+			err = c.processPurgePVCsOnDeleteFlag(ctx, mi)
+			if err != nil {
+				return err
+			}
+
 		}
 
 		// If the StatefulSet is not controlled by this Tenant resource, we should log
@@ -1295,4 +1319,105 @@ func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.
 		}
 	}
 	return nil
+}
+
+// getPodsForTenant returns a list of pods running on a given tenant
+func (c *Controller) getPodsForTenant(tenant *miniov1.Tenant) ([]corev1.Pod, error) {
+	pods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(context.Background(), metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", miniov1.TenantLabel, tenant.Name),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pods.Items, nil
+}
+
+// processPurgePVCsOnDelete sets the owner reference for PVC to the tenant. This allows automatic deletion
+// of the PVCs when the tenant is deleted.
+func (c *Controller) processPurgePVCsOnDeleteFlag(ctx context.Context, mi *miniov1.Tenant) error {
+
+	pods, err := c.getPodsForTenant(mi)
+	if err != nil {
+		// No pods created for tenant
+		if k8serrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	for _, pod := range pods {
+		for _, pvc := range pod.Spec.Volumes {
+			if pvc.PersistentVolumeClaim != nil {
+				p, err := c.kubeClientSet.CoreV1().PersistentVolumeClaims(mi.Namespace).Get(ctx, pvc.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
+				if err != nil {
+					// No claims found
+					if k8serrors.IsNotFound(err) {
+						return nil
+					}
+					return err
+				}
+				update := true
+				if mi.Spec.PurgePVCOnTenantDelete {
+					// No need to add if already present
+					for _, o := range p.OwnerReferences {
+						if o.UID == mi.OwnerRef()[0].UID {
+							update = false
+							break
+						}
+					}
+					if update {
+						p.OwnerReferences = append(p.OwnerReferences, mi.OwnerRef()...)
+					}
+				} else {
+					update = false
+					// If UID is set remove and update
+					for i, o := range mi.OwnerReferences {
+						// Loop through ALL to remove the UID reference to tenant.
+						if o.UID == mi.OwnerRef()[0].UID {
+							p.OwnerReferences = append(p.OwnerReferences[:i], p.OwnerReferences[i+1:]...)
+							update = true
+						}
+					}
+				}
+				if update {
+					_, err = c.kubeClientSet.CoreV1().PersistentVolumeClaims(mi.Namespace).Update(ctx, p, metav1.UpdateOptions{})
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (c *Controller) applyFinalizer(ctx context.Context, mi *miniov1.Tenant) (*miniov1.Tenant, error) {
+	found := false
+	for _, f := range mi.Finalizers {
+		if f == miniov1.Finalizer {
+			found = true
+			break
+		}
+	}
+	var err error
+	if !found {
+		mi.ObjectMeta.Finalizers = append(mi.ObjectMeta.Finalizers, miniov1.Finalizer)
+		mi, err = c.minioClientSet.MinioV1().Tenants(mi.Namespace).Update(ctx, mi, metav1.UpdateOptions{})
+	}
+	return mi, err
+}
+
+func (c *Controller) processDelete(ctx context.Context, mi *miniov1.Tenant) error {
+	// Set the PVC purge behavior needed. This will ensure that k8s correctly deletes all PVCs.
+	err := c.processPurgePVCsOnDeleteFlag(ctx, mi)
+	if err != nil {
+		return err
+	}
+	// Remove finalizer
+	for i, f := range mi.ObjectMeta.Finalizers {
+		if f == miniov1.Finalizer {
+			mi.ObjectMeta.Finalizers = append(mi.Finalizers[:i], mi.ObjectMeta.Finalizers[i+1:]...)
+		}
+	}
+	_, err = c.minioClientSet.MinioV1().Tenants(mi.Namespace).Update(ctx, mi, metav1.UpdateOptions{})
+	return err
 }
