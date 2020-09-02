@@ -173,6 +173,8 @@ spec:
 
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
   # env:
+  # - name: MINIO_KMS_AUTO_ENCRYPTION
+  #   value: "on" # to turn-on encryption
   # - name: MINIO_BROWSER
   #   value: "off" # to turn-off browser
   # - name: MINIO_STORAGE_CLASS_STANDARD
