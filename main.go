@@ -27,10 +27,6 @@ import (
 	"syscall"
 	"time"
 
-	"k8s.io/client-go/tools/clientcmd"
-
-	"k8s.io/klog/v2"
-
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
 	"github.com/minio/operator/pkg/controller/cluster"
@@ -38,6 +34,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/klog/v2"
 )
 
 // Version provides the version of this operator

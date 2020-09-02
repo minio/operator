@@ -15,5 +15,4 @@ resources:
   - operator-kustomize/cluster-role.yaml
   - operator-kustomize/cluster-role-binding.yaml
   - operator-kustomize/crds/minio.min.io_tenants.yaml
-  - operator-kustomize/service.yaml
   - operator-kustomize/deployment.yaml

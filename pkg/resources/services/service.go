@@ -24,6 +24,32 @@ import (
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 )
 
+// NewClusterIPForOperatorWebhook will return a new service for Operator Webhook
+func NewClusterIPForOperatorWebhook(ns string) *corev1.Service {
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: map[string]string{
+				"name": ns,
+			},
+			Name:      miniov1.WebhookOperatorSvcName,
+			Namespace: ns,
+		},
+		Spec: corev1.ServiceSpec{
+			Ports: []corev1.ServicePort{
+				{
+					Port: 4222,
+					Name: miniov1.WebhookOperatorSvcName,
+				},
+			},
+			Selector: map[string]string{
+				"name": ns,
+			},
+			Type: corev1.ServiceTypeClusterIP,
+		},
+	}
+	return svc
+}
+
 // NewClusterIPForMinIO will return a new headless Kubernetes service for a Tenant
 func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
 	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServicePortName}
@@ -106,8 +132,6 @@ func NewHeadlessForKES(t *miniov1.Tenant) *corev1.Service {
 
 // NewClusterIPForConsole will return a new cluster IP service for Console Deployment
 func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
-	consolePort := corev1.ServicePort{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName}
-	consoleTLSPort := corev1.ServicePort{Port: miniov1.ConsoleTLSPort, Name: miniov1.ConsoleServiceTLSPortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.ConsolePodLabels(),
@@ -117,8 +141,8 @@ func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
-				consolePort,
-				consoleTLSPort,
+				{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName},
+				{Port: miniov1.ConsoleTLSPort, Name: miniov1.ConsoleServiceTLSPortName},
 			},
 			Selector: t.ConsolePodLabels(),
 			Type:     corev1.ServiceTypeClusterIP,

@@ -19,7 +19,6 @@ package v1
 
 import (
 	"crypto/elliptic"
-	"runtime"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -75,10 +74,6 @@ const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
 const DefaultMinIOImage = "minio/minio:RELEASE.2020-08-18T19-41-00Z"
-
-// DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
-// pulled from during MinIO upgrades
-const DefaultMinIOUpdateURL = "https://dl.min.io/server/minio/release/" + runtime.GOOS + "-" + runtime.GOARCH + "/archive/"
 
 // MinIOHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service
 const MinIOHLSvcNameSuffix = "-hl"

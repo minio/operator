@@ -53,6 +53,7 @@ import (
 const (
 	WebhookAPIVersion       = "/webhook/v1"
 	WebhookDefaultPort      = "4222"
+	WebhookOperatorSvcName  = "operator"
 	WebhookMinIOArgsSecret  = "minio-args-secret"
 	WebhookOperatorUsername = "webhookUsername"
 	WebhookOperatorPassword = "webhookPassword"
@@ -491,11 +492,8 @@ func (t *Tenant) HasKESMetadata() bool {
 }
 
 // UpdateURL returns the URL for the sha256sum location of the new binary
-func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error) {
-	if overrideURL == "" {
-		overrideURL = DefaultMinIOUpdateURL
-	}
-	u, err := url.Parse(overrideURL)
+func (t *Tenant) UpdateURL(lrTime time.Time, updateURL string) (string, error) {
+	u, err := url.Parse(updateURL)
 	if err != nil {
 		return "", err
 	}

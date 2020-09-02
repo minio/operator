@@ -312,10 +312,11 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1
 					miniov1.WebhookOperatorUsername: []byte(cred.AccessKey),
 					miniov1.WebhookOperatorPassword: []byte(cred.SecretKey),
 					miniov1.WebhookMinIOArgs: []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
-						"env",
+						"env", // Use "env+tls" notation for HTTPs
 						cred.AccessKey,
 						cred.SecretKey,
-						fmt.Sprintf("operator.%s.svc.%s",
+						fmt.Sprintf("%s.%s.svc.%s",
+							miniov1.WebhookOperatorSvcName,
 							miniov1.GetNSFromFile(),
 							miniov1.ClusterDomain),
 						miniov1.WebhookDefaultPort,
@@ -565,6 +566,16 @@ func (c *Controller) removeArtifacts() error {
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
+	// Create the controller service, upon startup
+	opNS := miniov1.GetNSFromFile()
+	svc := services.NewClusterIPForOperatorWebhook(opNS)
+
+	if _, err := c.kubeClientSet.CoreV1().Services(opNS).Create(context.Background(), svc, metav1.CreateOptions{}); err != nil {
+		if !k8serrors.IsAlreadyExists(err) {
+			return err
+		}
+	}
+
 	go func() {
 		if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
 			klog.Infof("HTTP server ListenAndServe: %v", err)
@@ -966,7 +977,8 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		// FIXME: we can make operator TLS configurable here.
-		updateURL, err := mi.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
+		updateURL, err := mi.UpdateURL(latest, fmt.Sprintf("http://%s.%s.svc.%s:%s%s",
+			miniov1.WebhookOperatorSvcName,
 			miniov1.GetNSFromFile(), miniov1.ClusterDomain,
 			miniov1.WebhookDefaultPort, miniov1.WebhookAPIUpdate,
 		))
