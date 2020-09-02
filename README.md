@@ -5,7 +5,7 @@ MinIO Operator brings native support for [MinIO](https://github.com/minio/minio)
 ## Prerequisites
 
 - Kubernetes >= v1.17.0.
-- Create PVs. We recommend [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md) for PV creation.
+- Create PVs. 
 - Install [`kubectl minio` plugin](https://github.com/minio/operator/tree/master/kubectl-minio#install-plugin).
 
 ## Operator Setup
@@ -50,10 +50,8 @@ Note that the access key and secret key provided here is authorized to perform _
 
 We can create the Tenant now. Before that, please ensure you have requisite nodes and drives in place and relevant PVs are created. In below example, we ask MinIO Operator to create a Tenant with 4 nodes, 16 volumes, and 16 Ti total raw capacity (4 volumes of 1 Ti per node). This means you need to have 4 PVCs of 1 Ti each, per node, and total of 4 nodes, before attempting to create the MinIO Tenant.
 
-We recommend [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md) to create PVs.
-
 ```sh
-kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns --storageclass direct.csi.min.io
+kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns --storageclass default
 ```
 
 ## Post Tenant Creation
