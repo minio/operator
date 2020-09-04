@@ -92,7 +92,7 @@ const (
 
 // Standard Status messages for Tenant
 const (
-	StatusReady                         = "Ready"
+	StatusInitialized                   = "Initialized"
 	StatusProvisioningCIService         = "Provisioning MinIO Cluster IP Service"
 	StatusProvisioningHLService         = "Provisioning MinIO Headless Service"
 	StatusProvisioningStatefulSet       = "Provisioning MinIO Statefulset"
@@ -813,7 +813,7 @@ func (c *Controller) syncHandler(key string) error {
 	// Only 1 minio tenant per namespace allowed.
 	if len(li) > 1 {
 		for _, t := range li {
-			if t.Status.CurrentState != StatusReady {
+			if t.Status.CurrentState != StatusInitialized {
 				if _, err = c.updateTenantStatus(ctx, t, StatusFailedAlreadyExists, 0); err != nil {
 					return err
 				}
@@ -1151,7 +1151,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
-	_, err = c.updateTenantStatus(ctx, mi, StatusReady, totalReplicas)
+	_, err = c.updateTenantStatus(ctx, mi, StatusInitialized, totalReplicas)
 	return err
 }
 
