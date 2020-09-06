@@ -23,7 +23,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -506,37 +505,38 @@ func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, e
 
 	keychain := authn.DefaultKeychain
 
-	// if tenant has imagePullSecret use that for pulling the image
+	// if tenant has imagePullSecret use that for pulling the image, but we if we fail to extract the secret or we
+	// can't find the needed registry in that secret we will continue with the default keychain. This is because the
+	// needed pull secret could be attached to the service-account.
 	if tenant.Spec.ImagePullSecret.Name != "" {
 		// Get the secret
 		secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), tenant.Spec.ImagePullSecret.Name, metav1.GetOptions{})
 		if err != nil {
-			return time.Now(), err
-		}
-		// if we can't find .dockerconfigjson, error out
-		if _, ok := secret.Data[".dockerconfigjson"]; !ok {
-			return time.Time{}, errors.New("can't find .dockerconfigjson in image pull secret")
-		}
-
-		var config configfile.ConfigFile
-
-		err = json.Unmarshal(secret.Data[".dockerconfigjson"], &config)
-		if err != nil {
-			return time.Time{}, errors.New("cannot decode image pull secrets")
-		}
-
-		if _, ok := config.AuthConfigs[ref.Context().RegistryStr()]; !ok {
-			return time.Time{}, errors.New("can't find target registry in auth crededentials in image pull secret")
-		}
-
-		cfg := config.AuthConfigs[ref.Context().RegistryStr()]
-
-		keychain = &minioKeychain{
-			Username:      cfg.Username,
-			Password:      cfg.Password,
-			Auth:          cfg.Auth,
-			IdentityToken: cfg.IdentityToken,
-			RegistryToken: cfg.RegistryToken,
+			klog.Info("can't retrieve the tenant image pull secret")
+		} else {
+			// if we can't find .dockerconfigjson, error out
+			if _, ok := secret.Data[".dockerconfigjson"]; !ok {
+				klog.Info("can't find .dockerconfigjson in image pull secret")
+			} else {
+				var config configfile.ConfigFile
+				err = json.Unmarshal(secret.Data[".dockerconfigjson"], &config)
+				if err != nil {
+					klog.Info("can't decode image pull secrets")
+				} else {
+					if _, ok := config.AuthConfigs[ref.Context().RegistryStr()]; !ok {
+						klog.Info("can't find target registry in auth credentials in image pull secret")
+					} else {
+						cfg := config.AuthConfigs[ref.Context().RegistryStr()]
+						keychain = &minioKeychain{
+							Username:      cfg.Username,
+							Password:      cfg.Password,
+							Auth:          cfg.Auth,
+							IdentityToken: cfg.IdentityToken,
+							RegistryToken: cfg.RegistryToken,
+						}
+					}
+				}
+			}
 		}
 	}
 
