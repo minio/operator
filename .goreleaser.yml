@@ -5,8 +5,10 @@ project_name: minio-operator
 release:
    name_template: "Version {{.Version}}"
    github:
-    owner: minio
-    name: operator
+     owner: minio
+     name: operator
+   extra_files:
+     - glob: "*.minisig"
 
 before:
   hooks:
