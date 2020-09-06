@@ -518,6 +518,7 @@ func (c *Controller) getKeychainForTenant(ctx context.Context, ref name.Referenc
 		RegistryToken: cfg.RegistryToken,
 	}, nil
 }
+
 // Attempts to fetch given image and then extracts and keeps relevant files
 // (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
 func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, err error) {
@@ -539,7 +540,7 @@ func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, e
 	// needed pull secret could be attached to the service-account.
 	if tenant.Spec.ImagePullSecret.Name != "" {
 		// Get the secret
-		keychain, err = c.getKeychainForTenant(ref, tenant)
+		keychain, err = c.getKeychainForTenant(context.Background(), ref, tenant)
 		if err != nil {
 			klog.Info(err)
 		}
