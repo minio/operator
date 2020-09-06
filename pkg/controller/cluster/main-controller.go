@@ -23,6 +23,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -489,6 +490,35 @@ func (mk *minioKeychain) Resolve(_ authn.Resource) (authn.Authenticator, error) 
 	}), nil
 }
 
+// getKeychainForTenant attempts to build a new authn.Keychain from the image pull secret on the Tenant
+func (c *Controller) getKeychainForTenant(ref name.Reference, tenant *miniov1.Tenant) (authn.Keychain, error) {
+	// Get the secret
+	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), tenant.Spec.ImagePullSecret.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, errors.New("can't retrieve the tenant image pull secret")
+	}
+	// if we can't find .dockerconfigjson, error out
+	if _, ok := secret.Data[".dockerconfigjson"]; !ok {
+		return nil, errors.New("can't find .dockerconfigjson in image pull secret")
+	}
+	var config configfile.ConfigFile
+	err = json.Unmarshal(secret.Data[".dockerconfigjson"], &config)
+	if err != nil {
+		return nil, errors.New("can't decode image pull secrets")
+	}
+	if _, ok := config.AuthConfigs[ref.Context().RegistryStr()]; !ok {
+		return nil, errors.New("can't find target registry in auth credentials in image pull secret")
+	}
+	cfg := config.AuthConfigs[ref.Context().RegistryStr()]
+	return &minioKeychain{
+		Username:      cfg.Username,
+		Password:      cfg.Password,
+		Auth:          cfg.Auth,
+		IdentityToken: cfg.IdentityToken,
+		RegistryToken: cfg.RegistryToken,
+	}, nil
+}
+
 // Attempts to fetch given image and then extracts and keeps relevant files
 // (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
 func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, err error) {
@@ -510,33 +540,11 @@ func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, e
 	// needed pull secret could be attached to the service-account.
 	if tenant.Spec.ImagePullSecret.Name != "" {
 		// Get the secret
-		secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), tenant.Spec.ImagePullSecret.Name, metav1.GetOptions{})
+		keyc, err := c.getKeychainForTenant(ref, tenant)
 		if err != nil {
-			klog.Info("can't retrieve the tenant image pull secret")
+			klog.Info(err)
 		} else {
-			// if we can't find .dockerconfigjson, error out
-			if _, ok := secret.Data[".dockerconfigjson"]; !ok {
-				klog.Info("can't find .dockerconfigjson in image pull secret")
-			} else {
-				var config configfile.ConfigFile
-				err = json.Unmarshal(secret.Data[".dockerconfigjson"], &config)
-				if err != nil {
-					klog.Info("can't decode image pull secrets")
-				} else {
-					if _, ok := config.AuthConfigs[ref.Context().RegistryStr()]; !ok {
-						klog.Info("can't find target registry in auth credentials in image pull secret")
-					} else {
-						cfg := config.AuthConfigs[ref.Context().RegistryStr()]
-						keychain = &minioKeychain{
-							Username:      cfg.Username,
-							Password:      cfg.Password,
-							Auth:          cfg.Auth,
-							IdentityToken: cfg.IdentityToken,
-							RegistryToken: cfg.RegistryToken,
-						}
-					}
-				}
-			}
+			keychain = keyc
 		}
 	}
 
