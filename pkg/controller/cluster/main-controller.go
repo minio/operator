@@ -499,19 +499,19 @@ func (c *Controller) getKeychainForTenant(ref name.Reference, tenant *miniov1.Te
 	}
 	// if we can't find .dockerconfigjson, error out
 	if _, ok := secret.Data[".dockerconfigjson"]; !ok {
-		return nil, errors.New("can't find .dockerconfigjson in image pull secret")
+		return authn.DefaultKeychain, errors.New("can't find .dockerconfigjson in image pull secret")
 	}
 	var config configfile.ConfigFile
 	err = json.Unmarshal(secret.Data[".dockerconfigjson"], &config)
 	if err != nil {
-		return nil, errors.New("can't decode image pull secrets")
+		return authn.DefaultKeychain, errors.New("can't decode image pull secrets")
 	}
 	if _, ok := config.AuthConfigs[ref.Context().RegistryStr()]; !ok {
-		return nil, errors.New("can't find target registry in auth credentials in image pull secret")
+		return authn.DefaultKeychain, errors.New("can't find target registry in auth credentials in image pull secret")
 	}
 	cfg, ok := config.AuthConfigs[ref.Context().RegistryStr()]
 	if !ok {
-	     return authn.DefaultKeychain, fmt.Errorf("unable to locate auth config registry context %s", ref.Context().RegistryStr())
+		return authn.DefaultKeychain, fmt.Errorf("unable to locate auth config registry context %s", ref.Context().RegistryStr())
 	}
 	return &minioKeychain{
 		Username:      cfg.Username,
@@ -544,13 +544,8 @@ func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, e
 	if tenant.Spec.ImagePullSecret.Name != "" {
 		// Get the secret
 		keychain, err = c.getKeychainForTenant(ref, tenant)
-		if err != nil  {
-		      klog.Info(err)
-		}
 		if err != nil {
 			klog.Info(err)
-		} else {
-			keychain = keyc
 		}
 	}
 
