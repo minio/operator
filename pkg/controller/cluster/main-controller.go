@@ -509,7 +509,10 @@ func (c *Controller) getKeychainForTenant(ref name.Reference, tenant *miniov1.Te
 	if _, ok := config.AuthConfigs[ref.Context().RegistryStr()]; !ok {
 		return nil, errors.New("can't find target registry in auth credentials in image pull secret")
 	}
-	cfg := config.AuthConfigs[ref.Context().RegistryStr()]
+	cfg, ok := config.AuthConfigs[ref.Context().RegistryStr()]
+	if !ok {
+	     return authn.DefaultKeychain, fmt.Errorf("unable to locate auth config registry context %s", ref.Context().RegistryStr())
+	}
 	return &minioKeychain{
 		Username:      cfg.Username,
 		Password:      cfg.Password,
