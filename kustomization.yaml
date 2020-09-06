@@ -5,7 +5,7 @@ kind: Kustomization
 images:
   - name: minio/k8s-operator
     newName: minio/k8s-operator
-    newTag: v3.0.15
+    newTag: v3.0.16
 
 namespace: minio-operator
 
