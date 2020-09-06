@@ -535,8 +535,8 @@ func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, e
 
 	keychain := authn.DefaultKeychain
 
-	// if tenant has imagePullSecret use that for pulling the image, but we if we fail to extract the secret or we
-	// can't find the needed registry in that secret we will continue with the default keychain. This is because the
+	// if the tenant has imagePullSecret use that for pulling the image, but if we fail to extract the secret or we
+	// can't find the expected registry in the secret we will continue with the default keychain. This is because the
 	// needed pull secret could be attached to the service-account.
 	if tenant.Spec.ImagePullSecret.Name != "" {
 		// Get the secret
