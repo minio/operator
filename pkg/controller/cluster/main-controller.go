@@ -491,23 +491,20 @@ func (mk *minioKeychain) Resolve(_ authn.Resource) (authn.Authenticator, error) 
 }
 
 // getKeychainForTenant attempts to build a new authn.Keychain from the image pull secret on the Tenant
-func (c *Controller) getKeychainForTenant(ref name.Reference, tenant *miniov1.Tenant) (authn.Keychain, error) {
+func (c *Controller) getKeychainForTenant(ctx context.Context, ref name.Reference, tenant *miniov1.Tenant) (authn.Keychain, error) {
 	// Get the secret
-	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), tenant.Spec.ImagePullSecret.Name, metav1.GetOptions{})
+	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.Spec.ImagePullSecret.Name, metav1.GetOptions{})
 	if err != nil {
 		return authn.DefaultKeychain, errors.New("can't retrieve the tenant image pull secret")
 	}
 	// if we can't find .dockerconfigjson, error out
-	if _, ok := secret.Data[".dockerconfigjson"]; !ok {
-		return authn.DefaultKeychain, errors.New("can't find .dockerconfigjson in image pull secret")
+	dockerConfigJSON, ok := secret.Data[".dockerconfigjson"]
+	if !ok {
+		return authn.DefaultKeychain, fmt.Errorf("unable to find `.dockerconfigjson` in image pull secret")
 	}
 	var config configfile.ConfigFile
-	err = json.Unmarshal(secret.Data[".dockerconfigjson"], &config)
-	if err != nil {
-		return authn.DefaultKeychain, errors.New("can't decode image pull secrets")
-	}
-	if _, ok := config.AuthConfigs[ref.Context().RegistryStr()]; !ok {
-		return authn.DefaultKeychain, errors.New("can't find target registry in auth credentials in image pull secret")
+	if err = json.Unmarshal(dockerConfigJSON, &config); err != nil {
+		return authn.DefaultKeychain, fmt.Errorf("Unable to decode docker config secrets %w", err)
 	}
 	cfg, ok := config.AuthConfigs[ref.Context().RegistryStr()]
 	if !ok {
@@ -521,7 +518,6 @@ func (c *Controller) getKeychainForTenant(ref name.Reference, tenant *miniov1.Te
 		RegistryToken: cfg.RegistryToken,
 	}, nil
 }
-
 // Attempts to fetch given image and then extracts and keeps relevant files
 // (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
 func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, err error) {
