@@ -540,7 +540,10 @@ func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, e
 	// needed pull secret could be attached to the service-account.
 	if tenant.Spec.ImagePullSecret.Name != "" {
 		// Get the secret
-		keyc, err := c.getKeychainForTenant(ref, tenant)
+		keychain, err = c.getKeychainForTenant(ref, tenant)
+		if err != nil  {
+		      klog.Info(err)
+		}
 		if err != nil {
 			klog.Info(err)
 		} else {
