@@ -495,7 +495,7 @@ func (c *Controller) getKeychainForTenant(ref name.Reference, tenant *miniov1.Te
 	// Get the secret
 	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), tenant.Spec.ImagePullSecret.Name, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.New("can't retrieve the tenant image pull secret")
+		return authn.DefaultKeychain, errors.New("can't retrieve the tenant image pull secret")
 	}
 	// if we can't find .dockerconfigjson, error out
 	if _, ok := secret.Data[".dockerconfigjson"]; !ok {
