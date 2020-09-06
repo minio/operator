@@ -22,6 +22,8 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -29,6 +31,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/docker/cli/cli/config/configfile"
 
 	"k8s.io/klog/v2"
 
@@ -465,21 +469,78 @@ func (c *Controller) fetchTag(path string) (string, error) {
 	return op[2], nil
 }
 
+// minioKeychain implements Keychain to pass custom credentials
+type minioKeychain struct {
+	authn.Keychain
+	Username      string
+	Password      string
+	Auth          string
+	IdentityToken string
+	RegistryToken string
+}
+
+// Resolve implements Keychain.
+func (mk *minioKeychain) Resolve(_ authn.Resource) (authn.Authenticator, error) {
+	return authn.FromConfig(authn.AuthConfig{
+		Username:      mk.Username,
+		Password:      mk.Password,
+		Auth:          mk.Auth,
+		IdentityToken: mk.IdentityToken,
+		RegistryToken: mk.RegistryToken,
+	}), nil
+}
+
 // Attempts to fetch given image and then extracts and keeps relevant files
 // (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
-func (c *Controller) fetchArtifacts(image string) (latest time.Time, err error) {
+func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, err error) {
 	basePath := updatePath
 
 	if err = os.MkdirAll(basePath, 1777); err != nil {
 		return latest, err
 	}
 
-	ref, err := name.ParseReference(image)
+	ref, err := name.ParseReference(tenant.Spec.Image)
 	if err != nil {
 		return latest, err
 	}
 
-	img, err := remote.Image(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	keychain := authn.DefaultKeychain
+
+	// if tenant has imagePullSecret use that for pulling the image
+	if tenant.Spec.ImagePullSecret.Name != "" {
+		// Get the secret
+		secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), tenant.Spec.ImagePullSecret.Name, metav1.GetOptions{})
+		if err != nil {
+			return time.Now(), err
+		}
+		// if we can't find .dockerconfigjson, error out
+		if _, ok := secret.Data[".dockerconfigjson"]; !ok {
+			return time.Time{}, errors.New("can't find .dockerconfigjson in image pull secret")
+		}
+
+		var config configfile.ConfigFile
+
+		err = json.Unmarshal(secret.Data[".dockerconfigjson"], &config)
+		if err != nil {
+			return time.Time{}, errors.New("cannot decode image pull secrets")
+		}
+
+		if _, ok := config.AuthConfigs[ref.Context().RegistryStr()]; !ok {
+			return time.Time{}, errors.New("can't find target registry in auth crededentials in image pull secret")
+		}
+
+		cfg := config.AuthConfigs[ref.Context().RegistryStr()]
+
+		keychain = &minioKeychain{
+			Username:      cfg.Username,
+			Password:      cfg.Password,
+			Auth:          cfg.Auth,
+			IdentityToken: cfg.IdentityToken,
+			RegistryToken: cfg.RegistryToken,
+		}
+	}
+
+	img, err := remote.Image(ref, remote.WithAuthFromKeychain(keychain))
 	if err != nil {
 		return latest, err
 	}
@@ -959,7 +1020,7 @@ func (c *Controller) syncHandler(key string) error {
 		klog.V(4).Infof("Collecting artifacts for Tenant '%s' to update MinIO from: %s, to: %s",
 			name, images[0], mi.Spec.Image)
 
-		latest, err := c.fetchArtifacts(mi.Spec.Image)
+		latest, err := c.fetchArtifacts(mi)
 		if err != nil {
 			_ = c.removeArtifacts()
 			return err
