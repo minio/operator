@@ -41,7 +41,7 @@ example: `kubectl minio tenant create --name tenant1 --secret cred-secret --serv
 Options:
 
 - `--namespace=minio`
-- `--image=minio/minio:RELEASE.2020-08-26T00-00-49Z`
+- `--image=minio/minio:RELEASE.2020-09-05T07-14-49Z`
 - `--storageClass=local`
 - `--kms-secret=secret-name`
 - `--console-secret=secret-name`
