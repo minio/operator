@@ -53,14 +53,15 @@ import (
 const (
 	WebhookAPIVersion       = "/webhook/v1"
 	WebhookDefaultPort      = "4222"
-	WebhookMinIOArgsSecret  = "minio-args-secret"
+	WebhookSecret           = "minio-args-secret"
 	WebhookOperatorUsername = "webhookUsername"
 	WebhookOperatorPassword = "webhookPassword"
 )
 
 // Webhook environment variable constants
 const (
-	WebhookMinIOArgs = "MINIO_ARGS"
+	WebhookMinIOArgs   = "MINIO_ARGS"
+	WebhookMinIOBucket = "MINIO_DNS_WEBHOOK_ENDPOINT"
 )
 
 // List of webhook APIs
