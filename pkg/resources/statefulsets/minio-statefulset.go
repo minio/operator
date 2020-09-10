@@ -42,27 +42,38 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 	// Enable `mc admin update` style updates to MinIO binaries
 	// within the container, only operator is supposed to perform
 	// these operations.
-	envVars = append(envVars, corev1.EnvVar{
-		Name:  "MINIO_UPDATE",
-		Value: "on",
-	}, corev1.EnvVar{
-		Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
-		Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
-	}, corev1.EnvVar{
-		Name: "MINIO_ARGS",
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: miniov1.WebhookMinIOArgsSecret,
+	envVars = append(envVars,
+		corev1.EnvVar{
+			Name:  "MINIO_UPDATE",
+			Value: "on",
+		}, corev1.EnvVar{
+			Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
+			Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
+		}, corev1.EnvVar{
+			Name: miniov1.WebhookMinIOArgs,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: miniov1.WebhookSecret,
+					},
+					Key: miniov1.WebhookMinIOArgs,
 				},
-				Key: miniov1.WebhookMinIOArgs,
 			},
-		},
-	}, corev1.EnvVar{
-		// Add a fallback in-case operator is down.
-		Name:  "MINIO_ENDPOINTS",
-		Value: strings.Join(GetContainerArgs(t, hostsTemplate), " "),
-	})
+		}, corev1.EnvVar{
+			Name: miniov1.WebhookMinIOBucket,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: miniov1.WebhookSecret,
+					},
+					Key: miniov1.WebhookMinIOArgs,
+				},
+			},
+		}, corev1.EnvVar{
+			// Add a fallback in-case operator is down.
+			Name:  "MINIO_ENDPOINTS",
+			Value: strings.Join(GetContainerArgs(t, hostsTemplate), " "),
+		})
 
 	// Add env variables from credentials secret, if no secret provided, dont use
 	// env vars. MinIO server automatically creates default credentials

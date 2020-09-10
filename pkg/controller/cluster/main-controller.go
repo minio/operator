@@ -292,7 +292,7 @@ func (c *Controller) validateRequest(r *http.Request, secret *v1.Secret) error {
 
 func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1.Tenant) (*v1.Secret, error) {
 	secret, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Get(ctx,
-		miniov1.WebhookMinIOArgsSecret, metav1.GetOptions{})
+		miniov1.WebhookSecret, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			cred, err := auth.GetNewCredentials()
@@ -302,7 +302,7 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1
 			secret = &corev1.Secret{
 				Type: "Opaque",
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      miniov1.WebhookMinIOArgsSecret,
+					Name:      miniov1.WebhookSecret,
 					Namespace: mi.Namespace,
 					OwnerReferences: []metav1.OwnerReference{
 						*metav1.NewControllerRef(mi, schema.GroupVersionKind{
@@ -337,8 +337,9 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, mi *miniov1
 
 // Supported remote envs
 const (
-	envMinIOArgs = "MINIO_ARGS"
-	updatePath   = "/tmp" + miniov1.WebhookAPIUpdate + slashSeparator
+	envMinIOArgs          = "MINIO_ARGS"
+	envMinIOServiceTarget = "MINIO_DNS_WEBHOOK_ENDPOINT"
+	updatePath            = "/tmp" + miniov1.WebhookAPIUpdate + slashSeparator
 )
 
 // BucketSrvHandler - POST /webhook/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
@@ -353,7 +354,7 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 	deleteBucket := v.Get("delete")
 
 	secret, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(r.Context(),
-		miniov1.WebhookMinIOArgsSecret, metav1.GetOptions{})
+		miniov1.WebhookSecret, metav1.GetOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -409,7 +410,7 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 	key := vars["key"]
 
 	secret, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(r.Context(),
-		miniov1.WebhookMinIOArgsSecret, metav1.GetOptions{})
+		miniov1.WebhookSecret, metav1.GetOptions{})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -448,6 +449,19 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 
 		_, _ = w.Write([]byte(args))
 		w.(http.Flusher).Flush()
+	case envMinIOServiceTarget:
+		target := fmt.Sprintf("%s://%s:%s%s/%s/%s",
+			"http",
+			fmt.Sprintf("operator.%s.svc.%s",
+				miniov1.GetNSFromFile(),
+				miniov1.ClusterDomain),
+			miniov1.WebhookDefaultPort,
+			miniov1.WebhookAPIBucketService,
+			mi.Namespace,
+			mi.Name)
+		klog.Infof("%s value is %s", key, target)
+
+		_, _ = w.Write([]byte(target))
 	default:
 		http.Error(w, fmt.Sprintf("%s env key is not supported yet", key), http.StatusBadRequest)
 		return
