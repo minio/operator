@@ -53,7 +53,7 @@ import (
 const (
 	WebhookAPIVersion       = "/webhook/v1"
 	WebhookDefaultPort      = "4222"
-	WebhookSecret           = "minio-args-secret"
+	WebhookSecret           = "operator-webhook-secret"
 	WebhookOperatorUsername = "webhookUsername"
 	WebhookOperatorPassword = "webhookPassword"
 )
