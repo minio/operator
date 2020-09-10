@@ -1,68 +1,82 @@
-# MinIO Operator Guide [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
+# MinIO Operator [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
 
-MinIO is a high performance distributed object storage server, designed for large-scale private cloud infrastructure. MinIO is designed in a cloud-native manner to scale sustainably in multi-tenant environments. Orchestration platforms like Kubernetes provide perfect launchpad for MinIO to scale.
+MinIO Operator brings native support for [MinIO](https://github.com/minio/minio), [Graphical Console](https://github.com/minio/console), and [Encryption](https://github.com/minio/kes) to Kubernetes. This document explains how to get started with MinIO Operator using `kubectl minio` plugin.
 
-MinIO-Operator brings native MinIO, [Console](https://github.com/minio/console), and [KES](https://github.com/minio/kes) support to Kubernetes. MinIO-Operator currently supports following features:
+## Prerequisites
 
-| Feature                 | Reference Document |
-|-------------------------|--------------------|
-| Create and delete highly available distributed MinIO clusters  | [Create a MinIO Tenant](https://github.com/minio/operator#create-a-minio-tenant). |
-| TLS Configuration  | [TLS for MinIO Tenant](https://github.com/minio/operator/blob/master/docs/tls.md). |
-| Expand an existing MinIO cluster | [Expand a MinIO Cluster](https://github.com/minio/operator/blob/master/docs/adding-zones.md). |
-| Use a custom template for hostname discovery | [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md). |
-| Use PodSecurityPolicy for MinIO Pods | [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md). |
-| Deploy Console with MinIO cluster  | [Deploy MinIO Tenant with Console](https://github.com/minio/operator/blob/master/docs/console.md). |
-| Deploy KES with MinIO cluster  | [Deploy MinIO Tenant with KES](https://github.com/minio/operator/blob/master/docs/kes.md). |
+- Kubernetes >= v1.17.0.
+- Create PVs. We recommend [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md) for PV creation.
+- Install [`kubectl minio` plugin](https://github.com/minio/operator/tree/master/kubectl-minio#install-plugin).
 
-## Getting Started
+## Operator Setup
 
-### Prerequisites
+MinIO Operator offers MinIO Tenant creation, management, upgrade, zone addition and more. Operator is meant to control and manage multiple MinIO Tenants.
 
-- Kubernetes version v1.17.0 and above for compatibility. MinIO Operator uses `k8s/client-go` v0.18.0.
-- `kubectl` configured to refer to a Kubernetes cluster.
-- Create the required PVs using [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md).
-- Optional: `kustomize` installed as [explained here](https://github.com/kubernetes-sigs/kustomize/blob/master/docs/INSTALL.md#installation).
+To get started, create the MinIO Operator deployment. This is a _one time_ process.
 
-### Create Operator Deployment
-
-To start MinIO-Operator with default configuration, use the `kubectl apply -k` on this repository.
-
-```bash
-kubectl apply -k github.com/minio/operator
+```sh
+kubectl minio operator create
 ```
 
-Advanced users can leverage [kustomize](https://github.com/kubernetes-sigs/kustomize) to customize operator configuration via overlays.
+Once the MinIO Operator is created, proceed with Tenant creation.
 
-```bash
-git clone https://github.com/minio/operator
-kustomize build | kubectl apply -f -
+## Tenant Setup
+
+A Tenant is a MinIO cluster created and managed by the Operator.
+
+### Step 1: Create Tenant Namespace
+
+Before creating a Tenant, please create the namespace where this Tenant will reside.
+
+For logical isolation, Operator allows a single Tenant per Kubernetes Namespace.
+
+```sh
+kubectl create ns tenant1-ns
 ```
 
-### Create a MinIO Tenant
+### Step 2: Create Secret for Tenant Credentials
 
-Once MinIO-Operator deployment is running, you can create MinIO Tenants using the below command
+Next, create the Kubernetes secret that encapsulates root credentials for MinIO Tenant. Please ensure to create secret object with literals `accesskey` and `secretkey`.
+
+Remember to change `YOUR-ACCESS-KEY` and `YOUR-SECRET-KEY` to actual values.
+
+```sh
+kubectl create secret generic tenant1-secret --from-literal=accesskey=YOUR-ACCESS-KEY --from-literal=secretkey=YOUR-SECRET-KEY --namespace tenant1-ns
+```
+
+Note that the access key and secret key provided here is authorized to perform _all_ operations on the Tenant.
+
+### Step 3: Create MinIO Tenant
+
+We can create the Tenant now. Before that, please ensure you have requisite nodes and drives in place and relevant PVs are created. In below example, we ask MinIO Operator to create a Tenant with 4 nodes, 16 volumes, and 16 Ti total raw capacity (4 volumes of 1 Ti per node). This means you need to have 4 PVCs of 1 Ti each, per node, and total of 4 nodes, before attempting to create the MinIO Tenant.
+
+We recommend [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md) to create PVs.
+
+```sh
+kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns --storageclass direct.csi.min.io
+```
+
+## Post Tenant Creation
+
+### Expanding a Tenant
+
+You can add capacity to the tenant using `kubectl minio` plugin, like this
 
 ```
-kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/examples/tenant.yaml
+kubectl minio tenant volume add --name tenant1 --servers 8 --volumes 32 --capacity 32Ti --namespace tenant1-ns
 ```
 
-### Access Tenant via Service
+This will add 32 drives spread uniformly over 8 servers to the tenant `tenant1`, with additional capacity of 32Ti. Read more about [tenant expansion here](https://github.com/minio/operator/blob/master/docs/expansion.md).
 
-Add an [external service](https://kubernetes.io/docs/concepts/services-networking/service/) in Tenant definition to enable Service based access to the Tenant pods. Refer [the example here](https://github.com/minio/operator/blob/master/examples/tenant.yaml?raw=true) for details on how to setup service based access for Tenant pods.
+## License
 
-### Environment variables
-
-These variables may be passed to operator Deployment in order to modify some of its parameters
-
-| Name                | Default | Description                                                                                                                   |
-| ---                 | ---     | ---                                                                                                                           |
-| `CLUSTER_DOMAIN`    | `cluster.local` | Cluster Domain of the Kubernetes cluster |
-| `WATCHED_NAMESPACE` | `-` | If set, the operator will watch for Tenant (tenant.minio.min.io) resources in specified namespace only. If empty, operator will watch all namespaces. |
+Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICENSE](./LICENSE) file.
 
 ## Explore Further
 
-- [MinIO Erasure Code QuickStart Guide](https://docs.min.io/docs/minio-erasure-code-quickstart-guide)
-- [Use `mc` with MinIO Server](https://docs.min.io/docs/minio-client-quickstart-guide)
-- [Use `aws-cli` with MinIO Server](https://docs.min.io/docs/aws-cli-with-minio)
-- [The MinIO documentation website](https://docs.min.io)
-- Expose MinIO via Istio: Istio >= 1.4 has support for headless Services, so instead of creating an explicit `Service` for the created MinIO Tenant, you can also directly target the headless Service that is created by the operator. Use [Istio Ingress Gateway](https://istio.io/latest/docs/tasks/traffic-management/ingress/ingress-control/) to configure Istio to expose the MinIO service outside of the service mesh.
+- [Create a MinIO Tenant](https://github.com/minio/operator#create-a-minio-instance).
+- [TLS for MinIO Tenant](https://github.com/minio/operator/blob/master/docs/tls.md).
+- [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md).
+- [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md).
+- [Deploy MinIO Tenant with Console](https://github.com/minio/operator/blob/master/docs/console.md).
+- [Deploy MinIO Tenant with KES](https://github.com/minio/operator/blob/master/docs/kes.md).

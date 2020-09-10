@@ -123,7 +123,7 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 	}
 }
 
-// NewConsole creates a new Deployment for the given MinIO instance.
+// NewConsole creates a new Deployment for the given MinIO Tenant.
 func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 	var certPath = "server.crt"
 	var keyPath = "server.key"

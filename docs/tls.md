@@ -1,9 +1,6 @@
-# MinIO Operator TLS Configuration
+# MinIO Operator TLS Configuration [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
 
-[![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
-[![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
-
-This document explains how to enable TLS on Tenant pods. These are the approaches to enable TLS for MinIO:
+This document explains how to enable TLS on MinIO pods.
 
 ## Automatic TLS
 
@@ -15,7 +12,7 @@ To enable automatic CSR generation on Tenant, set `requestAutoCert` field in the
 
 - Organization: By default set to `Acme Co`. Change it to the name of your organization.
 
-- DNSNames: By default set to list of all pod DNS names that are part of current Tenant cluster. Any value added under this section will be appended to the list of existing pod DNS names.
+- DNSNames: By default set to list of all pod DNS names that are part of current Tenant. Any value added under this section will be appended to the list of existing pod DNS names.
 
 Once you enable `requestAutoCert` field and create the Tenant, MinIO Operator creates a CSR for this instance and sends to the Kubernetes API server. MinIO Operator will then approve the CSR. After the CSR is approved and Certificate available, MinIO operator downloads the certificate and then mounts the Private Key and Certificate within the Tenant pod.
 
@@ -70,8 +67,10 @@ spec:
   commonName: minio.example.com
   secretName: tls-minio
   dnsNames:
-    - minio.example.com # Ingress domain
-    - minio-hl-svc # Internal domain
+    # Ingress domain
+    - minio.example.com
+    # Internal domain
+    - minio-hl-svc
     - minio-hl-svc.default.svc.cluster.local
   issuerRef:
     name: selfsigning-issuer

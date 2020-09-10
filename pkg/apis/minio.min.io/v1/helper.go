@@ -53,14 +53,15 @@ import (
 const (
 	WebhookAPIVersion       = "/webhook/v1"
 	WebhookDefaultPort      = "4222"
-	WebhookMinIOArgsSecret  = "minio-args-secret"
+	WebhookSecret           = "operator-webhook-secret"
 	WebhookOperatorUsername = "webhookUsername"
 	WebhookOperatorPassword = "webhookPassword"
 )
 
 // Webhook environment variable constants
 const (
-	WebhookMinIOArgs = "MINIO_ARGS"
+	WebhookMinIOArgs   = "MINIO_ARGS"
+	WebhookMinIOBucket = "MINIO_DNS_WEBHOOK_ENDPOINT"
 )
 
 // List of webhook APIs
@@ -702,7 +703,7 @@ func (z *Zone) Validate(zi int) error {
 	return nil
 }
 
-// Validate returns an error if any configuration of the MinIO instance is invalid
+// Validate returns an error if any configuration of the MinIO Tenant is invalid
 func (t *Tenant) Validate() error {
 	if t.Spec.Zones == nil {
 		return errors.New("zones must be configured")
