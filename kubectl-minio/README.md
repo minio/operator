@@ -51,11 +51,11 @@ Options:
 
 #### Add Tenant Zones
 
-Command: `kubectl minio tenant volumes add --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
+Command: `kubectl minio tenant volume add --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
 
 Add new volumes (and nodes) to existing MinIO Tenant.
 
-example: `kubectl minio tenant volumes add --name cluster1 --servers 4 --volumes 16 --capacity 16Ti`
+example: `kubectl minio tenant volume add --name cluster1 --servers 4 --volumes 16 --capacity 16Ti`
 
 Options:
 
@@ -66,11 +66,11 @@ Options:
 
 #### List Tenant Zones
 
-Command: `kubectl minio tenant volumes list --name TENANT_NAME [options]`
+Command: `kubectl minio tenant volume list --name TENANT_NAME [options]`
 
 List all existing MinIO Zones in the given MinIO Tenant.
 
-example: `kubectl minio tenant volumes list --name cluster1`
+example: `kubectl minio tenant volume list --name cluster1`
 
 Options:
 

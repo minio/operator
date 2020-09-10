@@ -63,7 +63,7 @@ kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 -
 You can add capacity to the tenant using `kubectl minio` plugin, like this
 
 ```
-kubectl minio tenant volumes add --name tenant1 --servers 8 --volumes 32 --capacity 32Ti --namespace tenant1-ns
+kubectl minio tenant volume add --name tenant1 --servers 8 --volumes 32 --capacity 32Ti --namespace tenant1-ns
 ```
 
 This will add 32 drives spread uniformly over 8 servers to the tenant `tenant1`, with additional capacity of 32Ti. Read more about [tenant expansion here](https://github.com/minio/operator/blob/master/docs/expansion.md).

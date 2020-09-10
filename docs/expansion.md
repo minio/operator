@@ -9,7 +9,7 @@ MinIO expansion is done in terms of MinIO zones, read more about the design in [
 You can add capacity to the tenant using `kubectl minio` plugin.
 
 ```
-kubectl minio tenant volumes add --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY
+kubectl minio tenant volume add --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY
 ```
 
 Remember to replace `TENANT_NAME` with tenant name where you want to add volumes, `SERVERS` with new servers to be added to the tenant, `TOTAL_VOLUMES` with total new volumes to be added to tenant and `TOTAL_RAW_CAPACITY` with total new raw capacity to be added to the tenant.
