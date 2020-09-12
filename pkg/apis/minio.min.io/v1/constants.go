@@ -26,10 +26,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// MinIOOperatorVersionLabel denotes the version of the Tenant operator
-// running in the cluster.
-const MinIOOperatorVersionLabel = "v1.min.io/version"
-
 // MinIOCRDResourceKind is the Kind of a Cluster.
 const MinIOCRDResourceKind = "Tenant"
 
@@ -51,6 +47,10 @@ const CSRNameSuffix = "-csr"
 
 // MinIOCertPath is the path where all MinIO certs are mounted
 const MinIOCertPath = "/tmp/certs"
+
+// OperatorLabel denotes the version of the Tenant operator
+// running in the cluster.
+const OperatorLabel = "v1.min.io/version"
 
 // TenantLabel is applied to all components of a Tenant cluster
 const TenantLabel = "v1.min.io/tenant"

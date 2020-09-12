@@ -40,8 +40,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// Version provides the version of this operator
-var Version = "DEVELOPMENT.GOGET"
+// version provides the version of this operator
+var version = "DEVELOPMENT.GOGET"
 
 var (
 	masterURL     string
@@ -70,7 +70,7 @@ func main() {
 	flag.Parse()
 
 	if checkVersion {
-		fmt.Println(Version)
+		fmt.Println(version)
 		return
 	}
 
@@ -118,7 +118,8 @@ func main() {
 		kubeInformerFactory.Batch().V1().Jobs(),
 		minioInformerFactory.Minio().V1().Tenants(),
 		kubeInformerFactory.Core().V1().Services(),
-		hostsTemplate)
+		hostsTemplate,
+		version)
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)

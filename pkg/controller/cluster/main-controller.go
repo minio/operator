@@ -172,6 +172,9 @@ type Controller struct {
 	// Use a go template to render the hosts string
 	hostsTemplate string
 
+	// currently running operator version
+	operatorVersion string
+
 	// Webhook server instance
 	ws *http.Server
 }
@@ -186,7 +189,7 @@ func NewController(
 	jobInformer batchinformers.JobInformer,
 	tenantInformer informers.TenantInformer,
 	serviceInformer coreinformers.ServiceInformer,
-	hostsTemplate string) *Controller {
+	hostsTemplate, operatorVersion string) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -215,6 +218,7 @@ func NewController(
 		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "Tenants"),
 		recorder:                recorder,
 		hostsTemplate:           hostsTemplate,
+		operatorVersion:         operatorVersion,
 	}
 
 	// Initialize operator webhook handlers
@@ -945,7 +949,7 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 
-				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate)
+				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 				ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Create(ctx, ss, cOpts)
 				if err != nil {
 					return err
@@ -969,7 +973,7 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 				klog.V(4).Infof("resource requirements updates for zone %s", zone.Name)
-				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate)
+				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
@@ -980,7 +984,7 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 				klog.V(4).Infof("affinity update for zone %s", zone.Name)
-				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate)
+				ss = statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
@@ -1098,7 +1102,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		for _, zone := range mi.Spec.Zones {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate)
+			ss := statefulsets.NewForMinIOZone(mi, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(mi.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
