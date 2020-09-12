@@ -34,7 +34,7 @@ import (
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
-func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate string) []corev1.EnvVar {
+func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate string, opVersion string) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Env...)
@@ -73,6 +73,9 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			// Add a fallback in-case operator is down.
 			Name:  "MINIO_ENDPOINTS",
 			Value: strings.Join(GetContainerArgs(t, hostsTemplate), " "),
+		}, corev1.EnvVar{
+			Name:  "MINIO_OPERATOR_VERSION",
+			Value: opVersion,
 		})
 
 	// Add env variables from credentials secret, if no secret provided, dont use
@@ -127,7 +130,7 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 // Returns the MinIO pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func minioMetadata(t *miniov1.Tenant, zone *miniov1.Zone) metav1.ObjectMeta {
+func minioMetadata(t *miniov1.Tenant, zone *miniov1.Zone, opVersion string) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	if t.HasMetadata() {
 		meta = *t.Spec.Metadata
@@ -141,6 +144,7 @@ func minioMetadata(t *miniov1.Tenant, zone *miniov1.Zone) metav1.ObjectMeta {
 	}
 	// Add information labels, such as which zone we are building this pod about
 	meta.Labels[miniov1.ZoneLabel] = zone.Name
+	meta.Labels[miniov1.OperatorLabel] = opVersion
 	return meta
 }
 
@@ -216,7 +220,7 @@ func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
 }
 
 // Builds the MinIO container for a Tenant.
-func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, hostsTemplate string) corev1.Container {
+func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, hostsTemplate string, opVersion string) corev1.Container {
 	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
 
 	liveProbe := probes(t)
@@ -232,7 +236,7 @@ func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *mini
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, zone),
 		Args:            args,
-		Env:             minioEnvironmentVars(t, wsSecret, hostsTemplate),
+		Env:             minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion),
 		Resources:       zone.Resources,
 		LivenessProbe:   liveProbe,
 	}
@@ -310,7 +314,7 @@ func minioSecurityContext(t *miniov1.Tenant) *corev1.PodSecurityContext {
 }
 
 // NewForMinIOZone creates a new StatefulSet for the given Cluster.
-func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, serviceName string, hostsTemplate string) *appsv1.StatefulSet {
+func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = zone.Servers
 	var serverCertSecret string
@@ -413,7 +417,7 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 		})
 	}
 
-	containers := []corev1.Container{zoneMinioServerContainer(t, wsSecret, zone, hostsTemplate)}
+	containers := []corev1.Container{zoneMinioServerContainer(t, wsSecret, zone, hostsTemplate, operatorVersion)}
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: t.Namespace,
@@ -435,7 +439,7 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: minioMetadata(t, zone),
+				ObjectMeta: minioMetadata(t, zone, operatorVersion),
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					Volumes:            podVolumes,
