@@ -61,8 +61,11 @@ const ZoneLabel = "v1.min.io/zone"
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
 
-// MinIOServicePortName specifies the default Service's port name, e.g. for automatic protocol selection in Istio
-const MinIOServicePortName = "http-minio"
+// MinIOServiceHTTPPortName specifies the default Service's http port name, e.g. for automatic protocol selection in Istio
+const MinIOServiceHTTPPortName = "http-minio"
+
+// MinIOServiceHTTPSPortName specifies the default Service's https port name, e.g. for automatic protocol selection in Istio
+const MinIOServiceHTTPSPortName = "https-minio"
 
 // MinIOVolumeName specifies the default volume name for MinIO volumes
 const MinIOVolumeName = "export"

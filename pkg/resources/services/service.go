@@ -20,13 +20,27 @@ package services
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 )
 
 // NewClusterIPForMinIO will return a new headless Kubernetes service for a Tenant
 func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServicePortName}
+	var port int32
+	var name string
+	if t.TLS() {
+		port = 443
+		name = miniov1.MinIOServiceHTTPSPortName
+	} else {
+		port = 80
+		name = miniov1.MinIOServiceHTTPPortName
+	}
+	minioPort := corev1.ServicePort{
+		Port:       port,
+		Name:       name,
+		TargetPort: intstr.FromInt(miniov1.MinIOPort),
+	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.MinIOPodLabels(),
@@ -46,7 +60,20 @@ func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
 
 // ServiceForBucket will return a external name based service
 func ServiceForBucket(t *miniov1.Tenant, bucket string) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServicePortName}
+	var port int32
+	var name string
+	if t.TLS() {
+		port = 443
+		name = miniov1.MinIOServiceHTTPSPortName
+	} else {
+		port = 80
+		name = miniov1.MinIOServiceHTTPPortName
+	}
+	minioPort := corev1.ServicePort{
+		Port:       port,
+		Name:       name,
+		TargetPort: intstr.FromInt(miniov1.MinIOPort),
+	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            bucket,
@@ -64,7 +91,7 @@ func ServiceForBucket(t *miniov1.Tenant, bucket string) *corev1.Service {
 
 // NewHeadlessForMinIO will return a new headless Kubernetes service for a Tenant
 func NewHeadlessForMinIO(t *miniov1.Tenant) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServicePortName}
+	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServiceHTTPPortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.MinIOPodLabels(),
