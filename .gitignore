@@ -5,4 +5,5 @@ minio-operator
 dist/
 kubectl-minio/kubectl-minio
 *.minisig
+*.tar.gz
 kubectl-minio/crds
