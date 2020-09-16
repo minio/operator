@@ -30,7 +30,7 @@ builds:
     flags:
       - -trimpath
     hooks:
-      post: ./minisign.sh {{ .Path }}
+      post: ./package.sh {{ .Path }}
   -
     id: kubectl-minio
     dir: kubectl-minio
@@ -49,13 +49,14 @@ builds:
     flags:
       - -trimpath
     hooks:
-      post: ./minisign.sh {{ .Path }}
+      post: ./package.sh {{ .Path }}
 
 archives:
   -
     format: binary
     files:
       - "*.minisig"
+      - "*.tar.gz"
 
 dockers:
   -
