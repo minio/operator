@@ -53,7 +53,7 @@ We can create the Tenant now. Before that, please ensure you have requisite node
 We recommend [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md) to create PVs.
 
 ```sh
-kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns --storageclass direct.csi.min.io
+kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns --storage-class direct.csi.min.io
 ```
 
 ## Post Tenant Creation
