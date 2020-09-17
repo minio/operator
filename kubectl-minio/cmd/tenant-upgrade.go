@@ -38,7 +38,7 @@ import (
 const (
 	upgradeDesc = `
 'upgrade' command upgrades a MinIO tenant to the specified MinIO version`
-	upgradeExample = `  kubectl minio tenant upgrade --name tenant1 --image minio/minio:RELEASE.2020-09-10T22-02-45Z --namespace tenant1-ns`
+	upgradeExample = `  kubectl minio tenant upgrade --name tenant1 --image minio/minio:RELEASE.2020-09-17T04-49-20Z --namespace tenant1-ns`
 )
 
 type upgradeCmd struct {
