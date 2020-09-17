@@ -9,6 +9,7 @@ release:
      name: operator
    extra_files:
      - glob: "*.minisig"
+     - glob: "*.zip"
 
 before:
   hooks:
@@ -54,9 +55,6 @@ builds:
 archives:
   -
     format: binary
-    files:
-      - "*.minisig"
-      - "*.tar.gz"
 
 dockers:
   -

@@ -7,7 +7,7 @@ minisign -s "/media/${USER}/minio/minisign.key" \
 
 cp -f "${binary}.minisig" "${1}.minisig"
 cp -f LICENSE "$(dirname "${1}")"
-tar -C "$(dirname "${1}")" --numeric-owner -czf "${binary}.tar.gz" kubectl*
+zip -r -j "${binary}.zip" "$(dirname "${1}")"
 
 if [ -f minio-operator_linux_amd64.minisig ]; then
     mv minio-operator_linux_amd64.minisig minio-operator.minisig
