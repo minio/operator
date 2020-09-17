@@ -133,7 +133,7 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 // Returns the MinIO pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func minioMetadata(t *miniov1.Tenant, zone *miniov1.Zone, opVersion string) metav1.ObjectMeta {
+func minioPodMetadata(t *miniov1.Tenant, zone *miniov1.Zone, opVersion string) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	if t.HasMetadata() {
 		meta = *t.Spec.Metadata
@@ -420,19 +420,35 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 		})
 	}
 
+	ssMeta := metav1.ObjectMeta{
+		Namespace: t.Namespace,
+		Name:      t.ZoneStatefulsetName(zone),
+		OwnerReferences: []metav1.OwnerReference{
+			*metav1.NewControllerRef(t, schema.GroupVersionKind{
+				Group:   miniov1.SchemeGroupVersion.Group,
+				Version: miniov1.SchemeGroupVersion.Version,
+				Kind:    miniov1.MinIOCRDResourceKind,
+			}),
+		},
+	}
+	// Copy labels and annotations from the Tenant.Spec.Metadata
+	if t.Spec.Metadata != nil {
+		ssMeta.Labels = t.Spec.Metadata.Labels
+		ssMeta.Annotations = t.Spec.Metadata.Annotations
+	}
+
+	if ssMeta.Labels == nil {
+		ssMeta.Labels = make(map[string]string)
+	}
+
+	// Add information labels, such as which zone we are building this pod about
+	ssMeta.Labels[miniov1.TenantLabel] = t.Name
+	ssMeta.Labels[miniov1.ZoneLabel] = zone.Name
+	ssMeta.Labels[miniov1.OperatorLabel] = operatorVersion
+
 	containers := []corev1.Container{zoneMinioServerContainer(t, wsSecret, zone, hostsTemplate, operatorVersion)}
 	ss := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: t.Namespace,
-			Name:      t.ZoneStatefulsetName(zone),
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(t, schema.GroupVersionKind{
-					Group:   miniov1.SchemeGroupVersion.Group,
-					Version: miniov1.SchemeGroupVersion.Version,
-					Kind:    miniov1.MinIOCRDResourceKind,
-				}),
-			},
-		},
+		ObjectMeta: ssMeta,
 		Spec: appsv1.StatefulSetSpec{
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: miniov1.DefaultUpdateStrategy,
@@ -442,7 +458,7 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: minioMetadata(t, zone, operatorVersion),
+				ObjectMeta: minioPodMetadata(t, zone, operatorVersion),
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					Volumes:            podVolumes,
