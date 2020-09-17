@@ -94,21 +94,19 @@ apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
   name: minio
+  ## Optionally pass labels to be applied to the statefulset pods
+  labels:
+    app: minio
+  ## Annotations for MinIO Tenant Pods
+  annotations:
+    prometheus.io/path: /minio/prometheus/metrics
+    prometheus.io/port: "9000"
+    prometheus.io/scrape: "true"
 ## If a scheduler is specified here, Tenant pods will be dispatched by specified scheduler.
 ## If not specified, the Tenant pods will be dispatched by default scheduler.
 # scheduler:
 #  name: my-custom-scheduler
 spec:
-  ## Metadata for MinIO Tenant Pods
-  metadata:
-    labels:
-      app: minio
-    ## Annotations for MinIO Tenant Pods
-    annotations:
-      prometheus.io/path: /minio/prometheus/metrics
-      prometheus.io/port: "9000"
-      prometheus.io/scrape: "true"
-
   ## Registry location and Tag to download MinIO Server image
   image: minio/minio:RELEASE.2020-09-10T22-02-45Z
   imagePullPolicy: IfNotPresent
@@ -218,9 +216,6 @@ spec:
     replicas: 2
     consoleSecret:
       name: console-secret
-    metadata:
-      labels:
-        app: console
 
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes

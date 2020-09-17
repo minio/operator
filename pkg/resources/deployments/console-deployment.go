@@ -71,6 +71,8 @@ func consoleMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	for k, v := range t.ConsolePodLabels() {
 		meta.Labels[k] = v
 	}
+	// Mark which tenant is being used
+	meta.Labels[miniov1.TenantLabel] = t.Name
 	return meta
 }
 
