@@ -60,11 +60,6 @@ func (in *ConsoleConfiguration) DeepCopyInto(out *ConsoleConfiguration) {
 		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
-	if in.Metadata != nil {
-		in, out := &in.Metadata, &out.Metadata
-		*out = new(metav1.ObjectMeta)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]corev1.EnvVar, len(*in))
@@ -248,11 +243,6 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		}
 	}
 	out.ImagePullSecret = in.ImagePullSecret
-	if in.Metadata != nil {
-		in, out := &in.Metadata, &out.Metadata
-		*out = new(metav1.ObjectMeta)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.CredsSecret != nil {
 		in, out := &in.CredsSecret, &out.CredsSecret
 		*out = new(corev1.LocalObjectReference)

@@ -135,9 +135,10 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 // metadata.
 func minioPodMetadata(t *miniov1.Tenant, zone *miniov1.Zone, opVersion string) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if t.HasMetadata() {
-		meta = *t.Spec.Metadata
-	}
+	// Copy Labels and Annotations from Tenant
+	meta.Labels = t.ObjectMeta.Labels
+	meta.Annotations = t.ObjectMeta.Annotations
+
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
@@ -432,10 +433,8 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 		},
 	}
 	// Copy labels and annotations from the Tenant.Spec.Metadata
-	if t.Spec.Metadata != nil {
-		ssMeta.Labels = t.Spec.Metadata.Labels
-		ssMeta.Annotations = t.Spec.Metadata.Annotations
-	}
+	ssMeta.Labels = t.ObjectMeta.Labels
+	ssMeta.Annotations = t.ObjectMeta.Annotations
 
 	if ssMeta.Labels == nil {
 		ssMeta.Labels = make(map[string]string)

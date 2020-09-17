@@ -61,9 +61,10 @@ func consoleSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
 
 func consoleMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if t.HasConsoleMetadata() {
-		meta = *t.Spec.Console.Metadata
-	}
+	// Copy Labels and Annotations from Tenant
+	meta.Labels = t.ObjectMeta.Labels
+	meta.Annotations = t.ObjectMeta.Annotations
+
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
