@@ -68,8 +68,6 @@ type TenantSpec struct {
 	// Pod Management Policy for pod created by StatefulSet
 	// +optional
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
-	// Metadata defines the object metadata passed to each pod that is a part of this Tenant
-	Metadata *metav1.ObjectMeta `json:"metadata,omitempty"`
 	// If provided, use this secret as the credentials for Tenant resource
 	// Otherwise MinIO server creates dynamic credentials printed on MinIO server startup banner
 	// +optional
@@ -193,7 +191,6 @@ type ConsoleConfiguration struct {
 	// This secret provides all environment variables for KES
 	// This is a mandatory field
 	ConsoleSecret *corev1.LocalObjectReference `json:"consoleSecret"`
-	Metadata      *metav1.ObjectMeta           `json:"metadata,omitempty"`
 	// If provided, use these environment variables for Console resource
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`

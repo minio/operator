@@ -100,12 +100,6 @@ func (t *Tenant) HasCredsSecret() bool {
 	return t.Spec.CredsSecret != nil
 }
 
-// HasMetadata returns true if the user has provided a pod metadata
-// for a Tenant else false
-func (t *Tenant) HasMetadata() bool {
-	return t.Spec.Metadata != nil
-}
-
 // HasCertConfig returns true if the user has provided a certificate
 // config
 func (t *Tenant) HasCertConfig() bool {
@@ -477,12 +471,6 @@ func (t *Tenant) HasConsoleEnabled() bool {
 // for a Tenant else false
 func (t *Tenant) HasConsoleSecret() bool {
 	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
-}
-
-// HasConsoleMetadata returns true if the user has provided a console metadata
-// for a Tenant else false
-func (t *Tenant) HasConsoleMetadata() bool {
-	return t.Spec.Console != nil && t.Spec.Console.Metadata != nil
 }
 
 // HasKESMetadata returns true if the user has provided KES metadata
