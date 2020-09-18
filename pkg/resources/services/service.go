@@ -30,10 +30,10 @@ func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
 	var port int32
 	var name string
 	if t.TLS() {
-		port = 443
+		port = miniov1.MinIOTLSPortLoadBalancerSVC
 		name = miniov1.MinIOServiceHTTPSPortName
 	} else {
-		port = 80
+		port = miniov1.MinIOPortLoadBalancerSVC
 		name = miniov1.MinIOServiceHTTPPortName
 	}
 	minioPort := corev1.ServicePort{
@@ -63,10 +63,10 @@ func ServiceForBucket(t *miniov1.Tenant, bucket string) *corev1.Service {
 	var port int32
 	var name string
 	if t.TLS() {
-		port = 443
+		port = miniov1.MinIOTLSPortLoadBalancerSVC
 		name = miniov1.MinIOServiceHTTPSPortName
 	} else {
-		port = 80
+		port = miniov1.MinIOPortLoadBalancerSVC
 		name = miniov1.MinIOServiceHTTPPortName
 	}
 	minioPort := corev1.ServicePort{
