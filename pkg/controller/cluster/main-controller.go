@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -776,10 +777,10 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
-	namespace, name := key2NamespaceName(key)
+	namespace, tenantName := key2NamespaceName(key)
 
 	// Get the Tenant resource with this namespace/name
-	mi, err := c.tenantsLister.Tenants(namespace).Get(name)
+	mi, err := c.tenantsLister.Tenants(namespace).Get(tenantName)
 	if err != nil {
 		// The Tenant resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
@@ -789,7 +790,7 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 	// Set any required default values and init Global variables
-	nsName := types.NamespacedName{Namespace: namespace, Name: name}
+	nsName := types.NamespacedName{Namespace: namespace, Name: tenantName}
 
 	// Update tenant before setting defaults
 	mi, err = c.applyFinalizer(ctx, mi)
@@ -1042,7 +1043,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		klog.V(4).Infof("Collecting artifacts for Tenant '%s' to update MinIO from: %s, to: %s",
-			name, images[0], mi.Spec.Image)
+			tenantName, images[0], mi.Spec.Image)
 
 		latest, err := c.fetchArtifacts(mi)
 		if err != nil {
@@ -1058,7 +1059,7 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			_ = c.removeArtifacts()
 
-			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", name, err)
+			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", tenantName, err)
 			if _, terr := c.updateTenantStatus(ctx, mi, err.Error(), totalReplicas); terr != nil {
 				return terr
 			}
@@ -1068,13 +1069,13 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		klog.V(4).Infof("Updating Tenant %s MinIO version from: %s, to: %s -> URL: %s",
-			name, mi.Spec.Image, images[0], updateURL)
+			tenantName, mi.Spec.Image, images[0], updateURL)
 
 		us, err := adminClnt.ServerUpdate(ctx, updateURL)
 		if err != nil {
 			_ = c.removeArtifacts()
 
-			err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", name, err)
+			err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", tenantName, err)
 			if _, terr := c.updateTenantStatus(ctx, mi, err.Error(), totalReplicas); terr != nil {
 				return terr
 			}
@@ -1085,10 +1086,10 @@ func (c *Controller) syncHandler(key string) error {
 
 		if us.CurrentVersion != us.UpdatedVersion {
 			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
-				name, us.CurrentVersion, us.UpdatedVersion)
+				tenantName, us.CurrentVersion, us.UpdatedVersion)
 		} else {
 			msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
-				name,
+				tenantName,
 				us.CurrentVersion)
 			klog.Info(msg)
 			if _, terr := c.updateTenantStatus(ctx, mi, msg, totalReplicas); terr != nil {
@@ -1163,7 +1164,7 @@ func (c *Controller) syncHandler(key string) error {
 				if mi, err = c.updateTenantStatus(ctx, mi, StatusUpdatingConsoleVersion, totalReplicas); err != nil {
 					return err
 				}
-				klog.V(2).Infof("Updating Tenant %s console version %s, to: %s", name,
+				klog.V(2).Infof("Updating Tenant %s console version %s, to: %s", tenantName,
 					mi.Spec.Console.Image, consoleDeployment.Spec.Template.Spec.Containers[0].Image)
 				consoleDeployment = deployments.NewConsole(mi)
 				_, err = c.kubeClientSet.AppsV1().Deployments(mi.Namespace).Update(ctx, consoleDeployment, uOpts)
