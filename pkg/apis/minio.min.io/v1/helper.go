@@ -494,7 +494,15 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 
 // MinIOServerHostAddress similar to MinIOServerHost but returns host with port
 func (t *Tenant) MinIOServerHostAddress() string {
-	return net.JoinHostPort(t.MinIOServerHost(), strconv.Itoa(MinIOPort))
+	var port int
+
+	if t.TLS() {
+		port = MinIOTLSPortLoadBalancerSVC
+	} else {
+		port = MinIOPortLoadBalancerSVC
+	}
+
+	return net.JoinHostPort(t.MinIOServerHost(), strconv.Itoa(port))
 }
 
 // MinIOServerEndpoint similar to MinIOServerHostAddress but a URL with current scheme
