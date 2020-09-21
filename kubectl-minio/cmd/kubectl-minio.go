@@ -28,8 +28,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
+
+	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
 	"k8s.io/client-go/scale/scheme"
 
+	// Statik CRD assets for our plugin
 	_ "github.com/minio/kubectl-minio/statik"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )

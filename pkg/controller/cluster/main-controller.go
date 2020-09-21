@@ -36,6 +36,9 @@ import (
 
 	"k8s.io/klog/v2"
 
+	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -56,6 +59,7 @@ import (
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	batchlisters "k8s.io/client-go/listers/batch/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
+
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
