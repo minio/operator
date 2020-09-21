@@ -191,6 +191,10 @@ type ConsoleConfiguration struct {
 	// This secret provides all environment variables for KES
 	// This is a mandatory field
 	ConsoleSecret *corev1.LocalObjectReference `json:"consoleSecret"`
+	// ServiceAccountName is the name of the ServiceAccount to use to run pods of all Console
+	// Pods created as a part of this Tenant.
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// If provided, use these environment variables for Console resource
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
@@ -220,6 +224,10 @@ type KESConfig struct {
 	// This is applied to KES pods only.
 	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// ServiceAccountName is the name of the ServiceAccount to use to run pods of all KES
+	// Pods created as a part of this Tenant.
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 	// This kesSecret serves as the configuration for KES
 	// This is a mandatory field
 	Configuration *corev1.LocalObjectReference `json:"kesSecret"`
