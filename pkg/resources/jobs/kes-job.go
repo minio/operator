@@ -131,9 +131,9 @@ func kesEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 // metadata.
 func kesMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if t.HasKESMetadata() {
-		meta = *t.Spec.KES.Metadata
-	}
+	meta.Labels = t.Spec.KES.Labels
+	meta.Annotations = t.Spec.KES.Annotations
+
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
@@ -141,6 +141,7 @@ func kesMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	for k, v := range t.KESPodLabels() {
 		meta.Labels[k] = v
 	}
+	meta.Labels[miniov1.TenantLabel] = t.Name
 	return meta
 }
 

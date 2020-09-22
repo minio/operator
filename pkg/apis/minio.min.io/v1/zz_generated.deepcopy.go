@@ -22,7 +22,6 @@ package v1
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -73,6 +72,27 @@ func (in *ConsoleConfiguration) DeepCopyInto(out *ConsoleConfiguration) {
 		*out = new(LocalCertificateReference)
 		**out = **in
 	}
+	if in.Annotations != nil {
+		in, out := &in.Annotations, &out.Annotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.Labels != nil {
+		in, out := &in.Labels, &out.Labels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.NodeSelector != nil {
+		in, out := &in.NodeSelector, &out.NodeSelector
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 
@@ -94,11 +114,6 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 		*out = new(corev1.LocalObjectReference)
 		**out = **in
 	}
-	if in.Metadata != nil {
-		in, out := &in.Metadata, &out.Metadata
-		*out = new(metav1.ObjectMeta)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.ExternalCertSecret != nil {
 		in, out := &in.ExternalCertSecret, &out.ExternalCertSecret
 		*out = new(LocalCertificateReference)
@@ -108,6 +123,27 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 		in, out := &in.ClientCertSecret, &out.ClientCertSecret
 		*out = new(LocalCertificateReference)
 		**out = **in
+	}
+	if in.Annotations != nil {
+		in, out := &in.Annotations, &out.Annotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.Labels != nil {
+		in, out := &in.Labels, &out.Labels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
+	if in.NodeSelector != nil {
+		in, out := &in.NodeSelector, &out.NodeSelector
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
 	}
 	return
 }

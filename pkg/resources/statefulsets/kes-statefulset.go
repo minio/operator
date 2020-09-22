@@ -29,15 +29,16 @@ import (
 // metadata.
 func KESMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	if t.HasKESMetadata() {
-		meta = *t.Spec.KES.Metadata
-	}
+	meta.Labels = t.Spec.KES.Labels
+	meta.Annotations = t.Spec.KES.Annotations
+
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
 	}
 	for k, v := range t.KESPodLabels() {
 		meta.Labels[k] = v
 	}
+	meta.Labels[miniov1.TenantLabel] = t.Name
 	return meta
 }
 
@@ -198,6 +199,7 @@ func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 					Volumes:            podVolumes,
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					SchedulerName:      t.Scheduler.Name,
+					NodeSelector:       t.Spec.KES.NodeSelector,
 				},
 			},
 		},

@@ -43,9 +43,13 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Te
 | spec.console.image | Defines the console image. |
 | spec.console.replicas | Number of Console pods to be created. |
 | spec.console.consoleSecret | Use this secret to assign console credentials to Tenant. |
-| spec.console.metadata | This allows a way to map metadata to the console container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
+| spec.console.annotations | If provided, use these annotations for Console Object Meta annotations. |
+| spec.console.labels | If provided, use these labels for Console Object Meta labels. |
+| spec.console.nodeSelector | If provided, use these nodeSelector for Console Object Meta nodeSelector. |
 | spec.kes | Defines the KES configuration. Refer [this](https://github.com/minio/kes) |
 | spec.kes.replicas | Number of KES pods to be created. |
 | spec.kes.image | Defines the KES image. |
 | spec.kes.configSecret | Secret to specify KES Configuration. This is a mandatory field. |
-| spec.kes.metadata | This allows a way to map metadata to the KES pods. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). [Note: Should match the labels in `spec.kes.selector`] |
+| spec.kes.annotations | If provided, use these annotations for KES Object Meta annotations. |
+| spec.kes.labels | If provided, use these labels for KES Object Meta labels. |
+| spec.kes.nodeSelector | If provided, use these nodeSelector for KES Object Meta nodeSelector. |
