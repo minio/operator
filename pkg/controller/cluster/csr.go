@@ -67,7 +67,7 @@ func isEqual(a, b []string) bool {
 	return true
 }
 
-func generateCryptoData(mi *miniov1.Tenant, hostsTemplate string) ([]byte, []byte, error) {
+func generateCryptoData(tenant *miniov1.Tenant, hostsTemplate string) ([]byte, []byte, error) {
 	var dnsNames []string
 	klog.V(0).Infof("Generating private key")
 	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
@@ -82,24 +82,24 @@ func generateCryptoData(mi *miniov1.Tenant, hostsTemplate string) ([]byte, []byt
 		return nil, nil, err
 	}
 
-	klog.V(0).Infof("Generating CSR with CN=%s", mi.Spec.CertConfig.CommonName)
+	klog.V(0).Infof("Generating CSR with CN=%s", tenant.Spec.CertConfig.CommonName)
 
-	hosts := mi.AllMinIOHosts()
+	hosts := tenant.AllMinIOHosts()
 	if hostsTemplate != "" {
-		hosts = mi.TemplatedMinIOHosts(hostsTemplate)
+		hosts = tenant.TemplatedMinIOHosts(hostsTemplate)
 	}
 
-	if isEqual(mi.Spec.CertConfig.DNSNames, hosts) {
-		dnsNames = mi.Spec.CertConfig.DNSNames
+	if isEqual(tenant.Spec.CertConfig.DNSNames, hosts) {
+		dnsNames = tenant.Spec.CertConfig.DNSNames
 	} else {
-		dnsNames = append(mi.Spec.CertConfig.DNSNames, hosts...)
+		dnsNames = append(tenant.Spec.CertConfig.DNSNames, hosts...)
 	}
-	dnsNames = append(dnsNames, mi.MinIOBucketBaseWildcardDomain())
+	dnsNames = append(dnsNames, tenant.MinIOBucketBaseWildcardDomain())
 
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
-			CommonName:   mi.Spec.CertConfig.CommonName,
-			Organization: mi.Spec.CertConfig.OrganizationName,
+			CommonName:   tenant.Spec.CertConfig.CommonName,
+			Organization: tenant.Spec.CertConfig.OrganizationName,
 		},
 		SignatureAlgorithm: x509.ECDSAWithSHA512,
 		DNSNames:           dnsNames,
@@ -116,23 +116,23 @@ func generateCryptoData(mi *miniov1.Tenant, hostsTemplate string) ([]byte, []byt
 // createCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that MinIO statefulset will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createCSR(ctx context.Context, mi *miniov1.Tenant) error {
-	privKeysBytes, csrBytes, err := generateCryptoData(mi, c.hostsTemplate)
+func (c *Controller) createCSR(ctx context.Context, tenant *miniov1.Tenant) error {
+	privKeysBytes, csrBytes, err := generateCryptoData(tenant, c.hostsTemplate)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err
 	}
 
-	err = c.createCertificate(ctx, mi.MinIOPodLabels(), mi.MinIOCSRName(), mi.Namespace, csrBytes, mi)
+	err = c.createCertificate(ctx, tenant.MinIOPodLabels(), tenant.MinIOCSRName(), tenant.Namespace, csrBytes, tenant)
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.MinIOCSRName(), err)
+		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
 		return err
 	}
 
 	// fetch certificate from CSR
-	certbytes, err := c.fetchCertificate(ctx, mi.MinIOCSRName())
+	certbytes, err := c.fetchCertificate(ctx, tenant.MinIOCSRName())
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", mi.MinIOCSRName(), err)
+		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
 		return err
 	}
 
@@ -140,9 +140,9 @@ func (c *Controller) createCSR(ctx context.Context, mi *miniov1.Tenant) error {
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
 	// Create secret for MinIO Statefulset to use
-	err = c.createSecret(ctx, mi, mi.MinIOPodLabels(), mi.MinIOTLSSecretName(), encodedPrivKey, certbytes)
+	err = c.createSecret(ctx, tenant, tenant.MinIOPodLabels(), tenant.MinIOTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", mi.MinIOTLSSecretName(), err)
+		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", tenant.MinIOTLSSecretName(), err)
 		return err
 	}
 
@@ -150,7 +150,7 @@ func (c *Controller) createCSR(ctx context.Context, mi *miniov1.Tenant) error {
 }
 
 // createCertificate is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, mi *miniov1.Tenant) error {
+func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, tenant *miniov1.Tenant) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 
 	kubeCSR := &certificates.CertificateSigningRequest{
@@ -163,7 +163,7 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 			Labels:    labels,
 			Namespace: namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
+				*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
 					Group:   miniov1.SchemeGroupVersion.Group,
 					Version: miniov1.SchemeGroupVersion.Version,
 					Kind:    miniov1.MinIOCRDResourceKind,
@@ -252,15 +252,15 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 	}
 }
 
-func (c *Controller) createSecret(ctx context.Context, mi *miniov1.Tenant, labels map[string]string, secretName string, pkBytes, certBytes []byte) error {
+func (c *Controller) createSecret(ctx context.Context, tenant *miniov1.Tenant, labels map[string]string, secretName string, pkBytes, certBytes []byte) error {
 	secret := &corev1.Secret{
 		Type: "Opaque",
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
-			Namespace: mi.Namespace,
+			Namespace: tenant.Namespace,
 			Labels:    labels,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(mi, schema.GroupVersionKind{
+				*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
 					Group:   miniov1.SchemeGroupVersion.Group,
 					Version: miniov1.SchemeGroupVersion.Version,
 					Kind:    miniov1.MinIOCRDResourceKind,
@@ -272,7 +272,7 @@ func (c *Controller) createSecret(ctx context.Context, mi *miniov1.Tenant, label
 			"public.crt":  certBytes,
 		},
 	}
-	_, err := c.kubeClientSet.CoreV1().Secrets(mi.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+	_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 	return err
 }
 
