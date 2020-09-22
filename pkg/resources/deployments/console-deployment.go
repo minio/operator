@@ -215,9 +215,10 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: consoleMetadata(t),
 				Spec: corev1.PodSpec{
-					Containers:    []corev1.Container{consoleContainer(t)},
-					RestartPolicy: miniov1.ConsoleRestartPolicy,
-					Volumes:       podVolumes,
+					ServiceAccountName: t.Spec.Console.ServiceAccountName,
+					Containers:         []corev1.Container{consoleContainer(t)},
+					RestartPolicy:      miniov1.ConsoleRestartPolicy,
+					Volumes:            podVolumes,
 				},
 			},
 		},

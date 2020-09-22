@@ -193,10 +193,11 @@ func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: KESMetadata(t),
 				Spec: corev1.PodSpec{
-					Containers:    containers,
-					Volumes:       podVolumes,
-					RestartPolicy: corev1.RestartPolicyAlways,
-					SchedulerName: t.Scheduler.Name,
+					ServiceAccountName: t.Spec.KES.ServiceAccountName,
+					Containers:         containers,
+					Volumes:            podVolumes,
+					RestartPolicy:      corev1.RestartPolicyAlways,
+					SchedulerName:      t.Scheduler.Name,
 				},
 			},
 		},
