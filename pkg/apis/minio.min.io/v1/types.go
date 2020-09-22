@@ -205,6 +205,15 @@ type ConsoleConfiguration struct {
 	// used for enabling TLS support on Console Pods.
 	// +optional
 	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
+	// If provided, use these annotations for Console Object Meta annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// If provided, use these labels for Console Object Meta labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// If provided, use these nodeSelector for Console Object Meta nodeSelector
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same
@@ -231,7 +240,6 @@ type KESConfig struct {
 	// This kesSecret serves as the configuration for KES
 	// This is a mandatory field
 	Configuration *corev1.LocalObjectReference `json:"kesSecret"`
-	Metadata      *metav1.ObjectMeta           `json:"metadata,omitempty"`
 	// ExternalCertSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
 	// +optional
 	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
@@ -239,6 +247,15 @@ type KESConfig struct {
 	// used for adding client certificates on KES --> used for KES authentication against Vault or other KMS that supports mTLS.
 	// +optional
 	ClientCertSecret *LocalCertificateReference `json:"clientCertSecret,omitempty"`
+	// If provided, use these annotations for KES Object Meta annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// If provided, use these labels for KES Object Meta labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// If provided, use these nodeSelector for KES Object Meta nodeSelector
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

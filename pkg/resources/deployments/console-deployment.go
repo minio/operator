@@ -61,9 +61,8 @@ func consoleSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
 
 func consoleMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	// Copy Labels and Annotations from Tenant
-	meta.Labels = t.ObjectMeta.Labels
-	meta.Annotations = t.ObjectMeta.Annotations
+	meta.Labels = t.Spec.Console.Labels
+	meta.Annotations = t.Spec.Console.Annotations
 
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
@@ -219,6 +218,7 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 					Containers:         []corev1.Container{consoleContainer(t)},
 					RestartPolicy:      miniov1.ConsoleRestartPolicy,
 					Volumes:            podVolumes,
+					NodeSelector:       t.Spec.Console.NodeSelector,
 				},
 			},
 		},

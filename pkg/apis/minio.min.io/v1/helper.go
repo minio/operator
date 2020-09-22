@@ -473,12 +473,6 @@ func (t *Tenant) HasConsoleSecret() bool {
 	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
 }
 
-// HasKESMetadata returns true if the user has provided KES metadata
-// for a Tenant else false
-func (t *Tenant) HasKESMetadata() bool {
-	return t.Spec.KES != nil && t.Spec.KES.Metadata != nil
-}
-
 // UpdateURL returns the URL for the sha256sum location of the new binary
 func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error) {
 	if overrideURL == "" {
