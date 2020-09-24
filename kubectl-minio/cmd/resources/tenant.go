@@ -19,7 +19,9 @@
 package resources
 
 import (
+	"encoding/json"
 	"errors"
+	"log"
 
 	helpers "github.com/minio/kubectl-minio/cmd/helpers"
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
@@ -30,19 +32,28 @@ import (
 
 // TenantOptions encapsulates the CLI options for a MinIO Tenant
 type TenantOptions struct {
-	Name            string
-	SecretName      string
-	Servers         int32
-	Volumes         int32
-	Capacity        string
-	NS              string
-	Image           string
-	StorageClass    string
-	KmsSecret       string
-	ConsoleSecret   string
-	CertSecret      string
-	DisableTLS      bool
-	ImagePullSecret string
+	Name                      string
+	SecretName                string
+	Servers                   int32
+	Volumes                   int32
+	Capacity                  string
+	NS                        string
+	Image                     string
+	StorageClass              string
+	KmsSecret                 string
+	ConsoleSecret             string
+	CertSecret                string
+	DisableTLS                bool
+	ImagePullSecret           string
+	ServiceAccountName        string
+	ConsoleServiceAccountName string
+	KesServiceAccountName     string
+	ConsoleAnnotations        string
+	ConsoleLabels             string
+	ConsoleNodeSelector       string
+	KesAnnotations            string
+	KesLabels                 string
+	KesNodeSelector           string
 }
 
 // Validate Tenant Options
@@ -86,13 +97,13 @@ func tenantLabels(name string) map[string]string {
 
 func tenantKESLabels(name string) map[string]string {
 	m := make(map[string]string, 1)
-	m["app"] = name + "-kes"
+	m[miniov1.KESInstanceLabel] = name + "-kes"
 	return m
 }
 
 func tenantConsoleLabels(name string) map[string]string {
 	m := make(map[string]string, 1)
-	m["app"] = name + "-console"
+	m[miniov1.ConsoleTenantLabel] = name + "-console"
 	return m
 }
 
@@ -104,7 +115,30 @@ func tenantAnnotations() map[string]string {
 	return m
 }
 
-func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
+func parseKeyValues(rawObject string) map[string]string {
+	if rawObject == "" {
+		return map[string]string{}
+	}
+	var keyValues map[string]string
+	err := json.Unmarshal([]byte(rawObject), &keyValues)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return keyValues
+}
+
+func tenantKESConfig(tenant, serviceAccountName, annotationsRawObj, labelsRawObj, nodeSelectorRawObj, secret string) *miniov1.KESConfig {
+	// annotations
+	annotations := parseKeyValues(labelsRawObj)
+	// node selector
+	nodeSelector := parseKeyValues(nodeSelectorRawObj)
+	// labels
+	labels := parseKeyValues(annotationsRawObj)
+	for k, v := range tenantKESLabels(tenant) {
+		labels[k] = v
+	}
+	labels[miniov1.TenantLabel] = tenant
+
 	if secret != "" {
 		return &miniov1.KESConfig{
 			Replicas: helpers.KESReplicas,
@@ -112,15 +146,26 @@ func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
 			Configuration: &v1.LocalObjectReference{
 				Name: secret,
 			},
-			Metadata: &metav1.ObjectMeta{
-				Labels: tenantKESLabels(tenant),
-			},
+			Labels:       labels,
+			Annotations:  annotations,
+			NodeSelector: nodeSelector,
+			ServiceAccountName: serviceAccountName,
 		}
 	}
 	return nil
 }
 
-func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
+func tenantConsoleConfig(tenant, serviceAccountName, annotationsRawObj, labelsRawObj, nodeSelectorRawObj, secret string) *miniov1.ConsoleConfiguration {
+	// annotations
+	annotations := parseKeyValues(labelsRawObj)
+	// node selector
+	nodeSelector := parseKeyValues(nodeSelectorRawObj)
+	// labels
+	labels := parseKeyValues(annotationsRawObj)
+	for k, v := range tenantConsoleLabels(tenant) {
+		labels[k] = v
+	}
+	labels[miniov1.TenantLabel] = tenant
 	if secret != "" {
 		return &miniov1.ConsoleConfiguration{
 			Replicas: helpers.ConsoleReplicas,
@@ -128,9 +173,10 @@ func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
 			ConsoleSecret: &v1.LocalObjectReference{
 				Name: secret,
 			},
-			Metadata: &metav1.ObjectMeta{
-				Labels: tenantConsoleLabels(tenant),
-			},
+			Labels:       labels,
+			Annotations:  annotations,
+			NodeSelector: nodeSelector,
+			ServiceAccountName: serviceAccountName,
 		}
 	}
 	return nil
@@ -161,12 +207,12 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 	}
 
 	t := &miniov1.Tenant{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        opts.Name,
+			Labels:      tenantLabels(opts.Name),
+			Annotations: tenantAnnotations(),
+		},
 		Spec: miniov1.TenantSpec{
-			Metadata: &metav1.ObjectMeta{
-				Name:        opts.Name,
-				Labels:      tenantLabels(opts.Name),
-				Annotations: tenantAnnotations(),
-			},
 			Image:       opts.Image,
 			ServiceName: helpers.ServiceName(opts.Name),
 			CredsSecret: &v1.LocalObjectReference{
@@ -181,10 +227,11 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 			},
 			Mountpath:          helpers.MinIOMountPath,
 			Liveness:           helpers.DefaultLivenessCheck,
-			KES:                tenantKESConfig(opts.Name, opts.KmsSecret),
-			Console:            tenantConsoleConfig(opts.Name, opts.ConsoleSecret),
+			KES:                tenantKESConfig(opts.Name, opts.KesServiceAccountName, opts.KesAnnotations, opts.KesLabels, opts.KesNodeSelector, opts.KmsSecret),
+			Console:            tenantConsoleConfig(opts.Name, opts.ConsoleServiceAccountName, opts.ConsoleAnnotations, opts.ConsoleLabels, opts.ConsoleNodeSelector, opts.ConsoleSecret),
 			ExternalCertSecret: externalCertSecret(opts.CertSecret),
 			ImagePullSecret:    v1.LocalObjectReference{Name: opts.ImagePullSecret},
+			ServiceAccountName: opts.ServiceAccountName,
 		},
 	}
 	return t, t.Validate()

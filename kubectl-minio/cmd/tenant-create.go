@@ -78,6 +78,15 @@ func newCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&c.tenantOpts.ImagePullSecret, "image-pull-secrets", "", "image pull secret to be used for pulling MinIO image")
 	f.BoolVar(&c.tenantOpts.DisableTLS, "disable-tls", false, "disable automatic certificate creation for MinIO peer connection")
 	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
+	f.StringVar(&c.tenantOpts.ConsoleAnnotations, "console-annotations", "", "json object that contains k/v to be used as annotations for Console pods")
+	f.StringVar(&c.tenantOpts.ConsoleLabels, "console-labels", "", "json object that contains k/v to be used as labels for Console pods")
+	f.StringVar(&c.tenantOpts.ConsoleNodeSelector, "console-node-selector", "", "json object that contains k/v to be used as node selector for Console pods")
+	f.StringVar(&c.tenantOpts.KesAnnotations, "kes-annotations", "", "json object that contains k/v to be used as annotations for Kes pods")
+	f.StringVar(&c.tenantOpts.KesLabels, "kes-labels", "", "json object that contains k/v to be used as labels for Kes pods")
+	f.StringVar(&c.tenantOpts.KesNodeSelector, "kes-node-selector", "", "json object that contains k/v to be used as node selector for Kes pods")
+	f.StringVar(&c.tenantOpts.ServiceAccountName, "service-account", "", "service account name to be used for minio")
+	f.StringVar(&c.tenantOpts.ConsoleServiceAccountName, "console-service-account", "", "service account name to be used for console")
+	f.StringVar(&c.tenantOpts.KesServiceAccountName, "kes-service-account", "", "service account name to be used for kes")
 
 	return cmd
 }
