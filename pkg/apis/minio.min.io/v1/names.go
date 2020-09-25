@@ -39,9 +39,6 @@ const ConsoleContainerName = "console"
 // InitContainerImage name for init container.
 const InitContainerImage = "busybox:1.32"
 
-// Finalizer name used for resources operator wants to track for deletion
-const Finalizer = "finalizer.minio.min.io"
-
 // MinIO Related Names
 
 // MinIOStatefulSetNameForZone returns the name for MinIO StatefulSet

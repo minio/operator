@@ -800,12 +800,6 @@ func (c *Controller) syncHandler(key string) error {
 	// Set any required default values and init Global variables
 	nsName := types.NamespacedName{Namespace: namespace, Name: tenantName}
 
-	// Update tenant before setting defaults
-	tenant, err = c.applyFinalizer(ctx, tenant)
-	if err != nil {
-		return err
-	}
-
 	tenant.EnsureDefaults()
 	miniov1.InitGlobals(tenant)
 
@@ -821,16 +815,6 @@ func (c *Controller) syncHandler(key string) error {
 
 	secret, err := c.applyOperatorWebhookSecret(ctx, tenant)
 	if err != nil {
-		return err
-	}
-
-	// Process deletion
-	if !tenant.ObjectMeta.DeletionTimestamp.IsZero() {
-		klog.Infof("deleting tenant:%s/%s", tenant.Namespace, tenant.Name)
-		err = c.processDelete(ctx, tenant)
-		if err != nil {
-			return err
-		}
 		return err
 	}
 
@@ -997,12 +981,6 @@ func (c *Controller) syncHandler(key string) error {
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
-			}
-
-			// Set the PVC purge  behavior needed.
-			err = c.processPurgePVCsOnDeleteFlag(ctx, tenant)
-			if err != nil {
-				return err
 			}
 
 		}
@@ -1414,109 +1392,4 @@ func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.
 		}
 	}
 	return nil
-}
-
-// getPodsForTenant returns a list of pods running on a given tenant
-func (c *Controller) getPodsForTenant(tenant *miniov1.Tenant) ([]corev1.Pod, error) {
-	pods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(context.Background(), metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("%s=%s", miniov1.TenantLabel, tenant.Name),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return pods.Items, nil
-}
-
-// processPurgePVCsOnDelete sets the owner reference for PVC to the tenant. This allows automatic deletion
-// of the PVCs when the tenant is deleted.
-func (c *Controller) processPurgePVCsOnDeleteFlag(ctx context.Context, tenant *miniov1.Tenant) error {
-
-	pods, err := c.getPodsForTenant(tenant)
-	if err != nil {
-		// No pods created for tenant
-		if k8serrors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-	for _, pod := range pods {
-		for _, pvc := range pod.Spec.Volumes {
-			if pvc.PersistentVolumeClaim != nil {
-				p, err := c.kubeClientSet.CoreV1().PersistentVolumeClaims(tenant.Namespace).Get(ctx, pvc.PersistentVolumeClaim.ClaimName, metav1.GetOptions{})
-				if err != nil {
-					// No claims found
-					if k8serrors.IsNotFound(err) {
-						return nil
-					}
-					return err
-				}
-				update := true
-				if tenant.Spec.PurgePVCOnTenantDelete {
-					// No need to add if already present
-					for _, o := range p.OwnerReferences {
-						if o.UID == tenant.OwnerRef()[0].UID {
-							update = false
-							break
-						}
-					}
-					if update {
-						p.OwnerReferences = append(p.OwnerReferences, tenant.OwnerRef()...)
-					}
-				} else {
-					update = false
-					// If UID is set remove and update
-					for i, o := range tenant.OwnerReferences {
-						// Loop through ALL to remove the UID reference to tenant.
-						if o.UID == tenant.OwnerRef()[0].UID {
-							p.OwnerReferences = append(p.OwnerReferences[:i], p.OwnerReferences[i+1:]...)
-							update = true
-						}
-					}
-				}
-				if update {
-					_, err = c.kubeClientSet.CoreV1().PersistentVolumeClaims(tenant.Namespace).Update(ctx, p, metav1.UpdateOptions{})
-					if err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func (c *Controller) applyFinalizer(ctx context.Context, tenant *miniov1.Tenant) (*miniov1.Tenant, error) {
-	found := false
-	for _, f := range tenant.Finalizers {
-		if f == miniov1.Finalizer {
-			found = true
-			break
-		}
-	}
-	var err error
-	if !found {
-		tenant.ObjectMeta.Finalizers = append(tenant.ObjectMeta.Finalizers, miniov1.Finalizer)
-		tenant, err = c.minioClientSet.MinioV1().Tenants(tenant.Namespace).Update(ctx, tenant, metav1.UpdateOptions{})
-	}
-	return tenant, err
-}
-
-func (c *Controller) processDelete(ctx context.Context, tenant *miniov1.Tenant) error {
-	// Set the PVC purge behavior needed. This will ensure that k8s correctly deletes all PVCs.
-	err := c.processPurgePVCsOnDeleteFlag(ctx, tenant)
-	if err != nil {
-		return err
-	}
-
-	// Remove miniov1 finalizers
-	finalizers := tenant.ObjectMeta.Finalizers[:0]
-	for _, f := range tenant.ObjectMeta.Finalizers {
-		if f != miniov1.Finalizer {
-			finalizers = append(finalizers, f)
-		}
-	}
-	tenant.ObjectMeta.Finalizers = finalizers
-
-	_, err = c.minioClientSet.MinioV1().Tenants(tenant.Namespace).Update(ctx, tenant, metav1.UpdateOptions{})
-	return err
 }
