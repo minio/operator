@@ -417,9 +417,6 @@ spec:
             priorityClassName:
               description: PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods. This is applied to MinIO pods only. Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
               type: string
-            purgePVCOnTenantDelete:
-              description: Delete PVCs on tenant deletion. Defaults to (false) preserving PVCs if tenant is deleted. PVCs will need cleanup post tenant deletion if not set to true. If set to true ALL PVs for the tenant will be deleted.
-              type: boolean
             requestAutoCert:
               description: 'RequestAutoCert allows user to enable Kubernetes based TLS cert generation and signing as explained here: https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/'
               type: boolean
