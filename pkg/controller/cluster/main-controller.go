@@ -1507,12 +1507,16 @@ func (c *Controller) processDelete(ctx context.Context, tenant *miniov1.Tenant) 
 	if err != nil {
 		return err
 	}
-	// Remove finalizer
-	for i, f := range tenant.ObjectMeta.Finalizers {
-		if f == miniov1.Finalizer {
-			tenant.ObjectMeta.Finalizers = append(tenant.Finalizers[:i], tenant.ObjectMeta.Finalizers[i+1:]...)
+
+	// Remove miniov1 finalizers
+	finalizers := tenant.ObjectMeta.Finalizers[:0]
+	for _, f := range tenant.ObjectMeta.Finalizers {
+		if f != miniov1.Finalizer {
+			finalizers = append(finalizers, f)
 		}
 	}
+	tenant.ObjectMeta.Finalizers = finalizers
+
 	_, err = c.minioClientSet.MinioV1().Tenants(tenant.Namespace).Update(ctx, tenant, metav1.UpdateOptions{})
 	return err
 }
