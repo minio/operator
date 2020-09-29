@@ -398,7 +398,11 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-
+	ok, error := validateBucketName(bucket)
+	if !ok {
+		http.Error(w, error.Error(), http.StatusBadRequest)
+		return
+	}
 	// Create the service for the bucket name
 	service := services.ServiceForBucket(tenant, bucket)
 	_, err = c.kubeClientSet.CoreV1().Services(namespace).Create(r.Context(), service, metav1.CreateOptions{})
@@ -413,6 +417,14 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+}
+
+func validateBucketName(bucket string) (bool, error) {
+	// Additional check on top of existing checks done by minio due to limitation of service creation in k8s
+	if strings.Contains(bucket, ".") {
+		return false, fmt.Errorf("invalid bucket name: . in bucket name: %s", bucket)
+	}
+	return true, nil
 }
 
 // GetenvHandler - GET /webhook/v1/getenv/{namespace}/{name}?key={env}
