@@ -208,7 +208,7 @@ func NewController(
 		statefulSetLister:       statefulSetInformer.Lister(),
 		statefulSetListerSynced: statefulSetInformer.Informer().HasSynced,
 		deploymentLister:        deploymentInformer.Lister(),
-		deploymentListerSynced:  statefulSetInformer.Informer().HasSynced,
+		deploymentListerSynced:  deploymentInformer.Informer().HasSynced,
 		jobLister:               jobInformer.Lister(),
 		jobListerSynced:         jobInformer.Informer().HasSynced,
 		tenantsLister:           tenantInformer.Lister(),
