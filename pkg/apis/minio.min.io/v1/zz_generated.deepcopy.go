@@ -293,8 +293,14 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 	}
 	if in.ExternalCertSecret != nil {
 		in, out := &in.ExternalCertSecret, &out.ExternalCertSecret
-		*out = new(LocalCertificateReference)
-		**out = **in
+		*out = make([]*LocalCertificateReference, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(LocalCertificateReference)
+				**out = **in
+			}
+		}
 	}
 	if in.ExternalClientCertSecret != nil {
 		in, out := &in.ExternalClientCertSecret, &out.ExternalClientCertSecret

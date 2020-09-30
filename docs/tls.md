@@ -34,12 +34,12 @@ Alternatively, it's possible to use a TLS secret. First, create the Kubernetes s
 kubectl create secret tls tls-ssl-minio --key=private.key --cert=public.crt
 ```
 
-Once created, set the name of the Secret (in this example `tls-ssl-minio`) under `spec.externalCertSecret.name`. Also set the type under `spec.externalCertSecret.type` to `kubernetes.io/tls`:
+Once created, set the name of the Secret (in this example `tls-ssl-minio`) under `spec.externalCertSecret[].name`. Also set the type under `spec.externalCertSecret[].type` to `kubernetes.io/tls`:
 
 ```yaml
   externalCertSecret:
-    name: tls-ssl-minio
-    type: kubernetes.io/tls
+    - name: tls-ssl-minio
+      type: kubernetes.io/tls
 ```
 
 ## Using cert-manager
@@ -80,6 +80,6 @@ Finally configure MinIO to use the newly created TLS certificate:
 
 ```yaml
   externalCertSecret:
-    name: tls-minio
-    type: cert-manager.io/v1alpha2
+    - name: tls-minio
+      type: cert-manager.io/v1alpha2
 ```

@@ -298,15 +298,18 @@ spec:
                 type: object
               type: array
             externalCertSecret:
-              description: ExternalCertSecret allows a user to specify custom CA certificate, and private key. This is used for enabling TLS support on MinIO Pods.
-              properties:
-                name:
-                  type: string
-                type:
-                  type: string
-              required:
-              - name
-              type: object
+              description: ExternalCertSecret allows a user to specify one or more custom TLS certificates, and private keys. This is used for enabling TLS with SNI support on MinIO Pods.
+              items:
+                description: LocalCertificateReference defines the spec for a local certificate
+                properties:
+                  name:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - name
+                type: object
+              type: array
             externalClientCertSecret:
               description: ExternalClientCertSecret allows a user to specify custom CA client certificate, and private key. This is used for adding client certificates on MinIO Pods --> used for KES authentication.
               properties:
