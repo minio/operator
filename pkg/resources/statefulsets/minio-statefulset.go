@@ -279,12 +279,14 @@ func minioSecurityContext(t *miniov1.Tenant) *corev1.PodSecurityContext {
 func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = zone.Servers
-	var serverCertSecret string
+	var podVolumeSources []corev1.VolumeProjection
+
 	var serverCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "public.crt"},
 		{Key: "private.key", Path: "private.key"},
 		{Key: "public.crt", Path: "CAs/public.crt"},
 	}
+
 	var clientCertSecret string
 	var clientCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "client.crt"},
@@ -296,29 +298,107 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 	}
 
 	if t.AutoCert() {
-		serverCertSecret = t.MinIOTLSSecretName()
+		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: t.MinIOTLSSecretName(),
+				},
+				Items: serverCertPaths,
+			},
+		})
 		clientCertSecret = t.MinIOClientTLSSecretName()
 		kesCertSecret = t.KESTLSSecretName()
 	} else if t.ExternalCert() {
-		serverCertSecret = t.Spec.ExternalCertSecret.Name
-		if t.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" {
-			serverCertPaths = []corev1.KeyToPath{
-				{Key: "tls.crt", Path: "public.crt"},
-				{Key: "tls.key", Path: "private.key"},
-				{Key: "tls.crt", Path: "CAs/public.crt"},
+		// MinIO requires to have at least 1 certificate keyPair under the `certs` folder, by default
+		// we will take the first secret as the main certificate keyPair
+		//
+		//	certs
+		//		+ public.crt
+		//		+ private.key
+		if len(t.Spec.ExternalCertSecret) > 0 {
+			secret := t.Spec.ExternalCertSecret[0]
+			// if secret type is `cert-manager.io/v1alpha2` user is providing his own CA in the ca.crt file, if not by default
+			// we are going to use public.crt as the ca certificate
+			if secret.Type == "kubernetes.io/tls" {
+				serverCertPaths = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: "public.crt"},
+					{Key: "tls.key", Path: "private.key"},
+					{Key: "tls.crt", Path: "CAs/public.crt"},
+				}
+			} else if secret.Type == "cert-manager.io/v1alpha2" {
+				serverCertPaths = []corev1.KeyToPath{
+					{Key: "public.crt", Path: "public.crt"},
+					{Key: "private.key", Path: "private.key"},
+					{Key: "ca.crt", Path: "CAs/public.crt"},
+				}
 			}
-		} else if t.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
-			serverCertPaths = []corev1.KeyToPath{
-				{Key: "tls.crt", Path: "public.crt"},
-				{Key: "tls.key", Path: "private.key"},
-				{Key: "ca.crt", Path: "CAs/public.crt"},
+			podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secret.Name,
+					},
+					Items: serverCertPaths,
+				},
+			})
+		}
+		// Multiple certificates will be mounted using the following folder structure:
+		//
+		//	certs
+		//		+ public.crt
+		//		+ private.key
+		//		|
+		//		+ hostname-0
+		//		|			+ public.crt
+		//		|			+ private.key
+		//		+ hostname-1
+		//		|			+ public.crt
+		//		|			+ private.key
+		//		+ hostname-2
+		//		|			+ public.crt
+		//		|			+ private.key
+		//		+ CAs
+		//			 + hostname-0.crt
+		//			 + hostname-1.crt
+		//			 + hostname-2.crt
+		//			 + public.crt
+		//
+		// Iterate over all provided TLS certificates (including the one we already mounted) and store them on the list of
+		// Volumes that will be mounted to the Pod
+		for index, secret := range t.Spec.ExternalCertSecret {
+			var serverCertPaths []corev1.KeyToPath
+			if secret.Type == "kubernetes.io/tls" {
+				serverCertPaths = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: fmt.Sprintf("hostname-%d/public.crt", index)},
+					{Key: "tls.key", Path: fmt.Sprintf("hostname-%d/private.key", index)},
+					{Key: "tls.crt", Path: fmt.Sprintf("CAs/hostname-%d.crt", index)},
+				}
+			} else if secret.Type == "cert-manager.io/v1alpha2" {
+				serverCertPaths = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: fmt.Sprintf("hostname-%d/public.crt", index)},
+					{Key: "tls.key", Path: fmt.Sprintf("hostname-%d/private.key", index)},
+					{Key: "ca.crt", Path: fmt.Sprintf("CAs/hostname-%d.crt", index)},
+				}
+			} else {
+				serverCertPaths = []corev1.KeyToPath{
+					{Key: "public.crt", Path: fmt.Sprintf("hostname-%d/public.crt", index)},
+					{Key: "private.key", Path: fmt.Sprintf("hostname-%d/private.key", index)},
+					{Key: "public.crt", Path: fmt.Sprintf("CAs/hostname-%d.crt", index)},
+				}
 			}
+			podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secret.Name,
+					},
+					Items: serverCertPaths,
+				},
+			})
 		}
 		if t.ExternalClientCert() {
 			clientCertSecret = t.Spec.ExternalClientCertSecret.Name
 			// This covers both secrets of type "kubernetes.io/tls" and
 			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if t.Spec.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" {
 				clientCertPaths = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: "client.crt"},
 					{Key: "tls.key", Path: "client.key"},
@@ -339,18 +419,8 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 
 	// Add SSL volume from SSL secret to the podVolumes
 	if t.AutoCert() || t.ExternalCert() {
-		sources := []corev1.VolumeProjection{
-			{
-				Secret: &corev1.SecretProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: serverCertSecret,
-					},
-					Items: serverCertPaths,
-				},
-			},
-		}
 		if t.HasKESEnabled() {
-			sources = append(sources, []corev1.VolumeProjection{
+			podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
 				{
 					Secret: &corev1.SecretProjection{
 						LocalObjectReference: corev1.LocalObjectReference{
@@ -373,7 +443,7 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 			Name: t.MinIOTLSSecretName(),
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					Sources: sources,
+					Sources: podVolumeSources,
 				},
 			},
 		})

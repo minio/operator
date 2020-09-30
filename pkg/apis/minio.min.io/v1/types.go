@@ -71,10 +71,10 @@ type TenantSpec struct {
 	// If provided, use these environment variables for Tenant resource
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
-	// ExternalCertSecret allows a user to specify custom CA certificate, and private key. This is
-	// used for enabling TLS support on MinIO Pods.
+	// ExternalCertSecret allows a user to specify one or more custom TLS certificates, and private keys. This is
+	// used for enabling TLS with SNI support on MinIO Pods.
 	// +optional
-	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
+	ExternalCertSecret []*LocalCertificateReference `json:"externalCertSecret,omitempty"`
 	// ExternalClientCertSecret allows a user to specify custom CA client certificate, and private key. This is
 	// used for adding client certificates on MinIO Pods --> used for KES authentication.
 	// +optional
