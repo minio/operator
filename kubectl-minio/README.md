@@ -3,18 +3,18 @@
 ## Prerequisites
 
 - Kubernetes >= v1.17.0.
-- Create PVs using [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md).
 - kubectl installed on your local machine, configured to talk to the Kubernetes cluster.
+- Create PVs.
 
 ## Install Plugin
 
-Download the Kubectl plugin binary from [plugin release page](https://github.com/minio/operator/releases), and place the binary in executable path on your machine (e.g. `/usr/local/bin`).
+Command: `kubectl krew install minio`
 
 ## Plugin Commands
 
 ### Operator Deployment
 
-Command: `kubectl minio operator create`
+Command: `kubectl minio init [options]`
 
 Creates MinIO Operator Deployment along with MinIO Tenant CRD, Service account, Cluster Role and Cluster Role Binding.
 
@@ -22,55 +22,57 @@ Options:
 
 - `--image=minio/k8s-operator:3.0.5`
 - `--namespace=minio-operator`
-- `--service-account=minio-operator`
 - `--cluster-domain=cluster.local`
 - `--namespace-to-watch=default`
 - `--image-pull-secret=`
 - `--output`
 
+### Operator Deletion
+
+Command: `kubectl minio delete [options]`
+
+Deletes MinIO Operator Deployment along with MinIO Tenant CRD, Service account, Cluster Role and Cluster Role Binding. It also removes all the Tenant instances.
+
+Options:
+
+- `--namespace=minio-operator`
+
 ### Tenant
 
 #### MinIO Tenant Creation
 
-Command: `kubectl minio tenant create --name TENANT_NAME --secret SECRET_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
+Command: `kubectl minio tenant create --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
 
 Creates a MinIO Tenant based on the passed values.
 
-example: `kubectl minio tenant create --name tenant1 --secret cred-secret --servers 4 --volumes 16 --capacity 16Ti`
+example: `kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 16Ti`
 
 Options:
 
 - `--namespace=minio`
-- `--image=minio/minio:RELEASE.2020-09-26T03-44-56Z`
-- `--storageClass=local`
-- `--kms-secret=secret-name`
-- `--console-secret=secret-name`
-- `--cert-secret=secret-name`
-- `--image-pull-secret=`
+- `--kes-config=kes-secret`
 - `--output`
 
 #### Add Tenant Zones
 
-Command: `kubectl minio tenant volume add --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
+Command: `kubectl minio tenant expand --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
 
 Add new volumes (and nodes) to existing MinIO Tenant.
 
-example: `kubectl minio tenant volume add --name cluster1 --servers 4 --volumes 16 --capacity 16Ti`
+example: `kubectl minio tenant expand --name tenant1 --servers 4 --volumes 16 --capacity 16Ti`
 
 Options:
 
 - `--namespace=minio`
-- `--storageClass=local`
-- `--image-pull-secret=`
 - `--output`
 
 #### List Tenant Zones
 
-Command: `kubectl minio tenant volume list --name TENANT_NAME [options]`
+Command: `kubectl minio tenant info --name TENANT_NAME [options]`
 
 List all existing MinIO Zones in the given MinIO Tenant.
 
-example: `kubectl minio tenant volume list --name cluster1`
+example: `kubectl minio tenant info --name tenant1`
 
 Options:
 
@@ -82,12 +84,11 @@ Command: `kubectl minio tenant upgrade --name TENANT_NAME --image IMAGE_TAG [opt
 
 Upgrade MinIO Docker image for the given MinIO Tenant.
 
-example: `kubectl minio tenant upgrade --name cluster1 --image minio/minio:edge`
+example: `kubectl minio tenant upgrade --name tenant1 --image minio/minio:RELEASE.2020-09-26T03-44-56Z`
 
 Options:
 
 - `--namespace=minio`
-- `--image-pull-secret=`
 - `--output`
 
 #### Remove Tenant

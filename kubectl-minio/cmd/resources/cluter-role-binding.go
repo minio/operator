@@ -25,7 +25,7 @@ import (
 )
 
 // NewCluterRoleBindingForOperator will return a new cluster-role-binding for a MinIO Operator
-func NewCluterRoleBindingForOperator(ns, saName string) *rbacv1.ClusterRoleBinding {
+func NewCluterRoleBindingForOperator(saName, ns string) *rbacv1.ClusterRoleBinding {
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      helpers.ClusterRoleBindingName,

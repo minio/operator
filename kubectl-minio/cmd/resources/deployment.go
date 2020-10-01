@@ -32,7 +32,6 @@ type OperatorOptions struct {
 	NS              string
 	NSToWatch       string
 	ClusterDomain   string
-	ServiceAccount  string
 	ImagePullSecret string
 }
 
@@ -83,7 +82,7 @@ func NewDeploymentForOperator(opts OperatorOptions) *appsv1.Deployment {
 					Labels: operatorLabels(),
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: opts.ServiceAccount,
+					ServiceAccountName: helpers.DefaultServiceAccount,
 					Containers:         []corev1.Container{container(opts.Image, opts.ClusterDomain, opts.NSToWatch)},
 					ImagePullSecrets:   []corev1.LocalObjectReference{{Name: opts.ImagePullSecret}},
 				},

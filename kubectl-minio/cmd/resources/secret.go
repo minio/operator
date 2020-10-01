@@ -19,24 +19,55 @@
 package resources
 
 import (
+	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func secretData(accessKey, secretKey string) map[string][]byte {
+func tenantSecretData() map[string][]byte {
 	m := make(map[string][]byte, 2)
-	m["accesskey"] = []byte(accessKey)
-	m["secretkey"] = []byte(secretKey)
+	m["accesskey"] = []byte(uuid.New().String())
+	m["secretkey"] = []byte(uuid.New().String())
 	return m
 }
 
-// NewSecretForTenant will return a new secret a MinIO Tenant tenant
-func NewSecretForTenant(name, ns, accessKey, secretKey string) *corev1.Secret {
+func consoleSecretData() map[string][]byte {
+	m := make(map[string][]byte, 5)
+	m["CONSOLE_ACCESS_KEY"] = []byte(uuid.New().String())
+	m["CONSOLE_SECRET_KEY"] = []byte(uuid.New().String())
+	m["CONSOLE_HMAC_JWT_SECRET"] = []byte(uuid.New().String())
+	m["CONSOLE_PBKDF_PASSPHRASE"] = []byte(uuid.New().String())
+	m["CONSOLE_PBKDF_SALT"] = []byte(uuid.New().String())
+	return m
+}
+
+// NewSecretForTenant will return a new secret a MinIO Tenant
+func NewSecretForTenant(opts *TenantOptions) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
+			Name:      opts.SecretName,
+			Namespace: opts.NS,
 		},
-		Data: secretData(accessKey, secretKey),
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: v1.SchemeGroupVersion.Version,
+		},
+		Data: tenantSecretData(),
+	}
+}
+
+// NewSecretForConsole will return a new secret a MinIO Tenant Console
+func NewSecretForConsole(opts *TenantOptions) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      opts.ConsoleSecret,
+			Namespace: opts.NS,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: v1.SchemeGroupVersion.Version,
+		},
+		Data: consoleSecretData(),
 	}
 }

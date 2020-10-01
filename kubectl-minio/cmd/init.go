@@ -41,12 +41,12 @@ import (
 )
 
 const (
-	operatorCreateDesc = `
-'create' command creates MinIO Operator deployment along with all the dependencies.`
-	operatorCreateExample = `  kubectl minio operator create`
+	operatorInitDesc = `
+'init' command creates MinIO Operator deployment along with all the dependencies.`
+	operatorInitExample = `  kubectl minio operator init`
 )
 
-type operatorCreateCmd struct {
+type operatorInitCmd struct {
 	out          io.Writer
 	errOut       io.Writer
 	output       bool
@@ -54,14 +54,14 @@ type operatorCreateCmd struct {
 	steps        []runtime.Object
 }
 
-func newOperatorCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
-	o := &operatorCreateCmd{out: out, errOut: errOut}
+func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+	o := &operatorInitCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "create",
-		Short:   "Create MinIO Operator deployment",
-		Long:    operatorCreateDesc,
-		Example: operatorCreateExample,
+		Use:     "init",
+		Short:   "Initialize MinIO Operator deployment",
+		Long:    operatorInitDesc,
+		Example: operatorInitExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 0 {
 				return errors.New("this command does not accept arguments")
@@ -74,7 +74,6 @@ func newOperatorCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVarP(&o.operatorOpts.Image, "image", "i", helpers.DefaultOperatorImage, "operator image")
 	f.StringVarP(&o.operatorOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	f.StringVarP(&o.operatorOpts.ClusterDomain, "cluster-domain", "d", helpers.DefaultClusterDomain, "cluster domain of the Kubernetes cluster")
-	f.StringVar(&o.operatorOpts.ServiceAccount, "service-account", helpers.DefaultServiceAccount, "service account for operator")
 	f.StringVar(&o.operatorOpts.NSToWatch, "namespace-to-watch", "", "namespace where operator looks for MinIO tenants, leave empty for all namespaces")
 	f.StringVar(&o.operatorOpts.ImagePullSecret, "image-pull-secret", "", "image pull secret to be used for pulling operator image")
 	f.BoolVarP(&o.output, "output", "o", false, "dry run this command and generate requisite yaml")
@@ -83,9 +82,9 @@ func newOperatorCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (o *operatorCreateCmd) run() error {
-	sa := resources.NewServiceAccountForOperator(o.operatorOpts.ServiceAccount, o.operatorOpts.NS)
-	crb := resources.NewCluterRoleBindingForOperator(o.operatorOpts.NS, o.operatorOpts.ServiceAccount)
+func (o *operatorInitCmd) run() error {
+	sa := resources.NewServiceAccountForOperator(helpers.DefaultServiceAccount, o.operatorOpts.NS)
+	crb := resources.NewCluterRoleBindingForOperator(helpers.DefaultServiceAccount, o.operatorOpts.NS)
 	d := resources.NewDeploymentForOperator(o.operatorOpts)
 
 	if !o.output {

@@ -27,26 +27,27 @@ import (
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 )
 
 const (
-	deleteDesc = `
+	tenantDeleteDesc = `
 'delete' command deletes a MinIO tenant`
-	deleteExample = `  kubectl minio tenant delete --name tenant1 --namespace tenant1-ns`
+	tenantDeleteExample = `  kubectl minio tenant delete --name tenant1 --namespace tenant1-ns`
 )
 
-type deleteCmd struct {
+type tenantDeleteCmd struct {
 	out    io.Writer
 	errOut io.Writer
 	name   string
 	ns     string
 }
 
-func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
-	c := &deleteCmd{out: out, errOut: errOut}
+func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+	c := &tenantDeleteCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
 		Use:     "delete",
@@ -67,7 +68,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	return cmd
 }
 
-func (d *deleteCmd) validate() error {
+func (d *tenantDeleteCmd) validate() error {
 	if d.name == "" {
 		return errors.New("--name flag is required for tenant deletion")
 	}
@@ -75,15 +76,19 @@ func (d *deleteCmd) validate() error {
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (d *deleteCmd) run(args []string) error {
+func (d *tenantDeleteCmd) run(args []string) error {
 	oclient, err := helpers.GetKubeOperatorClient()
 	if err != nil {
 		return err
 	}
-	return deleteTenant(oclient, d)
+	kclient, err := helpers.GetKubeClient()
+	if err != nil {
+		return err
+	}
+	return deleteTenant(oclient, kclient, d)
 }
 
-func deleteTenant(client *operatorv1.Clientset, d *deleteCmd) error {
+func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d *tenantDeleteCmd) error {
 	tenant, err := client.MinioV1().Tenants(d.ns).Get(context.Background(), d.name, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -91,7 +96,15 @@ func deleteTenant(client *operatorv1.Clientset, d *deleteCmd) error {
 	if err := client.MinioV1().Tenants(d.ns).Delete(context.Background(), d.name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
+	if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.CredsSecret.Name, metav1.DeleteOptions{}); err != nil {
+		return err
+	}
+	if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Console.ConsoleSecret.Name, metav1.DeleteOptions{}); err != nil {
+		return err
+	}
+
 	fmt.Printf("Deleting MinIO Tenant %s\n", tenant.ObjectMeta.Name)
-	fmt.Printf("Please delete the secret %s used for MinIO Tenant credentials\n", tenant.Spec.CredsSecret.Name)
+	fmt.Printf("Deleting MinIO Tenant Credentials Secret %s\n", tenant.Spec.CredsSecret.Name)
+	fmt.Printf("Deleting MinIO Tenant Console Secret %s\n", tenant.Spec.Console.ConsoleSecret.Name)
 	return nil
 }

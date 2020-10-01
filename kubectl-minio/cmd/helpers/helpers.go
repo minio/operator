@@ -25,10 +25,10 @@ import (
 	"os/exec"
 
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
-	"gopkg.in/yaml.v2"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"

@@ -26,9 +26,9 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
-	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/yaml"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
@@ -36,26 +36,26 @@ import (
 )
 
 const (
-	addDesc = `
-'add' command adds zones to a MinIO tenant`
-	addVolumeExample = `  kubectl minio tenant volume add --name tenant1 --servers 4 --volumes 32 --capacity 32Ti --namespace tenant1-ns`
+	expandDesc = `
+'expand' command adds storage capacity to a MinIO tenant`
+	expandExample = `  kubectl minio tenant expand --name tenant1 --servers 4 --volumes 32 --capacity 32Ti --namespace tenant1-ns`
 )
 
-type volumeAddCmd struct {
+type expandCmd struct {
 	out        io.Writer
 	errOut     io.Writer
 	output     bool
 	tenantOpts resources.TenantOptions
 }
 
-func newVolumeAddCmd(out io.Writer, errOut io.Writer) *cobra.Command {
-	v := &volumeAddCmd{out: out, errOut: errOut}
+func newTenantExpandCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+	v := &expandCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "add",
-		Short:   "Add volumes to existing tenant",
-		Long:    addDesc,
-		Example: addVolumeExample,
+		Use:     "expand",
+		Short:   "Add capacity to existing tenant",
+		Long:    expandDesc,
+		Example: expandExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := v.validate(); err != nil {
 				return err
@@ -70,18 +70,17 @@ func newVolumeAddCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.Int32Var(&v.tenantOpts.Volumes, "volumes", 0, "total number of volumes to add to tenant")
 	f.StringVar(&v.tenantOpts.Capacity, "capacity", "", "total raw capacity to add to tenant, e.g. 16Ti")
 	f.StringVarP(&v.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
-	f.StringVarP(&v.tenantOpts.StorageClass, "storage-class", "s", "", "storage class to be used while PVC creation")
 	f.BoolVarP(&v.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	return cmd
 }
 
-func (v *volumeAddCmd) validate() error {
+func (v *expandCmd) validate() error {
 	return v.tenantOpts.Validate()
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (v *volumeAddCmd) run() error {
+func (v *expandCmd) run() error {
 	// Create operator client
 	client, err := helpers.GetKubeOperatorClient()
 	if err != nil {

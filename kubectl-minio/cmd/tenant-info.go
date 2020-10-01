@@ -34,25 +34,25 @@ import (
 )
 
 const (
-	listDesc = `
-'list' command lists zones from a MinIO tenant`
-	listExample = `  kubectl minio tenant volume list --name tenant1 --namespace tenant1-ns`
+	infoDesc = `
+'info' command lists zones from a MinIO tenant`
+	infoExample = `  kubectl minio tenant info --name tenant1 --namespace tenant1-ns`
 )
 
-type volumeListCmd struct {
+type infoCmd struct {
 	out    io.Writer
 	errOut io.Writer
 	name   string
 	ns     string
 }
 
-func newVolumeListCmd(out io.Writer, errOut io.Writer) *cobra.Command {
-	c := &volumeListCmd{out: out, errOut: errOut}
+func newTenantInfoCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+	c := &infoCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:   "list",
+		Use:   "info",
 		Short: "List all volumes in existing tenant",
-		Long:  listDesc,
+		Long:  infoDesc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := c.validate(); err != nil {
 				return err
@@ -67,7 +67,7 @@ func newVolumeListCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	return cmd
 }
 
-func (d *volumeListCmd) validate() error {
+func (d *infoCmd) validate() error {
 	if d.name == "" {
 		return errors.New("--name flag is required for adding volumes to tenant")
 	}
@@ -75,7 +75,7 @@ func (d *volumeListCmd) validate() error {
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (d *volumeListCmd) run() error {
+func (d *infoCmd) run() error {
 	// Create operator client
 	oclient, err := helpers.GetKubeOperatorClient()
 	if err != nil {
@@ -88,17 +88,18 @@ func (d *volumeListCmd) run() error {
 	return nil
 }
 
-func listZonesTenant(client *operatorv1.Clientset, d *volumeListCmd) error {
+func listZonesTenant(client *operatorv1.Clientset, d *infoCmd) error {
 	tenant, err := client.MinioV1().Tenants(d.ns).Get(context.Background(), d.name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Zone", "Servers", "Volumes Per Server", "Capacity Per Volume"})
+	t.AppendHeader(table.Row{"Zone", "Servers", "Volumes Per Server", "Capacity Per Volume", "Version"})
 	for i, z := range tenant.Spec.Zones {
 		t.AppendRow(table.Row{i, z.Servers, z.VolumesPerServer, z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().String()})
 	}
+	t.AppendFooter(table.Row{"Version", tenant.Spec.Image})
 	t.SetAlign([]text.Align{text.AlignRight, text.AlignRight, text.AlignRight, text.AlignRight})
 	t.Render()
 	return nil

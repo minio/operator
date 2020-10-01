@@ -20,14 +20,16 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
-	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/yaml"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
@@ -37,7 +39,9 @@ import (
 const (
 	createDesc = `
 'create' command creates a new MinIO tenant`
-	createExample = `  kubectl minio tenant create --name tenant1 --secret tenant1-creds --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
+	createExample       = `  kubectl minio tenant create --name tenant1 --secret tenant1-creds --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
+	tenantSecretSuffix  = "-creds-secret"
+	consoleSecretSuffix = "-console-secret"
 )
 
 type createCmd struct {
@@ -47,7 +51,7 @@ type createCmd struct {
 	tenantOpts resources.TenantOptions
 }
 
-func newCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &createCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
@@ -65,62 +69,83 @@ func newCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 
 	f := cmd.Flags()
 	f.StringVar(&c.tenantOpts.Name, "name", "", "name of the MinIO tenant to create")
-	f.StringVar(&c.tenantOpts.SecretName, "secret", "", "secret name used for tenant credentials")
 	f.Int32Var(&c.tenantOpts.Servers, "servers", 0, "total number of pods in MinIO tenant")
 	f.Int32Var(&c.tenantOpts.Volumes, "volumes", 0, "total number of volumes in the MinIO tenant")
 	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this zone, e.g. 16Ti")
 	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
-	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "image to be used for MinIO")
-	f.StringVarP(&c.tenantOpts.StorageClass, "storage-class", "s", "", "storage class to be used while PVC creation")
-	f.StringVar(&c.tenantOpts.KmsSecret, "kms-secret", "", "secret with details for enabled encryption")
-	f.StringVar(&c.tenantOpts.ConsoleSecret, "console-secret", "", "secret with details for MinIO console deployment")
-	f.StringVar(&c.tenantOpts.CertSecret, "cert-secret", "", "secret with external certificates for MinIO deployment")
-	f.StringVar(&c.tenantOpts.ImagePullSecret, "image-pull-secrets", "", "image pull secret to be used for pulling MinIO image")
-	f.BoolVar(&c.tenantOpts.DisableTLS, "disable-tls", false, "disable automatic certificate creation for MinIO peer connection")
+	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret with details for enabling encryption, refer example https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
 	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	return cmd
 }
 
 func (c *createCmd) validate() error {
-	if c.tenantOpts.SecretName == "" {
-		return errors.New("--secret flag is required for tenant creation")
-	}
+	c.tenantOpts.SecretName = c.tenantOpts.Name + tenantSecretSuffix
+	c.tenantOpts.ConsoleSecret = c.tenantOpts.Name + consoleSecretSuffix
+	c.tenantOpts.Image = helpers.DefaultTenantImage
 	return c.tenantOpts.Validate()
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (c *createCmd) run(args []string) error {
-	// Create operator client
+	// Create operator and kube client
 	oclient, err := helpers.GetKubeOperatorClient()
 	if err != nil {
 		return err
 	}
+	kclient, err := helpers.GetKubeClient()
+	if err != nil {
+		return err
+	}
 
+	// generate the resources
 	t, err := resources.NewTenant(&c.tenantOpts)
 	if err != nil {
 		return err
 	}
-	t.ObjectMeta.Name = c.tenantOpts.Name
-	t.ObjectMeta.Namespace = c.tenantOpts.NS
+	s := resources.NewSecretForTenant(&c.tenantOpts)
+	console := resources.NewSecretForConsole(&c.tenantOpts)
 
+	// create resources
 	if !c.output {
-		return createTenant(oclient, t)
+		return createTenant(oclient, kclient, t, s, console)
 	}
-
-	o, err := yaml.Marshal(&t)
+	ot, err := yaml.Marshal(&t)
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(o))
+	os, err := yaml.Marshal(&s)
+	if err != nil {
+		return err
+	}
+	oc, err := yaml.Marshal(&console)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(ot))
+	fmt.Println("---")
+	fmt.Println(string(os))
+	fmt.Println("---")
+	fmt.Println(string(oc))
 	return nil
 }
 
-func createTenant(client *operatorv1.Clientset, t *miniov1.Tenant) error {
-	_, err := client.MinioV1().Tenants(t.Namespace).Create(context.Background(), t, v1.CreateOptions{})
+func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, t *miniov1.Tenant, s, console *corev1.Secret) error {
+	if _, err := kclient.CoreV1().Secrets(t.Namespace).Create(context.Background(), s, metav1.CreateOptions{}); err != nil {
+		return err
+	}
+	if _, err := kclient.CoreV1().Secrets(t.Namespace).Create(context.Background(), console, metav1.CreateOptions{}); err != nil {
+		return err
+	}
+	to, err := oclient.MinioV1().Tenants(t.Namespace).Create(context.Background(), t, v1.CreateOptions{})
 	if err != nil {
 		return err
 	}
-	fmt.Printf("MinIO Tenant %s: created\n", t.ObjectMeta.Name)
+	fmt.Printf("MinIO Tenant %s Created\n\n", to.ObjectMeta.Name)
+	fmt.Printf("Tenant\nAccess Key: %s\nSecret Key: %s\nVersion: %s\nClusterIP Service: %s\n\n", s.Data["accesskey"], s.Data["secretkey"], to.Spec.Image, to.Spec.ServiceName)
+	fmt.Printf("MinIO Console\nAccess Key: %s\nSecret Key: %s\nVersion: %s\nClusterIP Service: %s\n\n", console.Data["CONSOLE_ACCESS_KEY"], console.Data["CONSOLE_SECRET_KEY"], to.Spec.Console.Image, to.Spec.Console.Metadata.Name+miniov1.ConsoleName)
+	if t.Spec.KES != nil {
+		fmt.Printf("KES Version: %s\n", t.Spec.KES.Image)
+	}
 	return nil
 }
