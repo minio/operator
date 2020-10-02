@@ -927,6 +927,7 @@ func (c *Controller) syncHandler(key string) error {
 	// For each zone check if it's a stateful set
 	var totalReplicas int32
 	var images []string
+	freshSetup := true
 	for _, zone := range tenant.Spec.Zones {
 		// Get the StatefulSet with the name specified in Tenant.spec
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.ZoneStatefulsetName(&zone))
@@ -960,12 +961,17 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 
-				// Restart the services to fetch the new args, ignore any error.
-				_ = adminClnt.ServiceRestart(ctx)
+				if !freshSetup {
+					// Restart the services to fetch the new args, ignore any error.
+					// only perform `restart()` of server deployment when we are truly
+					// expanding an existing deployment.
+					_ = adminClnt.ServiceRestart(ctx)
+				}
 			} else {
 				return err
 			}
 		} else {
+			freshSetup = false
 			if zone.Servers != *ss.Spec.Replicas {
 				// warn the user that replica count of an existing zone can't be changed
 				if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for zone %s", zone.Name), 0); err != nil {
