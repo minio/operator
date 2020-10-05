@@ -192,6 +192,12 @@ spec:
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
   requestAutoCert: true
 
+  ## Enable S3 specific features such as Bucket DNS which would allow `buckets` to be
+  ## accessible as DNS entries of form `<bucketname>.minio.default.svc.cluster.local`
+  s3:
+    ## This feature is turned off by default
+    bucketDNS: false
+  
   ## This field is used only when "requestAutoCert" is set to true. Use this field to set CommonName 
   ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is 
   ## not provided. DNS name format is *.minio.default.svc.cluster.local

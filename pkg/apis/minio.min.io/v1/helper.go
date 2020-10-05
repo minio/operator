@@ -256,11 +256,6 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.Image = DefaultMinIOImage
 	}
 
-	// Default an empty service name to the instance name
-	if t.Spec.ServiceName == "" {
-		t.Spec.ServiceName = t.Name
-	}
-
 	if t.Spec.ImagePullPolicy == "" {
 		t.Spec.ImagePullPolicy = DefaultImagePullPolicy
 	}
@@ -455,6 +450,11 @@ func (t *Tenant) KESServiceEndpoint() string {
 // KESServiceHost returns headless service Host for KES in current Tenant
 func (t *Tenant) KESServiceHost() string {
 	return fmt.Sprintf("%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, ClusterDomain)
+}
+
+// S3BucketDNS indicates if Bucket DNS feature is enabled.
+func (t *Tenant) S3BucketDNS() bool {
+	return t.Spec.S3 != nil && t.Spec.S3.BucketDNS
 }
 
 // HasKESEnabled checks if kes configuration is provided by user

@@ -47,23 +47,10 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			Name:  "MINIO_UPDATE",
 			Value: "on",
 		}, corev1.EnvVar{
-			Name:  "MINIO_DOMAIN",
-			Value: t.MinIOBucketBaseDomain(),
-		}, corev1.EnvVar{
 			Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
 			Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
 		}, corev1.EnvVar{
 			Name: miniov1.WebhookMinIOArgs,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: miniov1.WebhookSecret,
-					},
-					Key: miniov1.WebhookMinIOArgs,
-				},
-			},
-		}, corev1.EnvVar{
-			Name: miniov1.WebhookMinIOBucket,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -80,6 +67,24 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			Name:  "MINIO_OPERATOR_VERSION",
 			Value: opVersion,
 		})
+
+	// Enable Bucket DNS only if asked for by default turned off
+	if t.S3BucketDNS() {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "MINIO_DOMAIN",
+			Value: t.MinIOBucketBaseDomain(),
+		}, corev1.EnvVar{
+			Name: miniov1.WebhookMinIOBucket,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: miniov1.WebhookSecret,
+					},
+					Key: miniov1.WebhookMinIOArgs,
+				},
+			},
+		})
+	}
 
 	// Add env variables from credentials secret, if no secret provided, dont use
 	// env vars. MinIO server automatically creates default credentials
@@ -107,6 +112,7 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			},
 		})
 	}
+
 	if t.HasKESEnabled() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_ENDPOINT",

@@ -47,6 +47,13 @@ type TenantScheduler struct {
 	Name string `json:"name"`
 }
 
+// S3Features list of S3 features to enable/disable.
+// Currently only supports BucketDNS
+type S3Features struct {
+	// BucketDNS if 'true' means Buckets can be accessed using `<bucket>.minio.default.svc.cluster.local`
+	BucketDNS bool `json:"bucketDNS"`
+}
+
 // TenantSpec is the spec for a Tenant resource
 type TenantSpec struct {
 	// Definition for Cluster in given MinIO cluster
@@ -54,10 +61,6 @@ type TenantSpec struct {
 	// Image defines the Tenant Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`
-	// ServiceName defines name of the Service that will be created for this instance, if none is specified,
-	// it will default to the instance name
-	// +optional
-	ServiceName string `json:"serviceName,omitempty"`
 	// ImagePullSecret defines the secret to be used for pull image from a private Docker image.
 	// +optional
 	ImagePullSecret corev1.LocalObjectReference `json:"imagePullSecret,omitempty"`
@@ -92,6 +95,9 @@ type TenantSpec struct {
 	// https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
 	// +optional
 	RequestAutoCert bool `json:"requestAutoCert,omitempty"`
+	// S3 related features can be disabled or enabled such as `bucketDNS` etc.
+	S3 *S3Features `json:"s3,omitempty"`
+	// +optional
 	// CertConfig allows users to set entries like CommonName, Organization, etc for the certificate
 	// +optional
 	CertConfig *CertificateConfig `json:"certConfig,omitempty"`
