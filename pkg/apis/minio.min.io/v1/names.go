@@ -71,7 +71,8 @@ func (t *Tenant) MinIOHLServiceName() string {
 // MinIOCIServiceName returns the name of Cluster IP service that is created to communicate
 // with current MinIO StatefulSet pods
 func (t *Tenant) MinIOCIServiceName() string {
-	return t.Spec.ServiceName
+	// DO NOT CHANGE, this should be constant
+	return "minio"
 }
 
 // MinIOBucketBaseDomain returns the base domain name for buckets
