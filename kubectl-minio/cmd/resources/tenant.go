@@ -22,6 +22,7 @@ import (
 	"errors"
 
 	helpers "github.com/minio/kubectl-minio/cmd/helpers"
+	operator "github.com/minio/operator/pkg/apis/minio.min.io"
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -123,13 +124,13 @@ func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
 func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
 	if secret != "" {
 		return &miniov1.ConsoleConfiguration{
+			Metadata: &metav1.ObjectMeta{
+				Name: tenant,
+			},
 			Replicas: helpers.ConsoleReplicas,
 			Image:    helpers.DefaultConsoleImage,
 			ConsoleSecret: &v1.LocalObjectReference{
 				Name: secret,
-			},
-			Metadata: &metav1.ObjectMeta{
-				Labels: tenantConsoleLabels(tenant),
 			},
 		}
 	}
@@ -152,7 +153,7 @@ func storageClass(sc string) *string {
 	return nil
 }
 
-// NewTenant will return a new minioinstance for a MinIO Operator
+// NewTenant will return a new Tenant for a MinIO Operator
 func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 	volumesPerServer := helpers.VolumesPerServer(opts.Volumes, opts.Servers)
 	capacityPerVolume, err := helpers.CapacityPerVolume(opts.Capacity, opts.Volumes)
@@ -161,12 +162,15 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 	}
 
 	t := &miniov1.Tenant{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Tenant",
+			APIVersion: operator.GroupName + "/" + miniov1.Version,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      opts.Name,
+			Namespace: opts.NS,
+		},
 		Spec: miniov1.TenantSpec{
-			Metadata: &metav1.ObjectMeta{
-				Name:        opts.Name,
-				Labels:      tenantLabels(opts.Name),
-				Annotations: tenantAnnotations(),
-			},
 			Image:       opts.Image,
 			ServiceName: helpers.ServiceName(opts.Name),
 			CredsSecret: &v1.LocalObjectReference{

@@ -101,7 +101,8 @@ func NewCmdMinIO(streams genericclioptions.IOStreams) *cobra.Command {
 		SilenceUsage: true,
 	}
 
-	cmd.AddCommand(newOperatorCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
+	cmd.AddCommand(newInitCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
+	cmd.AddCommand(newDeleteCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 	cmd.AddCommand(newTenantCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 
 	return cmd

@@ -30,9 +30,9 @@ import (
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -48,7 +48,7 @@ type upgradeCmd struct {
 	tenantOpts resources.TenantOptions
 }
 
-func newUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &upgradeCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
@@ -67,7 +67,6 @@ func newUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&c.tenantOpts.Name, "name", "", "name of the MinIO tenant to upgrade")
 	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "image to which tenant is to be upgraded")
 	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
-	f.StringVar(&c.tenantOpts.ImagePullSecret, "image-pull-secrets", "", "image pull secret to be used for pulling MinIO image")
 	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	return cmd

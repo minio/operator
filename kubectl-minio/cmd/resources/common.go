@@ -23,6 +23,7 @@ import (
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func tenantStorage(q resource.Quantity) v1.ResourceList {
@@ -37,6 +38,10 @@ func Zone(servers, volumes int32, q resource.Quantity, sc string) miniov1.Zone {
 		Servers:          servers,
 		VolumesPerServer: volumes,
 		VolumeClaimTemplate: &v1.PersistentVolumeClaim{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       v1.ResourcePersistentVolumeClaims.String(),
+				APIVersion: v1.SchemeGroupVersion.Version,
+			},
 			Spec: v1.PersistentVolumeClaimSpec{
 				AccessModes: []v1.PersistentVolumeAccessMode{helpers.MinIOAccessMode},
 				Resources: v1.ResourceRequirements{
