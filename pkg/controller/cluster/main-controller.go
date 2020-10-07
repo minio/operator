@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/minio/minio/pkg/madmin"
+
 	"golang.org/x/time/rate"
 
 	"github.com/docker/cli/cli/config/configfile"
@@ -82,6 +84,7 @@ import (
 	listers "github.com/minio/operator/pkg/client/listers/minio.min.io/v1"
 	"github.com/minio/operator/pkg/resources/deployments"
 	"github.com/minio/operator/pkg/resources/jobs"
+	"github.com/minio/operator/pkg/resources/secrets"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
@@ -103,24 +106,26 @@ const (
 
 // Standard Status messages for Tenant
 const (
-	StatusInitialized                   = "Initialized"
-	StatusProvisioningCIService         = "Provisioning MinIO Cluster IP Service"
-	StatusProvisioningHLService         = "Provisioning MinIO Headless Service"
-	StatusProvisioningStatefulSet       = "Provisioning MinIO Statefulset"
-	StatusProvisioningConsoleDeployment = "Provisioning Console Deployment"
-	StatusProvisioningKESStatefulSet    = "Provisioning KES StatefulSet"
-	StatusWaitingForReadyState          = "Waiting for Pods to be ready"
-	StatusWaitingMinIOCert              = "Waiting for MinIO TLS Certificate"
-	StatusWaitingMinIOClientCert        = "Waiting for MinIO TLS Client Certificate"
-	StatusWaitingKESCert                = "Waiting for KES TLS Certificate"
-	StatusWaitingConsoleCert            = "Waiting for Console TLS Certificate"
-	StatusUpdatingMinIOVersion          = "Updating MinIO Version"
-	StatusUpdatingConsoleVersion        = "Updating Console Version"
-	StatusUpdatingResourceRequirements  = "Updating Resource Requirements"
-	StatusUpdatingAffinity              = "Updating Pod Affinity"
-	StatusNotOwned                      = "Statefulset not controlled by operator"
-	StatusFailedAlreadyExists           = "Another MinIO Tenant already exists in the namespace"
-	StatusInconsistentMinIOVersions     = "Different versions across MinIO Pools"
+	StatusInitialized                        = "Initialized"
+	StatusProvisioningCIService              = "Provisioning MinIO Cluster IP Service"
+	StatusProvisioningHLService              = "Provisioning MinIO Headless Service"
+	StatusProvisioningStatefulSet            = "Provisioning MinIO Statefulset"
+	StatusProvisioningConsoleDeployment      = "Provisioning Console Deployment"
+	StatusProvisioningKESStatefulSet         = "Provisioning KES StatefulSet"
+	StatusProvisioningLogPGStatefulSet       = "Provisioning Postgres server for Log Search feature"
+	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server for Log Search feature"
+	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
+	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"
+	StatusWaitingMinIOClientCert             = "Waiting for MinIO TLS Client Certificate"
+	StatusWaitingKESCert                     = "Waiting for KES TLS Certificate"
+	StatusWaitingConsoleCert                 = "Waiting for Console TLS Certificate"
+	StatusUpdatingMinIOVersion               = "Updating MinIO Version"
+	StatusUpdatingConsoleVersion             = "Updating Console Version"
+	StatusUpdatingResourceRequirements       = "Updating Resource Requirements"
+	StatusUpdatingAffinity                   = "Updating Pod Affinity"
+	StatusNotOwned                           = "Statefulset not controlled by operator"
+	StatusFailedAlreadyExists                = "Another MinIO Tenant already exists in the namespace"
+	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -1298,6 +1303,39 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
+	if tenant.HasLogEnabled() {
+		var logSecret *corev1.Secret
+		logSecret, err = c.checkAndCreateLogSecret(ctx, tenant)
+		if err != nil {
+			return err
+		}
+
+		searchSvc, err := c.checkAndCreateLogHeadless(ctx, tenant)
+		if err != nil {
+			return err
+		}
+
+		err = c.checkAndCreateLogStatefulSet(ctx, tenant, searchSvc.Name)
+		if err != nil {
+			return err
+		}
+
+		err = c.checkAndCreateLogSearchAPIDeployment(ctx, tenant)
+		if err != nil {
+			return err
+		}
+
+		err = c.checkAndCreateLogSearchAPIService(ctx, tenant)
+		if err != nil {
+			return err
+		}
+
+		err = c.checkAndConfigureLogSearchAPI(ctx, tenant, logSecret, adminClnt)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
 	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalReplicas)
@@ -1504,4 +1542,87 @@ func MinIOControllerRateLimiter() queue.RateLimiter {
 		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
 		&queue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
 	)
+}
+
+func (c *Controller) checkAndCreateLogHeadless(ctx context.Context, tenant *miniov1.Tenant) (*corev1.Service, error) {
+	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogHLServiceName())
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return svc, err
+	}
+
+	klog.V(2).Infof("Creating a new Log Headless Service for %s", tenant.Namespace)
+	svc = services.NewHeadlessForLog(tenant)
+	_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, metav1.CreateOptions{})
+	return svc, err
+}
+
+func (c *Controller) checkAndCreateLogStatefulSet(ctx context.Context, tenant *miniov1.Tenant, svcName string) error {
+	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LogStatefulsetName())
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningLogPGStatefulSet, 0); err != nil {
+		return err
+	}
+
+	klog.V(2).Infof("Creating a new Log StatefulSet for %s", tenant.Namespace)
+	searchSS := statefulsets.NewForLog(tenant, svcName)
+	_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, searchSS, metav1.CreateOptions{})
+	return err
+}
+
+func (c *Controller) checkAndCreateLogSearchAPIService(ctx context.Context, tenant *miniov1.Tenant) error {
+	_, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogSearchAPIServiceName())
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	klog.V(2).Infof("Creating a new Log Search API Service for %s", tenant.Namespace)
+	svc := services.NewClusterIPForLogSearchAPI(tenant)
+	_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, metav1.CreateOptions{})
+	return err
+}
+
+func (c *Controller) checkAndCreateLogSearchAPIDeployment(ctx context.Context, tenant *miniov1.Tenant) error {
+	_, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.LogSearchAPIDeploymentName())
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningLogSearchAPIDeployment, 0); err != nil {
+		return err
+	}
+
+	klog.V(2).Infof("Creating a new Log Search API deployment for %s", tenant.Name)
+	_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, deployments.NewForLogSearchAPI(tenant), metav1.CreateOptions{})
+	return err
+}
+
+func (c *Controller) checkAndCreateLogSecret(ctx context.Context, tenant *miniov1.Tenant) (*corev1.Secret, error) {
+	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.LogSecretName(), metav1.GetOptions{})
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return secret, err
+	}
+
+	klog.V(2).Infof("Creating a new Log secret for %s", tenant.Name)
+	secret, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secrets.LogSecret(tenant), metav1.CreateOptions{})
+	return secret, err
+}
+
+func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *miniov1.Tenant, secret *corev1.Secret, adminClnt *madmin.AdminClient) error {
+	// Check if audit webhook is configured for tenant's MinIO
+	auditCfg := newAuditWebhookConfig(tenant, secret)
+	_, err := adminClnt.GetConfigKV(ctx, auditCfg.target)
+	if err != nil {
+		err = adminClnt.SetConfigKV(ctx, auditCfg.args)
+		if err != nil {
+			return err
+		}
+
+		// Restart MinIO for config update to take effect
+		adminClnt.ServiceRestart(ctx) //nolint:errcheck
+		return nil
+	}
+	return err
 }
