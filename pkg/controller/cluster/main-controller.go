@@ -1430,7 +1430,7 @@ func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.
 			if err = c.createConsoleTLSCSR(ctx, tenant); err != nil {
 				return err
 			}
-			// we want to re-queue this tenant so we can re-check for the certification
+			// we want to re-queue this tenant so we can re-check for the console certificate
 			return errors.New("waiting for console cert")
 		}
 		return err
