@@ -38,7 +38,6 @@ func KESMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	for k, v := range t.KESPodLabels() {
 		meta.Labels[k] = v
 	}
-	meta.Labels[miniov1.TenantLabel] = t.Name
 	return meta
 }
 
