@@ -924,10 +924,9 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// For each zone check if it's a stateful set
+	// For each zone check if there is a stateful set
 	var totalReplicas int32
 	var images []string
-	freshSetup := true
 	for _, zone := range tenant.Spec.Zones {
 		// Get the StatefulSet with the name specified in Tenant.spec
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.ZoneStatefulsetName(&zone))
@@ -961,17 +960,17 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 
-				if !freshSetup {
-					// Restart the services to fetch the new args, ignore any error.
-					// only perform `restart()` of server deployment when we are truly
-					// expanding an existing deployment.
-					_ = adminClnt.ServiceRestart(ctx)
+				// Restart the services to fetch the new args, ignore any error.
+				// only perform `restart()` of server deployment when we are truly
+				// expanding an existing deployment.
+				err2 := adminClnt.ServiceRestart(ctx)
+				if err2 != nil {
+					klog.Info("Call to restart services failed!", err2)
 				}
 			} else {
 				return err
 			}
 		} else {
-			freshSetup = false
 			if zone.Servers != *ss.Spec.Replicas {
 				// warn the user that replica count of an existing zone can't be changed
 				if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for zone %s", zone.Name), 0); err != nil {
@@ -1157,9 +1156,11 @@ func (c *Controller) syncHandler(key string) error {
 						return err
 					}
 				} else {
-					if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
+					if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
 						return err
 					}
+					// we want to re-queue this tenant so we can re-check for the health at a later stage
+					return errors.New("waiting for ready state")
 				}
 			} else {
 				return err
@@ -1256,9 +1257,11 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 			if err = c.createCSR(ctx, tenant); err != nil {
 				return err
 			}
-		} else {
-			return err
+			// we want to re-queue this tenant so we can re-check for the health at a later stage
+			return errors.New("waiting for minio cert")
 		}
+		return err
+
 	}
 	if createClientCert {
 		if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{}); err != nil {
@@ -1270,9 +1273,11 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 				if err = c.createMinIOClientTLSCSR(ctx, tenant); err != nil {
 					return err
 				}
-			} else {
-				return err
+				// we want to re-queue this tenant so we can re-check for the health at a later stage
+				return errors.New("waiting for minio client cert")
 			}
+			return err
+
 		}
 	}
 	return nil
@@ -1327,7 +1332,14 @@ func (c *Controller) getCertIdentity(ns string, cert *miniov1.LocalCertificateRe
 }
 
 func (c *Controller) updateTenantStatus(ctx context.Context, tenant *miniov1.Tenant, currentState string, availableReplicas int32) (*miniov1.Tenant, error) {
-	opts := metav1.UpdateOptions{}
+	return c.updateTenantStatusWithRetry(ctx, tenant, currentState, availableReplicas, true)
+}
+func (c *Controller) updateTenantStatusWithRetry(ctx context.Context, tenant *miniov1.Tenant, currentState string, availableReplicas int32, retry bool) (*miniov1.Tenant, error) {
+	// If we are updating the tenant with the same status as before we are going to skip it as to avoid a resource number
+	// change and have the operator loop re-processing the tenant endlessly
+	if tenant.Status.CurrentState == currentState && tenant.Status.AvailableReplicas == availableReplicas {
+		return tenant, nil
+	}
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -1338,9 +1350,22 @@ func (c *Controller) updateTenantStatus(ctx context.Context, tenant *miniov1.Ten
 	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
 	// which is ideal for ensuring nothing other than resource status has been updated.
+	opts := metav1.UpdateOptions{}
 	t, err := c.minioClientSet.MinioV1().Tenants(tenant.Namespace).UpdateStatus(ctx, tenantCopy, opts)
 	t.EnsureDefaults()
-	return t, err
+	if err != nil {
+		// if rejected due to conflict, get the latest tenant and retry once
+		if k8serrors.IsConflict(err) && retry {
+			klog.Info("Hit conflict issue, getting latest version of tenant")
+			tenant, err = c.minioClientSet.MinioV1().Tenants(tenant.Namespace).Get(ctx, tenant.Name, metav1.GetOptions{})
+			if err != nil {
+				return tenant, err
+			}
+			return c.updateTenantStatusWithRetry(ctx, tenant, currentState, availableReplicas, false)
+		}
+		return t, err
+	}
+	return t, nil
 }
 
 // enqueueTenant takes a Tenant resource and converts it into a namespace/name
@@ -1405,9 +1430,10 @@ func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.
 			if err = c.createConsoleTLSCSR(ctx, tenant); err != nil {
 				return err
 			}
-		} else {
-			return err
+			// we want to re-queue this tenant so we can re-check for the certification
+			return errors.New("waiting for console cert")
 		}
+		return err
 	}
 	return nil
 }
