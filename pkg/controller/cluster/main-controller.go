@@ -927,47 +927,54 @@ func (c *Controller) syncHandler(key string) error {
 	// For each zone check if there is a stateful set
 	var totalReplicas int32
 	var images []string
-	for _, zone := range tenant.Spec.Zones {
+	for i, zone := range tenant.Spec.Zones {
 		// Get the StatefulSet with the name specified in Tenant.spec
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.ZoneStatefulsetName(&zone))
 		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				// If auto cert is enabled, create certificates for MinIO and
-				// optionally KES
-				if tenant.AutoCert() {
-					// Client cert is needed only with KES for mTLS authentication
-					if err = c.checkAndCreateMinIOCSR(ctx, nsName, tenant, tenant.HasKESEnabled()); err != nil {
+			if !k8serrors.IsNotFound(err) {
+				return err
+			}
+
+			klog.V(2).Infof("Deploying zone %s", zone.Name)
+
+			// Check healthcheck for previous zone, if they are online before adding this zone.
+			if i > 0 && !tenant.MinIOHealthCheck() {
+				return fmt.Errorf("MinIO is not ready")
+			}
+
+			// If auto cert is enabled, create certificates for MinIO and
+			// optionally KES
+			if tenant.AutoCert() {
+				// Client cert is needed only with KES for mTLS authentication
+				if err = c.checkAndCreateMinIOCSR(ctx, nsName, tenant, tenant.HasKESEnabled()); err != nil {
+					return err
+				}
+				if tenant.HasKESEnabled() {
+					if err = c.checkAndCreateKESCSR(ctx, nsName, tenant); err != nil {
 						return err
 					}
-					if tenant.HasKESEnabled() {
-						if err = c.checkAndCreateKESCSR(ctx, nsName, tenant); err != nil {
-							return err
-						}
-					}
-					if tenant.HasConsoleEnabled() {
-						if err = c.checkAndCreateConsoleCSR(ctx, nsName, tenant); err != nil {
-							return err
-						}
+				}
+				if tenant.HasConsoleEnabled() {
+					if err = c.checkAndCreateConsoleCSR(ctx, nsName, tenant); err != nil {
+						return err
 					}
 				}
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
-					return err
-				}
+			}
 
-				ss = statefulsets.NewForMinIOZone(tenant, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
-				ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
-				if err != nil {
-					return err
-				}
+			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
+				return err
+			}
 
-				// Restart the services to fetch the new args, ignore any error.
-				// only perform `restart()` of server deployment when we are truly
-				// expanding an existing deployment.
-				err2 := adminClnt.ServiceRestart(ctx)
-				if err2 != nil {
-					klog.Info("Call to restart services failed!", err2)
-				}
-			} else {
+			ss = statefulsets.NewForMinIOZone(tenant, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
+			if err != nil {
+				return err
+			}
+
+			// Restart the services to fetch the new args, ignore any error.
+			// only perform `restart()` of server deployment when we are truly
+			// expanding an existing deployment.
+			if err = adminClnt.ServiceRestart(ctx); err != nil {
 				return err
 			}
 		} else {
@@ -1035,7 +1042,7 @@ func (c *Controller) syncHandler(key string) error {
 	// So comparing tenant.Spec.Image (version to update to) against one value from images slice is fine.
 	if tenant.Spec.Image != images[0] && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
 		if !tenant.MinIOHealthCheck() {
-			return fmt.Errorf("MinIO doesn't seem to have enough quorum to proceed with binary update")
+			return fmt.Errorf("MinIO is not ready")
 		}
 
 		// Images different with the newer state change, continue to verify
@@ -1117,52 +1124,51 @@ func (c *Controller) syncHandler(key string) error {
 	if tenant.HasConsoleEnabled() {
 		// Get the Deployment with the name specified in MirrorInstace.spec
 		if consoleDeployment, err = c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName()); err != nil {
-			if k8serrors.IsNotFound(err) {
-				if !tenant.HasCredsSecret() || !tenant.HasConsoleSecret() {
-					msg := "Please set the credentials"
-					klog.V(2).Infof(msg)
-					return fmt.Errorf(msg)
+			if !k8serrors.IsNotFound(err) {
+				return err
+			}
+
+			if !tenant.HasCredsSecret() || !tenant.HasConsoleSecret() {
+				msg := "Please set the credentials"
+				klog.V(2).Infof(msg)
+				return fmt.Errorf(msg)
+			}
+
+			consoleSecretName := tenant.Spec.Console.ConsoleSecret.Name
+			consoleSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, consoleSecretName, gOpts)
+			if sErr != nil {
+				return sErr
+			}
+
+			// Make sure that MinIO is up and running to enable MinIO console user.
+			if !tenant.MinIOHealthCheck() {
+				if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
+					return err
 				}
+				return fmt.Errorf("MinIO is not ready")
+			}
 
-				consoleSecretName := tenant.Spec.Console.ConsoleSecret.Name
-				consoleSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, consoleSecretName, gOpts)
-				if sErr != nil {
-					return sErr
-				}
+			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningConsoleDeployment, totalReplicas); err != nil {
+				return err
+			}
 
-				// Make sure that MinIO is up and running to enable MinIO console user.
-				if tenant.MinIOHealthCheck() {
-					if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningConsoleDeployment, totalReplicas); err != nil {
-						return err
-					}
+			if pErr := tenant.CreateConsoleUser(adminClnt, consoleSecret.Data); pErr != nil {
+				klog.V(2).Infof(pErr.Error())
+				return pErr
+			}
 
-					if pErr := tenant.CreateConsoleUser(adminClnt, consoleSecret.Data); pErr != nil {
-						klog.V(2).Infof(pErr.Error())
-						return pErr
-					}
-
-					// Create Console Deployment
-					consoleDeployment = deployments.NewConsole(tenant)
-					_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, consoleDeployment, cOpts)
-					if err != nil {
-						klog.V(2).Infof(err.Error())
-						return err
-					}
-					// Create Console service
-					consoleSvc := services.NewClusterIPForConsole(tenant)
-					_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, consoleSvc, cOpts)
-					if err != nil {
-						klog.V(2).Infof(err.Error())
-						return err
-					}
-				} else {
-					if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
-						return err
-					}
-					// we want to re-queue this tenant so we can re-check for the health at a later stage
-					return errors.New("waiting for ready state")
-				}
-			} else {
+			// Create Console Deployment
+			consoleDeployment = deployments.NewConsole(tenant)
+			_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, consoleDeployment, cOpts)
+			if err != nil {
+				klog.V(2).Infof(err.Error())
+				return err
+			}
+			// Create Console service
+			consoleSvc := services.NewClusterIPForConsole(tenant)
+			_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, consoleSvc, cOpts)
+			if err != nil {
+				klog.V(2).Infof(err.Error())
 				return err
 			}
 		} else {
