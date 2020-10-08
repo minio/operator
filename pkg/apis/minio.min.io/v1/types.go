@@ -28,6 +28,8 @@ import (
 // +k8s:defaulter-gen=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=tenant,singular=tenant
+// +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.currentState"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Tenant is a specification for a MinIO resource
 type Tenant struct {
