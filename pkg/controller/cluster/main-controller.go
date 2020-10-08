@@ -843,18 +843,6 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// check if both auto certificate creation and external secret with certificate is passed,
-	// this is an error as only one of this is allowed in one Tenant
-	if tenant.AutoCert() && (tenant.ExternalCert() || tenant.ExternalClientCert() || tenant.KESExternalCert() || tenant.ConsoleExternalCert()) {
-		msg := "Please set either externalCertSecret or requestAutoCert in Tenant config"
-		klog.V(2).Infof(msg)
-		if _, err = c.updateTenantStatus(ctx, tenant, msg, 0); err != nil {
-			klog.V(2).Infof(err.Error())
-		}
-		// return nil so we don't re-queue this work item
-		return nil
-	}
-
 	// TLS is mandatory if KES is enabled
 	// AutoCert if enabled takes care of MinIO and KES certs
 	if tenant.HasKESEnabled() && !tenant.AutoCert() {
@@ -979,16 +967,23 @@ func (c *Controller) syncHandler(key string) error {
 			// If auto cert is enabled, create certificates for MinIO and
 			// optionally KES
 			if tenant.AutoCert() && freshSetup {
+				// Only generate Client certs if KES is enabled and user didnt provide external Client certificates
+				createClientCert := false
+				if tenant.HasKESEnabled() && !tenant.ExternalClientCert() {
+					createClientCert = true
+				}
 				// Client cert is needed only with KES for mTLS authentication
-				if err = c.checkAndCreateMinIOCSR(ctx, nsName, tenant, tenant.HasKESEnabled()); err != nil {
+				if err = c.checkAndCreateMinIOCSR(ctx, nsName, tenant, createClientCert); err != nil {
 					return err
 				}
-				if tenant.HasKESEnabled() {
+				// AutoCert will generate KES server certificates if user didn't provide any
+				if tenant.HasKESEnabled() && !tenant.KESExternalCert() {
 					if err = c.checkAndCreateKESCSR(ctx, nsName, tenant); err != nil {
 						return err
 					}
 				}
-				if tenant.HasConsoleEnabled() {
+				// AutoCert will generate Console server certificates if user didn't provide any
+				if tenant.HasConsoleEnabled() && !tenant.ConsoleExternalCert() {
 					if err = c.checkAndCreateConsoleCSR(ctx, nsName, tenant); err != nil {
 						return err
 					}
@@ -1229,7 +1224,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if tenant.HasKESEnabled() && (tenant.AutoCert() || tenant.ExternalCert()) {
+	if tenant.HasKESEnabled() && tenant.TLS() {
 		if tenant.ExternalClientCert() {
 			// Since we're using external secret, store the identity for later use
 			miniov1.KESIdentity, err = c.getCertIdentity(tenant.Namespace, tenant.Spec.ExternalClientCertSecret)

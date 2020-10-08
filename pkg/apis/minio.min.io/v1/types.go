@@ -93,7 +93,7 @@ type TenantSpec struct {
 	// RequestAutoCert allows user to enable Kubernetes based TLS cert generation and signing as explained here:
 	// https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
 	// +optional
-	RequestAutoCert bool `json:"requestAutoCert,omitempty"`
+	RequestAutoCert *bool `json:"requestAutoCert,omitempty"`
 	// S3 related features can be disabled or enabled such as `bucketDNS` etc.
 	S3 *S3Features `json:"s3,omitempty"`
 	// +optional

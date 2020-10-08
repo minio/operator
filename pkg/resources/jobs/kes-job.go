@@ -35,9 +35,7 @@ func NewForKES(t *miniov1.Tenant) *batchv1.Job {
 		{Key: "private.key", Path: "minio.key"},
 	}
 
-	if t.AutoCert() {
-		clientCertSecret = t.MinIOClientTLSSecretName()
-	} else if t.ExternalClientCert() {
+	if t.ExternalClientCert() {
 		clientCertSecret = t.Spec.ExternalClientCertSecret.Name
 		// This covers both secrets of type "kubernetes.io/tls" and
 		// "cert-manager.io/v1alpha2" because of same keys in both.
@@ -47,6 +45,8 @@ func NewForKES(t *miniov1.Tenant) *batchv1.Job {
 				{Key: "tls.key", Path: "minio.key"},
 			}
 		}
+	} else if t.AutoCert() {
+		clientCertSecret = t.MinIOClientTLSSecretName()
 	}
 
 	podVolumes := []corev1.Volume{

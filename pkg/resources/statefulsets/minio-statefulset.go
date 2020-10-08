@@ -271,6 +271,7 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 		{Key: "public.crt", Path: "CAs/kes.crt"},
 	}
 
+	// AutoCert certificates will be used for internal communication if requested
 	if t.AutoCert() {
 		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
 			Secret: &corev1.SecretProjection{
@@ -280,16 +281,45 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 				Items: serverCertPaths,
 			},
 		})
+	}
+
+	// External Client certificates will have priority over AutoCert generated certificates
+	if t.ExternalClientCert() {
+		clientCertSecret = t.Spec.ExternalClientCertSecret.Name
+		// This covers both secrets of type "kubernetes.io/tls" and
+		// "cert-manager.io/v1alpha2" because of same keys in both.
+		if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" {
+			clientCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: "client.crt"},
+				{Key: "tls.key", Path: "client.key"},
+			}
+		}
+	} else if t.AutoCert() {
 		clientCertSecret = t.MinIOClientTLSSecretName()
+	}
+
+	// KES External certificates will have priority over AutoCert generated certificates
+	if t.KESExternalCert() {
+		kesCertSecret = t.Spec.KES.ExternalCertSecret.Name
+		// This covers both secrets of type "kubernetes.io/tls" and
+		// "cert-manager.io/v1alpha2" because of same keys in both.
+		if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			KESCertPath = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: "CAs/kes.crt"},
+			}
+		}
+	} else if t.AutoCert() {
 		kesCertSecret = t.KESTLSSecretName()
-	} else if t.ExternalCert() {
+	}
+
+	if t.ExternalCert() {
 		// MinIO requires to have at least 1 certificate keyPair under the `certs` folder, by default
-		// we will take the first secret as the main certificate keyPair
+		// we will take the first secret as the main certificate keyPair if AutoCert is not enabled
 		//
 		//	certs
 		//		+ public.crt
 		//		+ private.key
-		if len(t.Spec.ExternalCertSecret) > 0 {
+		if len(t.Spec.ExternalCertSecret) > 0 && !t.AutoCert() {
 			secret := t.Spec.ExternalCertSecret[0]
 			// if secret type is `cert-manager.io/v1alpha2` user is providing his own CA in the ca.crt file, if not by default
 			// we are going to use public.crt as the ca certificate
@@ -368,31 +398,10 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 				},
 			})
 		}
-		if t.ExternalClientCert() {
-			clientCertSecret = t.Spec.ExternalClientCertSecret.Name
-			// This covers both secrets of type "kubernetes.io/tls" and
-			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" {
-				clientCertPaths = []corev1.KeyToPath{
-					{Key: "tls.crt", Path: "client.crt"},
-					{Key: "tls.key", Path: "client.key"},
-				}
-			}
-		}
-		if t.KESExternalCert() {
-			kesCertSecret = t.Spec.KES.ExternalCertSecret.Name
-			// This covers both secrets of type "kubernetes.io/tls" and
-			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
-				KESCertPath = []corev1.KeyToPath{
-					{Key: "tls.crt", Path: "CAs/kes.crt"},
-				}
-			}
-		}
 	}
 
 	// Add SSL volume from SSL secret to the podVolumes
-	if t.AutoCert() || t.ExternalCert() {
+	if t.TLS() {
 		if t.HasKESEnabled() {
 			podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
 				{

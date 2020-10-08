@@ -136,11 +136,12 @@ func (t *Tenant) ConsoleExternalCert() bool {
 	return t.Spec.Console != nil && t.Spec.Console.ExternalCertSecret != nil
 }
 
-// AutoCert returns true is the user has provided a secret
-// that contains CA cert, server cert and server key for group replication
-// SSL support
+// AutoCert is enabled by default, otherwise we return the user provided value
 func (t *Tenant) AutoCert() bool {
-	return t.Spec.RequestAutoCert
+	if t.Spec.RequestAutoCert == nil {
+		return true
+	}
+	return *t.Spec.RequestAutoCert
 }
 
 // VolumePathForZone returns the paths for MinIO mounts based on
@@ -294,6 +295,8 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 				OrganizationName: DefaultOrgName,
 			}
 		}
+	} else {
+		t.Spec.CertConfig = nil
 	}
 
 	if t.HasConsoleEnabled() {

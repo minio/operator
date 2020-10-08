@@ -307,6 +307,11 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(LocalCertificateReference)
 		**out = **in
 	}
+	if in.RequestAutoCert != nil {
+		in, out := &in.RequestAutoCert, &out.RequestAutoCert
+		*out = new(bool)
+		**out = **in
+	}
 	if in.S3 != nil {
 		in, out := &in.S3, &out.S3
 		*out = new(S3Features)

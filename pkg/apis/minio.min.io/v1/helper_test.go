@@ -18,23 +18,32 @@ func TestEnsureDefaults(t *testing.T) {
 		assert.Equal(t, mt.Spec.Image, DefaultMinIOImage)
 		assert.Equal(t, mt.Spec.Mountpath, MinIOVolumeMountPath)
 		assert.Equal(t, mt.Spec.Subpath, MinIOVolumeSubPath)
-		assert.False(t, mt.AutoCert())
+		// default behavior is autoCert will be enabled
+		assert.True(t, mt.AutoCert())
+		require.True(t, mt.HasCertConfig())
+		require.NotNil(t, mt.Spec.CertConfig)
 	})
 
-	t.Run("auto cert", func(t *testing.T) {
-		mt.Spec.RequestAutoCert = true
-		assert.True(t, mt.AutoCert())
+	t.Run("enable and disable autoCert", func(t *testing.T) {
+		// disable autoCert explicitly
+		autoCertEnabled := false
+		mt.Spec.RequestAutoCert = &autoCertEnabled
+
+		mt.EnsureDefaults()
+
+		assert.False(t, mt.AutoCert())
 		assert.False(t, mt.HasCertConfig())
+		require.Nil(t, mt.Spec.CertConfig)
+
+		// enable autoCert explicitly
+		autoCertEnabled = true
+		mt.Spec.RequestAutoCert = &autoCertEnabled
 
 		mt.EnsureDefaults()
 
+		assert.True(t, mt.AutoCert())
+		assert.True(t, mt.HasCertConfig())
 		require.NotNil(t, mt.Spec.CertConfig)
-		require.True(t, mt.HasCertConfig())
-		oldCertConfig := mt.Spec.CertConfig
-
-		mt.EnsureDefaults()
-
-		assert.Equal(t, oldCertConfig, mt.Spec.CertConfig)
 	})
 
 	t.Run("defaults don't override", func(t *testing.T) {
@@ -102,6 +111,7 @@ func TestTenant_KESServiceEndpoint(t1 *testing.T) {
 		Status     TenantStatus
 	}
 	ClusterDomain = "cluster.local"
+	autoCertEnabled := true
 	tests := []struct {
 		name   string
 		fields fields
@@ -115,7 +125,7 @@ func TestTenant_KESServiceEndpoint(t1 *testing.T) {
 					Namespace: "namespace",
 				},
 				Spec: TenantSpec{
-					RequestAutoCert: true,
+					RequestAutoCert: &autoCertEnabled,
 				},
 			},
 			want: "https://kes" + KESHLSvcNameSuffix + ".namespace.svc.cluster.local:7373",

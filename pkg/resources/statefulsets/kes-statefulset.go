@@ -97,8 +97,11 @@ func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 	var certPath = "server.crt"
 	var keyPath = "server.key"
 
+	var volumeProjections []corev1.VolumeProjection
+
 	var serverCertSecret string
-	// clientCertSecret holds certificate files (public.crt, private.key and ca.crt) used by KES in mTLS with a KMS (eg: authentication with Vault)
+	// clientCertSecret holds certificate files (public.crt, private.key and ca.crt) used by KES
+	// in mTLS with a KMS (eg: authentication with Vault)
 	var clientCertSecret string
 
 	var serverCertPaths = []corev1.KeyToPath{
@@ -110,9 +113,8 @@ func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 		{Key: "server-config.yaml", Path: "server-config.yaml"},
 	}
 
-	if t.AutoCert() {
-		serverCertSecret = t.KESTLSSecretName()
-	} else if t.KESExternalCert() {
+	// External certificates will have priority over AutoCert generated certificates
+	if t.KESExternalCert() {
 		serverCertSecret = t.Spec.KES.ExternalCertSecret.Name
 		// This covers both secrets of type "kubernetes.io/tls" and
 		// "cert-manager.io/v1alpha2" because of same keys in both.
@@ -122,13 +124,13 @@ func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 				{Key: "tls.key", Path: keyPath},
 			}
 		}
+	} else if t.AutoCert() {
+		serverCertSecret = t.KESTLSSecretName()
 	}
 
 	if t.KESClientCert() {
 		clientCertSecret = t.Spec.KES.ClientCertSecret.Name
 	}
-
-	var volumeProjections []corev1.VolumeProjection
 
 	if t.Spec.KES.Configuration.Name != "" {
 		volumeProjections = append(volumeProjections, corev1.VolumeProjection{
