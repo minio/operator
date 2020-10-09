@@ -295,18 +295,6 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 	}
 
-	if t.Spec.Liveness != nil {
-		if t.Spec.Liveness.InitialDelaySeconds == 0 {
-			t.Spec.Liveness.InitialDelaySeconds = LivenessInitialDelay
-		}
-		if t.Spec.Liveness.PeriodSeconds == 0 {
-			t.Spec.Liveness.PeriodSeconds = LivenessPeriod
-		}
-		if t.Spec.Liveness.TimeoutSeconds == 0 {
-			t.Spec.Liveness.TimeoutSeconds = LivenessTimeout
-		}
-	}
-
 	if t.HasConsoleEnabled() {
 		if t.Spec.Console.Image == "" {
 			t.Spec.Console.Image = DefaultConsoleImage

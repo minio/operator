@@ -90,9 +90,6 @@ type TenantSpec struct {
 	// Subpath inside mount path. This is the directory where MinIO stores data. Default to "" (empty)
 	// +optional
 	Subpath string `json:"subPath,omitempty"`
-	// Liveness Probe for container liveness. Container will be restarted if the probe fails.
-	// +optional
-	Liveness *Liveness `json:"liveness,omitempty"`
 	// RequestAutoCert allows user to enable Kubernetes based TLS cert generation and signing as explained here:
 	// https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
 	// +optional
