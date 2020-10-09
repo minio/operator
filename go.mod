@@ -10,6 +10,7 @@ require (
 	github.com/minio/minio v0.0.0-20200723003940-b9be841fd222
 	github.com/minio/minio-go/v7 v7.0.2
 	github.com/stretchr/testify v1.5.1
+	golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 	k8s.io/api v0.18.6
 	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v0.18.6
