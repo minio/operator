@@ -1,0 +1,177 @@
+## Secret to be used as MinIO Root Credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-autocert-encryption-minio-creds-secret
+type: Opaque
+data:
+  ## Access Key for MinIO Tenant, base64 encoded (echo -n 'minio' | base64)
+  accesskey: bWluaW8=
+  ## Secret Key for MinIO Tenant, base64 encoded (echo -n 'minio123' | base64)
+  secretkey: bWluaW8xMjM=
+---
+## Secret to be used for MinIO Console
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-autocert-encryption-console-secret
+type: Opaque
+data:
+  ## HMAC JWT Secret for Console, base64 encoded (echo -n 'YOURJWTSIGNINGSECRET' | base64)
+  CONSOLE_HMAC_JWT_SECRET: WU9VUkpXVFNJR05JTkdTRUNSRVQ=
+  ## Passphrase to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
+  CONSOLE_PBKDF_PASSPHRASE: U0VDUkVU
+  ## Salt to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
+  CONSOLE_PBKDF_SALT: U0VDUkVU
+  ## MinIO User Access Key (used for Console Login), base64 encoded (echo -n 'YOURCONSOLEACCESS' | base64)
+  CONSOLE_ACCESS_KEY: WU9VUkNPTlNPTEVBQ0NFU1M=
+  ## MinIO User Secret Key (used for Console Login), base64 encoded (echo -n 'YOURCONSOLESECRET' | base64)
+  CONSOLE_SECRET_KEY: WU9VUkNPTlNPTEVTRUNSRVQ=
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-autocert-encryption-kes-config
+type: Opaque
+stringData:
+  server-config.yaml: |-
+    address: 0.0.0.0:7373
+    root: _ # Effectively disabled since no root identity necessary.
+    tls:
+      key: /tmp/kes/server.key   # Path to the TLS private key
+      cert: /tmp/kes/server.crt # Path to the TLS certificate
+      proxy:
+        identities: []
+        header:
+          cert: X-Tls-Client-Cert
+    policy:
+      my-policy:
+        paths:
+        - /v1/key/create/*
+        - /v1/key/generate/*
+        - /v1/key/decrypt/*
+        identities:
+        - ${MINIO_KES_IDENTITY}
+    cache:
+      expiry:
+        any: 5m0s
+        unused: 20s
+    log:
+      error: on
+      audit: off
+    keys:
+       vault:
+         endpoint: "<PUT YOUR VAULT ENDPOINT HERE>"  # The Vault endpoint - e.g. https://127.0.0.1:8200
+         namespace: "" # An optional Vault namespace. See: https://www.vaultproject.io/docs/enterprise/namespaces/index.html
+         prefix: "my-minio"    # An optional K/V prefix. The server will store keys under this prefix.
+         approle:    # AppRole credentials. See: https://www.vaultproject.io/docs/auth/approle.html
+           id: "<PUT YOUR APPROLE ID HERE>"      # Your AppRole Role ID
+           secret: "<PUT YOUR APPROLE SECRET ID HERE>"  # Your AppRole Secret ID
+           retry: 15s  # Duration until the server tries to re-authenticate after connection loss.
+         status:     # Vault status configuration. The server will periodically reach out to Vault to check its status.
+           ping: 10s   # Duration until the server checks Vault's status again.
+---
+## MinIO Tenant Definition
+apiVersion: minio.min.io/v1
+kind: Tenant
+metadata:
+  name: minio-autocert-encryption
+  ## Optionally pass labels to be applied to the statefulset pods
+  labels:
+    app: minio-autocert-encryption-minio
+  ## Annotations for MinIO Tenant Pods
+  annotations:
+    prometheus.io/path: /minio/prometheus/metrics
+    prometheus.io/port: "9000"
+    prometheus.io/scrape: "true"
+
+## If a scheduler is specified here, Tenant pods will be dispatched by specified scheduler.
+## If not specified, the Tenant pods will be dispatched by default scheduler.
+# scheduler:
+#  name: my-custom-scheduler
+
+spec:
+  ## Registry location and Tag to download MinIO Server image
+  image: minio/minio:RELEASE.2020-10-03T02-19-42Z
+  imagePullPolicy: IfNotPresent
+
+  ## Secret with credentials to be used by MinIO Tenant.
+  ## Refers to the secret object created above.
+  credsSecret:
+    name: minio-autocert-encryption-minio-creds-secret
+
+  ## Specification for MinIO Zone(s) in this Tenant.
+  zones:
+    - servers: 4
+      volumesPerServer: 4
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+#    - servers: 4
+#      volumesPerServer: 4
+#      volumeClaimTemplate:
+#        metadata:
+#          name: data
+#        spec:
+#          accessModes:
+#            - ReadWriteOnce
+#          resources:
+#            requests:
+#              storage: 1Gi
+  ## Mount path where PV will be mounted inside container(s).
+  mountPath: /export
+    ## Sub path inside Mount path where MinIO stores data.
+  # subPath: /data
+
+  ## Enable automatic Kubernetes based certificate generation and signing as explained in
+  ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
+  requestAutoCert: true
+
+  ## This field is used only when "requestAutoCert" is set to true. Use this field to set CommonName
+  ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is
+  ## not provided. DNS name format is *.minio.default.svc.cluster.local
+  certConfig:
+    commonName: ""
+    organizationName: []
+    dnsNames: []
+
+  ## PodManagement policy for MinIO Tenant Pods. Can be "OrderedReady" or "Parallel"
+  ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
+  ## for details.
+  podManagementPolicy: Parallel
+
+  ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
+  # env:
+  # - name: MINIO_BROWSER
+  #   value: "off" # to turn-off browser
+  # - name: MINIO_STORAGE_CLASS_STANDARD
+  #   value: "EC:2"
+
+  ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
+  ## This is applied to MinIO pods only.
+  ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
+  # priorityClassName: high-priority
+
+  ## Define configuration for Console (Graphical user interface for MinIO)
+  ## Refer https://github.com/minio/console
+  console:
+    image: minio/console:v0.3.26
+    replicas: 2
+    consoleSecret:
+      name: minio-autocert-encryption-console-secret
+  ## Define configuration for KES (stateless and distributed key-management system)
+  ## Refer https://github.com/minio/kes
+  kes:
+    image: minio/kes:v0.12.0
+    replicas: 2
+    kesSecret:
+      name: minio-autocert-encryption-kes-config
+    metadata:
+      labels:
+        app: minio-autocert-encryption-kes
