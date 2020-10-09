@@ -206,7 +206,7 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 	var success = len(filesToExtract)
 	for {
 		header, err := tr.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			// only success if we have found all files
 			if success == 0 {
 				break
