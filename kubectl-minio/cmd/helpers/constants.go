@@ -19,7 +19,6 @@
 package helpers
 
 import (
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -83,13 +82,6 @@ const (
 	// DefaultConsoleImage is the default console image used while creating tenant
 	DefaultConsoleImage = "minio/console:v0.3.14"
 )
-
-// DefaultLivenessCheck for MinIO tenants
-var DefaultLivenessCheck *miniov1.Liveness = &miniov1.Liveness{
-	InitialDelaySeconds: int32(10),
-	PeriodSeconds:       int32(1),
-	TimeoutSeconds:      int32(1),
-}
 
 // DeploymentReplicas is the number of replicas for MinIO Operator
 var DeploymentReplicas int32 = 1

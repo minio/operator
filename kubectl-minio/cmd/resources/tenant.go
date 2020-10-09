@@ -184,7 +184,6 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 				DNSNames:         []string{},
 			},
 			Mountpath:          helpers.MinIOMountPath,
-			Liveness:           helpers.DefaultLivenessCheck,
 			KES:                tenantKESConfig(opts.Name, opts.KmsSecret),
 			Console:            tenantConsoleConfig(opts.Name, opts.ConsoleSecret),
 			ExternalCertSecret: externalCertSecret(opts.CertSecret),

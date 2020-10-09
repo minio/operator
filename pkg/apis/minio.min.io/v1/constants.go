@@ -101,22 +101,6 @@ const DefaultVolumesPerServer = 1
 // DefaultZoneName specifies the default zone name
 const DefaultZoneName = "zone-0"
 
-// LivenessPath specifies the endpoint for liveness check
-const LivenessPath = "/minio/health/live"
-
-// LivenessInitialDelay specifies the initial delay in calling the liveness endpoint
-const LivenessInitialDelay = 30 // initial delay of upto 30 seconds
-
-// LivenessPeriod specifies the interval in calling the liveness endpoint
-const LivenessPeriod = 10 // once in 10 seconds
-
-// LivenessTimeout specifies the timeout for the liveness probe to expect a response
-const LivenessTimeout = 10 // once in 10 seconds
-
-// LivenessFailureThreshold specifies the number of times the liveness probe can fail before
-// the probe to be considered failed.
-const LivenessFailureThreshold = 1
-
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image

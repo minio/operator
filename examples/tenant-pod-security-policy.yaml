@@ -152,12 +152,7 @@ spec:
   # resources:
     # requests:
       # memory: 20Gi
-  ## Liveness probe detects situations where MinIO server instance
-  ## is not working properly and needs restart. Kubernetes automatically
-  ## restarts the pods if liveness checks fail.
-  liveness:
-    initialDelaySeconds: 30
-    periodSeconds: 10
+      
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.

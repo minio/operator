@@ -157,14 +157,6 @@ spec:
   # - name: MINIO_STORAGE_CLASS_STANDARD
   #   value: "EC:2"
 
-  ## Liveness probe detects situations where MinIO tenant
-  ## is not working properly and needs restart. Kubernetes automatically
-  ## restarts the pods if liveness checks fail.
-  liveness:
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 10
-
   ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
   ## This is applied to MinIO pods only.
   ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/

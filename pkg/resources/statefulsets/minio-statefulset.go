@@ -28,7 +28,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // Returns the MinIO environment variables set in configuration.
@@ -201,39 +200,9 @@ func volumeMounts(t *miniov1.Tenant, zone *miniov1.Zone) (mounts []corev1.Volume
 	return mounts
 }
 
-func probes(t *miniov1.Tenant) (liveness *corev1.Probe) {
-	scheme := corev1.URISchemeHTTP
-	if t.TLS() {
-		scheme = corev1.URISchemeHTTPS
-	}
-	port := intstr.IntOrString{
-		IntVal: int32(miniov1.MinIOPort),
-	}
-
-	if t.Spec.Liveness != nil {
-		liveness = &corev1.Probe{
-			Handler: corev1.Handler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   miniov1.LivenessPath,
-					Port:   port,
-					Scheme: scheme,
-				},
-			},
-			InitialDelaySeconds: t.Spec.Liveness.InitialDelaySeconds,
-			PeriodSeconds:       t.Spec.Liveness.PeriodSeconds,
-			TimeoutSeconds:      t.Spec.Liveness.TimeoutSeconds,
-			FailureThreshold:    miniov1.LivenessFailureThreshold,
-		}
-	}
-
-	return liveness
-}
-
 // Builds the MinIO container for a Tenant.
 func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, hostsTemplate string, opVersion string) corev1.Container {
 	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
-
-	liveProbe := probes(t)
 
 	return corev1.Container{
 		Name:  miniov1.MinIOServerName,
@@ -248,7 +217,6 @@ func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *mini
 		Args:            args,
 		Env:             minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion),
 		Resources:       zone.Resources,
-		LivenessProbe:   liveProbe,
 	}
 }
 
