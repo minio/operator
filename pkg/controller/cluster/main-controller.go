@@ -233,6 +233,7 @@ func NewController(
 	tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueTenant,
 		UpdateFunc: func(old, new interface{}) {
+			// TODO: compare old vs new and don't enqueue if they are identical
 			controller.enqueueTenant(new)
 		},
 	})
@@ -757,6 +758,8 @@ func (c *Controller) processNextWorkItem() bool {
 		// Run the syncHandler, passing it the namespace/name string of the
 		// Tenant resource to be synced.
 		if err := c.syncHandler(key); err != nil {
+			// Put the item back on the workqueue to handle any transient errors.
+			c.workqueue.AddRateLimited(key)
 			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
 		}
 		// Finally, if no error occurs we Forget this item so it does not
@@ -826,7 +829,8 @@ func (c *Controller) syncHandler(key string) error {
 		if _, err2 = c.updateTenantStatus(ctx, tenant, err.Error(), 0); err2 != nil {
 			klog.V(2).Infof(err2.Error())
 		}
-		return err
+		// return nil so we don't re-queue this work item
+		return nil
 	}
 
 	secret, err := c.applyOperatorWebhookSecret(ctx, tenant)
@@ -842,7 +846,8 @@ func (c *Controller) syncHandler(key string) error {
 		if _, err = c.updateTenantStatus(ctx, tenant, msg, 0); err != nil {
 			klog.V(2).Infof(err.Error())
 		}
-		return fmt.Errorf(msg)
+		// return nil so we don't re-queue this work item
+		return nil
 	}
 
 	// TLS is mandatory if KES is enabled
@@ -856,7 +861,8 @@ func (c *Controller) syncHandler(key string) error {
 			if _, err = c.updateTenantStatus(ctx, tenant, msg, 0); err != nil {
 				klog.V(2).Infof(err.Error())
 			}
-			return fmt.Errorf(msg)
+			// return nil so we don't re-queue this work item
+			return nil
 		}
 	}
 
@@ -911,7 +917,8 @@ func (c *Controller) syncHandler(key string) error {
 				if _, err = c.updateTenantStatus(ctx, t, StatusFailedAlreadyExists, 0); err != nil {
 					return err
 				}
-				return fmt.Errorf("Failed creating MinIO Tenant '%s' because another MinIO Tenant already exists in the namespace '%s'", t.Name, tenant.Namespace)
+				// return nil so we don't re-queue this work item
+				return nil
 			}
 		}
 	}
@@ -1021,7 +1028,8 @@ func (c *Controller) syncHandler(key string) error {
 			}
 			msg := fmt.Sprintf(MessageResourceExists, ss.Name)
 			c.recorder.Event(tenant, corev1.EventTypeWarning, ErrResourceExists, msg)
-			return fmt.Errorf(msg)
+			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
+			return nil
 		}
 
 		// keep track of all replicas
@@ -1135,7 +1143,11 @@ func (c *Controller) syncHandler(key string) error {
 			if !tenant.HasCredsSecret() || !tenant.HasConsoleSecret() {
 				msg := "Please set the credentials"
 				klog.V(2).Infof(msg)
-				return fmt.Errorf(msg)
+				if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalReplicas); terr != nil {
+					return err
+				}
+				// return nil so we don't re-queue this work item
+				return nil
 			}
 
 			consoleSecretName := tenant.Spec.Console.ConsoleSecret.Name
