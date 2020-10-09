@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/docker/cli/cli/config/configfile"
 
 	"k8s.io/klog/v2"
@@ -119,6 +121,9 @@ const (
 	StatusFailedAlreadyExists           = "Another MinIO Tenant already exists in the namespace"
 	StatusInconsistentMinIOVersions     = "Different versions across MinIO Zones"
 )
+
+// ErrMinIONotReady is the error returned when MinIO is not Ready
+var ErrMinIONotReady = fmt.Errorf("MinIO is not ready")
 
 // Controller struct watches the Kubernetes API for changes to Tenant resources
 type Controller struct {
@@ -219,7 +224,7 @@ func NewController(
 		tenantsSynced:           tenantInformer.Informer().HasSynced,
 		serviceLister:           serviceInformer.Lister(),
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
-		workqueue:               queue.NewNamedRateLimitingQueue(queue.DefaultControllerRateLimiter(), "Tenants"),
+		workqueue:               queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
 		recorder:                recorder,
 		hostsTemplate:           hostsTemplate,
 		operatorVersion:         operatorVersion,
@@ -950,7 +955,7 @@ func (c *Controller) syncHandler(key string) error {
 
 			// Check healthcheck for previous zone, if they are online before adding this zone.
 			if i > 0 && !tenant.MinIOHealthCheck() {
-				return fmt.Errorf("MinIO is not ready")
+				return ErrMinIONotReady
 			}
 
 			// If auto cert is enabled, create certificates for MinIO and
@@ -1054,7 +1059,7 @@ func (c *Controller) syncHandler(key string) error {
 	// So comparing tenant.Spec.Image (version to update to) against one value from images slice is fine.
 	if tenant.Spec.Image != images[0] && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
 		if !tenant.MinIOHealthCheck() {
-			return fmt.Errorf("MinIO is not ready")
+			return ErrMinIONotReady
 		}
 
 		// Images different with the newer state change, continue to verify
@@ -1161,7 +1166,7 @@ func (c *Controller) syncHandler(key string) error {
 				if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
 					return err
 				}
-				return fmt.Errorf("MinIO is not ready")
+				return ErrMinIONotReady
 			}
 
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningConsoleDeployment, totalReplicas); err != nil {
@@ -1458,4 +1463,14 @@ func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.
 		return err
 	}
 	return nil
+}
+
+// MinIOControllerRateLimiter is a no-arg constructor for a default rate limiter for a workqueue for our controller.
+// both overall and per-item rate limiting.  The overall is a token bucket and the per-item is exponential
+func MinIOControllerRateLimiter() queue.RateLimiter {
+	return queue.NewMaxOfRateLimiter(
+		queue.NewItemExponentialFailureRateLimiter(5*time.Second, 60*time.Second),
+		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
+		&queue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
+	)
 }
