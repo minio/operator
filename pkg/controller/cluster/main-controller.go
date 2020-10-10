@@ -943,6 +943,7 @@ func (c *Controller) syncHandler(key string) error {
 	// For each zone check if there is a stateful set
 	var totalReplicas int32
 	var images []string
+	var freshSetup bool
 	for i, zone := range tenant.Spec.Zones {
 		// Get the StatefulSet with the name specified in Tenant.spec
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.ZoneStatefulsetName(&zone))
@@ -951,10 +952,17 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			klog.V(2).Infof("Deploying zone %s", zone.Name)
+			klog.Infof("Deploying zone %s", zone.Name)
 
-			// Check healthcheck for previous zone, if they are online before adding this zone.
-			if i > 0 && !tenant.MinIOHealthCheck() {
+			if i == 0 {
+				// Fresh setup only if zone1 is not yet deployed.
+				freshSetup = true
+			}
+
+			// Check healthcheck for previous zone only if its not a fresh setup,
+			// if they are online before adding this zone.
+			if !freshSetup && !tenant.MinIOHealthCheck() {
+				klog.Infof("Deploying zone failed %s", zone.Name)
 				return ErrMinIONotReady
 			}
 
