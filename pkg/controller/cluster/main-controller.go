@@ -1296,8 +1296,8 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 			return errors.New("waiting for minio cert")
 		}
 		return err
-
 	}
+
 	if createClientCert {
 		if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{}); err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -1312,9 +1312,9 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 				return errors.New("waiting for minio client cert")
 			}
 			return err
-
 		}
 	}
+
 	return nil
 }
 
@@ -1328,9 +1328,9 @@ func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.Name
 			if err = c.createKESTLSCSR(ctx, tenant); err != nil {
 				return err
 			}
-		} else {
-			return err
+			return errors.New("waiting for kes cert")
 		}
+		return err
 	}
 	return nil
 }
@@ -1369,6 +1369,7 @@ func (c *Controller) getCertIdentity(ns string, cert *miniov1.LocalCertificateRe
 func (c *Controller) updateTenantStatus(ctx context.Context, tenant *miniov1.Tenant, currentState string, availableReplicas int32) (*miniov1.Tenant, error) {
 	return c.updateTenantStatusWithRetry(ctx, tenant, currentState, availableReplicas, true)
 }
+
 func (c *Controller) updateTenantStatusWithRetry(ctx context.Context, tenant *miniov1.Tenant, currentState string, availableReplicas int32, retry bool) (*miniov1.Tenant, error) {
 	// If we are updating the tenant with the same status as before we are going to skip it as to avoid a resource number
 	// change and have the operator loop re-processing the tenant endlessly
