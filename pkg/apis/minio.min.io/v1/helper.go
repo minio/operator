@@ -224,7 +224,7 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 				}
 				if _, err := io.Copy(outFile, tr); err != nil {
 					_ = outFile.Close()
-					return fmt.Errorf("Tar file extraction failed during copy: %d, %s, %w", success, name, err)
+					return fmt.Errorf("Tar file extraction failed while copying file: %s, at index: %d, with: %w", name, success, err)
 				}
 				_ = outFile.Close()
 				success--
