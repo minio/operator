@@ -214,7 +214,7 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("Tar file extraction failed to find next: %d, %w", success, err)
+			return fmt.Errorf("Tar file extraction failed for file index: %d, with: %w", success, err)
 		}
 		if header.Typeflag == tar.TypeReg {
 			if name := find(filesToExtract, header.Name); name != "" {
