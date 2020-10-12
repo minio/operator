@@ -940,11 +940,26 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
+	var currentSetup int
+	for _, zone := range tenant.Spec.Zones {
+		// Get the StatefulSet with the name specified in Tenant.spec
+		if _, serr := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.ZoneStatefulsetName(&zone)); serr != nil {
+			if k8serrors.IsNotFound(serr) {
+				currentSetup++
+				continue
+			}
+			return serr
+		}
+	}
+
 	// For each zone check if there is a stateful set
 	var totalReplicas int32
 	var images []string
-	var freshSetup bool
-	for i, zone := range tenant.Spec.Zones {
+
+	// Check if this is fresh setup not an expansion.
+	freshSetup := len(tenant.Spec.Zones) == currentSetup
+
+	for _, zone := range tenant.Spec.Zones {
 		// Get the StatefulSet with the name specified in Tenant.spec
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.ZoneStatefulsetName(&zone))
 		if err != nil {
@@ -953,11 +968,6 @@ func (c *Controller) syncHandler(key string) error {
 			}
 
 			klog.Infof("Deploying zone %s", zone.Name)
-
-			if i == 0 {
-				// Fresh setup only if zone1 is not yet deployed.
-				freshSetup = true
-			}
 
 			// Check healthcheck for previous zone only if its not a fresh setup,
 			// if they are online before adding this zone.
@@ -968,7 +978,7 @@ func (c *Controller) syncHandler(key string) error {
 
 			// If auto cert is enabled, create certificates for MinIO and
 			// optionally KES
-			if tenant.AutoCert() {
+			if tenant.AutoCert() && freshSetup {
 				// Client cert is needed only with KES for mTLS authentication
 				if err = c.checkAndCreateMinIOCSR(ctx, nsName, tenant, tenant.HasKESEnabled()); err != nil {
 					return err
@@ -998,8 +1008,8 @@ func (c *Controller) syncHandler(key string) error {
 			// Restart the services to fetch the new args, ignore any error.
 			// only perform `restart()` of server deployment when we are truly
 			// expanding an existing deployment.
-			if err = adminClnt.ServiceRestart(ctx); err != nil {
-				return err
+			if !freshSetup {
+				adminClnt.ServiceRestart(ctx) //nolint:errcheck
 			}
 		} else {
 			if zone.Servers != *ss.Spec.Replicas {
