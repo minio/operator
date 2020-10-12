@@ -40,6 +40,7 @@ import (
 
 	certificates "k8s.io/api/certificates/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -182,8 +183,13 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 	}
 
 	ks, err := c.certClient.CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
-	if err != nil {
+	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return err
+	}
+
+	// Return if certificate already exists.
+	if k8serrors.IsAlreadyExists(err) {
+		return nil
 	}
 
 	// Update the CSR to be approved automatically
