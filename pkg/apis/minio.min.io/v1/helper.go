@@ -212,18 +212,19 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 				break
 			}
 		}
+
 		if err != nil {
-			return fmt.Errorf("Tar file extraction failed: %w", err)
+			return fmt.Errorf("Tar file extraction failed for file index: %d, with: %w", success, err)
 		}
 		if header.Typeflag == tar.TypeReg {
 			if name := find(filesToExtract, header.Name); name != "" {
 				outFile, err := os.OpenFile(basePath+path.Base(name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
 				if err != nil {
-					return fmt.Errorf("Tar file extraction failed: %w", err)
+					return fmt.Errorf("Tar file extraction failed while opening file: %s, at index: %d, with: %w", name, success, err)
 				}
 				if _, err := io.Copy(outFile, tr); err != nil {
 					_ = outFile.Close()
-					return fmt.Errorf("Tar file extraction failed: %w", err)
+					return fmt.Errorf("Tar file extraction failed while copying file: %s, at index: %d, with: %w", name, success, err)
 				}
 				_ = outFile.Close()
 				success--
