@@ -29,13 +29,13 @@ In below example, we ask MinIO Operator to create a Tenant yaml with 4 nodes, 16
 We recommend [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md) to create PVs.
 
 ```sh
-kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti
+kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 16Ti
 ```
 
 Optionally, you can generate a yaml file with the `-o` flag in above command and modify the yaml file as per your specific requirements. Once you verify and optionally add any other relevant fields to the file, create the tenant
 
 ```sh
-kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti -o > tenant.yaml
+kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 16Ti -o > tenant.yaml
 kubectl apply -f tenant.yaml
 ```
 
