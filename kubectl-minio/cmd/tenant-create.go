@@ -39,7 +39,7 @@ import (
 const (
 	createDesc = `
 'create' command creates a new MinIO tenant`
-	createExample       = `  kubectl minio tenant create --name tenant1 --secret tenant1-creds --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
+	createExample       = `  kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
 	tenantSecretSuffix  = "-creds-secret"
 	consoleSecretSuffix = "-console-secret"
 )
