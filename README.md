@@ -59,6 +59,7 @@ Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICE
 
 - [Create a MinIO Tenant](https://github.com/minio/operator#create-a-minio-instance).
 - [TLS for MinIO Tenant](https://github.com/minio/operator/blob/master/docs/tls.md).
+- [Examples for MinIO Tenant Settings](https://github.com/minio/operator/blob/master/docs/examples.md)
 - [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md).
 - [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md).
 - [Deploy MinIO Tenant with Console](https://github.com/minio/operator/blob/master/docs/console.md).
