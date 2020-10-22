@@ -238,7 +238,13 @@ func NewController(
 	tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueTenant,
 		UpdateFunc: func(old, new interface{}) {
-			// TODO: compare old vs new and don't enqueue if they are identical
+			oldTenant := old.(*miniov1.Tenant)
+			newTenant := new.(*miniov1.Tenant)
+			if newTenant.ResourceVersion == oldTenant.ResourceVersion {
+				// Periodic resync will send update events for all known Tenants.
+				// Two different versions of the same Tenant will always have different RVs.
+				return
+			}
 			controller.enqueueTenant(new)
 		},
 	})
