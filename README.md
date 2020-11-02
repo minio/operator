@@ -6,7 +6,7 @@ MinIO Operator brings native support for [MinIO](https://github.com/minio/minio)
 
 - Kubernetes >= v1.17.0.
 - Create PVs.
-- Install [`kubectl minio` plugin using `krew install minio`.
+- Install [`kubectl minio` plugin using `kubectl krew install minio`.
 
 ## Operator Setup
 
