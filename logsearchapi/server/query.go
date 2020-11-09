@@ -75,7 +75,7 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 	if timeParam := values.Get("timeStart"); timeParam != "" {
 		timeStart, err = parseSQTimeString(timeParam)
 		if err != nil {
-			return nil, fmt.Errorf("Invalid start start (must be RFC3339 format): %s", timeParam)
+			return nil, fmt.Errorf("Invalid start date (must be RFC3339 format): %s", timeParam)
 		}
 	} else {
 		timeStart = time.Now()
