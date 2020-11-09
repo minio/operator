@@ -322,7 +322,6 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 	case rawQ:
 		timeRangeClause := fmt.Sprintf("event_time %s '%s'", timeRangeOp, s.TimeStart.Format(time.RFC3339Nano))
 		q := logEventSelect.build(auditLogEventsTable.Name, timeRangeClause, timeOrder)
-		fmt.Println(q)
 		rows, _ := c.Query(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
 		var logEventsRaw []logEventRawRow
 		if err := pgxscan.ScanAll(&logEventsRaw, rows); err != nil {

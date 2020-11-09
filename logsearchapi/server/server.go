@@ -88,7 +88,7 @@ func (ls *LogSearch) ingestHandler(w http.ResponseWriter, r *http.Request) {
 	// Request is assumed to be authenticated at this point.
 
 	// FIXME(aditya): Remove this printing used for debugging.
-	err := printReq(r)
+	// err := printReq(r)
 	if err != nil {
 		log.Print(err)
 	}
