@@ -140,6 +140,9 @@ const ConsoleConfigMountPath = "/tmp/console"
 // DefaultConsoleReplicas specifies the default number of Console pods to be created if not specified
 const DefaultConsoleReplicas = 2
 
+// ConsoleCertPath is the path where all Console certs are mounted
+const ConsoleCertPath = "/tmp/certs"
+
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image

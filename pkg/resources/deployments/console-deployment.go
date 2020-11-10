@@ -19,7 +19,6 @@ package deployments
 
 import (
 	"fmt"
-	"strings"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -34,20 +33,6 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 			Name:  "CONSOLE_MINIO_SERVER",
 			Value: t.MinIOServerEndpoint(),
 		},
-	}
-	if t.TLS() {
-		var caCerts []string
-		if t.ExternalCert() {
-			for index := range t.Spec.ExternalCertSecret {
-				caCerts = append(caCerts, fmt.Sprintf("%s/CAs/minio-hostname-%d.crt", miniov1.ConsoleConfigMountPath, index))
-			}
-		} else {
-			caCerts = append(caCerts, fmt.Sprintf("%s/CAs/minio.crt", miniov1.ConsoleConfigMountPath))
-		}
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "CONSOLE_MINIO_SERVER_TLS_ROOT_CAS",
-			Value: strings.Join(caCerts, ","),
-		})
 	}
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Console.Env...)
@@ -91,24 +76,18 @@ func consoleSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 
 // ConsoleVolumeMounts builds the volume mounts for Console container.
 func ConsoleVolumeMounts(t *miniov1.Tenant) (mounts []corev1.VolumeMount) {
-	if t.TLS() || t.ConsoleExternalCert() {
-		mounts = []corev1.VolumeMount{
-			{
-				Name:      t.ConsoleVolMountName(),
-				MountPath: miniov1.ConsoleConfigMountPath,
-			},
-		}
+	return []corev1.VolumeMount{
+		{
+			Name:      t.ConsoleVolMountName(),
+			MountPath: miniov1.ConsoleCertPath,
+		},
 	}
-	return mounts
 }
 
 // Builds the Console container for a Tenant.
 func consoleContainer(t *miniov1.Tenant) corev1.Container {
 	args := []string{"server"}
-
-	if t.AutoCert() || t.ConsoleExternalCert() {
-		args = append(args, "--tls-certificate=/tmp/console/server.crt", "--tls-key=/tmp/console/server.key")
-	}
+	args = append(args, fmt.Sprintf("--certs-dir=%s", miniov1.ConsoleCertPath))
 
 	return corev1.Container{
 		Name:  miniov1.ConsoleContainerName,
@@ -134,8 +113,8 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 
 // NewConsole creates a new Deployment for the given MinIO Tenant.
 func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
-	var certPath = "server.crt"
-	var keyPath = "server.key"
+	var certPath = "public.crt"
+	var keyPath = "private.key"
 
 	var podVolumeSources []corev1.VolumeProjection
 
