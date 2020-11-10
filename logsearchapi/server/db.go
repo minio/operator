@@ -341,9 +341,23 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			return fmt.Errorf("Error writing to output stream: %v", err)
 		}
 	case reqInfoQ:
-		timeRangeClause := fmt.Sprintf("time %s '%s'", timeRangeOp, s.TimeStart.Format(time.RFC3339Nano))
-		q := reqInfoSelect.build(requestInfoTable.Name, timeRangeClause, timeOrder)
-		rows, _ := c.Query(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
+		// For this query, $1 and $2 are used for offset and limit.
+		sqlArgs := []interface{}{s.PageNumber * s.PageSize, s.PageSize}
+
+		// $3 will be used for the time parameter
+		timeRangeClause := fmt.Sprintf("time %s $3", timeRangeOp)
+		whereClauses := []string{timeRangeClause}
+		sqlArgs = append(sqlArgs, s.TimeStart.Format(time.RFC3339Nano))
+
+		// Remaining dollar params are added for filter where clauses
+		filterClauses, filterArgs := generateFilterClauses(s.FParams, 4)
+		whereClauses = append(whereClauses, filterClauses...)
+		sqlArgs = append(sqlArgs, filterArgs...)
+
+		whereClause := strings.Join(whereClauses, " AND ")
+		q := reqInfoSelect.build(requestInfoTable.Name, whereClause, timeOrder)
+		// fmt.Println(q, sqlArgs)
+		rows, _ := c.Query(ctx, q, sqlArgs...)
 		var reqInfos []reqInfoRow
 		err := pgxscan.ScanAll(&reqInfos, rows)
 		if err != nil {
