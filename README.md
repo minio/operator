@@ -6,7 +6,7 @@ MinIO Operator brings native support for [MinIO](https://github.com/minio/minio)
 
 - Kubernetes >= v1.17.0.
 - Create PVs.
-- Install [`kubectl minio` plugin using `krew install minio`.
+- Install `kubectl minio` plugin using `krew install minio`.
 
 ## Operator Setup
 
@@ -26,7 +26,13 @@ A Tenant is a MinIO cluster created and managed by the Operator. Before creating
 
 In below example, we ask MinIO Operator to create a Tenant yaml with 4 nodes, 16 volumes, and 16 Ti total raw capacity (4 volumes of 1 Ti per node). This means you need to have 4 PVs of 1Ti each per node, with a total of 4 nodes, before attempting to create the MinIO tenant.
 
-We recommend [direct CSI driver](https://github.com/minio/operator/blob/master/docs/using-direct-csi.md) to create PVs.
+Since MinIO has built-in erasure-code support for high-availability and data protection, we recommend the following CSI drivers for high-performance and scalability:
+
+- [Local PV](https://kubernetes.io/docs/concepts/storage/volumes/#local)
+- [OpenEBS Local PV](https://docs.openebs.io/docs/next/localpv.html)
+- [vSAN Direct](https://blogs.vmware.com/virtualblocks/2020/09/15/whats-new-in-vsan-7-update-1/)
+
+We recommend _against_ PVs or CSI drivers which use network-attached storage, as network latency reduces performance compared to local disks.
 
 ```sh
 kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 16Ti
