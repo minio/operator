@@ -32,7 +32,7 @@ type LogSearch struct {
 	// Configuration
 	PGConnStr                      string
 	AuditAuthToken, QueryAuthToken string
-	MaxRetentionMonths             int
+	DiskCapacityGBs                int
 
 	// Runtime
 	DBClient *DBClient
@@ -40,12 +40,12 @@ type LogSearch struct {
 }
 
 // NewLogSearch creates a LogSearch
-func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, maxRetentionMonths int) (ls *LogSearch, err error) {
+func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, diskCapacity int) (ls *LogSearch, err error) {
 	ls = &LogSearch{
-		PGConnStr:          pgConnStr,
-		AuditAuthToken:     auditAuthToken,
-		QueryAuthToken:     queryAuthToken,
-		MaxRetentionMonths: maxRetentionMonths,
+		PGConnStr:       pgConnStr,
+		AuditAuthToken:  auditAuthToken,
+		QueryAuthToken:  queryAuthToken,
+		DiskCapacityGBs: diskCapacity,
 	}
 
 	// Initialize DB Client
@@ -66,6 +66,9 @@ func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, maxRe
 	ls.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {})
 	ls.HandleFunc("/api/ingest", authorize(ls.ingestHandler, ls.AuditAuthToken))
 	ls.HandleFunc("/api/query", authorize(ls.queryHandler, ls.QueryAuthToken))
+
+	// Start vacuum thread
+	go ls.DBClient.vacuumData(ls.DiskCapacityGBs)
 
 	return ls, nil
 }
@@ -109,7 +112,8 @@ func (ls *LogSearch) queryHandler(w http.ResponseWriter, r *http.Request) {
 
 	sq, err := searchQueryFromRequest(r)
 	if err != nil {
-		ls.writeErrorResponse(w, 400, "Bad params: %v", err)
+		ls.writeErrorResponse(w, 400, "Bad params:", err)
+		return
 	}
 
 	w.Header().Add("Content-Type", "application/json")
