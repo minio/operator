@@ -32,8 +32,6 @@ Since MinIO has built-in erasure-code support for high-availability and data pro
 - [OpenEBS Local PV](https://docs.openebs.io/docs/next/localpv.html)
 - [vSAN Direct](https://blogs.vmware.com/virtualblocks/2020/09/15/whats-new-in-vsan-7-update-1/)
 
-We recommend _against_ PVs or CSI drivers which use network-attached storage, as network latency reduces performance compared to local disks.
-
 ```sh
 kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 16Ti
 ```
