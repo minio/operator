@@ -29,4 +29,4 @@ jobs:
         run: |
           diff -au <(gofmt -s -d pkg) <(printf "")
           make getdeps
-          make verify
+          make

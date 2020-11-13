@@ -20,14 +20,11 @@
 package server
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/http/httputil"
 )
 
 // LogSearch represents the Log Search API server
@@ -87,12 +84,6 @@ func (ls *LogSearch) writeErrorResponse(w http.ResponseWriter, status int, msg s
 func (ls *LogSearch) ingestHandler(w http.ResponseWriter, r *http.Request) {
 	// Request is assumed to be authenticated at this point.
 
-	// FIXME(aditya): Remove this printing used for debugging.
-	// err := printReq(r)
-	if err != nil {
-		log.Print(err)
-	}
-
 	if r.Method != "POST" {
 		ls.writeErrorResponse(w, 400, "Non post request", nil)
 		return
@@ -127,26 +118,4 @@ func (ls *LogSearch) queryHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Del("Content-Type")
 		ls.writeErrorResponse(w, 500, "Unhandled error:", err)
 	}
-}
-
-// debug helper
-func printReq(r *http.Request) error {
-	b, err := httputil.DumpRequest(r, false)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(b))
-
-	buf, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return err
-	}
-
-	var out bytes.Buffer
-	_ = json.Indent(&out, buf, "", "  ")
-	fmt.Println(out.String())
-
-	newBuf := bytes.NewBuffer(buf)
-	r.Body = ioutil.NopCloser(newBuf)
-	return nil
 }

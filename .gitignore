@@ -7,3 +7,4 @@ kubectl-minio/kubectl-minio
 *.minisig
 *.zip
 kubectl-minio/crds
+logsearchapi/logsearchapi
