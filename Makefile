@@ -12,7 +12,10 @@ KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/crds/
 
 PLUGIN_HOME=kubectl-minio
 
-all: build
+LOGSEARCHAPI=logsearchapi
+LOGSEARCHAPI_TAG ?= "minio/logsearchapi:$(VERSION)"
+
+all: build logsearchapi
 
 getdeps:
 	@echo "Checking dependencies"
@@ -57,3 +60,15 @@ statik:
 plugin: regen-crd
 	@echo "Building 'kubectl-minio' binary"
 	@(cd $(PLUGIN_HOME); go build -o kubectl-minio main.go)
+
+.PHONY: logsearchapi
+logsearchapi:
+	@echo "Building 'logsearchapi' binary"
+	@(cd $(LOGSEARCHAPI); \
+		go vet ./... && \
+		go test -race ./... && \
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
+		go build && \
+		docker build -t $(LOGSEARCHAPI_TAG) . \
+   )
