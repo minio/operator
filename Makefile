@@ -1,5 +1,9 @@
 PWD := $(shell pwd)
+ifeq '${CI}' 'true'
+VERSION ?= dev
+else
 VERSION ?= $(shell git describe --tags)
+endif
 TAG ?= "minio/k8s-operator:$(VERSION)"
 LDFLAGS ?= "-s -w -X main.Version=$(VERSION)"
 
