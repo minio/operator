@@ -59,7 +59,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								Containers: []corev1.Container{
-									corev1.Container{
+									{
 										Name: "minio",
 									},
 								},
@@ -99,7 +99,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								Containers: []corev1.Container{
-									corev1.Container{
+									{
 										Name: "minio",
 									},
 								},
@@ -120,7 +120,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 					},
 					Spec: miniov1.TenantSpec{
 						Zones: []miniov1.Zone{
-							miniov1.Zone{
+							{
 								Name: "zone-0",
 							},
 						},
@@ -137,10 +137,10 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								Containers: []corev1.Container{
-									corev1.Container{
+									{
 										Name: "minio",
 									},
-									corev1.Container{
+									{
 										Name:  "warp",
 										Image: "minio/warp:v0.3.20",
 									},
@@ -182,10 +182,10 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								Containers: []corev1.Container{
-									corev1.Container{
+									{
 										Name: "minio",
 									},
-									corev1.Container{
+									{
 										Name:  "warp",
 										Image: "minio/warp:v0.3.20",
 									},
@@ -207,7 +207,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 					},
 					Spec: miniov1.TenantSpec{
 						Zones: []miniov1.Zone{
-							miniov1.Zone{
+							{
 								Name: "zone-0",
 								Resources: corev1.ResourceRequirements{
 									Limits: nil,
@@ -236,7 +236,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								Containers: []corev1.Container{
-									corev1.Container{
+									{
 										Name: "minio",
 										Resources: corev1.ResourceRequirements{
 											Limits: nil,
@@ -263,7 +263,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 					},
 					Spec: miniov1.TenantSpec{
 						Zones: []miniov1.Zone{
-							miniov1.Zone{
+							{
 								Name: "zone-0",
 							},
 						},
@@ -280,7 +280,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								Containers: []corev1.Container{
-									corev1.Container{
+									{
 										Name: "minio",
 										Resources: corev1.ResourceRequirements{
 											Limits: nil,
@@ -307,19 +307,19 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 					},
 					Spec: miniov1.TenantSpec{
 						Zones: []miniov1.Zone{
-							miniov1.Zone{
+							{
 								Name: "zone-0",
 								Affinity: &corev1.Affinity{
 									PodAntiAffinity: &corev1.PodAntiAffinity{
 										RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-											corev1.PodAffinityTerm{
+											{
 												LabelSelector: &metav1.LabelSelector{
 													MatchExpressions: []metav1.LabelSelectorRequirement{
-														metav1.LabelSelectorRequirement{
+														{
 															Key:      miniov1.TenantLabel,
 															Operator: metav1.LabelSelectorOpIn,
 															Values:   []string{"tenant-a"},
-														}, metav1.LabelSelectorRequirement{
+														}, {
 															Key:      miniov1.ZoneLabel,
 															Operator: metav1.LabelSelectorOpIn,
 															Values:   []string{"zone-0"},
@@ -339,14 +339,14 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 					Affinity: &corev1.Affinity{
 						PodAntiAffinity: &corev1.PodAntiAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-								corev1.PodAffinityTerm{
+								{
 									LabelSelector: &metav1.LabelSelector{
 										MatchExpressions: []metav1.LabelSelectorRequirement{
-											metav1.LabelSelectorRequirement{
+											{
 												Key:      miniov1.TenantLabel,
 												Operator: metav1.LabelSelectorOpIn,
 												Values:   []string{"tenant-a"},
-											}, metav1.LabelSelectorRequirement{
+											}, {
 												Key:      miniov1.ZoneLabel,
 												Operator: metav1.LabelSelectorOpIn,
 												Values:   []string{"zone-0"},
@@ -366,7 +366,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								Containers: []corev1.Container{
-									corev1.Container{
+									{
 										Name: "minio",
 									},
 								},
@@ -387,7 +387,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 					},
 					Spec: miniov1.TenantSpec{
 						Zones: []miniov1.Zone{
-							miniov1.Zone{
+							{
 								Name: "zone-0",
 							},
 						},
@@ -404,21 +404,21 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Template: corev1.PodTemplateSpec{
 							Spec: corev1.PodSpec{
 								Containers: []corev1.Container{
-									corev1.Container{
+									{
 										Name: "minio",
 									},
 								},
 								Affinity: &corev1.Affinity{
 									PodAntiAffinity: &corev1.PodAntiAffinity{
 										RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-											corev1.PodAffinityTerm{
+											{
 												LabelSelector: &metav1.LabelSelector{
 													MatchExpressions: []metav1.LabelSelectorRequirement{
-														metav1.LabelSelectorRequirement{
+														{
 															Key:      miniov1.TenantLabel,
 															Operator: metav1.LabelSelectorOpIn,
 															Values:   []string{"tenant-a"},
-														}, metav1.LabelSelectorRequirement{
+														}, {
 															Key:      miniov1.ZoneLabel,
 															Operator: metav1.LabelSelectorOpIn,
 															Values:   []string{"zone-0"},
