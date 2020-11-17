@@ -491,7 +491,15 @@ func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool,
 	ssMeta.Labels[miniov1.PoolLabel] = pool.Name
 	ssMeta.Labels[miniov1.OperatorLabel] = operatorVersion
 
-	containers := []corev1.Container{poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion)}
+	containers := []corev1.Container{
+		zoneMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion),
+	}
+	// attach any sidecar containers and volumes
+	if t.Spec.SideCars != nil && len(t.Spec.SideCars.Containers) > 0 {
+		containers = append(containers, t.Spec.SideCars.Containers...)
+		podVolumes = append(podVolumes, t.Spec.SideCars.Volumes...)
+	}
+
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: ssMeta,
 		Spec: appsv1.StatefulSetSpec{
@@ -532,6 +540,10 @@ func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool,
 			pvClaim.Name = name + strconv.Itoa(i)
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvClaim)
 		}
+	}
+	// attach any sidecar containers and volumes
+	if t.Spec.SideCars != nil && len(t.Spec.SideCars.VolumeClaimTemplates) > 0 {
+		ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, t.Spec.SideCars.VolumeClaimTemplates...)
 	}
 	return ss
 }

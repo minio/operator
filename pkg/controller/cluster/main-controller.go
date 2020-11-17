@@ -1024,24 +1024,15 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 			}
-
-			if pool.Resources.String() != ss.Spec.Template.Spec.Containers[0].Resources.String() {
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingResourceRequirements, ss.Status.Replicas); err != nil {
-					return err
-				}
-				klog.V(4).Infof("resource requirements updates for pool %s", pool.Name)
-				ss = statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
-				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
-					return err
-				}
+			// Verify if this zone matches the spec on the tenant (resources, affinity, sidecars, etc)
+			updateZoneSS, err := zoneSSMatchesSpec(tenant, &zone, ss)
+			if err != nil {
+				return err
 			}
 
-			if pool.Affinity.String() != ss.Spec.Template.Spec.Affinity.String() {
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingAffinity, ss.Status.Replicas); err != nil {
-					return err
-				}
-				klog.V(4).Infof("affinity update for pool %s", pool.Name)
-				ss = statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			// if the zone is marked for update, make it so.
+			if updateZoneSS {
+				ss = statefulsets.NewForMinIOZone(tenant, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
