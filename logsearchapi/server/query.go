@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -35,6 +36,18 @@ const (
 	reqInfoQ qType = "reqinfo"
 )
 
+type fParam string
+
+func stringToFParam(s string) (f fParam, err error) {
+	f = fParam(s)
+	switch f {
+	case "bucket", "object", "api_name", "request_id", "user_agent", "response_status":
+	default:
+		return "", fmt.Errorf("Unknown filter param: %s", s)
+	}
+	return
+}
+
 // SearchQuery represents a search query.
 type SearchQuery struct {
 	Query         qType
@@ -42,6 +55,7 @@ type SearchQuery struct {
 	TimeAscending bool
 	PageNumber    int
 	PageSize      int
+	FParams       map[fParam]string
 }
 
 // searchQueryFromRequest creates a SearchQuery from the search parameters of a
@@ -60,6 +74,13 @@ type SearchQuery struct {
 // Optional, defaults to 10. Allowed range is 10 to 1000.
 //
 // "pageNo" - 0-based page number of results. Optional, defaults to 0.
+//
+// "fp" - Repeatable parameter to specify key-value match filters. The format is
+// `key:value-pattern`, where key is the name of a field to match on, and
+// value-pattern is a glob expression using `.` to signify a single character
+// match and a `*` to match any text. For example, `bucket:photos-*` matches any
+// bucket with a "photos-" prefix. To match a literal '.' or '*' prefix with
+// '\'. To match a literal '\', just double it: '\\'.
 func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 	values, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
@@ -101,6 +122,7 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 	}
 
 	m := map[string][]string(values)
+
 	_, isTimeAsc := m["timeAsc"]
 	_, isTimeDesc := m["timeDesc"]
 	if isTimeDesc && isTimeAsc {
@@ -111,12 +133,29 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 		timeAscending = true
 	}
 
+	var fParams map[fParam]string
+	if vs, ok := m["fp"]; ok {
+		fParams = make(map[fParam]string)
+		for _, v := range vs {
+			ps := strings.SplitN(v, ":", 2)
+			if len(ps) != 2 {
+				return nil, fmt.Errorf("Invalid filter parameter: %s", v)
+			}
+			key, err := stringToFParam(ps[0])
+			if err != nil {
+				return nil, err
+			}
+			fParams[key] = ps[1]
+		}
+	}
+
 	return &SearchQuery{
 		Query:         q,
 		TimeStart:     timeStart,
 		TimeAscending: timeAscending,
 		PageSize:      pageSize,
 		PageNumber:    pageNumber,
+		FParams:       fParams,
 	}, nil
 }
 
@@ -133,5 +172,22 @@ func parseSQTimeString(s string) (r time.Time, err error) {
 		}
 	}
 	err = fmt.Errorf("Unknown time format %s - RFC3339 time or date is known", s)
+	return
+}
+
+func generateFilterClauses(m map[fParam]string, dollarStart int) (clauses []string, args []interface{}) {
+	for k, v := range m {
+		arg, op := v, "="
+		if strings.Contains(v, ".") || strings.Contains(v, "*") {
+			arg = strings.Replace(arg, ".", "_", -1)
+			arg = strings.Replace(arg, "*", "%", -1)
+			op = "LIKE"
+		}
+
+		clause := fmt.Sprintf("%s %s $%d", k, op, dollarStart)
+		clauses = append(clauses, clause)
+		args = append(args, arg)
+		dollarStart++
+	}
 	return
 }
