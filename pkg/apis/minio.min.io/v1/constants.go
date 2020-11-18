@@ -104,7 +104,7 @@ const DefaultZoneName = "zone-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.4.5"
+const DefaultConsoleImage = "minio/console:v0.4.6"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"

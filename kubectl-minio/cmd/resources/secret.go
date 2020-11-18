@@ -36,7 +36,6 @@ func consoleSecretData() map[string][]byte {
 	m := make(map[string][]byte, 5)
 	m["CONSOLE_ACCESS_KEY"] = []byte(uuid.New().String())
 	m["CONSOLE_SECRET_KEY"] = []byte(uuid.New().String())
-	m["CONSOLE_HMAC_JWT_SECRET"] = []byte(uuid.New().String())
 	m["CONSOLE_PBKDF_PASSPHRASE"] = []byte(uuid.New().String())
 	m["CONSOLE_PBKDF_SALT"] = []byte(uuid.New().String())
 	return m
