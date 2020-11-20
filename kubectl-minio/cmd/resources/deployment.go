@@ -68,6 +68,10 @@ func container(img, clusterDomain, nsToWatch string) corev1.Container {
 // NewDeploymentForOperator will return a new deployment for a MinIO Operator
 func NewDeploymentForOperator(opts OperatorOptions) *appsv1.Deployment {
 	return &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      helpers.DeploymentName,
 			Namespace: opts.NS,

@@ -26,6 +26,10 @@ import (
 // NewServiceAccountForOperator will return a new service account for a MinIO Operator
 func NewServiceAccountForOperator(name, ns string) *corev1.ServiceAccount {
 	return &corev1.ServiceAccount{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ServiceAccount",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: ns,
