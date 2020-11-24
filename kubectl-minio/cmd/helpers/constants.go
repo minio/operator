@@ -80,10 +80,10 @@ const (
 	DefaultTenantImage = "minio/minio:RELEASE.2020-11-19T23-48-16Z"
 
 	// DefaultKESImage is the default KES image used while creating tenant
-	DefaultKESImage = "minio/kes:v0.11.0"
+	DefaultKESImage = "minio/kes:v0.12.1"
 
 	// DefaultConsoleImage is the default console image used while creating tenant
-	DefaultConsoleImage = "minio/console:v0.3.14"
+	DefaultConsoleImage = "minio/console:v0.4.5"
 )
 
 // DeploymentReplicas is the number of replicas for MinIO Operator
