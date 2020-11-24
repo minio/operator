@@ -10,10 +10,10 @@ data:
 apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
-  name: four-zones
+  name: add-one-pool
 spec:
-  zones:
-    - servers: 4
+  pools:
+    - servers: 1
       volumesPerServer: 4
       volumeClaimTemplate:
         metadata:
@@ -24,29 +24,7 @@ spec:
               storage: 2Gi
           accessModes:
             - ReadWriteOnce
-    - servers: 4
-      volumesPerServer: 4
-      volumeClaimTemplate:
-        metadata:
-          name: data
-        spec:
-          resources:
-            requests:
-              storage: 2Gi
-          accessModes:
-            - ReadWriteOnce
-    - servers: 4
-      volumesPerServer: 4
-      volumeClaimTemplate:
-        metadata:
-          name: data
-        spec:
-          resources:
-            requests:
-              storage: 2Gi
-          accessModes:
-            - ReadWriteOnce
-    - servers: 4
+    - servers: 1
       volumesPerServer: 4
       volumeClaimTemplate:
         metadata:

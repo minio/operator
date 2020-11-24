@@ -53,6 +53,7 @@ clean:
 	@find . -name '*.test' | xargs rm -fv
 	@find . -name '*~' | xargs rm -fv
 	@find . -name '*.zip' | xargs rm -fv
+	@find . -name '*.minisig' | xargs rm -fv
 
 regen-crd:
 	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)

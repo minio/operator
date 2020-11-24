@@ -3,10 +3,10 @@ kind: Tenant
 metadata:
   name: minio
 spec:
-  zones:
+  pools:
     - volumesPerServer: 4
-      ## Number of MinIO servers/pods in zone 0.
+      ## Number of MinIO servers/pods in pool 0.
       servers: 4
     - volumesPerServer: 4
-      ## Number of MinIO servers/pods in zone 1.
+      ## Number of MinIO servers/pods in pool 1.
       servers: 4

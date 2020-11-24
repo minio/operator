@@ -113,9 +113,6 @@ func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
 			Configuration: &v1.LocalObjectReference{
 				Name: secret,
 			},
-			Metadata: &metav1.ObjectMeta{
-				Labels: tenantKESLabels(tenant),
-			},
 		}
 	}
 	return nil
@@ -124,9 +121,6 @@ func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
 func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
 	if secret != "" {
 		return &miniov1.ConsoleConfiguration{
-			Metadata: &metav1.ObjectMeta{
-				Name: tenant,
-			},
 			Replicas: helpers.ConsoleReplicas,
 			Image:    helpers.DefaultConsoleImage,
 			ConsoleSecret: &v1.LocalObjectReference{
@@ -161,6 +155,7 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 		return nil, err
 	}
 
+	autoCert := true
 	t := &miniov1.Tenant{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Tenant",
@@ -171,13 +166,12 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 			Namespace: opts.NS,
 		},
 		Spec: miniov1.TenantSpec{
-			Image:       opts.Image,
-			ServiceName: helpers.ServiceName(opts.Name),
+			Image: opts.Image,
 			CredsSecret: &v1.LocalObjectReference{
 				Name: opts.SecretName,
 			},
-			Zones:           []miniov1.Zone{Zone(opts.Servers, volumesPerServer, *capacityPerVolume, opts.StorageClass)},
-			RequestAutoCert: true,
+			RequestAutoCert: &autoCert,
+			Pools:           []miniov1.Pool{Pool(opts.Servers, volumesPerServer, *capacityPerVolume, opts.StorageClass)},
 			CertConfig: &miniov1.CertificateConfig{
 				CommonName:       "",
 				OrganizationName: []string{},
@@ -186,7 +180,7 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 			Mountpath:          helpers.MinIOMountPath,
 			KES:                tenantKESConfig(opts.Name, opts.KmsSecret),
 			Console:            tenantConsoleConfig(opts.Name, opts.ConsoleSecret),
-			ExternalCertSecret: externalCertSecret(opts.CertSecret),
+			ExternalCertSecret: []*miniov1.LocalCertificateReference{externalCertSecret(opts.CertSecret)},
 			ImagePullSecret:    v1.LocalObjectReference{Name: opts.ImagePullSecret},
 		},
 	}

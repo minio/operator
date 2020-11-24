@@ -71,7 +71,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&c.tenantOpts.Name, "name", "", "name of the MinIO tenant to create")
 	f.Int32Var(&c.tenantOpts.Servers, "servers", 0, "total number of pods in MinIO tenant")
 	f.Int32Var(&c.tenantOpts.Volumes, "volumes", 0, "total number of volumes in the MinIO tenant")
-	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this zone, e.g. 16Ti")
+	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this pool, e.g. 16Ti")
 	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	f.StringVarP(&c.tenantOpts.StorageClass, "storage-class", "s", helpers.DefaultStorageclass, "storage class for this MinIO tenant")
 	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret with details for enabling encryption, refer example https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
@@ -143,8 +143,9 @@ func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, 
 		return err
 	}
 	fmt.Printf("MinIO Tenant %s Created\n\n", to.ObjectMeta.Name)
-	fmt.Printf("Tenant\nAccess Key: %s\nSecret Key: %s\nVersion: %s\nClusterIP Service: %s\n\n", s.Data["accesskey"], s.Data["secretkey"], to.Spec.Image, to.Spec.ServiceName)
-	fmt.Printf("MinIO Console\nAccess Key: %s\nSecret Key: %s\nVersion: %s\nClusterIP Service: %s\n\n", console.Data["CONSOLE_ACCESS_KEY"], console.Data["CONSOLE_SECRET_KEY"], to.Spec.Console.Image, to.Spec.Console.Metadata.Name+miniov1.ConsoleName)
+	fmt.Printf("Tenant\nAccess Key: %s\nSecret Key: %s\nVersion: %s\nClusterIP Service: minio\n\n", s.Data["accesskey"], s.Data["secretkey"], to.Spec.Image)
+	fmt.Printf("MinIO Console\nAccess Key: %s\nSecret Key: %s\nVersion: %s\nClusterIP Service: %s\n\n",
+		console.Data["CONSOLE_ACCESS_KEY"], console.Data["CONSOLE_SECRET_KEY"], to.Spec.Console.Image, to.Name+miniov1.ConsoleName)
 	if t.Spec.KES != nil {
 		fmt.Printf("KES Version: %s\n", t.Spec.KES.Image)
 	}

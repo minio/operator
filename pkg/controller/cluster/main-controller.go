@@ -119,7 +119,7 @@ const (
 	StatusUpdatingAffinity              = "Updating Pod Affinity"
 	StatusNotOwned                      = "Statefulset not controlled by operator"
 	StatusFailedAlreadyExists           = "Another MinIO Tenant already exists in the namespace"
-	StatusInconsistentMinIOVersions     = "Different versions across MinIO Zones"
+	StatusInconsistentMinIOVersions     = "Different versions across MinIO Pools"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -922,7 +922,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// For each zone check it's stateful set
+	// For each pool check it's stateful set
 	minioSecretName := tenant.Spec.CredsSecret.Name
 	minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, gOpts)
 	if err != nil {
@@ -935,9 +935,9 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	var currentSetup int
-	for _, zone := range tenant.Spec.Zones {
+	for _, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.spec
-		if _, serr := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.ZoneStatefulsetName(&zone)); serr != nil {
+		if _, serr := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PoolStatefulsetName(&pool)); serr != nil {
 			if k8serrors.IsNotFound(serr) {
 				currentSetup++
 				continue
@@ -946,27 +946,27 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// For each zone check if there is a stateful set
+	// For each pool check if there is a stateful set
 	var totalReplicas int32
 	var images []string
 
 	// Check if this is fresh setup not an expansion.
-	freshSetup := len(tenant.Spec.Zones) == currentSetup
+	freshSetup := len(tenant.Spec.Pools) == currentSetup
 
-	for _, zone := range tenant.Spec.Zones {
+	for _, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.spec
-		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.ZoneStatefulsetName(&zone))
+		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PoolStatefulsetName(&pool))
 		if err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return err
 			}
 
-			klog.Infof("Deploying zone %s", zone.Name)
+			klog.Infof("Deploying pool %s", pool.Name)
 
-			// Check healthcheck for previous zone only if its not a fresh setup,
-			// if they are online before adding this zone.
+			// Check healthcheck for previous pool only if its not a fresh setup,
+			// if they are online before adding this pool.
 			if !freshSetup && !tenant.MinIOHealthCheck() {
-				klog.Infof("Deploying zone failed %s", zone.Name)
+				klog.Infof("Deploying pool failed %s", pool.Name)
 				return ErrMinIONotReady
 			}
 
@@ -1000,7 +1000,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			ss = statefulsets.NewForMinIOZone(tenant, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			ss = statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -1013,30 +1013,30 @@ func (c *Controller) syncHandler(key string) error {
 				adminClnt.ServiceRestart(ctx) //nolint:errcheck
 			}
 		} else {
-			if zone.Servers != *ss.Spec.Replicas {
-				// warn the user that replica count of an existing zone can't be changed
-				if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for zone %s", zone.Name), 0); err != nil {
+			if pool.Servers != *ss.Spec.Replicas {
+				// warn the user that replica count of an existing pool can't be changed
+				if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for pool %s", pool.Name), 0); err != nil {
 					return err
 				}
 			}
 
-			if zone.Resources.String() != ss.Spec.Template.Spec.Containers[0].Resources.String() {
+			if pool.Resources.String() != ss.Spec.Template.Spec.Containers[0].Resources.String() {
 				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingResourceRequirements, ss.Status.Replicas); err != nil {
 					return err
 				}
-				klog.V(4).Infof("resource requirements updates for zone %s", zone.Name)
-				ss = statefulsets.NewForMinIOZone(tenant, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+				klog.V(4).Infof("resource requirements updates for pool %s", pool.Name)
+				ss = statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
 			}
 
-			if zone.Affinity.String() != ss.Spec.Template.Spec.Affinity.String() {
+			if pool.Affinity.String() != ss.Spec.Template.Spec.Affinity.String() {
 				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingAffinity, ss.Status.Replicas); err != nil {
 					return err
 				}
-				klog.V(4).Infof("affinity update for zone %s", zone.Name)
-				ss = statefulsets.NewForMinIOZone(tenant, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+				klog.V(4).Infof("affinity update for pool %s", pool.Name)
+				ss = statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}
@@ -1061,20 +1061,20 @@ func (c *Controller) syncHandler(key string) error {
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 	}
 
-	// compare all the images across all zones, they should always be the same.
+	// compare all the images across all pools, they should always be the same.
 	for _, image := range images {
 		for i := 0; i < len(images); i++ {
 			if image != images[i] {
 				if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
 					return err
 				}
-				return fmt.Errorf("Zone %d is running incorrect image version, all zones are required to be on the same MinIO version. Attempting update of the inconsistent zone",
+				return fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
 					i+1)
 			}
 		}
 	}
 
-	// In loop above we compared all the versions in all zones.
+	// In loop above we compared all the versions in all pools.
 	// So comparing tenant.Spec.Image (version to update to) against one value from images slice is fine.
 	if tenant.Spec.Image != images[0] && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
 		if !tenant.MinIOHealthCheck() {
@@ -1147,9 +1147,9 @@ func (c *Controller) syncHandler(key string) error {
 		// clean the local directory
 		_ = c.removeArtifacts()
 
-		for _, zone := range tenant.Spec.Zones {
+		for _, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewForMinIOZone(tenant, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			ss := statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}

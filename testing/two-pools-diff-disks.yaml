@@ -10,31 +10,31 @@ data:
 apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
-  name: add-one-zone
+  name: two-pools-diff-disks
 spec:
-  zones:
-    - servers: 1
+  pools:
+    - servers: 4
+      volumesPerServer: 2
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 2Gi
+    - servers: 4
       volumesPerServer: 4
       volumeClaimTemplate:
         metadata:
           name: data
         spec:
+          accessModes:
+            - ReadWriteOnce
           resources:
             requests:
               storage: 2Gi
-          accessModes:
-            - ReadWriteOnce
-    - servers: 1
-      volumesPerServer: 4
-      volumeClaimTemplate:
-        metadata:
-          name: data
-        spec:
-          resources:
-            requests:
-              storage: 2Gi
-          accessModes:
-            - ReadWriteOnce
   credsSecret:
     name: test-minio-creds-secret
 

@@ -1,6 +1,6 @@
 module github.com/minio/kubectl-minio
 
-go 1.13
+go 1.14
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
@@ -14,7 +14,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/minio/minio v0.0.0-20200730061534-fe157166cae7 // indirect
 	github.com/minio/minio-go/v7 v7.0.2 // indirect
-	github.com/minio/operator v0.0.0-20200730044813-c2895a5065a1
+	github.com/minio/operator v0.0.0-00010101000000-000000000000
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/montanaflynn/stats v0.6.3 // indirect
 	github.com/pkg/errors v0.9.1
@@ -38,3 +38,5 @@ require (
 	k8s.io/utils v0.0.0-20200729134348-d5654de09c73 // indirect
 	sigs.k8s.io/yaml v1.2.0
 )
+
+replace github.com/minio/operator => ../

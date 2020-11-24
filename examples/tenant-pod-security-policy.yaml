@@ -79,9 +79,9 @@ spec:
   image: minio/minio:RELEASE.2020-11-19T23-48-16Z
   ## Service account to be used for all the MinIO Pods
   serviceAccountName: minio-pods
-  zones:
+  pools:
     - volumesPerServer: 4
-      ## Number of MinIO servers/pods in this zone.
+      ## Number of MinIO servers/pods in this pool.
       ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
       ## Note that the operator does not support upgrading from standalone to distributed mode.
       servers: 4

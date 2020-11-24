@@ -35,7 +35,7 @@ import (
 
 const (
 	infoDesc = `
-'info' command lists zones from a MinIO tenant`
+'info' command lists pools from a MinIO tenant`
 	infoExample = `  kubectl minio tenant info --name tenant1 --namespace tenant1-ns`
 )
 
@@ -81,22 +81,22 @@ func (d *infoCmd) run() error {
 	if err != nil {
 		return err
 	}
-	err = listZonesTenant(oclient, d)
+	err = listPoolsTenant(oclient, d)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func listZonesTenant(client *operatorv1.Clientset, d *infoCmd) error {
+func listPoolsTenant(client *operatorv1.Clientset, d *infoCmd) error {
 	tenant, err := client.MinioV1().Tenants(d.ns).Get(context.Background(), d.name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Zone", "Servers", "Volumes Per Server", "Capacity Per Volume", "Version"})
-	for i, z := range tenant.Spec.Zones {
+	t.AppendHeader(table.Row{"Pool", "Servers", "Volumes Per Server", "Capacity Per Volume", "Version"})
+	for i, z := range tenant.Spec.Pools {
 		t.AppendRow(table.Row{i, z.Servers, z.VolumesPerServer, z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().String()})
 	}
 	t.AppendFooter(table.Row{"Version", tenant.Spec.Image})

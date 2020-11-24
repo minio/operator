@@ -1,4 +1,4 @@
 apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
-  name: no-zones
+  name: no-pools

@@ -138,7 +138,7 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 // Returns the MinIO pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func minioPodMetadata(t *miniov1.Tenant, zone *miniov1.Zone, opVersion string) metav1.ObjectMeta {
+func minioPodMetadata(t *miniov1.Tenant, pool *miniov1.Pool, opVersion string) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	// Copy Labels and Annotations from Tenant
 	meta.Labels = t.ObjectMeta.Labels
@@ -151,38 +151,38 @@ func minioPodMetadata(t *miniov1.Tenant, zone *miniov1.Zone, opVersion string) m
 	for k, v := range t.MinIOPodLabels() {
 		meta.Labels[k] = v
 	}
-	// Add information labels, such as which zone we are building this pod about
-	meta.Labels[miniov1.ZoneLabel] = zone.Name
+	// Add information labels, such as which pool we are building this pod about
+	meta.Labels[miniov1.PoolLabel] = pool.Name
 	meta.Labels[miniov1.OperatorLabel] = opVersion
 	return meta
 }
 
 // ContainerMatchLabels Returns the labels that match the Pods in the statefulset
-func ContainerMatchLabels(t *miniov1.Tenant, zone *miniov1.Zone) *metav1.LabelSelector {
+func ContainerMatchLabels(t *miniov1.Tenant, pool *miniov1.Pool) *metav1.LabelSelector {
 	labels := t.MinIOPodLabels()
-	// Add zone information so it's passed down to the underlying PVCs
-	labels[miniov1.ZoneLabel] = zone.Name
+	// Add pool information so it's passed down to the underlying PVCs
+	labels[miniov1.PoolLabel] = pool.Name
 	return &metav1.LabelSelector{
 		MatchLabels: labels,
 	}
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(t *miniov1.Tenant, zone *miniov1.Zone) (mounts []corev1.VolumeMount) {
-	// This is the case where user didn't provide a zone and we deploy a EmptyDir based
+func volumeMounts(t *miniov1.Tenant, pool *miniov1.Pool) (mounts []corev1.VolumeMount) {
+	// This is the case where user didn't provide a pool and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
 	name := miniov1.MinIOVolumeName
-	if zone.VolumeClaimTemplate != nil {
-		name = zone.VolumeClaimTemplate.Name
+	if pool.VolumeClaimTemplate != nil {
+		name = pool.VolumeClaimTemplate.Name
 	}
 
-	if zone.VolumesPerServer == 1 {
+	if pool.VolumesPerServer == 1 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      name + strconv.Itoa(0),
 			MountPath: t.Spec.Mountpath,
 		})
 	} else {
-		for i := 0; i < int(zone.VolumesPerServer); i++ {
+		for i := 0; i < int(pool.VolumesPerServer); i++ {
 			mounts = append(mounts, corev1.VolumeMount{
 				Name:      name + strconv.Itoa(i),
 				MountPath: t.Spec.Mountpath + strconv.Itoa(i),
@@ -201,7 +201,7 @@ func volumeMounts(t *miniov1.Tenant, zone *miniov1.Zone) (mounts []corev1.Volume
 }
 
 // Builds the MinIO container for a Tenant.
-func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, hostsTemplate string, opVersion string) corev1.Container {
+func poolMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool, hostsTemplate string, opVersion string) corev1.Container {
 	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
 
 	return corev1.Container{
@@ -213,29 +213,29 @@ func zoneMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, zone *mini
 			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
-		VolumeMounts:    volumeMounts(t, zone),
+		VolumeMounts:    volumeMounts(t, pool),
 		Args:            args,
 		Env:             minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion),
-		Resources:       zone.Resources,
+		Resources:       pool.Resources,
 	}
 }
 
 // GetContainerArgs returns the arguments that the MinIO container receives
 func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
 	var args []string
-	if len(t.Spec.Zones) == 1 && t.Spec.Zones[0].Servers == 1 {
+	if len(t.Spec.Pools) == 1 && t.Spec.Pools[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
-		args = append(args, t.VolumePathForZone(&t.Spec.Zones[0]))
+		args = append(args, t.VolumePathForPool(&t.Spec.Pools[0]))
 	} else {
 		for index, endpoint := range t.MinIOEndpoints(hostsTemplate) {
-			args = append(args, fmt.Sprintf("%s%s", endpoint, t.VolumePathForZone(&t.Spec.Zones[index])))
+			args = append(args, fmt.Sprintf("%s%s", endpoint, t.VolumePathForPool(&t.Spec.Pools[index])))
 		}
 	}
 	return args
 }
 
-// Builds the tolerations for a Zone.
-func minioZoneTolerations(z *miniov1.Zone) []corev1.Toleration {
+// Builds the tolerations for a Pool.
+func minioPoolTolerations(z *miniov1.Pool) []corev1.Toleration {
 	var tolerations []corev1.Toleration
 	return append(tolerations, z.Tolerations...)
 }
@@ -249,10 +249,10 @@ func minioSecurityContext(t *miniov1.Tenant) *corev1.PodSecurityContext {
 	return &securityContext
 }
 
-// NewForMinIOZone creates a new StatefulSet for the given Cluster.
-func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
+// NewForMinIOPool creates a new StatefulSet for the given Cluster.
+func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
-	var replicas = zone.Servers
+	var replicas = pool.Servers
 	var podVolumeSources []corev1.VolumeProjection
 
 	var serverCertPaths = []corev1.KeyToPath{
@@ -434,7 +434,7 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 
 	ssMeta := metav1.ObjectMeta{
 		Namespace: t.Namespace,
-		Name:      t.ZoneStatefulsetName(zone),
+		Name:      t.PoolStatefulsetName(pool),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(t, schema.GroupVersionKind{
 				Group:   miniov1.SchemeGroupVersion.Group,
@@ -451,12 +451,12 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 		ssMeta.Labels = make(map[string]string)
 	}
 
-	// Add information labels, such as which zone we are building this pod about
+	// Add information labels, such as which pool we are building this pod about
 	ssMeta.Labels[miniov1.TenantLabel] = t.Name
-	ssMeta.Labels[miniov1.ZoneLabel] = zone.Name
+	ssMeta.Labels[miniov1.PoolLabel] = pool.Name
 	ssMeta.Labels[miniov1.OperatorLabel] = operatorVersion
 
-	containers := []corev1.Container{zoneMinioServerContainer(t, wsSecret, zone, hostsTemplate, operatorVersion)}
+	containers := []corev1.Container{poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion)}
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: ssMeta,
 		Spec: appsv1.StatefulSetSpec{
@@ -464,19 +464,19 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 				Type: miniov1.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: t.Spec.PodManagementPolicy,
-			Selector:            ContainerMatchLabels(t, zone),
+			Selector:            ContainerMatchLabels(t, pool),
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: minioPodMetadata(t, zone, operatorVersion),
+				ObjectMeta: minioPodMetadata(t, pool, operatorVersion),
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					Volumes:            podVolumes,
 					RestartPolicy:      corev1.RestartPolicyAlways,
-					Affinity:           zone.Affinity,
-					NodeSelector:       zone.NodeSelector,
+					Affinity:           pool.Affinity,
+					NodeSelector:       pool.NodeSelector,
 					SchedulerName:      t.Scheduler.Name,
-					Tolerations:        minioZoneTolerations(zone),
+					Tolerations:        minioPoolTolerations(pool),
 					SecurityContext:    minioSecurityContext(t),
 					ServiceAccountName: t.Spec.ServiceAccountName,
 					PriorityClassName:  t.Spec.PriorityClassName,
@@ -490,10 +490,10 @@ func NewForMinIOZone(t *miniov1.Tenant, wsSecret *v1.Secret, zone *miniov1.Zone,
 		ss.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{t.Spec.ImagePullSecret}
 	}
 
-	if zone.VolumeClaimTemplate != nil {
-		pvClaim := *zone.VolumeClaimTemplate
+	if pool.VolumeClaimTemplate != nil {
+		pvClaim := *pool.VolumeClaimTemplate
 		name := pvClaim.Name
-		for i := 0; i < int(zone.VolumesPerServer); i++ {
+		for i := 0; i < int(pool.VolumesPerServer); i++ {
 			pvClaim.Name = name + strconv.Itoa(i)
 			ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, pvClaim)
 		}
