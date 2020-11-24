@@ -31,15 +31,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-const (
-	createTablePartition QTemplate = `CREATE TABLE %s PARTITION OF %s
-                                            FOR VALUES FROM ('%s') TO ('%s');`
-)
-
-const (
-	partitionsPerMonth = 4
-)
-
 // QTemplate is used to represent queries that involve string substitution as
 // well as SQL positional argument substitution.
 type QTemplate string
@@ -56,11 +47,6 @@ type Table struct {
 
 func (t *Table) getCreateStatement() string {
 	return t.CreateStatement.build(t.Name)
-}
-
-func (t *Table) getCreatePartitionStatement(partitionNameSuffix, rangeStart, rangeEnd string) string {
-	partitionName := fmt.Sprintf("%s_%s", t.Name, partitionNameSuffix)
-	return createTablePartition.build(partitionName, t.Name, rangeStart, rangeEnd)
 }
 
 var (
@@ -88,28 +74,10 @@ var (
                                     response_content_length INT8
                                   ) PARTITION BY RANGE (time);`,
 	}
-)
 
-func getPartitionRange(t time.Time) (time.Time, time.Time) {
-	// Zero out the time and use UTC
-	t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
-	daysInMonth := t.AddDate(0, 1, -t.Day()).Day()
-	quot := daysInMonth / partitionsPerMonth
-	remDays := daysInMonth % partitionsPerMonth
-	rangeStart := t.AddDate(0, 0, 1-t.Day())
-	for {
-		rangeDays := quot
-		if remDays > 0 {
-			rangeDays++
-			remDays--
-		}
-		rangeEnd := rangeStart.AddDate(0, 0, rangeDays)
-		if t.Before(rangeEnd) {
-			return rangeStart, rangeEnd
-		}
-		rangeStart = rangeEnd
-	}
-}
+	// Allows iterating on all tables
+	allTables = []Table{auditLogEventsTable, requestInfoTable}
+)
 
 // DBClient is a client object that makes requests to the DB.
 type DBClient struct {
@@ -152,10 +120,8 @@ func (c *DBClient) createTableAndPartition(ctx context.Context, table Table) err
 		return err
 	}
 
-	start, end := getPartitionRange(time.Now())
-	partSuffix := start.Format("2006_01_02")
-	rangeStart, rangeEnd := start.Format("2006-01-02"), end.Format("2006-01-02")
-	_, err := c.Exec(ctx, table.getCreatePartitionStatement(partSuffix, rangeStart, rangeEnd))
+	partTimeRange := newPartitionTimeRange(time.Now())
+	_, err := c.Exec(ctx, table.getCreatePartitionStatement(partTimeRange))
 	return err
 }
 

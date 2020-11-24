@@ -30,10 +30,10 @@ import (
 )
 
 const (
-	pgConnStrEnv          = "LOGSEARCH_PG_CONN_STR"
-	auditAuthTokenEnv     = "LOGSEARCH_AUDIT_AUTH_TOKEN"
-	queryAuthTokenEnv     = "LOGSEARCH_QUERY_AUTH_TOKEN"
-	maxRetentionMonthsEnv = "LOGSEARCH_MAX_RETENTION_MONTHS"
+	pgConnStrEnv      = "LOGSEARCH_PG_CONN_STR"
+	auditAuthTokenEnv = "LOGSEARCH_AUDIT_AUTH_TOKEN"
+	queryAuthTokenEnv = "LOGSEARCH_QUERY_AUTH_TOKEN"
+	diskCapacityEnv   = "LOGSEARCH_DISK_CAPACITY_GB"
 )
 
 func loadEnv() (*server.LogSearch, error) {
@@ -49,12 +49,12 @@ func loadEnv() (*server.LogSearch, error) {
 	if queryAuthToken == "" {
 		return nil, errors.New(queryAuthTokenEnv + " env variable is required.")
 	}
-	maxRetentionMonths, err := strconv.Atoi(os.Getenv(maxRetentionMonthsEnv))
+	diskCapacity, err := strconv.Atoi(os.Getenv(diskCapacityEnv))
 	if err != nil {
-		return nil, errors.New(maxRetentionMonthsEnv + " env variable is required and must be an integer.")
+		return nil, errors.New(diskCapacityEnv + " env variable is required and must be an integer.")
 	}
 
-	return server.NewLogSearch(pgConnStr, auditAuthToken, queryAuthToken, maxRetentionMonths)
+	return server.NewLogSearch(pgConnStr, auditAuthToken, queryAuthToken, diskCapacity)
 }
 
 func main() {

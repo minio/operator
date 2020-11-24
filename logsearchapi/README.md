@@ -14,7 +14,7 @@ docker run --rm -it -e "POSTGRES_PASSWORD=example" -p 5432:5432 postgres:13-alpi
 export LOGSEARCH_PG_CONN_STR="postgres://postgres:example@localhost/postgres"
 export LOGSEARCH_AUDIT_AUTH_TOKEN=xxx
 export LOGSEARCH_QUERY_AUTH_TOKEN=yyy
-export LOGSEARCH_MAX_RETENTION_MONTHS=3
+export LOGSEARCH_DISK_CAPACITY_GB=5
 go build && ./logsearchapi
 ```
 
