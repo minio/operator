@@ -98,7 +98,7 @@ You need to provide those `kubernetes secrets` in your Tenant `YAML` file using 
       type: kubernetes.io/tls
   ...
   console:
-    image: minio/console:v0.3.26
+    image: minio/console:v0.4.5
     ...
     externalCertSecret:
       name: console-tls-cert

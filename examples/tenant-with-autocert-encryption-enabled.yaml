@@ -161,14 +161,14 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.3.26
+    image: minio/console:v0.4.5
     replicas: 2
     consoleSecret:
       name: minio-autocert-encryption-console-secret
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   kes:
-    image: minio/kes:v0.12.0
+    image: minio/kes:v0.12.1
     replicas: 2
     kesSecret:
       name: minio-autocert-encryption-kes-config
