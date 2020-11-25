@@ -113,9 +113,7 @@ func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
 			Configuration: &v1.LocalObjectReference{
 				Name: secret,
 			},
-			Metadata: &metav1.ObjectMeta{
-				Labels: tenantKESLabels(tenant),
-			},
+			Labels: tenantKESLabels(tenant),
 		}
 	}
 	return nil
@@ -124,9 +122,6 @@ func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
 func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
 	if secret != "" {
 		return &miniov1.ConsoleConfiguration{
-			Metadata: &metav1.ObjectMeta{
-				Name: tenant,
-			},
 			Replicas: helpers.ConsoleReplicas,
 			Image:    helpers.DefaultConsoleImage,
 			ConsoleSecret: &v1.LocalObjectReference{
