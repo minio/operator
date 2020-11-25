@@ -113,6 +113,12 @@ func (t *Tenant) ExternalCert() bool {
 	return t.Spec.ExternalCertSecret != nil
 }
 
+// ExternalCaCerts returns true is the user has provided a
+// additional CA certificates for MinIO
+func (t *Tenant) ExternalCaCerts() bool {
+	return len(t.Spec.ExternalCaCertSecret) > 0
+}
+
 // ExternalClientCert returns true is the user has provided a secret
 // that contains CA client cert, server cert and server key
 func (t *Tenant) ExternalClientCert() bool {
@@ -135,6 +141,12 @@ func (t *Tenant) KESClientCert() bool {
 // that contains CA cert, server cert and server key for Console pods
 func (t *Tenant) ConsoleExternalCert() bool {
 	return t.Spec.Console != nil && t.Spec.Console.ExternalCertSecret != nil
+}
+
+// ConsoleExternalCaCerts returns true is the user has provided a
+// additional CA certificates for Console
+func (t *Tenant) ConsoleExternalCaCerts() bool {
+	return t.Spec.Console != nil && len(t.Spec.Console.ExternalCaCertSecret) > 0
 }
 
 // AutoCert is enabled by default, otherwise we return the user provided value

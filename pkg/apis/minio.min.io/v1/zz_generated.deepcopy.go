@@ -72,6 +72,17 @@ func (in *ConsoleConfiguration) DeepCopyInto(out *ConsoleConfiguration) {
 		*out = new(LocalCertificateReference)
 		**out = **in
 	}
+	if in.ExternalCaCertSecret != nil {
+		in, out := &in.ExternalCaCertSecret, &out.ExternalCaCertSecret
+		*out = make([]*LocalCertificateReference, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(LocalCertificateReference)
+				**out = **in
+			}
+		}
+	}
 	if in.Annotations != nil {
 		in, out := &in.Annotations, &out.Annotations
 		*out = make(map[string]string, len(*in))
@@ -293,6 +304,17 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 	}
 	if in.ExternalCertSecret != nil {
 		in, out := &in.ExternalCertSecret, &out.ExternalCertSecret
+		*out = make([]*LocalCertificateReference, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(LocalCertificateReference)
+				**out = **in
+			}
+		}
+	}
+	if in.ExternalCaCertSecret != nil {
+		in, out := &in.ExternalCaCertSecret, &out.ExternalCaCertSecret
 		*out = make([]*LocalCertificateReference, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {

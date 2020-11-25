@@ -159,8 +159,21 @@ spec:
                     - name
                     type: object
                   type: array
+                externalCaCertSecret:
+                  description: ExternalCaCertSecret allows a user to provide additional CA certificates. This is used for Console to verify TLS connections with other applications.
+                  items:
+                    description: LocalCertificateReference defines the spec for a local certificate
+                    properties:
+                      name:
+                        type: string
+                      type:
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  type: array
                 externalCertSecret:
-                  description: ExternalCertSecret allows a user to specify custom CA certificate, and private key. This is used for enabling TLS support on Console Pods.
+                  description: ExternalCertSecret allows a user to provide an external certificate and private key. This is used for enabling TLS on Console and has priority over AutoCert.
                   properties:
                     name:
                       type: string
@@ -304,8 +317,21 @@ spec:
                 - name
                 type: object
               type: array
+            externalCaCertSecret:
+              description: ExternalCaCertSecret allows a user to provide additional CA certificates. This is used for MinIO to verify TLS connections with other applications.
+              items:
+                description: LocalCertificateReference defines the spec for a local certificate
+                properties:
+                  name:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - name
+                type: object
+              type: array
             externalCertSecret:
-              description: ExternalCertSecret allows a user to specify one or more custom TLS certificates, and private keys. This is used for enabling TLS with SNI support on MinIO Pods.
+              description: ExternalCertSecret allows a user to provide one or more TLS certificates and private keys. This is used for enabling TLS with SNI support on MinIO server.
               items:
                 description: LocalCertificateReference defines the spec for a local certificate
                 properties:
