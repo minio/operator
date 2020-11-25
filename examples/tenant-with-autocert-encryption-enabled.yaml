@@ -17,8 +17,6 @@ metadata:
   name: minio-autocert-encryption-console-secret
 type: Opaque
 data:
-  ## HMAC JWT Secret for Console, base64 encoded (echo -n 'YOURJWTSIGNINGSECRET' | base64)
-  CONSOLE_HMAC_JWT_SECRET: WU9VUkpXVFNJR05JTkdTRUNSRVQ=
   ## Passphrase to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
   CONSOLE_PBKDF_PASSPHRASE: U0VDUkVU
   ## Salt to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
@@ -161,7 +159,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.4.5
+    image: minio/console:v0.4.6
     replicas: 2
     consoleSecret:
       name: minio-autocert-encryption-console-secret

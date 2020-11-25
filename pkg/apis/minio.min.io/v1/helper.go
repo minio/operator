@@ -38,6 +38,7 @@ import (
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
@@ -465,6 +466,15 @@ func (t *Tenant) HasConsoleSecret() bool {
 	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
 }
 
+// GetConsoleEnvVars returns the environment variables for the console
+// deployment of a particular tenant
+func (t *Tenant) GetConsoleEnvVars() (env []corev1.EnvVar) {
+	if t.Spec.Console != nil {
+		return t.Spec.Console.Env
+	}
+	return env
+}
+
 // UpdateURL returns the URL for the sha256sum location of the new binary
 func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error) {
 	if overrideURL == "" {
@@ -586,7 +596,7 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 }
 
 // CreateConsoleUser function creates an admin user
-func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret map[string][]byte) error {
+func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret map[string][]byte, skipCreateUser bool) error {
 	consoleAccessKey, ok := consoleSecret["CONSOLE_ACCESS_KEY"]
 	if !ok {
 		return errors.New("CONSOLE_ACCESS_KEY not provided")
@@ -601,8 +611,10 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret m
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 
-	if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
-		return err
+	if !skipCreateUser {
+		if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
+			return err
+		}
 	}
 
 	// Create policy
