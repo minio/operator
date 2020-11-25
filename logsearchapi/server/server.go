@@ -69,6 +69,7 @@ func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, diskC
 
 	// Start vacuum thread
 	go ls.DBClient.vacuumData(ls.DiskCapacityGBs)
+	go ls.DBClient.partitionTables()
 
 	return ls, nil
 }
