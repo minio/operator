@@ -59,7 +59,7 @@ type S3Features struct {
 // TenantSpec is the spec for a Tenant resource
 type TenantSpec struct {
 	// Definition for Cluster in given MinIO cluster
-	Zones []Zone `json:"zones"`
+	Pools []Pool `json:"pools"`
 	// Image defines the Tenant Docker image.
 	// +optional
 	Image string `json:"image,omitempty"`
@@ -147,12 +147,12 @@ type LocalCertificateReference struct {
 	Type string `json:"type,omitempty"`
 }
 
-// Zone defines the spec for a MinIO Zone
-type Zone struct {
-	// Name of the zone
+// Pool defines the spec for a MinIO Pool
+type Pool struct {
+	// Name of the pool
 	// +optional
 	Name string `json:"name,omitempty"`
-	// Number of Servers in the zone
+	// Number of Servers in the pool
 	Servers int32 `json:"servers"`
 	// Number of persistent volumes that will be attached per server
 	VolumesPerServer int32 `json:"volumesPerServer"`

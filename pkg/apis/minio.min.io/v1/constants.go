@@ -55,8 +55,8 @@ const OperatorLabel = "v1.min.io/version"
 // TenantLabel is applied to all components of a Tenant cluster
 const TenantLabel = "v1.min.io/tenant"
 
-// ZoneLabel is applied to all components in a Zone of a Tenant cluster
-const ZoneLabel = "v1.min.io/zone"
+// PoolLabel is applied to all components in a Pool of a Tenant cluster
+const PoolLabel = "v1.min.io/pool"
 
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
@@ -98,8 +98,8 @@ const DefaultServers = 1
 // DefaultVolumesPerServer specifies the default number of volumes per MinIO Tenant
 const DefaultVolumesPerServer = 1
 
-// DefaultZoneName specifies the default zone name
-const DefaultZoneName = "zone-0"
+// DefaultPoolName specifies the default pool name
+const DefaultPoolName = "pool-0"
 
 // Console Related Constants
 

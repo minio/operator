@@ -132,13 +132,14 @@ func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
 	return nil
 }
 
-func externalCertSecret(secret string) *miniov1.LocalCertificateReference {
+func externalCertSecret(secret string) []*miniov1.LocalCertificateReference {
+	certs := make([]*miniov1.LocalCertificateReference, 1)
 	if secret != "" {
-		return &miniov1.LocalCertificateReference{
+		certs[0] = &miniov1.LocalCertificateReference{
 			Name: secret,
 		}
 	}
-	return nil
+	return certs
 }
 
 func storageClass(sc string) *string {
@@ -150,6 +151,7 @@ func storageClass(sc string) *string {
 
 // NewTenant will return a new Tenant for a MinIO Operator
 func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
+	autoCert := true
 	volumesPerServer := helpers.VolumesPerServer(opts.Volumes, opts.Servers)
 	capacityPerVolume, err := helpers.CapacityPerVolume(opts.Capacity, opts.Volumes)
 	if err != nil {
@@ -166,13 +168,12 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 			Namespace: opts.NS,
 		},
 		Spec: miniov1.TenantSpec{
-			Image:       opts.Image,
-			ServiceName: helpers.ServiceName(opts.Name),
+			Image: opts.Image,
 			CredsSecret: &v1.LocalObjectReference{
 				Name: opts.SecretName,
 			},
-			Zones:           []miniov1.Zone{Zone(opts.Servers, volumesPerServer, *capacityPerVolume, opts.StorageClass)},
-			RequestAutoCert: true,
+			Pools:           []miniov1.Pool{Pool(opts.Servers, volumesPerServer, *capacityPerVolume, opts.StorageClass)},
+			RequestAutoCert: &autoCert,
 			CertConfig: &miniov1.CertificateConfig{
 				CommonName:       "",
 				OrganizationName: []string{},

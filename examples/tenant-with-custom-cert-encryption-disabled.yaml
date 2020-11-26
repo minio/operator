@@ -86,9 +86,9 @@ spec:
   credsSecret:
     name: minio-custom-cert-no-encryption-minio-creds-secret
 
-  ## Specification for MinIO Zone(s) in this Tenant.
-  zones:
-    ## Servers specifies the number of MinIO Tenant Pods / Servers in this zone.
+  ## Specification for MinIO Pool(s) in this Tenant.
+  pools:
+    ## Servers specifies the number of MinIO Tenant Pods / Servers in this pool.
     ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
     ## Note that the operator does not support upgrading from standalone to distributed mode.
     - servers: 4
@@ -97,7 +97,7 @@ spec:
       volumesPerServer: 4
 
       ## This VolumeClaimTemplate is used across all the volumes provisioned for MinIO Tenant in this
-      ## Zone.
+      ## Pool.
       volumeClaimTemplate:
         metadata:
           name: data

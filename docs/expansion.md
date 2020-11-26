@@ -2,7 +2,7 @@
 
 This document explains how to expand an existing MinIO Tenant with Operator. This is only applicable to a Tenant (MinIO Deployment) created by MinIO Operator.
 
-MinIO expansion is done in terms of MinIO zones, read more about the design in [MinIO Docs](https://github.com/minio/minio/blob/master/docs/distributed).
+MinIO expansion is done in terms of MinIO pools, read more about the design in [MinIO Docs](https://github.com/minio/minio/blob/master/docs/distributed).
 
 ## Getting Started
 
@@ -22,19 +22,19 @@ Remember to replace `TENANT_NAME` with tenant name where you want to add volumes
 
 ## Underlying Details in Tenant Expansion
 
-### What are MinIO Zones
+### What are MinIO pools
 
-A MinIO zone is a self contained entity with same SLA's (read/write quorum) for each object. There are no limits on how many zones can be combined. After adding of a zone, MinIO simply uses the least used zone. All zones are for all purposes are invisible to an any application, and MinIO handles the zones internally. 
+A MinIO pool is a self contained entity with same SLA's (read/write quorum) for each object. There are no limits on how many pools can be combined. After adding of a pool, MinIO simply uses the least used pool. All pools are for all purposes are invisible to an any application, and MinIO handles the pools internally. 
 
-### Rules of Adding Zones
+### Rules of Adding pools
 
-There is only one requirement, i.e. based on initial zone's erasure set count (say `n`), new zones are expected to have a minimum of `n` drives to match the original Tenant SLA or it should be in multiples of `n`. For example if initial set count is 4, new zones should have at least 4 or multiple of 4 drives.
+There is only one requirement, i.e. based on initial pool's erasure set count (say `n`), new pools are expected to have a minimum of `n` drives to match the original Tenant SLA or it should be in multiples of `n`. For example if initial set count is 4, new pools should have at least 4 or multiple of 4 drives.
 
 ### Effects on KES/TLS Enabled Instance
 
 If your MinIO Operator configuration has [KES](https://github.com/minio/operator/blob/master/docs/kes.md) or [Automatic TLS](https://github.com/minio/operator/blob/master/docs/tls.md#automatic-csr-generation) enabled, there are additional considerations:
 
-- When new zones are added, Operator invalidates older self signed TLS certificates and the related secrets. Operator then creates new certificate signing requests (CSR). This is because there are new MinIO nodes that must be added in certificate DNS names. The administrator must approve these CSRs for MinIO server to be deployed again. Unless the CSR are approved, Operator will not create MinIO StatefulSet pods.
+- When new pools are added, Operator invalidates older self signed TLS certificates and the related secrets. Operator then creates new certificate signing requests (CSR). This is because there are new MinIO nodes that must be added in certificate DNS names. The administrator must approve these CSRs for MinIO server to be deployed again. Unless the CSR are approved, Operator will not create MinIO StatefulSet pods.
 
 - If you're using your own certificates, as explained [here](https://github.com/minio/operator/blob/master/docs/tls.md#pass-certificate-secret-to-tenant), please ensure to use/update proper certificates that allow older and new MinIO nodes.
 

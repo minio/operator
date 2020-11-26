@@ -10,9 +10,9 @@ data:
 apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
-  name: four-zones
+  name: four-pools
 spec:
-  zones:
+  pools:
     - servers: 4
       volumesPerServer: 4
       volumeClaimTemplate:

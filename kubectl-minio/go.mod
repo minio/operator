@@ -2,6 +2,8 @@ module github.com/minio/kubectl-minio
 
 go 1.13
 
+replace github.com/minio/operator => ../
+
 require (
 	github.com/asaskevich/govalidator v0.0.0-20200428143746-21a406dcc535 // indirect
 	github.com/go-openapi/errors v0.19.6 // indirect
@@ -12,8 +14,7 @@ require (
 	github.com/imdario/mergo v0.3.10 // indirect
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/mattn/go-runewidth v0.0.9 // indirect
-	github.com/minio/minio v0.0.0-20200730061534-fe157166cae7
-	github.com/minio/minio-go/v7 v7.0.2 // indirect
+	github.com/minio/minio v0.0.0-20200927172404-27d9bd04e544
 	github.com/minio/operator v0.3.23
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/montanaflynn/stats v0.6.3 // indirect
@@ -23,9 +24,7 @@ require (
 	github.com/shirou/gopsutil v2.20.6+incompatible // indirect
 	github.com/spf13/cobra v1.0.0
 	go.mongodb.org/mongo-driver v1.3.5 // indirect
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
-	golang.org/x/sys v0.0.0-20200728102440-3e129f6d46b1 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect

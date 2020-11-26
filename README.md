@@ -10,7 +10,7 @@ MinIO Operator brings native support for [MinIO](https://github.com/minio/minio)
 
 ## Operator Setup
 
-MinIO Operator offers MinIO Tenant creation, management, upgrade, zone addition and more. Operator is meant to control and manage multiple MinIO Tenants.
+MinIO Operator offers MinIO Tenant creation, management, upgrade, pool addition and more. Operator is meant to control and manage multiple MinIO Tenants.
 
 To get started, initialize the MinIO Operator deployment. This is a _one time_ process.
 

@@ -157,15 +157,15 @@ func (t *Tenant) AutoCert() bool {
 	return *t.Spec.RequestAutoCert
 }
 
-// VolumePathForZone returns the paths for MinIO mounts based on
-// total number of volumes on a given zone
-func (t *Tenant) VolumePathForZone(zone *Zone) string {
-	if zone.VolumesPerServer == 1 {
+// VolumePathForPool returns the paths for MinIO mounts based on
+// total number of volumes on a given pool
+func (t *Tenant) VolumePathForPool(pool *Pool) string {
+	if pool.VolumesPerServer == 1 {
 		// Add an extra "/" to make sure relative paths are avoided.
 		return path.Join("/", t.Spec.Mountpath, "/", t.Spec.Subpath)
 	}
 	// Add an extra "/" to make sure relative paths are avoided.
-	return path.Join("/", t.Spec.Mountpath+genEllipsis(0, int(zone.VolumesPerServer-1)), "/", t.Spec.Subpath)
+	return path.Join("/", t.Spec.Mountpath+genEllipsis(0, int(pool.VolumesPerServer-1)), "/", t.Spec.Subpath)
 }
 
 // KESReplicas returns the number of total KES replicas
@@ -275,11 +275,11 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.ImagePullPolicy = DefaultImagePullPolicy
 	}
 
-	for zi, z := range t.Spec.Zones {
+	for zi, z := range t.Spec.Pools {
 		if z.Name == "" {
-			z.Name = fmt.Sprintf("zone-%d", zi)
+			z.Name = fmt.Sprintf("pool-%d", zi)
 		}
-		t.Spec.Zones[zi] = z
+		t.Spec.Pools[zi] = z
 	}
 
 	if t.Spec.Mountpath == "" {
@@ -360,11 +360,11 @@ func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
 // MinIOHosts returns the domain names in ellipses format created for current Tenant
 func (t *Tenant) MinIOHosts() (hosts []string) {
 	// Create the ellipses style URL
-	for _, z := range t.Spec.Zones {
+	for _, z := range t.Spec.Pools {
 		if z.Servers == 1 {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), "0", t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), "0", t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
 		} else {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), genEllipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), genEllipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
 		}
 	}
 	return hosts
@@ -380,10 +380,10 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 	}
 	var max, index int32
 	// Create the ellipses style URL
-	for _, z := range t.Spec.Zones {
+	for _, z := range t.Spec.Pools {
 		max = max + z.Servers
 		data := hostsTemplateValues{
-			StatefulSet: t.MinIOStatefulSetNameForZone(&z),
+			StatefulSet: t.MinIOStatefulSetNameForPool(&z),
 			CIService:   t.MinIOCIServiceName(),
 			HLService:   t.MinIOHLServiceName(),
 			Ellipsis:    genEllipsis(int(index), int(max)-1),
@@ -419,7 +419,7 @@ func (t *Tenant) ConsoleServerHost() string {
 
 // MinIOHeadlessServiceHost returns headless service Host for current Tenant
 func (t *Tenant) MinIOHeadlessServiceHost() string {
-	if t.Spec.Zones[0].Servers == 1 {
+	if t.Spec.Pools[0].Servers == 1 {
 		msg := "Please set the server count > 1"
 		klog.V(2).Infof(msg)
 		return ""
@@ -657,27 +657,27 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret m
 	return madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false)
 }
 
-// Validate validate single zone as per MinIO deployment requirements
-func (z *Zone) Validate(zi int) error {
-	// Make sure the replicas are not 0 on any zone
+// Validate validate single pool as per MinIO deployment requirements
+func (z *Pool) Validate(zi int) error {
+	// Make sure the replicas are not 0 on any pool
 	if z.Servers <= 0 {
-		return fmt.Errorf("zone #%d cannot have 0 servers", zi)
+		return fmt.Errorf("pool #%d cannot have 0 servers", zi)
 	}
 
-	// Make sure the zones don't have 0 volumes
+	// Make sure the pools don't have 0 volumes
 	if z.VolumesPerServer <= 0 {
-		return fmt.Errorf("zone #%d cannot have 0 volumes per server", zi)
+		return fmt.Errorf("pool #%d cannot have 0 volumes per server", zi)
 	}
 
 	if z.Servers*z.VolumesPerServer < 4 {
 		// Erasure coding has few requirements.
 		switch z.Servers {
 		case 1:
-			return fmt.Errorf("zone #%d setup must have a minimum of 4 volumes per server", zi)
+			return fmt.Errorf("pool #%d setup must have a minimum of 4 volumes per server", zi)
 		case 2:
-			return fmt.Errorf("zone #%d setup must have a minimum of 2 volumes per server", zi)
+			return fmt.Errorf("pool #%d setup must have a minimum of 2 volumes per server", zi)
 		case 3:
-			return fmt.Errorf("zone #%d setup must have a minimum of 2 volumes per server", zi)
+			return fmt.Errorf("pool #%d setup must have a minimum of 2 volumes per server", zi)
 		}
 	}
 
@@ -711,17 +711,17 @@ func (z *Zone) Validate(zi int) error {
 
 // Validate returns an error if any configuration of the MinIO Tenant is invalid
 func (t *Tenant) Validate() error {
-	if t.Spec.Zones == nil {
-		return errors.New("zones must be configured")
+	if t.Spec.Pools == nil {
+		return errors.New("pools must be configured")
 	}
 
 	if t.Spec.CredsSecret == nil {
 		return errors.New("please set credsSecret secret with credentials for Tenant")
 	}
 
-	// Every zone must contain a Volume Claim Template
-	for zi, zone := range t.Spec.Zones {
-		if err := zone.Validate(zi); err != nil {
+	// Every pool must contain a Volume Claim Template
+	for zi, pool := range t.Spec.Pools {
+		if err := pool.Validate(zi); err != nil {
 			return err
 		}
 	}
