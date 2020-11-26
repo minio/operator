@@ -25,6 +25,7 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
+	"github.com/minio/minio/pkg/color"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -142,11 +143,34 @@ func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, 
 	if err != nil {
 		return err
 	}
-	fmt.Printf("MinIO Tenant %s Created\n\n", to.ObjectMeta.Name)
-	fmt.Printf("Tenant\nAccess Key: %s\nSecret Key: %s\nVersion: %s\nClusterIP Service: %s\n\n", s.Data["accesskey"], s.Data["secretkey"], to.Spec.Image, to.Spec.ServiceName)
-	fmt.Printf("MinIO Console\nAccess Key: %s\nSecret Key: %s\nVersion: %s\nClusterIP Service: %s\n\n", console.Data["CONSOLE_ACCESS_KEY"], console.Data["CONSOLE_SECRET_KEY"], to.Spec.Console.Image, to.Spec.Console.Metadata.Name+miniov1.ConsoleName)
-	if t.Spec.KES != nil {
-		fmt.Printf("KES Version: %s\n", t.Spec.KES.Image)
+	if color.IsTerminal() {
+		consolePort := miniov1.ConsolePort
+		minioPort := miniov1.MinIOPort
+		if to.HasCertConfig() || to.AutoCert() {
+			consolePort = miniov1.ConsoleTLSPort
+		}
+		printBanner(to.ObjectMeta.Name, string(console.Data["CONSOLE_ACCESS_KEY"]), string(console.Data["CONSOLE_SECRET_KEY"]),
+			to.ConsoleCIServiceName(), to.MinIOHLServiceName(), consolePort, minioPort, (to.HasCertConfig() || to.AutoCert()))
 	}
 	return nil
+}
+
+func printBanner(tenantName, user, pwd, consoleSVCName, minioSVCName string, consolePort, minioPort int, tls bool) {
+	minioLocalPort := 9000
+	consoleLocalPort := 9090
+	scheme := "http"
+	if tls {
+		scheme = "https"
+	}
+	fmt.Printf(color.Bold(fmt.Sprintf("\nMinIO Tenant '%s' created\n\n", tenantName)))
+	fmt.Printf(color.Blue("Username: ") + color.Bold(fmt.Sprintf("%s \n", user)))
+	fmt.Printf(color.Blue("Password: ") + color.Bold(fmt.Sprintf("%s \n\n", pwd)))
+
+	fmt.Printf(color.Blue("Web interface access: \n"))
+	fmt.Printf(fmt.Sprintf("\t$ kubectl port-forward svc/%s %d:%d\n", consoleSVCName, consoleLocalPort, consolePort))
+	fmt.Printf(fmt.Sprintf("\tPoint browser to %s://localhost:%d\n\n", scheme, consoleLocalPort))
+
+	fmt.Printf(color.Blue("Object storage access: \n"))
+	fmt.Printf(fmt.Sprintf("\t$ kubectl port-forward svc/%s %d:%d\n", minioSVCName, minioLocalPort, minioPort))
+	fmt.Printf((fmt.Sprintf("\t$ mc alias set %s %s://localhost:%d %s %s\n\n", tenantName, scheme, minioLocalPort, user, pwd)))
 }
