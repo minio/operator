@@ -29,7 +29,7 @@ func NewCluterRoleBindingForOperator(saName, ns string) *rbacv1.ClusterRoleBindi
 	return &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
-			Kind:       "RoleBinding",
+			Kind:       "ClusterRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      helpers.ClusterRoleBindingName,
