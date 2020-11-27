@@ -155,8 +155,8 @@ spec:
   credsSecret:
     name: minio-autocert-ldap-minio-creds-secret
 
-  ## Specification for MinIO Zone(s) in this Tenant.
-  zones:
+  ## Specification for MinIO Pool(s) in this Tenant.
+  pools:
     - servers: 4
       volumesPerServer: 4
       volumeClaimTemplate:

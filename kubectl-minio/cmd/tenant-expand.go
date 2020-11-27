@@ -98,10 +98,10 @@ func (v *expandCmd) run() error {
 		return err
 	}
 
-	t.Spec.Zones = append(t.Spec.Zones, resources.Zone(v.tenantOpts.Servers, volumesPerServer, *capacityPerVolume, v.tenantOpts.StorageClass))
+	t.Spec.Pools = append(t.Spec.Pools, resources.Pool(v.tenantOpts.Servers, volumesPerServer, *capacityPerVolume, v.tenantOpts.StorageClass))
 
 	if !v.output {
-		return addZoneToTenant(client, t)
+		return addPoolToTenant(client, t)
 	}
 
 	o, err := yaml.Marshal(t)
@@ -112,7 +112,7 @@ func (v *expandCmd) run() error {
 	return nil
 }
 
-func addZoneToTenant(client *operatorv1.Clientset, t *miniov1.Tenant) error {
+func addPoolToTenant(client *operatorv1.Clientset, t *miniov1.Tenant) error {
 	data, err := json.Marshal(t)
 	if err != nil {
 		return err

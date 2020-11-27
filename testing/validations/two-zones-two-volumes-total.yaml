@@ -1,9 +1,9 @@
 apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
-  name: two-zones-two-volumes-total
+  name: two-pools-two-volumes-total
 spec:
-  zones:
+  pools:
     - servers: 1
       volumesPerServer: 1
       volumeClaimTemplate:

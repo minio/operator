@@ -10,9 +10,9 @@ data:
 apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
-  name: two-zones-diff-disks
+  name: two-pools-diff-disks
 spec:
-  zones:
+  pools:
     - servers: 4
       volumesPerServer: 2
       volumeClaimTemplate:

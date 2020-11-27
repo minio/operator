@@ -20,8 +20,8 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Te
 | scheduler             | Set custom scheduler for pods created by MinIO Operator.|
 | spec.metadata         | Define the object metadata to be passed to all the members pods of this Tenant. This allows adding annotations and labels. For example,you can add Prometheus annotations here. Internally  `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta).|
 | spec.image            | Set the container registry and image tag for MinIO server to be used in the Tenant.|
-| spec.zones            | Set the number of servers per MinIO Zone. Add a new Zone field to expand the MinIO cluster. Read more on [MinIO zones here](https://github.com/minio/minio/blob/master/docs/distributed/DESIGN.md).|
-| spec.volumesPerServer | Set the number of volume mounts per MinIO node. For example if you set `spec.zones[0].Servers = 4`, `spec.zones[1].Servers = 8` and `spec.volumesPerServer = 4`, then you'll have total 12 MinIO Pods, with 4 volume mounts on each Pod. Note that  `volumesPerServer` is static per cluster, expanding a cluster will add new nodes. |
+| spec.pools            | Set the number of servers per MinIO Pool. Add a new Pool field to expand the MinIO cluster. Read more on [MinIO pools here](https://github.com/minio/minio/blob/master/docs/distributed/DESIGN.md).|
+| spec.volumesPerServer | Set the number of volume mounts per MinIO node. For example if you set `spec.pools[0].Servers = 4`, `spec.pools[1].Servers = 8` and `spec.volumesPerServer = 4`, then you'll have total 12 MinIO Pods, with 4 volume mounts on each Pod. Note that  `volumesPerServer` is static per cluster, expanding a cluster will add new nodes. |
 | spec.imagePullSecret  | Defines the secret to be used for pull image from a private Docker image. |
 | spec.credsSecret      | Use this secret to assign custom credentials (access key and secret key) to Tenant.|
 | spec.replicas         | Define the number of nodes to be created for current Tenant cluster.|

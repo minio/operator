@@ -41,8 +41,8 @@ const InitContainerImage = "busybox:1.32"
 
 // MinIO Related Names
 
-// MinIOStatefulSetNameForZone returns the name for MinIO StatefulSet
-func (t *Tenant) MinIOStatefulSetNameForZone(z *Zone) string {
+// MinIOStatefulSetNameForPool returns the name for MinIO StatefulSet
+func (t *Tenant) MinIOStatefulSetNameForPool(z *Pool) string {
 	return fmt.Sprintf("%s-%s", t.Name, z.Name)
 }
 
@@ -156,9 +156,9 @@ func (t *Tenant) ConsoleCIServiceName() string {
 	return t.Name + ConsoleName
 }
 
-// ZoneStatefulsetName returns the name of a statefulset for a given zone
-func (t *Tenant) ZoneStatefulsetName(zone *Zone) string {
-	return fmt.Sprintf("%s-%s", t.Name, zone.Name)
+// PoolStatefulsetName returns the name of a statefulset for a given pool
+func (t *Tenant) PoolStatefulsetName(pool *Pool) string {
+	return fmt.Sprintf("%s-%s", t.Name, pool.Name)
 }
 
 // ConsoleVolMountName returns the name of Secret that has TLS related Info (Cert & Private Key)

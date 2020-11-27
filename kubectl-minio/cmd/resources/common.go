@@ -32,9 +32,9 @@ func tenantStorage(q resource.Quantity) v1.ResourceList {
 	return m
 }
 
-// Zone returns a Zone object from given values
-func Zone(servers, volumes int32, q resource.Quantity, sc string) miniov1.Zone {
-	return miniov1.Zone{
+// Pool returns a Pool object from given values
+func Pool(servers, volumes int32, q resource.Quantity, sc string) miniov1.Pool {
+	return miniov1.Pool{
 		Servers:          servers,
 		VolumesPerServer: volumes,
 		VolumeClaimTemplate: &v1.PersistentVolumeClaim{

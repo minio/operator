@@ -60,7 +60,7 @@ func TestTemplateVariables(t *testing.T) {
 	mt := Tenant{
 		ObjectMeta: metav1.ObjectMeta{Name: "test"},
 		Spec: TenantSpec{
-			Zones: []Zone{
+			Pools: []Pool{
 				{
 					Name:                "single",
 					Servers:             int32(servers),
@@ -78,7 +78,7 @@ func TestTemplateVariables(t *testing.T) {
 
 	t.Run("StatefulSet", func(t *testing.T) {
 		hosts := mt.TemplatedMinIOHosts("{{.StatefulSet}}")
-		assert.Contains(t, hosts, mt.MinIOStatefulSetNameForZone(&mt.Spec.Zones[0]))
+		assert.Contains(t, hosts, mt.MinIOStatefulSetNameForPool(&mt.Spec.Pools[0]))
 	})
 
 	t.Run("CIService", func(t *testing.T) {

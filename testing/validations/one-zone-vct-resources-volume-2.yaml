@@ -1,9 +1,9 @@
 apiVersion: minio.min.io/v1
 kind: Tenant
 metadata:
-  name: one-zone-vct-resources-volume-2
+  name: one-pool-vct-resources-volume-2
 spec:
-  zones:
+  pools:
     - servers: 1
       volumesPerServer: 2
       volumeClaimTemplate:

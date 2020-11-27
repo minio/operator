@@ -53,7 +53,7 @@ Options:
 - `--kes-config=kes-secret`
 - `--output`
 
-#### Add Tenant Zones
+#### Add Tenant pools
 
 Command: `kubectl minio tenant expand --name TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
 
@@ -66,11 +66,11 @@ Options:
 - `--namespace=minio`
 - `--output`
 
-#### List Tenant Zones
+#### List Tenant pools
 
 Command: `kubectl minio tenant info --name TENANT_NAME [options]`
 
-List all existing MinIO Zones in the given MinIO Tenant.
+List all existing MinIO pools in the given MinIO Tenant.
 
 example: `kubectl minio tenant info --name tenant1`
 
