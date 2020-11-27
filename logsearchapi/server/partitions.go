@@ -242,3 +242,27 @@ func (c *DBClient) vacuumData(diskCapacityGBs int) {
 
 	}
 }
+
+func (c *DBClient) partitionTables() {
+	checkInterval := 12 * time.Hour
+	bgCtx := context.Background()
+	tables := []Table{auditLogEventsTable, requestInfoTable}
+	for {
+		// Check if the partition table to store audit logs 12hrs from now exists
+		halfDayLater := time.Now().Add(12 * time.Hour)
+		for _, table := range tables {
+			partitionExists, err := c.checkPartitionTableExists(bgCtx, table.Name, halfDayLater)
+			log.Printf("Error while checking if partition for %s exists %s", table.Name, err)
+			if partitionExists {
+				continue
+			}
+
+			if err := c.createTablePartition(bgCtx, table); err != nil {
+				log.Printf("Error while creating partition for %s", table.Name)
+			}
+		}
+
+		// Check again after 12hrs
+		time.Sleep(checkInterval)
+	}
+}

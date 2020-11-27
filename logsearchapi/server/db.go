@@ -109,6 +109,31 @@ func (c *DBClient) checkTableExists(ctx context.Context, table string) (bool, er
 	return true, nil
 }
 
+func (c *DBClient) checkPartitionTableExists(ctx context.Context, table string, givenTime time.Time) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	p := newPartitionTimeRange(givenTime)
+	partitionTable := fmt.Sprintf("%s_%s", table, p.getPartnameSuffix())
+	const existsQuery QTemplate = `SELECT 1 FROM %s WHERE false;`
+	res, _ := c.Query(ctx, existsQuery.build(partitionTable))
+	if res.Err() != nil {
+		// check for table does not exist error
+		if strings.Contains(res.Err().Error(), "(SQLSTATE 42P01)") {
+			return false, nil
+		}
+		return false, res.Err()
+	}
+
+	return true, nil
+}
+
+func (c *DBClient) createTablePartition(ctx context.Context, table Table) error {
+	partTimeRange := newPartitionTimeRange(time.Now())
+	_, err := c.Exec(ctx, table.getCreatePartitionStatement(partTimeRange))
+	return err
+}
+
 func (c *DBClient) createTableAndPartition(ctx context.Context, table Table) error {
 	if exists, err := c.checkTableExists(ctx, table.Name); err != nil {
 		return err
@@ -120,9 +145,7 @@ func (c *DBClient) createTableAndPartition(ctx context.Context, table Table) err
 		return err
 	}
 
-	partTimeRange := newPartitionTimeRange(time.Now())
-	_, err := c.Exec(ctx, table.getCreatePartitionStatement(partTimeRange))
-	return err
+	return c.createTablePartition(ctx, table)
 }
 
 func (c *DBClient) createTables(ctx context.Context) error {
