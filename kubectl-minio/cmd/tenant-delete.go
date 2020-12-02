@@ -25,6 +25,7 @@ import (
 	"io"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
+	"github.com/minio/minio/pkg/color"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -36,13 +37,12 @@ import (
 const (
 	tenantDeleteDesc = `
 'delete' command deletes a MinIO tenant`
-	tenantDeleteExample = `  kubectl minio tenant delete --name tenant1 --namespace tenant1-ns`
+	tenantDeleteExample = `  kubectl minio tenant delete tenant1 --namespace tenant1-ns`
 )
 
 type tenantDeleteCmd struct {
 	out    io.Writer
 	errOut io.Writer
-	name   string
 	ns     string
 }
 
@@ -54,23 +54,34 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Short:   "Delete a MinIO tenant",
 		Long:    deleteDesc,
 		Example: deleteExample,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.validate(); err != nil {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := c.validate(args); err != nil {
 				return err
 			}
+			if !helpers.Ask(fmt.Sprintf("This will delete the Tenant %s and ALL its data. Do you want to proceed?", args[0])) {
+				return fmt.Errorf(color.Bold("Aborting Tenant deletion\n"))
+			}
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.run(args)
 		},
 	}
-
+	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
-	f.StringVar(&c.name, "name", "", "name of the MinIO tenant to delete")
 	f.StringVarP(&c.ns, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	return cmd
 }
 
-func (d *tenantDeleteCmd) validate() error {
-	if d.name == "" {
-		return errors.New("--name flag is required for tenant deletion")
+func (d *tenantDeleteCmd) validate(args []string) error {
+	if args == nil {
+		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant delete tenant1'")
+	}
+	if len(args) != 1 {
+		return errors.New("delete command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant delete tenant1'")
+	}
+	if args[0] == "" {
+		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant delete tenant1'")
 	}
 	return nil
 }
@@ -85,15 +96,15 @@ func (d *tenantDeleteCmd) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	return deleteTenant(oclient, kclient, d)
+	return deleteTenant(oclient, kclient, d, args[0])
 }
 
-func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d *tenantDeleteCmd) error {
-	tenant, err := client.MinioV1().Tenants(d.ns).Get(context.Background(), d.name, metav1.GetOptions{})
+func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d *tenantDeleteCmd, name string) error {
+	tenant, err := client.MinioV1().Tenants(d.ns).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if err := client.MinioV1().Tenants(d.ns).Delete(context.Background(), d.name, v1.DeleteOptions{}); err != nil {
+	if err := client.MinioV1().Tenants(d.ns).Delete(context.Background(), name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
 	if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.CredsSecret.Name, metav1.DeleteOptions{}); err != nil {

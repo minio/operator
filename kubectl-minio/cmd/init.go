@@ -28,7 +28,7 @@ import (
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/spf13/cobra"
 
-	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,7 +43,7 @@ import (
 const (
 	operatorInitDesc = `
 'init' command creates MinIO Operator deployment along with all the dependencies.`
-	operatorInitExample = `  kubectl minio operator init`
+	operatorInitExample = `  kubectl minio init`
 )
 
 type operatorInitCmd struct {
@@ -59,7 +59,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "init",
-		Short:   "Initialize MinIO Operator deployment",
+		Short:   "Initialize MinIO Operator",
 		Long:    operatorInitDesc,
 		Example: operatorInitExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -69,7 +69,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			return o.run()
 		},
 	}
-
+	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
 	f.StringVarP(&o.operatorOpts.Image, "image", "i", helpers.DefaultOperatorImage, "operator image")
 	f.StringVarP(&o.operatorOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
@@ -124,7 +124,7 @@ func (o *operatorInitCmd) run() error {
 }
 
 func createCRD(client *apiextension.Clientset, crd *apiextensionv1.CustomResourceDefinition) error {
-	_, err := client.ApiextensionsV1beta1().CustomResourceDefinitions().Create(context.Background(), crd, v1.CreateOptions{})
+	_, err := client.ApiextensionsV1().CustomResourceDefinitions().Create(context.Background(), crd, v1.CreateOptions{})
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
 			return fmt.Errorf("CustomResourceDefinition %s: already present, skipped", crd.ObjectMeta.Name)

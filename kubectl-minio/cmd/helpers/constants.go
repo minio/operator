@@ -23,9 +23,6 @@ import (
 )
 
 const (
-	// StaticYamlPath is path to the static yaml files
-	//	StaticYamlPath = "https://raw.githubusercontent.com/nitisht/kubectl-minio/master/cmd/static/static.yaml"
-
 	// ClusterRoleBindingName is the name for CRB
 	ClusterRoleBindingName = "minio-operator-binding"
 
@@ -86,11 +83,13 @@ const (
 	DefaultConsoleImage = "minio/console:v0.4.6"
 )
 
-// DeploymentReplicas is the number of replicas for MinIO Operator
-var DeploymentReplicas int32 = 1
+var (
+	// DeploymentReplicas is the number of replicas for MinIO Operator
+	DeploymentReplicas int32 = 1
 
-// KESReplicas is the number of replicas for MinIO KES
-var KESReplicas int32 = 2
+	// KESReplicas is the number of replicas for MinIO KES
+	KESReplicas int32 = 2
 
-// ConsoleReplicas is the number of replicas for MinIO Console
-var ConsoleReplicas int32 = 2
+	// ConsoleReplicas is the number of replicas for MinIO Console
+	ConsoleReplicas int32 = 2
+)

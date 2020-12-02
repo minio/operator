@@ -20,27 +20,30 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/minio/minio/pkg/color"
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
+	"github.com/minio/operator/pkg/resources/services"
+	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/yaml"
-
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
-	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
-	"github.com/spf13/cobra"
 )
 
 const (
 	createDesc = `
 'create' command creates a new MinIO tenant`
-	createExample       = `  kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
+	createExample       = `  kubectl minio tenant create tenant1 --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
 	tenantSecretSuffix  = "-creds-secret"
 	consoleSecretSuffix = "-console-secret"
 )
@@ -56,20 +59,19 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &createCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "create",
+		Use:     "create <string> --servers <int> --volumes <int> --capacity <str> --namespace <str>",
 		Short:   "Create a MinIO tenant",
 		Long:    createDesc,
 		Example: createExample,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.validate(); err != nil {
+			if err := c.validate(args); err != nil {
 				return err
 			}
 			return c.run(args)
 		},
 	}
-
+	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
-	f.StringVar(&c.tenantOpts.Name, "name", "", "name of the MinIO tenant to create")
 	f.Int32Var(&c.tenantOpts.Servers, "servers", 0, "total number of pods in MinIO tenant")
 	f.Int32Var(&c.tenantOpts.Volumes, "volumes", 0, "total number of volumes in the MinIO tenant")
 	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this pool, e.g. 16Ti")
@@ -78,13 +80,26 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret with details for enabling encryption, refer example https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
 	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
+	cmd.MarkFlagRequired("servers")
+	cmd.MarkFlagRequired("volumes")
+	cmd.MarkFlagRequired("capacity")
 	return cmd
 }
 
-func (c *createCmd) validate() error {
+func (c *createCmd) validate(args []string) error {
+	c.tenantOpts.Name = args[0]
 	c.tenantOpts.SecretName = c.tenantOpts.Name + tenantSecretSuffix
 	c.tenantOpts.ConsoleSecret = c.tenantOpts.Name + consoleSecretSuffix
 	c.tenantOpts.Image = helpers.DefaultTenantImage
+	if args == nil {
+		return errors.New("create command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant create tenant1'")
+	}
+	if len(args) != 1 {
+		return errors.New("create command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant create tenant1'")
+	}
+	if args[0] == "" {
+		return errors.New("create command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant create tenant1'")
+	}
 	return c.tenantOpts.Validate()
 }
 
@@ -143,34 +158,31 @@ func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, 
 	if err != nil {
 		return err
 	}
+	minSvc := services.NewClusterIPForMinIO(to)
+	conSvc := services.NewClusterIPForConsole(to)
 	if color.IsTerminal() {
-		consolePort := miniov1.ConsolePort
-		minioPort := miniov1.MinIOPort
-		if to.HasCertConfig() || to.AutoCert() {
-			consolePort = miniov1.ConsoleTLSPort
-		}
-		printBanner(to.ObjectMeta.Name, string(console.Data["CONSOLE_ACCESS_KEY"]), string(console.Data["CONSOLE_SECRET_KEY"]),
-			to.ConsoleCIServiceName(), to.MinIOHLServiceName(), consolePort, minioPort, (to.HasCertConfig() || to.AutoCert()))
+		printBanner(to.ObjectMeta.Name, to.ObjectMeta.Namespace, string(console.Data["CONSOLE_ACCESS_KEY"]), string(console.Data["CONSOLE_SECRET_KEY"]),
+			minSvc, conSvc)
 	}
 	return nil
 }
 
-func printBanner(tenantName, user, pwd, consoleSVCName, minioSVCName string, consolePort, minioPort int, tls bool) {
-	minioLocalPort := 9000
-	consoleLocalPort := 9090
-	scheme := "http"
-	if tls {
-		scheme = "https"
+func printBanner(tenantName, ns, user, pwd string, s, c *corev1.Service) {
+	fmt.Printf(color.Bold(fmt.Sprintf("\nTenant '%s' created in '%s' Namespace\n\n", tenantName, ns)))
+	fmt.Printf(color.Blue("  Username: %s \n", user))
+	fmt.Printf(color.Blue("  Password: %s \n", pwd))
+	fmt.Printf(color.Blue("  Note: Copy the credentials to a secure location. MinIO will not display these again.\n\n"))
+	var minPorts, consolePorts string
+	for _, p := range s.Spec.Ports {
+		minPorts = minPorts + strconv.Itoa(int(p.Port)) + ","
 	}
-	fmt.Printf(color.Bold(fmt.Sprintf("\nMinIO Tenant '%s' created\n\n", tenantName)))
-	fmt.Printf(color.Blue("Username: ") + color.Bold(fmt.Sprintf("%s \n", user)))
-	fmt.Printf(color.Blue("Password: ") + color.Bold(fmt.Sprintf("%s \n\n", pwd)))
-
-	fmt.Printf(color.Blue("Web interface access: \n"))
-	fmt.Printf(fmt.Sprintf("\t$ kubectl port-forward svc/%s %d:%d\n", consoleSVCName, consoleLocalPort, consolePort))
-	fmt.Printf(fmt.Sprintf("\tPoint browser to %s://localhost:%d\n\n", scheme, consoleLocalPort))
-
-	fmt.Printf(color.Blue("Object storage access: \n"))
-	fmt.Printf(fmt.Sprintf("\t$ kubectl port-forward svc/%s %d:%d\n", minioSVCName, minioLocalPort, minioPort))
-	fmt.Printf((fmt.Sprintf("\t$ mc alias set %s %s://localhost:%d %s %s\n\n", tenantName, scheme, minioLocalPort, user, pwd)))
+	for _, p := range c.Spec.Ports {
+		consolePorts = consolePorts + strconv.Itoa(int(p.Port)) + ","
+	}
+	t := helpers.GetTable()
+	t.SetHeader([]string{"Application", "Service Name", "Namespace", "Service Type", "Service Port"})
+	t.Append([]string{"MinIO", s.Name, ns, "ClusterIP", strings.TrimSuffix(minPorts, ",")})
+	t.Append([]string{"Console", c.Name, ns, "ClusterIP", strings.TrimSuffix(consolePorts, ",")})
+	t.Render()
+	fmt.Println()
 }

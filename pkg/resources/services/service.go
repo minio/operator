@@ -29,14 +29,11 @@ import (
 
 // NewClusterIPForMinIO will return a new headless Kubernetes service for a Tenant
 func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
-	var port int32
-	var name string
+	var port int32 = miniov1.MinIOPortLoadBalancerSVC
+	var name string = miniov1.MinIOServiceHTTPPortName
 	if t.TLS() {
 		port = miniov1.MinIOTLSPortLoadBalancerSVC
 		name = miniov1.MinIOServiceHTTPSPortName
-	} else {
-		port = miniov1.MinIOPortLoadBalancerSVC
-		name = miniov1.MinIOServiceHTTPPortName
 	}
 	minioPort := corev1.ServicePort{
 		Port:       port,
@@ -62,14 +59,11 @@ func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
 
 // ServiceForBucket will return a external name based service
 func ServiceForBucket(t *miniov1.Tenant, bucket string) *corev1.Service {
-	var port int32
-	var name string
+	var port int32 = miniov1.MinIOPortLoadBalancerSVC
+	var name string = miniov1.MinIOServiceHTTPPortName
 	if t.TLS() {
 		port = miniov1.MinIOTLSPortLoadBalancerSVC
 		name = miniov1.MinIOServiceHTTPSPortName
-	} else {
-		port = miniov1.MinIOPortLoadBalancerSVC
-		name = miniov1.MinIOServiceHTTPPortName
 	}
 	minioPort := corev1.ServicePort{
 		Port:       port,
@@ -157,7 +151,9 @@ func NewHeadlessForLog(t *miniov1.Tenant) *corev1.Service {
 // NewClusterIPForConsole will return a new cluster IP service for Console Deployment
 func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
 	consolePort := corev1.ServicePort{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName}
-	consoleTLSPort := corev1.ServicePort{Port: miniov1.ConsoleTLSPort, Name: miniov1.ConsoleServiceTLSPortName}
+	if t.TLS() {
+		consolePort = corev1.ServicePort{Port: miniov1.ConsoleTLSPort, Name: miniov1.ConsoleServiceTLSPortName}
+	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.ConsolePodLabels(),
@@ -168,7 +164,6 @@ func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				consolePort,
-				consoleTLSPort,
 			},
 			Selector: t.ConsolePodLabels(),
 			Type:     corev1.ServiceTypeClusterIP,

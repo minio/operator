@@ -19,16 +19,14 @@
 package cmd
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"strings"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
+	"github.com/minio/minio/pkg/color"
 	"github.com/spf13/cobra"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +35,7 @@ import (
 
 const (
 	deleteDesc = `
-'delete' command delete MinIO Operator deployment along with all the tenants.`
+'delete' command delete MinIO Operator along with all the tenants.`
 	deleteExample = `  kubectl minio delete`
 )
 
@@ -54,49 +52,26 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "delete",
-		Short:   "Delete MinIO Operator deployment",
+		Short:   "Delete MinIO Operator",
 		Long:    deleteDesc,
 		Example: deleteExample,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator? [Y/N]: ")
-			if !o.ask() {
-				return errors.New("Aborting Operator deletion")
+			if !helpers.Ask(fmt.Sprintf("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator?")) {
+				return fmt.Errorf(color.Bold("Aborting Operator deletion\n"))
 			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 0 {
-				return errors.New("this command does not accept arguments")
+				return errors.New("delete command does not accept arguments")
 			}
 			return o.run()
 		},
 	}
-
+	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
 	f.StringVarP(&o.operatorOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
-
 	return cmd
-}
-
-func (o *deleteCmd) ask() bool {
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		s, _ := reader.ReadString('\n')
-		s = strings.TrimSuffix(s, "\n")
-		s = strings.ToLower(s)
-		if len(s) > 1 {
-			fmt.Fprintln(os.Stderr, "Please enter Y or N")
-			continue
-		}
-		if strings.Compare(s, "n") == 0 {
-			return false
-		} else if strings.Compare(s, "y") == 0 {
-			break
-		} else {
-			continue
-		}
-	}
-	return true
 }
 
 func (o *deleteCmd) run() error {
