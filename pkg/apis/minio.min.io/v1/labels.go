@@ -31,6 +31,20 @@ func (t *Tenant) KESPodLabels() map[string]string {
 	return m
 }
 
+// LogPgPodLabels returns the default labels for Log Postgres server pods
+func (t *Tenant) LogPgPodLabels() map[string]string {
+	m := make(map[string]string, 1)
+	m[LogDBInstanceLabel] = t.LogStatefulsetName()
+	return m
+}
+
+// LogSearchAPIPodLabels returns the default labels for Log search API server pods
+func (t *Tenant) LogSearchAPIPodLabels() map[string]string {
+	m := make(map[string]string, 1)
+	m[LogSearchAPIInstanceLabel] = t.LogSearchAPIDeploymentName()
+	return m
+}
+
 // ConsolePodLabels returns the default labels for Console Pod
 func (t *Tenant) ConsolePodLabels() map[string]string {
 	m := make(map[string]string, 1)

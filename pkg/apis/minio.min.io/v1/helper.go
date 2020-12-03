@@ -467,6 +467,11 @@ func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
 }
 
+// HasLogEnabled checks if Log feature has been enabled
+func (t *Tenant) HasLogEnabled() bool {
+	return t.Spec.Log != nil
+}
+
 // HasConsoleEnabled checks if the console has been enabled by the user
 func (t *Tenant) HasConsoleEnabled() bool {
 	return t.Spec.Console != nil
