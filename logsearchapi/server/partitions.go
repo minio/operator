@@ -252,7 +252,10 @@ func (c *DBClient) partitionTables() {
 		aDayLater := time.Now().Add(24 * time.Hour)
 		for _, table := range tables {
 			partitionExists, err := c.checkPartitionTableExists(bgCtx, table.Name, aDayLater)
-			log.Printf("Error while checking if partition for %s exists %s", table.Name, err)
+			if err != nil {
+				log.Printf("Error while checking if partition for %s exists %s", table.Name, err)
+			}
+
 			if partitionExists {
 				continue
 			}
