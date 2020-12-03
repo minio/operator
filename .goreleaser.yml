@@ -62,7 +62,7 @@ dockers:
     goos: linux
     # GOARCH of the built binary that should be used.
     goarch: amd64
-    dockerfile: Dockerfile.release
+    dockerfile: Dockerfile
     image_templates:
       - "minio/k8s-operator:{{ .Tag }}"
       - "minio/k8s-operator:latest"
@@ -71,4 +71,3 @@ dockers:
       - README.md
       - CREDITS
       - minio-operator.minisig
-      - ca-certificates.crt
