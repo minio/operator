@@ -14,15 +14,15 @@ require (
 	github.com/imdario/mergo v0.3.10 // indirect
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/mattn/go-runewidth v0.0.9 // indirect
-	github.com/minio/minio v0.0.0-20200927172404-27d9bd04e544
+	github.com/minio/minio v0.0.0-20201203193910-919441d9c4d2
 	github.com/minio/operator v0.3.23
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/montanaflynn/stats v0.6.3 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rakyll/statik v0.1.7
 	github.com/secure-io/sio-go v0.3.1 // indirect
-	github.com/shirou/gopsutil v2.20.6+incompatible // indirect
 	github.com/spf13/cobra v1.0.0
+	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200707003333-58bb8ae09f8e // indirect
 	go.mongodb.org/mongo-driver v1.3.5 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect

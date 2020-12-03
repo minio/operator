@@ -75,7 +75,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/gorilla/mux"
-	console "github.com/minio/console/pkg/auth/ldap"
 	"github.com/minio/minio/pkg/auth"
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
@@ -1202,7 +1201,7 @@ func (c *Controller) syncHandler(key string) error {
 			// If Console is deployed with the CONSOLE_LDAP_ENABLED="on" configuration that means MinIO is running with LDAP enabled
 			// and we need to skip the console user creation
 			for _, env := range tenant.GetConsoleEnvVars() {
-				if env.Name == console.ConsoleLDAPEnabled && env.Value == "on" {
+				if env.Name == "CONSOLE_LDAP_ENABLED" && env.Value == "on" {
 					skipCreateConsoleUser = true
 					break
 				}
