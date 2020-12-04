@@ -34,8 +34,8 @@ func newAuditWebhookConfig(tenant *miniov1.Tenant, secret *corev1.Secret) auditW
 	auditToken := string(secret.Data[miniov1.LogAuditTokenKey])
 	whTarget := fmt.Sprintf("audit_webhook:%s", tenant.LogSearchAPIDeploymentName())
 
-	// audit_webhook enable=off endpoint= auth_token=
-	whArgs := fmt.Sprintf("%s auth_token=\"%s\" endpoint=\"%s\"", whTarget, auditToken, services.GetLogSearchAPIAddr(tenant))
+	logIngestEndpoint := fmt.Sprintf("%s/%s?token=%s", services.GetLogSearchAPIAddr(tenant), "api/ingest", auditToken)
+	whArgs := fmt.Sprintf("%s endpoint=\"%s\"", whTarget, logIngestEndpoint)
 	return auditWebhookConfig{
 		target: whTarget,
 		args:   whArgs,
