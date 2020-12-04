@@ -151,7 +151,7 @@ func NewHeadlessForLog(t *miniov1.Tenant) *corev1.Service {
 // NewClusterIPForConsole will return a new cluster IP service for Console Deployment
 func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
 	consolePort := corev1.ServicePort{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName}
-	if t.TLS() {
+	if t.TLS() || t.ConsoleExternalCert() {
 		consolePort = corev1.ServicePort{Port: miniov1.ConsoleTLSPort, Name: miniov1.ConsoleServiceTLSPortName}
 	}
 	svc := &corev1.Service{
