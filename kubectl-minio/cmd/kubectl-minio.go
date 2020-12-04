@@ -35,8 +35,9 @@ import (
 	"k8s.io/client-go/scale/scheme"
 
 	// Statik CRD assets for our plugin
+	"github.com/minio/kubectl-minio/cmd/helpers"
 	_ "github.com/minio/kubectl-minio/statik"
-	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 var (
@@ -49,7 +50,7 @@ var (
 
 const (
 	minioDesc = `
-kubectl plugin to manage MinIO operator CRDs.`
+Deploy and manage the multi tenant, S3 API compatible object storage on Kubernetes`
 )
 
 func init() {
@@ -105,10 +106,11 @@ func NewCmdMinIO(streams genericclioptions.IOStreams) *cobra.Command {
 		Long:         minioDesc,
 		SilenceUsage: true,
 	}
-
+	cmd = helpers.DisableHelp(cmd)
+	cobra.EnableCommandSorting = false
 	cmd.AddCommand(newInitCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
-	cmd.AddCommand(newDeleteCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 	cmd.AddCommand(newTenantCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
+	cmd.AddCommand(newDeleteCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 
 	return cmd
 }

@@ -41,30 +41,20 @@ type TenantOptions struct {
 	StorageClass    string
 	KmsSecret       string
 	ConsoleSecret   string
-	CertSecret      string
 	DisableTLS      bool
 	ImagePullSecret string
 }
 
 // Validate Tenant Options
 func (t TenantOptions) Validate() error {
-	if t.Name == "" {
-		return errors.New("--name flag is required for tenant creation")
+	if t.Servers <= 0 {
+		return errors.New("--servers is required. Specify a value greater than or equal to 1")
 	}
-	if t.Servers == 0 {
-		return errors.New("--servers flag is required for tenant creation")
-	}
-	if t.Servers < 0 {
-		return errors.New("servers can not be negative")
-	}
-	if t.Volumes == 0 {
-		return errors.New("--volumes flag is required for tenant creation")
-	}
-	if t.Volumes < 0 {
-		return errors.New("volumes can not be negative")
+	if t.Volumes <= 0 {
+		return errors.New("--volumes is required. Specify a positive value")
 	}
 	if t.Capacity == "" {
-		return errors.New("--capacity flag is required for tenant creation")
+		return errors.New("--capacity flag is required")
 	}
 	_, err := resource.ParseQuantity(t.Capacity)
 	if err != nil {
@@ -132,16 +122,6 @@ func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
 	return nil
 }
 
-func externalCertSecret(secret string) []*miniov1.LocalCertificateReference {
-	certs := make([]*miniov1.LocalCertificateReference, 1)
-	if secret != "" {
-		certs[0] = &miniov1.LocalCertificateReference{
-			Name: secret,
-		}
-	}
-	return certs
-}
-
 func storageClass(sc string) *string {
 	if sc != "" {
 		return &sc
@@ -179,11 +159,10 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 				OrganizationName: []string{},
 				DNSNames:         []string{},
 			},
-			Mountpath:          helpers.MinIOMountPath,
-			KES:                tenantKESConfig(opts.Name, opts.KmsSecret),
-			Console:            tenantConsoleConfig(opts.Name, opts.ConsoleSecret),
-			ExternalCertSecret: externalCertSecret(opts.CertSecret),
-			ImagePullSecret:    v1.LocalObjectReference{Name: opts.ImagePullSecret},
+			Mountpath:       helpers.MinIOMountPath,
+			KES:             tenantKESConfig(opts.Name, opts.KmsSecret),
+			Console:         tenantConsoleConfig(opts.Name, opts.ConsoleSecret),
+			ImagePullSecret: v1.LocalObjectReference{Name: opts.ImagePullSecret},
 		},
 	}
 	return t, t.Validate()

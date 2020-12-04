@@ -37,7 +37,7 @@ const (
 func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tenant",
-		Short: "Manage MinIO tenant",
+		Short: "Manage MinIO tenant(s)",
 		Long:  tenantDesc,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			client, err := helpers.GetKubeExtensionClient()
@@ -54,10 +54,10 @@ func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			return nil
 		},
 	}
-
+	cmd = helpers.DisableHelp(cmd)
 	cmd.AddCommand(newTenantCreateCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
-	cmd.AddCommand(newTenantExpandCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 	cmd.AddCommand(newTenantInfoCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
+	cmd.AddCommand(newTenantExpandCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 	cmd.AddCommand(newTenantUpgradeCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 	cmd.AddCommand(newTenantDeleteCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 

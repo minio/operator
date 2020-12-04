@@ -21,15 +21,23 @@ package helpers
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
+	"os"
 	"os/exec"
+	"strings"
 
+	"github.com/dustin/go-humanize"
+	"github.com/manifoldco/promptui"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
+	"github.com/spf13/cobra"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	table "github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -134,6 +142,16 @@ func CapacityPerVolume(capacity string, volumes int32) (*resource.Quantity, erro
 	return resource.NewQuantity(bytesPerVolume, totalQuantity.Format), nil
 }
 
+// TotalCapacity returns total capacity of a given tenant
+func TotalCapacity(tenant miniov1.Tenant) string {
+	var totalBytes int64
+	for _, z := range tenant.Spec.Pools {
+		pvcBytes, _ := z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().AsInt64()
+		totalBytes = totalBytes + (pvcBytes * int64(z.Servers) * int64(z.VolumesPerServer))
+	}
+	return humanize.IBytes(uint64(totalBytes))
+}
+
 // ToYaml takes a slice of values, and returns corresponding YAML
 // representation as a string slice
 func ToYaml(objs []runtime.Object) ([]string, error) {
@@ -147,4 +165,48 @@ func ToYaml(objs []runtime.Object) ([]string, error) {
 	}
 
 	return manifests, nil
+}
+
+// GetTable returns a formatted instance of the table
+func GetTable() *table.Table {
+	t := table.NewWriter(os.Stdout)
+	t.SetAutoWrapText(false)
+	t.SetHeaderAlignment(table.ALIGN_LEFT)
+	t.SetAlignment(table.ALIGN_LEFT)
+	return t
+}
+
+// DisableHelp disables the help command
+func DisableHelp(cmd *cobra.Command) *cobra.Command {
+	cmd.SetHelpCommand(&cobra.Command{
+		Use:    "no-help",
+		Hidden: true,
+	})
+	return cmd
+}
+
+// Ask user for Y/N input. Return true if response is "y"
+func Ask(label string) bool {
+	validate := func(input string) error {
+		s := strings.TrimSuffix(input, "\n")
+		s = strings.ToLower(s)
+		if strings.Compare(s, "n") != 0 && strings.Compare(s, "y") != 0 {
+			return errors.New("Please enter y/n")
+		}
+		return nil
+	}
+
+	prompt := promptui.Prompt{
+		Label:    label,
+		Validate: validate,
+	}
+	fmt.Println()
+	result, err := prompt.Run()
+	if err != nil {
+		return false
+	}
+	if strings.Compare(result, "n") == 0 {
+		return false
+	}
+	return true
 }
