@@ -575,7 +575,7 @@ spec:
                             type: object
                         type: object
                       podAffinity:
-                        description: Describes pod affinity scheduling rules (e.g. co-locate this pod in the same node, zone, etc. as some other pod(s)).
+                        description: Describes pod affinity scheduling rules (e.g. co-locate this pod in the same node, pool, etc. as some other pod(s)).
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
                             description: The scheduler will prefer to schedule pods to nodes that satisfy the affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.
@@ -684,7 +684,7 @@ spec:
                             type: array
                         type: object
                       podAntiAffinity:
-                        description: Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the same node, zone, etc. as some other pod(s)).
+                        description: Describes pod anti-affinity scheduling rules (e.g. avoid putting this pod in the same node, pool, etc. as some other pod(s)).
                         properties:
                           preferredDuringSchedulingIgnoredDuringExecution:
                             description: The scheduler will prefer to schedule pods to nodes that satisfy the anti-affinity expressions specified by this field, but it may choose a node that violates one or more of the expressions. The node that is most preferred is the one with the greatest sum of weights, i.e. for each node that meets all of the scheduling requirements (resource request, requiredDuringScheduling anti-affinity expressions, etc.), compute a sum by iterating through the elements of this field and adding "weight" to the sum if the node has pods which matches the corresponding podAffinityTerm; the node(s) with the highest sum are the most preferred.
@@ -1101,7 +1101,7 @@ spec:
               description: ServiceAccountName is the name of the ServiceAccount to use to run pods of all MinIO Pods created as a part of this Tenant.
               type: string
             sideCars:
-              description: SideCars a list of containers to run as sidecars along every MinIO Pod on every zone
+              description: SideCars a list of containers to run as sidecars along every MinIO Pod on every pool
               properties:
                 containers:
                   description: List of containers to run inside the Pod

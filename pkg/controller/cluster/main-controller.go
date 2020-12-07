@@ -1024,15 +1024,15 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 			}
-			// Verify if this zone matches the spec on the tenant (resources, affinity, sidecars, etc)
-			updateZoneSS, err := zoneSSMatchesSpec(tenant, &zone, ss)
+			// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
+			updatePoolSS, err := poolSSMatchesSpec(tenant, &pool, ss)
 			if err != nil {
 				return err
 			}
 
-			// if the zone is marked for update, make it so.
-			if updateZoneSS {
-				ss = statefulsets.NewForMinIOZone(tenant, secret, &zone, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			// if the pool is marked for update, make it so.
+			if updatePoolSS {
+				ss = statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 					return err
 				}

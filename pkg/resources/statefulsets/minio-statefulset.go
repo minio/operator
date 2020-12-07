@@ -492,7 +492,7 @@ func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool,
 	ssMeta.Labels[miniov1.OperatorLabel] = operatorVersion
 
 	containers := []corev1.Container{
-		zoneMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion),
+		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion),
 	}
 	// attach any sidecar containers and volumes
 	if t.Spec.SideCars != nil && len(t.Spec.SideCars.Containers) > 0 {

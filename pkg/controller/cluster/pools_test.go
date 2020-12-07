@@ -27,10 +27,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Test_zoneSSMatchesSpec(t *testing.T) {
+func Test_poolSSMatchesSpec(t *testing.T) {
 	type args struct {
 		tenant *miniov1.Tenant
-		zone   *miniov1.Zone
+		pool   *miniov1.Pool
 		ss     *appsv1.StatefulSet
 	}
 	tests := []struct {
@@ -48,12 +48,12 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 					},
 					Spec: miniov1.TenantSpec{},
 				},
-				zone: &miniov1.Zone{
-					Name: "zone-0",
+				pool: &miniov1.Pool{
+					Name: "pool-0",
 				},
 				ss: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-zone-0",
+						Name: "tenant-a-pool-0",
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
@@ -88,12 +88,12 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				zone: &miniov1.Zone{
-					Name: "zone-0",
+				pool: &miniov1.Pool{
+					Name: "pool-0",
 				},
 				ss: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-zone-0",
+						Name: "tenant-a-pool-0",
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
@@ -119,19 +119,19 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Name: "tenant-a",
 					},
 					Spec: miniov1.TenantSpec{
-						Zones: []miniov1.Zone{
+						Pools: []miniov1.Pool{
 							{
-								Name: "zone-0",
+								Name: "pool-0",
 							},
 						},
 					},
 				},
-				zone: &miniov1.Zone{
-					Name: "zone-0",
+				pool: &miniov1.Pool{
+					Name: "pool-0",
 				},
 				ss: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-zone-0",
+						Name: "tenant-a-pool-0",
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
@@ -171,12 +171,12 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				zone: &miniov1.Zone{
-					Name: "zone-0",
+				pool: &miniov1.Pool{
+					Name: "pool-0",
 				},
 				ss: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-zone-0",
+						Name: "tenant-a-pool-0",
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
@@ -206,9 +206,9 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Name: "tenant-a",
 					},
 					Spec: miniov1.TenantSpec{
-						Zones: []miniov1.Zone{
+						Pools: []miniov1.Pool{
 							{
-								Name: "zone-0",
+								Name: "pool-0",
 								Resources: corev1.ResourceRequirements{
 									Limits: nil,
 									Requests: corev1.ResourceList{
@@ -219,8 +219,8 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				zone: &miniov1.Zone{
-					Name: "zone-0",
+				pool: &miniov1.Pool{
+					Name: "pool-0",
 					Resources: corev1.ResourceRequirements{
 						Limits: nil,
 						Requests: corev1.ResourceList{
@@ -230,7 +230,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 				},
 				ss: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-zone-0",
+						Name: "tenant-a-pool-0",
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
@@ -262,19 +262,19 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Name: "tenant-a",
 					},
 					Spec: miniov1.TenantSpec{
-						Zones: []miniov1.Zone{
+						Pools: []miniov1.Pool{
 							{
-								Name: "zone-0",
+								Name: "pool-0",
 							},
 						},
 					},
 				},
-				zone: &miniov1.Zone{
-					Name: "zone-0",
+				pool: &miniov1.Pool{
+					Name: "pool-0",
 				},
 				ss: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-zone-0",
+						Name: "tenant-a-pool-0",
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
@@ -306,9 +306,9 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Name: "tenant-a",
 					},
 					Spec: miniov1.TenantSpec{
-						Zones: []miniov1.Zone{
+						Pools: []miniov1.Pool{
 							{
-								Name: "zone-0",
+								Name: "pool-0",
 								Affinity: &corev1.Affinity{
 									PodAntiAffinity: &corev1.PodAntiAffinity{
 										RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
@@ -320,9 +320,9 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 															Operator: metav1.LabelSelectorOpIn,
 															Values:   []string{"tenant-a"},
 														}, {
-															Key:      miniov1.ZoneLabel,
+															Key:      miniov1.PoolLabel,
 															Operator: metav1.LabelSelectorOpIn,
-															Values:   []string{"zone-0"},
+															Values:   []string{"pool-0"},
 														},
 													},
 												},
@@ -334,8 +334,8 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				zone: &miniov1.Zone{
-					Name: "zone-0",
+				pool: &miniov1.Pool{
+					Name: "pool-0",
 					Affinity: &corev1.Affinity{
 						PodAntiAffinity: &corev1.PodAntiAffinity{
 							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
@@ -347,9 +347,9 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 												Operator: metav1.LabelSelectorOpIn,
 												Values:   []string{"tenant-a"},
 											}, {
-												Key:      miniov1.ZoneLabel,
+												Key:      miniov1.PoolLabel,
 												Operator: metav1.LabelSelectorOpIn,
-												Values:   []string{"zone-0"},
+												Values:   []string{"pool-0"},
 											},
 										},
 									},
@@ -360,7 +360,7 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 				},
 				ss: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-zone-0",
+						Name: "tenant-a-pool-0",
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
@@ -386,19 +386,19 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 						Name: "tenant-a",
 					},
 					Spec: miniov1.TenantSpec{
-						Zones: []miniov1.Zone{
+						Pools: []miniov1.Pool{
 							{
-								Name: "zone-0",
+								Name: "pool-0",
 							},
 						},
 					},
 				},
-				zone: &miniov1.Zone{
-					Name: "zone-0",
+				pool: &miniov1.Pool{
+					Name: "pool-0",
 				},
 				ss: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-zone-0",
+						Name: "tenant-a-pool-0",
 					},
 					Spec: appsv1.StatefulSetSpec{
 						Template: corev1.PodTemplateSpec{
@@ -419,9 +419,9 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 															Operator: metav1.LabelSelectorOpIn,
 															Values:   []string{"tenant-a"},
 														}, {
-															Key:      miniov1.ZoneLabel,
+															Key:      miniov1.PoolLabel,
 															Operator: metav1.LabelSelectorOpIn,
-															Values:   []string{"zone-0"},
+															Values:   []string{"pool-0"},
 														},
 													},
 												},
@@ -440,13 +440,13 @@ func Test_zoneSSMatchesSpec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := zoneSSMatchesSpec(tt.args.tenant, tt.args.zone, tt.args.ss)
+			got, err := poolSSMatchesSpec(tt.args.tenant, tt.args.pool, tt.args.ss)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("zoneSSMatchesSpec() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("poolSSMatchesSpec() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("zoneSSMatchesSpec() got = %v, want %v", got, tt.want)
+				t.Errorf("poolSSMatchesSpec() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

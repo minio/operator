@@ -127,7 +127,7 @@ type TenantSpec struct {
 	// This is applied to MinIO pods only.
 	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// SideCars a list of containers to run as sidecars along every MinIO Pod on every zone
+	// SideCars a list of containers to run as sidecars along every MinIO Pod on every pool
 	// +optional
 	SideCars *SideCars `json:"sideCars,omitempty"`
 }
@@ -291,7 +291,7 @@ type TenantList struct {
 	Items []Tenant `json:"items"`
 }
 
-// SideCars represents a list of containers that will be attached to the MinIO pods on each zone
+// SideCars represents a list of containers that will be attached to the MinIO pods on each pool
 type SideCars struct {
 	// List of containers to run inside the Pod
 	// +patchMergeKey=name
