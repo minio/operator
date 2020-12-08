@@ -34,8 +34,11 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
+
+	"github.com/minio/minio/pkg/env"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -79,6 +82,11 @@ type hostsTemplateValues struct {
 	Ellipsis    string
 	Domain      string
 }
+
+var (
+	once             sync.Once
+	k8sClusterDomain string
+)
 
 // GetNSFromFile assumes the operator is running inside a k8s pod and extract the
 // current namespace from the /var/run/secrets/kubernetes.io/serviceaccount/namespace file
@@ -362,9 +370,9 @@ func (t *Tenant) MinIOHosts() (hosts []string) {
 	// Create the ellipses style URL
 	for _, z := range t.Spec.Pools {
 		if z.Servers == 1 {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), "0", t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), "0", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
 		} else {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), genEllipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), genEllipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
 		}
 	}
 	return hosts
@@ -387,7 +395,7 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 			CIService:   t.MinIOCIServiceName(),
 			HLService:   t.MinIOHLServiceName(),
 			Ellipsis:    genEllipsis(int(index), int(max)-1),
-			Domain:      ClusterDomain,
+			Domain:      GetClusterDomain(),
 		}
 		output := new(bytes.Buffer)
 		if err = tmpl.Execute(output, data); err != nil {
@@ -409,12 +417,12 @@ func (t *Tenant) AllMinIOHosts() []string {
 
 // MinIOServerHost returns ClusterIP service Host for current Tenant
 func (t *Tenant) MinIOServerHost() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
+	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // ConsoleServerHost returns ClusterIP service Host for current Console Tenant
 func (t *Tenant) ConsoleServerHost() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, ClusterDomain)
+	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // MinIOHeadlessServiceHost returns headless service Host for current Tenant
@@ -424,7 +432,7 @@ func (t *Tenant) MinIOHeadlessServiceHost() string {
 		klog.V(2).Infof(msg)
 		return ""
 	}
-	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, ClusterDomain)
+	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // KESHosts returns the host names created for current KES StatefulSet
@@ -432,7 +440,7 @@ func (t *Tenant) KESHosts() []string {
 	hosts := make([]string, 0)
 	var i int32 = 0
 	for i < t.Spec.KES.Replicas {
-		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(i))+".%s.%s.svc.%s", t.KESStatefulSetName(), t.KESHLServiceName(), t.Namespace, ClusterDomain))
+		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(i))+".%s.%s.svc.%s", t.KESStatefulSetName(), t.KESHLServiceName(), t.Namespace, GetClusterDomain()))
 		i++
 	}
 	hosts = append(hosts, t.KESServiceHost())
@@ -454,7 +462,7 @@ func (t *Tenant) KESServiceEndpoint() string {
 
 // KESServiceHost returns headless service Host for KES in current Tenant
 func (t *Tenant) KESServiceHost() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, ClusterDomain)
+	return fmt.Sprintf("%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // S3BucketDNS indicates if Bucket DNS feature is enabled.
@@ -772,4 +780,12 @@ func (t *Tenant) OwnerRef() []metav1.OwnerReference {
 // TLS indicates whether TLS is enabled for this tenant
 func (t *Tenant) TLS() bool {
 	return t.AutoCert() || t.ExternalCert()
+}
+
+// GetClusterDomain returns the Kubernetes cluster domain
+func GetClusterDomain() string {
+	once.Do(func() {
+		k8sClusterDomain = env.Get(clusterDomain, "cluster.local")
+	})
+	return k8sClusterDomain
 }

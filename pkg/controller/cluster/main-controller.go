@@ -346,7 +346,7 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *min
 						cred.SecretKey,
 						fmt.Sprintf("operator.%s.svc.%s",
 							miniov1.GetNSFromFile(),
-							miniov1.ClusterDomain),
+							miniov1.GetClusterDomain()),
 						miniov1.WebhookDefaultPort,
 						miniov1.WebhookAPIGetenv,
 						tenant.Namespace,
@@ -412,7 +412,6 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tenant.EnsureDefaults()
-	miniov1.InitGlobals(tenant)
 
 	// Validate the MinIO Tenant
 	if err = tenant.Validate(); err != nil {
@@ -480,7 +479,6 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tenant.EnsureDefaults()
-	miniov1.InitGlobals(tenant)
 
 	// Validate the MinIO Tenant
 	if err = tenant.Validate(); err != nil {
@@ -500,7 +498,7 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 			"http",
 			fmt.Sprintf("operator.%s.svc.%s",
 				miniov1.GetNSFromFile(),
-				miniov1.ClusterDomain),
+				miniov1.GetClusterDomain()),
 			miniov1.WebhookDefaultPort,
 			miniov1.WebhookAPIBucketService,
 			tenant.Namespace,
@@ -836,7 +834,6 @@ func (c *Controller) syncHandler(key string) error {
 	nsName := types.NamespacedName{Namespace: namespace, Name: tenantName}
 
 	tenant.EnsureDefaults()
-	miniov1.InitGlobals(tenant)
 
 	// Validate the MinIO Tenant
 	if err = tenant.Validate(); err != nil {
@@ -1095,7 +1092,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		// FIXME: we can make operator TLS configurable here.
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
-			miniov1.GetNSFromFile(), miniov1.ClusterDomain,
+			miniov1.GetNSFromFile(), miniov1.GetClusterDomain(),
 			miniov1.WebhookDefaultPort, miniov1.WebhookAPIUpdate,
 		))
 		if err != nil {

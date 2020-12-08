@@ -251,3 +251,6 @@ var DefaultQueryTimeout = time.Minute * 20
 
 // TLSSecretSuffix is the suffix applied to Tenant name to create the TLS secret
 var TLSSecretSuffix = "-tls"
+
+// Cluster Domain
+const clusterDomain = "CLUSTER_DOMAIN"

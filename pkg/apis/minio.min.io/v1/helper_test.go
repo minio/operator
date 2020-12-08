@@ -98,7 +98,7 @@ func TestTemplateVariables(t *testing.T) {
 
 	t.Run("Domain", func(t *testing.T) {
 		hosts := mt.TemplatedMinIOHosts("{{.Domain}}")
-		assert.Contains(t, hosts, ClusterDomain)
+		assert.Contains(t, hosts, GetClusterDomain())
 	})
 }
 
@@ -110,7 +110,6 @@ func TestTenant_KESServiceEndpoint(t1 *testing.T) {
 		Spec       TenantSpec
 		Status     TenantStatus
 	}
-	ClusterDomain = "cluster.local"
 	autoCertEnabled := true
 	tests := []struct {
 		name   string

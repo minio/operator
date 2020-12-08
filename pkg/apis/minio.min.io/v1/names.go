@@ -55,7 +55,7 @@ func (t *Tenant) MinIOStatefulSetNameForPool(z *Pool) string {
 
 // MinIOWildCardName returns the wild card name for all MinIO Pods in current StatefulSet
 func (t *Tenant) MinIOWildCardName() string {
-	return fmt.Sprintf("*.%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, ClusterDomain)
+	return fmt.Sprintf("*.%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // MinIOTLSSecretName returns the name of Secret that has TLS related Info (Cert & Private Key)
@@ -84,17 +84,17 @@ func (t *Tenant) MinIOCIServiceName() string {
 
 // MinIOBucketBaseDomain returns the base domain name for buckets
 func (t *Tenant) MinIOBucketBaseDomain() string {
-	return fmt.Sprintf("%s.svc.%s", t.Namespace, ClusterDomain)
+	return fmt.Sprintf("%s.svc.%s", t.Namespace, GetClusterDomain())
 }
 
 // MinIOBucketBaseWildcardDomain returns the base domain name for buckets
 func (t *Tenant) MinIOBucketBaseWildcardDomain() string {
-	return fmt.Sprintf("*.%s.svc.%s", t.Namespace, ClusterDomain)
+	return fmt.Sprintf("*.%s.svc.%s", t.Namespace, GetClusterDomain())
 }
 
 // MinIOFQDNServiceName returns the name of the service created for the tenant.
 func (t *Tenant) MinIOFQDNServiceName() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
+	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // MinIOCSRName returns the name of CSR that is generated if AutoTLS is enabled
@@ -136,7 +136,7 @@ func (t *Tenant) KESVolMountName() string {
 // KESWildCardName returns the wild card name managed by headless service created for
 // KES StatefulSet in current Tenant
 func (t *Tenant) KESWildCardName() string {
-	return fmt.Sprintf("*.%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, ClusterDomain)
+	return fmt.Sprintf("*.%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // KESTLSSecretName returns the name of Secret that has KES TLS related Info (Cert & Private Key)
@@ -175,7 +175,7 @@ func (t *Tenant) ConsoleVolMountName() string {
 
 // ConsoleCommonName returns the CommonName to be used in the csr template
 func (t *Tenant) ConsoleCommonName() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, ClusterDomain)
+	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // ConsoleTLSSecretName returns the name of Secret that has Console TLS related Info (Cert & Private Key)

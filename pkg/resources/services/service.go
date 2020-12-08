@@ -195,10 +195,10 @@ func NewClusterIPForLogSearchAPI(t *miniov1.Tenant) *corev1.Service {
 
 // GetLogSearchDBAddr returns the tenant's Postgres DB server address
 func GetLogSearchDBAddr(t *miniov1.Tenant) string {
-	return fmt.Sprintf("%s.%s.svc.%s:%d", t.LogHLServiceName(), t.Namespace, miniov1.ClusterDomain, miniov1.LogPgPort)
+	return fmt.Sprintf("%s.%s.svc.%s:%d", t.LogHLServiceName(), t.Namespace, miniov1.GetClusterDomain(), miniov1.LogPgPort)
 }
 
 // GetLogSearchAPIAddr returns the tenant's log-search-api server address
 func GetLogSearchAPIAddr(t *miniov1.Tenant) string {
-	return fmt.Sprintf("http://%s.%s.svc.%s:%d", t.LogSearchAPIServiceName(), t.Namespace, miniov1.ClusterDomain, miniov1.LogSearchAPIPort)
+	return fmt.Sprintf("http://%s.%s.svc.%s:%d", t.LogSearchAPIServiceName(), t.Namespace, miniov1.GetClusterDomain(), miniov1.LogSearchAPIPort)
 }
