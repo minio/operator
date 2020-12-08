@@ -39,8 +39,8 @@ install: all
 
 lint:
 	@echo "Running $@ check"
-	@GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean
-	@GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ./.golangci.yml
+	@GO111MODULE=on golangci-lint cache clean
+	@GO111MODULE=on golangci-lint run --timeout=5m --config ./.golangci.yml
 
 govet:
 	@go vet ./...
@@ -55,6 +55,7 @@ clean:
 	@find . -name '*.zip' | xargs rm -fv
 
 regen-crd:
+	@GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1
 	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 
 statik:
