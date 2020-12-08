@@ -127,6 +127,9 @@ type TenantSpec struct {
 	// This is applied to MinIO pods only.
 	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
 	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+	// SideCars a list of containers to run as sidecars along every MinIO Pod on every pool
+	// +optional
+	SideCars *SideCars `json:"sideCars,omitempty"`
 }
 
 // TenantStatus is the status for a Tenant resource
@@ -286,4 +289,27 @@ type TenantList struct {
 	metav1.ListMeta `json:"metadata"`
 
 	Items []Tenant `json:"items"`
+}
+
+// SideCars represents a list of containers that will be attached to the MinIO pods on each pool
+type SideCars struct {
+	// List of containers to run inside the Pod
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	Containers []corev1.Container `json:"containers" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,2,rep,name=containers"`
+	// volumeClaimTemplates is a list of claims that pods are allowed to reference.
+	// The StatefulSet controller is responsible for mapping network identities to
+	// claims in a way that maintains the identity of a pod. Every claim in
+	// this list must have at least one matching (by name) volumeMount in one
+	// container in the template. A claim in this list takes precedence over
+	// any volumes in the template, with the same name.
+	// TODO: Define the behavior if a claim already exists with the same name.
+	// +optional
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty" protobuf:"bytes,4,rep,name=volumeClaimTemplates"`
+	// List of volumes that can be mounted by containers belonging to the pod.
+	// More info: https://kubernetes.io/docs/concepts/storage/volumes
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge,retainKeys
+	Volumes []corev1.Volume `json:"volumes,omitempty" patchStrategy:"merge,retainKeys" patchMergeKey:"name" protobuf:"bytes,1,rep,name=volumes"`
 }
