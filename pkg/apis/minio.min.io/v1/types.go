@@ -114,6 +114,8 @@ type TenantSpec struct {
 	//+optional
 	KES *KESConfig `json:"kes,omitempty"`
 	Log *LogConfig `json:"log,omitempty"`
+	// Prometheus is for setting up Prometheus metrics.
+	Prometheus *PrometheusConfig `json:"prometheus,omitempty"`
 	// ServiceAccountName is the name of the ServiceAccount to use to run pods of all MinIO
 	// Pods created as a part of this Tenant.
 	// +optional
@@ -242,6 +244,26 @@ type AuditConfig struct {
 	// DiskCapacityGB defines the disk capacity in GB available to store audit logs
 	// +optional
 	DiskCapacityGB *int `json:"diskCapacityGB,omitempty"`
+}
+
+// PrometheusConfig defines configuration for Prometheus metrics server
+type PrometheusConfig struct {
+	// DiskCapacityGB defines the disk capacity in GB available to the
+	// Prometheus server
+	// +optional
+	DiskCapacityDB *int `json:"diskCapacityGB,omitempty"`
+	// If provided, use these annotations for Prometheus Object Meta annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// If provided, use these labels for Prometheus Object Meta labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// If provided, use these nodeSelector for Prometheus Object Meta nodeSelector
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If provided, use these requests and limit for cpu/memory resource allocation
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // KESConfig defines the specifications for KES StatefulSet

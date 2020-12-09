@@ -43,6 +43,12 @@ const LogPgContainerName = "log-search-pg"
 // LogSearchAPIContainerName is the name for the log search API server container
 const LogSearchAPIContainerName = "log-search-api"
 
+// PrometheusContainerName is the name of the prometheus server container
+const PrometheusContainerName = "prometheus"
+
+// PrometheusInitContainerName is the name of the prometheus init container
+const PrometheusInitContainerName = "prometheus-init"
+
 // InitContainerImage name for init container.
 const InitContainerImage = "busybox:1.32"
 
@@ -213,4 +219,26 @@ func (t *Tenant) LogSearchAPIDeploymentName() string {
 // LogSearchAPIServiceName returns name of Log Search API service name
 func (t *Tenant) LogSearchAPIServiceName() string {
 	return fmt.Sprintf("%s-%s", t.Name, LogSearchAPIContainerName)
+}
+
+// PrometheusStatefulsetName returns name of statefulset meant for Prometheus
+// metrics.
+func (t *Tenant) PrometheusStatefulsetName() string {
+	return fmt.Sprintf("%s-%s", t.Name, "prometheus")
+}
+
+// PrometheusConfigVolMountName returns name of the prometheus config volume.
+func (t *Tenant) PrometheusConfigVolMountName() string {
+	return fmt.Sprintf("%s-prometheus-config-volmount", t.Name)
+}
+
+// PrometheusServiceName returns name of the Prometheus service
+func (t *Tenant) PrometheusServiceName() string {
+	return fmt.Sprintf("%s-%s", t.Name, PrometheusContainerName)
+}
+
+// PrometheusHLServiceName returns name of Headless service for the Log
+// statefulsets
+func (t *Tenant) PrometheusHLServiceName() string {
+	return t.Name + PrometheusHLSvcNameSuffix
 }

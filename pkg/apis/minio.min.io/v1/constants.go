@@ -143,6 +143,28 @@ const DefaultConsoleReplicas = 2
 // ConsoleCertPath is the path where all Console certs are mounted
 const ConsoleCertPath = "/tmp/certs"
 
+// Prometheus related constants
+
+// PrometheusImage specifies the container image for prometheus server
+const PrometheusImage = "quay.io/prometheus/prometheus:latest"
+
+// PrometheusInitContainerImage specifies the container image for prometheus
+// init container
+const PrometheusInitContainerImage = "busybox:latest"
+
+// PrometheusInstanceLabel is applied to the prometheus server pod
+const PrometheusInstanceLabel = "v1.min.io/prometheus"
+
+// PrometheusPort specifies the default prometheus port number
+const PrometheusPort = 9090
+
+// PrometheusPortName speicfies the default prometheus port's name.
+const PrometheusPortName = "http-prometheus"
+
+// PrometheusHLSvcNameSuffix specifies the suffix added to Tenant name to create
+// a headless service for Prometheus.
+const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
+
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
