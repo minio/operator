@@ -480,6 +480,11 @@ func (t *Tenant) HasLogEnabled() bool {
 	return t.Spec.Log != nil
 }
 
+// HasPrometheusEnabled checks if Prometheus metrics has been enabled
+func (t *Tenant) HasPrometheusEnabled() bool {
+	return t.Spec.Prometheus != nil
+}
+
 // HasConsoleEnabled checks if the console has been enabled by the user
 func (t *Tenant) HasConsoleEnabled() bool {
 	return t.Spec.Console != nil

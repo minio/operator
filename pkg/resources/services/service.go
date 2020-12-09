@@ -148,6 +148,26 @@ func NewHeadlessForLog(t *miniov1.Tenant) *corev1.Service {
 	return svc
 }
 
+// NewHeadlessForPrometheus returns a k8s Headless service object for the
+// Prometheus StatefulSet.
+func NewHeadlessForPrometheus(t *miniov1.Tenant) *corev1.Service {
+	promPort := corev1.ServicePort{Port: miniov1.PrometheusPort, Name: miniov1.PrometheusPortName}
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:          t.PrometheusPodLabels(),
+			Name:            t.PrometheusHLServiceName(),
+			Namespace:       t.Namespace,
+			OwnerReferences: t.OwnerRef(),
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{promPort},
+			Selector:  t.PrometheusPodLabels(),
+			Type:      corev1.ServiceTypeClusterIP,
+			ClusterIP: corev1.ClusterIPNone,
+		},
+	}
+}
+
 // NewClusterIPForConsole will return a new cluster IP service for Console Deployment
 func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
 	consolePort := corev1.ServicePort{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName}

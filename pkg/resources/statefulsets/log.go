@@ -68,7 +68,6 @@ func logEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 			},
 		},
 	}
-
 }
 
 func logVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {

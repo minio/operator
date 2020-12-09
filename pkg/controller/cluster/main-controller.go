@@ -113,6 +113,7 @@ const (
 	StatusProvisioningKESStatefulSet         = "Provisioning KES StatefulSet"
 	StatusProvisioningLogPGStatefulSet       = "Provisioning Postgres server for Log Search feature"
 	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server for Log Search feature"
+	StatusProvisioningPrometheusStatefulSet  = "Provisioning Prometheus server for Prometheus metrics feature"
 	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
 	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"
 	StatusWaitingMinIOClientCert             = "Waiting for MinIO TLS Client Certificate"
@@ -1323,6 +1324,18 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
+	if tenant.HasPrometheusEnabled() {
+		_, err := c.checkAndCreatePrometheusHeadless(ctx, tenant)
+		if err != nil {
+			return err
+		}
+
+		err = c.checkAndCreatePrometheusStatefulSet(ctx, tenant, string(minioSecret.Data["accesskey"]), string(minioSecret.Data["secretkey"]))
+		if err != nil {
+			return err
+		}
+	}
+
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
 	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalReplicas)
@@ -1611,5 +1624,33 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 		adminClnt.ServiceRestart(ctx) //nolint:errcheck
 		return nil
 	}
+	return err
+}
+
+func (c *Controller) checkAndCreatePrometheusHeadless(ctx context.Context, tenant *miniov1.Tenant) (*corev1.Service, error) {
+	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.PrometheusHLServiceName())
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return svc, err
+	}
+
+	klog.V(2).Infof("Creating a new Prometheus Headless Service for %s", tenant.Namespace)
+	svc = services.NewHeadlessForPrometheus(tenant)
+	_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, metav1.CreateOptions{})
+	return svc, err
+}
+
+func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, tenant *miniov1.Tenant, ak, sk string) error {
+	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PrometheusStatefulsetName())
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningPrometheusStatefulSet, 0); err != nil {
+		return err
+	}
+
+	klog.V(2).Infof("Creating a new Prometheus StatefulSet for %s", tenant.Namespace)
+	prometheusSS := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName(), ak, sk)
+	_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, prometheusSS, metav1.CreateOptions{})
 	return err
 }
