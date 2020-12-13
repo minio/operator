@@ -25,8 +25,6 @@ getdeps:
 	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
 	@which golangci-lint 1>/dev/null || (echo "Installing golangci-lint" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.27.0)
-	@which controller-gen 1>/dev/null || (echo "Installing controller-gen" && GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0)
-	@which statik 1>/dev/null || (echo "Installing statik" && GO111MODULE=off go get github.com/rakyll/statik)
 
 verify: getdeps govet gotest lint
 
@@ -60,6 +58,7 @@ regen-crd:
 
 statik:
 	@echo "Building static assets"
+	@GO111MODULE=on go get github.com/rakyll/statik
 	@statik -src=$(KUSTOMIZE_HOME) -dest $(PLUGIN_HOME) -f
 
 plugin: regen-crd
