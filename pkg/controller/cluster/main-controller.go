@@ -119,7 +119,7 @@ const (
 	StatusWaitingKESCert                     = "Waiting for KES TLS Certificate"
 	StatusWaitingConsoleCert                 = "Waiting for Console TLS Certificate"
 	StatusUpdatingMinIOVersion               = "Updating MinIO Version"
-	StatusUpdatingConsoleVersion             = "Updating Console Version"
+	StatusUpdatingConsole                    = "Updating Console"
 	StatusUpdatingResourceRequirements       = "Updating Resource Requirements"
 	StatusUpdatingAffinity                   = "Updating Pod Affinity"
 	StatusNotOwned                           = "Statefulset not controlled by operator"
@@ -1215,18 +1215,20 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 		} else {
-			if consoleDeployment != nil && !tenant.Spec.Console.EqualImage(consoleDeployment.Spec.Template.Spec.Containers[0].Image) {
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingConsoleVersion, totalReplicas); err != nil {
+
+			// Verify if this console deployment matches the spec on the tenant (resources, affinity, sidecars, etc)
+			consoleDeploymentMatchesSpec, err := consoleDeploymentMatchesSpec(tenant, consoleDeployment)
+			if err != nil {
+				return err
+			}
+
+			// if the console deployment doesn't match the spec
+			if !consoleDeploymentMatchesSpec {
+				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingConsole, totalReplicas); err != nil {
 					return err
 				}
-				klog.V(2).Infof("Updating Tenant %s console version %s, to: %s", tenantName,
-					tenant.Spec.Console.Image, consoleDeployment.Spec.Template.Spec.Containers[0].Image)
 				consoleDeployment = deployments.NewConsole(tenant)
-				_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Update(ctx, consoleDeployment, uOpts)
-				// If an error occurs during Update, we'll requeue the item so we can
-				// attempt processing again later. This could have been caused by a
-				// temporary network failure, or any other transient reason.
-				if err != nil {
+				if _, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Update(ctx, consoleDeployment, uOpts); err != nil {
 					return err
 				}
 			}

@@ -34,6 +34,19 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 			Value: t.MinIOServerEndpoint(),
 		},
 	}
+	if t.HasLogEnabled() {
+		envVars = append(envVars, corev1.EnvVar{
+			Name: miniov1.LogQueryTokenKey,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: t.LogSecretName(),
+					},
+					Key: miniov1.LogQueryTokenKey,
+				},
+			},
+		})
+	}
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Console.Env...)
 	return envVars

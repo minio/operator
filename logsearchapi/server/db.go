@@ -249,24 +249,26 @@ type logEventRawRow struct {
 	Log       string
 }
 
-type logEventRow struct {
-	EventTime time.Time
-	Log       map[string]interface{}
+// LogEventRow holds a raw log record
+type LogEventRow struct {
+	EventTime time.Time              `json:"event_time"`
+	Log       map[string]interface{} `json:"log"`
 }
 
-type reqInfoRow struct {
-	Time                  time.Time
-	APIName               string
-	Bucket                string
-	Object                string
-	TimeToResponseNs      uint64
-	RemoteHost            string
-	RequestID             string
-	UserAgent             string
-	ResponseStatus        string
-	ResponseStatusCode    int
-	RequestContentLength  *uint64
-	ResponseContentLength *uint64
+// ReqInfoRow holds a structured log record
+type ReqInfoRow struct {
+	Time                  time.Time `json:"time"`
+	APIName               string    `json:"api_name"`
+	Bucket                string    `json:"bucket"`
+	Object                string    `json:"object"`
+	TimeToResponseNs      uint64    `json:"time_to_response_ns"`
+	RemoteHost            string    `json:"remote_host"`
+	RequestID             string    `json:"request_id"`
+	UserAgent             string    `json:"user_agent"`
+	ResponseStatus        string    `json:"response_status"`
+	ResponseStatusCode    int       `json:"response_status_code"`
+	RequestContentLength  *uint64   `json:"request_content_length"`
+	ResponseContentLength *uint64   `json:"response_content_length"`
 }
 
 // Search executes a search query on the db.
@@ -299,18 +301,24 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
                                            OFFSET $1 LIMIT $2;`
 	)
 
-	timeRangeOp := "<="
 	timeOrder := "DESC"
 	if s.TimeAscending {
-		timeRangeOp = ">="
 		timeOrder = "ASC"
 	}
 
 	jw := json.NewEncoder(w)
 	switch s.Query {
 	case rawQ:
-		timeRangeClause := fmt.Sprintf("event_time %s '%s'", timeRangeOp, s.TimeStart.Format(time.RFC3339Nano))
-		q := logEventSelect.build(auditLogEventsTable.Name, timeRangeClause, timeOrder)
+		whereClauses := []string{}
+		// only filter by time if provided
+		if s.TimeStart != nil {
+			timeRangeOp := ">="
+			timeRangeClause := fmt.Sprintf("event_time %s '%s'", timeRangeOp, s.TimeStart.Format(time.RFC3339Nano))
+			whereClauses = append(whereClauses, timeRangeClause)
+		}
+		whereClause := strings.Join(whereClauses, " AND ")
+
+		q := logEventSelect.build(auditLogEventsTable.Name, whereClause, timeOrder)
 		rows, _ := c.Query(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
 		var logEventsRaw []logEventRawRow
 		if err := pgxscan.ScanAll(&logEventsRaw, rows); err != nil {
@@ -318,7 +326,7 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		}
 		// parse the encoded json string stored in the db into a json
 		// object for output
-		logEvents := make([]logEventRow, len(logEventsRaw))
+		logEvents := make([]LogEventRow, len(logEventsRaw))
 		for i, e := range logEventsRaw {
 			logEvents[i].EventTime = e.EventTime
 			logEvents[i].Log = make(map[string]interface{})
@@ -333,21 +341,27 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		// For this query, $1 and $2 are used for offset and limit.
 		sqlArgs := []interface{}{s.PageNumber * s.PageSize, s.PageSize}
 
-		// $3 will be used for the time parameter
-		timeRangeClause := fmt.Sprintf("time %s $3", timeRangeOp)
-		whereClauses := []string{timeRangeClause}
-		sqlArgs = append(sqlArgs, s.TimeStart.Format(time.RFC3339Nano))
+		dollarStart := 3
+		whereClauses := []string{}
+		// only filter by time if provided
+		if s.TimeStart != nil {
+			// $3 will be used for the time parameter
+			timeRangeOp := ">="
+			timeRangeClause := fmt.Sprintf("time %s $%d", timeRangeOp, dollarStart)
+			sqlArgs = append(sqlArgs, s.TimeStart.Format(time.RFC3339Nano))
+			whereClauses = append(whereClauses, timeRangeClause)
+			dollarStart++
+		}
 
 		// Remaining dollar params are added for filter where clauses
-		filterClauses, filterArgs := generateFilterClauses(s.FParams, 4)
+		filterClauses, filterArgs := generateFilterClauses(s.FParams, dollarStart)
 		whereClauses = append(whereClauses, filterClauses...)
 		sqlArgs = append(sqlArgs, filterArgs...)
 
 		whereClause := strings.Join(whereClauses, " AND ")
 		q := reqInfoSelect.build(requestInfoTable.Name, whereClause, timeOrder)
-		// fmt.Println(q, sqlArgs)
 		rows, _ := c.Query(ctx, q, sqlArgs...)
-		var reqInfos []reqInfoRow
+		var reqInfos []ReqInfoRow
 		err := pgxscan.ScanAll(&reqInfos, rows)
 		if err != nil {
 			return fmt.Errorf("Error accessing db: %v", err)

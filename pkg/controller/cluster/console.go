@@ -23,6 +23,12 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
+
+	"github.com/minio/operator/pkg/resources/deployments"
+	"k8s.io/apimachinery/pkg/api/equality"
+
+	appsv1 "k8s.io/api/apps/v1"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 
@@ -93,4 +99,27 @@ func (c *Controller) createConsoleTLSCSR(ctx context.Context, tenant *miniov1.Te
 	}
 
 	return nil
+}
+
+// consoleDeploymentMatchesSpec checks if the deployment for console matches what is expected and described from the Tenant
+func consoleDeploymentMatchesSpec(tenant *miniov1.Tenant, consoleDeployment *appsv1.Deployment) (bool, error) {
+	if consoleDeployment == nil {
+		return false, errors.New("cannot process an empty console deployment")
+	}
+	if tenant == nil {
+		return false, errors.New("cannot process an empty tenant")
+	}
+	// compare image directly
+	if !tenant.Spec.Console.EqualImage(consoleDeployment.Spec.Template.Spec.Containers[0].Image) {
+		klog.V(2).Infof("Tenant %s console version %s doesn't match: %s", tenant.Name,
+			tenant.Spec.Console.Image, consoleDeployment.Spec.Template.Spec.Containers[0].Image)
+		return false, nil
+	}
+	// compare any other change from what is specified on the tenant
+	expectedDeployment := deployments.NewConsole(tenant)
+	if !equality.Semantic.DeepDerivative(expectedDeployment.Spec, consoleDeployment.Spec) {
+		// some field set by the operator has changed
+		return false, nil
+	}
+	return true, nil
 }
