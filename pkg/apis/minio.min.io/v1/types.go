@@ -252,6 +252,15 @@ type PrometheusConfig struct {
 	// Prometheus server
 	// +optional
 	DiskCapacityDB *int `json:"diskCapacityGB,omitempty"`
+	// If provided, use these annotations for Prometheus Object Meta annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// If provided, use these labels for Prometheus Object Meta labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// If provided, use these nodeSelector for Prometheus Object Meta nodeSelector
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // KESConfig defines the specifications for KES StatefulSet

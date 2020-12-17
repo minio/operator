@@ -35,23 +35,26 @@ const (
 	defaultPrometheusJWTExpiry = 100 * 365 * 24 * time.Hour
 )
 
+// prometheusMetadata returns the object metadata for Prometheus pods. User
+// specified metadata in the spec is also included here.
+func prometheusMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+	meta := metav1.ObjectMeta{
+		Labels:      t.Spec.Prometheus.Labels,
+		Annotations: t.Spec.Prometheus.Annotations,
+	}
+	if meta.Labels == nil {
+		meta.Labels = make(map[string]string)
+	}
+	for k, v := range t.PrometheusPodLabels() {
+		meta.Labels[k] = v
+	}
+	return meta
+}
+
 // prometheusSelector returns the prometheus pods selector
 func prometheusSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: t.PrometheusPodLabels(),
-	}
-}
-
-// prometheusMetadata returns the object metadata for Prometheus pods
-func prometheusMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
-	labels := make(map[string]string)
-	labels[miniov1.TenantLabel] = t.Name
-	for k, v := range t.PrometheusPodLabels() {
-		labels[k] = v
-	}
-
-	return metav1.ObjectMeta{
-		Labels: labels,
 	}
 }
 
@@ -85,13 +88,6 @@ func prometheusServerContainer(t *miniov1.Tenant) corev1.Container {
 			{
 				ContainerPort: miniov1.PrometheusPort,
 			},
-		},
-		Args: []string{
-			"--config.file=/etc/prometheus/prometheus.yml",
-			"--storage.tsdb.path=/prometheus",
-			"--web.console.libraries=/usr/share/prometheus/console_libraries",
-			"--web.console.templates=/usr/share/prometheus/consoles",
-			"--log.level=debug",
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    prometheusVolumeMounts(t),
@@ -209,18 +205,10 @@ func prometheusInitContainers(t *miniov1.Tenant, accessKey, secretKey string) []
 			Command:         []string{"/bin/sh"},
 			Args:            []string{"-c", scriptArg},
 		},
-		// {
-		// 	Name:            miniov1.PrometheusInitContainerName + "-1",
-		// 	Image:           miniov1.PrometheusInitContainerImage,
-		// 	ImagePullPolicy: t.Spec.ImagePullPolicy,
-		// 	VolumeMounts:    []corev1.VolumeMount{prometheusConfigVolumeMount(t)},
-		// 	Command:         []string{"/bin/sh"},
-		// 	Args:            []string{"-c", "echo ok && cat /etc/prometheus/prometheus.yml"},
-		// },
 	}
 }
 
-const prometheusVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
+const prometheusDefaultVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
 // NewForPrometheus creates a new Prometheus StatefulSet for prometheus metrics
 func NewForPrometheus(t *miniov1.Tenant, serviceName string, accessKey, secretKey string) *appsv1.StatefulSet {
@@ -232,7 +220,11 @@ func NewForPrometheus(t *miniov1.Tenant, serviceName string, accessKey, secretKe
 	}
 	// Create a PVC to for prometheus storage
 	volumeReq := corev1.ResourceList{}
-	volumeReq[corev1.ResourceStorage] = *resource.NewQuantity(prometheusVolumeSize, resource.BinarySI)
+	volumeSize := int64(prometheusDefaultVolumeSize)
+	if t.Spec.Prometheus.DiskCapacityDB != nil && *t.Spec.Prometheus.DiskCapacityDB > 0 {
+		volumeSize = int64(*t.Spec.Prometheus.DiskCapacityDB) * 1024 * 1024 * 1024
+	}
+	volumeReq[corev1.ResourceStorage] = *resource.NewQuantity(volumeSize, resource.BinarySI)
 	volumeClaim := corev1.PersistentVolumeClaim{
 		ObjectMeta: promMeta,
 		Spec: corev1.PersistentVolumeClaimSpec{
@@ -272,6 +264,7 @@ func NewForPrometheus(t *miniov1.Tenant, serviceName string, accessKey, secretKe
 					Volumes:            podVolumes,
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					SchedulerName:      t.Scheduler.Name,
+					NodeSelector:       t.Spec.Prometheus.NodeSelector,
 				},
 			},
 		},
