@@ -51,7 +51,7 @@ func stringToFParam(s string) (f fParam, err error) {
 // SearchQuery represents a search query.
 type SearchQuery struct {
 	Query         qType
-	TimeStart     time.Time
+	TimeStart     *time.Time
 	TimeAscending bool
 	PageNumber    int
 	PageSize      int
@@ -92,14 +92,13 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 		return nil, fmt.Errorf("Invalid query name: %s", string(q))
 	}
 
-	var timeStart time.Time
+	var timeStart *time.Time
 	if timeParam := values.Get("timeStart"); timeParam != "" {
-		timeStart, err = parseSQTimeString(timeParam)
+		ts, err := parseSQTimeString(timeParam)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid start date (must be RFC3339 format): %s", timeParam)
 		}
-	} else {
-		timeStart = time.Now()
+		timeStart = &ts
 	}
 
 	var pageSize int = 10
