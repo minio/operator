@@ -96,7 +96,7 @@ func logServerContainer(t *miniov1.Tenant) corev1.Container {
 	}
 }
 
-const logVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
+const logDefaultVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
 // NewForLog creates a new Log StatefulSet for Log feature
 func NewForLog(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
@@ -108,7 +108,11 @@ func NewForLog(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 	}
 	// Create a PVC to store log data
 	volumeReq := corev1.ResourceList{}
-	volumeReq[corev1.ResourceStorage] = *resource.NewQuantity(logVolumeSize, resource.BinarySI)
+	volumeSize := int64(logDefaultVolumeSize)
+	if t.Spec.Log.Audit.DiskCapacityGB != nil && *t.Spec.Log.Audit.DiskCapacityGB > 0 {
+		volumeSize = int64(*t.Spec.Log.Audit.DiskCapacityGB) * 1024 * 1024 * 1024
+	}
+	volumeReq[corev1.ResourceStorage] = *resource.NewQuantity(volumeSize, resource.BinarySI)
 	volumeClaim := corev1.PersistentVolumeClaim{
 		ObjectMeta: logMeta,
 		Spec: corev1.PersistentVolumeClaimSpec{
