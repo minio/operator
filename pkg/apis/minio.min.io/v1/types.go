@@ -160,7 +160,7 @@ type Pool struct {
 	Servers int32 `json:"servers"`
 	// Number of persistent volumes that will be attached per server
 	VolumesPerServer int32 `json:"volumesPerServer"`
-	// VolumeClaimTemplate allows a user to specify how volumes inside a Tenant
+	// VolumeClaimTemplate allows a user to specify how volumes configuration for the Pool
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	// If provided, use these requests and limit for cpu/memory resource allocation
 	// +optional
@@ -232,8 +232,30 @@ type LogConfig struct {
 	// Image defines the tenant's LogSearchAPI container image.
 	// +optional
 	Image string `json:"image,omitempty"`
-	// AuditConfig holds configuration for audit logs from MinIO
+	// If provided, use these requests and limit for cpu/memory resource allocation
 	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If specified, affinity will define the pod's scheduling constraints
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// Tolerations allows users to set entries like effect, key, operator, value.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// If provided, use these annotations for Console Object Meta annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// If provided, use these labels for Console Object Meta labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// Db holds configuration for audit logs DB
+	// +optional
+	Db *LogDbConfig `json:"db,omitempty"`
+	// AuditConfig holds configuration for audit logs from MinIO
 	Audit *AuditConfig `json:"audit,omitempty"`
 }
 
@@ -242,6 +264,35 @@ type AuditConfig struct {
 	// DiskCapacityGB defines the disk capacity in GB available to store audit logs
 	// +optional
 	DiskCapacityGB *int `json:"diskCapacityGB,omitempty"`
+}
+
+// LogDbConfig Holds all the configurations regarding the Log DB (Postgres) StatefulSet
+type LogDbConfig struct {
+	// Image defines postgres DB container image.
+	// +optional
+	Image string `json:"image,omitempty"`
+	// VolumeClaimTemplate allows a user to specify how volumes inside a Tenant
+	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
+	// If provided, use these requests and limit for cpu/memory resource allocation
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If specified, affinity will define the pod's scheduling constraints
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// Tolerations allows users to set entries like effect, key, operator, value.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// If provided, use these annotations for Console Object Meta annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// If provided, use these labels for Console Object Meta labels
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // KESConfig defines the specifications for KES StatefulSet

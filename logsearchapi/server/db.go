@@ -316,6 +316,11 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			timeRangeClause := fmt.Sprintf("event_time %s '%s'", timeRangeOp, s.TimeStart.Format(time.RFC3339Nano))
 			whereClauses = append(whereClauses, timeRangeClause)
 		}
+		if s.TimeEnd != nil {
+			timeRangeOp := "<"
+			timeRangeClause := fmt.Sprintf("event_time %s '%s'", timeRangeOp, s.TimeEnd.Format(time.RFC3339Nano))
+			whereClauses = append(whereClauses, timeRangeClause)
+		}
 		whereClause := strings.Join(whereClauses, " AND ")
 
 		q := logEventSelect.build(auditLogEventsTable.Name, whereClause, timeOrder)
@@ -349,6 +354,15 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			timeRangeOp := ">="
 			timeRangeClause := fmt.Sprintf("time %s $%d", timeRangeOp, dollarStart)
 			sqlArgs = append(sqlArgs, s.TimeStart.Format(time.RFC3339Nano))
+			whereClauses = append(whereClauses, timeRangeClause)
+			dollarStart++
+		}
+		// only filter by time if provided
+		if s.TimeEnd != nil {
+			// $3 will be used for the time parameter
+			timeRangeOp := "<"
+			timeRangeClause := fmt.Sprintf("time %s $%d", timeRangeOp, dollarStart)
+			sqlArgs = append(sqlArgs, s.TimeEnd.Format(time.RFC3339Nano))
 			whereClauses = append(whereClauses, timeRangeClause)
 			dollarStart++
 		}
