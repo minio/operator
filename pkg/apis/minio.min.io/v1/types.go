@@ -261,6 +261,9 @@ type PrometheusConfig struct {
 	// If provided, use these nodeSelector for Prometheus Object Meta nodeSelector
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// If provided, use these requests and limit for cpu/memory resource allocation
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // KESConfig defines the specifications for KES StatefulSet

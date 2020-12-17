@@ -92,6 +92,7 @@ func prometheusServerContainer(t *miniov1.Tenant) corev1.Container {
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    prometheusVolumeMounts(t),
 		Env:             prometheusEnvVars(t),
+		Resources:       t.Spec.Prometheus.Resources,
 	}
 }
 
@@ -204,6 +205,7 @@ func prometheusInitContainers(t *miniov1.Tenant, accessKey, secretKey string) []
 			VolumeMounts:    []corev1.VolumeMount{prometheusConfigVolumeMount(t)},
 			Command:         []string{"/bin/sh"},
 			Args:            []string{"-c", scriptArg},
+			Resources:       t.Spec.Prometheus.Resources,
 		},
 	}
 }
