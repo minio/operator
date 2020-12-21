@@ -1636,14 +1636,14 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 }
 
 func (c *Controller) checkAndCreatePrometheusConfigMap(ctx context.Context, tenant *miniov1.Tenant, accessKey, secretKey string) (*corev1.ConfigMap, error) {
-	secret, err := c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Get(ctx, tenant.PrometheusConfigMapName(), metav1.GetOptions{})
+	configMap, err := c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Get(ctx, tenant.PrometheusConfigMapName(), metav1.GetOptions{})
 	if err == nil || !k8serrors.IsNotFound(err) {
-		return secret, err
+		return configMap, err
 	}
 
 	klog.V(2).Infof("Creating a new Prometheus config-map for %s", tenant.Name)
-	secret, err = c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Create(ctx, configmaps.PrometheusConfigMap(tenant, accessKey, secretKey), metav1.CreateOptions{})
-	return secret, err
+	configMap, err = c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Create(ctx, configmaps.PrometheusConfigMap(tenant, accessKey, secretKey), metav1.CreateOptions{})
+	return configMap, err
 }
 
 func (c *Controller) checkAndCreatePrometheusHeadless(ctx context.Context, tenant *miniov1.Tenant) (*corev1.Service, error) {
