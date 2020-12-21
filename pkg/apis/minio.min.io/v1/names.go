@@ -227,6 +227,11 @@ func (t *Tenant) PrometheusStatefulsetName() string {
 	return fmt.Sprintf("%s-%s", t.Name, "prometheus")
 }
 
+// PrometheusConfigMapName returns name of the config map for Prometheus.
+func (t *Tenant) PrometheusConfigMapName() string {
+	return fmt.Sprintf("%s-%s", t.Name, "config-map")
+}
+
 // PrometheusConfigVolMountName returns name of the prometheus config volume.
 func (t *Tenant) PrometheusConfigVolMountName() string {
 	return fmt.Sprintf("%s-prometheus-config-volmount", t.Name)

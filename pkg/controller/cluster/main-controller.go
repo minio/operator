@@ -81,6 +81,7 @@ import (
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v1"
 	listers "github.com/minio/operator/pkg/client/listers/minio.min.io/v1"
+	"github.com/minio/operator/pkg/resources/configmaps"
 	"github.com/minio/operator/pkg/resources/deployments"
 	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/secrets"
@@ -1327,12 +1328,17 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if tenant.HasPrometheusEnabled() {
-		_, err := c.checkAndCreatePrometheusHeadless(ctx, tenant)
+		_, err := c.checkAndCreatePrometheusConfigMap(ctx, tenant, string(minioSecret.Data["accesskey"]), string(minioSecret.Data["secretkey"]))
 		if err != nil {
 			return err
 		}
 
-		err = c.checkAndCreatePrometheusStatefulSet(ctx, tenant, string(minioSecret.Data["accesskey"]), string(minioSecret.Data["secretkey"]))
+		_, err = c.checkAndCreatePrometheusHeadless(ctx, tenant)
+		if err != nil {
+			return err
+		}
+
+		err = c.checkAndCreatePrometheusStatefulSet(ctx, tenant)
 		if err != nil {
 			return err
 		}
@@ -1629,6 +1635,17 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 	return err
 }
 
+func (c *Controller) checkAndCreatePrometheusConfigMap(ctx context.Context, tenant *miniov1.Tenant, accessKey, secretKey string) (*corev1.ConfigMap, error) {
+	secret, err := c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Get(ctx, tenant.PrometheusConfigMapName(), metav1.GetOptions{})
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return secret, err
+	}
+
+	klog.V(2).Infof("Creating a new Prometheus config-map for %s", tenant.Name)
+	secret, err = c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Create(ctx, configmaps.PrometheusConfigMap(tenant, accessKey, secretKey), metav1.CreateOptions{})
+	return secret, err
+}
+
 func (c *Controller) checkAndCreatePrometheusHeadless(ctx context.Context, tenant *miniov1.Tenant) (*corev1.Service, error) {
 	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.PrometheusHLServiceName())
 	if err == nil || !k8serrors.IsNotFound(err) {
@@ -1641,7 +1658,7 @@ func (c *Controller) checkAndCreatePrometheusHeadless(ctx context.Context, tenan
 	return svc, err
 }
 
-func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, tenant *miniov1.Tenant, ak, sk string) error {
+func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, tenant *miniov1.Tenant) error {
 	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PrometheusStatefulsetName())
 	if err == nil || !k8serrors.IsNotFound(err) {
 		return err
@@ -1652,7 +1669,7 @@ func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, te
 	}
 
 	klog.V(2).Infof("Creating a new Prometheus StatefulSet for %s", tenant.Namespace)
-	prometheusSS := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName(), ak, sk)
+	prometheusSS := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName())
 	_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, prometheusSS, metav1.CreateOptions{})
 	return err
 }
