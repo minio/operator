@@ -46,9 +46,6 @@ const LogSearchAPIContainerName = "log-search-api"
 // PrometheusContainerName is the name of the prometheus server container
 const PrometheusContainerName = "prometheus"
 
-// PrometheusInitContainerName is the name of the prometheus init container
-const PrometheusInitContainerName = "prometheus-init"
-
 // InitContainerImage name for init container.
 const InitContainerImage = "busybox:1.32"
 
