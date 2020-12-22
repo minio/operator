@@ -46,6 +46,11 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 				},
 			},
 		})
+		url := fmt.Sprintf("http://%s:%d", t.LogSearchAPIServiceName(), miniov1.LogSearchAPIPort)
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "CONSOLE_LOG_QUERY_URL",
+			Value: url,
+		})
 	}
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Console.Env...)

@@ -58,6 +58,9 @@ const TenantLabel = "v1.min.io/tenant"
 // PoolLabel is applied to all components in a Pool of a Tenant cluster
 const PoolLabel = "v1.min.io/pool"
 
+// LogDbLabel is applied to all log db components of a Tenant cluster
+const LogDbLabel = "v1.min.io/logdb"
+
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
 

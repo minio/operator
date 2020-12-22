@@ -296,9 +296,9 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
                                                   request_content_length,
                                                   response_content_length
                                              FROM %s
-                                            WHERE %s
-                                         ORDER BY time %s
-                                           OFFSET $1 LIMIT $2;`
+                                            %s
+                                         	ORDER BY time %s
+                                           	OFFSET $1 LIMIT $2;`
 	)
 
 	timeOrder := "DESC"
@@ -314,6 +314,11 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		if s.TimeStart != nil {
 			timeRangeOp := ">="
 			timeRangeClause := fmt.Sprintf("event_time %s '%s'", timeRangeOp, s.TimeStart.Format(time.RFC3339Nano))
+			whereClauses = append(whereClauses, timeRangeClause)
+		}
+		if s.TimeEnd != nil {
+			timeRangeOp := "<"
+			timeRangeClause := fmt.Sprintf("event_time %s '%s'", timeRangeOp, s.TimeEnd.Format(time.RFC3339Nano))
 			whereClauses = append(whereClauses, timeRangeClause)
 		}
 		whereClause := strings.Join(whereClauses, " AND ")
@@ -352,6 +357,15 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			whereClauses = append(whereClauses, timeRangeClause)
 			dollarStart++
 		}
+		// only filter by time if provided
+		if s.TimeEnd != nil {
+			// $3 will be used for the time parameter
+			timeRangeOp := "<"
+			timeRangeClause := fmt.Sprintf("time %s $%d", timeRangeOp, dollarStart)
+			sqlArgs = append(sqlArgs, s.TimeEnd.Format(time.RFC3339Nano))
+			whereClauses = append(whereClauses, timeRangeClause)
+			dollarStart++
+		}
 
 		// Remaining dollar params are added for filter where clauses
 		filterClauses, filterArgs := generateFilterClauses(s.FParams, dollarStart)
@@ -359,6 +373,9 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		sqlArgs = append(sqlArgs, filterArgs...)
 
 		whereClause := strings.Join(whereClauses, " AND ")
+		if len(whereClauses) > 0 {
+			whereClause = fmt.Sprintf("WHERE %s", whereClause)
+		}
 		q := reqInfoSelect.build(requestInfoTable.Name, whereClause, timeOrder)
 		rows, _ := c.Query(ctx, q, sqlArgs...)
 		var reqInfos []ReqInfoRow
