@@ -106,7 +106,7 @@ func logSearchAPIMeta(t *miniov1.Tenant) metav1.ObjectMeta {
 		meta.Labels[k] = v
 	}
 	// attach any annotations
-	if len(t.Spec.Log.Labels) > 0 {
+	if len(t.Spec.Log.Annotations) > 0 {
 		meta.Annotations = make(map[string]string)
 		for k, v := range t.Spec.Log.Annotations {
 			meta.Annotations[k] = v

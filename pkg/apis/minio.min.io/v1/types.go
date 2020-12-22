@@ -256,6 +256,7 @@ type LogConfig struct {
 	// +optional
 	Db *LogDbConfig `json:"db,omitempty"`
 	// AuditConfig holds configuration for audit logs from MinIO
+	// +optional
 	Audit *AuditConfig `json:"audit,omitempty"`
 }
 
