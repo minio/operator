@@ -43,8 +43,12 @@ func prometheusMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 
 // prometheusSelector returns the prometheus pods selector
 func prometheusSelector(t *miniov1.Tenant) *metav1.LabelSelector {
+	m := t.PrometheusPodLabels()
+	for k, v := range t.Spec.Prometheus.Labels {
+		m[k] = v
+	}
 	return &metav1.LabelSelector{
-		MatchLabels: t.PrometheusPodLabels(),
+		MatchLabels: m,
 	}
 }
 
