@@ -296,9 +296,9 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
                                                   request_content_length,
                                                   response_content_length
                                              FROM %s
-                                            WHERE %s
-                                         ORDER BY time %s
-                                           OFFSET $1 LIMIT $2;`
+                                            %s
+                                         	ORDER BY time %s
+                                           	OFFSET $1 LIMIT $2;`
 	)
 
 	timeOrder := "DESC"
@@ -373,6 +373,9 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		sqlArgs = append(sqlArgs, filterArgs...)
 
 		whereClause := strings.Join(whereClauses, " AND ")
+		if len(whereClauses) > 0 {
+			whereClause = fmt.Sprintf("WHERE %s", whereClause)
+		}
 		q := reqInfoSelect.build(requestInfoTable.Name, whereClause, timeOrder)
 		rows, _ := c.Query(ctx, q, sqlArgs...)
 		var reqInfos []ReqInfoRow
