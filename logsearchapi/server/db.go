@@ -94,9 +94,6 @@ func NewDBClient(ctx context.Context, connStr string) (*DBClient, error) {
 }
 
 func (c *DBClient) checkTableExists(ctx context.Context, table string) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
 	const existsQuery QTemplate = `SELECT 1 FROM %s WHERE false;`
 	res, _ := c.Query(ctx, existsQuery.build(table))
 	if res.Err() != nil {
@@ -110,9 +107,6 @@ func (c *DBClient) checkTableExists(ctx context.Context, table string) (bool, er
 }
 
 func (c *DBClient) checkPartitionTableExists(ctx context.Context, table string, givenTime time.Time) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
 	p := newPartitionTimeRange(givenTime)
 	partitionTable := fmt.Sprintf("%s_%s", table, p.getPartnameSuffix())
 	const existsQuery QTemplate = `SELECT 1 FROM %s WHERE false;`
@@ -162,17 +156,11 @@ func (c *DBClient) createTables(ctx context.Context) error {
 
 // InitDBTables Creates tables in the DB.
 func (c *DBClient) InitDBTables(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
 	return c.createTables(ctx)
 }
 
 // InsertEvent inserts audit event in the DB.
 func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) error {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
 	if isEmptyEvent(eventBytes) {
 		return nil
 	}
@@ -273,9 +261,6 @@ type ReqInfoRow struct {
 
 // Search executes a search query on the db.
 func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) error {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
 	const (
 		logEventSelect QTemplate = `SELECT event_time,
                                                    log

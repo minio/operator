@@ -125,9 +125,6 @@ func (c *DBClient) getExistingPartitions(ctx context.Context, t Table) (tableNam
 }
 
 func (c *DBClient) getTablesDiskUsage(ctx context.Context) (m map[Table]map[string]uint64, _ error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
 	const (
 		tableSize QTemplate = `SELECT pg_total_relation_size('%s');`
 	)
