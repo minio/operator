@@ -160,7 +160,7 @@ type Pool struct {
 	Servers int32 `json:"servers"`
 	// Number of persistent volumes that will be attached per server
 	VolumesPerServer int32 `json:"volumesPerServer"`
-	// VolumeClaimTemplate allows a user to specify how volumes configuration for the Pool
+	// VolumeClaimTemplate allows a user to specify how volumes are configured for the Pool
 	VolumeClaimTemplate *corev1.PersistentVolumeClaim `json:"volumeClaimTemplate"`
 	// If provided, use these requests and limit for cpu/memory resource allocation
 	// +optional
