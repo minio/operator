@@ -1575,7 +1575,7 @@ func (c *Controller) checkAndCreateLogStatefulSet(ctx context.Context, tenant *m
 	}
 
 	klog.V(2).Infof("Creating a new Log StatefulSet for %s", tenant.Namespace)
-	searchSS := statefulsets.NewForLog(tenant, svcName)
+	searchSS := statefulsets.NewForLogDb(tenant, svcName)
 	_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, searchSS, metav1.CreateOptions{})
 	return err
 }

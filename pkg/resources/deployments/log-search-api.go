@@ -78,7 +78,7 @@ func logSearchAPIContainer(t *miniov1.Tenant) corev1.Container {
 	if t.Spec.Log.Image != "" {
 		logSearchAPIImage = t.Spec.Log.Image
 	}
-	return corev1.Container{
+	container := corev1.Container{
 		Name:  miniov1.LogSearchAPIContainerName,
 		Image: logSearchAPIImage,
 		Ports: []corev1.ContainerPort{
@@ -88,7 +88,10 @@ func logSearchAPIContainer(t *miniov1.Tenant) corev1.Container {
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		Env:             logSearchAPIEnvVars(t),
+		Resources:       t.Spec.Log.Resources,
 	}
+
+	return container
 }
 
 func logSearchAPIMeta(t *miniov1.Tenant) metav1.ObjectMeta {
@@ -97,6 +100,19 @@ func logSearchAPIMeta(t *miniov1.Tenant) metav1.ObjectMeta {
 	for k, v := range t.LogSearchAPIPodLabels() {
 		meta.Labels[k] = v
 	}
+
+	// attach any labels
+	for k, v := range t.Spec.Log.Labels {
+		meta.Labels[k] = v
+	}
+	// attach any annotations
+	if len(t.Spec.Log.Annotations) > 0 {
+		meta.Annotations = make(map[string]string)
+		for k, v := range t.Spec.Log.Annotations {
+			meta.Annotations[k] = v
+		}
+	}
+
 	return meta
 }
 
@@ -110,6 +126,27 @@ func logSearchAPISelector(t *miniov1.Tenant) *metav1.LabelSelector {
 // NewForLogSearchAPI returns k8s deployment object for Log Search API server
 func NewForLogSearchAPI(t *miniov1.Tenant) *appsv1.Deployment {
 	var replicas int32 = 1
+
+	apiPod := corev1.PodTemplateSpec{
+		ObjectMeta: logSearchAPIMeta(t),
+		Spec: corev1.PodSpec{
+			ServiceAccountName: t.Spec.ServiceAccountName,
+			Containers:         []corev1.Container{logSearchAPIContainer(t)},
+			RestartPolicy:      corev1.RestartPolicyAlways,
+		},
+	}
+
+	if t.Spec.Log.Db != nil {
+		// attach affinity clauses
+		if t.Spec.Log.Db.Affinity != nil {
+			apiPod.Spec.Affinity = t.Spec.Log.Db.Affinity
+		}
+		// attach node selector clauses
+		apiPod.Spec.NodeSelector = t.Spec.Log.Db.NodeSelector
+		// attach tolerations
+		apiPod.Spec.Tolerations = t.Spec.Log.Db.Tolerations
+	}
+
 	d := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:       t.Namespace,
@@ -119,14 +156,7 @@ func NewForLogSearchAPI(t *miniov1.Tenant) *appsv1.Deployment {
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: logSearchAPISelector(t),
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: logSearchAPIMeta(t),
-				Spec: corev1.PodSpec{
-					ServiceAccountName: t.Spec.ServiceAccountName,
-					Containers:         []corev1.Container{logSearchAPIContainer(t)},
-					RestartPolicy:      corev1.RestartPolicyAlways,
-				},
-			},
+			Template: apiPod,
 		},
 	}
 

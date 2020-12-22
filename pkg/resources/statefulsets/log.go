@@ -32,17 +32,33 @@ func logSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	}
 }
 
-// logMetadata returns the object metadata for Log pods
-func logMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+// logDbMetadata returns the object metadata for Log pods
+func logDbMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 	labels := make(map[string]string)
-	labels[miniov1.TenantLabel] = t.Name
+	labels[miniov1.LogDbLabel] = t.Name
 	for k, v := range t.LogPgPodLabels() {
 		labels[k] = v
 	}
 
-	return metav1.ObjectMeta{
+	meta := metav1.ObjectMeta{
 		Labels: labels,
 	}
+
+	if t.Spec.Log.Db != nil {
+		// attach any labels
+		for k, v := range t.Spec.Log.Db.Labels {
+			meta.Labels[k] = v
+		}
+		// attach any annotations
+		if len(t.Spec.Log.Db.Annotations) > 0 {
+			meta.Annotations = make(map[string]string)
+			for k, v := range t.Spec.Log.Db.Annotations {
+				meta.Annotations[k] = v
+			}
+		}
+	}
+
+	return meta
 }
 
 // logEnvVars returns env with POSTGRES_DB set to log database, POSTGRES_USER and POSTGRES_PASSWORD from Log's k8s secret
@@ -75,13 +91,14 @@ func logVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
 		{
 			Name:      t.LogStatefulsetName(),
 			MountPath: "/var/lib/postgresql/data",
+			SubPath:   "data",
 		},
 	}
 }
 
-// logServerContainer returns a postgresql server container for a Log StatefulSet.
-func logServerContainer(t *miniov1.Tenant) corev1.Container {
-	return corev1.Container{
+// logDbContainer returns a postgresql server container for a Log StatefulSet.
+func logDbContainer(t *miniov1.Tenant) corev1.Container {
+	container := corev1.Container{
 		Name:  miniov1.LogPgContainerName,
 		Image: miniov1.LogPgImage,
 		Ports: []corev1.ContainerPort{
@@ -93,30 +110,68 @@ func logServerContainer(t *miniov1.Tenant) corev1.Container {
 		VolumeMounts:    logVolumeMounts(t),
 		Env:             logEnvVars(t),
 	}
+	// if we have DB configurations
+	if t.Spec.Log.Db != nil {
+		// if an image was specified, use it.
+		if t.Spec.Log.Db.Image != "" {
+			container.Image = t.Spec.Log.Db.Image
+		}
+		// resources constraints
+		container.Resources = t.Spec.Log.Db.Resources
+	}
+	return container
 }
 
-const logVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
+// defaultLogVolumeSize is a fallback value if the volume claim template for the DB is not provided
+const defaultLogVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
-// NewForLog creates a new Log StatefulSet for Log feature
-func NewForLog(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
+// NewForLogDb creates a new Log StatefulSet for Log feature
+func NewForLogDb(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 	var replicas int32 = 1
 	logMeta := metav1.ObjectMeta{
 		Name:            t.LogStatefulsetName(),
 		Namespace:       t.Namespace,
 		OwnerReferences: t.OwnerRef(),
 	}
-	// Create a PVC to store log data
-	volumeReq := corev1.ResourceList{}
-	volumeReq[corev1.ResourceStorage] = *resource.NewQuantity(logVolumeSize, resource.BinarySI)
-	volumeClaim := corev1.PersistentVolumeClaim{
-		ObjectMeta: logMeta,
-		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			Resources:   corev1.ResourceRequirements{Requests: volumeReq},
+
+	// Volume for the Logs Database
+	var volumeClaim corev1.PersistentVolumeClaim
+	if t.Spec.Log.Db != nil && t.Spec.Log.Db.VolumeClaimTemplate != nil {
+		volumeClaim = *t.Spec.Log.Db.VolumeClaimTemplate
+	} else {
+		// Create a PVC to store log data
+		volumeReq := corev1.ResourceList{
+			corev1.ResourceStorage: *resource.NewQuantity(defaultLogVolumeSize, resource.BinarySI),
+		}
+		volumeClaim = corev1.PersistentVolumeClaim{
+			ObjectMeta: logMeta,
+			Spec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				Resources:   corev1.ResourceRequirements{Requests: volumeReq},
+			},
+		}
+	}
+	dbPod := corev1.PodTemplateSpec{
+		ObjectMeta: logDbMetadata(t),
+		Spec: corev1.PodSpec{
+			ServiceAccountName: t.Spec.ServiceAccountName,
+			Containers:         []corev1.Container{logDbContainer(t)},
+			RestartPolicy:      corev1.RestartPolicyAlways,
+			SchedulerName:      t.Scheduler.Name,
 		},
 	}
+	// if we have DB configurations to honor
+	if t.Spec.Log.Db != nil {
+		// attach affinity clauses
+		if t.Spec.Log.Db.Affinity != nil {
+			dbPod.Spec.Affinity = t.Spec.Log.Db.Affinity
+		}
+		// attach node selector clauses
+		dbPod.Spec.NodeSelector = t.Spec.Log.Db.NodeSelector
+		// attach tolerations
+		dbPod.Spec.Tolerations = t.Spec.Log.Db.Tolerations
+	}
 
-	containers := []corev1.Container{logServerContainer(t)}
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: logMeta,
 		Spec: appsv1.StatefulSetSpec{
@@ -128,15 +183,7 @@ func NewForLog(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 			ServiceName:          serviceName,
 			Replicas:             &replicas,
 			VolumeClaimTemplates: []corev1.PersistentVolumeClaim{volumeClaim},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: logMetadata(t),
-				Spec: corev1.PodSpec{
-					ServiceAccountName: t.Spec.ServiceAccountName,
-					Containers:         containers,
-					RestartPolicy:      corev1.RestartPolicyAlways,
-					SchedulerName:      t.Scheduler.Name,
-				},
-			},
+			Template:             dbPod,
 		},
 	}
 	// Address issue https://github.com/kubernetes/kubernetes/issues/85332
