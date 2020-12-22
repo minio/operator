@@ -1972,6 +1972,50 @@ spec:
               priorityClassName:
                 description: PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods. This is applied to MinIO pods only. Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
                 type: string
+              prometheus:
+                description: Prometheus is for setting up Prometheus metrics.
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: If provided, use these annotations for Prometheus Object Meta annotations
+                    type: object
+                  diskCapacityGB:
+                    description: DiskCapacityGB defines the disk capacity in GB available to the Prometheus server
+                    type: integer
+                  labels:
+                    additionalProperties:
+                      type: string
+                    description: If provided, use these labels for Prometheus Object Meta labels
+                    type: object
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: If provided, use these nodeSelector for Prometheus Object Meta nodeSelector
+                    type: object
+                  resources:
+                    description: If provided, use these requests and limit for cpu/memory resource allocation
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Limits describes the maximum amount of compute resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                        type: object
+                    type: object
+                type: object
               requestAutoCert:
                 description: 'RequestAutoCert allows user to enable Kubernetes based TLS cert generation and signing as explained here: https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/'
                 type: boolean

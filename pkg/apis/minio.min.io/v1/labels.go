@@ -51,3 +51,10 @@ func (t *Tenant) ConsolePodLabels() map[string]string {
 	m[ConsoleTenantLabel] = t.ConsoleDeploymentName()
 	return m
 }
+
+// PrometheusPodLabels returns the default labels for Prometheus server pods
+func (t *Tenant) PrometheusPodLabels() map[string]string {
+	m := make(map[string]string, 1)
+	m[PrometheusInstanceLabel] = t.PrometheusStatefulsetName()
+	return m
+}

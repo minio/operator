@@ -19,6 +19,7 @@ rules:
       - pods
       - services
       - events
+      - configmaps
     verbs:
       - get
       - watch
