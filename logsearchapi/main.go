@@ -26,6 +26,8 @@ import (
 	"os"
 	"strconv"
 
+	_ "github.com/lib/pq"
+
 	"github.com/minio/operator/logsearchapi/server"
 )
 

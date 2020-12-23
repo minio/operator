@@ -25,7 +25,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
+	"github.com/georgysavva/scany/sqlscan"
 )
 
 const (
@@ -112,9 +112,9 @@ func (c *DBClient) getExistingPartitions(ctx context.Context, t Table) (tableNam
 	)
 
 	q := listPartitions.build(t.Name)
-	rows, _ := c.Query(ctx, q)
+	rows, _ := c.QueryContext(ctx, q)
 	var childTables []childTableInfo
-	if err := pgxscan.ScanAll(&childTables, rows); err != nil {
+	if err := sqlscan.ScanAll(&childTables, rows); err != nil {
 		return nil, fmt.Errorf("Error accessing db: %v", err)
 	}
 	for _, ct := range childTables {
@@ -141,7 +141,7 @@ func (c *DBClient) getTablesDiskUsage(ctx context.Context) (m map[Table]map[stri
 		cm := make(map[string]uint64, len(parts))
 		for _, tableName := range parts {
 			q := tableSize.build(tableName)
-			row := c.QueryRow(ctx, q)
+			row := c.QueryRowContext(ctx, q)
 			var size uint64
 			if err := row.Scan(&size); err != nil {
 				return nil, fmt.Errorf("Unable to query relation size: %v", err)
@@ -155,7 +155,7 @@ func (c *DBClient) getTablesDiskUsage(ctx context.Context) (m map[Table]map[stri
 
 func (c *DBClient) deleteChildTable(ctx context.Context, table, reason string) error {
 	q := fmt.Sprintf("DROP TABLE %s;", table)
-	_, err := c.Exec(ctx, q)
+	_, err := c.ExecContext(ctx, q)
 	if err != nil {
 		return fmt.Errorf("Table deletion error for %s: %v (attempted for reason: %s)", table, err, reason)
 	}
