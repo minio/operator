@@ -21,14 +21,15 @@ package server
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 	"time"
 
-	"github.com/georgysavva/scany/pgxscan"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/georgysavva/scany/sqlscan"
 )
 
 // QTemplate is used to represent queries that involve string substitution as
@@ -81,30 +82,32 @@ var (
 
 // DBClient is a client object that makes requests to the DB.
 type DBClient struct {
-	*pgxpool.Pool
+	*sql.DB
 }
 
 // NewDBClient creates a new DBClient.
 func NewDBClient(ctx context.Context, connStr string) (*DBClient, error) {
-	pool, err := pgxpool.Connect(ctx, connStr)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
-	return &DBClient{pool}, nil
+	if err := db.PingContext(ctx); err != nil {
+		return nil, err
+	}
+	log.Print("Connected to db.")
+
+	return &DBClient{db}, nil
 }
 
 func (c *DBClient) checkTableExists(ctx context.Context, table string) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
 	const existsQuery QTemplate = `SELECT 1 FROM %s WHERE false;`
-	res, _ := c.Query(ctx, existsQuery.build(table))
-	if res.Err() != nil {
+	_, err := c.QueryContext(ctx, existsQuery.build(table))
+	if err != nil {
 		// check for table does not exist error
-		if strings.Contains(res.Err().Error(), "(SQLSTATE 42P01)") {
+		if strings.Contains(err.Error(), fmt.Sprintf(`relation "%s" does not exist`, table)) {
 			return false, nil
 		}
-		return false, res.Err()
+		return false, err
 	}
 	return true, nil
 }
@@ -116,7 +119,7 @@ func (c *DBClient) checkPartitionTableExists(ctx context.Context, table string, 
 	p := newPartitionTimeRange(givenTime)
 	partitionTable := fmt.Sprintf("%s_%s", table, p.getPartnameSuffix())
 	const existsQuery QTemplate = `SELECT 1 FROM %s WHERE false;`
-	res, _ := c.Query(ctx, existsQuery.build(partitionTable))
+	res, _ := c.QueryContext(ctx, existsQuery.build(partitionTable))
 	if res.Err() != nil {
 		// check for table does not exist error
 		if strings.Contains(res.Err().Error(), "(SQLSTATE 42P01)") {
@@ -130,7 +133,7 @@ func (c *DBClient) checkPartitionTableExists(ctx context.Context, table string, 
 
 func (c *DBClient) createTablePartition(ctx context.Context, table Table) error {
 	partTimeRange := newPartitionTimeRange(time.Now())
-	_, err := c.Exec(ctx, table.getCreatePartitionStatement(partTimeRange))
+	_, err := c.ExecContext(ctx, table.getCreatePartitionStatement(partTimeRange))
 	return err
 }
 
@@ -141,7 +144,7 @@ func (c *DBClient) createTableAndPartition(ctx context.Context, table Table) err
 		return nil
 	}
 
-	if _, err := c.Exec(ctx, table.getCreateStatement()); err != nil {
+	if _, err := c.ExecContext(ctx, table.getCreateStatement()); err != nil {
 		return err
 	}
 
@@ -199,16 +202,20 @@ func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) error {
 	)
 
 	// Start a database transaction
-	tx, err := c.Begin(ctx)
+	tx, err := c.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = tx.Rollback(ctx) }()
+	defer func() { _ = tx.Rollback() }()
 
 	// NOTE: Timestamps are nanosecond resolution from MinIO, however we are
 	// using storing it with only microsecond precision in PG for simplicity
 	// as that is the maximum precision supported by it.
-	_, err = tx.Exec(ctx, insertAuditLogEvent.build(auditLogEventsTable.Name), event.Time, event)
+	eventJSON, errJSON := json.Marshal(event)
+	if errJSON != nil {
+		return errJSON
+	}
+	_, err = tx.ExecContext(ctx, insertAuditLogEvent.build(auditLogEventsTable.Name), event.Time, eventJSON)
 	if err != nil {
 		return err
 	}
@@ -224,7 +231,7 @@ func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) error {
 		respLen = &rsplen
 	}
 
-	_, err = tx.Exec(ctx, insertRequestInfo.build(requestInfoTable.Name),
+	_, err = tx.ExecContext(ctx, insertRequestInfo.build(requestInfoTable.Name),
 		event.Time,
 		event.API.Name,
 		event.API.Bucket,
@@ -241,7 +248,7 @@ func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) error {
 		return err
 	}
 
-	return tx.Commit(ctx)
+	return tx.Commit()
 }
 
 type logEventRawRow struct {
@@ -324,9 +331,9 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		whereClause := strings.Join(whereClauses, " AND ")
 
 		q := logEventSelect.build(auditLogEventsTable.Name, whereClause, timeOrder)
-		rows, _ := c.Query(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
+		rows, _ := c.QueryContext(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
 		var logEventsRaw []logEventRawRow
-		if err := pgxscan.ScanAll(&logEventsRaw, rows); err != nil {
+		if err := sqlscan.ScanAll(&logEventsRaw, rows); err != nil {
 			return fmt.Errorf("Error accessing db: %v", err)
 		}
 		// parse the encoded json string stored in the db into a json
@@ -377,9 +384,9 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			whereClause = fmt.Sprintf("WHERE %s", whereClause)
 		}
 		q := reqInfoSelect.build(requestInfoTable.Name, whereClause, timeOrder)
-		rows, _ := c.Query(ctx, q, sqlArgs...)
+		rows, _ := c.QueryContext(ctx, q, sqlArgs...)
 		var reqInfos []ReqInfoRow
-		err := pgxscan.ScanAll(&reqInfos, rows)
+		err := sqlscan.ScanAll(&reqInfos, rows)
 		if err != nil {
 			return fmt.Errorf("Error accessing db: %v", err)
 		}
