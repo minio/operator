@@ -1811,7 +1811,7 @@ spec:
                         type: object
                       type: array
                     volumeClaimTemplate:
-                      description: VolumeClaimTemplate allows a user to specify how volumes configuration for the Pool
+                      description: VolumeClaimTemplate allows a user to specify how volumes are configured for the Pool
                       properties:
                         apiVersion:
                           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
