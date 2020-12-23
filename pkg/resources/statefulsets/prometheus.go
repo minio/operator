@@ -159,7 +159,7 @@ func NewForPrometheus(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet
 	//      mountPath: /var/prometheus/data
 	initContainers := []corev1.Container{
 		{
-			Name:  "init-chown-data",
+			Name:  "prometheus-init-chown-data",
 			Image: "busybox",
 			Command: []string{
 				"chown",
