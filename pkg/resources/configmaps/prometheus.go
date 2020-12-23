@@ -91,6 +91,10 @@ func getMinioPodAddrs(t *miniov1.Tenant) []string {
 func PrometheusConfigMap(t *miniov1.Tenant, accessKey, secretKey string) *corev1.ConfigMap {
 	bearerToken := genBearerToken(accessKey, secretKey)
 	minioTargets := getMinioPodAddrs(t)
+	minioScheme := "http"
+	if t.TLS() {
+		minioScheme = "https"
+	}
 
 	// populate config
 	promConfig := prometheusConfig{
@@ -103,7 +107,7 @@ func PrometheusConfigMap(t *miniov1.Tenant, accessKey, secretKey string) *corev1
 				JobName:     "minio",
 				BearerToken: bearerToken,
 				MetricsPath: "/minio/prometheus/metrics",
-				Scheme:      "https",
+				Scheme:      minioScheme,
 				TLSConfig: tlsConfig{
 					CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 				},
