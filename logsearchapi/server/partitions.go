@@ -230,16 +230,16 @@ func (c *DBClient) vacuumData(diskCapacityGBs int) {
 		retryInterval  time.Duration = 2 * time.Minute
 	)
 	timer := time.NewTimer(normalInterval)
+	defer timer.Stop()
+
 	for range timer.C {
+		timer.Reset(retryInterval) // timer fired, reset it right here.
+
 		err := c.maintainLowWatermarkUsage(context.Background(), diskCapacityGBs)
 		if err != nil {
 			log.Printf("Error maintaining high-water mark disk usage: %v (retrying in %s)", err, retryInterval)
-			timer.Reset(retryInterval)
 			continue
 		}
-
-		timer.Reset(normalInterval)
-
 	}
 }
 

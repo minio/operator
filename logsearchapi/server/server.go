@@ -99,7 +99,7 @@ func (ls *LogSearch) ingestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = ls.DBClient.InsertEvent(context.Background(), buf)
+	err = ls.DBClient.InsertEvent(r.Context(), buf)
 	if err != nil {
 		ls.writeErrorResponse(w, 500, "Error writing to DB", err)
 	}
@@ -118,7 +118,7 @@ func (ls *LogSearch) queryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	err = ls.DBClient.Search(context.Background(), sq, w)
+	err = ls.DBClient.Search(r.Context(), sq, w)
 	if err != nil {
 		w.Header().Del("Content-Type")
 		ls.writeErrorResponse(w, 500, "Unhandled error:", err)
