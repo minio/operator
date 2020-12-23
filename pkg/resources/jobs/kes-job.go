@@ -96,7 +96,7 @@ func NewForKES(t *miniov1.Tenant) *batchv1.Job {
 
 // returns the KES job container
 func kesJobContainer(t *miniov1.Tenant) corev1.Container {
-	args := []string{"key", "create", miniov1.KESMinIOKey, "-k"}
+	args := []string{"key", "create", "-k", miniov1.KESMinIOKey} // KES CLI expects flags before command args
 
 	return corev1.Container{
 		Name:            miniov1.KESContainerName,
