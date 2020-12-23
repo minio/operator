@@ -229,6 +229,14 @@ func (c ConsoleConfiguration) EqualImage(currentImage string) bool {
 	return c.Image == currentImage
 }
 
+// EqualImage returns true if image specified in `LogConfig` is equal to `image`
+func (lc *LogConfig) EqualImage(image string) bool {
+	if lc == nil {
+		return false
+	}
+	return lc.Image == image
+}
+
 // LogConfig defines configuration parameters for Log feature
 type LogConfig struct {
 	// Image defines the tenant's LogSearchAPI container image.
