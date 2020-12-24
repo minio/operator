@@ -692,6 +692,7 @@ github.com/miekg/dns v1.1.35/go.mod h1:KNUDUusw/aVsxyTYZM1oqvCicbwhgbNgztCETuNZ7
 github.com/minio/cli v1.22.0/go.mod h1:bYxnK0uS629N3Bq+AOZZ+6lwF77Sodk4+UL9vNuXhOY=
 github.com/minio/controller-tools v0.4.5/go.mod h1:xES4iNis9dGrLQuP6nquTZZNg2T0/EM8wduC4/GWfZ0=
 github.com/minio/controller-tools v0.4.6/go.mod h1:xES4iNis9dGrLQuP6nquTZZNg2T0/EM8wduC4/GWfZ0=
+github.com/minio/controller-tools v0.4.7/go.mod h1:xES4iNis9dGrLQuP6nquTZZNg2T0/EM8wduC4/GWfZ0=
 github.com/minio/highwayhash v1.0.0/go.mod h1:xQboMTeM9nY9v/LlAOxFctujiv5+Aq2hR5dxBpaMbdc=
 github.com/minio/md5-simd v1.1.0/go.mod h1:XpBqgZULrMYD3R+M28PcmP0CkI7PEMzB3U77ZrKZ0Gw=
 github.com/minio/minio v0.0.0-20210128013121-e79829b5b368 h1:oRvZaqSesXt/SVTqkfJ9UhmXpkDiBUITpmSJU1hwmSA=

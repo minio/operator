@@ -59,8 +59,7 @@ func prometheusEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 func prometheusConfigVolumeMount(t *miniov2.Tenant) corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      t.PrometheusConfigVolMountName(),
-		MountPath: "/etc/prometheus/prometheus.yml",
-		SubPath:   "prometheus.yml",
+		MountPath: "/etc/prometheus",
 	}
 }
 
@@ -99,12 +98,42 @@ func prometheusServerContainer(t *miniov2.Tenant) corev1.Container {
 		VolumeMounts:    prometheusVolumeMounts(t),
 		Env:             prometheusEnvVars(t),
 		Resources:       t.Spec.Prometheus.Resources,
+		Args: []string{
+			"--config.file=/etc/prometheus/prometheus.yml",
+			"--storage.tsdb.path=/prometheus",
+			"--web.console.libraries=/usr/share/prometheus/console_libraries",
+			"--web.console.templates=/usr/share/prometheus/consoles",
+			"--web.enable-lifecycle",
+		},
 		SecurityContext: &corev1.SecurityContext{
 			RunAsUser:    &runAsUser,
 			RunAsGroup:   &fsGroup,
 			RunAsNonRoot: &runAsNonRoot,
 		},
 	}
+}
+
+// prometheusSidecarContainer returns a container for Prometheus sidecar. It
+// simply listens for changes to the config file (mounted via the configmap) and
+// calls Prometheus server's reload API.
+func prometheusSidecarContainer(t *miniov2.Tenant) corev1.Container {
+	return corev1.Container{
+		Name:            miniov2.PrometheusContainerName + "-sidecar",
+		Image:           "alpine",
+		ImagePullPolicy: t.Spec.ImagePullPolicy,
+		VolumeMounts:    prometheusVolumeMounts(t),
+		Env:             prometheusEnvVars(t),
+		Resources:       t.Spec.Prometheus.Resources,
+		Command:         []string{"/bin/sh"},
+		Args: []string{
+			"-c",
+			`apk --no-cache add curl && \
+echo -e '#!/bin/sh\necho got event >> /tmp/testlog\ncurl -XPOST http://localhost:9090/-/reload\n' > /tmp/run.sh && \
+echo "ok" && chmod +x /tmp/run.sh && \
+inotifyd /tmp/run.sh /etc/prometheus/prometheus.yml:w`,
+		},
+	}
+
 }
 
 const prometheusDefaultVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
@@ -145,7 +174,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 		},
 	}
 
-	containers := []corev1.Container{prometheusServerContainer(t)}
+	containers := []corev1.Container{prometheusServerContainer(t), prometheusSidecarContainer(t)}
 
 	// init container per https://github.com/prometheus-operator/prometheus-operator/issues/966#issuecomment-365037713
 	//
