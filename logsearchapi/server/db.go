@@ -119,13 +119,13 @@ func (c *DBClient) checkPartitionTableExists(ctx context.Context, table string, 
 	p := newPartitionTimeRange(givenTime)
 	partitionTable := fmt.Sprintf("%s_%s", table, p.getPartnameSuffix())
 	const existsQuery QTemplate = `SELECT 1 FROM %s WHERE false;`
-	res, _ := c.QueryContext(ctx, existsQuery.build(partitionTable))
-	if res.Err() != nil {
+	_, err := c.QueryContext(ctx, existsQuery.build(partitionTable))
+	if err != nil {
 		// check for table does not exist error
-		if strings.Contains(res.Err().Error(), "(SQLSTATE 42P01)") {
+		if strings.Contains(err.Error(), fmt.Sprintf(`relation "%s" does not exist`, table)) {
 			return false, nil
 		}
-		return false, res.Err()
+		return false, err
 	}
 
 	return true, nil
