@@ -59,7 +59,8 @@ func prometheusEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 func prometheusConfigVolumeMount(t *miniov1.Tenant) corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      t.PrometheusConfigVolMountName(),
-		MountPath: "/etc/prometheus",
+		MountPath: "/etc/prometheus/prometheus.yml",
+		SubPath:   "prometheus.yml",
 	}
 }
 
@@ -68,6 +69,7 @@ func prometheusVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
 		{
 			Name:      t.PrometheusStatefulsetName(),
 			MountPath: "/prometheus",
+			SubPath:   "prometheus",
 		},
 		prometheusConfigVolumeMount(t),
 	}
@@ -75,6 +77,16 @@ func prometheusVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
 
 // prometheusServerContainer returns a container for Prometheus StatefulSet.
 func prometheusServerContainer(t *miniov1.Tenant) corev1.Container {
+	// as per https://github.com/prometheus-operator/prometheus-operator/issues/3459 we need to set a security
+	// context.
+	//
+	//  securityContext:
+	//    fsGroup: 2000
+	//    runAsNonRoot: true
+	//    runAsUser: 1000
+	runAsNonRoot := true
+	var fsGroup int64 = 2000
+	var runAsUser int64 = 1000
 	return corev1.Container{
 		Name:  miniov1.PrometheusContainerName,
 		Image: miniov1.PrometheusImage,
@@ -87,6 +99,11 @@ func prometheusServerContainer(t *miniov1.Tenant) corev1.Container {
 		VolumeMounts:    prometheusVolumeMounts(t),
 		Env:             prometheusEnvVars(t),
 		Resources:       t.Spec.Prometheus.Resources,
+		SecurityContext: &corev1.SecurityContext{
+			RunAsUser:    &runAsUser,
+			RunAsGroup:   &fsGroup,
+			RunAsNonRoot: &runAsNonRoot,
+		},
 	}
 }
 
@@ -129,6 +146,31 @@ func NewForPrometheus(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet
 	}
 
 	containers := []corev1.Container{prometheusServerContainer(t)}
+
+	// init container per https://github.com/prometheus-operator/prometheus-operator/issues/966#issuecomment-365037713
+	//
+	//  initContainers:
+	//  - name: "init-chown-data"
+	//    image: "busybox"
+	//    # 1000 is the user that prometheus uses.
+	//    command: ["chown", "-R", "1000:2000", /var/prometheus/data]
+	//    volumeMounts:
+	//    - name: prometheus-kube-prometheus-db
+	//      mountPath: /var/prometheus/data
+	initContainers := []corev1.Container{
+		{
+			Name:  "prometheus-init-chown-data",
+			Image: "busybox",
+			Command: []string{
+				"chown",
+				"-R",
+				"1000:2000",
+				"/prometheus",
+			},
+			VolumeMounts: prometheusVolumeMounts(t),
+		},
+	}
+
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: promMeta,
 		Spec: appsv1.StatefulSetSpec{
@@ -149,6 +191,7 @@ func NewForPrometheus(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					SchedulerName:      t.Scheduler.Name,
 					NodeSelector:       t.Spec.Prometheus.NodeSelector,
+					InitContainers:     initContainers,
 				},
 			},
 		},
