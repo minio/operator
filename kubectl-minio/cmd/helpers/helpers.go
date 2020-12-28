@@ -44,11 +44,13 @@ import (
 )
 
 // GetKubeClient provides k8s client for kubeconfig
-func GetKubeClient() (*kubernetes.Clientset, error) {
+func GetKubeClient(path string) (*kubernetes.Clientset, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if path != "" {
+		loadingRules.ExplicitPath = path
+	}
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-
 	config, err := kubeConfig.ClientConfig()
 	if err != nil {
 		return nil, err

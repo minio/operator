@@ -75,7 +75,8 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (o *deleteCmd) run() error {
-	client, err := helpers.GetKubeClient()
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	client, err := helpers.GetKubeClient(path)
 	if err != nil {
 		return err
 	}

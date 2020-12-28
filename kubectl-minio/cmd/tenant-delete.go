@@ -92,7 +92,8 @@ func (d *tenantDeleteCmd) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	kclient, err := helpers.GetKubeClient()
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	kclient, err := helpers.GetKubeClient(path)
 	if err != nil {
 		return err
 	}

@@ -51,9 +51,20 @@ var (
 const (
 	minioDesc = `
 Deploy and manage the multi tenant, S3 API compatible object storage on Kubernetes`
+	kubeconfig = "kubeconfig"
 )
 
+var confPath string
+var rootCmd = &cobra.Command{
+	Use:          "minio",
+	Short:        "manage MinIO operator CRDs",
+	Long:         minioDesc,
+	SilenceUsage: true,
+}
+
 func init() {
+	rootCmd.PersistentFlags().StringVar(&confPath, kubeconfig, "", "Custom kubeconfig path")
+
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	emfs, err := fs.New()
 	if err != nil {
@@ -100,17 +111,10 @@ func init() {
 
 // NewCmdMinIO creates a new root command for kubectl-minio
 func NewCmdMinIO(streams genericclioptions.IOStreams) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:          "minio",
-		Short:        "manage MinIO operator CRDs",
-		Long:         minioDesc,
-		SilenceUsage: true,
-	}
-	cmd = helpers.DisableHelp(cmd)
+	rootCmd = helpers.DisableHelp(rootCmd)
 	cobra.EnableCommandSorting = false
-	cmd.AddCommand(newInitCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
-	cmd.AddCommand(newTenantCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
-	cmd.AddCommand(newDeleteCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
-
-	return cmd
+	rootCmd.AddCommand(newInitCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
+	rootCmd.AddCommand(newTenantCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
+	rootCmd.AddCommand(newDeleteCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
+	return rootCmd
 }
