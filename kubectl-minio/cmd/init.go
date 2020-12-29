@@ -88,7 +88,8 @@ func (o *operatorInitCmd) run() error {
 	d := resources.NewDeploymentForOperator(o.operatorOpts)
 
 	if !o.output {
-		client, err := helpers.GetKubeClient()
+		path, _ := rootCmd.Flags().GetString(kubeconfig)
+		client, err := helpers.GetKubeClient(path)
 		if err != nil {
 			return err
 		}
