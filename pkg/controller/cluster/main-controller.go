@@ -1331,7 +1331,6 @@ func (c *Controller) syncHandler(key string) error {
 			}
 			return ErrMinIONotReady
 		}
-		fmt.Println("minio online")
 		err = c.checkAndConfigureLogSearchAPI(ctx, tenant, logSecret, adminClnt)
 		if err != nil {
 			return err
