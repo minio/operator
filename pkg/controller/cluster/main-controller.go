@@ -1642,7 +1642,6 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 		if err != nil {
 			return err
 		}
-		fmt.Println("restart minio")
 		// Restart MinIO for config update to take effect
 		if err = adminClnt.ServiceRestart(ctx); err != nil {
 			fmt.Println("error restart minio")
