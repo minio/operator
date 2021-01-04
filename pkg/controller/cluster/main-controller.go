@@ -1672,7 +1672,6 @@ func (c *Controller) checkLogSearchAPIReady(tenant *miniov1.Tenant) error {
 	if resp.StatusCode == 404 {
 		return nil
 	}
-	fmt.Println("resp.StatusCode", resp.StatusCode)
 
 	return errors.New("Log Search API Not Ready")
 }
