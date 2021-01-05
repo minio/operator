@@ -122,6 +122,8 @@ const (
 	StatusWaitingConsoleCert                 = "Waiting for Console TLS Certificate"
 	StatusUpdatingMinIOVersion               = "Updating MinIO Version"
 	StatusUpdatingConsole                    = "Updating Console"
+	StatusUpdatingLogPGStatefulSet           = "Updating Postgres server for Log Search feature"
+	StatusUpdatingLogSearchAPIServer         = "Updating Log Search API server"
 	StatusUpdatingResourceRequirements       = "Updating Resource Requirements"
 	StatusUpdatingAffinity                   = "Updating Pod Affinity"
 	StatusNotOwned                           = "Statefulset not controlled by operator"
@@ -1565,19 +1567,39 @@ func (c *Controller) checkAndCreateLogHeadless(ctx context.Context, tenant *mini
 }
 
 func (c *Controller) checkAndCreateLogStatefulSet(ctx context.Context, tenant *miniov1.Tenant, svcName string) error {
-	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LogStatefulsetName())
-	if err == nil || !k8serrors.IsNotFound(err) {
+	logPgSS, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LogStatefulsetName())
+	if err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningLogPGStatefulSet, 0); err != nil {
+			return err
+		}
+
+		klog.V(2).Infof("Creating a new Log StatefulSet for %s", tenant.Namespace)
+		searchSS := statefulsets.NewForLogDb(tenant, svcName)
+		_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, searchSS, metav1.CreateOptions{})
 		return err
+
 	}
 
-	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningLogPGStatefulSet, 0); err != nil {
+	// check if expected and actual values of Log DB spec match
+	dbSpecMatches, err := logDBStatefulsetMatchesSpec(tenant, logPgSS)
+	if err != nil {
 		return err
 	}
+	if !dbSpecMatches {
+		// Note: using current spec replica count works as long as we don't expose replicas via tenant spec.
+		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingLogPGStatefulSet, *logPgSS.Spec.Replicas); err != nil {
+			return err
+		}
+		logPgSS = statefulsets.NewForLogDb(tenant, svcName)
+		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, logPgSS, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+	}
 
-	klog.V(2).Infof("Creating a new Log StatefulSet for %s", tenant.Namespace)
-	searchSS := statefulsets.NewForLogDb(tenant, svcName)
-	_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, searchSS, metav1.CreateOptions{})
-	return err
+	return nil
 }
 
 func (c *Controller) checkAndCreateLogSearchAPIService(ctx context.Context, tenant *miniov1.Tenant) error {
@@ -1593,18 +1615,36 @@ func (c *Controller) checkAndCreateLogSearchAPIService(ctx context.Context, tena
 }
 
 func (c *Controller) checkAndCreateLogSearchAPIDeployment(ctx context.Context, tenant *miniov1.Tenant) error {
-	_, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.LogSearchAPIDeploymentName())
-	if err == nil || !k8serrors.IsNotFound(err) {
+	logSearchDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.LogSearchAPIDeploymentName())
+	if err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return err
+		}
+		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningLogSearchAPIDeployment, 0); err != nil {
+			return err
+		}
+
+		klog.V(2).Infof("Creating a new Log Search API deployment for %s", tenant.Name)
+		_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, deployments.NewForLogSearchAPI(tenant), metav1.CreateOptions{})
 		return err
 	}
 
-	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningLogSearchAPIDeployment, 0); err != nil {
+	// check if expected and actual values of Log search API deployment match
+	apiDeploymentMatches, err := logSearchAPIDeploymentMatchesSpec(tenant, logSearchDeployment)
+	if err != nil {
 		return err
 	}
-
-	klog.V(2).Infof("Creating a new Log Search API deployment for %s", tenant.Name)
-	_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, deployments.NewForLogSearchAPI(tenant), metav1.CreateOptions{})
-	return err
+	if !apiDeploymentMatches {
+		// Note: using current spec replica count works as long as we don't expose replicas via tenant spec.
+		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingLogSearchAPIServer, *logSearchDeployment.Spec.Replicas); err != nil {
+			return err
+		}
+		logSearchDeployment = deployments.NewForLogSearchAPI(tenant)
+		if _, err := c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Update(ctx, logSearchDeployment, metav1.UpdateOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *Controller) checkAndCreateLogSecret(ctx context.Context, tenant *miniov1.Tenant) (*corev1.Secret, error) {
