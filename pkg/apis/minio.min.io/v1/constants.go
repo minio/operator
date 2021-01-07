@@ -219,6 +219,12 @@ const LogAuditTokenKey = "LOGSEARCH_AUDIT_AUTH_TOKEN"
 // the token used to perform search query on audit logs persisted.
 const LogQueryTokenKey = "LOGSEARCH_QUERY_AUTH_TOKEN"
 
+// ConsolePrometheusURL is the url to the prometheus the console should use to pull metrics from.
+const ConsolePrometheusURL = "CONSOLE_PROMETHEUS_URL"
+
+// PrometheusAPIPort specifies the default Prometheus API Service's port number.
+const PrometheusAPIPort = 9090
+
 // LogSearchDiskCapacityGB is the k8s secret/environment variable key name
 // referring to disk capacity required to store tenant's audit logs
 const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"

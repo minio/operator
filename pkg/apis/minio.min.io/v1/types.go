@@ -132,6 +132,19 @@ type TenantSpec struct {
 	// SideCars a list of containers to run as sidecars along every MinIO Pod on every pool
 	// +optional
 	SideCars *SideCars `json:"sideCars,omitempty"`
+	// ExposeServices tells operator whether to expose the MinIO service and/or the Console Service
+	// +optional
+	ExposeServices *ExposeServices `json:"exposeServices,omitempty"`
+}
+
+// ExposeServices tells operator whether to expose the services for MinIO and Console
+type ExposeServices struct {
+	// MinIO tells operator whether to expose the MinIO service
+	// +optional
+	MinIO bool `json:"minio,omitempty"`
+	// Console tells operator whether to expose the Console Service
+	// +optional
+	Console bool `json:"console,omitempty"`
 }
 
 // TenantStatus is the status for a Tenant resource

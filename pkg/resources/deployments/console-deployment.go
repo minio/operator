@@ -52,6 +52,13 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 			Value: url,
 		})
 	}
+	if t.HasPrometheusEnabled() {
+		url := fmt.Sprintf("http://%s:%d", t.PrometheusHLServiceName(), miniov1.PrometheusAPIPort)
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  miniov1.ConsolePrometheusURL,
+			Value: url,
+		})
+	}
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Console.Env...)
 	return envVars

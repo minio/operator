@@ -317,6 +317,16 @@ spec:
                   - name
                   type: object
                 type: array
+              exposeServices:
+                description: ExposeServices tells operator whether to expose the MinIO service and/or the Console Service
+                properties:
+                  console:
+                    description: Console tells operator whether to expose the Console Service
+                    type: boolean
+                  minio:
+                    description: MinIO tells operator whether to expose the MinIO service
+                    type: boolean
+                type: object
               externalCaCertSecret:
                 description: ExternalCaCertSecret allows a user to provide additional CA certificates. This is used for MinIO to verify TLS connections with other applications.
                 items:

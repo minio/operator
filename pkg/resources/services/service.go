@@ -54,6 +54,11 @@ func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
 		},
 	}
 
+	// check if the service is meant to be exposed
+	if t.Spec.ExposeServices != nil && t.Spec.ExposeServices.MinIO {
+		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
+	}
+
 	return svc
 }
 
@@ -188,6 +193,10 @@ func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
 			Selector: t.ConsolePodLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
+	}
+	// check if the service is meant to be exposed
+	if t.Spec.ExposeServices != nil && t.Spec.ExposeServices.Console {
+		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
 	}
 
 	return svc

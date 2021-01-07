@@ -116,6 +116,7 @@ const (
 	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server for Log Search feature"
 	StatusProvisioningPrometheusStatefulSet  = "Provisioning Prometheus server for Prometheus metrics feature"
 	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
+	StatusWaitingForLogSearchReadyState      = "Waiting for Log Search Pods to be ready"
 	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"
 	StatusWaitingMinIOClientCert             = "Waiting for MinIO TLS Client Certificate"
 	StatusWaitingKESCert                     = "Waiting for KES TLS Certificate"
@@ -133,6 +134,9 @@ const (
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
 var ErrMinIONotReady = fmt.Errorf("MinIO is not ready")
+
+// ErrLogSearchNotReady is the error returned when Log Search is not Ready
+var ErrLogSearchNotReady = fmt.Errorf("Log Search is not ready")
 
 // Controller struct watches the Kubernetes API for changes to Tenant resources
 type Controller struct {
@@ -1322,7 +1326,13 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			return err
 		}
-
+		// Make sure that MinIO is up and running to enable Log Search.
+		if !tenant.MinIOHealthCheck() {
+			if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
+				return err
+			}
+			return ErrMinIONotReady
+		}
 		err = c.checkAndConfigureLogSearchAPI(ctx, tenant, logSecret, adminClnt)
 		if err != nil {
 			return err
@@ -1663,16 +1673,45 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 	auditCfg := newAuditWebhookConfig(tenant, secret)
 	_, err := adminClnt.GetConfigKV(ctx, auditCfg.target)
 	if err != nil {
+		// check if log search is ready
+		if err = c.checkLogSearchAPIReady(tenant); err != nil {
+			klog.V(2).Info(err)
+			return ErrLogSearchNotReady
+		}
 		err = adminClnt.SetConfigKV(ctx, auditCfg.args)
 		if err != nil {
 			return err
 		}
-
 		// Restart MinIO for config update to take effect
-		adminClnt.ServiceRestart(ctx) //nolint:errcheck
+		if err = adminClnt.ServiceRestart(ctx); err != nil {
+			fmt.Println("error restart minio")
+			klog.V(2).Info(err)
+		}
+		fmt.Println("done restart minio")
 		return nil
 	}
 	return err
+}
+
+func (c *Controller) checkLogSearchAPIReady(tenant *miniov1.Tenant) error {
+	endpoint := fmt.Sprintf("http://%s.%s.svc.cluster.local:8080", tenant.LogSearchAPIServiceName(), tenant.Namespace)
+	client := http.Client{Timeout: 100 * time.Millisecond}
+	resp, err := client.Get(endpoint)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			klog.V(2).Info(err)
+		}
+	}()
+
+	if resp.StatusCode == 404 {
+		return nil
+	}
+
+	return errors.New("Log Search API Not Ready")
 }
 
 func (c *Controller) checkAndCreatePrometheusConfigMap(ctx context.Context, tenant *miniov1.Tenant, accessKey, secretKey string) (*corev1.ConfigMap, error) {
