@@ -99,14 +99,14 @@ spec:
               storage: 1Ti
   ## Mount path where PV will be mounted inside container(s). Defaults to "/export".
   mountPath: /export
-  
+
   ## Sub path inside Mount path where MinIO starts. Defaults to "".
   # subPath: /data
-  
+
   ## Secret with credentials to be used by MinIO Tenant.
   credsSecret:
     name: minio-creds-secret
-    
+
   ## PodManagement policy for pods created by StatefulSet. Can be "OrderedReady" or "Parallel"
   ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
   ## for details. Defaults to "Parallel"
@@ -128,7 +128,7 @@ spec:
   s3:
     ## This feature is turned off by default
     bucketDNS: false
-  
+
   ## Used when "requestAutoCert" is set to true. Set CommonName for the auto-generated certificate.
   ## Internal DNS name for the pod will be used if CommonName is not provided.
   ## DNS name format is minio-{0...3}.minio.default.svc.cluster.local
@@ -152,7 +152,7 @@ spec:
   # resources:
     # requests:
       # memory: 20Gi
-      
+
   ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
   ## eligible to run on a node, the node must have each of the
   ## indicated key-value pairs as labels.

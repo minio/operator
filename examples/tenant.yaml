@@ -65,7 +65,7 @@ spec:
     ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
       volumesPerServer: 4
 
-      ## This VolumeClaimTemplate is used across all the volumes provisioned for MinIO Tenant in this 
+      ## This VolumeClaimTemplate is used across all the volumes provisioned for MinIO Tenant in this
       ## Pool.
       volumeClaimTemplate:
         metadata:
@@ -119,7 +119,7 @@ spec:
   # subPath: /data
 
   ## Use this field to provide a list of Secrets with external certificates. This can be used to to configure
-  ## TLS for MinIO Tenant pods. Create secrets as explained here: 
+  ## TLS for MinIO Tenant pods. Create secrets as explained here:
   ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
   # externalCertSecret:
   #   - name: tls-ssl-minio
@@ -135,8 +135,8 @@ spec:
     ## This feature is turned off by default
     bucketDNS: false
 
-  ## This field is used only when "requestAutoCert" is set to true. Use this field to set CommonName 
-  ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is 
+  ## This field is used only when "requestAutoCert" is set to true. Use this field to set CommonName
+  ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is
   ## not provided. DNS name format is *.minio.default.svc.cluster.local
   certConfig:
     commonName: ""
@@ -159,7 +159,7 @@ spec:
   ## This is applied to MinIO pods only.
   ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
   # priorityClassName: high-priority
-  
+
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:

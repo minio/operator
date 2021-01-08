@@ -19,7 +19,7 @@ This example will deploy a MinIO tenant with TLS and Server Side Encryption.
 ### Prerequisites
 
 - Deploy `Vault` KMS in your cluster: `kubectl apply -f examples/vault/deployment.yaml`
-- Expose vault via k8s-portforward: `kubectl port-foward svc/vault 8200` on a terminal
+- Expose vault via k8s-portforward: `kubectl port-forward svc/vault 8200` on a terminal
 - Obtain the `Vault` Root token from the pod logs: `kubectl logs -l app=vault`
 - Set the `Vault` token and address in the client:
 
