@@ -25,7 +25,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -55,8 +55,8 @@ func tenantStorage(q resource.Quantity) corev1.ResourceList {
 }
 
 // Pool returns a Pool object from given values
-func Pool(servers, volumes int32, q resource.Quantity, sc string) miniov1.Pool {
-	return miniov1.Pool{
+func Pool(servers, volumes int32, q resource.Quantity, sc string) miniov2.Pool {
+	return miniov2.Pool{
 		Servers:          servers,
 		VolumesPerServer: volumes,
 		VolumeClaimTemplate: &corev1.PersistentVolumeClaim{

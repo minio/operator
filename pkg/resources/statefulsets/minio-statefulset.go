@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -33,7 +33,7 @@ import (
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
-func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate string, opVersion string) []corev1.EnvVar {
+func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate string, opVersion string) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Env...)
@@ -49,13 +49,13 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
 			Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
 		}, corev1.EnvVar{
-			Name: miniov1.WebhookMinIOArgs,
+			Name: miniov2.WebhookMinIOArgs,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: miniov1.WebhookSecret,
+						Name: miniov2.WebhookSecret,
 					},
-					Key: miniov1.WebhookMinIOArgs,
+					Key: miniov2.WebhookMinIOArgs,
 				},
 			},
 		}, corev1.EnvVar{
@@ -73,13 +73,13 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			Name:  "MINIO_DOMAIN",
 			Value: t.MinIOBucketBaseDomain(),
 		}, corev1.EnvVar{
-			Name: miniov1.WebhookMinIOBucket,
+			Name: miniov2.WebhookMinIOBucket,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: miniov1.WebhookSecret,
+						Name: miniov2.WebhookSecret,
 					},
-					Key: miniov1.WebhookMinIOArgs,
+					Key: miniov2.WebhookMinIOArgs,
 				},
 			},
 		})
@@ -118,16 +118,16 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			Value: t.KESServiceEndpoint(),
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CERT_FILE",
-			Value: miniov1.MinIOCertPath + "/client.crt",
+			Value: miniov2.MinIOCertPath + "/client.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_FILE",
-			Value: miniov1.MinIOCertPath + "/client.key",
+			Value: miniov2.MinIOCertPath + "/client.key",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CA_PATH",
-			Value: miniov1.MinIOCertPath + "/CAs/kes.crt",
+			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
-			Value: miniov1.KESMinIOKey,
+			Value: miniov2.KESMinIOKey,
 		})
 	}
 
@@ -138,7 +138,7 @@ func minioEnvironmentVars(t *miniov1.Tenant, wsSecret *v1.Secret, hostsTemplate 
 // Returns the MinIO pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func minioPodMetadata(t *miniov1.Tenant, pool *miniov1.Pool, opVersion string) metav1.ObjectMeta {
+func minioPodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	// Copy Labels and Annotations from Tenant
 	meta.Labels = t.ObjectMeta.Labels
@@ -152,26 +152,26 @@ func minioPodMetadata(t *miniov1.Tenant, pool *miniov1.Pool, opVersion string) m
 		meta.Labels[k] = v
 	}
 	// Add information labels, such as which pool we are building this pod about
-	meta.Labels[miniov1.PoolLabel] = pool.Name
-	meta.Labels[miniov1.OperatorLabel] = opVersion
+	meta.Labels[miniov2.PoolLabel] = pool.Name
+	meta.Labels[miniov2.OperatorLabel] = opVersion
 	return meta
 }
 
 // ContainerMatchLabels Returns the labels that match the Pods in the statefulset
-func ContainerMatchLabels(t *miniov1.Tenant, pool *miniov1.Pool) *metav1.LabelSelector {
+func ContainerMatchLabels(t *miniov2.Tenant, pool *miniov2.Pool) *metav1.LabelSelector {
 	labels := t.MinIOPodLabels()
 	// Add pool information so it's passed down to the underlying PVCs
-	labels[miniov1.PoolLabel] = pool.Name
+	labels[miniov2.PoolLabel] = pool.Name
 	return &metav1.LabelSelector{
 		MatchLabels: labels,
 	}
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(t *miniov1.Tenant, pool *miniov1.Pool) (mounts []corev1.VolumeMount) {
+func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.VolumeMount) {
 	// This is the case where user didn't provide a pool and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
-	name := miniov1.MinIOVolumeName
+	name := miniov2.MinIOVolumeName
 	if pool.VolumeClaimTemplate != nil {
 		name = pool.VolumeClaimTemplate.Name
 	}
@@ -193,7 +193,7 @@ func volumeMounts(t *miniov1.Tenant, pool *miniov1.Pool) (mounts []corev1.Volume
 	if t.AutoCert() || t.ExternalCert() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      t.MinIOTLSSecretName(),
-			MountPath: miniov1.MinIOCertPath,
+			MountPath: miniov2.MinIOCertPath,
 		})
 	}
 
@@ -201,15 +201,15 @@ func volumeMounts(t *miniov1.Tenant, pool *miniov1.Pool) (mounts []corev1.Volume
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool, hostsTemplate string, opVersion string) corev1.Container {
-	args := []string{"server", "--certs-dir", miniov1.MinIOCertPath}
+func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string) corev1.Container {
+	args := []string{"server", "--certs-dir", miniov2.MinIOCertPath}
 
 	return corev1.Container{
-		Name:  miniov1.MinIOServerName,
+		Name:  miniov2.MinIOServerName,
 		Image: t.Spec.Image,
 		Ports: []corev1.ContainerPort{
 			{
-				ContainerPort: miniov1.MinIOPort,
+				ContainerPort: miniov2.MinIOPort,
 			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
@@ -221,7 +221,7 @@ func poolMinioServerContainer(t *miniov1.Tenant, wsSecret *v1.Secret, pool *mini
 }
 
 // GetContainerArgs returns the arguments that the MinIO container receives
-func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
+func GetContainerArgs(t *miniov2.Tenant, hostsTemplate string) []string {
 	var args []string
 	if len(t.Spec.Pools) == 1 && t.Spec.Pools[0].Servers == 1 {
 		// to run in standalone mode we must pass the path
@@ -235,13 +235,13 @@ func GetContainerArgs(t *miniov1.Tenant, hostsTemplate string) []string {
 }
 
 // Builds the tolerations for a Pool.
-func minioPoolTolerations(z *miniov1.Pool) []corev1.Toleration {
+func minioPoolTolerations(z *miniov2.Pool) []corev1.Toleration {
 	var tolerations []corev1.Toleration
 	return append(tolerations, z.Tolerations...)
 }
 
 // Builds the security context for a Tenant
-func minioSecurityContext(t *miniov1.Tenant) *corev1.PodSecurityContext {
+func minioSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 	var securityContext = corev1.PodSecurityContext{}
 	if t.Spec.SecurityContext != nil {
 		securityContext = *t.Spec.SecurityContext
@@ -250,7 +250,7 @@ func minioSecurityContext(t *miniov1.Tenant) *corev1.PodSecurityContext {
 }
 
 // NewForMinIOPool creates a new StatefulSet for the given Cluster.
-func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
+func NewForMinIOPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = pool.Servers
 	var podVolumeSources []corev1.VolumeProjection
@@ -435,28 +435,44 @@ func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool,
 		}
 	}
 
+	// Mount Operator TLS certificate to MinIO ~/cert/CAs
+	operatorTLSSecretName := "operator-tls"
+	podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
+		{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: operatorTLSSecretName,
+				},
+				Items: []corev1.KeyToPath{
+					{Key: "public.crt", Path: "CAs/operator.crt"},
+				},
+			},
+		},
+	}...)
+
 	// Add SSL volume from SSL secret to the podVolumes
-	if t.TLS() {
-		if t.HasKESEnabled() {
-			podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
-				{
-					Secret: &corev1.SecretProjection{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: clientCertSecret,
-						},
-						Items: clientCertPaths,
+	if t.TLS() && t.HasKESEnabled() {
+		podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: clientCertSecret,
 					},
+					Items: clientCertPaths,
 				},
-				{
-					Secret: &corev1.SecretProjection{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: kesCertSecret,
-						},
-						Items: KESCertPath,
+			},
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: kesCertSecret,
 					},
+					Items: KESCertPath,
 				},
-			}...)
-		}
+			},
+		}...)
+	}
+
+	if len(podVolumeSources) > 0 {
 		podVolumes = append(podVolumes, corev1.Volume{
 			Name: t.MinIOTLSSecretName(),
 			VolumeSource: corev1.VolumeSource{
@@ -472,9 +488,9 @@ func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool,
 		Name:      t.PoolStatefulsetName(pool),
 		OwnerReferences: []metav1.OwnerReference{
 			*metav1.NewControllerRef(t, schema.GroupVersionKind{
-				Group:   miniov1.SchemeGroupVersion.Group,
-				Version: miniov1.SchemeGroupVersion.Version,
-				Kind:    miniov1.MinIOCRDResourceKind,
+				Group:   miniov2.SchemeGroupVersion.Group,
+				Version: miniov2.SchemeGroupVersion.Version,
+				Kind:    miniov2.MinIOCRDResourceKind,
 			}),
 		},
 	}
@@ -487,9 +503,9 @@ func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool,
 	}
 
 	// Add information labels, such as which pool we are building this pod about
-	ssMeta.Labels[miniov1.TenantLabel] = t.Name
-	ssMeta.Labels[miniov1.PoolLabel] = pool.Name
-	ssMeta.Labels[miniov1.OperatorLabel] = operatorVersion
+	ssMeta.Labels[miniov2.TenantLabel] = t.Name
+	ssMeta.Labels[miniov2.PoolLabel] = pool.Name
+	ssMeta.Labels[miniov2.OperatorLabel] = operatorVersion
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion),
@@ -504,7 +520,7 @@ func NewForMinIOPool(t *miniov1.Tenant, wsSecret *v1.Secret, pool *miniov1.Pool,
 		ObjectMeta: ssMeta,
 		Spec: appsv1.StatefulSetSpec{
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-				Type: miniov1.DefaultUpdateStrategy,
+				Type: miniov2.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: t.Spec.PodManagementPolicy,
 			Selector:            ContainerMatchLabels(t, pool),

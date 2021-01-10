@@ -23,7 +23,7 @@ import (
 
 	helpers "github.com/minio/kubectl-minio/cmd/helpers"
 	operator "github.com/minio/operator/pkg/apis/minio.min.io"
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -95,9 +95,9 @@ func tenantAnnotations() map[string]string {
 	return m
 }
 
-func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
+func tenantKESConfig(tenant, secret string) *miniov2.KESConfig {
 	if secret != "" {
-		return &miniov1.KESConfig{
+		return &miniov2.KESConfig{
 			Replicas: helpers.KESReplicas,
 			Image:    helpers.DefaultKESImage,
 			Configuration: &v1.LocalObjectReference{
@@ -109,9 +109,9 @@ func tenantKESConfig(tenant, secret string) *miniov1.KESConfig {
 	return nil
 }
 
-func tenantConsoleConfig(tenant, secret string) *miniov1.ConsoleConfiguration {
+func tenantConsoleConfig(tenant, secret string) *miniov2.ConsoleConfiguration {
 	if secret != "" {
-		return &miniov1.ConsoleConfiguration{
+		return &miniov2.ConsoleConfiguration{
 			Replicas: helpers.ConsoleReplicas,
 			Image:    helpers.DefaultConsoleImage,
 			ConsoleSecret: &v1.LocalObjectReference{
@@ -130,7 +130,7 @@ func storageClass(sc string) *string {
 }
 
 // NewTenant will return a new Tenant for a MinIO Operator
-func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
+func NewTenant(opts *TenantOptions) (*miniov2.Tenant, error) {
 	autoCert := true
 	volumesPerServer := helpers.VolumesPerServer(opts.Volumes, opts.Servers)
 	capacityPerVolume, err := helpers.CapacityPerVolume(opts.Capacity, opts.Volumes)
@@ -138,23 +138,23 @@ func NewTenant(opts *TenantOptions) (*miniov1.Tenant, error) {
 		return nil, err
 	}
 
-	t := &miniov1.Tenant{
+	t := &miniov2.Tenant{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Tenant",
-			APIVersion: operator.GroupName + "/" + miniov1.Version,
+			APIVersion: operator.GroupName + "/" + miniov2.Version,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      opts.Name,
 			Namespace: opts.NS,
 		},
-		Spec: miniov1.TenantSpec{
+		Spec: miniov2.TenantSpec{
 			Image: opts.Image,
 			CredsSecret: &v1.LocalObjectReference{
 				Name: opts.SecretName,
 			},
-			Pools:           []miniov1.Pool{Pool(opts.Servers, volumesPerServer, *capacityPerVolume, opts.StorageClass)},
+			Pools:           []miniov2.Pool{Pool(opts.Servers, volumesPerServer, *capacityPerVolume, opts.StorageClass)},
 			RequestAutoCert: &autoCert,
-			CertConfig: &miniov1.CertificateConfig{
+			CertConfig: &miniov2.CertificateConfig{
 				CommonName:       "",
 				OrganizationName: []string{},
 				DNSNames:         []string{},

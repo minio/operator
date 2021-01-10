@@ -12,7 +12,7 @@ GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
 KUSTOMIZE_HOME=operator-kustomize
-KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/crds/
+KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/base/crds/
 
 PLUGIN_HOME=kubectl-minio
 
@@ -54,8 +54,9 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@which controller-gen 1>/dev/null || (echo "Installing controller-gen" && GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
-	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
+	@GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1
+	@controller-gen crd:maxDescLen=0 paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
+	@kustomize build operator-kustomize/patch-crd > /tmp/temptenant.yaml && mv /tmp/temptenant.yaml operator-kustomize/base/crds/minio.min.io_tenants.yaml
 
 regen-crd-docs:
 	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go get github.com/elastic/crd-ref-docs)

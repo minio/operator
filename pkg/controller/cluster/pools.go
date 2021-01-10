@@ -17,14 +17,14 @@
 package cluster
 
 import (
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/klog/v2"
 )
 
 // poolSSMatchesSpec checks if the statefulset for the pool matches what is expected and described from the Tenant
-func poolSSMatchesSpec(tenant *miniov1.Tenant, pool *miniov1.Pool, ss *appsv1.StatefulSet) (bool, error) {
+func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.StatefulSet) (bool, error) {
 	// Verify Resources
 	updatePoolSS := false
 	if pool.Resources.String() != ss.Spec.Template.Spec.Containers[0].Resources.String() {

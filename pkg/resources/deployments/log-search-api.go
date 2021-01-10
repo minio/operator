@@ -20,70 +20,70 @@ package deployments
 import (
 	"fmt"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Adds required log-search-api environment variables
-func logSearchAPIEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
+func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	var diskCapacityGB int
 	if t.Spec.Log.Audit.DiskCapacityGB != nil {
 		diskCapacityGB = *t.Spec.Log.Audit.DiskCapacityGB
 	}
 	return []corev1.EnvVar{
 		{
-			Name:  miniov1.LogSearchDiskCapacityGB,
+			Name:  miniov2.LogSearchDiskCapacityGB,
 			Value: fmt.Sprintf("%d", diskCapacityGB),
 		},
 		{
-			Name: miniov1.LogPgConnStr,
+			Name: miniov2.LogPgConnStr,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: t.LogSecretName(),
 					},
-					Key: miniov1.LogPgConnStr,
+					Key: miniov2.LogPgConnStr,
 				},
 			},
 		},
 		{
-			Name: miniov1.LogAuditTokenKey,
+			Name: miniov2.LogAuditTokenKey,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: t.LogSecretName(),
 					},
-					Key: miniov1.LogAuditTokenKey,
+					Key: miniov2.LogAuditTokenKey,
 				},
 			},
 		},
 		{
-			Name: miniov1.LogQueryTokenKey,
+			Name: miniov2.LogQueryTokenKey,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: t.LogSecretName(),
 					},
-					Key: miniov1.LogQueryTokenKey,
+					Key: miniov2.LogQueryTokenKey,
 				},
 			},
 		},
 	}
 }
 
-func logSearchAPIContainer(t *miniov1.Tenant) corev1.Container {
-	logSearchAPIImage := miniov1.DefaultLogSearchAPIImage
+func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
+	logSearchAPIImage := miniov2.DefaultLogSearchAPIImage
 	if t.Spec.Log.Image != "" {
 		logSearchAPIImage = t.Spec.Log.Image
 	}
 	container := corev1.Container{
-		Name:  miniov1.LogSearchAPIContainerName,
+		Name:  miniov2.LogSearchAPIContainerName,
 		Image: logSearchAPIImage,
 		Ports: []corev1.ContainerPort{
 			{
-				ContainerPort: miniov1.LogSearchAPIPort,
+				ContainerPort: miniov2.LogSearchAPIPort,
 			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
@@ -94,7 +94,7 @@ func logSearchAPIContainer(t *miniov1.Tenant) corev1.Container {
 	return container
 }
 
-func logSearchAPIMeta(t *miniov1.Tenant) metav1.ObjectMeta {
+func logSearchAPIMeta(t *miniov2.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	meta.Labels = make(map[string]string)
 	for k, v := range t.LogSearchAPIPodLabels() {
@@ -117,14 +117,14 @@ func logSearchAPIMeta(t *miniov1.Tenant) metav1.ObjectMeta {
 }
 
 // logSearchAPISelector Returns the Log search API Pod selector
-func logSearchAPISelector(t *miniov1.Tenant) *metav1.LabelSelector {
+func logSearchAPISelector(t *miniov2.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: t.LogSearchAPIPodLabels(),
 	}
 }
 
 // NewForLogSearchAPI returns k8s deployment object for Log Search API server
-func NewForLogSearchAPI(t *miniov1.Tenant) *appsv1.Deployment {
+func NewForLogSearchAPI(t *miniov2.Tenant) *appsv1.Deployment {
 	var replicas int32 = 1
 
 	apiPod := corev1.PodTemplateSpec{

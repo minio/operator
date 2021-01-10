@@ -20,14 +20,14 @@ package deployments
 import (
 	"fmt"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Adds required Console environment variables
-func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
+func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	envVars := []corev1.EnvVar{
 		{
 			Name:  "CONSOLE_MINIO_SERVER",
@@ -36,26 +36,26 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 	}
 	if t.HasLogEnabled() {
 		envVars = append(envVars, corev1.EnvVar{
-			Name: miniov1.LogQueryTokenKey,
+			Name: miniov2.LogQueryTokenKey,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: t.LogSecretName(),
 					},
-					Key: miniov1.LogQueryTokenKey,
+					Key: miniov2.LogQueryTokenKey,
 				},
 			},
 		})
-		url := fmt.Sprintf("http://%s:%d", t.LogSearchAPIServiceName(), miniov1.LogSearchAPIPort)
+		url := fmt.Sprintf("http://%s:%d", t.LogSearchAPIServiceName(), miniov2.LogSearchAPIPort)
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "CONSOLE_LOG_QUERY_URL",
 			Value: url,
 		})
 	}
 	if t.HasPrometheusEnabled() {
-		url := fmt.Sprintf("http://%s:%d", t.PrometheusHLServiceName(), miniov1.PrometheusAPIPort)
+		url := fmt.Sprintf("http://%s:%d", t.PrometheusHLServiceName(), miniov2.PrometheusAPIPort)
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  miniov1.ConsolePrometheusURL,
+			Name:  miniov2.ConsolePrometheusURL,
 			Value: url,
 		})
 	}
@@ -65,7 +65,7 @@ func consoleEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
 }
 
 // Returns the Console environment variables set in configuration.
-func consoleSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
+func consoleSecretEnvVars(t *miniov2.Tenant) []corev1.EnvFromSource {
 	envVars := []corev1.EnvFromSource{
 		{
 			SecretRef: &corev1.SecretEnvSource{
@@ -78,7 +78,7 @@ func consoleSecretEnvVars(t *miniov1.Tenant) []corev1.EnvFromSource {
 	return envVars
 }
 
-func consoleMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+func consoleMetadata(t *miniov2.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	meta.Labels = t.Spec.Console.Labels
 	meta.Annotations = t.Spec.Console.Annotations
@@ -93,38 +93,38 @@ func consoleMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 }
 
 // consoleSelector Returns the Console pods selector
-func consoleSelector(t *miniov1.Tenant) *metav1.LabelSelector {
+func consoleSelector(t *miniov2.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: t.ConsolePodLabels(),
 	}
 }
 
 // ConsoleVolumeMounts builds the volume mounts for Console container.
-func ConsoleVolumeMounts(t *miniov1.Tenant) (mounts []corev1.VolumeMount) {
+func ConsoleVolumeMounts(t *miniov2.Tenant) (mounts []corev1.VolumeMount) {
 	return []corev1.VolumeMount{
 		{
 			Name:      t.ConsoleVolMountName(),
-			MountPath: miniov1.ConsoleCertPath,
+			MountPath: miniov2.ConsoleCertPath,
 		},
 	}
 }
 
 // Builds the Console container for a Tenant.
-func consoleContainer(t *miniov1.Tenant) corev1.Container {
+func consoleContainer(t *miniov2.Tenant) corev1.Container {
 	args := []string{"server"}
-	args = append(args, fmt.Sprintf("--certs-dir=%s", miniov1.ConsoleCertPath))
+	args = append(args, fmt.Sprintf("--certs-dir=%s", miniov2.ConsoleCertPath))
 
 	return corev1.Container{
-		Name:  miniov1.ConsoleContainerName,
+		Name:  miniov2.ConsoleContainerName,
 		Image: t.Spec.Console.Image,
 		Ports: []corev1.ContainerPort{
 			{
 				Name:          "http",
-				ContainerPort: miniov1.ConsolePort,
+				ContainerPort: miniov2.ConsolePort,
 			},
 			{
 				Name:          "https",
-				ContainerPort: miniov1.ConsoleTLSPort,
+				ContainerPort: miniov2.ConsoleTLSPort,
 			},
 		},
 		ImagePullPolicy: t.Spec.Console.ImagePullPolicy,
@@ -137,7 +137,7 @@ func consoleContainer(t *miniov1.Tenant) corev1.Container {
 }
 
 // NewConsole creates a new Deployment for the given MinIO Tenant.
-func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
+func NewConsole(t *miniov2.Tenant) *appsv1.Deployment {
 	var certPath = "public.crt"
 	var keyPath = "private.key"
 
@@ -293,7 +293,7 @@ func NewConsole(t *miniov1.Tenant) *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					ServiceAccountName: t.Spec.Console.ServiceAccountName,
 					Containers:         []corev1.Container{consoleContainer(t)},
-					RestartPolicy:      miniov1.ConsoleRestartPolicy,
+					RestartPolicy:      miniov2.ConsoleRestartPolicy,
 					Volumes:            podVolumes,
 					NodeSelector:       t.Spec.Console.NodeSelector,
 				},

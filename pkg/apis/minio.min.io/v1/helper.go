@@ -34,14 +34,12 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"sync"
 	"text/template"
 	"time"
 
-	"github.com/minio/minio/pkg/env"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
@@ -83,11 +81,6 @@ type hostsTemplateValues struct {
 	Domain      string
 }
 
-var (
-	once             sync.Once
-	k8sClusterDomain string
-)
-
 // GetNSFromFile assumes the operator is running inside a k8s pod and extract the
 // current namespace from the /var/run/secrets/kubernetes.io/serviceaccount/namespace file
 func GetNSFromFile() string {
@@ -121,12 +114,6 @@ func (t *Tenant) ExternalCert() bool {
 	return t.Spec.ExternalCertSecret != nil
 }
 
-// ExternalCaCerts returns true is the user has provided a
-// additional CA certificates for MinIO
-func (t *Tenant) ExternalCaCerts() bool {
-	return len(t.Spec.ExternalCaCertSecret) > 0
-}
-
 // ExternalClientCert returns true is the user has provided a secret
 // that contains CA client cert, server cert and server key
 func (t *Tenant) ExternalClientCert() bool {
@@ -151,12 +138,6 @@ func (t *Tenant) ConsoleExternalCert() bool {
 	return t.Spec.Console != nil && t.Spec.Console.ExternalCertSecret != nil
 }
 
-// ConsoleExternalCaCerts returns true is the user has provided a
-// additional CA certificates for Console
-func (t *Tenant) ConsoleExternalCaCerts() bool {
-	return t.Spec.Console != nil && len(t.Spec.Console.ExternalCaCertSecret) > 0
-}
-
 // AutoCert is enabled by default, otherwise we return the user provided value
 func (t *Tenant) AutoCert() bool {
 	if t.Spec.RequestAutoCert == nil {
@@ -165,15 +146,15 @@ func (t *Tenant) AutoCert() bool {
 	return *t.Spec.RequestAutoCert
 }
 
-// VolumePathForPool returns the paths for MinIO mounts based on
-// total number of volumes on a given pool
-func (t *Tenant) VolumePathForPool(pool *Pool) string {
-	if pool.VolumesPerServer == 1 {
+// VolumePathForZone returns the paths for MinIO mounts based on
+// total number of volumes on a given zone
+func (t *Tenant) VolumePathForZone(zone *Zone) string {
+	if zone.VolumesPerServer == 1 {
 		// Add an extra "/" to make sure relative paths are avoided.
 		return path.Join("/", t.Spec.Mountpath, "/", t.Spec.Subpath)
 	}
 	// Add an extra "/" to make sure relative paths are avoided.
-	return path.Join("/", t.Spec.Mountpath+genEllipsis(0, int(pool.VolumesPerServer-1)), "/", t.Spec.Subpath)
+	return path.Join("/", t.Spec.Mountpath+genEllipsis(0, int(zone.VolumesPerServer-1)), "/", t.Spec.Subpath)
 }
 
 // KESReplicas returns the number of total KES replicas
@@ -283,11 +264,11 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.ImagePullPolicy = DefaultImagePullPolicy
 	}
 
-	for zi, z := range t.Spec.Pools {
+	for zi, z := range t.Spec.Zones {
 		if z.Name == "" {
-			z.Name = fmt.Sprintf("pool-%d", zi)
+			z.Name = fmt.Sprintf("zone-%d", zi)
 		}
-		t.Spec.Pools[zi] = z
+		t.Spec.Zones[zi] = z
 	}
 
 	if t.Spec.Mountpath == "" {
@@ -310,7 +291,7 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 				t.Spec.CertConfig.OrganizationName = DefaultOrgName
 			}
 		} else {
-			t.Spec.CertConfig = &CertificateConfig{
+			t.Spec.CertConfig = &miniov2.CertificateConfig{
 				CommonName:       t.MinIOWildCardName(),
 				DNSNames:         t.MinIOHosts(),
 				OrganizationName: DefaultOrgName,
@@ -368,11 +349,11 @@ func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
 // MinIOHosts returns the domain names in ellipses format created for current Tenant
 func (t *Tenant) MinIOHosts() (hosts []string) {
 	// Create the ellipses style URL
-	for _, z := range t.Spec.Pools {
+	for _, z := range t.Spec.Zones {
 		if z.Servers == 1 {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), "0", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), "0", t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
 		} else {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), genEllipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForZone(&z), genEllipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, ClusterDomain))
 		}
 	}
 	return hosts
@@ -388,14 +369,14 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 	}
 	var max, index int32
 	// Create the ellipses style URL
-	for _, z := range t.Spec.Pools {
+	for _, z := range t.Spec.Zones {
 		max = max + z.Servers
 		data := hostsTemplateValues{
-			StatefulSet: t.MinIOStatefulSetNameForPool(&z),
+			StatefulSet: t.MinIOStatefulSetNameForZone(&z),
 			CIService:   t.MinIOCIServiceName(),
 			HLService:   t.MinIOHLServiceName(),
 			Ellipsis:    genEllipsis(int(index), int(max)-1),
-			Domain:      GetClusterDomain(),
+			Domain:      ClusterDomain,
 		}
 		output := new(bytes.Buffer)
 		if err = tmpl.Execute(output, data); err != nil {
@@ -417,22 +398,22 @@ func (t *Tenant) AllMinIOHosts() []string {
 
 // MinIOServerHost returns ClusterIP service Host for current Tenant
 func (t *Tenant) MinIOServerHost() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
 }
 
 // ConsoleServerHost returns ClusterIP service Host for current Console Tenant
 func (t *Tenant) ConsoleServerHost() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, ClusterDomain)
 }
 
 // MinIOHeadlessServiceHost returns headless service Host for current Tenant
 func (t *Tenant) MinIOHeadlessServiceHost() string {
-	if t.Spec.Pools[0].Servers == 1 {
+	if t.Spec.Zones[0].Servers == 1 {
 		msg := "Please set the server count > 1"
 		klog.V(2).Infof(msg)
 		return ""
 	}
-	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, ClusterDomain)
 }
 
 // KESHosts returns the host names created for current KES StatefulSet
@@ -440,7 +421,7 @@ func (t *Tenant) KESHosts() []string {
 	hosts := make([]string, 0)
 	var i int32 = 0
 	for i < t.Spec.KES.Replicas {
-		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(i))+".%s.%s.svc.%s", t.KESStatefulSetName(), t.KESHLServiceName(), t.Namespace, GetClusterDomain()))
+		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(i))+".%s.%s.svc.%s", t.KESStatefulSetName(), t.KESHLServiceName(), t.Namespace, ClusterDomain))
 		i++
 	}
 	hosts = append(hosts, t.KESServiceHost())
@@ -462,7 +443,7 @@ func (t *Tenant) KESServiceEndpoint() string {
 
 // KESServiceHost returns headless service Host for KES in current Tenant
 func (t *Tenant) KESServiceHost() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, ClusterDomain)
 }
 
 // S3BucketDNS indicates if Bucket DNS feature is enabled.
@@ -475,16 +456,6 @@ func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
 }
 
-// HasLogEnabled checks if Log feature has been enabled
-func (t *Tenant) HasLogEnabled() bool {
-	return t.Spec.Log != nil
-}
-
-// HasPrometheusEnabled checks if Prometheus metrics has been enabled
-func (t *Tenant) HasPrometheusEnabled() bool {
-	return t.Spec.Prometheus != nil
-}
-
 // HasConsoleEnabled checks if the console has been enabled by the user
 func (t *Tenant) HasConsoleEnabled() bool {
 	return t.Spec.Console != nil
@@ -494,15 +465,6 @@ func (t *Tenant) HasConsoleEnabled() bool {
 // for a Tenant else false
 func (t *Tenant) HasConsoleSecret() bool {
 	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
-}
-
-// GetConsoleEnvVars returns the environment variables for the console
-// deployment of a particular tenant
-func (t *Tenant) GetConsoleEnvVars() (env []corev1.EnvVar) {
-	if t.Spec.Console != nil {
-		return t.Spec.Console.Env
-	}
-	return env
 }
 
 // UpdateURL returns the URL for the sha256sum location of the new binary
@@ -626,7 +588,7 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 }
 
 // CreateConsoleUser function creates an admin user
-func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret map[string][]byte, skipCreateUser bool) error {
+func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret map[string][]byte) error {
 	consoleAccessKey, ok := consoleSecret["CONSOLE_ACCESS_KEY"]
 	if !ok {
 		return errors.New("CONSOLE_ACCESS_KEY not provided")
@@ -641,10 +603,8 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret m
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 
-	if !skipCreateUser {
-		if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
-			return err
-		}
+	if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
+		return err
 	}
 
 	// Create policy
@@ -675,27 +635,27 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret m
 	return madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false)
 }
 
-// Validate validate single pool as per MinIO deployment requirements
-func (z *Pool) Validate(zi int) error {
-	// Make sure the replicas are not 0 on any pool
+// Validate validate single zone as per MinIO deployment requirements
+func (z *Zone) Validate(zi int) error {
+	// Make sure the replicas are not 0 on any zone
 	if z.Servers <= 0 {
-		return fmt.Errorf("pool #%d cannot have 0 servers", zi)
+		return fmt.Errorf("zone #%d cannot have 0 servers", zi)
 	}
 
-	// Make sure the pools don't have 0 volumes
+	// Make sure the zones don't have 0 volumes
 	if z.VolumesPerServer <= 0 {
-		return fmt.Errorf("pool #%d cannot have 0 volumes per server", zi)
+		return fmt.Errorf("zone #%d cannot have 0 volumes per server", zi)
 	}
 
 	if z.Servers*z.VolumesPerServer < 4 {
 		// Erasure coding has few requirements.
 		switch z.Servers {
 		case 1:
-			return fmt.Errorf("pool #%d setup must have a minimum of 4 volumes per server", zi)
+			return fmt.Errorf("zone #%d setup must have a minimum of 4 volumes per server", zi)
 		case 2:
-			return fmt.Errorf("pool #%d setup must have a minimum of 2 volumes per server", zi)
+			return fmt.Errorf("zone #%d setup must have a minimum of 2 volumes per server", zi)
 		case 3:
-			return fmt.Errorf("pool #%d setup must have a minimum of 2 volumes per server", zi)
+			return fmt.Errorf("zone #%d setup must have a minimum of 2 volumes per server", zi)
 		}
 	}
 
@@ -729,17 +689,17 @@ func (z *Pool) Validate(zi int) error {
 
 // Validate returns an error if any configuration of the MinIO Tenant is invalid
 func (t *Tenant) Validate() error {
-	if t.Spec.Pools == nil {
-		return errors.New("pools must be configured")
+	if t.Spec.Zones == nil {
+		return errors.New("zones must be configured")
 	}
 
 	if t.Spec.CredsSecret == nil {
 		return errors.New("please set credsSecret secret with credentials for Tenant")
 	}
 
-	// Every pool must contain a Volume Claim Template
-	for zi, pool := range t.Spec.Pools {
-		if err := pool.Validate(zi); err != nil {
+	// Every zone must contain a Volume Claim Template
+	for zi, zone := range t.Spec.Zones {
+		if err := zone.Validate(zi); err != nil {
 			return err
 		}
 	}
@@ -785,12 +745,4 @@ func (t *Tenant) OwnerRef() []metav1.OwnerReference {
 // TLS indicates whether TLS is enabled for this tenant
 func (t *Tenant) TLS() bool {
 	return t.AutoCert() || t.ExternalCert()
-}
-
-// GetClusterDomain returns the Kubernetes cluster domain
-func GetClusterDomain() string {
-	once.Do(func() {
-		k8sClusterDomain = env.Get(clusterDomain, "cluster.local")
-	})
-	return k8sClusterDomain
 }

@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/deployments"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -36,8 +36,8 @@ type auditWebhookConfig struct {
 	args   string
 }
 
-func newAuditWebhookConfig(tenant *miniov1.Tenant, secret *corev1.Secret) auditWebhookConfig {
-	auditToken := string(secret.Data[miniov1.LogAuditTokenKey])
+func newAuditWebhookConfig(tenant *miniov2.Tenant, secret *corev1.Secret) auditWebhookConfig {
+	auditToken := string(secret.Data[miniov2.LogAuditTokenKey])
 	whTarget := fmt.Sprintf("audit_webhook:%s", tenant.LogSearchAPIDeploymentName())
 
 	logIngestEndpoint := fmt.Sprintf("%s/%s?token=%s", services.GetLogSearchAPIAddr(tenant), "api/ingest", auditToken)
@@ -50,7 +50,7 @@ func newAuditWebhookConfig(tenant *miniov1.Tenant, secret *corev1.Secret) auditW
 
 // logDBStatefulsetMatchesSpec checks if the log DB statefulset `actualSS`
 // matches the desired spec provided by `tenant`
-func logDBStatefulsetMatchesSpec(tenant *miniov1.Tenant, actualSS *appsv1.StatefulSet) (bool, error) {
+func logDBStatefulsetMatchesSpec(tenant *miniov2.Tenant, actualSS *appsv1.StatefulSet) (bool, error) {
 	if actualSS == nil {
 		return false, errors.New("cannot process an empty Log DB statefulset")
 	}
@@ -71,7 +71,7 @@ func logDBStatefulsetMatchesSpec(tenant *miniov1.Tenant, actualSS *appsv1.Statef
 
 // logSearchAPIDeploymentMatchesSpec checks if the log DB statefulset `actualSS`
 // matches the desired spec provided by `tenant`
-func logSearchAPIDeploymentMatchesSpec(tenant *miniov1.Tenant, actualDeployment *appsv1.Deployment) (bool, error) {
+func logSearchAPIDeploymentMatchesSpec(tenant *miniov2.Tenant, actualDeployment *appsv1.Deployment) (bool, error) {
 	if actualDeployment == nil {
 		return false, errors.New("cannot process an empty Logsearch API deployment")
 	}
