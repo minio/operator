@@ -22,7 +22,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,12 +38,12 @@ func generatePassword() []byte {
 }
 
 // LogSecret returns a k8s secret object with postgres password
-func LogSecret(t *miniov1.Tenant) *corev1.Secret {
+func LogSecret(t *miniov2.Tenant) *corev1.Secret {
 	dbAddr := services.GetLogSearchDBAddr(t)
 	pgPasswd := generatePassword()
 	auditToken := generatePassword()
 	queryToken := generatePassword()
-	pgConnStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", miniov1.LogPgUser, pgPasswd, dbAddr, miniov1.LogAuditDB)
+	pgConnStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", miniov2.LogPgUser, pgPasswd, dbAddr, miniov2.LogAuditDB)
 	return &corev1.Secret{
 		Type: "Opaque",
 		ObjectMeta: metav1.ObjectMeta{
@@ -52,10 +52,10 @@ func LogSecret(t *miniov1.Tenant) *corev1.Secret {
 			OwnerReferences: t.OwnerRef(),
 		},
 		Data: map[string][]byte{
-			miniov1.LogPgPassKey:     pgPasswd,
-			miniov1.LogAuditTokenKey: auditToken,
-			miniov1.LogQueryTokenKey: queryToken,
-			miniov1.LogPgConnStr:     []byte(pgConnStr),
+			miniov2.LogPgPassKey:     pgPasswd,
+			miniov2.LogAuditTokenKey: auditToken,
+			miniov2.LogQueryTokenKey: queryToken,
+			miniov2.LogPgConnStr:     []byte(pgConnStr),
 		},
 	}
 }

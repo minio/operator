@@ -4,6 +4,13 @@ metadata:
   name: minio-operator-role
 rules:
   - apiGroups:
+      - "apiextensions.k8s.io"
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - update
+  - apiGroups:
       - ""
     resources:
       - persistentvolumeclaims
@@ -15,7 +22,6 @@ rules:
       - ""
     resources:
       - namespaces
-      - secrets
       - pods
       - services
       - events
@@ -24,6 +30,18 @@ rules:
       - get
       - watch
       - create
+      - list
+      - delete
+      - deletecollection
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - watch
+      - create
+      - update
       - list
       - delete
       - deletecollection

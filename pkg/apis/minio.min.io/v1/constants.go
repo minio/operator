@@ -55,11 +55,8 @@ const OperatorLabel = "v1.min.io/version"
 // TenantLabel is applied to all components of a Tenant cluster
 const TenantLabel = "v1.min.io/tenant"
 
-// PoolLabel is applied to all components in a Pool of a Tenant cluster
-const PoolLabel = "v1.min.io/pool"
-
-// LogDbLabel is applied to all log db components of a Tenant cluster
-const LogDbLabel = "v1.min.io/logdb"
+// ZoneLabel is applied to all components in a Zone of a Tenant cluster
+const ZoneLabel = "v1.min.io/zone"
 
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
@@ -86,7 +83,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2020-12-23T02-24-12Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-01-16T02-19-44Z "
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -101,13 +98,13 @@ const DefaultServers = 1
 // DefaultVolumesPerServer specifies the default number of volumes per MinIO Tenant
 const DefaultVolumesPerServer = 1
 
-// DefaultPoolName specifies the default pool name
-const DefaultPoolName = "pool-0"
+// DefaultZoneName specifies the default zone name
+const DefaultZoneName = "zone-0"
 
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.4.6"
+const DefaultConsoleImage = "minio/console:v0.5.2"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -146,93 +143,10 @@ const DefaultConsoleReplicas = 2
 // ConsoleCertPath is the path where all Console certs are mounted
 const ConsoleCertPath = "/tmp/certs"
 
-// Prometheus related constants
-
-// PrometheusImage specifies the container image for prometheus server
-const PrometheusImage = "quay.io/prometheus/prometheus:latest"
-
-// PrometheusInstanceLabel is applied to the prometheus server pod
-const PrometheusInstanceLabel = "v1.min.io/prometheus"
-
-// PrometheusPort specifies the default prometheus port number
-const PrometheusPort = 9090
-
-// PrometheusPortName speicfies the default prometheus port's name.
-const PrometheusPortName = "http-prometheus"
-
-// PrometheusHLSvcNameSuffix specifies the suffix added to Tenant name to create
-// a headless service for Prometheus.
-const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
-
-// Log related constants
-
-// DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:latest"
-
-// LogPgImage specifies the latest Postgres container image
-const LogPgImage = "library/postgres"
-
-// LogDBInstanceLabel is applied to the Log (Postgres server) pods
-const LogDBInstanceLabel = "v1.min.io/log-pg"
-
-// LogSearchAPIInstanceLabel is applied to the Log Search API server pods
-const LogSearchAPIInstanceLabel = "v1.min.io/logsearchapi"
-
-// LogPgPort specifies the default Log Service's port number.
-const LogPgPort = 5432
-
-// LogSearchAPIPort specifies the default Log Search API Service's port number.
-const LogSearchAPIPort = 8080
-
-// LogPgPortName specifies the default Log Service Postgres server's port name.
-const LogPgPortName = "http-log-pg"
-
-// LogSearchAPIPortName specifies the default Log Search API server's port name.
-const LogSearchAPIPortName = "http-logsearchapi"
-
-// LogHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service for Log
-const LogHLSvcNameSuffix = "-log-hl-svc"
-
-// LogPgUserKey is the k8s secret/environment variable key name referring to postgres user
-const LogPgUserKey = "POSTGRES_USER"
-
-// LogPgPassKey is the k8s secret/environment variable key name referring to postgress password
-const LogPgPassKey = "POSTGRES_PASSWORD"
-
-// LogAuditDBKey is the k8s secret/environment variable key name referring to postgress default database.
-const LogAuditDBKey = "POSTGRES_DB"
-
-// LogPgConnStr is the k8s env var key name referring to the postgres connection string; used in logsearchapi deployment
-const LogPgConnStr = "LOGSEARCH_PG_CONN_STR"
-
-// LogPgUser is the POSTGRES_USER used for Log feature
-const LogPgUser = "postgres"
-
-// LogAuditDB holds the name of the DB used to store MinIO audit events
-const LogAuditDB = "minio_logs"
-
-// LogAuditTokenKey is the k8s secret/environment variable key name referring to
-// the token used to authenticate audit log ingestion from tenant's MinIO
-const LogAuditTokenKey = "LOGSEARCH_AUDIT_AUTH_TOKEN"
-
-// LogQueryTokenKey is the k8s secret/environment variable key name referring to
-// the token used to perform search query on audit logs persisted.
-const LogQueryTokenKey = "LOGSEARCH_QUERY_AUTH_TOKEN"
-
-// ConsolePrometheusURL is the url to the prometheus the console should use to pull metrics from.
-const ConsolePrometheusURL = "CONSOLE_PROMETHEUS_URL"
-
-// PrometheusAPIPort specifies the default Prometheus API Service's port number.
-const PrometheusAPIPort = 9090
-
-// LogSearchDiskCapacityGB is the k8s secret/environment variable key name
-// referring to disk capacity required to store tenant's audit logs
-const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"
-
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.12.1"
+const DefaultKESImage = "minio/kes:v0.13.4"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"
@@ -278,6 +192,3 @@ var DefaultQueryTimeout = time.Minute * 20
 
 // TLSSecretSuffix is the suffix applied to Tenant name to create the TLS secret
 var TLSSecretSuffix = "-tls"
-
-// Cluster Domain
-const clusterDomain = "CLUSTER_DOMAIN"

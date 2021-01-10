@@ -36,29 +36,19 @@ const KESContainerName = "kes"
 // ConsoleContainerName specifies the default container name for Console
 const ConsoleContainerName = "console"
 
-// LogPgContainerName is the default name for the Log (PostgreSQL) server
-// container
-const LogPgContainerName = "log-search-pg"
-
-// LogSearchAPIContainerName is the name for the log search API server container
-const LogSearchAPIContainerName = "log-search-api"
-
-// PrometheusContainerName is the name of the prometheus server container
-const PrometheusContainerName = "prometheus"
-
 // InitContainerImage name for init container.
 const InitContainerImage = "busybox:1.32"
 
 // MinIO Related Names
 
-// MinIOStatefulSetNameForPool returns the name for MinIO StatefulSet
-func (t *Tenant) MinIOStatefulSetNameForPool(z *Pool) string {
+// MinIOStatefulSetNameForZone returns the name for MinIO StatefulSet
+func (t *Tenant) MinIOStatefulSetNameForZone(z *Zone) string {
 	return fmt.Sprintf("%s-%s", t.Name, z.Name)
 }
 
 // MinIOWildCardName returns the wild card name for all MinIO Pods in current StatefulSet
 func (t *Tenant) MinIOWildCardName() string {
-	return fmt.Sprintf("*.%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("*.%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, ClusterDomain)
 }
 
 // MinIOTLSSecretName returns the name of Secret that has TLS related Info (Cert & Private Key)
@@ -87,17 +77,17 @@ func (t *Tenant) MinIOCIServiceName() string {
 
 // MinIOBucketBaseDomain returns the base domain name for buckets
 func (t *Tenant) MinIOBucketBaseDomain() string {
-	return fmt.Sprintf("%s.svc.%s", t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("%s.svc.%s", t.Namespace, ClusterDomain)
 }
 
 // MinIOBucketBaseWildcardDomain returns the base domain name for buckets
 func (t *Tenant) MinIOBucketBaseWildcardDomain() string {
-	return fmt.Sprintf("*.%s.svc.%s", t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("*.%s.svc.%s", t.Namespace, ClusterDomain)
 }
 
 // MinIOFQDNServiceName returns the name of the service created for the tenant.
 func (t *Tenant) MinIOFQDNServiceName() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, ClusterDomain)
 }
 
 // MinIOCSRName returns the name of CSR that is generated if AutoTLS is enabled
@@ -139,7 +129,7 @@ func (t *Tenant) KESVolMountName() string {
 // KESWildCardName returns the wild card name managed by headless service created for
 // KES StatefulSet in current Tenant
 func (t *Tenant) KESWildCardName() string {
-	return fmt.Sprintf("*.%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("*.%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, ClusterDomain)
 }
 
 // KESTLSSecretName returns the name of Secret that has KES TLS related Info (Cert & Private Key)
@@ -166,9 +156,9 @@ func (t *Tenant) ConsoleCIServiceName() string {
 	return t.Name + ConsoleName
 }
 
-// PoolStatefulsetName returns the name of a statefulset for a given pool
-func (t *Tenant) PoolStatefulsetName(pool *Pool) string {
-	return fmt.Sprintf("%s-%s", t.Name, pool.Name)
+// ZoneStatefulsetName returns the name of a statefulset for a given zone
+func (t *Tenant) ZoneStatefulsetName(zone *Zone) string {
+	return fmt.Sprintf("%s-%s", t.Name, zone.Name)
 }
 
 // ConsoleVolMountName returns the name of Secret that has TLS related Info (Cert & Private Key)
@@ -178,7 +168,7 @@ func (t *Tenant) ConsoleVolMountName() string {
 
 // ConsoleCommonName returns the CommonName to be used in the csr template
 func (t *Tenant) ConsoleCommonName() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, GetClusterDomain())
+	return fmt.Sprintf("%s.%s.svc.%s", t.ConsoleCIServiceName(), t.Namespace, ClusterDomain)
 }
 
 // ConsoleTLSSecretName returns the name of Secret that has Console TLS related Info (Cert & Private Key)
@@ -191,56 +181,4 @@ func (t *Tenant) ConsoleTLSSecretName() string {
 // since CSR is not a namespaced resource
 func (t *Tenant) ConsoleCSRName() string {
 	return t.ConsoleDeploymentName() + "-" + t.Namespace + CSRNameSuffix
-}
-
-// LogStatefulsetName returns name of statefulsets meant for Log feature
-func (t *Tenant) LogStatefulsetName() string {
-	return fmt.Sprintf("%s-%s", t.Name, "log")
-}
-
-// LogHLServiceName returns name of Headless service for the Log statefulsets
-func (t *Tenant) LogHLServiceName() string {
-	return t.Name + LogHLSvcNameSuffix
-}
-
-// LogSecretName returns name of secret shared by Log PG server and log-search-api server
-func (t *Tenant) LogSecretName() string {
-	return fmt.Sprintf("%s-%s", t.Name, "log-secret")
-}
-
-// LogSearchAPIDeploymentName returns name of Log Search API server deployment
-func (t *Tenant) LogSearchAPIDeploymentName() string {
-	return fmt.Sprintf("%s-%s", t.Name, LogSearchAPIContainerName)
-}
-
-// LogSearchAPIServiceName returns name of Log Search API service name
-func (t *Tenant) LogSearchAPIServiceName() string {
-	return fmt.Sprintf("%s-%s", t.Name, LogSearchAPIContainerName)
-}
-
-// PrometheusStatefulsetName returns name of statefulset meant for Prometheus
-// metrics.
-func (t *Tenant) PrometheusStatefulsetName() string {
-	return fmt.Sprintf("%s-%s", t.Name, "prometheus")
-}
-
-// PrometheusConfigMapName returns name of the config map for Prometheus.
-func (t *Tenant) PrometheusConfigMapName() string {
-	return fmt.Sprintf("%s-%s", t.Name, "prometheus-config-map")
-}
-
-// PrometheusConfigVolMountName returns name of the prometheus config volume.
-func (t *Tenant) PrometheusConfigVolMountName() string {
-	return fmt.Sprintf("%s-prometheus-config-volmount", t.Name)
-}
-
-// PrometheusServiceName returns name of the Prometheus service
-func (t *Tenant) PrometheusServiceName() string {
-	return fmt.Sprintf("%s-%s", t.Name, PrometheusContainerName)
-}
-
-// PrometheusHLServiceName returns name of Headless service for the Log
-// statefulsets
-func (t *Tenant) PrometheusHLServiceName() string {
-	return t.Name + PrometheusHLSvcNameSuffix
 }

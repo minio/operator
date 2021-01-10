@@ -101,11 +101,11 @@ func (d *tenantDeleteCmd) run(args []string) error {
 }
 
 func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d *tenantDeleteCmd, name string) error {
-	tenant, err := client.MinioV1().Tenants(d.ns).Get(context.Background(), name, metav1.GetOptions{})
+	tenant, err := client.MinioV2().Tenants(d.ns).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	if err := client.MinioV1().Tenants(d.ns).Delete(context.Background(), name, v1.DeleteOptions{}); err != nil {
+	if err := client.MinioV2().Tenants(d.ns).Delete(context.Background(), name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
 	if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.CredsSecret.Name, metav1.DeleteOptions{}); err != nil {

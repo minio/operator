@@ -22,7 +22,7 @@ import (
 	"time"
 
 	jwtgo "github.com/dgrijalva/jwt-go"
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -75,12 +75,12 @@ func genBearerToken(accessKey, secretKey string) string {
 }
 
 // getMinioPodAddrs returns a list of stable minio pod addresses.
-func getMinioPodAddrs(t *miniov1.Tenant) []string {
+func getMinioPodAddrs(t *miniov2.Tenant) []string {
 	targets := []string{}
 	for _, pool := range t.Spec.Pools {
 		poolName := t.PoolStatefulsetName(&pool)
 		for i := 0; i < int(pool.Servers); i++ {
-			target := fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", poolName, i, t.MinIOHLServiceName(), t.Namespace, miniov1.GetClusterDomain(), miniov1.MinIOPort)
+			target := fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", poolName, i, t.MinIOHLServiceName(), t.Namespace, miniov2.GetClusterDomain(), miniov2.MinIOPort)
 			targets = append(targets, target)
 		}
 	}
@@ -88,7 +88,7 @@ func getMinioPodAddrs(t *miniov1.Tenant) []string {
 }
 
 // PrometheusConfigMap returns configuration for Prometheus.
-func PrometheusConfigMap(t *miniov1.Tenant, accessKey, secretKey string) *corev1.ConfigMap {
+func PrometheusConfigMap(t *miniov2.Tenant, accessKey, secretKey string) *corev1.ConfigMap {
 	bearerToken := genBearerToken(accessKey, secretKey)
 	minioTargets := getMinioPodAddrs(t)
 	minioScheme := "http"

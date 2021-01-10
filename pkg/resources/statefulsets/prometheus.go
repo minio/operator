@@ -18,7 +18,7 @@
 package statefulsets
 
 import (
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -27,7 +27,7 @@ import (
 
 // prometheusMetadata returns the object metadata for Prometheus pods. User
 // specified metadata in the spec is also included here.
-func prometheusMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+func prometheusMetadata(t *miniov2.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{
 		Labels:      t.Spec.Prometheus.Labels,
 		Annotations: t.Spec.Prometheus.Annotations,
@@ -42,7 +42,7 @@ func prometheusMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 }
 
 // prometheusSelector returns the prometheus pods selector
-func prometheusSelector(t *miniov1.Tenant) *metav1.LabelSelector {
+func prometheusSelector(t *miniov2.Tenant) *metav1.LabelSelector {
 	m := t.PrometheusPodLabels()
 	for k, v := range t.Spec.Prometheus.Labels {
 		m[k] = v
@@ -52,11 +52,11 @@ func prometheusSelector(t *miniov1.Tenant) *metav1.LabelSelector {
 	}
 }
 
-func prometheusEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
+func prometheusEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	return []corev1.EnvVar{}
 }
 
-func prometheusConfigVolumeMount(t *miniov1.Tenant) corev1.VolumeMount {
+func prometheusConfigVolumeMount(t *miniov2.Tenant) corev1.VolumeMount {
 	return corev1.VolumeMount{
 		Name:      t.PrometheusConfigVolMountName(),
 		MountPath: "/etc/prometheus/prometheus.yml",
@@ -64,7 +64,7 @@ func prometheusConfigVolumeMount(t *miniov1.Tenant) corev1.VolumeMount {
 	}
 }
 
-func prometheusVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
+func prometheusVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      t.PrometheusStatefulsetName(),
@@ -76,7 +76,7 @@ func prometheusVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
 }
 
 // prometheusServerContainer returns a container for Prometheus StatefulSet.
-func prometheusServerContainer(t *miniov1.Tenant) corev1.Container {
+func prometheusServerContainer(t *miniov2.Tenant) corev1.Container {
 	// as per https://github.com/prometheus-operator/prometheus-operator/issues/3459 we need to set a security
 	// context.
 	//
@@ -88,11 +88,11 @@ func prometheusServerContainer(t *miniov1.Tenant) corev1.Container {
 	var fsGroup int64 = 2000
 	var runAsUser int64 = 1000
 	return corev1.Container{
-		Name:  miniov1.PrometheusContainerName,
-		Image: miniov1.PrometheusImage,
+		Name:  miniov2.PrometheusContainerName,
+		Image: miniov2.PrometheusImage,
 		Ports: []corev1.ContainerPort{
 			{
-				ContainerPort: miniov1.PrometheusPort,
+				ContainerPort: miniov2.PrometheusPort,
 			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
@@ -110,7 +110,7 @@ func prometheusServerContainer(t *miniov1.Tenant) corev1.Container {
 const prometheusDefaultVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
 // NewForPrometheus creates a new Prometheus StatefulSet for prometheus metrics
-func NewForPrometheus(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
+func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	var replicas int32 = 1
 	promMeta := metav1.ObjectMeta{
 		Name:            t.PrometheusStatefulsetName(),
@@ -175,7 +175,7 @@ func NewForPrometheus(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet
 		ObjectMeta: promMeta,
 		Spec: appsv1.StatefulSetSpec{
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-				Type: miniov1.DefaultUpdateStrategy,
+				Type: miniov2.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy:  t.Spec.PodManagementPolicy,
 			Selector:             prometheusSelector(t),

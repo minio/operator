@@ -30,7 +30,7 @@ import (
 	"github.com/minio/minio/pkg/color"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/spf13/cobra"
 )
@@ -88,7 +88,7 @@ func (d *infoCmd) run(args []string) error {
 		return err
 	}
 
-	tenant, err := oclient.MinioV1().Tenants(d.ns).Get(context.Background(), args[0], metav1.GetOptions{})
+	tenant, err := oclient.MinioV2().Tenants(d.ns).Get(context.Background(), args[0], metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (d *infoCmd) run(args []string) error {
 	return nil
 }
 
-func printTenantInfo(tenant miniov1.Tenant) {
+func printTenantInfo(tenant miniov2.Tenant) {
 	minSvc := services.NewClusterIPForMinIO(&tenant)
 	conSvc := services.NewClusterIPForConsole(&tenant)
 	var minPorts, consolePorts string

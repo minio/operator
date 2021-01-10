@@ -38,7 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	table "github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/kubernetes"
@@ -162,7 +162,7 @@ func CapacityPerVolume(capacity string, volumes int32) (*resource.Quantity, erro
 }
 
 // TotalCapacity returns total capacity of a given tenant
-func TotalCapacity(tenant miniov1.Tenant) string {
+func TotalCapacity(tenant miniov2.Tenant) string {
 	var totalBytes int64
 	for _, z := range tenant.Spec.Pools {
 		pvcBytes, _ := z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().AsInt64()

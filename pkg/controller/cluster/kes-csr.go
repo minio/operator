@@ -29,11 +29,11 @@ import (
 
 	"k8s.io/klog/v2"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
-func generateKESCryptoData(tenant *miniov1.Tenant) ([]byte, []byte, error) {
-	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
+func generateKESCryptoData(tenant *miniov2.Tenant) ([]byte, []byte, error) {
+	privateKey, err := newPrivateKey(miniov2.DefaultEllipticCurve)
 	if err != nil {
 		klog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
 		return nil, nil, err
@@ -65,7 +65,7 @@ func generateKESCryptoData(tenant *miniov1.Tenant) ([]byte, []byte, error) {
 // createKESTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that KES Statefulset will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createKESTLSCSR(ctx context.Context, tenant *miniov1.Tenant) error {
+func (c *Controller) createKESTLSCSR(ctx context.Context, tenant *miniov2.Tenant) error {
 	privKeysBytes, csrBytes, err := generateKESCryptoData(tenant)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
@@ -100,7 +100,7 @@ func (c *Controller) createKESTLSCSR(ctx context.Context, tenant *miniov1.Tenant
 
 // createMinIOClientTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that KES Statefulset will use for MinIO Client Auth
-func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, tenant *miniov1.Tenant) error {
+func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, tenant *miniov2.Tenant) error {
 	privKeysBytes, csrBytes, err := generateCryptoData(tenant, c.hostsTemplate)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
@@ -136,7 +136,7 @@ func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, tenant *miniov
 	}
 
 	// Store the Identity to be used later during KES container creation
-	miniov1.KESIdentity = hex.EncodeToString(h.Sum(nil))
+	miniov2.KESIdentity = hex.EncodeToString(h.Sum(nil))
 
 	// PEM encode private ECDSA key
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})

@@ -28,7 +28,7 @@ import (
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/minio/minio/pkg/color"
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -103,12 +103,12 @@ func (u *upgradeCmd) run() error {
 		return fmt.Errorf("MinIO operator does not allow images without RELEASE tags")
 	}
 
-	latest, err := miniov1.ReleaseTagToReleaseTime(imageSplits[1])
+	latest, err := miniov2.ReleaseTagToReleaseTime(imageSplits[1])
 	if err != nil {
 		return fmt.Errorf("Unsupported release tag, unable to apply requested update %w", err)
 	}
 
-	t, err := client.MinioV1().Tenants(u.tenantOpts.NS).Get(context.Background(), u.tenantOpts.Name, v1.GetOptions{})
+	t, err := client.MinioV2().Tenants(u.tenantOpts.NS).Get(context.Background(), u.tenantOpts.Name, v1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (u *upgradeCmd) run() error {
 	if len(currentImageSplits) == 1 {
 		return fmt.Errorf("MinIO operator already deployed container with RELEASE tags, update not allowed please manually fix this using 'kubectl patch --help'")
 	}
-	current, err := miniov1.ReleaseTagToReleaseTime(currentImageSplits[1])
+	current, err := miniov2.ReleaseTagToReleaseTime(currentImageSplits[1])
 	if err != nil {
 		return fmt.Errorf("Unsupported release tag on current image, non-disruptive update not allowed %w", err)
 	}
@@ -143,12 +143,12 @@ func (u *upgradeCmd) run() error {
 	return nil
 }
 
-func (u *upgradeCmd) upgradeTenant(client *operatorv1.Clientset, t *miniov1.Tenant, c, p string) error {
+func (u *upgradeCmd) upgradeTenant(client *operatorv1.Clientset, t *miniov2.Tenant, c, p string) error {
 	if helpers.Ask(fmt.Sprintf("Upgrade is a one way process. Are you sure to upgrade Tenant '%s/%s' from version %s to %s?", t.ObjectMeta.Name, t.ObjectMeta.Namespace, c, p)) {
 		fmt.Printf(color.Bold(fmt.Sprintf("\nUpgrading Tenant '%s/%s'\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace)))
 		// update the image
 		t.Spec.Image = u.tenantOpts.Image
-		if _, err := client.MinioV1().Tenants(t.Namespace).Update(context.Background(), t, v1.UpdateOptions{}); err != nil {
+		if _, err := client.MinioV2().Tenants(t.Namespace).Update(context.Background(), t, v1.UpdateOptions{}); err != nil {
 			return err
 		}
 	} else {

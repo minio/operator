@@ -30,13 +30,13 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
 	"k8s.io/klog/v2"
 )
 
-func generateConsoleCryptoData(tenant *miniov1.Tenant) ([]byte, []byte, error) {
-	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
+func generateConsoleCryptoData(tenant *miniov2.Tenant) ([]byte, []byte, error) {
+	privateKey, err := newPrivateKey(miniov2.DefaultEllipticCurve)
 	if err != nil {
 		klog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
 		return nil, nil, err
@@ -68,7 +68,7 @@ func generateConsoleCryptoData(tenant *miniov1.Tenant) ([]byte, []byte, error) {
 // createConsoleTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that Console deployment will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createConsoleTLSCSR(ctx context.Context, tenant *miniov1.Tenant) error {
+func (c *Controller) createConsoleTLSCSR(ctx context.Context, tenant *miniov2.Tenant) error {
 	privKeysBytes, csrBytes, err := generateConsoleCryptoData(tenant)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
@@ -102,7 +102,7 @@ func (c *Controller) createConsoleTLSCSR(ctx context.Context, tenant *miniov1.Te
 }
 
 // consoleDeploymentMatchesSpec checks if the deployment for console matches what is expected and described from the Tenant
-func consoleDeploymentMatchesSpec(tenant *miniov1.Tenant, consoleDeployment *appsv1.Deployment) (bool, error) {
+func consoleDeploymentMatchesSpec(tenant *miniov2.Tenant, consoleDeployment *appsv1.Deployment) (bool, error) {
 	if consoleDeployment == nil {
 		return false, errors.New("cannot process an empty console deployment")
 	}

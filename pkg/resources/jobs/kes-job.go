@@ -18,14 +18,14 @@
 package jobs
 
 import (
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NewForKES creates a new Job to create KES Key
-func NewForKES(t *miniov1.Tenant) *batchv1.Job {
+func NewForKES(t *miniov2.Tenant) *batchv1.Job {
 
 	containers := []corev1.Container{kesJobContainer(t)}
 
@@ -79,7 +79,7 @@ func NewForKES(t *miniov1.Tenant) *batchv1.Job {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: kesMetadata(t),
 				Spec: corev1.PodSpec{
-					RestartPolicy: miniov1.KESJobRestartPolicy,
+					RestartPolicy: miniov2.KESJobRestartPolicy,
 					Containers:    containers,
 					Volumes:       podVolumes,
 				},
@@ -95,11 +95,11 @@ func NewForKES(t *miniov1.Tenant) *batchv1.Job {
 }
 
 // returns the KES job container
-func kesJobContainer(t *miniov1.Tenant) corev1.Container {
-	args := []string{"key", "create", "-k", miniov1.KESMinIOKey} // KES CLI expects flags before command args
+func kesJobContainer(t *miniov2.Tenant) corev1.Container {
+	args := []string{"key", "create", "-k", miniov2.KESMinIOKey} // KES CLI expects flags before command args
 
 	return corev1.Container{
-		Name:            miniov1.KESContainerName,
+		Name:            miniov2.KESContainerName,
 		Image:           t.Spec.KES.Image,
 		ImagePullPolicy: t.Spec.KES.ImagePullPolicy,
 		Args:            args,
@@ -109,7 +109,7 @@ func kesJobContainer(t *miniov1.Tenant) corev1.Container {
 }
 
 // Returns the KES environment variables required for the Job.
-func kesEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
+func kesEnvironmentVars(t *miniov2.Tenant) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
 			Name:  "KES_SERVER",
@@ -117,11 +117,11 @@ func kesEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 		},
 		{
 			Name:  "KES_CLIENT_CERT",
-			Value: miniov1.KESConfigMountPath + "/minio.crt",
+			Value: miniov2.KESConfigMountPath + "/minio.crt",
 		},
 		{
 			Name:  "KES_CLIENT_KEY",
-			Value: miniov1.KESConfigMountPath + "/minio.key",
+			Value: miniov2.KESConfigMountPath + "/minio.key",
 		},
 	}
 }
@@ -129,7 +129,7 @@ func kesEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
 // KESMetadata Returns the KES pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func kesMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+func kesMetadata(t *miniov2.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	meta.Labels = t.Spec.KES.Labels
 	meta.Annotations = t.Spec.KES.Annotations
@@ -145,11 +145,11 @@ func kesMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 }
 
 // kesVolumeMounts builds the volume mounts for KES container.
-func kesVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
+func kesVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      t.KESVolMountName(),
-			MountPath: miniov1.KESConfigMountPath,
+			MountPath: miniov2.KESConfigMountPath,
 		},
 	}
 }

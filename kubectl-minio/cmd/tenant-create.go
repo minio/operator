@@ -29,7 +29,7 @@ import (
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/minio/minio/pkg/color"
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/spf13/cobra"
@@ -148,14 +148,14 @@ func (c *createCmd) run(args []string) error {
 	return nil
 }
 
-func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, t *miniov1.Tenant, s, console *corev1.Secret) error {
+func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, t *miniov2.Tenant, s, console *corev1.Secret) error {
 	if _, err := kclient.CoreV1().Secrets(t.Namespace).Create(context.Background(), s, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 	if _, err := kclient.CoreV1().Secrets(t.Namespace).Create(context.Background(), console, metav1.CreateOptions{}); err != nil {
 		return err
 	}
-	to, err := oclient.MinioV1().Tenants(t.Namespace).Create(context.Background(), t, v1.CreateOptions{})
+	to, err := oclient.MinioV2().Tenants(t.Namespace).Create(context.Background(), t, v1.CreateOptions{})
 	if err != nil {
 		return err
 	}

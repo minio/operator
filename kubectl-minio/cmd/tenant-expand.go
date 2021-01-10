@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 )
@@ -101,7 +101,7 @@ func (v *expandCmd) run() error {
 		return err
 	}
 
-	t, err := client.MinioV1().Tenants(v.tenantOpts.NS).Get(context.Background(), v.tenantOpts.Name, metav1.GetOptions{})
+	t, err := client.MinioV2().Tenants(v.tenantOpts.NS).Get(context.Background(), v.tenantOpts.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -127,12 +127,12 @@ func (v *expandCmd) run() error {
 	return nil
 }
 
-func addPoolToTenant(client *operatorv1.Clientset, t *miniov1.Tenant) error {
+func addPoolToTenant(client *operatorv1.Clientset, t *miniov2.Tenant) error {
 	data, err := json.Marshal(t)
 	if err != nil {
 		return err
 	}
-	if _, err := client.MinioV1().Tenants(t.Namespace).Patch(context.Background(), t.Name, types.MergePatchType, data, metav1.PatchOptions{FieldManager: "kubectl"}); err != nil {
+	if _, err := client.MinioV2().Tenants(t.Namespace).Patch(context.Background(), t.Name, types.MergePatchType, data, metav1.PatchOptions{FieldManager: "kubectl"}); err != nil {
 		return err
 	}
 	return nil

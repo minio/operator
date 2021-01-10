@@ -36,7 +36,7 @@ import (
 
 	"k8s.io/klog/v2"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
 	certificates "k8s.io/api/certificates/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -68,10 +68,10 @@ func isEqual(a, b []string) bool {
 	return true
 }
 
-func generateCryptoData(tenant *miniov1.Tenant, hostsTemplate string) ([]byte, []byte, error) {
+func generateCryptoData(tenant *miniov2.Tenant, hostsTemplate string) ([]byte, []byte, error) {
 	var dnsNames []string
 	klog.V(0).Infof("Generating private key")
-	privateKey, err := newPrivateKey(miniov1.DefaultEllipticCurve)
+	privateKey, err := newPrivateKey(miniov2.DefaultEllipticCurve)
 	if err != nil {
 		klog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
 		return nil, nil, err
@@ -117,7 +117,7 @@ func generateCryptoData(tenant *miniov1.Tenant, hostsTemplate string) ([]byte, [
 // createCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that MinIO statefulset will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createCSR(ctx context.Context, tenant *miniov1.Tenant) error {
+func (c *Controller) createCSR(ctx context.Context, tenant *miniov2.Tenant) error {
 	privKeysBytes, csrBytes, err := generateCryptoData(tenant, c.hostsTemplate)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
@@ -151,7 +151,7 @@ func (c *Controller) createCSR(ctx context.Context, tenant *miniov1.Tenant) erro
 }
 
 // createCertificate is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, tenant *miniov1.Tenant) error {
+func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, owner metav1.Object) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 
 	kubeCSR := &certificates.CertificateSigningRequest{
@@ -164,10 +164,10 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 			Labels:    labels,
 			Namespace: namespace,
 			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-					Group:   miniov1.SchemeGroupVersion.Group,
-					Version: miniov1.SchemeGroupVersion.Version,
-					Kind:    miniov1.MinIOCRDResourceKind,
+				*metav1.NewControllerRef(owner, schema.GroupVersionKind{
+					Group:   miniov2.SchemeGroupVersion.Group,
+					Version: miniov2.SchemeGroupVersion.Version,
+					Kind:    miniov2.MinIOCRDResourceKind,
 				}),
 			},
 		},
@@ -215,12 +215,12 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 // FetchCertificate fetches the generated certificate from the CSR
 func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]byte, error) {
 	klog.V(0).Infof("Start polling for certificate of csr/%s, every %s, timeout after %s", csrName,
-		miniov1.DefaultQueryInterval, miniov1.DefaultQueryTimeout)
+		miniov2.DefaultQueryInterval, miniov2.DefaultQueryTimeout)
 
-	tick := time.NewTicker(miniov1.DefaultQueryInterval)
+	tick := time.NewTicker(miniov2.DefaultQueryInterval)
 	defer tick.Stop()
 
-	timeout := time.NewTimer(miniov1.DefaultQueryTimeout)
+	timeout := time.NewTimer(miniov2.DefaultQueryTimeout)
 
 	ch := make(chan os.Signal, 1) // should be always un-buffered SA1017
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
@@ -249,7 +249,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 					return nil, err
 				}
 			}
-			klog.V(1).Infof("Certificate of csr/%s still not available, next try in %d", csrName, miniov1.DefaultQueryInterval)
+			klog.V(1).Infof("Certificate of csr/%s still not available, next try in %d", csrName, miniov2.DefaultQueryInterval)
 
 		case <-timeout.C:
 			return nil, fmt.Errorf("timeout during certificate fetching of csr/%s", csrName)
@@ -257,7 +257,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 	}
 }
 
-func (c *Controller) createSecret(ctx context.Context, tenant *miniov1.Tenant, labels map[string]string, secretName string, pkBytes, certBytes []byte) error {
+func (c *Controller) createSecret(ctx context.Context, tenant *miniov2.Tenant, labels map[string]string, secretName string, pkBytes, certBytes []byte) error {
 	secret := &corev1.Secret{
 		Type: "Opaque",
 		ObjectMeta: metav1.ObjectMeta{
@@ -266,9 +266,9 @@ func (c *Controller) createSecret(ctx context.Context, tenant *miniov1.Tenant, l
 			Labels:    labels,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-					Group:   miniov1.SchemeGroupVersion.Group,
-					Version: miniov1.SchemeGroupVersion.Version,
-					Kind:    miniov1.MinIOCRDResourceKind,
+					Group:   miniov2.SchemeGroupVersion.Group,
+					Version: miniov2.SchemeGroupVersion.Version,
+					Kind:    miniov2.MinIOCRDResourceKind,
 				}),
 			},
 		},

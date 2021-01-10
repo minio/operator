@@ -24,21 +24,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
 // NewClusterIPForMinIO will return a new headless Kubernetes service for a Tenant
-func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
-	var port int32 = miniov1.MinIOPortLoadBalancerSVC
-	var name string = miniov1.MinIOServiceHTTPPortName
+func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
+	var port int32 = miniov2.MinIOPortLoadBalancerSVC
+	var name string = miniov2.MinIOServiceHTTPPortName
 	if t.TLS() {
-		port = miniov1.MinIOTLSPortLoadBalancerSVC
-		name = miniov1.MinIOServiceHTTPSPortName
+		port = miniov2.MinIOTLSPortLoadBalancerSVC
+		name = miniov2.MinIOServiceHTTPSPortName
 	}
 	minioPort := corev1.ServicePort{
 		Port:       port,
 		Name:       name,
-		TargetPort: intstr.FromInt(miniov1.MinIOPort),
+		TargetPort: intstr.FromInt(miniov2.MinIOPort),
 	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -63,17 +63,17 @@ func NewClusterIPForMinIO(t *miniov1.Tenant) *corev1.Service {
 }
 
 // ServiceForBucket will return a external name based service
-func ServiceForBucket(t *miniov1.Tenant, bucket string) *corev1.Service {
-	var port int32 = miniov1.MinIOPortLoadBalancerSVC
-	var name string = miniov1.MinIOServiceHTTPPortName
+func ServiceForBucket(t *miniov2.Tenant, bucket string) *corev1.Service {
+	var port int32 = miniov2.MinIOPortLoadBalancerSVC
+	var name string = miniov2.MinIOServiceHTTPPortName
 	if t.TLS() {
-		port = miniov1.MinIOTLSPortLoadBalancerSVC
-		name = miniov1.MinIOServiceHTTPSPortName
+		port = miniov2.MinIOTLSPortLoadBalancerSVC
+		name = miniov2.MinIOServiceHTTPSPortName
 	}
 	minioPort := corev1.ServicePort{
 		Port:       port,
 		Name:       name,
-		TargetPort: intstr.FromInt(miniov1.MinIOPort),
+		TargetPort: intstr.FromInt(miniov2.MinIOPort),
 	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -91,8 +91,8 @@ func ServiceForBucket(t *miniov1.Tenant, bucket string) *corev1.Service {
 }
 
 // NewHeadlessForMinIO will return a new headless Kubernetes service for a Tenant
-func NewHeadlessForMinIO(t *miniov1.Tenant) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: miniov1.MinIOPort, Name: miniov1.MinIOServiceHTTPPortName}
+func NewHeadlessForMinIO(t *miniov2.Tenant) *corev1.Service {
+	minioPort := corev1.ServicePort{Port: miniov2.MinIOPort, Name: miniov2.MinIOServiceHTTPPortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.MinIOPodLabels(),
@@ -112,8 +112,8 @@ func NewHeadlessForMinIO(t *miniov1.Tenant) *corev1.Service {
 }
 
 // NewHeadlessForKES will return a new headless Kubernetes service for a KES StatefulSet
-func NewHeadlessForKES(t *miniov1.Tenant) *corev1.Service {
-	kesPort := corev1.ServicePort{Port: miniov1.KESPort, Name: miniov1.KESServicePortName}
+func NewHeadlessForKES(t *miniov2.Tenant) *corev1.Service {
+	kesPort := corev1.ServicePort{Port: miniov2.KESPort, Name: miniov2.KESServicePortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.KESPodLabels(),
@@ -133,8 +133,8 @@ func NewHeadlessForKES(t *miniov1.Tenant) *corev1.Service {
 }
 
 // NewHeadlessForLog returns a k8s Headless service object for Log
-func NewHeadlessForLog(t *miniov1.Tenant) *corev1.Service {
-	searchPort := corev1.ServicePort{Port: miniov1.LogPgPort, Name: miniov1.LogPgPortName}
+func NewHeadlessForLog(t *miniov2.Tenant) *corev1.Service {
+	searchPort := corev1.ServicePort{Port: miniov2.LogPgPort, Name: miniov2.LogPgPortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.LogPgPodLabels(),
@@ -155,8 +155,8 @@ func NewHeadlessForLog(t *miniov1.Tenant) *corev1.Service {
 
 // NewHeadlessForPrometheus returns a k8s Headless service object for the
 // Prometheus StatefulSet.
-func NewHeadlessForPrometheus(t *miniov1.Tenant) *corev1.Service {
-	promPort := corev1.ServicePort{Port: miniov1.PrometheusPort, Name: miniov1.PrometheusPortName}
+func NewHeadlessForPrometheus(t *miniov2.Tenant) *corev1.Service {
+	promPort := corev1.ServicePort{Port: miniov2.PrometheusPort, Name: miniov2.PrometheusPortName}
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.PrometheusPodLabels(),
@@ -174,10 +174,10 @@ func NewHeadlessForPrometheus(t *miniov1.Tenant) *corev1.Service {
 }
 
 // NewClusterIPForConsole will return a new cluster IP service for Console Deployment
-func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
-	consolePort := corev1.ServicePort{Port: miniov1.ConsolePort, Name: miniov1.ConsoleServicePortName}
+func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
+	consolePort := corev1.ServicePort{Port: miniov2.ConsolePort, Name: miniov2.ConsoleServicePortName}
 	if t.TLS() || t.ConsoleExternalCert() {
-		consolePort = corev1.ServicePort{Port: miniov1.ConsoleTLSPort, Name: miniov1.ConsoleServiceTLSPortName}
+		consolePort = corev1.ServicePort{Port: miniov2.ConsoleTLSPort, Name: miniov2.ConsoleServiceTLSPortName}
 	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -203,8 +203,8 @@ func NewClusterIPForConsole(t *miniov1.Tenant) *corev1.Service {
 }
 
 // NewClusterIPForLogSearchAPI will return a new cluster IP service object for log-search-api deployment
-func NewClusterIPForLogSearchAPI(t *miniov1.Tenant) *corev1.Service {
-	logSearchAPIPort := corev1.ServicePort{Port: miniov1.LogSearchAPIPort, Name: miniov1.LogSearchAPIPortName}
+func NewClusterIPForLogSearchAPI(t *miniov2.Tenant) *corev1.Service {
+	logSearchAPIPort := corev1.ServicePort{Port: miniov2.LogSearchAPIPort, Name: miniov2.LogSearchAPIPortName}
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.LogSearchAPIPodLabels(),
@@ -223,11 +223,11 @@ func NewClusterIPForLogSearchAPI(t *miniov1.Tenant) *corev1.Service {
 }
 
 // GetLogSearchDBAddr returns the tenant's Postgres DB server address
-func GetLogSearchDBAddr(t *miniov1.Tenant) string {
-	return fmt.Sprintf("%s.%s.svc.%s:%d", t.LogHLServiceName(), t.Namespace, miniov1.GetClusterDomain(), miniov1.LogPgPort)
+func GetLogSearchDBAddr(t *miniov2.Tenant) string {
+	return fmt.Sprintf("%s.%s.svc.%s:%d", t.LogHLServiceName(), t.Namespace, miniov2.GetClusterDomain(), miniov2.LogPgPort)
 }
 
 // GetLogSearchAPIAddr returns the tenant's log-search-api server address
-func GetLogSearchAPIAddr(t *miniov1.Tenant) string {
-	return fmt.Sprintf("http://%s.%s.svc.%s:%d", t.LogSearchAPIServiceName(), t.Namespace, miniov1.GetClusterDomain(), miniov1.LogSearchAPIPort)
+func GetLogSearchAPIAddr(t *miniov2.Tenant) string {
+	return fmt.Sprintf("http://%s.%s.svc.%s:%d", t.LogSearchAPIServiceName(), t.Namespace, miniov2.GetClusterDomain(), miniov2.LogSearchAPIPort)
 }

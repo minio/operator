@@ -18,7 +18,7 @@
 package statefulsets
 
 import (
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -26,16 +26,16 @@ import (
 )
 
 // logSelector returns the Log pods selector
-func logSelector(t *miniov1.Tenant) *metav1.LabelSelector {
+func logSelector(t *miniov2.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: t.LogPgPodLabels(),
 	}
 }
 
 // logDbMetadata returns the object metadata for Log pods
-func logDbMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+func logDbMetadata(t *miniov2.Tenant) metav1.ObjectMeta {
 	labels := make(map[string]string)
-	labels[miniov1.LogDbLabel] = t.Name
+	labels[miniov2.LogDbLabel] = t.Name
 	for k, v := range t.LogPgPodLabels() {
 		labels[k] = v
 	}
@@ -62,31 +62,31 @@ func logDbMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 }
 
 // logEnvVars returns env with POSTGRES_DB set to log database, POSTGRES_USER and POSTGRES_PASSWORD from Log's k8s secret
-func logEnvVars(t *miniov1.Tenant) []corev1.EnvVar {
+func logEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	return []corev1.EnvVar{
 		{
-			Name:  miniov1.LogAuditDBKey,
-			Value: miniov1.LogAuditDB,
+			Name:  miniov2.LogAuditDBKey,
+			Value: miniov2.LogAuditDB,
 		},
 		{
-			Name:  miniov1.LogPgUserKey,
-			Value: miniov1.LogPgUser,
+			Name:  miniov2.LogPgUserKey,
+			Value: miniov2.LogPgUser,
 		},
 		{
-			Name: miniov1.LogPgPassKey,
+			Name: miniov2.LogPgPassKey,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: t.LogSecretName(),
 					},
-					Key: miniov1.LogPgPassKey,
+					Key: miniov2.LogPgPassKey,
 				},
 			},
 		},
 	}
 }
 
-func logVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
+func logVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      t.LogStatefulsetName(),
@@ -97,13 +97,13 @@ func logVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
 }
 
 // logDbContainer returns a postgresql server container for a Log StatefulSet.
-func logDbContainer(t *miniov1.Tenant) corev1.Container {
+func logDbContainer(t *miniov2.Tenant) corev1.Container {
 	container := corev1.Container{
-		Name:  miniov1.LogPgContainerName,
-		Image: miniov1.LogPgImage,
+		Name:  miniov2.LogPgContainerName,
+		Image: miniov2.LogPgImage,
 		Ports: []corev1.ContainerPort{
 			{
-				ContainerPort: miniov1.LogPgPort,
+				ContainerPort: miniov2.LogPgPort,
 			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
@@ -126,7 +126,7 @@ func logDbContainer(t *miniov1.Tenant) corev1.Container {
 const defaultLogVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
 // NewForLogDb creates a new Log StatefulSet for Log feature
-func NewForLogDb(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
+func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	var replicas int32 = 1
 	logMeta := metav1.ObjectMeta{
 		Name:            t.LogStatefulsetName(),
@@ -176,7 +176,7 @@ func NewForLogDb(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 		ObjectMeta: logMeta,
 		Spec: appsv1.StatefulSetSpec{
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-				Type: miniov1.DefaultUpdateStrategy,
+				Type: miniov2.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy:  t.Spec.PodManagementPolicy,
 			Selector:             logSelector(t),

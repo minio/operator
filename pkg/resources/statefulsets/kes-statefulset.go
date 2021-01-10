@@ -18,7 +18,7 @@
 package statefulsets
 
 import (
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,7 +27,7 @@ import (
 // KESMetadata Returns the KES pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
-func KESMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
+func KESMetadata(t *miniov2.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	meta.Labels = t.Spec.KES.Labels
 	meta.Annotations = t.Spec.KES.Annotations
@@ -42,45 +42,45 @@ func KESMetadata(t *miniov1.Tenant) metav1.ObjectMeta {
 }
 
 // KESSelector Returns the KES pods selector set in configuration.
-func KESSelector(t *miniov1.Tenant) *metav1.LabelSelector {
+func KESSelector(t *miniov2.Tenant) *metav1.LabelSelector {
 	return &metav1.LabelSelector{
 		MatchLabels: t.KESPodLabels(),
 	}
 }
 
 // KESVolumeMounts builds the volume mounts for MinIO container.
-func KESVolumeMounts(t *miniov1.Tenant) []corev1.VolumeMount {
+func KESVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      t.KESVolMountName(),
-			MountPath: miniov1.KESConfigMountPath,
+			MountPath: miniov2.KESConfigMountPath,
 		},
 	}
 }
 
 // KESEnvironmentVars returns the KES environment variables set in configuration.
-func KESEnvironmentVars(t *miniov1.Tenant) []corev1.EnvVar {
+func KESEnvironmentVars(t *miniov2.Tenant) []corev1.EnvVar {
 	// pass the identity created while generating the MinIO client cert
 	return []corev1.EnvVar{
 		{
 			Name:  "MINIO_KES_IDENTITY",
-			Value: miniov1.KESIdentity,
+			Value: miniov2.KESIdentity,
 		},
 	}
 }
 
 // KESServerContainer returns the KES container for a KES StatefulSet.
-func KESServerContainer(t *miniov1.Tenant) corev1.Container {
+func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 
-	// Args to start KES with config mounted at miniov1.KESConfigMountPath and require but don't verify mTLS authentication
-	args := []string{"server", "--config=" + miniov1.KESConfigMountPath + "/server-config.yaml", "--auth=off"}
+	// Args to start KES with config mounted at miniov2.KESConfigMountPath and require but don't verify mTLS authentication
+	args := []string{"server", "--config=" + miniov2.KESConfigMountPath + "/server-config.yaml", "--auth=off"}
 
 	return corev1.Container{
-		Name:  miniov1.KESContainerName,
+		Name:  miniov2.KESContainerName,
 		Image: t.Spec.KES.Image,
 		Ports: []corev1.ContainerPort{
 			{
-				ContainerPort: miniov1.KESPort,
+				ContainerPort: miniov2.KESPort,
 			},
 		},
 		ImagePullPolicy: t.Spec.KES.ImagePullPolicy,
@@ -91,7 +91,7 @@ func KESServerContainer(t *miniov1.Tenant) corev1.Container {
 }
 
 // NewForKES creates a new KES StatefulSet for the given Cluster.
-func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
+func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	var replicas = t.KESReplicas()
 	// certificate files used by the KES server
 	var certPath = "server.crt"
@@ -185,7 +185,7 @@ func NewForKES(t *miniov1.Tenant, serviceName string) *appsv1.StatefulSet {
 		},
 		Spec: appsv1.StatefulSetSpec{
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-				Type: miniov1.DefaultUpdateStrategy,
+				Type: miniov2.DefaultUpdateStrategy,
 			},
 			PodManagementPolicy: t.Spec.PodManagementPolicy,
 			// KES is always matched via Tenant Name + KES prefix

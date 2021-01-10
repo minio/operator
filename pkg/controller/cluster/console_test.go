@@ -21,7 +21,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +29,7 @@ import (
 
 func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 	type args struct {
-		tenant            *miniov1.Tenant
+		tenant            *miniov2.Tenant
 		consoleDeployment *appsv1.Deployment
 	}
 	tests := []struct {
@@ -41,12 +41,12 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 		{
 			name: "Different image",
 			args: args{
-				tenant: &miniov1.Tenant{
+				tenant: &miniov2.Tenant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a",
 					},
-					Spec: miniov1.TenantSpec{
-						Console: &miniov1.ConsoleConfiguration{
+					Spec: miniov2.TenantSpec{
+						Console: &miniov2.ConsoleConfiguration{
 							Image: "minio/console:image1",
 						},
 					},
@@ -56,13 +56,13 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 						Replicas: intToPtr(0),
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								miniov1.ConsoleTenantLabel: "tenant-a-console",
+								miniov2.ConsoleTenantLabel: "tenant-a-console",
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									miniov1.ConsoleTenantLabel: "tenant-a-console",
+									miniov2.ConsoleTenantLabel: "tenant-a-console",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -160,12 +160,12 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 		{
 			name: "Same image",
 			args: args{
-				tenant: &miniov1.Tenant{
+				tenant: &miniov2.Tenant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a",
 					},
-					Spec: miniov1.TenantSpec{
-						Console: &miniov1.ConsoleConfiguration{
+					Spec: miniov2.TenantSpec{
+						Console: &miniov2.ConsoleConfiguration{
 							Image:         "minio/console:image1",
 							ConsoleSecret: &corev1.LocalObjectReference{Name: "ssshh"},
 						},
@@ -176,13 +176,13 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 						Replicas: intToPtr(0),
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								miniov1.ConsoleTenantLabel: "tenant-a-console",
+								miniov2.ConsoleTenantLabel: "tenant-a-console",
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									miniov1.ConsoleTenantLabel: "tenant-a-console",
+									miniov2.ConsoleTenantLabel: "tenant-a-console",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -276,12 +276,12 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 		{
 			name: "Same resources",
 			args: args{
-				tenant: &miniov1.Tenant{
+				tenant: &miniov2.Tenant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a",
 					},
-					Spec: miniov1.TenantSpec{
-						Console: &miniov1.ConsoleConfiguration{
+					Spec: miniov2.TenantSpec{
+						Console: &miniov2.ConsoleConfiguration{
 							Image:         "minio/console:image1",
 							ConsoleSecret: &corev1.LocalObjectReference{Name: "ssshh"},
 							Resources: corev1.ResourceRequirements{
@@ -298,13 +298,13 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 						Replicas: intToPtr(0),
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								miniov1.ConsoleTenantLabel: "tenant-a-console",
+								miniov2.ConsoleTenantLabel: "tenant-a-console",
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									miniov1.ConsoleTenantLabel: "tenant-a-console",
+									miniov2.ConsoleTenantLabel: "tenant-a-console",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -408,12 +408,12 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 		{
 			name: "Resources changed",
 			args: args{
-				tenant: &miniov1.Tenant{
+				tenant: &miniov2.Tenant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a",
 					},
-					Spec: miniov1.TenantSpec{
-						Console: &miniov1.ConsoleConfiguration{
+					Spec: miniov2.TenantSpec{
+						Console: &miniov2.ConsoleConfiguration{
 							Image:         "minio/console:image1",
 							ConsoleSecret: &corev1.LocalObjectReference{Name: "ssshh"},
 							Resources: corev1.ResourceRequirements{
@@ -451,12 +451,12 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 		{
 			name: "Environment changed",
 			args: args{
-				tenant: &miniov1.Tenant{
+				tenant: &miniov2.Tenant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a",
 					},
-					Spec: miniov1.TenantSpec{
-						Console: &miniov1.ConsoleConfiguration{
+					Spec: miniov2.TenantSpec{
+						Console: &miniov2.ConsoleConfiguration{
 							Image:         "minio/console:image1",
 							ConsoleSecret: &corev1.LocalObjectReference{Name: "ssshh"},
 							Env: []corev1.EnvVar{
@@ -473,13 +473,13 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 						Replicas: intToPtr(0),
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								miniov1.ConsoleTenantLabel: "tenant-a-console",
+								miniov2.ConsoleTenantLabel: "tenant-a-console",
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									miniov1.ConsoleTenantLabel: "tenant-a-console",
+									miniov2.ConsoleTenantLabel: "tenant-a-console",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -577,12 +577,12 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 		{
 			name: "Same Environment",
 			args: args{
-				tenant: &miniov1.Tenant{
+				tenant: &miniov2.Tenant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a",
 					},
-					Spec: miniov1.TenantSpec{
-						Console: &miniov1.ConsoleConfiguration{
+					Spec: miniov2.TenantSpec{
+						Console: &miniov2.ConsoleConfiguration{
 							Image:         "minio/console:image1",
 							ConsoleSecret: &corev1.LocalObjectReference{Name: "ssshh"},
 							Env: []corev1.EnvVar{
@@ -599,13 +599,13 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 						Replicas: intToPtr(0),
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								miniov1.ConsoleTenantLabel: "tenant-a-console",
+								miniov2.ConsoleTenantLabel: "tenant-a-console",
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									miniov1.ConsoleTenantLabel: "tenant-a-console",
+									miniov2.ConsoleTenantLabel: "tenant-a-console",
 								},
 							},
 							Spec: corev1.PodSpec{
@@ -703,12 +703,12 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 		{
 			name: "Log Search Enabled Env Missing",
 			args: args{
-				tenant: &miniov1.Tenant{
+				tenant: &miniov2.Tenant{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a",
 					},
-					Spec: miniov1.TenantSpec{
-						Console: &miniov1.ConsoleConfiguration{
+					Spec: miniov2.TenantSpec{
+						Console: &miniov2.ConsoleConfiguration{
 							Image:         "minio/console:image1",
 							ConsoleSecret: &corev1.LocalObjectReference{Name: "ssshh"},
 							Env: []corev1.EnvVar{
@@ -718,7 +718,7 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 								},
 							},
 						},
-						Log: &miniov1.LogConfig{
+						Log: &miniov2.LogConfig{
 							Image: "minio/log-search:image1",
 						},
 					},
@@ -728,13 +728,13 @@ func Test_consoleDeploymentMatchesSpec(t *testing.T) {
 						Replicas: intToPtr(0),
 						Selector: &metav1.LabelSelector{
 							MatchLabels: map[string]string{
-								miniov1.ConsoleTenantLabel: "tenant-a-console",
+								miniov2.ConsoleTenantLabel: "tenant-a-console",
 							},
 						},
 						Template: corev1.PodTemplateSpec{
 							ObjectMeta: metav1.ObjectMeta{
 								Labels: map[string]string{
-									miniov1.ConsoleTenantLabel: "tenant-a-console",
+									miniov2.ConsoleTenantLabel: "tenant-a-console",
 								},
 							},
 							Spec: corev1.PodSpec{

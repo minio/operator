@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
 // Used for registering with rest handlers (have a look at registerStorageRESTHandlers for usage example)
@@ -40,23 +40,29 @@ func configureWebhookServer(c *Controller) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
 	router.Methods(http.MethodGet).
-		Path(miniov1.WebhookAPIGetenv + "/{namespace}/{name:.+}").
+		Path(miniov2.WebhookAPIGetenv + "/{namespace}/{name:.+}").
 		HandlerFunc(c.GetenvHandler).
 		Queries(restQueries("key")...)
 	router.Methods(http.MethodPost).
-		Path(miniov1.WebhookAPIBucketService + "/{namespace}/{name:.+}").
+		Path(miniov2.WebhookAPIBucketService + "/{namespace}/{name:.+}").
 		HandlerFunc(c.BucketSrvHandler).
 		Queries(restQueries("bucket")...)
 	router.Methods(http.MethodGet).
-		PathPrefix(miniov1.WebhookAPIUpdate).
-		Handler(http.StripPrefix(miniov1.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
+		PathPrefix(miniov2.WebhookAPIUpdate).
+		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
+	// CRD Conversion
+	router.Methods(http.MethodPost).
+		Path(miniov2.WebhookCRDConversaion).
+		HandlerFunc(c.CRDConversionHandler)
+	//.
+	//		Queries(restQueries("bucket")...)
 
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r)
 	})
 
 	s := &http.Server{
-		Addr:           ":" + miniov1.WebhookDefaultPort,
+		Addr:           ":" + miniov2.WebhookDefaultPort,
 		Handler:        router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,

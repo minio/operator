@@ -6,13 +6,13 @@ VERSION ?= $(shell git describe --tags)
 endif
 TAG ?= "minio/operator:$(VERSION)"
 LDFLAGS ?= "-s -w -X main.Version=$(VERSION)"
-
+TMPFILE := $(shell mktemp)
 GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
 KUSTOMIZE_HOME=operator-kustomize
-KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/crds/
+KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/base/crds/
 
 PLUGIN_HOME=kubectl-minio
 
@@ -54,8 +54,12 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@which controller-gen 1>/dev/null || (echo "Installing controller-gen" && GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
-	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
+	@GO111MODULE=on go get github.com/minio/controller-tools/cmd/controller-gen@v0.4.6
+	@echo "WARNING: for the time being, you need to clone and build github.com/minio/controller-tools/cmd/controller-gen@v0.4.6"
+	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
+	@controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
+	@kustomize build operator-kustomize/patch-crd > $(TMPFILE)
+	@mv -f $(TMPFILE) operator-kustomize/base/crds/minio.min.io_tenants.yaml
 
 regen-crd-docs:
 	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go get github.com/elastic/crd-ref-docs)

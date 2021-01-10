@@ -27,7 +27,7 @@ data:
   CONSOLE_SECRET_KEY: WU9VUkNPTlNPTEVTRUNSRVQ=
 ---
 ## MinIO Tenant Definition
-apiVersion: minio.min.io/v1
+apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: minio-autocert-no-encryption
@@ -116,7 +116,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.4.6
+    image: minio/console:v0.5.2
     replicas: 2
     consoleSecret:
       name: minio-autocert-no-encryption-console-secret

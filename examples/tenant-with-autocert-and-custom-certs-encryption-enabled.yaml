@@ -81,7 +81,7 @@ data:
   CONSOLE_SECRET_KEY: WU9VUkNPTlNPTEVTRUNSRVQ=
 ---
 ## MinIO Tenant Definition
-apiVersion: minio.min.io/v1
+apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: minio-autocert-custom-cert-encryption-minio
@@ -174,7 +174,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.4.6
+    image: minio/console:v0.5.2
     replicas: 2
     externalCertSecret:
       name: minio-autocert-custom-cert-encryption-localhost-cert
@@ -184,7 +184,7 @@ spec:
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   kes:
-    image: minio/kes:v0.12.1
+    image: minio/kes:v0.13.4
     replicas: 2
     kesSecret:
       name: minio-autocert-custom-cert-encryption-kes-config
