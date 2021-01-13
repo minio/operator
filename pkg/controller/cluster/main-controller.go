@@ -624,9 +624,16 @@ func (c *Controller) fetchArtifacts(tenant *miniov1.Tenant) (latest time.Time, e
 
 	// Find the file with largest size among all layers.
 	// This is the tar file with all minio relevant files.
-	maxSizeHash, _ := ls[0].Digest()
-	maxSize, _ := ls[0].Size()
+	start := 0
+	if len(ls) >= 2 { // skip the base layer
+		start = 1
+	}
+	maxSizeHash, _ := ls[start].Digest()
+	maxSize, _ := ls[start].Size()
 	for i := range ls {
+		if i < start {
+			continue
+		}
 		s, _ := ls[i].Size()
 		if s > maxSize {
 			maxSize, _ = ls[i].Size()
