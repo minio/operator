@@ -17,25 +17,15 @@
  *
  */
 
-package main
+package server
 
-import (
-	"log"
-	"net/http"
-
-	_ "github.com/lib/pq"
-
-	"github.com/minio/operator/logsearchapi/server"
+const (
+	// QueryAuthTokenEnv environment variable
+	QueryAuthTokenEnv = "LOGSEARCH_QUERY_AUTH_TOKEN"
+	// PgConnStrEnv environment variable
+	PgConnStrEnv = "LOGSEARCH_PG_CONN_STR"
+	// AuditAuthTokenEnv environment variable
+	AuditAuthTokenEnv = "LOGSEARCH_AUDIT_AUTH_TOKEN"
+	// DiskCapacityEnv environment variable
+	DiskCapacityEnv = "LOGSEARCH_DISK_CAPACITY_GB"
 )
-
-func main() {
-	ls, err := server.LoadEnv()
-	if err != nil {
-		log.Fatal(err)
-	}
-	s := &http.Server{
-		Addr:    ":8080",
-		Handler: ls,
-	}
-	log.Fatal(s.ListenAndServe())
-}

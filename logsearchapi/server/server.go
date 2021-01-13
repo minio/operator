@@ -21,10 +21,13 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 )
 
 // LogSearch represents the Log Search API server
@@ -123,4 +126,27 @@ func (ls *LogSearch) queryHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Del("Content-Type")
 		ls.writeErrorResponse(w, 500, "Unhandled error:", err)
 	}
+}
+
+// LoadEnv loads environment variables and returns
+// a new LogSearch.
+func LoadEnv() (*LogSearch, error) {
+	pgConnStr := os.Getenv(PgConnStrEnv)
+	if pgConnStr == "" {
+		return nil, errors.New(PgConnStrEnv + " env variable is required.")
+	}
+	auditAuthToken := os.Getenv(AuditAuthTokenEnv)
+	if auditAuthToken == "" {
+		return nil, errors.New(AuditAuthTokenEnv + " env variable is required.")
+	}
+	queryAuthToken := os.Getenv(QueryAuthTokenEnv)
+	if queryAuthToken == "" {
+		return nil, errors.New(QueryAuthTokenEnv + " env variable is required.")
+	}
+	diskCapacity, err := strconv.Atoi(os.Getenv(DiskCapacityEnv))
+	if err != nil {
+		return nil, errors.New(DiskCapacityEnv + " env variable is required and must be an integer.")
+	}
+
+	return NewLogSearch(pgConnStr, auditAuthToken, queryAuthToken, diskCapacity)
 }
