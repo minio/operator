@@ -126,8 +126,6 @@ func (u *upgradeCmd) run() error {
 			u.tenantOpts.Name, u.tenantOpts.Image, t.Spec.Image)
 	}
 
-	// update the image
-	t.Spec.Image = u.tenantOpts.Image
 	if u.tenantOpts.ImagePullSecret != "" {
 		t.Spec.ImagePullSecret = corev1.LocalObjectReference{Name: u.tenantOpts.ImagePullSecret}
 	}
@@ -135,7 +133,8 @@ func (u *upgradeCmd) run() error {
 	if !u.output {
 		return u.upgradeTenant(client, t, t.Spec.Image, u.tenantOpts.Image)
 	}
-
+	// update the image
+	t.Spec.Image = u.tenantOpts.Image
 	o, err := yaml.Marshal(&t)
 	if err != nil {
 		return err
@@ -147,6 +146,8 @@ func (u *upgradeCmd) run() error {
 func (u *upgradeCmd) upgradeTenant(client *operatorv1.Clientset, t *miniov1.Tenant, c, p string) error {
 	if helpers.Ask(fmt.Sprintf("Upgrade is a one way process. Are you sure to upgrade Tenant '%s/%s' from version %s to %s?", t.ObjectMeta.Name, t.ObjectMeta.Namespace, c, p)) {
 		fmt.Printf(color.Bold(fmt.Sprintf("\nUpgrading Tenant '%s/%s'\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace)))
+		// update the image
+		t.Spec.Image = u.tenantOpts.Image
 		if _, err := client.MinioV1().Tenants(t.Namespace).Update(context.Background(), t, v1.UpdateOptions{}); err != nil {
 			return err
 		}

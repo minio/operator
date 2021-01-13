@@ -86,6 +86,7 @@ func (o *operatorInitCmd) run() error {
 	sa := resources.NewServiceAccountForOperator(helpers.DefaultServiceAccount, o.operatorOpts.NS)
 	crb := resources.NewCluterRoleBindingForOperator(helpers.DefaultServiceAccount, o.operatorOpts.NS)
 	d := resources.NewDeploymentForOperator(o.operatorOpts)
+	svc := resources.NewServiceForOperator(o.operatorOpts)
 
 	if !o.output {
 		path, _ := rootCmd.Flags().GetString(kubeconfig)
@@ -107,6 +108,9 @@ func (o *operatorInitCmd) run() error {
 			return err
 		}
 		if err = createClusterRB(client, crb); err != nil {
+			return err
+		}
+		if err = createService(client, svc); err != nil {
 			return err
 		}
 		return createDeployment(client, d)
@@ -181,5 +185,17 @@ func createDeployment(client *kubernetes.Clientset, d *appsv1.Deployment) error 
 		return err
 	}
 	fmt.Printf("MinIO Operator Deployment %s: created\n", d.ObjectMeta.Name)
+	return nil
+}
+
+func createService(client *kubernetes.Clientset, svc *corev1.Service) error {
+	_, err := client.CoreV1().Services(svc.ObjectMeta.Namespace).Create(context.Background(), svc, v1.CreateOptions{})
+	if err != nil {
+		if k8serrors.IsAlreadyExists(err) {
+			return fmt.Errorf("MinIO Operator Service %s: already present, skipped", svc.ObjectMeta.Name)
+		}
+		return err
+	}
+	fmt.Printf("MinIO Operator Service %s: created\n", svc.ObjectMeta.Name)
 	return nil
 }
