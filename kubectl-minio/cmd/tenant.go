@@ -47,7 +47,7 @@ func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			_, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Get(context.Background(), crdObj.GetObjectMeta().GetName(), v1.GetOptions{})
 			if err != nil {
 				if k8serrors.IsNotFound(err) {
-					return fmt.Errorf("CustomResourceDefinition %s: not found, please run 'kubectl minio operator create' before using tenant command", crdObj.ObjectMeta.Name)
+					return fmt.Errorf("CustomResourceDefinition %s: not found, please run 'kubectl minio init' before using tenant command", crdObj.ObjectMeta.Name)
 				}
 				return err
 			}
