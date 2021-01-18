@@ -29,7 +29,7 @@ import (
 type OperatorOptions struct {
 	Name            string
 	Image           string
-	NS              string
+	Namespace       string
 	NSToWatch       string
 	ClusterDomain   string
 	ImagePullSecret string
@@ -74,7 +74,7 @@ func NewDeploymentForOperator(opts OperatorOptions) *appsv1.Deployment {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      helpers.DeploymentName,
-			Namespace: opts.NS,
+			Namespace: opts.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &helpers.DeploymentReplicas,

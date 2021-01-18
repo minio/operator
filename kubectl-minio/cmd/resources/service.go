@@ -31,7 +31,7 @@ func NewServiceForOperator(opts OperatorOptions) *corev1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:    operatorLabels(),
 			Name:      "operator",
-			Namespace: opts.NS,
+			Namespace: opts.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{

@@ -36,7 +36,7 @@ const (
 	DeploymentName = "minio-operator"
 
 	// DefaultNamespace is the default namespace for all operations
-	DefaultNamespace = "default"
+	DefaultNamespace = "minio-operator"
 
 	// DefaultStorageclass is the default storage class for MinIO Tenant PVC
 	DefaultStorageclass = "default"

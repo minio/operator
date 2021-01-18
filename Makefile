@@ -76,3 +76,9 @@ logsearchapi:
 		go build && \
 		docker build -t $(LOGSEARCHAPI_TAG) . \
    )
+
+getconsoleuiyaml:
+	@echo "Getting the latest Console UI"
+	@kustomize build github.com/minio/console/k8s/operator-console/base > operator-kustomize/console-ui.yaml
+	@make statik
+	@echo "Done"
