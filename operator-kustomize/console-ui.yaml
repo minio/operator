@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: console-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: console-sa-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - watch
+  - create
+  - list
+  - patch
+  - update
+  - deletecollection
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  - services
+  - events
+  - resourcequotas
+  - nodes
+  verbs:
+  - get
+  - watch
+  - create
+  - list
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumeclaims
+  verbs:
+  - deletecollection
+  - list
+  - get
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - watch
+  - create
+  - list
+  - patch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  - deployments
+  verbs:
+  - get
+  - create
+  - list
+  - patch
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - batch
+  resources:
+  - jobs
+  verbs:
+  - get
+  - create
+  - list
+  - patch
+  - watch
+  - update
+  - delete
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  - certificatesigningrequests/approval
+  - certificatesigningrequests/status
+  verbs:
+  - update
+  - create
+  - get
+- apiGroups:
+  - minio.min.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+- apiGroups:
+  - min.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: console-sa-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: console-sa-role
+subjects:
+- kind: ServiceAccount
+  name: console-sa
+  namespace: default
+---
+apiVersion: v1
+data:
+  CONSOLE_PORT: "9090"
+  CONSOLE_TLS_PORT: "9443"
+kind: ConfigMap
+metadata:
+  name: console-env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: console
+  name: console
+spec:
+  ports:
+  - name: http
+    port: 9090
+  - name: https
+    port: 9443
+  selector:
+    app: console
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: console
+  template:
+    metadata:
+      labels:
+        app: console
+    spec:
+      containers:
+      - args:
+        - server
+        env:
+        - name: CONSOLE_OPERATOR_MODE
+          value: "on"
+        image: minio/console:v0.5.0
+        imagePullPolicy: IfNotPresent
+        name: console
+        ports:
+        - containerPort: 9090
+          name: http
+        - containerPort: 9433
+          name: https
+      serviceAccountName: console-sa

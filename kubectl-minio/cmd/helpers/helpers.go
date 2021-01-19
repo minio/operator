@@ -27,6 +27,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"k8s.io/client-go/dynamic"
+
 	"github.com/dustin/go-humanize"
 	"github.com/manifoldco/promptui"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
@@ -80,6 +82,21 @@ func GetKubeExtensionClient() (*apiextension.Clientset, error) {
 	}
 
 	return extClient, nil
+}
+
+// GetKubeDynamicClient provides k8s client for CRDs
+func GetKubeDynamicClient() (dynamic.Interface, error) {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+
+	config, err := kubeConfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	dynClient, err := dynamic.NewForConfig(config)
+	return dynClient, nil
 }
 
 // GetKubeOperatorClient provides k8s client for operator

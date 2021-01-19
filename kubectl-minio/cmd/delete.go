@@ -24,6 +24,15 @@ import (
 	"fmt"
 	"io"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+
+	rbacv1 "k8s.io/api/rbac/v1"
+	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/restmapper"
+
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/minio/minio/pkg/color"
@@ -70,7 +79,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
-	f.StringVarP(&o.operatorOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&o.operatorOpts.Namespace, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	return cmd
 }
 
@@ -84,17 +93,105 @@ func (o *deleteCmd) run() error {
 	if err != nil {
 		return err
 	}
+	dynclient, err := helpers.GetKubeDynamicClient()
+	if err != nil {
+		return err
+	}
+	// Load Resources
+	emfs, decode := resources.GetFSAndDecoder()
+	crdObj := resources.LoadTenantCRD(emfs, decode)
 	if err := extclient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), crdObj.Name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
+	crObj := resources.LoadClusterRole(emfs, decode)
 	if err := client.RbacV1().ClusterRoles().Delete(context.Background(), crObj.Name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
-	if err := client.CoreV1().ServiceAccounts(o.operatorOpts.NS).Delete(context.Background(), helpers.DefaultServiceAccount, v1.DeleteOptions{}); err != nil {
+	if err := client.CoreV1().ServiceAccounts(o.operatorOpts.Namespace).Delete(context.Background(), helpers.DefaultServiceAccount, v1.DeleteOptions{}); err != nil {
 		return err
 	}
 	if err := client.RbacV1().ClusterRoleBindings().Delete(context.Background(), helpers.ClusterRoleBindingName, v1.DeleteOptions{}); err != nil {
 		return err
 	}
-	return client.AppsV1().Deployments(o.operatorOpts.NS).Delete(context.Background(), helpers.DeploymentName, v1.DeleteOptions{})
+	if err := client.AppsV1().Deployments(o.operatorOpts.Namespace).Delete(context.Background(), helpers.DeploymentName, v1.DeleteOptions{}); err != nil {
+		return err
+	}
+	consoleResources := resources.LoadConsoleUI(emfs, decode, &o.operatorOpts)
+	if err := deleteConsoleResources(o.operatorOpts, extclient, dynclient, consoleResources); err != nil {
+		return err
+	}
+	// if the namespace is the default, we'll delete the namespace
+	if o.operatorOpts.Namespace == helpers.DefaultNamespace {
+		if err = client.CoreV1().Namespaces().Delete(context.Background(), o.operatorOpts.Namespace, metav1.DeleteOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func deleteConsoleResources(opts resources.OperatorOptions, clientset *apiextension.Clientset, dynClient dynamic.Interface, consoleResources []runtime.Object) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	groupResources, err := restmapper.GetAPIGroupResources(clientset.Discovery())
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("Cannot get group resources.")
+	}
+	rm := restmapper.NewDiscoveryRESTMapper(groupResources)
+
+	for _, obj := range consoleResources {
+		gvk := obj.GetObjectKind().GroupVersionKind()
+		gk := schema.GroupKind{Group: gvk.Group, Kind: gvk.Kind}
+
+		mapping, err := rm.RESTMapping(gk, gvk.Version)
+
+		// convert the runtime.Object to unstructured.Unstructured
+		unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+		if err != nil {
+			return err
+		}
+		var resourceName string
+		if metaobj, ok := unstructuredObj["metadata"]; ok {
+			mtobj := metaobj.(map[string]interface{})
+			if name, ok2 := mtobj["name"]; ok2 {
+				resourceName = name.(string)
+			}
+		}
+
+		switch obj.(type) {
+		case *rbacv1.ClusterRoleBinding:
+			if err := clusterScopeDelete(dynClient, mapping, ctx, resourceName); err != nil {
+				return err
+			}
+		case *rbacv1.ClusterRole:
+			if err := clusterScopeDelete(dynClient, mapping, ctx, resourceName); err != nil {
+				return err
+			}
+		default:
+			if err := namespaceScopeDelete(opts, dynClient, mapping, ctx, resourceName); err != nil {
+				return err
+			}
+		}
+
+	}
+	fmt.Println("MinIO Console Deployment: Deleted")
+
+	return nil
+}
+
+func clusterScopeDelete(dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, name string) error {
+	if err := dynClient.Resource(mapping.Resource).Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		fmt.Println(err)
+		return errors.New("Cannot delete console resources")
+	}
+	return nil
+}
+
+func namespaceScopeDelete(opts resources.OperatorOptions, dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, name string) error {
+	if err := dynClient.Resource(mapping.Resource).Namespace(opts.Namespace).Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
+		fmt.Println(err)
+		return errors.New("Cannot delete console resources")
+	}
+	return nil
 }

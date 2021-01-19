@@ -21,31 +21,22 @@ package cmd
 import (
 	"log"
 
-	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cobra"
-	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 
 	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"k8s.io/client-go/scale/scheme"
-
 	// Statik CRD assets for our plugin
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	_ "github.com/minio/kubectl-minio/statik"
-	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 )
 
 var (
 	kubeConfig string
 	namespace  string
 	kubeClient *kubernetes.Clientset
-	crdObj     *apiextensionv1.CustomResourceDefinition
-	crObj      *rbacv1.ClusterRole
 )
 
 const (
@@ -66,46 +57,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&confPath, kubeconfig, "", "Custom kubeconfig path")
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	emfs, err := fs.New()
-	if err != nil {
-		log.Fatal(err)
-	}
-	sch := runtime.NewScheme()
-	scheme.AddToScheme(sch)
-	apiextensionv1.AddToScheme(sch)
-	rbacv1.AddToScheme(sch)
-	decode := serializer.NewCodecFactory(sch).UniversalDeserializer().Decode
-
-	contents, err := fs.ReadFile(emfs, "/crds/minio.min.io_tenants.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	obj, _, err := decode(contents, nil, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var ok bool
-	crdObj, ok = obj.(*apiextensionv1.CustomResourceDefinition)
-	if !ok {
-		log.Fatal("Unable to locate CustomResourceDefinition object")
-	}
-
-	contents, err = fs.ReadFile(emfs, "/cluster-role.yaml")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	obj, _, err = decode(contents, nil, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	crObj, ok = obj.(*rbacv1.ClusterRole)
-	if !ok {
-		log.Fatal("Unable to locate ClusterRole object")
-	}
 
 }
 
@@ -116,5 +67,6 @@ func NewCmdMinIO(streams genericclioptions.IOStreams) *cobra.Command {
 	rootCmd.AddCommand(newInitCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	rootCmd.AddCommand(newTenantCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	rootCmd.AddCommand(newDeleteCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
+	rootCmd.AddCommand(newProxyCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	return rootCmd
 }

@@ -24,6 +24,14 @@ import (
 	"fmt"
 	"io"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/restmapper"
+
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/spf13/cobra"
@@ -35,6 +43,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -72,7 +81,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
 	f.StringVarP(&o.operatorOpts.Image, "image", "i", helpers.DefaultOperatorImage, "operator image")
-	f.StringVarP(&o.operatorOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&o.operatorOpts.Namespace, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	f.StringVarP(&o.operatorOpts.ClusterDomain, "cluster-domain", "d", helpers.DefaultClusterDomain, "cluster domain of the Kubernetes cluster")
 	f.StringVar(&o.operatorOpts.NSToWatch, "namespace-to-watch", "", "namespace where operator looks for MinIO tenants, leave empty for all namespaces")
 	f.StringVar(&o.operatorOpts.ImagePullSecret, "image-pull-secret", "", "image pull secret to be used for pulling operator image")
@@ -83,11 +92,15 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (o *operatorInitCmd) run() error {
-	sa := resources.NewServiceAccountForOperator(helpers.DefaultServiceAccount, o.operatorOpts.NS)
-	crb := resources.NewCluterRoleBindingForOperator(helpers.DefaultServiceAccount, o.operatorOpts.NS)
+	sa := resources.NewServiceAccountForOperator(helpers.DefaultServiceAccount, o.operatorOpts.Namespace)
+	crb := resources.NewCluterRoleBindingForOperator(helpers.DefaultServiceAccount, o.operatorOpts.Namespace)
 	d := resources.NewDeploymentForOperator(o.operatorOpts)
 	svc := resources.NewServiceForOperator(o.operatorOpts)
-
+	// Load Resources
+	emfs, decode := resources.GetFSAndDecoder()
+	crdObj := resources.LoadTenantCRD(emfs, decode)
+	crObj := resources.LoadClusterRole(emfs, decode)
+	consoleResources := resources.LoadConsoleUI(emfs, decode, &o.operatorOpts)
 	if !o.output {
 		path, _ := rootCmd.Flags().GetString(kubeconfig)
 		client, err := helpers.GetKubeClient(path)
@@ -98,6 +111,18 @@ func (o *operatorInitCmd) run() error {
 		if err != nil {
 			return err
 		}
+		dynclient, err := helpers.GetKubeDynamicClient()
+		if err != nil {
+			return err
+		}
+		// if the namespace is the default, we'll create the namespace
+		if o.operatorOpts.Namespace == helpers.DefaultNamespace {
+			ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: o.operatorOpts.Namespace}}
+			if _, err = client.CoreV1().Namespaces().Create(context.Background(), &ns, metav1.CreateOptions{}); err != nil {
+				return err
+			}
+		}
+
 		if err = createCRD(extclient, crdObj); err != nil {
 			return err
 		}
@@ -113,10 +138,25 @@ func (o *operatorInitCmd) run() error {
 		if err = createService(client, svc); err != nil {
 			return err
 		}
-		return createDeployment(client, d)
+		if err = createDeployment(client, d); err != nil {
+			return err
+		}
+		if err = createConsoleResources(o.operatorOpts, extclient, dynclient, consoleResources); err != nil {
+			return err
+		}
+		// since we did an explicit deployment of resources, let's show a message telling users how to connect to console
+		fmt.Println("-----------------")
+		fmt.Println("")
+		fmt.Println("Operator UI has been deployed, to connect, start a port forward using the following command:")
+		fmt.Println("")
+		fmt.Println("kubectl minio proxy")
+		fmt.Println("")
+		fmt.Println("-----------------")
+		return nil
 	}
-
+	// build yaml output
 	o.steps = append(o.steps, crdObj, crObj, sa, crb, d)
+	o.steps = append(o.steps, consoleResources...)
 	op, err := helpers.ToYaml(o.steps)
 	if err != nil {
 		return err
@@ -124,6 +164,67 @@ func (o *operatorInitCmd) run() error {
 	for _, s := range op {
 		fmt.Printf(s)
 		fmt.Println("---")
+	}
+	return nil
+}
+
+func createConsoleResources(opts resources.OperatorOptions, clientset *apiextension.Clientset, dynClient dynamic.Interface, consoleResources []runtime.Object) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	groupResources, err := restmapper.GetAPIGroupResources(clientset.Discovery())
+	if err != nil {
+		fmt.Println(err)
+		return errors.New("Cannot get group resources.")
+	}
+	rm := restmapper.NewDiscoveryRESTMapper(groupResources)
+
+	for _, obj := range consoleResources {
+		gvk := obj.GetObjectKind().GroupVersionKind()
+		gk := schema.GroupKind{Group: gvk.Group, Kind: gvk.Kind}
+
+		mapping, err := rm.RESTMapping(gk, gvk.Version)
+
+		// convert the runtime.Object to unstructured.Unstructured
+		unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+		if err != nil {
+			return err
+		}
+		uns := unstructured.Unstructured{Object: unstructuredObj}
+
+		switch obj.(type) {
+		case *rbacv1.ClusterRoleBinding:
+			if err := clusterScopeCreate(dynClient, mapping, ctx, uns); err != nil {
+				return err
+			}
+		case *rbacv1.ClusterRole:
+			if err := clusterScopeCreate(dynClient, mapping, ctx, uns); err != nil {
+				return err
+			}
+		default:
+			if err := namespaceScopeCreate(opts, dynClient, mapping, ctx, uns); err != nil {
+				return err
+			}
+		}
+
+	}
+	fmt.Println("MinIO Console Deployment: created")
+
+	return nil
+}
+
+func clusterScopeCreate(dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, uns unstructured.Unstructured) error {
+	if _, err := dynClient.Resource(mapping.Resource).Create(ctx, &uns, metav1.CreateOptions{}); err != nil {
+		fmt.Println(err)
+		return errors.New("Cannot create console resources")
+	}
+	return nil
+}
+
+func namespaceScopeCreate(opts resources.OperatorOptions, dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, uns unstructured.Unstructured) error {
+	if _, err := dynClient.Resource(mapping.Resource).Namespace(opts.Namespace).Create(ctx, &uns, metav1.CreateOptions{}); err != nil {
+		fmt.Println(err)
+		return errors.New("Cannot create console resources")
 	}
 	return nil
 }

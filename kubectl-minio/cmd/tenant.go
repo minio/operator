@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/minio/kubectl-minio/cmd/resources"
+
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -44,6 +46,9 @@ func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			// Load Resources
+			emfs, decode := resources.GetFSAndDecoder()
+			crdObj := resources.LoadTenantCRD(emfs, decode)
 			_, err = client.ApiextensionsV1beta1().CustomResourceDefinitions().Get(context.Background(), crdObj.GetObjectMeta().GetName(), v1.GetOptions{})
 			if err != nil {
 				if k8serrors.IsNotFound(err) {
