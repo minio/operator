@@ -23,15 +23,16 @@ builds:
     goos:
       - linux
     goarch:
+      - arm64
       - amd64
+      - ppc64le
+      - s390x
     env:
       - CGO_ENABLED=0
     ldflags:
       - -s -w -X main.version={{.Tag}}
     flags:
       - -trimpath
-    hooks:
-      post: ./package.sh {{ .Path }}
   -
     id: kubectl-minio
     dir: kubectl-minio
@@ -40,34 +41,88 @@ builds:
       - linux
       - darwin
       - windows
-      - freebsd
     goarch:
       - amd64
+      - arm64
+      - ppc64le
+      - s390x
+    ignore:
+      - goos: darwin
+        goarch: arm64
+      - goos: windows
+        goarch: arm64
     env:
       - CGO_ENABLED=0
     ldflags:
       - -s -w -X main.version={{.Tag}}
     flags:
       - -trimpath
-    hooks:
-      post: ./package.sh {{ .Path }}
 
 archives:
   -
-    format: binary
+    allow_different_binary_count: true
+    id: kubectl-minio
+    builds:
+      - kubectl-minio
+    format: zip
+
+signs:
+  -
+    signature: "${artifact}.minisig"
+    cmd: "sh"
+    args:
+      - '-c'
+      - 'minisign -s /media/${USER}/minio/minisign.key -Sm ${artifact} < /media/${USER}/minio/minisign-passphrase'
+    artifacts: all
 
 dockers:
-  -
-    # GOOS of the built binary that should be used.
-    goos: linux
-    # GOARCH of the built binary that should be used.
-    goarch: amd64
-    dockerfile: Dockerfile
-    image_templates:
-      - "minio/k8s-operator:{{ .Tag }}"
-      - "minio/k8s-operator:latest"
-    extra_files:
-      - LICENSE
-      - README.md
-      - CREDITS
-      - minio-operator.minisig
+- image_templates:
+  - "minio/operator:{{ .Tag }}-amd64"
+  use_buildx: true
+  dockerfile: Dockerfile
+  extra_files:
+    - LICENSE
+    - CREDITS
+  build_flag_templates:
+  - "--platform=linux/amd64"
+- image_templates:
+  - "minio/operator:{{ .Tag }}-ppc64le"
+  use_buildx: true
+  dockerfile: Dockerfile
+  extra_files:
+    - LICENSE
+    - CREDITS
+  build_flag_templates:
+  - "--platform=linux/ppc64le"
+- image_templates:
+  - "minio/operator:{{ .Tag }}-s390x"
+  use_buildx: true
+  dockerfile: Dockerfile
+  extra_files:
+    - LICENSE
+    - CREDITS
+  build_flag_templates:
+  - "--platform=linux/s390x"
+- image_templates:
+  - "minio/operator:{{ .Tag }}-arm64"
+  use_buildx: true
+  goarch: arm64
+  dockerfile: Dockerfile
+  extra_files:
+    - LICENSE
+    - CREDITS
+  build_flag_templates:
+  - "--platform=linux/arm64"
+docker_manifests:
+- name_template: minio/operator:{{ .Tag }}
+  image_templates:
+  - minio/operator:{{ .Tag }}-amd64
+  - minio/operator:{{ .Tag }}-arm64
+  - minio/operator:{{ .Tag }}-ppc64le
+  - minio/operator:{{ .Tag }}-s390x
+- name_template: minio/operator:latest
+  image_templates:
+  - minio/operator:{{ .Tag }}-amd64
+  - minio/operator:{{ .Tag }}-arm64
+  - minio/operator:{{ .Tag }}-ppc64le
+  - minio/operator:{{ .Tag }}-s390x
