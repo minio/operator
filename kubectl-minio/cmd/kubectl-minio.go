@@ -40,15 +40,13 @@ var (
 )
 
 const (
-	minioDesc = `
-Deploy and manage the multi tenant, S3 API compatible object storage on Kubernetes`
+	minioDesc  = `Deploy and manage the multi tenant, S3 API compatible object storage on Kubernetes`
 	kubeconfig = "kubeconfig"
 )
 
 var confPath string
 var rootCmd = &cobra.Command{
 	Use:          "minio",
-	Short:        "manage MinIO operator CRDs",
 	Long:         minioDesc,
 	SilenceUsage: true,
 }
