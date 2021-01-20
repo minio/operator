@@ -888,7 +888,7 @@ func (c *Controller) syncHandler(key string) error {
 			},
 		}
 		_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
-		if err != nil {
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
 			return err
 		}
 	}
