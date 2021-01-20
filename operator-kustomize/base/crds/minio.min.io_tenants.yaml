@@ -25,6 +25,7 @@ spec:
     shortNames:
     - tenant
     singular: tenant
+  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:

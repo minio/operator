@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   name: tenants.minio.min.io
 spec:
+  preserveUnknownFields: false
   conversion:
     strategy: Webhook
     webhook:
