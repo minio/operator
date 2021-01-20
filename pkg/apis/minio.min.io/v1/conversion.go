@@ -54,6 +54,9 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	/*
 		The rest of the conversion is pretty rote.
 	*/
+	dst.Kind = "Tenant"
+	dst.APIVersion = "minio.min.io/v2"
+
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
 
@@ -114,6 +117,10 @@ func (dst *Tenant) ConvertFrom(srcRaw conversion.Hub) error { //nolint
 	/*
 		The rest of the conversion is pretty rote.
 	*/
+
+	dst.Kind = "Tenant"
+	dst.APIVersion = "minio.min.io/v1"
+
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
 
