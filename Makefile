@@ -4,7 +4,7 @@ VERSION ?= dev
 else
 VERSION ?= $(shell git describe --tags)
 endif
-TAG ?= "minio/k8s-operator:$(VERSION)"
+TAG ?= "minio/operator:$(VERSION)"
 LDFLAGS ?= "-s -w -X main.Version=$(VERSION)"
 
 GOPATH := $(shell go env GOPATH)
@@ -51,6 +51,7 @@ clean:
 	@find . -name '*.test' | xargs rm -fv
 	@find . -name '*~' | xargs rm -fv
 	@find . -name '*.zip' | xargs rm -fv
+	@rm -rf dist/
 
 regen-crd:
 	@GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1

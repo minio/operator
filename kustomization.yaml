@@ -3,9 +3,9 @@ kind: Kustomization
 
 # Configure repo and tag of MinIO Operator Image
 images:
-  - name: minio/k8s-operator
-    newName: minio/k8s-operator
-    newTag: v3.0.29
+  - name: minio/operator
+    newName: minio/operator
+    newTag: v4.0.0
 
 namespace: minio-operator
 

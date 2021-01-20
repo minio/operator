@@ -1,4 +1,6 @@
-# MinIO Operator [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
+# MinIO Operator
+
+![build](https://github.com/minio/operator/workflows/Go/badge.svg) ![license](https://img.shields.io/badge/license-AGPL%20V3-blue)
 
 <a href="https://min.io"> <img src=https://raw.githubusercontent.com/minio/minio/master/.github/logo.svg width="600px"/> </a>
 

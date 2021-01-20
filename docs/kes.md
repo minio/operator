@@ -1,4 +1,4 @@
-# MinIO Operator KES Configuration [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
+# MinIO Operator KES Configuration [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
 
 This document explains how to enable KES with MinIO Operator.
 
@@ -28,10 +28,10 @@ KES Configuration is a part of Tenant yaml file. Check the sample file [availabl
 
 ### KES Fields
 
-| Field                 | Description |
-|-----------------------|-------------|
-| spec.kes | Defines the KES configuration. Refer [this](https://github.com/minio/kes) |
-| spec.kes.replicas | Number of KES pods to be created. |
-| spec.kes.image | Defines the KES image. |
-| spec.kes.kesSecret | Secret to specify KES Configuration. This is a mandatory field. |
-| spec.kes.metadata | This allows a way to map metadata to the KES pods. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
+| Field              | Description                                                                                                                                                                       |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| spec.kes           | Defines the KES configuration. Refer [this](https://github.com/minio/kes)                                                                                                         |
+| spec.kes.replicas  | Number of KES pods to be created.                                                                                                                                                 |
+| spec.kes.image     | Defines the KES image.                                                                                                                                                            |
+| spec.kes.kesSecret | Secret to specify KES Configuration. This is a mandatory field.                                                                                                                   |
+| spec.kes.metadata  | This allows a way to map metadata to the KES pods. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
