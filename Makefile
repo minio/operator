@@ -54,8 +54,12 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1
+	@which controller-gen 1>/dev/null || (echo "Installing controller-gen" && GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
 	@controller-gen crd:trivialVersions=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
+
+regen-crd-docs:
+	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go get github.com/elastic/crd-ref-docs)
+	@crd-ref-docs --source-path=${GOPATH}/src/github.com/minio/operator/pkg/apis --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/api.asiidoc --templates-dir=docs/templates/asciidoctor/
 
 statik:
 	@echo "Building static assets"
