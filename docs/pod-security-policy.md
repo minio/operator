@@ -1,4 +1,4 @@
-# Using PodSecurityPolicy for MinIO Pods [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
+# Using PodSecurityPolicy for MinIO Pods [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
 
 This document explains how to apply `PodSecurityPolicy` to MinIO Pods created by the MinIO Operator. A Pod Security Policy is a cluster-level resource that controls security sensitive aspects of the pod specification. Read more in [Kubernetes PodSecurityPolicy Documentation](https://kubernetes.io/docs/concepts/policy/pod-security-policy/).
 

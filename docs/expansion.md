@@ -1,4 +1,4 @@
-# Adding capacity to a MinIO Tenant [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
+# Adding capacity to a MinIO Tenant [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
 
 This document explains how to expand an existing MinIO Tenant with Operator. This is only applicable to a Tenant (MinIO Deployment) created by MinIO Operator.
 

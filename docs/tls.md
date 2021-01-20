@@ -1,4 +1,4 @@
-# MinIO Operator TLS Configuration [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) [![Docker Pulls](https://img.shields.io/docker/pulls/minio/k8s-operator.svg?maxAge=604800)](https://hub.docker.com/r/minio/k8s-operator)
+# MinIO Operator TLS Configuration [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
 
 This document explains how to enable TLS on MinIO pods.
 
