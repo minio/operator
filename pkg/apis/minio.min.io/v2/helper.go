@@ -89,6 +89,16 @@ var (
 	k8sClusterDomain string
 )
 
+// GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
+// current ca certificate from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+func GetPodCAFromFile() []byte {
+	namespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	if err != nil {
+		return nil
+	}
+	return namespace
+}
+
 // GetNSFromFile assumes the operator is running inside a k8s pod and extract the
 // current namespace from the /var/run/secrets/kubernetes.io/serviceaccount/namespace file
 func GetNSFromFile() string {

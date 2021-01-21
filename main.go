@@ -23,11 +23,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -112,9 +113,18 @@ func main() {
 
 	namespace, isNamespaced := os.LookupEnv("WATCHED_NAMESPACE")
 
-	// Verify the current pod service account ca.crt is passed to the CRD so that the k8s API can talk to us and
-	// perform conversion, do this only if running inside a pod
-	caContent := getPodCA()
+	ctx := context.Background()
+	var caContent []byte
+	operatorCATLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
+	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
+	if err != nil {
+		caContent = miniov2.GetPodCAFromFile()
+	} else {
+		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+			caContent = val
+		}
+	}
+
 	if len(caContent) > 0 {
 		crd, err := extClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.Background(), "tenants.minio.min.io", metav1.GetOptions{})
 		if err != nil {
@@ -181,13 +191,4 @@ func setupSignalHandler() (stopCh <-chan struct{}) {
 	}()
 
 	return stop
-}
-
-// getPodCA gets the contents of
-func getPodCA() []byte {
-	namespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-	if err != nil {
-		return nil
-	}
-	return namespace
 }
