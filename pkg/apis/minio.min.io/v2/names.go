@@ -19,6 +19,7 @@ package v2
 
 import (
 	"fmt"
+	"strings"
 )
 
 // MinIOServerName specifies the default container name for Tenant
@@ -169,6 +170,12 @@ func (t *Tenant) ConsoleCIServiceName() string {
 // PoolStatefulsetName returns the name of a statefulset for a given pool
 func (t *Tenant) PoolStatefulsetName(pool *Pool) string {
 	return fmt.Sprintf("%s-%s", t.Name, pool.Name)
+}
+
+// LegacyStatefulsetName returns the name of a statefulset for a given pool
+func (t *Tenant) LegacyStatefulsetName(pool *Pool) string {
+	zoneName := strings.Replace(pool.Name, "pool", "zone", 1)
+	return fmt.Sprintf("%s-%s", t.Name, zoneName)
 }
 
 // ConsoleVolMountName returns the name of Secret that has TLS related Info (Cert & Private Key)

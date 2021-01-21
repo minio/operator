@@ -177,7 +177,7 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 		w.(http.Flusher).Flush()
 	case envMinIOServiceTarget:
 		target := fmt.Sprintf("%s://%s:%s%s/%s/%s",
-			"http",
+			"https",
 			fmt.Sprintf("operator.%s.svc.%s",
 				miniov2.GetNSFromFile(),
 				miniov2.GetClusterDomain()),

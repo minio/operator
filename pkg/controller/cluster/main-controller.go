@@ -348,7 +348,7 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *min
 					miniov2.WebhookOperatorUsername: []byte(cred.AccessKey),
 					miniov2.WebhookOperatorPassword: []byte(cred.SecretKey),
 					miniov2.WebhookMinIOArgs: []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
-						"env",
+						"env+tls",
 						cred.AccessKey,
 						cred.SecretKey,
 						fmt.Sprintf("operator.%s.svc.%s",
@@ -895,7 +895,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	for _, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.spec
-		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PoolStatefulsetName(&pool))
+		ss, err := c.getSSForPool(tenant, &pool)
 		if err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return err

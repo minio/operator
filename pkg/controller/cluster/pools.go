@@ -20,8 +20,25 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
 )
+
+func (c *Controller) getSSForPool(tenant *miniov2.Tenant, pool *miniov2.Pool) (*appsv1.StatefulSet, error) {
+	ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PoolStatefulsetName(pool))
+	if err != nil {
+		if !k8serrors.IsNotFound(err) {
+			return nil, err
+		}
+
+		// check if there are legacy statefulsets
+		ss, err = c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LegacyStatefulsetName(pool))
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ss, nil
+}
 
 // poolSSMatchesSpec checks if the statefulset for the pool matches what is expected and described from the Tenant
 func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.StatefulSet) (bool, error) {
