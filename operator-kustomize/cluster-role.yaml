@@ -22,7 +22,6 @@ rules:
       - ""
     resources:
       - namespaces
-      - secrets
       - pods
       - services
       - events
@@ -31,6 +30,18 @@ rules:
       - get
       - watch
       - create
+      - list
+      - delete
+      - deletecollection
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - watch
+      - create
+      - update
       - list
       - delete
       - deletecollection

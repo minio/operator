@@ -331,40 +331,57 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *min
 			if err != nil {
 				return nil, err
 			}
-			secret = &corev1.Secret{
-				Type: "Opaque",
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      miniov2.WebhookSecret,
-					Namespace: tenant.Namespace,
-					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-							Group:   miniov2.SchemeGroupVersion.Group,
-							Version: miniov2.SchemeGroupVersion.Version,
-							Kind:    miniov2.MinIOCRDResourceKind,
-						}),
-					},
-				},
-				Data: map[string][]byte{
-					miniov2.WebhookOperatorUsername: []byte(cred.AccessKey),
-					miniov2.WebhookOperatorPassword: []byte(cred.SecretKey),
-					miniov2.WebhookMinIOArgs: []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
-						"env+tls",
-						cred.AccessKey,
-						cred.SecretKey,
-						fmt.Sprintf("operator.%s.svc.%s",
-							miniov2.GetNSFromFile(),
-							miniov2.GetClusterDomain()),
-						miniov2.WebhookDefaultPort,
-						miniov2.WebhookAPIGetenv,
-						tenant.Namespace,
-						tenant.Name)),
-				},
-			}
+			secret = getSecretForTenant(tenant, cred)
 			return c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 		}
 		return nil, err
 	}
+	// check the secret has the desired values
+	minioArgs := string(secret.Data[miniov2.WebhookMinIOArgs])
+	if strings.Contains(minioArgs, "env://") {
+		// update the secret
+		minioArgs = strings.ReplaceAll(minioArgs, "env://", "env+tls://")
+		secret.Data[miniov2.WebhookMinIOArgs] = []byte(minioArgs)
+		secret, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return secret, nil
+}
+
+func getSecretForTenant(tenant *miniov2.Tenant, cred auth.Credentials) *v1.Secret {
+	secret := &corev1.Secret{
+		Type: "Opaque",
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      miniov2.WebhookSecret,
+			Namespace: tenant.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
+					Group:   miniov2.SchemeGroupVersion.Group,
+					Version: miniov2.SchemeGroupVersion.Version,
+					Kind:    miniov2.MinIOCRDResourceKind,
+				}),
+			},
+		},
+		Data: map[string][]byte{
+			miniov2.WebhookOperatorUsername: []byte(cred.AccessKey),
+			miniov2.WebhookOperatorPassword: []byte(cred.SecretKey),
+			miniov2.WebhookMinIOArgs: []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
+				"env+tls",
+				cred.AccessKey,
+				cred.SecretKey,
+				fmt.Sprintf("operator.%s.svc.%s",
+					miniov2.GetNSFromFile(),
+					miniov2.GetClusterDomain()),
+				miniov2.WebhookDefaultPort,
+				miniov2.WebhookAPIGetenv,
+				tenant.Namespace,
+				tenant.Name)),
+		},
+	}
+	return secret
 }
 
 func (c *Controller) fetchTag(path string) (string, error) {
