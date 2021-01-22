@@ -26,7 +26,7 @@ Each MinIO Tenant represents an independent MinIO Object Store within
 the Kubernetes cluster. The following diagram describes the architecture of a
 MinIO Tenant deployed into Kubernetes:
 
-IMAGE
+<img src=docs/images/architecture.png width="600px"/>
 
 MinIO provides multiple methods for accessing and managing the MinIO Tenant:
 
@@ -35,7 +35,7 @@ MinIO provides multiple methods for accessing and managing the MinIO Tenant:
 The MinIO Console provides a graphical user interface (GUI) for interacting with
 MinIO Tenants. 
 
-IMAGE
+<img src=docs/images/console-dashboard.png width="600px"/>
 
 Administrators of MinIO Tenants can perform a variety of tasks through the Console,
 including user creation, policy configuration, and bucket replication. The
