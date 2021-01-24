@@ -1,0 +1,356 @@
+// Generated documentation. Please do not edit.
+:anchor_prefix: k8s-api
+
+[id="{p}-api-reference"]
+== API Reference
+
+.Packages
+- xref:{anchor_prefix}-minio-min-io-v1[$$minio.min.io/v1$$]
+
+
+[id="{anchor_prefix}-minio-min-io-v1"]
+=== minio.min.io/v1
+
+Package v1 is the v1beta1 version of the API.
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-auditconfig"]
+==== AuditConfig 
+
+AuditConfig defines configuration parameters for Audit (type) logs
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-logconfig[$$LogConfig$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`diskCapacityGB`* __integer__ | DiskCapacityGB defines the disk capacity in GB available to store audit logs
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-certificateconfig"]
+==== CertificateConfig 
+
+CertificateConfig is a specification for certificate contents
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`commonName`* __string__ | 
+| *`organizationName`* __string array__ | 
+| *`dnsNames`* __string array__ | 
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-consoleconfiguration"]
+==== ConsoleConfiguration 
+
+ConsoleConfiguration defines the specifications for Console Deployment
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`replicas`* __integer__ | Replicas defines number of pods for KES StatefulSet.
+| *`image`* __string__ | Image defines the Tenant Console Docker image.
+| *`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#pullpolicy-v1-core[$$PullPolicy$$]__ | Image pull policy. One of Always, Never, IfNotPresent. This is applied to MinIO Console pods only. Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+| *`consoleSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#localobjectreference-v1-core[$$LocalObjectReference$$]__ | This secret provides all environment variables for KES This is a mandatory field
+| *`serviceAccountName`* __string__ | ServiceAccountName is the name of the ServiceAccount to use to run pods of all Console Pods created as a part of this Tenant.
+| *`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#envvar-v1-core[$$EnvVar$$]__ | If provided, use these environment variables for Console resource
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | If provided, use these requests and limit for cpu/memory resource allocation
+| *`externalCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-localcertificatereference[$$LocalCertificateReference$$]__ | ExternalCertSecret allows a user to provide an external certificate and private key. This is used for enabling TLS on Console and has priority over AutoCert.
+| *`externalCaCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-localcertificatereference[$$LocalCertificateReference$$]__ | ExternalCaCertSecret allows a user to provide additional CA certificates. This is used for Console to verify TLS connections with other applications.
+| *`annotations`* __object (keys:string, values:string)__ | If provided, use these annotations for Console Object Meta annotations
+| *`labels`* __object (keys:string, values:string)__ | If provided, use these labels for Console Object Meta labels
+| *`nodeSelector`* __object (keys:string, values:string)__ | If provided, use these nodeSelector for Console Object Meta nodeSelector
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-exposeservices"]
+==== ExposeServices 
+
+ExposeServices tells operator whether to expose the services for MinIO and Console
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`minio`* __boolean__ | MinIO tells operator whether to expose the MinIO service
+| *`console`* __boolean__ | Console tells operator whether to expose the Console Service
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-kesconfig"]
+==== KESConfig 
+
+KESConfig defines the specifications for KES StatefulSet
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`replicas`* __integer__ | Replicas defines number of pods for KES StatefulSet.
+| *`image`* __string__ | Image defines the Tenant KES Docker image.
+| *`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#pullpolicy-v1-core[$$PullPolicy$$]__ | Image pull policy. One of Always, Never, IfNotPresent. This is applied to KES pods only. Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+| *`serviceAccountName`* __string__ | ServiceAccountName is the name of the ServiceAccount to use to run pods of all KES Pods created as a part of this Tenant.
+| *`kesSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#localobjectreference-v1-core[$$LocalObjectReference$$]__ | This kesSecret serves as the configuration for KES This is a mandatory field
+| *`externalCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-localcertificatereference[$$LocalCertificateReference$$]__ | ExternalCertSecret allows a user to specify custom CA certificate, and private key for group replication SSL.
+| *`clientCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-localcertificatereference[$$LocalCertificateReference$$]__ | ClientCertSecret allows a user to specify a custom root certificate, client certificate and client private key. This is used for adding client certificates on KES --> used for KES authentication against Vault or other KMS that supports mTLS.
+| *`annotations`* __object (keys:string, values:string)__ | If provided, use these annotations for KES Object Meta annotations
+| *`labels`* __object (keys:string, values:string)__ | If provided, use these labels for KES Object Meta labels
+| *`nodeSelector`* __object (keys:string, values:string)__ | If provided, use these nodeSelector for KES Object Meta nodeSelector
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-localcertificatereference"]
+==== LocalCertificateReference 
+
+LocalCertificateReference defines the spec for a local certificate
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-consoleconfiguration[$$ConsoleConfiguration$$]
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-kesconfig[$$KESConfig$$]
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`name`* __string__ | 
+| *`type`* __string__ | 
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-logconfig"]
+==== LogConfig 
+
+LogConfig defines configuration parameters for Log feature
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`image`* __string__ | Image defines the tenant's LogSearchAPI container image.
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | If provided, use these requests and limit for cpu/memory resource allocation
+| *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+| *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#affinity-v1-core[$$Affinity$$]__ | If specified, affinity will define the pod's scheduling constraints
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#toleration-v1-core[$$Toleration$$]__ | Tolerations allows users to set entries like effect, key, operator, value.
+| *`annotations`* __object (keys:string, values:string)__ | If provided, use these annotations for Console Object Meta annotations
+| *`labels`* __object (keys:string, values:string)__ | If provided, use these labels for Console Object Meta labels
+| *`db`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-logdbconfig[$$LogDbConfig$$]__ | Db holds configuration for audit logs DB
+| *`audit`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-auditconfig[$$AuditConfig$$]__ | AuditConfig holds configuration for audit logs from MinIO
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-logdbconfig"]
+==== LogDbConfig 
+
+LogDbConfig Holds all the configurations regarding the Log DB (Postgres) StatefulSet
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-logconfig[$$LogConfig$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`image`* __string__ | Image defines postgres DB container image.
+| *`volumeClaimTemplate`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$]__ | VolumeClaimTemplate allows a user to specify how volumes inside a Tenant
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | If provided, use these requests and limit for cpu/memory resource allocation
+| *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+| *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#affinity-v1-core[$$Affinity$$]__ | If specified, affinity will define the pod's scheduling constraints
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#toleration-v1-core[$$Toleration$$]__ | Tolerations allows users to set entries like effect, key, operator, value.
+| *`annotations`* __object (keys:string, values:string)__ | If provided, use these annotations for Console Object Meta annotations
+| *`labels`* __object (keys:string, values:string)__ | If provided, use these labels for Console Object Meta labels
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-pool"]
+==== Pool 
+
+Pool defines the spec for a MinIO Pool
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`name`* __string__ | Name of the pool
+| *`servers`* __integer__ | Number of Servers in the pool
+| *`volumesPerServer`* __integer__ | Number of persistent volumes that will be attached per server
+| *`volumeClaimTemplate`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$]__ | VolumeClaimTemplate allows a user to specify how volumes are configured for the Pool
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | If provided, use these requests and limit for cpu/memory resource allocation
+| *`nodeSelector`* __object (keys:string, values:string)__ | NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+| *`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#affinity-v1-core[$$Affinity$$]__ | If specified, affinity will define the pod's scheduling constraints
+| *`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#toleration-v1-core[$$Toleration$$] array__ | Tolerations allows users to set entries like effect, key, operator, value.
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-prometheusconfig"]
+==== PrometheusConfig 
+
+PrometheusConfig defines configuration for Prometheus metrics server
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`diskCapacityGB`* __integer__ | DiskCapacityGB defines the disk capacity in GB available to the Prometheus server
+| *`annotations`* __object (keys:string, values:string)__ | If provided, use these annotations for Prometheus Object Meta annotations
+| *`labels`* __object (keys:string, values:string)__ | If provided, use these labels for Prometheus Object Meta labels
+| *`nodeSelector`* __object (keys:string, values:string)__ | If provided, use these nodeSelector for Prometheus Object Meta nodeSelector
+| *`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ | If provided, use these requests and limit for cpu/memory resource allocation
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-s3features"]
+==== S3Features 
+
+S3Features list of S3 features to enable/disable. Currently only supports BucketDNS
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`bucketDNS`* __boolean__ | BucketDNS if 'true' means Buckets can be accessed using `<bucket>.minio.default.svc.cluster.local`
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-sidecars"]
+==== SideCars 
+
+SideCars represents a list of containers that will be attached to the MinIO pods on each pool
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`containers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#container-v1-core[$$Container$$] array__ | List of containers to run inside the Pod
+| *`volumeClaimTemplates`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$]__ | volumeClaimTemplates is a list of claims that pods are allowed to reference. The StatefulSet controller is responsible for mapping network identities to claims in a way that maintains the identity of a pod. Every claim in this list must have at least one matching (by name) volumeMount in one container in the template. A claim in this list takes precedence over any volumes in the template, with the same name. TODO: Define the behavior if a claim already exists with the same name.
+| *`volumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#volume-v1-core[$$Volume$$] array__ | List of volumes that can be mounted by containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenant"]
+==== Tenant 
+
+Tenant is a specification for a MinIO resource
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantlist[$$TenantList$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#objectmeta-v1-meta[$$ObjectMeta$$]__ | Refer to Kubernetes API documentation for fields of `metadata`.
+
+| *`scheduler`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantscheduler[$$TenantScheduler$$]__ | 
+| *`spec`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec[$$TenantSpec$$]__ | 
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantscheduler"]
+==== TenantScheduler 
+
+TenantScheduler is the spec for a Tenant scheduler
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenant[$$Tenant$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`name`* __string__ | SchedulerName defines the name of scheduler to be used to schedule Tenant pods
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenantspec"]
+==== TenantSpec 
+
+TenantSpec is the spec for a Tenant resource
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-tenant[$$Tenant$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+| *`pools`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-pool[$$Pool$$] array__ | Definition for Cluster in given MinIO cluster
+| *`image`* __string__ | Image defines the Tenant Docker image.
+| *`imagePullSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#localobjectreference-v1-core[$$LocalObjectReference$$]__ | ImagePullSecret defines the secret to be used for pull image from a private Docker image.
+| *`podManagementPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podmanagementpolicytype-v1-apps[$$PodManagementPolicyType$$]__ | Pod Management Policy for pod created by StatefulSet
+| *`credsSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#localobjectreference-v1-core[$$LocalObjectReference$$]__ | If provided, use this secret as the credentials for Tenant resource Otherwise MinIO server creates dynamic credentials printed on MinIO server startup banner
+| *`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#envvar-v1-core[$$EnvVar$$] array__ | If provided, use these environment variables for Tenant resource
+| *`externalCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-localcertificatereference[$$LocalCertificateReference$$] array__ | ExternalCertSecret allows a user to provide one or more TLS certificates and private keys. This is used for enabling TLS with SNI support on MinIO server.
+| *`externalCaCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-localcertificatereference[$$LocalCertificateReference$$]__ | ExternalCaCertSecret allows a user to provide additional CA certificates. This is used for MinIO to verify TLS connections with other applications.
+| *`externalClientCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-localcertificatereference[$$LocalCertificateReference$$]__ | ExternalClientCertSecret allows a user to specify custom CA client certificate, and private key. This is used for adding client certificates on MinIO Pods --> used for KES authentication.
+| *`mountPath`* __string__ | Mount path for MinIO volume (PV). Defaults to /export
+| *`subPath`* __string__ | Subpath inside mount path. This is the directory where MinIO stores data. Default to "" (empty)
+| *`requestAutoCert`* __boolean__ | RequestAutoCert allows user to enable Kubernetes based TLS cert generation and signing as explained here: https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/
+| *`s3`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-s3features[$$S3Features$$]__ | S3 related features can be disabled or enabled such as `bucketDNS` etc.
+| *`certConfig`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-certificateconfig[$$CertificateConfig$$]__ | CertConfig allows users to set entries like CommonName, Organization, etc for the certificate
+| *`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ | Security Context allows user to set entries like runAsUser, privilege escalation etc.
+| *`console`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-consoleconfiguration[$$ConsoleConfiguration$$]__ | ConsoleConfiguration is for setting up minio/console for graphical user interface
+| *`kes`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-kesconfig[$$KESConfig$$]__ | KES is for setting up minio/kes as MinIO KMS
+| *`log`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-logconfig[$$LogConfig$$]__ | 
+| *`prometheus`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-prometheusconfig[$$PrometheusConfig$$]__ | Prometheus is for setting up Prometheus metrics.
+| *`serviceAccountName`* __string__ | ServiceAccountName is the name of the ServiceAccount to use to run pods of all MinIO Pods created as a part of this Tenant.
+| *`priorityClassName`* __string__ | PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods. This is applied to MinIO pods only. Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
+| *`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#pullpolicy-v1-core[$$PullPolicy$$]__ | Image pull policy. One of Always, Never, IfNotPresent. This is applied to MinIO pods only. Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+| *`sideCars`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-sidecars[$$SideCars$$]__ | SideCars a list of containers to run as sidecars along every MinIO Pod on every pool
+| *`exposeServices`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v1-exposeservices[$$ExposeServices$$]__ | ExposeServices tells operator whether to expose the MinIO service and/or the Console Service
+|===
+
+
+
+
