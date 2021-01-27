@@ -80,7 +80,7 @@ const (
 	DefaultKESImage = "minio/kes:v0.12.1"
 
 	// DefaultConsoleImage is the default console image used while creating tenant
-	DefaultConsoleImage = "minio/console:v0.5.1"
+	DefaultConsoleImage = "minio/console:v0.5.2"
 )
 
 var (
