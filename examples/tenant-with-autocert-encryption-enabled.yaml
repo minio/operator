@@ -70,7 +70,7 @@ stringData:
            ping: 10s   # Duration until the server checks Vault's status again.
 ---
 ## MinIO Tenant Definition
-apiVersion: minio.min.io/v1
+apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: minio-autocert-encryption

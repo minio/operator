@@ -59,7 +59,7 @@ subjects:
   name: minio-pods
   namespace: default
 ---
-apiVersion: minio.min.io/v1
+apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: minio

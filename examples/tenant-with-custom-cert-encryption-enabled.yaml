@@ -121,7 +121,7 @@ data:
   CONSOLE_SECRET_KEY: WU9VUkNPTlNPTEVTRUNSRVQ=
 ---
 ## MinIO Tenant Definition
-apiVersion: minio.min.io/v1
+apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: minio-custom-cert-encryption-minio

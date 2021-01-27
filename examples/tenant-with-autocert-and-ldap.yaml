@@ -127,7 +127,7 @@ data:
   CONSOLE_SECRET_KEY: YmlsbHkxMjM=
 ---
 ## MinIO Tenant Definition
-apiVersion: minio.min.io/v1
+apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: minio-autocert-ldap
