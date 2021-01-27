@@ -8,6 +8,12 @@ MinIO is a Kubernetes-native high performance object store with an S3-compatible
 MinIO Kubernetes Operator supports deploying MinIO Tenants onto private and public 
 cloud infrastructures ("Hybrid" Cloud).
 
+*IMPORTANT*: This documentation reflects the *latest bleeding-edge release* of the MinIO Operator. The API and syntax may differ from
+previous releases. For documentation on previous releases, please visit the documentation in context of that release tag:
+
+- [v0.3.29](https://github.com/minio/operator/blob/v3.0.29/README.md)
+- [v0.3.28](https://github.com/minio/operator/blob/v3.0.28/README.md)
+
 ## Table of Contents
 
 * [Architecture](#architecture)
@@ -26,7 +32,7 @@ Each MinIO Tenant represents an independent MinIO Object Store within
 the Kubernetes cluster. The following diagram describes the architecture of a
 MinIO Tenant deployed into Kubernetes:
 
-IMAGE
+![Tenant Architecture](docs/images/architecture.png)
 
 MinIO provides multiple methods for accessing and managing the MinIO Tenant:
 
@@ -35,7 +41,7 @@ MinIO provides multiple methods for accessing and managing the MinIO Tenant:
 The MinIO Console provides a graphical user interface (GUI) for interacting with
 MinIO Tenants. 
 
-IMAGE
+![Console Dashboard](docs/images/console-dashboard.png)
 
 Administrators of MinIO Tenants can perform a variety of tasks through the Console,
 including user creation, policy configuration, and bucket replication. The
@@ -107,7 +113,7 @@ volumes, and a total capacity  of 16Ti. This configuration requires
       --volumes 16                            \
       --capacity 16Ti                         \
       --namespace minio-tenant-1              \
-      --storageClassName local-storage        \
+      --storage-class local-storage        \
 ```
 
 - The `minio-tenant-1` argument specifies the name of the MinIO Tenant. The MinIO
@@ -136,7 +142,7 @@ volumes, and a total capacity  of 16Ti. This configuration requires
 
   MinIO supports *one* MinIO Tenant per namespace.
 
-- The `--storageClassName` field indicates which 
+- The `--storage-class` field indicates which 
   [`StorageClass`](https://kubernetes.io/docs/concepts/storage/storage-classes/) to use 
   when generating each `PVC`.
 
@@ -257,7 +263,7 @@ provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
 ```
 
-To specify the storage class, include the `--storageClassName` option to 
+To specify the storage class, include the `--storage-class` option to 
 `kubectl minio tenant create`.
 
 
