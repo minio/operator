@@ -55,9 +55,7 @@ clean:
 
 regen-crd:
 #	@GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1
-	@echo "WARNING: for the time being, you need to clone and build github.com/dvaldivia/controller-tools/cmd/controller-gen@embedded-objectmeta"
-	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
-	@controller-gen crd:maxDescLen=0 paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
+	@./controller-gen crd:maxDescLen=0 paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@kustomize build operator-kustomize/patch-crd > /tmp/temptenant.yaml && mv /tmp/temptenant.yaml operator-kustomize/base/crds/minio.min.io_tenants.yaml
 
 regen-crd-docs:
