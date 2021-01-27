@@ -296,7 +296,7 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 
 	for zi, z := range t.Spec.Pools {
 		if z.Name == "" {
-			z.Name = fmt.Sprintf("pool-%d", zi)
+			z.Name = fmt.Sprintf("%s-%d", StatefulSetPrefix, zi)
 		}
 		t.Spec.Pools[zi] = z
 	}
@@ -399,10 +399,10 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 	}
 	var max, index int32
 	// Create the ellipses style URL
-	for _, z := range t.Spec.Pools {
-		max = max + z.Servers
+	for _, pool := range t.Spec.Pools {
+		max = max + pool.Servers
 		data := hostsTemplateValues{
-			StatefulSet: t.MinIOStatefulSetNameForPool(&z),
+			StatefulSet: t.MinIOStatefulSetNameForPool(&pool),
 			CIService:   t.MinIOCIServiceName(),
 			HLService:   t.MinIOHLServiceName(),
 			Ellipsis:    genEllipsis(int(index), int(max)-1),

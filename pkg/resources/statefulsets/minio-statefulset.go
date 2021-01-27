@@ -135,14 +135,19 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 	return envVars
 }
 
-// Returns the MinIO pods metadata set in configuration.
-// If a user specifies metadata in the spec we return that
-// metadata.
-func minioPodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1.ObjectMeta {
+// PodMetadata Returns the MinIO pods metadata set in configuration.
+// If a user specifies metadata in the spec we return that metadata.
+func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	// Copy Labels and Annotations from Tenant
 	meta.Labels = t.ObjectMeta.Labels
 	meta.Annotations = t.ObjectMeta.Annotations
+
+	if meta.Annotations == nil {
+		meta.Annotations = make(map[string]string)
+	}
+
+	meta.Annotations[miniov2.Revision] = fmt.Sprintf("%d", t.Status.Revision)
 
 	if meta.Labels == nil {
 		meta.Labels = make(map[string]string)
@@ -505,7 +510,6 @@ func NewForMinIOPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool,
 	// Add information labels, such as which pool we are building this pod about
 	ssMeta.Labels[miniov2.TenantLabel] = t.Name
 	ssMeta.Labels[miniov2.PoolLabel] = pool.Name
-	ssMeta.Labels[miniov2.OperatorLabel] = operatorVersion
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion),
@@ -527,7 +531,7 @@ func NewForMinIOPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool,
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: minioPodMetadata(t, pool, operatorVersion),
+				ObjectMeta: PodMetadata(t, pool, operatorVersion),
 				Spec: corev1.PodSpec{
 					Containers:         containers,
 					Volumes:            podVolumes,

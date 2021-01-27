@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+
 	"github.com/minio/minio/pkg/madmin"
 
 	"golang.org/x/time/rate"
@@ -346,6 +348,12 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *min
 		if err != nil {
 			return nil, err
 		}
+		// update the revision of the tenant to force a rolling restart across all statefulsets
+		t2, err := c.increaseTenantRevision(ctx, tenant)
+		if err != nil {
+			return nil, err
+		}
+		*tenant = *t2
 	}
 
 	return secret, nil
@@ -590,7 +598,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				klog.Infof("operator TLS secret not found", err.Error())
 				// we will request the certificates for operator via CSR
 				if err = c.checkAndCreateOperatorCSR(ctx, operatorDeployment); err != nil {
-					klog.Infof("Waiting for the operator certificates to be issued", err.Error())
+					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
 				}
 				time.Sleep(time.Second * 10)
 			} else {
@@ -977,15 +985,33 @@ func (c *Controller) syncHandler(key string) error {
 				}
 			}
 			// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
-			updatePoolSS, err := poolSSMatchesSpec(tenant, &pool, ss)
+			poolMatchesSS, err := poolSSMatchesSpec(tenant, &pool, ss, c.operatorVersion)
 			if err != nil {
 				return err
 			}
 
-			// if the pool is marked for update, make it so.
-			if updatePoolSS {
-				ss = statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
-				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
+			// if the pool doesn't match the spec
+			if !poolMatchesSS {
+				// for legacy reasons, if the zone label is present in SS we must carry it over
+				carryOverLabels := make(map[string]string)
+				if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
+					carryOverLabels[miniov1.ZoneLabel] = val
+				}
+				nss := statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+
+				ssCopy := ss.DeepCopy()
+
+				ssCopy.Spec.Template = nss.Spec.Template
+				ssCopy.Spec.UpdateStrategy = nss.Spec.UpdateStrategy
+
+				if ss.Spec.Template.ObjectMeta.Labels == nil {
+					ssCopy.Spec.Template.ObjectMeta.Labels = make(map[string]string)
+				}
+				for k, v := range carryOverLabels {
+					ssCopy.Spec.Template.ObjectMeta.Labels[k] = v
+				}
+
+				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ssCopy, uOpts); err != nil {
 					return err
 				}
 			}
@@ -1389,44 +1415,6 @@ func (c *Controller) getCertIdentity(ns string, cert *miniov2.LocalCertificateRe
 	}
 
 	return hex.EncodeToString(h.Sum(nil)), nil
-}
-
-func (c *Controller) updateTenantStatus(ctx context.Context, tenant *miniov2.Tenant, currentState string, availableReplicas int32) (*miniov2.Tenant, error) {
-	return c.updateTenantStatusWithRetry(ctx, tenant, currentState, availableReplicas, true)
-}
-
-func (c *Controller) updateTenantStatusWithRetry(ctx context.Context, tenant *miniov2.Tenant, currentState string, availableReplicas int32, retry bool) (*miniov2.Tenant, error) {
-	// If we are updating the tenant with the same status as before we are going to skip it as to avoid a resource number
-	// change and have the operator loop re-processing the tenant endlessly
-	if tenant.Status.CurrentState == currentState && tenant.Status.AvailableReplicas == availableReplicas {
-		return tenant, nil
-	}
-	// NEVER modify objects from the store. It's a read-only, local cache.
-	// You can use DeepCopy() to make a deep copy of original object and modify this copy
-	// Or create a copy manually for better performance
-	tenantCopy := tenant.DeepCopy()
-	tenantCopy.Status.AvailableReplicas = availableReplicas
-	tenantCopy.Status.CurrentState = currentState
-	// If the CustomResourceSubresources feature gate is not enabled,
-	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
-	// UpdateStatus will not allow changes to the Spec of the resource,
-	// which is ideal for ensuring nothing other than resource status has been updated.
-	opts := metav1.UpdateOptions{}
-	t, err := c.minioClientSet.MinioV2().Tenants(tenant.Namespace).UpdateStatus(ctx, tenantCopy, opts)
-	t.EnsureDefaults()
-	if err != nil {
-		// if rejected due to conflict, get the latest tenant and retry once
-		if k8serrors.IsConflict(err) && retry {
-			klog.Info("Hit conflict issue, getting latest version of tenant")
-			tenant, err = c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Get(ctx, tenant.Name, metav1.GetOptions{})
-			if err != nil {
-				return tenant, err
-			}
-			return c.updateTenantStatusWithRetry(ctx, tenant, currentState, availableReplicas, false)
-		}
-		return t, err
-	}
-	return t, nil
 }
 
 // enqueueTenant takes a Tenant resource and converts it into a namespace/name

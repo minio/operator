@@ -64,6 +64,9 @@ const PoolLabel = "v1.min.io/pool"
 // LogDbLabel is applied to all log db components of a Tenant cluster
 const LogDbLabel = "v1.min.io/logdb"
 
+// Revision is applied to all statefulsets
+const Revision = "min.io/revision"
+
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
 
@@ -284,3 +287,9 @@ var TLSSecretSuffix = "-tls"
 
 // Cluster Domain
 const clusterDomain = "CLUSTER_DOMAIN"
+
+// StatefulSetPrefix used by statefulsets
+const StatefulSetPrefix = "ss"
+
+// StatefulSetLegacyPrefix by old operators
+const StatefulSetLegacyPrefix = "zone"

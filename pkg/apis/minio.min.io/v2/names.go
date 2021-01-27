@@ -174,7 +174,7 @@ func (t *Tenant) PoolStatefulsetName(pool *Pool) string {
 
 // LegacyStatefulsetName returns the name of a statefulset for a given pool
 func (t *Tenant) LegacyStatefulsetName(pool *Pool) string {
-	zoneName := strings.Replace(pool.Name, "pool", "zone", 1)
+	zoneName := strings.Replace(pool.Name, StatefulSetPrefix, StatefulSetLegacyPrefix, 1)
 	return fmt.Sprintf("%s-%s", t.Name, zoneName)
 }
 

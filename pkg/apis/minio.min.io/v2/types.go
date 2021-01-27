@@ -161,6 +161,7 @@ type ExposeServices struct {
 type TenantStatus struct {
 	CurrentState      string `json:"currentState"`
 	AvailableReplicas int32  `json:"availableReplicas"`
+	Revision          int32  `json:"revision"`
 }
 
 // CertificateConfig is a specification for certificate contents
