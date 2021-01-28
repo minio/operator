@@ -918,13 +918,23 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	for _, pool := range tenant.Spec.Pools {
-		// Get the StatefulSet with the name specified in Tenant.spec
+	// pre-load all statefulsets to ensure when arguments get generated they point to the right statefulset name
+	poolDir := make(map[int]*appsv1.StatefulSet)
+	for i, pool := range tenant.Spec.Pools {
 		ss, err := c.getSSForPool(tenant, &pool)
-		if err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return err
-			}
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return err
+		}
+		if k8serrors.IsNotFound(err) {
+			continue
+		}
+		poolDir[i] = ss
+	}
+
+	for i, pool := range tenant.Spec.Pools {
+		// Get the StatefulSet with the name specified in Tenant.spec
+		ss, ssFound := poolDir[i]
+		if !ssFound {
 
 			klog.Infof("Deploying pool %s", pool.Name)
 

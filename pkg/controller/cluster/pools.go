@@ -42,7 +42,7 @@ func (c *Controller) getSSForPool(tenant *miniov2.Tenant, pool *miniov2.Pool) (*
 			return nil, err
 		}
 		// Update the name of the pool
-		pool.Name = strings.Replace(pool.Name, fmt.Sprintf("%s-", tenant.Name), "", 1)
+		pool.Name = strings.Replace(ss.Name, fmt.Sprintf("%s-", tenant.Name), "", 1)
 	}
 	return ss, nil
 }
