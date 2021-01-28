@@ -49,13 +49,15 @@ func (c *Controller) getSSForPool(tenant *miniov2.Tenant, pool *miniov2.Pool) (*
 
 func (c *Controller) getAllSSForTenant(tenant *miniov2.Tenant) (map[int]*appsv1.StatefulSet, error) {
 	poolDir := make(map[int]*appsv1.StatefulSet)
-	for i, pool := range tenant.Spec.Pools {
-		ss, err := c.getSSForPool(tenant, &pool)
-		if err != nil {
+	// TODO: Load all statefulsets by using the tenant label in a single list call
+	for i := range tenant.Spec.Pools {
+		ss, err := c.getSSForPool(tenant, &tenant.Spec.Pools[i])
+		if err != nil && !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
-		tenant.Spec.Pools[i] = pool
-		poolDir[i] = ss
+		if ss != nil {
+			poolDir[i] = ss
+		}
 	}
 	return poolDir, nil
 }
