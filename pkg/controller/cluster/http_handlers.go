@@ -167,12 +167,11 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	// correct all statefulset names
-	for _, pool := range tenant.Spec.Pools {
-		_, err := c.getSSForPool(tenant, &pool)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-		}
+	// correct all statefulset names by loading them, this will fix their name on the tenant pool namess
+	_, err = c.getAllSSForTenant(tenant)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
 	}
 
 	switch key {

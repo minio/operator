@@ -47,6 +47,19 @@ func (c *Controller) getSSForPool(tenant *miniov2.Tenant, pool *miniov2.Pool) (*
 	return ss, nil
 }
 
+func (c *Controller) getAllSSForTenant(tenant *miniov2.Tenant) (map[int]*appsv1.StatefulSet, error) {
+	poolDir := make(map[int]*appsv1.StatefulSet)
+	for i, pool := range tenant.Spec.Pools {
+		ss, err := c.getSSForPool(tenant, &pool)
+		if err != nil {
+			return nil, err
+		}
+		tenant.Spec.Pools[i] = pool
+		poolDir[i] = ss
+	}
+	return poolDir, nil
+}
+
 // poolSSMatchesSpec checks if the statefulset for the pool matches what is expected and described from the Tenant
 func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.StatefulSet, opVersion string) (bool, error) {
 	// Verify Resources

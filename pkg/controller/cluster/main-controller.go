@@ -919,16 +919,9 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// pre-load all statefulsets to ensure when arguments get generated they point to the right statefulset name
-	poolDir := make(map[int]*appsv1.StatefulSet)
-	for i, pool := range tenant.Spec.Pools {
-		ss, err := c.getSSForPool(tenant, &pool)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return err
-		}
-		if k8serrors.IsNotFound(err) {
-			continue
-		}
-		poolDir[i] = ss
+	poolDir, err := c.getAllSSForTenant(tenant)
+	if err != nil {
+		return err
 	}
 
 	for i, pool := range tenant.Spec.Pools {
