@@ -131,6 +131,7 @@ func main() {
 			klog.Errorf("Error getting CRD for adding caBundle: %v", err.Error())
 		} else {
 			crd.Spec.Conversion.Webhook.ClientConfig.CABundle = caContent
+			crd.Spec.Conversion.Webhook.ClientConfig.Service.Namespace = miniov2.GetNSFromFile()
 			_, err := extClient.ApiextensionsV1().CustomResourceDefinitions().Update(context.Background(), crd, metav1.UpdateOptions{})
 			if err != nil {
 				klog.Errorf("Error updating CRD with caBundle: %v", err.Error())
