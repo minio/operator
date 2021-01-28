@@ -70,7 +70,7 @@ early development using MinIO for object storage.
 - MinIO requires Kubernetes version 1.17.0 or later.
 
 - This procedure assumes the cluster contains a 
-  [namespace](https://github.com/minio/operator/blob/master/README.md#create-a-namespace) for
+  [namespace](https://github.com/minio/operator/blob/master/README.md#minio-tenant-namespace) for
   the MinIO Tenant.
 
 - This procedure assumes the cluster contains a
@@ -290,7 +290,7 @@ MinIO supports no more than *one* MinIO Tenant per Namespace. The following
 `kubectl` command creates a new namespace for the MinIO Tenant.
 
 ```sh
-kubectl create namespace minio-tenant1
+kubectl create namespace minio-tenant-1
 ```
 
 # License
