@@ -54,8 +54,8 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@GO111MODULE=on go get github.com/minio/controller-tools/cmd/controller-gen@v0.4.5
-	@echo "WARNING: for the time being, you need to clone and build github.com/minio/controller-tools/cmd/controller-gen@v0.4.5"
+	@GO111MODULE=on go get github.com/minio/controller-tools/cmd/controller-gen@v0.4.6
+	@echo "WARNING: for the time being, you need to clone and build github.com/minio/controller-tools/cmd/controller-gen@v0.4.6"
 	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
 	@controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@kustomize build operator-kustomize/patch-crd > $(TMPFILE)
