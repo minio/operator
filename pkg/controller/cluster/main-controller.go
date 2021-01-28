@@ -1611,16 +1611,18 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 			klog.V(2).Info(err)
 			return ErrLogSearchNotReady
 		}
-		err = adminClnt.SetConfigKV(ctx, auditCfg.args)
+		restart, err := adminClnt.SetConfigKV(ctx, auditCfg.args)
 		if err != nil {
 			return err
 		}
-		// Restart MinIO for config update to take effect
-		if err = adminClnt.ServiceRestart(ctx); err != nil {
-			fmt.Println("error restart minio")
-			klog.V(2).Info(err)
+		if restart {
+			// Restart MinIO for config update to take effect
+			if err = adminClnt.ServiceRestart(ctx); err != nil {
+				fmt.Println("error restarting minio")
+				klog.V(2).Info(err)
+			}
+			fmt.Println("done restarting minio")
 		}
-		fmt.Println("done restart minio")
 		return nil
 	}
 	return err
