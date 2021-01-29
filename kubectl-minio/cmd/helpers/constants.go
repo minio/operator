@@ -77,7 +77,7 @@ const (
 	DefaultTenantImage = "minio/minio:RELEASE.2021-01-16T02-19-44Z"
 
 	// DefaultKESImage is the default KES image used while creating tenant
-	DefaultKESImage = "minio/kes:v0.12.1"
+	DefaultKESImage = "minio/kes:v0.13.4"
 
 	// DefaultConsoleImage is the default console image used while creating tenant
 	DefaultConsoleImage = "minio/console:v0.5.2"

@@ -170,7 +170,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.4.6
+    image: minio/console:v0.5.2
     replicas: 2
     consoleSecret:
       name: minio-custom-cert-no-encryption-console-secret
