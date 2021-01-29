@@ -139,6 +139,25 @@ type TenantSpec struct {
 	// ExposeServices tells operator whether to expose the MinIO service and/or the Console Service
 	// +optional
 	ExposeServices *ExposeServices `json:"exposeServices,omitempty"`
+	// ServiceMetadata provides a way to bring your own service to be used for MinIO and / or Console
+	// +optional
+	ServiceMetadata *ServiceMetadata `json:"serviceMetadata,omitempty"`
+}
+
+// ServiceMetadata provides a way to bring your own service to be used for MinIO and / or Console
+type ServiceMetadata struct {
+	// If provided, append these labels to the MinIO service
+	// +optional
+	MinIOServiceLabels map[string]string `json:"minioServiceLabels,omitempty"`
+	// If provided, append these annotations to the MinIO service
+	// +optional
+	MinIOServiceAnnotations map[string]string `json:"minioServiceAnnotations,omitempty"`
+	// If provided, append these labels to the Console service
+	// +optional
+	ConsoleServiceLabels map[string]string `json:"consoleServiceLabels,omitempty"`
+	// If provided, append these annotations to the Console service
+	// +optional
+	ConsoleServiceAnnotations map[string]string `json:"consoleServiceAnnotations,omitempty"`
 }
 
 // LocalCertificateReference defines the spec for a local certificate
