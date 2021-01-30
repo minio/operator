@@ -148,6 +148,18 @@ spec:
   ## for details.
   podManagementPolicy: Parallel
 
+  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific 
+  ## services created by the operator.
+  serviceMetadata:
+    minioServiceLabels:
+      label: minio-svc
+    minioServiceAnnotations:
+      v2.min.io: minio-svc
+    consoleServiceLabels:
+      label: console-svc
+    consoleServiceAnnotations:
+      v2.min.io: console-svc
+
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
   # env:
   # - name: MINIO_BROWSER

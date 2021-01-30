@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.6
+  creationTimestamp: null
   name: tenants.minio.min.io
 spec:
   conversion:
@@ -5125,6 +5126,25 @@ spec:
                 type: object
               serviceAccountName:
                 type: string
+              serviceMetadata:
+                properties:
+                  consoleServiceAnnotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  consoleServiceLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  minioServiceAnnotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  minioServiceLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
               sideCars:
                 properties:
                   containers:

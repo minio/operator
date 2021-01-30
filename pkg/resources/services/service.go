@@ -31,9 +31,15 @@ import (
 func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 	var port int32 = miniov2.MinIOPortLoadBalancerSVC
 	var name string = miniov2.MinIOServiceHTTPPortName
+	var internalLabels, labels map[string]string
+
+	internalLabels = t.MinIOPodLabels()
 	if t.TLS() {
 		port = miniov2.MinIOTLSPortLoadBalancerSVC
 		name = miniov2.MinIOServiceHTTPSPortName
+	}
+	if t.Spec.ServiceMetadata.MinIOServiceLabels != nil {
+		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.MinIOServiceLabels)
 	}
 	minioPort := corev1.ServicePort{
 		Port:       port,
@@ -42,10 +48,11 @@ func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:          t.MinIOPodLabels(),
+			Labels:          labels,
 			Name:            t.MinIOCIServiceName(),
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
+			Annotations:     t.Spec.ServiceMetadata.MinIOServiceAnnotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:    []corev1.ServicePort{minioPort},
@@ -175,16 +182,23 @@ func NewHeadlessForPrometheus(t *miniov2.Tenant) *corev1.Service {
 
 // NewClusterIPForConsole will return a new cluster IP service for Console Deployment
 func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
+	var internalLabels, labels map[string]string
+	internalLabels = t.ConsolePodLabels()
+
 	consolePort := corev1.ServicePort{Port: miniov2.ConsolePort, Name: miniov2.ConsoleServicePortName}
 	if t.TLS() || t.ConsoleExternalCert() {
 		consolePort = corev1.ServicePort{Port: miniov2.ConsoleTLSPort, Name: miniov2.ConsoleServiceTLSPortName}
 	}
+	if t.Spec.ServiceMetadata.ConsoleServiceLabels != nil {
+		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.ConsoleServiceLabels)
+	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:          t.ConsolePodLabels(),
+			Labels:          labels,
 			Name:            t.ConsoleCIServiceName(),
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
+			Annotations:     t.Spec.ServiceMetadata.ConsoleServiceAnnotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
