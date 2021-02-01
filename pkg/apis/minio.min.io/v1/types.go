@@ -31,7 +31,6 @@ import (
 // +kubebuilder:resource:scope=Namespaced,shortName=tenant,singular=tenant
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.currentState"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:deprecated:warning="This version is deprecated in favor of minio.min.io/v2"
 
 // Tenant is a specification for a MinIO resource
 type Tenant struct {
