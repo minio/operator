@@ -115,14 +115,6 @@ func (o *operatorInitCmd) run() error {
 		if err != nil {
 			return err
 		}
-		// if the namespace is the default, we'll create the namespace
-		if o.operatorOpts.Namespace == helpers.DefaultNamespace {
-			ns := corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: o.operatorOpts.Namespace}}
-			if _, err = client.CoreV1().Namespaces().Create(context.Background(), &ns, metav1.CreateOptions{}); err != nil {
-				return err
-			}
-		}
-
 		if err = createCRD(extclient, crdObj); err != nil {
 			return err
 		}

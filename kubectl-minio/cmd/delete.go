@@ -120,12 +120,6 @@ func (o *deleteCmd) run() error {
 	if err := deleteConsoleResources(o.operatorOpts, extclient, dynclient, consoleResources); err != nil {
 		return err
 	}
-	// if the namespace is the default, we'll delete the namespace
-	if o.operatorOpts.Namespace == helpers.DefaultNamespace {
-		if err = client.CoreV1().Namespaces().Delete(context.Background(), o.operatorOpts.Namespace, metav1.DeleteOptions{}); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
