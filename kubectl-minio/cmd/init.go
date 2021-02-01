@@ -147,7 +147,7 @@ func (o *operatorInitCmd) run() error {
 		// since we did an explicit deployment of resources, let's show a message telling users how to connect to console
 		fmt.Println("-----------------")
 		fmt.Println("")
-		fmt.Println("Operator UI has been deployed, to connect, start a port forward using the following command:")
+		fmt.Println("To open Operator UI, start a port forward using this command:")
 		fmt.Println("")
 		fmt.Println("kubectl minio proxy")
 		fmt.Println("")

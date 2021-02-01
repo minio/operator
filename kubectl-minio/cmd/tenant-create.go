@@ -77,6 +77,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this pool, e.g. 16Ti")
 	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	f.StringVarP(&c.tenantOpts.StorageClass, "storage-class", "s", helpers.DefaultStorageclass, "storage class for this MinIO tenant")
+	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "MinIO image for this tenant")
 	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret with details for enabling encryption, refer example https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
 	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
@@ -90,7 +91,6 @@ func (c *createCmd) validate(args []string) error {
 	c.tenantOpts.Name = args[0]
 	c.tenantOpts.SecretName = c.tenantOpts.Name + tenantSecretSuffix
 	c.tenantOpts.ConsoleSecret = c.tenantOpts.Name + consoleSecretSuffix
-	c.tenantOpts.Image = helpers.DefaultTenantImage
 	if args == nil {
 		return errors.New("create command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant create tenant1'")
 	}

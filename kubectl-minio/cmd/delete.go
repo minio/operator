@@ -173,10 +173,7 @@ func deleteConsoleResources(opts resources.OperatorOptions, clientset *apiextens
 				return err
 			}
 		}
-
 	}
-	fmt.Println("MinIO Console Deployment: Deleted")
-
 	return nil
 }
 
