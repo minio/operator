@@ -92,7 +92,7 @@ func GetFSAndDecoder() (http.FileSystem, func(data []byte, defaults *schema.Grou
 }
 
 func LoadTenantCRD(emfs http.FileSystem, decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *apiextensionv1.CustomResourceDefinition {
-	contents, err := fs.ReadFile(emfs, "/crds/minio.min.io_tenants.yaml")
+	contents, err := fs.ReadFile(emfs, "/base/crds/minio.min.io_tenants.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
