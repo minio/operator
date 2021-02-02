@@ -11,7 +11,7 @@ GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
-KUSTOMIZE_HOME=operator-kustomize
+KUSTOMIZE_HOME=resources
 KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/base/crds/
 
 PLUGIN_HOME=kubectl-minio
@@ -58,8 +58,8 @@ regen-crd:
 	@echo "WARNING: for the time being, you need to clone and build github.com/minio/controller-tools/cmd/controller-gen@v0.4.6"
 	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
 	@controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
-	@kustomize build operator-kustomize/patch-crd > $(TMPFILE)
-	@mv -f $(TMPFILE) operator-kustomize/base/crds/minio.min.io_tenants.yaml
+	@kustomize build resources/patch-crd > $(TMPFILE)
+	@mv -f $(TMPFILE) resources/base/crds/minio.min.io_tenants.yaml
 
 regen-crd-docs:
 	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go get github.com/elastic/crd-ref-docs)
@@ -88,6 +88,6 @@ logsearchapi:
 
 getconsoleuiyaml:
 	@echo "Getting the latest Console UI"
-	@kustomize build github.com/minio/console/k8s/operator-console/base > operator-kustomize/console-ui.yaml
+	@kustomize build github.com/minio/console/k8s/operator-console/base > resources/console-ui.yaml
 	@make statik
 	@echo "Done"
