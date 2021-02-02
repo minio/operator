@@ -153,12 +153,7 @@ func CapacityPerVolume(capacity string, volumes int32) (*resource.Quantity, erro
 	if err != nil {
 		return nil, err
 	}
-	totalBytes, ok := totalQuantity.AsInt64()
-	if !ok {
-		totalBytes = totalQuantity.AsDec().UnscaledBig().Int64()
-	}
-	bytesPerVolume := totalBytes / int64(volumes)
-	return resource.NewQuantity(bytesPerVolume, totalQuantity.Format), nil
+	return resource.NewQuantity(totalQuantity.Value()/int64(volumes), totalQuantity.Format), nil
 }
 
 // TotalCapacity returns total capacity of a given tenant
