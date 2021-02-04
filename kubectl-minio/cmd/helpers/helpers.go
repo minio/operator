@@ -202,7 +202,7 @@ func DisableHelp(cmd *cobra.Command) *cobra.Command {
 // Ask user for Y/N input. Return true if response is "y"
 func Ask(label string) bool {
 	validate := func(input string) error {
-		s := strings.TrimSuffix(input, "\n")
+		s := strings.Trim(input, "\n\r")
 		s = strings.ToLower(s)
 		if strings.Compare(s, "n") != 0 && strings.Compare(s, "y") != 0 {
 			return errors.New("Please enter y/n")
