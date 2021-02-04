@@ -306,3 +306,4 @@ Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICE
 - [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md).
 - [Deploy MinIO Tenant with Console](https://github.com/minio/operator/blob/master/docs/console.md).
 - [Deploy MinIO Tenant with KES](https://github.com/minio/operator/blob/master/docs/kes.md).
+- [Tenant API Documentation](docs/crd.adoc)
