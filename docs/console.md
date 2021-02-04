@@ -34,4 +34,5 @@ Console Configuration is a part of Tenant yaml file. Check the sample file [avai
 | spec.console.consoleSecret | Use this secret to assign console credentials to Tenant.                                                                                                                                   |
 | spec.console.metadata      | This allows a way to map metadata to the console container. Internally `metadata` is a struct type as [explained here](https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#ObjectMeta). |
 |                            |                                                                                                                                                                                            |
+
 A complete list of values is available [here](crd.adoc##consoleconfiguration) in the API reference.
