@@ -295,11 +295,12 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.ImagePullPolicy = DefaultImagePullPolicy
 	}
 
-	for zi, z := range t.Spec.Pools {
-		if z.Name == "" {
-			z.Name = fmt.Sprintf("%s-%d", StatefulSetPrefix, zi)
+	for pi, pool := range t.Spec.Pools {
+		// Default names for the pools if a name is not specified
+		if pool.Name == "" {
+			pool.Name = fmt.Sprintf("%s-%d", StatefulSetPrefix, pi)
 		}
-		t.Spec.Pools[zi] = z
+		t.Spec.Pools[pi] = pool
 	}
 
 	if t.Spec.Mountpath == "" {
@@ -380,11 +381,17 @@ func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
 // MinIOHosts returns the domain names in ellipses format created for current Tenant
 func (t *Tenant) MinIOHosts() (hosts []string) {
 	// Create the ellipses style URL
-	for _, z := range t.Spec.Pools {
-		if z.Servers == 1 {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), "0", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
+	for pi, pool := range t.Spec.Pools {
+		// determine the proper statefulset name
+		ssName := t.PoolStatefulsetName(&pool)
+		if len(t.Status.Pools) > pi {
+			ssName = t.Status.Pools[pi].SSName
+		}
+
+		if pool.Servers == 1 {
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", ssName, "0", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
 		} else {
-			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", t.MinIOStatefulSetNameForPool(&z), genEllipsis(0, int(z.Servers)-1), t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
+			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", ssName, genEllipsis(0, int(pool.Servers)-1), t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
 		}
 	}
 	return hosts

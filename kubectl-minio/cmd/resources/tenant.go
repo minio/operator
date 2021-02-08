@@ -21,7 +21,7 @@ package resources
 import (
 	"errors"
 
-	helpers "github.com/minio/kubectl-minio/cmd/helpers"
+	"github.com/minio/kubectl-minio/cmd/helpers"
 	operator "github.com/minio/operator/pkg/apis/minio.min.io"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	v1 "k8s.io/api/core/v1"
@@ -78,20 +78,6 @@ func tenantLabels(name string) map[string]string {
 func tenantKESLabels(name string) map[string]string {
 	m := make(map[string]string, 1)
 	m["app"] = name + "-kes"
-	return m
-}
-
-func tenantConsoleLabels(name string) map[string]string {
-	m := make(map[string]string, 1)
-	m["app"] = name + "-console"
-	return m
-}
-
-func tenantAnnotations() map[string]string {
-	m := make(map[string]string, 3)
-	m["prometheus.io/path"] = helpers.MinIOPrometheusPath
-	m["prometheus.io/port"] = helpers.MinIOPrometheusPort
-	m["prometheus.io/scrape"] = "true"
 	return m
 }
 

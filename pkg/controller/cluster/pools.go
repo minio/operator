@@ -17,9 +17,7 @@
 package cluster
 
 import (
-	"fmt"
 	"reflect"
-	"strings"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -35,14 +33,11 @@ func (c *Controller) getSSForPool(tenant *miniov2.Tenant, pool *miniov2.Pool) (*
 		if !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
-
 		// check if there are legacy statefulsets
 		ss, err = c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LegacyStatefulsetName(pool))
 		if err != nil {
 			return nil, err
 		}
-		// Update the name of the pool
-		pool.Name = strings.Replace(ss.Name, fmt.Sprintf("%s-", tenant.Name), "", 1)
 	}
 	return ss, nil
 }
