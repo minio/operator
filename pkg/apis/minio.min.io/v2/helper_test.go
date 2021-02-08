@@ -3,10 +3,9 @@ package v2
 import (
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -141,6 +140,83 @@ func TestTenant_KESServiceEndpoint(t1 *testing.T) {
 			}
 			if got := t.KESServiceEndpoint(); got != tt.want {
 				t1.Errorf("KESServiceEndpoint() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCompareEnvs(t *testing.T) {
+	type args struct {
+		old map[string]string
+		new map[string]string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "equal",
+			args: args{
+				old: map[string]string{
+					"TEST_ENV1": "test_val1",
+					"TEST_ENV2": "test_val2",
+				},
+				new: map[string]string{
+					"TEST_ENV1": "test_val1",
+					"TEST_ENV2": "test_val2",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "not_sorted",
+			args: args{
+				old: map[string]string{
+					"TEST_ENV2": "test_val2",
+					"TEST_ENV1": "test_val1",
+				},
+				new: map[string]string{
+					"TEST_ENV1": "test_val1",
+					"TEST_ENV2": "test_val2",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "unequal_length",
+			args: args{
+				old: map[string]string{
+					"TEST_ENV1": "test_val1",
+					"TEST_ENV2": "test_val2",
+				},
+				new: map[string]string{
+					"TEST_ENV1": "test_val1",
+					"TEST_ENV2": "test_val2",
+					"TEST_ENV3": "test_val3",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "unequal_values",
+			args: args{
+				old: map[string]string{
+					"TEST_ENV1": "test_val1",
+					"TEST_ENV2": "test_val2",
+				},
+				new: map[string]string{
+					"TEST_ENV1": "test_val1",
+					"TEST_ENV2": "test_val3",
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsEnvUpdated(tt.args.old, tt.args.new); got != tt.want {
+				t.Errorf("Test case = %s, CompareEnvs() = %v, want %v", tt.name, got, tt.want)
 			}
 		})
 	}

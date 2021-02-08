@@ -32,6 +32,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -812,4 +813,25 @@ func MergeMaps(a, b map[string]string) map[string]string {
 		a[k] = v
 	}
 	return a
+}
+
+// ToMap converts a slice of env vars to a map of Name and value
+func ToMap(envs []corev1.EnvVar) map[string]string {
+	newMap := make(map[string]string)
+	for i := range envs {
+		newMap[envs[i].Name] = envs[i].Value
+	}
+	return newMap
+}
+
+// IsEnvUpdated looks for new env vars in the old env vars and returns true if
+// new env vars are not found
+func IsEnvUpdated(old, new map[string]string) bool {
+	if len(old) != len(new) {
+		return true
+	}
+	if !reflect.DeepEqual(old, new) {
+		return true
+	}
+	return false
 }
