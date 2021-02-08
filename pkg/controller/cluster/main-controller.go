@@ -768,6 +768,8 @@ func (c *Controller) syncHandler(key string) error {
 
 	tenant.EnsureDefaults()
 
+	// if certificate state is missing, do investigation of certs
+
 	// Validate the MinIO Tenant
 	if err = tenant.Validate(); err != nil {
 		klog.V(2).Infof(err.Error())
@@ -857,7 +859,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// For each pool check it's stateful set
 	minioSecretName := tenant.Spec.CredsSecret.Name
 	minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, gOpts)
 	if err != nil {
@@ -869,24 +870,9 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	var currentSetup int
-	for _, pool := range tenant.Spec.Pools {
-		// Get the StatefulSet with the name specified in Tenant.spec
-		if _, serr := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PoolStatefulsetName(&pool)); serr != nil {
-			if k8serrors.IsNotFound(serr) {
-				currentSetup++
-				continue
-			}
-			return serr
-		}
-	}
-
 	// For each pool check if there is a stateful set
 	var totalReplicas int32
 	var images []string
-
-	// Check if this is fresh setup not an expansion.
-	freshSetup := len(tenant.Spec.Pools) == currentSetup
 
 	// Copy Operator TLS certificate to Tenant Namespace
 	operatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, operatorTLSSecretName, metav1.GetOptions{})
@@ -918,16 +904,49 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// pre-load all statefulsets to ensure when arguments get generated they point to the right statefulset name
-	poolDir, err := c.getAllSSForTenant(tenant)
-	if err != nil {
-		return err
+	// consolidate the status of all pools. this is meant to cover for legacy tenants
+	// this status value is zero only for new tenants or legacy tenants
+	if len(tenant.Status.Pools) == 0 {
+		poolDir, err := c.getAllSSForTenant(tenant)
+		if err != nil {
+			return err
+		}
+		for pi := range poolDir {
+			tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
+				SSName: poolDir[pi].Name,
+				State:  miniov2.PoolNotCreated,
+			})
+		}
+		// push updates to status
+		if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+			return err
+		}
 	}
 
+	// Check if this is fresh setup not an expansion.
+	freshSetup := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
+
 	for i, pool := range tenant.Spec.Pools {
-		// Get the StatefulSet with the name specified in Tenant.spec
-		ss, ssFound := poolDir[i]
-		if !ssFound {
+		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
+
+		// if this index is in the status of pools use it, else capture the desired name in the status and store it
+		var ssName string
+		if len(tenant.Status.Pools) > i {
+			ssName = tenant.Status.Pools[i].SSName
+		} else {
+			ssName = tenant.PoolStatefulsetName(&pool)
+			tenant.Status.Pools[i] = miniov2.PoolStatus{
+				SSName: ssName,
+				State:  miniov2.PoolNotCreated,
+			}
+			// push updates to status
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				return err
+			}
+		}
+
+		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
+		if k8serrors.IsNotFound(err) {
 
 			klog.Infof("Deploying pool %s", pool.Name)
 
