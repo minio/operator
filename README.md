@@ -11,8 +11,8 @@ cloud infrastructures ("Hybrid" Cloud).
 *IMPORTANT*: This documentation reflects the *latest bleeding-edge release* of the MinIO Operator. The API and syntax may differ from
 previous releases. For documentation on previous releases, please visit the documentation in context of that release tag:
 
-- [v0.3.29](https://github.com/minio/operator/blob/v3.0.29/README.md)
-- [v0.3.28](https://github.com/minio/operator/blob/v3.0.28/README.md)
+- [v3.0.29](https://github.com/minio/operator/blob/v3.0.29/README.md)
+- [v3.0.28](https://github.com/minio/operator/blob/v3.0.28/README.md)
 
 ## Table of Contents
 
