@@ -72,6 +72,7 @@ func (c *Controller) increaseTenantRevisionWithRetry(ctx context.Context, tenant
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Status = *tenant.Status.DeepCopy()
 	tenantCopy.Status.Revision = tenantCopy.Status.Revision + 1
 	// If the CustomResourceSubresources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
