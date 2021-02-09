@@ -935,10 +935,10 @@ func (c *Controller) syncHandler(key string) error {
 			ssName = tenant.Status.Pools[i].SSName
 		} else {
 			ssName = tenant.PoolStatefulsetName(&pool)
-			tenant.Status.Pools[i] = miniov2.PoolStatus{
+			tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
 				SSName: ssName,
 				State:  miniov2.PoolNotCreated,
-			}
+			})
 			// push updates to status
 			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
 				return err
