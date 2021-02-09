@@ -611,9 +611,17 @@ func (t *Tenant) MinIOHealthCheck() bool {
 
 // NewMinIOAdmin initializes a new madmin.Client for operator interaction
 func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClient, error) {
-	host := t.MinIOServerHostAddress()
+	return t.NewMinIOAdminForAddress("", minioSecret)
+}
+
+// NewMinIOAdminForAddress initializes a new madmin.Client for operator interaction
+func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string][]byte) (*madmin.AdminClient, error) {
+	host := address
 	if host == "" {
-		return nil, errors.New("MinIO server host is empty")
+		host = t.MinIOServerHostAddress()
+		if host == "" {
+			return nil, errors.New("MinIO server host is empty")
+		}
 	}
 
 	accessKey, ok := minioSecret["accesskey"]

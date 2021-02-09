@@ -912,10 +912,12 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 		for pi := range poolDir {
-			tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
-				SSName: poolDir[pi].Name,
-				State:  miniov2.PoolNotCreated,
-			})
+			if poolDir[pi] != nil {
+				tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
+					SSName: poolDir[pi].Name,
+					State:  miniov2.PoolCreated,
+				})
+			}
 		}
 		// push updates to status
 		if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
@@ -993,6 +995,13 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
+			// Report the pool is properly created
+			tenant.Status.Pools[i].State = miniov2.PoolCreated
+			// push updates to status
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				fmt.Println("ERROR ON UPDATE POL", err)
+				return err
+			}
 			// Restart the services to fetch the new args, ignore any error.
 			// only perform `restart()` of server deployment when we are truly
 			// expanding an existing deployment.
@@ -1055,6 +1064,51 @@ func (c *Controller) syncHandler(key string) error {
 		// keep track of all replicas
 		totalReplicas += ss.Status.Replicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
+	}
+
+	// validate each pool if it's initialized
+	for pi, pool := range tenant.Spec.Pools {
+		// get a pod for the established statefulset
+		if tenant.Status.Pools[pi].State == miniov2.PoolCreated {
+			// get a pod for the ss
+			pods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, pool.Name),
+			})
+			if err != nil {
+				klog.Warning("Could not validate state of statefulset for pool", err)
+			}
+			if len(pods.Items) > 0 {
+				ssPod := pods.Items[0]
+				podIP := ssPod.Status.PodIP
+				if podIP == "" {
+					for _, ip := range ssPod.Status.PodIPs {
+						if ip.IP != "" {
+							podIP = ip.IP
+						}
+					}
+				}
+				// ping MinIO through that specific pod
+				podAddress := fmt.Sprintf("%s:9000", podIP)
+				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, minioSecret.Data)
+				if err != nil {
+					return err
+				}
+
+				_, err = podAdminClnt.ServerInfo(ctx)
+				// any error means we are not ready, if the call succeeds, the ss is ready
+				if err == nil {
+					// Report the pool is properly created
+					tenant.Status.Pools[pi].State = miniov2.PoolInitialized
+					// push updates to status
+					if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+						fmt.Println("ERROR ON UPDATE POL", err)
+						return err
+					}
+				} else {
+					fmt.Println(err)
+				}
+			}
+		}
 	}
 
 	// compare all the images across all pools, they should always be the same.
