@@ -186,6 +186,10 @@ type PoolState string
 const (
 	// PoolNotCreated of a pool when it's not even created yet
 	PoolNotCreated PoolState = "PoolNotCreated"
+	// PoolCreated indicates a pool was created
+	PoolCreated PoolState = "PoolCreated"
+	// PoolInitialized indicates if a pool has been observed to be online
+	PoolInitialized PoolState = "PoolInitialized"
 )
 
 // PoolStatus keeps track of all the pools and their current state
