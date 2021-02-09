@@ -999,7 +999,6 @@ func (c *Controller) syncHandler(key string) error {
 			tenant.Status.Pools[i].State = miniov2.PoolCreated
 			// push updates to status
 			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
-				fmt.Println("ERROR ON UPDATE POL", err)
 				return err
 			}
 			// Restart the services to fetch the new args, ignore any error.
@@ -1087,6 +1086,10 @@ func (c *Controller) syncHandler(key string) error {
 						}
 					}
 				}
+				// still empty ip? pass on this pod/pool
+				if podIP == "" {
+					continue
+				}
 				// ping MinIO through that specific pod
 				podAddress := fmt.Sprintf("%s:9000", podIP)
 				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, minioSecret.Data)
@@ -1101,7 +1104,6 @@ func (c *Controller) syncHandler(key string) error {
 					tenant.Status.Pools[pi].State = miniov2.PoolInitialized
 					// push updates to status
 					if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
-						fmt.Println("ERROR ON UPDATE POL", err)
 						return err
 					}
 				} else {
