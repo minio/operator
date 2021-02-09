@@ -3106,7 +3106,7 @@ spec:
               availableReplicas:
                 format: int32
                 type: integer
-              certificateStatus:
+              certificates:
                 nullable: true
                 type: object
               currentState:
@@ -3131,7 +3131,7 @@ spec:
                 type: string
             required:
             - availableReplicas
-            - certificateStatus
+            - certificates
             - currentState
             - pools
             - revision
@@ -6241,7 +6241,7 @@ spec:
               availableReplicas:
                 format: int32
                 type: integer
-              certificateStatus:
+              certificates:
                 nullable: true
                 type: object
               currentState:
@@ -6266,7 +6266,7 @@ spec:
                 type: string
             required:
             - availableReplicas
-            - certificateStatus
+            - certificates
             - currentState
             - pools
             - revision

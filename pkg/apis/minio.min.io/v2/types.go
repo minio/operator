@@ -206,7 +206,7 @@ type TenantStatus struct {
 	SyncVersion       string `json:"syncVersion"`
 	// Keeps track of all the TLS certificates managed by the operator
 	// +nullable
-	CertificateStatus CertificateStatus `json:"certificateStatus"`
+	Certificates CertificateStatus `json:"certificates"`
 	// All the pools get an individual status
 	// +nullable
 	Pools []PoolStatus `json:"pools"`
