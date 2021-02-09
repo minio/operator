@@ -296,6 +296,7 @@ func NewConsole(t *miniov2.Tenant) *appsv1.Deployment {
 					RestartPolicy:      miniov2.ConsoleRestartPolicy,
 					Volumes:            podVolumes,
 					NodeSelector:       t.Spec.Console.NodeSelector,
+					Tolerations:        t.Spec.Console.Tolerations,
 				},
 			},
 		},

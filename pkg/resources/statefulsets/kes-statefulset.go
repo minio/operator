@@ -201,6 +201,7 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					SchedulerName:      t.Scheduler.Name,
 					NodeSelector:       t.Spec.KES.NodeSelector,
+					Tolerations:        t.Spec.KES.Tolerations,
 				},
 			},
 		},

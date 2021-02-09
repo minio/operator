@@ -259,6 +259,9 @@ type ConsoleConfiguration struct {
 	// If provided, use these nodeSelector for Console Object Meta nodeSelector
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Tolerations allows users to set entries like effect, key, operator, value.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same
@@ -398,6 +401,12 @@ type KESConfig struct {
 	// If provided, use these nodeSelector for KES Object Meta nodeSelector
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// Tolerations allows users to set entries like effect, key, operator, value.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// If provided, use this as the name of key that KES creates on the KMS backend
+	// +optional
+	KeyName string `json:"keyName,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

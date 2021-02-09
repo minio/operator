@@ -195,6 +195,22 @@ spec:
                     type: object
                   serviceAccountName:
                     type: string
+                  tolerations:
+                    items:
+                      properties:
+                        effect:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        tolerationSeconds:
+                          format: int64
+                          type: integer
+                        value:
+                          type: string
+                      type: object
+                    type: array
                 required:
                 - consoleSecret
                 type: object
@@ -343,6 +359,8 @@ spec:
                       name:
                         type: string
                     type: object
+                  keyName:
+                    type: string
                   labels:
                     additionalProperties:
                       type: string
@@ -356,6 +374,22 @@ spec:
                     type: integer
                   serviceAccountName:
                     type: string
+                  tolerations:
+                    items:
+                      properties:
+                        effect:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        tolerationSeconds:
+                          format: int64
+                          type: integer
+                        value:
+                          type: string
+                      type: object
+                    type: array
                 required:
                 - kesSecret
                 type: object
@@ -3256,6 +3290,22 @@ spec:
                     type: object
                   serviceAccountName:
                     type: string
+                  tolerations:
+                    items:
+                      properties:
+                        effect:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        tolerationSeconds:
+                          format: int64
+                          type: integer
+                        value:
+                          type: string
+                      type: object
+                    type: array
                 required:
                 - consoleSecret
                 type: object
@@ -3404,6 +3454,8 @@ spec:
                       name:
                         type: string
                     type: object
+                  keyName:
+                    type: string
                   labels:
                     additionalProperties:
                       type: string
@@ -3417,6 +3469,22 @@ spec:
                     type: integer
                   serviceAccountName:
                     type: string
+                  tolerations:
+                    items:
+                      properties:
+                        effect:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        tolerationSeconds:
+                          format: int64
+                          type: integer
+                        value:
+                          type: string
+                      type: object
+                    type: array
                 required:
                 - kesSecret
                 type: object
