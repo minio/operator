@@ -178,6 +178,9 @@ type ExposeServices struct {
 
 // CertificateStatus keeps track of all the certificates managed by the operator
 type CertificateStatus struct {
+	// AutoCertEnabled registers whether we know if the tenant has autocert enabled
+	// +nullable
+	AutoCertEnabled *bool `json:"autoCertEnabled,omitempty"`
 }
 
 // PoolState represents the state of a pool

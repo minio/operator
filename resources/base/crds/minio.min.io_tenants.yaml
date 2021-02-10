@@ -3074,6 +3074,10 @@ spec:
                 type: integer
               certificates:
                 nullable: true
+                properties:
+                  autoCertEnabled:
+                    nullable: true
+                    type: boolean
                 type: object
               currentState:
                 type: string
@@ -6175,6 +6179,10 @@ spec:
                 type: integer
               certificates:
                 nullable: true
+                properties:
+                  autoCertEnabled:
+                    nullable: true
+                    type: boolean
                 type: object
               currentState:
                 type: string

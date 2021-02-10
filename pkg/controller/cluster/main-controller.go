@@ -781,6 +781,19 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
+	if tenant.Status.Certificates.AutoCertEnabled == nil {
+		fmt.Println("WITNESS ME")
+		fmt.Println("WITNESS ME")
+		fmt.Println("WITNESS ME")
+		fmt.Println("WITNESS ME")
+		fmt.Println("WITNESS ME")
+		fmt.Println("WITNESS ME")
+		// investigate the matter!
+		if tenant, err = c.updateCertificatesStatus(ctx, tenant, true); err != nil {
+			fmt.Println("FAIL", err)
+		}
+	}
+
 	secret, err := c.applyOperatorWebhookSecret(ctx, tenant)
 	if err != nil {
 		return err
