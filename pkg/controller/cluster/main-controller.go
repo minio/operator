@@ -768,8 +768,6 @@ func (c *Controller) syncHandler(key string) error {
 
 	tenant.EnsureDefaults()
 
-	// if certificate state is missing, do investigation of certs
-
 	// Validate the MinIO Tenant
 	if err = tenant.Validate(); err != nil {
 		klog.V(2).Infof(err.Error())
@@ -781,16 +779,24 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
+	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2
+	// Previous behavior was that AutoCert is disabled by default if RequestAutoCert is nil
+	// New behavior is that AutoCert is enabled by default if RequestAutoCert is nil
+	// In the future this support will be dropped
 	if tenant.Status.Certificates.AutoCertEnabled == nil {
-		fmt.Println("WITNESS ME")
-		fmt.Println("WITNESS ME")
-		fmt.Println("WITNESS ME")
-		fmt.Println("WITNESS ME")
-		fmt.Println("WITNESS ME")
-		fmt.Println("WITNESS ME")
-		// investigate the matter!
-		if tenant, err = c.updateCertificatesStatus(ctx, tenant, true); err != nil {
-			fmt.Println("FAIL", err)
+		autoCertEnabled := true
+		if tenant.Spec.RequestAutoCert == nil && tenant.APIVersion != "" {
+			// If we get certificate signing requests for MinIO is safe to assume the Tenant v1 was deployed using AutoCert
+			// otherwise AutoCert will be false
+			tenantCSR, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
+			if err != nil || tenantCSR == nil {
+				autoCertEnabled = false
+			}
+		} else {
+			autoCertEnabled = tenant.AutoCert()
+		}
+		if tenant, err = c.updateCertificatesStatus(ctx, tenant, autoCertEnabled); err != nil {
+			klog.V(2).Infof(err.Error())
 		}
 	}
 
