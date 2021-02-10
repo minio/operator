@@ -82,6 +82,8 @@ func NewForKES(t *miniov2.Tenant) *batchv1.Job {
 					RestartPolicy: miniov2.KESJobRestartPolicy,
 					Containers:    containers,
 					Volumes:       podVolumes,
+					Tolerations:   t.Spec.KES.Tolerations,
+					NodeSelector:  t.Spec.KES.NodeSelector,
 				},
 			},
 		},
@@ -96,7 +98,7 @@ func NewForKES(t *miniov2.Tenant) *batchv1.Job {
 
 // returns the KES job container
 func kesJobContainer(t *miniov2.Tenant) corev1.Container {
-	args := []string{"key", "create", "-k", miniov2.KESMinIOKey} // KES CLI expects flags before command args
+	args := []string{"key", "create", "-k", t.Spec.KES.KeyName} // KES CLI expects flags before command args
 
 	return corev1.Container{
 		Name:            miniov2.KESContainerName,

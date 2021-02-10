@@ -127,7 +127,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
-			Value: miniov2.KESMinIOKey,
+			Value: t.Spec.KES.KeyName,
 		})
 	}
 
