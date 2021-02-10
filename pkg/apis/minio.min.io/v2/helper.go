@@ -171,6 +171,11 @@ func (t *Tenant) ConsoleExternalCaCerts() bool {
 
 // AutoCert is enabled by default, otherwise we return the user provided value
 func (t *Tenant) AutoCert() bool {
+	// AutoCertEnabled will take priority over RequestAutoCert and
+	// will be removed in the future
+	if t.Status.Certificates.AutoCertEnabled != nil {
+		return *t.Status.Certificates.AutoCertEnabled
+	}
 	if t.Spec.RequestAutoCert == nil {
 		return true
 	}
