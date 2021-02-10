@@ -328,6 +328,9 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		if t.Spec.KES.ImagePullPolicy == "" {
 			t.Spec.KES.ImagePullPolicy = DefaultImagePullPolicy
 		}
+		if t.Spec.KES.KeyName == "" {
+			t.Spec.KES.KeyName = KESMinIOKey
+		}
 	}
 
 	return t
