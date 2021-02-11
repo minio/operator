@@ -236,7 +236,6 @@ func GetContainerArgs(t *miniov2.Tenant, hostsTemplate string) []string {
 			args = append(args, fmt.Sprintf("%s%s", endpoint, t.VolumePathForPool(&t.Spec.Pools[index])))
 		}
 	}
-	fmt.Println("arg:", args)
 	return args
 }
 
