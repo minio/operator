@@ -83,7 +83,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-01-16T02-19-44Z "
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-02-14T04-01-33Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
