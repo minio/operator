@@ -37,6 +37,8 @@ import (
 	"text/template"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -596,25 +598,10 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 }
 
 // CreateConsoleUser function creates an admin user
-func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret map[string][]byte) error {
-	consoleAccessKey, ok := consoleSecret["CONSOLE_ACCESS_KEY"]
-	if !ok {
-		return errors.New("CONSOLE_ACCESS_KEY not provided")
-	}
-
-	consoleSecretKey, ok := consoleSecret["CONSOLE_SECRET_KEY"]
-	if !ok {
-		return errors.New("CONSOLE_SECRET_KEY not provided")
-	}
-
+func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-
-	if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
-		return err
-	}
-
 	// Create policy
 	p := iampolicy.Policy{
 		Version: iampolicy.DefaultVersion,
@@ -635,12 +622,28 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, consoleSecret m
 			},
 		},
 	}
-
 	if err := madmClnt.AddCannedPolicy(context.Background(), ConsoleAdminPolicyName, &p); err != nil {
 		return err
 	}
-
-	return madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false)
+	for _, secret := range userCredentialSecrets {
+		consoleAccessKey, ok := secret.Data["CONSOLE_ACCESS_KEY"]
+		if !ok {
+			return errors.New("CONSOLE_ACCESS_KEY not provided")
+		}
+		consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+		if !ok || skipCreateUser {
+			return errors.New("CONSOLE_SECRET_KEY not provided")
+		}
+		if !skipCreateUser {
+			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
+				return err
+			}
+		}
+		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Validate validate single zone as per MinIO deployment requirements

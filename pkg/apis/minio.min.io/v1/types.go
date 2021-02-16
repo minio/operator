@@ -46,6 +46,9 @@ type Tenant struct {
 
 // TenantSpec is the spec for a Tenant resource
 type TenantSpec struct {
+	// Users defines an array of user credential secrets that will be created on MinIO during tenant provisioning.
+	// +optional
+	Users []corev1.LocalObjectReference `json:"users"`
 	// Definition for Cluster in given MinIO cluster
 	Zones []Zone `json:"zones"`
 	// Image defines the Tenant Docker image.
