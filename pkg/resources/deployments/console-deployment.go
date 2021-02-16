@@ -362,6 +362,7 @@ func NewConsole(t *miniov2.Tenant) *appsv1.Deployment {
 					Volumes:            podVolumes,
 					NodeSelector:       t.Spec.Console.NodeSelector,
 					Tolerations:        t.Spec.Console.Tolerations,
+					SecurityContext:    t.Spec.Console.SecurityContext,
 				},
 			},
 		},

@@ -105,9 +105,6 @@ type TenantSpec struct {
 	// CertConfig allows users to set entries like CommonName, Organization, etc for the certificate
 	// +optional
 	CertConfig *CertificateConfig `json:"certConfig,omitempty"`
-	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
-	// +optional
-	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 	// ConsoleConfiguration is for setting up minio/console for graphical user interface
 	//+optional
 	Console *ConsoleConfiguration `json:"console,omitempty"`
@@ -247,6 +244,9 @@ type Pool struct {
 	// Tolerations allows users to set entries like effect, key, operator, value.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 }
 
 // ConsoleConfiguration defines the specifications for Console Deployment
@@ -294,6 +294,9 @@ type ConsoleConfiguration struct {
 	// Tolerations allows users to set entries like effect, key, operator, value.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same
@@ -340,6 +343,9 @@ type LogConfig struct {
 	// AuditConfig holds configuration for audit logs from MinIO
 	// +optional
 	Audit *AuditConfig `json:"audit,omitempty"`
+	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 }
 
 // AuditConfig defines configuration parameters for Audit (type) logs
@@ -367,6 +373,9 @@ type PrometheusConfig struct {
 	// If provided, use these requests and limit for cpu/memory resource allocation
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 }
 
 // LogDbConfig Holds all the configurations regarding the Log DB (Postgres) StatefulSet
@@ -396,6 +405,9 @@ type LogDbConfig struct {
 	// If provided, use these labels for Console Object Meta labels
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
+	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 }
 
 // KESConfig defines the specifications for KES StatefulSet
@@ -439,6 +451,9 @@ type KESConfig struct {
 	// If provided, use this as the name of key that KES creates on the KMS backend
 	// +optional
 	KeyName string `json:"keyName,omitempty"`
+	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

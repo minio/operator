@@ -698,11 +698,6 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(CertificateConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.SecurityContext != nil {
-		in, out := &in.SecurityContext, &out.SecurityContext
-		*out = new(v1.PodSecurityContext)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.Console != nil {
 		in, out := &in.Console, &out.Console
 		*out = new(ConsoleConfiguration)

@@ -202,6 +202,7 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 					SchedulerName:      t.Scheduler.Name,
 					NodeSelector:       t.Spec.KES.NodeSelector,
 					Tolerations:        t.Spec.KES.Tolerations,
+					SecurityContext:    t.Spec.KES.SecurityContext,
 				},
 			},
 		},

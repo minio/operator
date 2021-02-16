@@ -192,6 +192,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 					SchedulerName:      t.Scheduler.Name,
 					NodeSelector:       t.Spec.Prometheus.NodeSelector,
 					InitContainers:     initContainers,
+					SecurityContext:    t.Spec.Prometheus.SecurityContext,
 				},
 			},
 		},

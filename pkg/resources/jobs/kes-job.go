@@ -79,11 +79,12 @@ func NewForKES(t *miniov2.Tenant) *batchv1.Job {
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: kesMetadata(t),
 				Spec: corev1.PodSpec{
-					RestartPolicy: miniov2.KESJobRestartPolicy,
-					Containers:    containers,
-					Volumes:       podVolumes,
-					Tolerations:   t.Spec.KES.Tolerations,
-					NodeSelector:  t.Spec.KES.NodeSelector,
+					RestartPolicy:   miniov2.KESJobRestartPolicy,
+					Containers:      containers,
+					Volumes:         podVolumes,
+					Tolerations:     t.Spec.KES.Tolerations,
+					NodeSelector:    t.Spec.KES.NodeSelector,
+					SecurityContext: t.Spec.KES.SecurityContext,
 				},
 			},
 		},

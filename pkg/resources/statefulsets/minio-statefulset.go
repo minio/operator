@@ -245,11 +245,11 @@ func minioPoolTolerations(z *miniov2.Pool) []corev1.Toleration {
 	return append(tolerations, z.Tolerations...)
 }
 
-// Builds the security context for a Tenant
-func minioSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
+// Builds the security context for a Pool
+func minioSecurityContext(pool *miniov2.Pool) *corev1.PodSecurityContext {
 	var securityContext = corev1.PodSecurityContext{}
-	if t.Spec.SecurityContext != nil {
-		securityContext = *t.Spec.SecurityContext
+	if pool != nil && pool.SecurityContext != nil {
+		securityContext = *pool.SecurityContext
 	}
 	return &securityContext
 }
@@ -540,7 +540,7 @@ func NewForMinIOPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool,
 					NodeSelector:       pool.NodeSelector,
 					SchedulerName:      t.Scheduler.Name,
 					Tolerations:        minioPoolTolerations(pool),
-					SecurityContext:    minioSecurityContext(t),
+					SecurityContext:    minioSecurityContext(pool),
 					ServiceAccountName: t.Spec.ServiceAccountName,
 					PriorityClassName:  t.Spec.PriorityClassName,
 				},
