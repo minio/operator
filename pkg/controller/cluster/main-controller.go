@@ -779,6 +779,27 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
+	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2
+	// Previous behavior was that AutoCert is disabled by default if RequestAutoCert is nil
+	// New behavior is that AutoCert is enabled by default if RequestAutoCert is nil
+	// In the future this support will be dropped
+	if tenant.Status.Certificates.AutoCertEnabled == nil {
+		autoCertEnabled := true
+		if tenant.Spec.RequestAutoCert == nil && tenant.APIVersion != "" {
+			// If we get certificate signing requests for MinIO is safe to assume the Tenant v1 was deployed using AutoCert
+			// otherwise AutoCert will be false
+			tenantCSR, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
+			if err != nil || tenantCSR == nil {
+				autoCertEnabled = false
+			}
+		} else {
+			autoCertEnabled = tenant.AutoCert()
+		}
+		if tenant, err = c.updateCertificatesStatus(ctx, tenant, autoCertEnabled); err != nil {
+			klog.V(2).Infof(err.Error())
+		}
+	}
+
 	secret, err := c.applyOperatorWebhookSecret(ctx, tenant)
 	if err != nil {
 		return err
@@ -857,7 +878,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// For each pool check it's stateful set
 	minioSecretName := tenant.Spec.CredsSecret.Name
 	minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, gOpts)
 	if err != nil {
@@ -869,24 +889,9 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	var currentSetup int
-	for _, pool := range tenant.Spec.Pools {
-		// Get the StatefulSet with the name specified in Tenant.spec
-		if _, serr := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PoolStatefulsetName(&pool)); serr != nil {
-			if k8serrors.IsNotFound(serr) {
-				currentSetup++
-				continue
-			}
-			return serr
-		}
-	}
-
 	// For each pool check if there is a stateful set
 	var totalReplicas int32
 	var images []string
-
-	// Check if this is fresh setup not an expansion.
-	freshSetup := len(tenant.Spec.Pools) == currentSetup
 
 	// Copy Operator TLS certificate to Tenant Namespace
 	operatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, operatorTLSSecretName, metav1.GetOptions{})
@@ -918,16 +923,51 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// pre-load all statefulsets to ensure when arguments get generated they point to the right statefulset name
-	poolDir, err := c.getAllSSForTenant(tenant)
-	if err != nil {
-		return err
+	// consolidate the status of all pools. this is meant to cover for legacy tenants
+	// this status value is zero only for new tenants or legacy tenants
+	if len(tenant.Status.Pools) == 0 {
+		poolDir, err := c.getAllSSForTenant(tenant)
+		if err != nil {
+			return err
+		}
+		for pi := range poolDir {
+			if poolDir[pi] != nil {
+				tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
+					SSName: poolDir[pi].Name,
+					State:  miniov2.PoolCreated,
+				})
+			}
+		}
+		// push updates to status
+		if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+			return err
+		}
 	}
 
+	// Check if this is fresh setup not an expansion.
+	freshSetup := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
+
 	for i, pool := range tenant.Spec.Pools {
-		// Get the StatefulSet with the name specified in Tenant.spec
-		ss, ssFound := poolDir[i]
-		if !ssFound {
+		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
+
+		// if this index is in the status of pools use it, else capture the desired name in the status and store it
+		var ssName string
+		if len(tenant.Status.Pools) > i {
+			ssName = tenant.Status.Pools[i].SSName
+		} else {
+			ssName = tenant.PoolStatefulsetName(&pool)
+			tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
+				SSName: ssName,
+				State:  miniov2.PoolNotCreated,
+			})
+			// push updates to status
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				return err
+			}
+		}
+
+		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
+		if k8serrors.IsNotFound(err) {
 
 			klog.Infof("Deploying pool %s", pool.Name)
 
@@ -974,6 +1014,12 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
+			// Report the pool is properly created
+			tenant.Status.Pools[i].State = miniov2.PoolCreated
+			// push updates to status
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				return err
+			}
 			// Restart the services to fetch the new args, ignore any error.
 			// only perform `restart()` of server deployment when we are truly
 			// expanding an existing deployment.
@@ -1036,6 +1082,54 @@ func (c *Controller) syncHandler(key string) error {
 		// keep track of all replicas
 		totalReplicas += ss.Status.Replicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
+	}
+
+	// validate each pool if it's initialized
+	for pi, pool := range tenant.Spec.Pools {
+		// get a pod for the established statefulset
+		if tenant.Status.Pools[pi].State == miniov2.PoolCreated {
+			// get a pod for the ss
+			pods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
+				LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, pool.Name),
+			})
+			if err != nil {
+				klog.Warning("Could not validate state of statefulset for pool", err)
+			}
+			if len(pods.Items) > 0 {
+				ssPod := pods.Items[0]
+				podIP := ssPod.Status.PodIP
+				if podIP == "" {
+					for _, ip := range ssPod.Status.PodIPs {
+						if ip.IP != "" {
+							podIP = ip.IP
+						}
+					}
+				}
+				// still empty ip? pass on this pod/pool
+				if podIP == "" {
+					continue
+				}
+				// ping MinIO through that specific pod
+				podAddress := fmt.Sprintf("%s:9000", podIP)
+				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, minioSecret.Data)
+				if err != nil {
+					return err
+				}
+
+				_, err = podAdminClnt.ServerInfo(ctx)
+				// any error means we are not ready, if the call succeeds, the ss is ready
+				if err == nil {
+					// Report the pool is properly created
+					tenant.Status.Pools[pi].State = miniov2.PoolInitialized
+					// push updates to status
+					if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+						return err
+					}
+				} else {
+					fmt.Println(err)
+				}
+			}
+		}
 	}
 
 	// compare all the images across all pools, they should always be the same.

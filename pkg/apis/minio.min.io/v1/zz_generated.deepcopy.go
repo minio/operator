@@ -33,7 +33,7 @@ func (in *Tenant) DeepCopyInto(out *Tenant) {
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	out.Scheduler = in.Scheduler
 	in.Spec.DeepCopyInto(&out.Spec)
-	out.Status = in.Status
+	in.Status.DeepCopyInto(&out.Status)
 	return
 }
 

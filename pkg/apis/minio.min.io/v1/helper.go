@@ -140,6 +140,11 @@ func (t *Tenant) ConsoleExternalCert() bool {
 
 // AutoCert is enabled by default, otherwise we return the user provided value
 func (t *Tenant) AutoCert() bool {
+	// AutoCertEnabled will take priority over RequestAutoCert and
+	// will be removed in the future
+	if t.Status.Certificates.AutoCertEnabled != nil {
+		return *t.Status.Certificates.AutoCertEnabled
+	}
 	if t.Spec.RequestAutoCert == nil {
 		return true
 	}
@@ -322,6 +327,9 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 		if t.Spec.KES.ImagePullPolicy == "" {
 			t.Spec.KES.ImagePullPolicy = DefaultImagePullPolicy
+		}
+		if t.Spec.KES.KeyName == "" {
+			t.Spec.KES.KeyName = KESMinIOKey
 		}
 	}
 

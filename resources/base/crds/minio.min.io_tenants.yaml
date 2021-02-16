@@ -3,7 +3,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.7
-  creationTimestamp: null
   name: tenants.minio.min.io
 spec:
   conversion:
@@ -3107,15 +3106,40 @@ spec:
               availableReplicas:
                 format: int32
                 type: integer
+              certificates:
+                nullable: true
+                properties:
+                  autoCertEnabled:
+                    nullable: true
+                    type: boolean
+                type: object
               currentState:
                 type: string
+              pools:
+                items:
+                  properties:
+                    ssName:
+                      type: string
+                    state:
+                      type: string
+                  required:
+                  - ssName
+                  - state
+                  type: object
+                nullable: true
+                type: array
               revision:
                 format: int32
                 type: integer
+              syncVersion:
+                type: string
             required:
             - availableReplicas
+            - certificates
             - currentState
+            - pools
             - revision
+            - syncVersion
             type: object
         required:
         - spec
@@ -6221,15 +6245,40 @@ spec:
               availableReplicas:
                 format: int32
                 type: integer
+              certificates:
+                nullable: true
+                properties:
+                  autoCertEnabled:
+                    nullable: true
+                    type: boolean
+                type: object
               currentState:
                 type: string
+              pools:
+                items:
+                  properties:
+                    ssName:
+                      type: string
+                    state:
+                      type: string
+                  required:
+                  - ssName
+                  - state
+                  type: object
+                nullable: true
+                type: array
               revision:
                 format: int32
                 type: integer
+              syncVersion:
+                type: string
             required:
             - availableReplicas
+            - certificates
             - currentState
+            - pools
             - revision
+            - syncVersion
             type: object
         required:
         - spec

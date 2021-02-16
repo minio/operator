@@ -176,11 +176,43 @@ type ExposeServices struct {
 	Console bool `json:"console,omitempty"`
 }
 
+// CertificateStatus keeps track of all the certificates managed by the operator
+type CertificateStatus struct {
+	// AutoCertEnabled registers whether we know if the tenant has autocert enabled
+	// +nullable
+	AutoCertEnabled *bool `json:"autoCertEnabled,omitempty"`
+}
+
+// PoolState represents the state of a pool
+type PoolState string
+
+const (
+	// PoolNotCreated of a pool when it's not even created yet
+	PoolNotCreated PoolState = "PoolNotCreated"
+	// PoolCreated indicates a pool was created
+	PoolCreated PoolState = "PoolCreated"
+	// PoolInitialized indicates if a pool has been observed to be online
+	PoolInitialized PoolState = "PoolInitialized"
+)
+
+// PoolStatus keeps track of all the pools and their current state
+type PoolStatus struct {
+	SSName string    `json:"ssName"`
+	State  PoolState `json:"state"`
+}
+
 // TenantStatus is the status for a Tenant resource
 type TenantStatus struct {
 	CurrentState      string `json:"currentState"`
 	AvailableReplicas int32  `json:"availableReplicas"`
 	Revision          int32  `json:"revision"`
+	SyncVersion       string `json:"syncVersion"`
+	// Keeps track of all the TLS certificates managed by the operator
+	// +nullable
+	Certificates CertificateStatus `json:"certificates"`
+	// All the pools get an individual status
+	// +nullable
+	Pools []PoolStatus `json:"pools"`
 }
 
 // CertificateConfig is a specification for certificate contents

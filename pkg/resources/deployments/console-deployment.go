@@ -19,7 +19,11 @@ package deployments
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
 
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -59,6 +63,22 @@ func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 			Value: url,
 		})
 	}
+	// handle old versions
+	if isOldConsoleVersion(t.Spec.Console.Image) && t.TLS() {
+		var caCerts []string
+		if t.ExternalCert() {
+			for index := range t.Spec.ExternalCertSecret {
+				caCerts = append(caCerts, fmt.Sprintf("%s/CAs/minio-hostname-%d.crt", miniov1.ConsoleConfigMountPath, index))
+			}
+		} else {
+			caCerts = append(caCerts, fmt.Sprintf("%s/CAs/minio.crt", miniov1.ConsoleConfigMountPath))
+		}
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "CONSOLE_MINIO_SERVER_TLS_ROOT_CAS",
+			Value: strings.Join(caCerts, ","),
+		})
+	}
+
 	// Add all the environment variables
 	envVars = append(envVars, t.Spec.Console.Env...)
 	return envVars
@@ -100,19 +120,34 @@ func consoleSelector(t *miniov2.Tenant) *metav1.LabelSelector {
 }
 
 // ConsoleVolumeMounts builds the volume mounts for Console container.
-func ConsoleVolumeMounts(t *miniov2.Tenant) (mounts []corev1.VolumeMount) {
+func ConsoleVolumeMounts(t *miniov2.Tenant, oldConsole bool) (mounts []corev1.VolumeMount) {
+	volumeMount := corev1.VolumeMount{
+		Name:      t.ConsoleVolMountName(),
+		MountPath: miniov2.ConsoleCertPath,
+	}
+
+	if oldConsole && (t.TLS() || t.ConsoleExternalCert()) {
+		volumeMount.MountPath = miniov1.ConsoleConfigMountPath
+	}
+
 	return []corev1.VolumeMount{
-		{
-			Name:      t.ConsoleVolMountName(),
-			MountPath: miniov2.ConsoleCertPath,
-		},
+		volumeMount,
 	}
 }
 
 // Builds the Console container for a Tenant.
-func consoleContainer(t *miniov2.Tenant) corev1.Container {
+func consoleContainer(t *miniov2.Tenant, oldConsole bool) corev1.Container {
 	args := []string{"server"}
-	args = append(args, fmt.Sprintf("--certs-dir=%s", miniov2.ConsoleCertPath))
+
+	// apply old args for console versions older than v.0.4.4
+	if oldConsole {
+		if t.AutoCert() || t.ConsoleExternalCert() {
+			args = append(args, "--tls-certificate=/tmp/console/server.crt", "--tls-key=/tmp/console/server.key")
+		}
+	} else {
+		args = append(args, fmt.Sprintf("--certs-dir=%s", miniov2.ConsoleCertPath))
+
+	}
 
 	return corev1.Container{
 		Name:  miniov2.ConsoleContainerName,
@@ -132,14 +167,44 @@ func consoleContainer(t *miniov2.Tenant) corev1.Container {
 		Env:             consoleEnvVars(t),
 		EnvFrom:         consoleSecretEnvVars(t),
 		Resources:       t.Spec.Console.Resources,
-		VolumeMounts:    ConsoleVolumeMounts(t),
+		VolumeMounts:    ConsoleVolumeMounts(t, oldConsole),
 	}
+}
+
+// isOldConsoleVersion returns whether image tag is older than v.0.4.4 or not
+// fallbacks to false if the image is invalid
+func isOldConsoleVersion(image string) bool {
+	re := regexp.MustCompile(`v([0-9]+)\.([0-9]+)\.([0-9]+)`)
+	matches := re.FindAllSubmatch([]byte(image), -1)
+
+	if len(matches) == 0 || len(matches[0]) < 4 {
+		return false
+	}
+
+	// check mayor, minor and patch version
+	if string(matches[0][1]) == "0" && string(matches[0][2]) == "4" {
+		patchVersion, err := strconv.Atoi(string(matches[0][3]))
+		if err != nil {
+			return false
+		}
+		if patchVersion < 4 {
+			return true
+		}
+	}
+
+	return false
 }
 
 // NewConsole creates a new Deployment for the given MinIO Tenant.
 func NewConsole(t *miniov2.Tenant) *appsv1.Deployment {
 	var certPath = "public.crt"
 	var keyPath = "private.key"
+
+	isOldConsole := isOldConsoleVersion(t.Spec.Console.Image)
+	if isOldConsole {
+		certPath = "server.crt"
+		keyPath = "server.key"
+	}
 
 	var podVolumeSources []corev1.VolumeProjection
 
@@ -292,7 +357,7 @@ func NewConsole(t *miniov2.Tenant) *appsv1.Deployment {
 				ObjectMeta: consoleMetadata(t),
 				Spec: corev1.PodSpec{
 					ServiceAccountName: t.Spec.Console.ServiceAccountName,
-					Containers:         []corev1.Container{consoleContainer(t)},
+					Containers:         []corev1.Container{consoleContainer(t, isOldConsole)},
 					RestartPolicy:      miniov2.ConsoleRestartPolicy,
 					Volumes:            podVolumes,
 					NodeSelector:       t.Spec.Console.NodeSelector,
