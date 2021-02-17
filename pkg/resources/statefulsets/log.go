@@ -158,11 +158,12 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 			Containers:         []corev1.Container{logDbContainer(t)},
 			RestartPolicy:      corev1.RestartPolicyAlways,
 			SchedulerName:      t.Scheduler.Name,
-			SecurityContext:    t.Spec.Log.Db.SecurityContext,
 		},
 	}
 	// if we have DB configurations to honor
 	if t.Spec.Log.Db != nil {
+		// Attach security Policy
+		dbPod.Spec.SecurityContext = t.Spec.Log.Db.SecurityContext
 		// attach affinity clauses
 		if t.Spec.Log.Db.Affinity != nil {
 			dbPod.Spec.Affinity = t.Spec.Log.Db.Affinity
