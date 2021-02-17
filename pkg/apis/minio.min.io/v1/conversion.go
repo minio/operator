@@ -18,6 +18,7 @@ package v1
 
 import (
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 )
 
@@ -75,7 +76,6 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.RequestAutoCert = src.Spec.RequestAutoCert
 	dst.Spec.S3 = src.Spec.S3
 	dst.Spec.CertConfig = src.Spec.CertConfig
-	dst.Spec.SecurityContext = src.Spec.SecurityContext
 	dst.Spec.Console = src.Spec.Console
 	dst.Spec.KES = src.Spec.KES
 	dst.Spec.Log = src.Spec.Log
@@ -85,6 +85,10 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.ImagePullPolicy = src.Spec.ImagePullPolicy
 	dst.Spec.SideCars = src.Spec.SideCars
 	dst.Spec.ExposeServices = src.Spec.ExposeServices
+	// Apply the securityContext to all the Pools
+	for _, p := range dst.Spec.Pools {
+		p.SecurityContext = src.Spec.SecurityContext
+	}
 
 	// Status
 	dst.Status.AvailableReplicas = src.Status.AvailableReplicas
@@ -142,7 +146,6 @@ func (dst *Tenant) ConvertFrom(srcRaw conversion.Hub) error { //nolint
 	dst.Spec.RequestAutoCert = src.Spec.RequestAutoCert
 	dst.Spec.S3 = src.Spec.S3
 	dst.Spec.CertConfig = src.Spec.CertConfig
-	dst.Spec.SecurityContext = src.Spec.SecurityContext
 	dst.Spec.Console = src.Spec.Console
 	dst.Spec.KES = src.Spec.KES
 	dst.Spec.Log = src.Spec.Log
@@ -152,6 +155,11 @@ func (dst *Tenant) ConvertFrom(srcRaw conversion.Hub) error { //nolint
 	dst.Spec.ImagePullPolicy = src.Spec.ImagePullPolicy
 	dst.Spec.SideCars = src.Spec.SideCars
 	dst.Spec.ExposeServices = src.Spec.ExposeServices
+	if len(src.Spec.Pools) > 0 {
+		dst.Spec.SecurityContext = src.Spec.Pools[0].SecurityContext
+	} else {
+		dst.Spec.SecurityContext = &corev1.PodSecurityContext{}
+	}
 
 	// Status
 	dst.Status.AvailableReplicas = src.Status.AvailableReplicas

@@ -133,6 +133,7 @@ func NewForLogSearchAPI(t *miniov2.Tenant) *appsv1.Deployment {
 			ServiceAccountName: t.Spec.ServiceAccountName,
 			Containers:         []corev1.Container{logSearchAPIContainer(t)},
 			RestartPolicy:      corev1.RestartPolicyAlways,
+			SecurityContext:    t.Spec.Log.SecurityContext,
 		},
 	}
 
