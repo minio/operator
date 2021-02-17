@@ -1232,8 +1232,28 @@ func (c *Controller) syncHandler(key string) error {
 			if !k8serrors.IsNotFound(err) {
 				return err
 			}
-
-			if !tenant.HasCredsSecret() || !tenant.HasConsoleSecret() {
+			var userCredentials []*v1.Secret
+			for _, credential := range tenant.Spec.Users {
+				credentialSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, gOpts)
+				if sErr == nil && credentialSecret != nil {
+					userCredentials = append(userCredentials, credentialSecret)
+				}
+			}
+			if tenant.HasCredsSecret() && tenant.HasConsoleSecret() {
+				consoleSecretName := tenant.Spec.Console.ConsoleSecret.Name
+				consoleSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, consoleSecretName, gOpts)
+				if sErr == nil && consoleSecret != nil {
+					_, accessKeyExist := consoleSecret.Data["CONSOLE_ACCESS_KEY"]
+					_, secretKeyExist := consoleSecret.Data["CONSOLE_SECRET_KEY"]
+					if accessKeyExist && secretKeyExist {
+						userCredentials = append(userCredentials, consoleSecret)
+					}
+				} else {
+					// just log the error
+					klog.Info(sErr)
+				}
+			}
+			if len(userCredentials) == 0 {
 				msg := "Please set the credentials"
 				klog.V(2).Infof(msg)
 				if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalReplicas); terr != nil {
@@ -1242,13 +1262,6 @@ func (c *Controller) syncHandler(key string) error {
 				// return nil so we don't re-queue this work item
 				return nil
 			}
-
-			consoleSecretName := tenant.Spec.Console.ConsoleSecret.Name
-			consoleSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, consoleSecretName, gOpts)
-			if sErr != nil {
-				return sErr
-			}
-
 			// Make sure that MinIO is up and running to enable MinIO console user.
 			if !tenant.MinIOHealthCheck() {
 				if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
@@ -1271,7 +1284,7 @@ func (c *Controller) syncHandler(key string) error {
 				}
 			}
 
-			if pErr := tenant.CreateConsoleUser(adminClnt, consoleSecret.Data, skipCreateConsoleUser); pErr != nil {
+			if pErr := tenant.CreateConsoleUser(adminClnt, userCredentials, skipCreateConsoleUser); pErr != nil {
 				klog.V(2).Infof(pErr.Error())
 				return pErr
 			}

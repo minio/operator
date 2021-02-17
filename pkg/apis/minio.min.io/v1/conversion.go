@@ -61,6 +61,7 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	dst.ObjectMeta = src.ObjectMeta
 
 	// Spec
+	dst.Spec.Users = src.Spec.Users
 	dst.Spec.Image = src.Spec.Image
 	dst.Spec.ImagePullSecret = src.Spec.ImagePullSecret
 	dst.Spec.PodManagementPolicy = src.Spec.PodManagementPolicy
@@ -127,6 +128,7 @@ func (dst *Tenant) ConvertFrom(srcRaw conversion.Hub) error { //nolint
 	dst.ObjectMeta = src.ObjectMeta
 
 	// Spec
+	dst.Spec.Users = src.Spec.Users
 	dst.Spec.Image = src.Spec.Image
 	dst.Spec.ImagePullSecret = src.Spec.ImagePullSecret
 	dst.Spec.PodManagementPolicy = src.Spec.PodManagementPolicy
