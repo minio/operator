@@ -100,6 +100,12 @@ func (o *deleteCmd) run() error {
 	// Load Resources
 	emfs, decode := resources.GetFSAndDecoder()
 	crdObj := resources.LoadTenantCRD(emfs, decode)
+	if err := client.CoreV1().ServiceAccounts(o.operatorOpts.Namespace).Delete(context.Background(), helpers.DefaultServiceAccount, v1.DeleteOptions{}); err != nil {
+		return err
+	}
+	if err := client.AppsV1().Deployments(o.operatorOpts.Namespace).Delete(context.Background(), helpers.DeploymentName, v1.DeleteOptions{}); err != nil {
+		return err
+	}
 	if err := extclient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), crdObj.Name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
@@ -107,13 +113,7 @@ func (o *deleteCmd) run() error {
 	if err := client.RbacV1().ClusterRoles().Delete(context.Background(), crObj.Name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
-	if err := client.CoreV1().ServiceAccounts(o.operatorOpts.Namespace).Delete(context.Background(), helpers.DefaultServiceAccount, v1.DeleteOptions{}); err != nil {
-		return err
-	}
 	if err := client.RbacV1().ClusterRoleBindings().Delete(context.Background(), helpers.ClusterRoleBindingName, v1.DeleteOptions{}); err != nil {
-		return err
-	}
-	if err := client.AppsV1().Deployments(o.operatorOpts.Namespace).Delete(context.Background(), helpers.DeploymentName, v1.DeleteOptions{}); err != nil {
 		return err
 	}
 	consoleResources := resources.LoadConsoleUI(emfs, decode, &o.operatorOpts)

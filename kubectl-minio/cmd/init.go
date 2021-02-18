@@ -96,6 +96,7 @@ func (o *operatorInitCmd) run() error {
 	crb := resources.NewCluterRoleBindingForOperator(helpers.DefaultServiceAccount, o.operatorOpts.Namespace)
 	d := resources.NewDeploymentForOperator(o.operatorOpts)
 	svc := resources.NewServiceForOperator(o.operatorOpts)
+	ns := resources.NewNamespaceForOperator(o.operatorOpts.Namespace)
 	// Load Resources
 	emfs, decode := resources.GetFSAndDecoder()
 	crdObj := resources.LoadTenantCRD(emfs, decode)
@@ -113,6 +114,9 @@ func (o *operatorInitCmd) run() error {
 		}
 		dynclient, err := helpers.GetKubeDynamicClient()
 		if err != nil {
+			return err
+		}
+		if err = createNamespace(client, ns); err != nil {
 			return err
 		}
 		if err = createCRD(extclient, crdObj); err != nil {
@@ -290,5 +294,16 @@ func createService(client *kubernetes.Clientset, svc *corev1.Service) error {
 		return err
 	}
 	fmt.Printf("MinIO Operator Service %s: created\n", svc.ObjectMeta.Name)
+	return nil
+}
+
+func createNamespace(client *kubernetes.Clientset, ns *corev1.Namespace) error {
+	_, err := client.CoreV1().Namespaces().Create(context.Background(), ns, v1.CreateOptions{})
+	if err != nil {
+		if !k8serrors.IsAlreadyExists(err) {
+			return err
+		}
+	}
+	fmt.Printf("MinIO Operator Namespace %s: created\n", ns.ObjectMeta.Name)
 	return nil
 }
