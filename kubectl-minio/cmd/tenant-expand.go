@@ -71,6 +71,7 @@ func newTenantExpandCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.Int32Var(&v.tenantOpts.Volumes, "volumes", 0, "total number of volumes to add to tenant")
 	f.StringVar(&v.tenantOpts.Capacity, "capacity", "", "total raw capacity to add to tenant, e.g. 16Ti")
 	f.StringVarP(&v.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&v.tenantOpts.StorageClass, "storage-class", "s", helpers.DefaultStorageclass, "storage class for this MinIO tenant")
 	f.BoolVarP(&v.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	cmd.MarkFlagRequired("servers")
