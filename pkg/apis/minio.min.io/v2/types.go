@@ -61,7 +61,7 @@ type S3Features struct {
 type TenantSpec struct {
 	// Users defines an array of user credential secrets that will be created on MinIO during tenant provisioning.
 	// +optional
-	Users []corev1.LocalObjectReference `json:"users"`
+	Users []*corev1.LocalObjectReference `json:"users,omitempty"`
 	// Definition for Cluster in given MinIO cluster
 	Pools []Pool `json:"pools"`
 	// Image defines the Tenant Docker image.

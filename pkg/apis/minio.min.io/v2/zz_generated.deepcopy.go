@@ -153,6 +153,11 @@ func (in *ConsoleConfiguration) DeepCopyInto(out *ConsoleConfiguration) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.SecurityContext != nil {
+		in, out := &in.SecurityContext, &out.SecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -227,6 +232,11 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.SecurityContext != nil {
+		in, out := &in.SecurityContext, &out.SecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -304,6 +314,11 @@ func (in *LogConfig) DeepCopyInto(out *LogConfig) {
 		*out = new(AuditConfig)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.SecurityContext != nil {
+		in, out := &in.SecurityContext, &out.SecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -359,6 +374,11 @@ func (in *LogDbConfig) DeepCopyInto(out *LogDbConfig) {
 			(*out)[key] = val
 		}
 	}
+	if in.SecurityContext != nil {
+		in, out := &in.SecurityContext, &out.SecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -399,6 +419,11 @@ func (in *Pool) DeepCopyInto(out *Pool) {
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.SecurityContext != nil {
+		in, out := &in.SecurityContext, &out.SecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -459,6 +484,11 @@ func (in *PrometheusConfig) DeepCopyInto(out *PrometheusConfig) {
 		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
+	if in.SecurityContext != nil {
+		in, out := &in.SecurityContext, &out.SecurityContext
+		*out = new(v1.PodSecurityContext)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
@@ -652,8 +682,14 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 	*out = *in
 	if in.Users != nil {
 		in, out := &in.Users, &out.Users
-		*out = make([]v1.LocalObjectReference, len(*in))
-		copy(*out, *in)
+		*out = make([]*v1.LocalObjectReference, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(v1.LocalObjectReference)
+				**out = **in
+			}
+		}
 	}
 	if in.Pools != nil {
 		in, out := &in.Pools, &out.Pools
