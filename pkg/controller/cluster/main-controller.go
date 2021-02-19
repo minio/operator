@@ -778,7 +778,6 @@ func (c *Controller) syncHandler(key string) error {
 		// return nil so we don't re-queue this work item
 		return nil
 	}
-
 	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2
 	// Previous behavior was that AutoCert is disabled by default if RequestAutoCert is nil
 	// New behavior is that AutoCert is enabled by default if RequestAutoCert is nil
@@ -888,7 +887,6 @@ func (c *Controller) syncHandler(key string) error {
 	if err != nil {
 		return err
 	}
-
 	// For each pool check if there is a stateful set
 	var totalReplicas int32
 	var images []string
@@ -922,7 +920,6 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 	}
-
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
 	// this status value is zero only for new tenants or legacy tenants
 	if len(tenant.Status.Pools) == 0 {
@@ -946,7 +943,6 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Check if this is fresh setup not an expansion.
 	freshSetup := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
-
 	for i, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 
@@ -965,7 +961,6 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 		}
-
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
 		if k8serrors.IsNotFound(err) {
 
@@ -1038,7 +1033,6 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
-
 			// if the pool doesn't match the spec
 			if !poolMatchesSS {
 				// for legacy reasons, if the zone label is present in SS we must carry it over
@@ -1066,7 +1060,6 @@ func (c *Controller) syncHandler(key string) error {
 			}
 
 		}
-
 		// If the StatefulSet is not controlled by this Tenant resource, we should log
 		// a warning to the event recorder and ret
 		if !metav1.IsControlledBy(ss, tenant) {
@@ -1083,7 +1076,6 @@ func (c *Controller) syncHandler(key string) error {
 		totalReplicas += ss.Status.Replicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 	}
-
 	// validate each pool if it's initialized
 	for pi, pool := range tenant.Spec.Pools {
 		// get a pod for the established statefulset
@@ -1233,10 +1225,12 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 			var userCredentials []*v1.Secret
-			for _, credential := range tenant.Spec.Users {
-				credentialSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, gOpts)
-				if sErr == nil && credentialSecret != nil {
-					userCredentials = append(userCredentials, credentialSecret)
+			if tenant.Spec.Users != nil {
+				for _, credential := range tenant.Spec.Users {
+					credentialSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, gOpts)
+					if sErr == nil && credentialSecret != nil {
+						userCredentials = append(userCredentials, credentialSecret)
+					}
 				}
 			}
 			if tenant.HasCredsSecret() && tenant.HasConsoleSecret() {
