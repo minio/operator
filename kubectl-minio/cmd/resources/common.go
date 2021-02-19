@@ -173,9 +173,14 @@ func LoadConsoleUI(emfs http.FileSystem, decode func(data []byte, defaults *sche
 				}
 			case *rbacv1.ClusterRoleBinding:
 				if resourceObj, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
+					updatedSubjects := []rbacv1.Subject{}
 					for _, sub := range resourceObj.Subjects {
 						sub.Namespace = opts.Namespace
+						// store modified subject
+						updatedSubjects = append(updatedSubjects, sub)
 					}
+					// update subjects with modified array
+					resourceObj.Subjects = updatedSubjects
 				}
 			default:
 				// fmt.Println("Unhandled kind:", obj.GetObjectKind())
