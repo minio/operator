@@ -25,6 +25,7 @@ import (
 	"io"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/klog/v2"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -75,7 +76,13 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if len(args) != 0 {
 				return errors.New("this command does not accept arguments")
 			}
-			return o.run()
+			klog.Info("init command started")
+			err := o.run()
+			if err != nil {
+				klog.Warning(err)
+				return err
+			}
+			return nil
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)
@@ -170,8 +177,8 @@ func createConsoleResources(opts resources.OperatorOptions, clientset *apiextens
 
 	groupResources, err := restmapper.GetAPIGroupResources(clientset.Discovery())
 	if err != nil {
-		fmt.Println(err)
-		return errors.New("Cannot get group resources.")
+		klog.Info(err)
+		return errors.New("Cannot get group resources")
 	}
 	rm := restmapper.NewDiscoveryRESTMapper(groupResources)
 
@@ -211,7 +218,10 @@ func createConsoleResources(opts resources.OperatorOptions, clientset *apiextens
 
 func clusterScopeCreate(dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, uns unstructured.Unstructured) error {
 	if _, err := dynClient.Resource(mapping.Resource).Create(ctx, &uns, metav1.CreateOptions{}); err != nil {
-		fmt.Println(err)
+		if k8serrors.IsAlreadyExists(err) {
+			fmt.Printf("%s, skipped\n", err.Error())
+			return nil
+		}
 		return errors.New("Cannot create console resources")
 	}
 	return nil
@@ -219,7 +229,10 @@ func clusterScopeCreate(dynClient dynamic.Interface, mapping *meta.RESTMapping, 
 
 func namespaceScopeCreate(opts resources.OperatorOptions, dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, uns unstructured.Unstructured) error {
 	if _, err := dynClient.Resource(mapping.Resource).Namespace(opts.Namespace).Create(ctx, &uns, metav1.CreateOptions{}); err != nil {
-		fmt.Println(err)
+		if k8serrors.IsAlreadyExists(err) {
+			fmt.Printf("%s, skipped\n", err.Error())
+			return nil
+		}
 		return errors.New("Cannot create console resources")
 	}
 	return nil
@@ -229,7 +242,8 @@ func createCRD(client *apiextension.Clientset, crd *apiextensionv1.CustomResourc
 	_, err := client.ApiextensionsV1().CustomResourceDefinitions().Create(context.Background(), crd, v1.CreateOptions{})
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			return fmt.Errorf("CustomResourceDefinition %s: already present, skipped", crd.ObjectMeta.Name)
+			fmt.Printf("CustomResourceDefinition %s: already present, skipped\n", crd.ObjectMeta.Name)
+			return nil
 		}
 		return err
 	}
@@ -241,7 +255,8 @@ func createCR(client *kubernetes.Clientset, cr *rbacv1.ClusterRole) error {
 	_, err := client.RbacV1().ClusterRoles().Create(context.Background(), cr, v1.CreateOptions{})
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			return fmt.Errorf("ClusterRole %s: already present, skipped", cr.ObjectMeta.Name)
+			fmt.Printf("ClusterRole %s: already present, skipped\n", cr.ObjectMeta.Name)
+			return nil
 		}
 		return err
 	}
@@ -253,7 +268,8 @@ func createSA(client *kubernetes.Clientset, sa *corev1.ServiceAccount) error {
 	_, err := client.CoreV1().ServiceAccounts(sa.ObjectMeta.Namespace).Create(context.Background(), sa, v1.CreateOptions{})
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			return fmt.Errorf("ServiceAccount %s: already present, skipped", sa.ObjectMeta.Name)
+			fmt.Printf("ServiceAccount %s: already present, skipped\n", sa.ObjectMeta.Name)
+			return nil
 		}
 		return err
 	}
@@ -265,7 +281,8 @@ func createClusterRB(client *kubernetes.Clientset, crb *rbacv1.ClusterRoleBindin
 	_, err := client.RbacV1().ClusterRoleBindings().Create(context.Background(), crb, v1.CreateOptions{})
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			return fmt.Errorf("ClusterRoleBinding %s: already present, skipped", crb.ObjectMeta.Name)
+			fmt.Printf("ClusterRoleBinding %s: already present, skipped\n", crb.ObjectMeta.Name)
+			return nil
 		}
 		return err
 	}
@@ -277,7 +294,8 @@ func createDeployment(client *kubernetes.Clientset, d *appsv1.Deployment) error 
 	_, err := client.AppsV1().Deployments(d.ObjectMeta.Namespace).Create(context.Background(), d, v1.CreateOptions{})
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			return fmt.Errorf("MinIO Operator Deployment %s: already present, skipped", d.ObjectMeta.Name)
+			fmt.Printf("MinIO Operator Deployment %s: already present, skipped\n", d.ObjectMeta.Name)
+			return nil
 		}
 		return err
 	}
@@ -289,7 +307,8 @@ func createService(client *kubernetes.Clientset, svc *corev1.Service) error {
 	_, err := client.CoreV1().Services(svc.ObjectMeta.Namespace).Create(context.Background(), svc, v1.CreateOptions{})
 	if err != nil {
 		if k8serrors.IsAlreadyExists(err) {
-			return fmt.Errorf("MinIO Operator Service %s: already present, skipped", svc.ObjectMeta.Name)
+			fmt.Printf("MinIO Operator Service %s: already present, skipped\n", svc.ObjectMeta.Name)
+			return nil
 		}
 		return err
 	}

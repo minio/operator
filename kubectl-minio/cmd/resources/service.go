@@ -19,6 +19,7 @@
 package resources
 
 import (
+	"github.com/minio/kubectl-minio/cmd/helpers"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -30,7 +31,7 @@ func NewServiceForOperator(opts OperatorOptions) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:    operatorLabels(),
-			Name:      "operator",
+			Name:      helpers.DefaultOperatorServiceName,
 			Namespace: opts.Namespace,
 		},
 		Spec: corev1.ServiceSpec{

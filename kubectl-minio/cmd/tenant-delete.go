@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
@@ -64,7 +65,13 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.run(args)
+			klog.Info("delete tenant command started")
+			err := c.run(args)
+			if err != nil {
+				klog.Warning(err)
+				return err
+			}
+			return nil
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)

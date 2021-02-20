@@ -33,6 +33,7 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 )
 
@@ -60,7 +61,13 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if err := c.validate(args); err != nil {
 				return err
 			}
-			return c.run()
+			klog.Info("upgrade tenant command started")
+			err := c.run()
+			if err != nil {
+				klog.Warning(err)
+				return err
+			}
+			return nil
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)

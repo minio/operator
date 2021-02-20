@@ -81,6 +81,9 @@ const (
 
 	// DefaultConsoleImage is the default console image used while creating tenant
 	DefaultConsoleImage = "minio/console:v0.6.0"
+
+	// DefaultOperatorServiceName is the default service name for operator
+	DefaultOperatorServiceName = "operator"
 )
 
 var (
