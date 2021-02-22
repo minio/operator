@@ -30,6 +30,7 @@ import (
 	"github.com/minio/minio/pkg/color"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -62,7 +63,13 @@ func newTenantExpandCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if err := v.validate(args); err != nil {
 				return err
 			}
-			return v.run()
+			klog.Info("expand tenant command started")
+			err := v.run()
+			if err != nil {
+				klog.Warning(err)
+				return err
+			}
+			return nil
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)

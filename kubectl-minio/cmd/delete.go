@@ -25,6 +25,7 @@ import (
 	"io"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/klog/v2"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -38,6 +39,7 @@ import (
 	"github.com/minio/minio/pkg/color"
 	"github.com/spf13/cobra"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -74,7 +76,13 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if len(args) != 0 {
 				return errors.New("delete command does not accept arguments")
 			}
-			return o.run()
+			klog.Info("delete command started")
+			err := o.run()
+			if err != nil {
+				klog.Warning(err)
+				return err
+			}
+			return nil
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)
@@ -85,6 +93,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 
 func (o *deleteCmd) run() error {
 	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	ctx := context.Background()
 	client, err := helpers.GetKubeClient(path)
 	if err != nil {
 		return err
@@ -100,25 +109,29 @@ func (o *deleteCmd) run() error {
 	// Load Resources
 	emfs, decode := resources.GetFSAndDecoder()
 	crdObj := resources.LoadTenantCRD(emfs, decode)
-	if err := client.CoreV1().ServiceAccounts(o.operatorOpts.Namespace).Delete(context.Background(), helpers.DefaultServiceAccount, v1.DeleteOptions{}); err != nil {
+	if err := client.CoreV1().ServiceAccounts(o.operatorOpts.Namespace).Delete(ctx, helpers.DefaultServiceAccount, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
-	if err := client.AppsV1().Deployments(o.operatorOpts.Namespace).Delete(context.Background(), helpers.DeploymentName, v1.DeleteOptions{}); err != nil {
+	if err := client.AppsV1().Deployments(o.operatorOpts.Namespace).Delete(ctx, helpers.DeploymentName, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
-	if err := extclient.ApiextensionsV1().CustomResourceDefinitions().Delete(context.Background(), crdObj.Name, v1.DeleteOptions{}); err != nil {
+	if err := client.CoreV1().Services(o.operatorOpts.Namespace).Delete(ctx, helpers.DefaultOperatorServiceName, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	if err := extclient.ApiextensionsV1().CustomResourceDefinitions().Delete(ctx, crdObj.Name, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
 	crObj := resources.LoadClusterRole(emfs, decode)
-	if err := client.RbacV1().ClusterRoles().Delete(context.Background(), crObj.Name, v1.DeleteOptions{}); err != nil {
+	if err := client.RbacV1().ClusterRoles().Delete(ctx, crObj.Name, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
-	if err := client.RbacV1().ClusterRoleBindings().Delete(context.Background(), helpers.ClusterRoleBindingName, v1.DeleteOptions{}); err != nil {
+	if err := client.RbacV1().ClusterRoleBindings().Delete(ctx, helpers.ClusterRoleBindingName, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
 	consoleResources := resources.LoadConsoleUI(emfs, decode, &o.operatorOpts)
-	if err := deleteConsoleResources(o.operatorOpts, extclient, dynclient, consoleResources); err != nil {
-		return err
+	if err := deleteConsoleResources(o.operatorOpts, extclient, dynclient, consoleResources); err != nil && !k8serrors.IsNotFound(err) {
+		klog.Info(err)
+		return errors.New("Cannot delete console resources")
 	}
 	return nil
 }
@@ -129,8 +142,8 @@ func deleteConsoleResources(opts resources.OperatorOptions, clientset *apiextens
 
 	groupResources, err := restmapper.GetAPIGroupResources(clientset.Discovery())
 	if err != nil {
-		fmt.Println(err)
-		return errors.New("Cannot get group resources.")
+		klog.Info(err)
+		return errors.New("Cannot get group resources")
 	}
 	rm := restmapper.NewDiscoveryRESTMapper(groupResources)
 
@@ -173,16 +186,14 @@ func deleteConsoleResources(opts resources.OperatorOptions, clientset *apiextens
 
 func clusterScopeDelete(dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, name string) error {
 	if err := dynClient.Resource(mapping.Resource).Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
-		fmt.Println(err)
-		return errors.New("Cannot delete console resources")
+		return err
 	}
 	return nil
 }
 
 func namespaceScopeDelete(opts resources.OperatorOptions, dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, name string) error {
 	if err := dynClient.Resource(mapping.Resource).Namespace(opts.Namespace).Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
-		fmt.Println(err)
-		return errors.New("Cannot delete console resources")
+		return err
 	}
 	return nil
 }

@@ -37,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 )
 
@@ -67,7 +68,13 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if err := c.validate(args); err != nil {
 				return err
 			}
-			return c.run(args)
+			klog.Info("create tenant command started")
+			err := c.run(args)
+			if err != nil {
+				klog.Warning(err)
+				return err
+			}
+			return nil
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)

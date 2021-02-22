@@ -29,6 +29,7 @@ import (
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/minio/pkg/color"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
@@ -58,7 +59,13 @@ func newTenantInfoCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if err := c.validate(args); err != nil {
 				return err
 			}
-			return c.run(args)
+			klog.Info("info tenant command started")
+			err := c.run(args)
+			if err != nil {
+				klog.Warning(err)
+				return err
+			}
+			return nil
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)

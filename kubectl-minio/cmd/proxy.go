@@ -28,6 +28,7 @@ import (
 	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 
 	"github.com/fatih/color"
 
@@ -64,7 +65,13 @@ func newProxyCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if len(args) != 0 {
 				return errors.New("this command does not accept arguments")
 			}
-			return o.run()
+			klog.Info("proxy command started")
+			err := o.run()
+			if err != nil {
+				klog.Warning(err)
+				return err
+			}
+			return nil
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)

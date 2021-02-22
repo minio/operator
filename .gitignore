@@ -8,3 +8,4 @@ kubectl-minio/kubectl-minio
 *.zip
 kubectl-minio/crds
 logsearchapi/logsearchapi
+*.log
