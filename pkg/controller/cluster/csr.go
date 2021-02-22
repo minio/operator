@@ -38,7 +38,7 @@ import (
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
-	certificates "k8s.io/api/certificates/v1beta1"
+	certificates "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -156,7 +156,7 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 
 	kubeCSR := &certificates.CertificateSigningRequest{
 		TypeMeta: v1.TypeMeta{
-			APIVersion: "certificates.k8s.io/v1beta1",
+			APIVersion: "certificates.k8s.io/v1",
 			Kind:       "CertificateSigningRequest",
 		},
 		ObjectMeta: v1.ObjectMeta{
@@ -204,7 +204,7 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 		},
 	}
 
-	_, err = c.certClient.CertificateSigningRequests().UpdateApproval(ctx, ks, metav1.UpdateOptions{})
+	_, err = c.certClient.CertificateSigningRequests().UpdateApproval(ctx, name, ks, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
