@@ -60,7 +60,7 @@ import (
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
+	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	batchlisters "k8s.io/client-go/listers/batch/v1"
@@ -146,7 +146,7 @@ type Controller struct {
 	// minioClientSet is a clientset for our own API group
 	minioClientSet clientset.Interface
 	// certClient is a clientset for our certficate management
-	certClient certapi.CertificatesV1beta1Client
+	certClient certapi.CertificatesV1Client
 	// statefulSetLister is able to list/get StatefulSets from a shared
 	// informer's store.
 	statefulSetLister appslisters.StatefulSetLister
@@ -206,7 +206,7 @@ type Controller struct {
 func NewController(
 	kubeClientSet kubernetes.Interface,
 	minioClientSet clientset.Interface,
-	certClient certapi.CertificatesV1beta1Client,
+	certClient certapi.CertificatesV1Client,
 	statefulSetInformer appsinformers.StatefulSetInformer,
 	deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer batchinformers.JobInformer,

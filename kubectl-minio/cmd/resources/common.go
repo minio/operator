@@ -45,7 +45,6 @@ import (
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	_ "github.com/minio/kubectl-minio/statik"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 func tenantStorage(q resource.Quantity) corev1.ResourceList {
@@ -83,7 +82,6 @@ func GetFSAndDecoder() (http.FileSystem, func(data []byte, defaults *schema.Grou
 	sch := runtime.NewScheme()
 	scheme.AddToScheme(sch)
 	apiextensionv1.AddToScheme(sch)
-	apiextensionv1beta1.AddToScheme(sch)
 	appsv1.AddToScheme(sch)
 	rbacv1.AddToScheme(sch)
 	corev1.AddToScheme(sch)
