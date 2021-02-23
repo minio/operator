@@ -67,7 +67,7 @@ early development using MinIO for object storage.
 
 ## Prerequisites
 
-- Starting with Operator v4.0.0, MinIO requires Kubernetes version 1.19.0 or later. Previous versions of the Operator supported Kubernetes 1.17.0 or later. You must upgrade your Kubernetes cluster to 1.19.0 or later to use Operator v4.0.0+.
+- MinIO requires Kubernetes version 1.17.0 or later.
 
 - This procedure assumes the cluster contains a 
   [namespace](https://github.com/minio/operator/blob/master/README.md#minio-tenant-namespace) for
@@ -197,7 +197,7 @@ to temporarily forward traffic from the local host to the MinIO Tenant.
 
 MinIO supports expanding an existing MinIO Tenant onto additional hosts and storage.
 
-- Starting with Operator v4.0.0, MinIO requires Kubernetes version 1.19.0 or later. Previous versions of the Operator supported Kubernetes 1.17.0 or later. You must upgrade your Kubernetes cluster to 1.19.0 or later to use Operator v4.0.0+.
+- MinIO requires Kubernetes version 1.17.0 or later.
 
 - This procedure assumes the cluster contains a 
   [namespace](https://github.com/minio/operator#create-a-namespace) for
