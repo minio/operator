@@ -154,6 +154,10 @@ func LoadConsoleUI(emfs http.FileSystem, decode func(data []byte, defaults *sche
 			case *appsv1.Deployment:
 				if resourceObj, ok := obj.(*appsv1.Deployment); ok {
 					resourceObj.Namespace = opts.Namespace
+					// console image
+					if opts.ConsoleImage != "" {
+						resourceObj.Spec.Template.Spec.Containers[0].Image = opts.ConsoleImage
+					}
 					// push down image pull secrets
 					if opts.ImagePullSecret != "" {
 						resourceObj.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: opts.ImagePullSecret}}

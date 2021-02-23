@@ -33,6 +33,7 @@ type OperatorOptions struct {
 	NSToWatch       string
 	ClusterDomain   string
 	ImagePullSecret string
+	ConsoleImage    string
 }
 
 func operatorLabels() map[string]string {

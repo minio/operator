@@ -92,6 +92,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVarP(&o.operatorOpts.ClusterDomain, "cluster-domain", "d", helpers.DefaultClusterDomain, "cluster domain of the Kubernetes cluster")
 	f.StringVar(&o.operatorOpts.NSToWatch, "namespace-to-watch", "", "namespace where operator looks for MinIO tenants, leave empty for all namespaces")
 	f.StringVar(&o.operatorOpts.ImagePullSecret, "image-pull-secret", "", "image pull secret to be used for pulling operator image")
+	f.StringVar(&o.operatorOpts.ConsoleImage, "console-image", "", "console image")
 	f.BoolVarP(&o.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	return cmd
