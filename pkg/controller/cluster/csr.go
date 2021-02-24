@@ -124,7 +124,7 @@ func (c *Controller) createCSR(ctx context.Context, tenant *miniov2.Tenant) erro
 		return err
 	}
 
-	err = c.createCertificate(ctx, tenant.MinIOPodLabels(), tenant.MinIOCSRName(), tenant.Namespace, csrBytes, tenant)
+	err = c.createCertificate(ctx, tenant.MinIOPodLabels(), tenant.MinIOCSRName(), csrBytes, tenant, tenant.GetObjectKind())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
 		return err
@@ -151,7 +151,7 @@ func (c *Controller) createCSR(ctx context.Context, tenant *miniov2.Tenant) erro
 }
 
 // createCertificate is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, owner metav1.Object) error {
+func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name string, csrBytes []byte, owner metav1.Object, ownerVK schema.ObjectKind) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 
 	kubeCSR := &certificates.CertificateSigningRequest{
@@ -162,16 +162,14 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 		ObjectMeta: v1.ObjectMeta{
 			Name:      name,
 			Labels:    labels,
-			Namespace: namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(owner, schema.GroupVersionKind{
-					Group:   miniov2.SchemeGroupVersion.Group,
-					Version: miniov2.SchemeGroupVersion.Version,
-					Kind:    miniov2.MinIOCRDResourceKind,
-				}),
-			},
+			Namespace: owner.GetNamespace(),
+			//OwnerReferences: []metav1.OwnerReference{
+			//	*metav1.NewControllerRef(owner, ownerVK.GroupVersionKind()),
+			//},
 		},
 		Spec: certificates.CertificateSigningRequestSpec{
+			SignerName: "min.io/operator",
+			//SignerName: "kubernetes.io/kube-apisever-client",
 			Request: encodedBytes,
 			Groups:  []string{"system:authenticated"},
 			Usages: []certificates.KeyUsage{
@@ -196,6 +194,7 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 	ks.Status = certificates.CertificateSigningRequestStatus{
 		Conditions: []certificates.CertificateSigningRequestCondition{
 			{
+				Status:         corev1.ConditionTrue,
 				Type:           certificates.CertificateApproved,
 				Reason:         "MinIOOperatorAutoApproval",
 				Message:        "Automatically approved by MinIO Operator",

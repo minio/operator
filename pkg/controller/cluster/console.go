@@ -75,7 +75,7 @@ func (c *Controller) createConsoleTLSCSR(ctx context.Context, tenant *miniov2.Te
 		return err
 	}
 
-	err = c.createCertificate(ctx, tenant.ConsolePodLabels(), tenant.ConsoleCSRName(), tenant.Namespace, csrBytes, tenant)
+	err = c.createCertificate(ctx, tenant.ConsolePodLabels(), tenant.ConsoleCSRName(), csrBytes, tenant, tenant.GetObjectKind())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.ConsoleCSRName(), err)
 		return err

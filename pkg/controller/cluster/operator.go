@@ -25,6 +25,8 @@ import (
 	"errors"
 	"fmt"
 
+	v1 "k8s.io/api/apps/v1"
+
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -99,15 +101,14 @@ func (c *Controller) createOperatorTLSSecret(ctx context.Context, operator metav
 // createOperatorTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that Operator deployment will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createOperatorTLSCSR(ctx context.Context, operator metav1.Object) error {
+func (c *Controller) createOperatorTLSCSR(ctx context.Context, operator *v1.Deployment) error {
 	privKeysBytes, csrBytes, err := generateOperatorCryptoData()
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err
 	}
-	namespace := miniov2.GetNSFromFile()
-	operatorCSRName := fmt.Sprintf("operator-%s-csr", namespace)
-	err = c.createCertificate(ctx, map[string]string{}, operatorCSRName, namespace, csrBytes, operator)
+	operatorCSRName := fmt.Sprintf("operator-%s-csr", miniov2.GetNSFromFile())
+	err = c.createCertificate(ctx, map[string]string{}, operatorCSRName, csrBytes, operator, operator.GetObjectKind())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", operatorCSRName, err)
 		return err
@@ -132,7 +133,7 @@ func (c *Controller) createOperatorTLSCSR(ctx context.Context, operator metav1.O
 	return nil
 }
 
-func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator metav1.Object) error {
+func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator *v1.Deployment) error {
 	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, "operator-auto-tls", metav1.GetOptions{}); err != nil {
 		if k8serrors.IsNotFound(err) {
 			klog.V(2).Infof("Creating a new Certificate Signing Request for Operator Server Certs, cluster %q")
