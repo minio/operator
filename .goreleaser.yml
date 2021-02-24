@@ -50,8 +50,6 @@ builds:
       - ppc64le
       - s390x
     ignore:
-      - goos: darwin
-        goarch: arm64
       - goos: windows
         goarch: arm64
     env:
@@ -72,6 +70,7 @@ dockers:
 - image_templates:
   - "minio/operator:{{ .Tag }}-amd64"
   use_buildx: true
+  goarch: amd64
   dockerfile: Dockerfile
   extra_files:
     - LICENSE
@@ -82,6 +81,7 @@ dockers:
   - "minio/operator:{{ .Tag }}-ppc64le"
   use_buildx: true
   dockerfile: Dockerfile
+  goarch: ppc64le
   extra_files:
     - LICENSE
     - CREDITS
@@ -90,6 +90,7 @@ dockers:
 - image_templates:
   - "minio/operator:{{ .Tag }}-s390x"
   use_buildx: true
+  goarch: s390x
   dockerfile: Dockerfile
   extra_files:
     - LICENSE
