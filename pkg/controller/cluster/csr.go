@@ -34,6 +34,8 @@ import (
 	"syscall"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
+
 	"k8s.io/klog/v2"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -124,7 +126,7 @@ func (c *Controller) createCSR(ctx context.Context, tenant *miniov2.Tenant) erro
 		return err
 	}
 
-	err = c.createCertificate(ctx, tenant.MinIOPodLabels(), tenant.MinIOCSRName(), csrBytes, tenant, tenant.GetObjectKind())
+	err = c.createCertificateForTenant(ctx, tenant.MinIOPodLabels(), tenant.MinIOCSRName(), tenant.Name, csrBytes, tenant)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
 		return err
@@ -150,8 +152,24 @@ func (c *Controller) createCSR(ctx context.Context, tenant *miniov2.Tenant) erro
 	return nil
 }
 
+func (c *Controller) createCertificateForTenant(ctx context.Context, labels map[string]string, name string, namespace string, csrBytes []byte, tenant *miniov2.Tenant) error {
+	ownerRef := tenant.OwnerRef()
+	return c.createCertificateWithOwnerReference(ctx, labels, name, namespace, csrBytes, ownerRef)
+}
+
+func (c *Controller) createCertificateForDeployment(ctx context.Context, labels map[string]string, name string, namespace string, csrBytes []byte, deployment *appsv1.Deployment) error {
+	ownerRef := []metav1.OwnerReference{
+		*metav1.NewControllerRef(deployment, schema.GroupVersionKind{
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "Deployment",
+		}),
+	}
+	return c.createCertificateWithOwnerReference(ctx, labels, name, namespace, csrBytes, ownerRef)
+}
+
 // createCertificate is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name string, csrBytes []byte, owner metav1.Object, ownerVK schema.ObjectKind) error {
+func (c *Controller) createCertificateWithOwnerReference(ctx context.Context, labels map[string]string, name string, namespace string, csrBytes []byte, ownerRef []metav1.OwnerReference) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 
 	kubeCSR := &certificates.CertificateSigningRequest{
@@ -160,12 +178,10 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 			Kind:       "CertificateSigningRequest",
 		},
 		ObjectMeta: v1.ObjectMeta{
-			Name:      name,
-			Labels:    labels,
-			Namespace: owner.GetNamespace(),
-			//OwnerReferences: []metav1.OwnerReference{
-			//	*metav1.NewControllerRef(owner, ownerVK.GroupVersionKind()),
-			//},
+			Name:            name,
+			Labels:          labels,
+			Namespace:       namespace,
+			OwnerReferences: ownerRef,
 		},
 		Spec: certificates.CertificateSigningRequestSpec{
 			SignerName: "min.io/operator",
