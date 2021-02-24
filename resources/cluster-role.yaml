@@ -92,8 +92,7 @@ rules:
   - apiGroups:
       - certificates.k8s.io
     resourceNames:
-      - kubernetes.io/legacy-unknown
-      - min.io/operator
+      - kubernetes.io/kube-apiserver-client
     resources:
       - signers
     verbs:
