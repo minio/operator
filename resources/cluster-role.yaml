@@ -93,6 +93,7 @@ rules:
       - certificates.k8s.io
     resourceNames:
       - kubernetes.io/legacy-unknown
+      - min.io/operator
     resources:
       - signers
     verbs:
