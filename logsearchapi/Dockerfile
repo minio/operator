@@ -1,5 +1,7 @@
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.3
 
+ARG TARGETARCH
+
 LABEL name="MinIO" \
       vendor="MinIO Inc <dev@min.io>" \
       maintainer="MinIO Inc <dev@min.io>" \
@@ -11,6 +13,6 @@ LABEL name="MinIO" \
 COPY CREDITS /licenses/CREDITS
 COPY LICENSE /licenses/LICENSE
 
-COPY logsearchapi /logsearchapi
+COPY logsearchapi_${TARGETARCH} /logsearchapi
 
 CMD ["/logsearchapi"]
