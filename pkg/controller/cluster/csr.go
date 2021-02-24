@@ -185,9 +185,8 @@ func (c *Controller) createCertificateWithOwnerReference(ctx context.Context, la
 		},
 		Spec: certificates.CertificateSigningRequestSpec{
 			SignerName: "min.io/operator",
-			//SignerName: "kubernetes.io/kube-apisever-client",
-			Request: encodedBytes,
-			Groups:  []string{"system:authenticated"},
+			Request:    encodedBytes,
+			Groups:     []string{"system:authenticated"},
 			Usages: []certificates.KeyUsage{
 				certificates.UsageDigitalSignature,
 				certificates.UsageServerAuth,

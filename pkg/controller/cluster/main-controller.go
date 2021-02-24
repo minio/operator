@@ -580,9 +580,9 @@ var operatorTLSSecretName = "operator-tls"
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
+	namespace := miniov2.GetNSFromFile()
+	ctx := context.Background()
 	go func() {
-		ctx := context.Background()
-		namespace := miniov2.GetNSFromFile()
 		// operator deployment for owner reference
 		operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, "minio-operator", metav1.GetOptions{})
 		if err != nil {
@@ -595,7 +595,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		for {
 			// operator TLS certificates
 			operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, operatorTLSSecretName, metav1.GetOptions{})
-			if err != nil {
+			if err != nil || operatorTLSCert == nil {
 				klog.Infof("operator TLS secret not found", err.Error())
 				// we will request the certificates for operator via CSR
 				if err = c.checkAndCreateOperatorCSR(ctx, operatorDeployment); err != nil {
@@ -630,6 +630,16 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			return
 		}
 	}()
+
+	for {
+		// Check if operator-tls certificate secret exists
+		operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, operatorTLSSecretName, metav1.GetOptions{})
+		if err == nil && operatorTLSCert != nil {
+			break
+		}
+		klog.Info("Waiting for the operator certificates to start the workers")
+		time.Sleep(time.Second * 10)
+	}
 
 	// Start the informer factories to begin populating the informer caches
 	klog.Info("Starting Tenant controller")
