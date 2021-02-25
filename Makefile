@@ -82,9 +82,8 @@ logsearchapi:
 		go test -race ./... && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
-		go build && \
-		docker build -t $(LOGSEARCHAPI_TAG) . \
-   )
+		GOOS=linux go build --ldflags "-s -w" -trimpath -o $(LOGSEARCHAPI)_amd64 && \
+		docker buildx build --output=type=docker --platform linux/amd64 -t $(LOGSEARCHAPI_TAG) .)
 
 getconsoleuiyaml:
 	@echo "Getting the latest Console UI"
