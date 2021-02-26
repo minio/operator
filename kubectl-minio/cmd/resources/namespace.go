@@ -26,6 +26,10 @@ import (
 // NewNamespaceForOperator will return a new namespace for a MinIO Operator
 func NewNamespaceForOperator(name string) *corev1.Namespace {
 	return &corev1.Namespace{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Namespace",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},

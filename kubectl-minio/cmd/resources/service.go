@@ -29,6 +29,10 @@ func NewServiceForOperator(opts OperatorOptions) *corev1.Service {
 	operatorWebhookHTTPPort := corev1.ServicePort{Port: 4222, Name: "http"}
 	operatorWebhookHTTPSPort := corev1.ServicePort{Port: 4233, Name: "https"}
 	return &corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:    operatorLabels(),
 			Name:      helpers.DefaultOperatorServiceName,
