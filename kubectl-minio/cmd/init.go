@@ -159,7 +159,7 @@ func (o *operatorInitCmd) run() error {
 		return nil
 	}
 	// build yaml output
-	o.steps = append(o.steps, crdObj, crObj, sa, crb, d)
+	o.steps = append(o.steps, ns, crdObj, crObj, sa, crb, svc, d)
 	o.steps = append(o.steps, consoleResources...)
 	op, err := helpers.ToYaml(o.steps)
 	if err != nil {
