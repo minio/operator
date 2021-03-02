@@ -1,0 +1,41 @@
+# Default values for minio-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+operator:
+  image:
+    repository: minio/operator
+    tag: v4.0.0
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  replicaCount: 1
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+      ephemeral-storage: 500Mi
+
+console:
+  image:
+    repository: minio/console
+    tag: v0.6.2
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+
+namespace:
+  create: true
+  name: "minio-operator"
+
+service:
+  type: ClusterIP
+  port: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
