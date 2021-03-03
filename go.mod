@@ -7,7 +7,6 @@ require (
 	github.com/docker/cli v0.0.0-20191017083524-a8ff7f821017
 	github.com/google/go-containerregistry v0.1.2
 	github.com/gorilla/mux v1.8.0
-	github.com/minio/controller-tools v0.4.7 // indirect
 	github.com/minio/minio v0.0.0-20210128013121-e79829b5b368
 	github.com/minio/minio-go/v7 v7.0.8-0.20210127003153-c40722862654
 	github.com/secure-io/sio-go v0.3.1 // indirect
