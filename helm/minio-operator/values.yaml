@@ -20,6 +20,6 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.6.2
+    tag: v0.6.3
     pullPolicy: IfNotPresent
   replicaCount: 1
