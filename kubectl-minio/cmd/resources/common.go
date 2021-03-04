@@ -23,6 +23,8 @@ import (
 	"log"
 	"regexp"
 
+	"github.com/minio/operator/resources"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -40,16 +42,12 @@ import (
 
 	"k8s.io/client-go/scale/scheme"
 
-	// Statik CRD assets for our plugin
-	"embed"
-
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
-//go:embed yamls/*
-var fs embed.FS
+var fs = resources.GetStaticResources()
 
 func tenantStorage(q resource.Quantity) corev1.ResourceList {
 	m := make(corev1.ResourceList, 1)
@@ -93,7 +91,7 @@ func GetSchemeDecoder() func(data []byte, defaults *schema.GroupVersionKind, int
 }
 
 func LoadTenantCRD(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *apiextensionv1.CustomResourceDefinition {
-	contents, err := fs.Open("yamls/base/crds/minio.min.io_tenants.yaml")
+	contents, err := fs.Open("base/crds/minio.min.io_tenants.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -116,7 +114,7 @@ func LoadTenantCRD(decode func(data []byte, defaults *schema.GroupVersionKind, i
 }
 
 func LoadClusterRole(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *rbacv1.ClusterRole {
-	contents, err := fs.Open("yamls/cluster-role.yaml")
+	contents, err := fs.Open("cluster-role.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -139,7 +137,7 @@ func LoadClusterRole(decode func(data []byte, defaults *schema.GroupVersionKind,
 }
 
 func LoadConsoleUI(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error), opts *OperatorOptions) []runtime.Object {
-	contents, err := fs.Open("yamls/console-ui.yaml")
+	contents, err := fs.Open("console-ui.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
