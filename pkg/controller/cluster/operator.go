@@ -29,7 +29,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"k8s.io/klog/v2"
@@ -79,13 +78,6 @@ func (c *Controller) createOperatorTLSSecret(ctx context.Context, operator metav
 			Name:      secretName,
 			Namespace: miniov2.GetNSFromFile(),
 			Labels:    labels,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(operator, schema.GroupVersionKind{
-					Group:   miniov2.SchemeGroupVersion.Group,
-					Version: miniov2.SchemeGroupVersion.Version,
-					Kind:    miniov2.OperatorCRDResourceKind,
-				}),
-			},
 		},
 		Data: map[string][]byte{
 			"private.key": pkBytes,
