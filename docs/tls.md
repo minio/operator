@@ -81,5 +81,5 @@ Finally configure MinIO to use the newly created TLS certificate:
 ```yaml
   externalCertSecret:
     - name: tls-minio
-      type: cert-manager.io/v1alpha2
+      type: kubernetes.io/tls
 ```
