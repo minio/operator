@@ -22,7 +22,7 @@ Installing the Chart
 Install this chart using:
 
 ```bash
-helm install --namespace minio-operator --create-namespace --generate-name minio/minio
+helm install --namespace minio-operator --create-namespace --generate-name minio/minio-operator
 ```
 
 The command deploys MinIO Operator on the Kubernetes cluster in the default configuration.
