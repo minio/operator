@@ -2,9 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: console-sa
-  {{- if .Values.namespace.create }}
-  namespace: {{ .Values.namespace.name }}
-  {{- end }}
+  namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -115,9 +113,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: console-sa
-  {{- if .Values.namespace.create }}
-  namespace: {{ .Values.namespace.name }}
-  {{- end }}
+  namespace: {{ .Release.Namespace }}
 ---
 apiVersion: v1
 data:
@@ -126,6 +122,4 @@ data:
 kind: ConfigMap
 metadata:
   name: console-env
-  {{- if .Values.namespace.create }}
-  namespace: {{ .Values.namespace.name }}
-  {{- end }}
+  namespace: {{ .Release.Namespace }}

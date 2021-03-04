@@ -1,6 +1,4 @@
 # Default values for minio-operator.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 
 operator:
   image:
@@ -25,17 +23,3 @@ console:
     tag: v0.6.2
     pullPolicy: IfNotPresent
   replicaCount: 1
-
-namespace:
-  create: true
-  name: "minio-operator"
-
-service:
-  type: ClusterIP
-  port: 80
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
