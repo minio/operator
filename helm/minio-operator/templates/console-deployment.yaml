@@ -2,9 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "minio-operator.console-fullname" . }}
-  {{- if .Values.namespace.create }}
-  namespace: {{ .Values.namespace.name }}
-  {{- end }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "minio-operator.labels" . | nindent 4 }}
 spec:

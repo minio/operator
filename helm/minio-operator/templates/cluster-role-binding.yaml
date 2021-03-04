@@ -9,6 +9,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: minio-operator
-    {{- if .Values.namespace.create }}
-    namespace: {{ .Values.namespace.name }}
-    {{- end }}
+    namespace: {{ .Release.Namespace }}
