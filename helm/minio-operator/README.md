@@ -13,7 +13,7 @@ Configure MinIO Helm repo
 --------------------
 
 ```bash
-helm repo add minio https://helm.min.io/
+helm repo add minio https://operator.min.io/
 ```
 
 Installing the Chart
