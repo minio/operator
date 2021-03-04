@@ -66,5 +66,6 @@ func NewCmdMinIO(streams genericclioptions.IOStreams) *cobra.Command {
 	rootCmd.AddCommand(newTenantCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	rootCmd.AddCommand(newDeleteCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	rootCmd.AddCommand(newProxyCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
+	rootCmd.AddCommand(newVersionCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	return rootCmd
 }
