@@ -240,6 +240,3 @@ spec:
       type: kubernetes.io/tls
     kesSecret:
       name: minio-custom-cert-encryption-kes-config
-    metadata:
-      labels:
-        app: minio-autocert-encryption-kes
