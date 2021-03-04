@@ -70,9 +70,8 @@ regen-crd-docs:
 	@crd-ref-docs --source-path=${GOPATH}/src/github.com/minio/operator/pkg/apis --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/crd.adoc --templates-dir=docs/templates/asciidoctor/
 
 statik:
-	@echo "Building static assets"
-	@GO111MODULE=on go get github.com/rakyll/statik
-	@statik -src=$(KUSTOMIZE_HOME) -dest $(PLUGIN_HOME) -f
+	@echo "Copying resources to kubectl-minio static assets"
+	@cp -R resources/*  kubectl-minio/cmd/resources/yamls
 
 plugin: regen-crd
 	@echo "Building 'kubectl-minio' binary"

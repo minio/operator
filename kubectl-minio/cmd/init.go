@@ -106,10 +106,10 @@ func (o *operatorInitCmd) run() error {
 	svc := resources.NewServiceForOperator(o.operatorOpts)
 	ns := resources.NewNamespaceForOperator(o.operatorOpts.Namespace)
 	// Load Resources
-	emfs, decode := resources.GetFSAndDecoder()
-	crdObj := resources.LoadTenantCRD(emfs, decode)
-	crObj := resources.LoadClusterRole(emfs, decode)
-	consoleResources := resources.LoadConsoleUI(emfs, decode, &o.operatorOpts)
+	decoder := resources.GetSchemeDecoder()
+	crdObj := resources.LoadTenantCRD(decoder)
+	crObj := resources.LoadClusterRole(decoder)
+	consoleResources := resources.LoadConsoleUI(decoder, &o.operatorOpts)
 	if !o.output {
 		path, _ := rootCmd.Flags().GetString(kubeconfig)
 		client, err := helpers.GetKubeClient(path)

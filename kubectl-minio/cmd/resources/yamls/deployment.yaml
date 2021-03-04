@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-operator
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: minio-operator
+  template:
+    metadata:
+      labels:
+        name: minio-operator
+    spec:
+      serviceAccountName: minio-operator
+      containers:
+        - name: minio-operator
+          image: minio/operator:v4.0.0
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+              ephemeral-storage: 500Mi
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
