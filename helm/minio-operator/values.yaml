@@ -3,7 +3,7 @@
 operator:
   image:
     repository: minio/operator
-    tag: v4.0.0
+    tag: v4.0.1
     pullPolicy: IfNotPresent
   imagePullSecrets: []
   replicaCount: 1

@@ -2,7 +2,27 @@ apiVersion: v1
 entries:
   minio-operator:
   - apiVersion: v2
-    created: "2021-03-03T23:59:46.994877731-08:00"
+    created: "2021-03-05T10:14:55.137890739-08:00"
+    description: A Helm chart for MinIO Operator
+    digest: 58a0995b3d1545e455dd6f3fa58a5783c3e5ce498971d1b2500b9d022162c61a
+    home: https://min.io
+    icon: https://min.io/resources/img/logo/MINIO_wordmark.png
+    keywords:
+    - storage
+    - object-storage
+    - S3
+    maintainers:
+    - email: dev@minio.io
+      name: MinIO, Inc
+    name: minio-operator
+    sources:
+    - https://github.com/minio/operator
+    type: application
+    urls:
+    - https://operator.min.io/helm-releases/minio-operator-4.0.1.tgz
+    version: 4.0.1
+  - apiVersion: v2
+    created: "2021-03-05T10:14:55.136575345-08:00"
     description: A Helm chart for MinIO Operator
     digest: 8bc6f068743480ed1cecae0ec896ac6f46ffec5e7ed6e4efbb241bc3b47c7f21
     home: https://min.io
@@ -21,4 +41,4 @@ entries:
     urls:
     - https://operator.min.io/helm-releases/minio-operator-4.0.0.tgz
     version: 4.0.0
-generated: "2021-03-03T23:59:46.991642808-08:00"
+generated: "2021-03-05T10:14:55.134787057-08:00"
