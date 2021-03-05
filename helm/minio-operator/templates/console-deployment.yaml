@@ -27,7 +27,7 @@ spec:
           ports:
           - containerPort: 9090
             name: http
-          - containerPort: 9433
+          - containerPort: 9443
             name: https
           args:
           - server
