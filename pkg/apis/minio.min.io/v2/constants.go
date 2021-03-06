@@ -157,6 +157,12 @@ const ConsoleCertPath = "/tmp/certs"
 // PrometheusImage specifies the container image for prometheus server
 const PrometheusImage = "quay.io/prometheus/prometheus:latest"
 
+// PrometheusSideCarImage specifies the container image for prometheus sidecar
+const PrometheusSideCarImage = "alpine"
+
+// PrometheusInitImage specifies the init container image for prometheus server
+const PrometheusInitImage = "busybox"
+
 // PrometheusInstanceLabel is applied to the prometheus server pod
 const PrometheusInstanceLabel = "v1.min.io/prometheus"
 

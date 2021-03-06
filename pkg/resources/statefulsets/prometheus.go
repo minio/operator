@@ -88,7 +88,7 @@ func prometheusServerContainer(t *miniov2.Tenant) corev1.Container {
 	var runAsUser int64 = 1000
 	return corev1.Container{
 		Name:  miniov2.PrometheusContainerName,
-		Image: miniov2.PrometheusImage,
+		Image: t.Spec.Prometheus.Image,
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: miniov2.PrometheusPort,
@@ -119,7 +119,7 @@ func prometheusServerContainer(t *miniov2.Tenant) corev1.Container {
 func prometheusSidecarContainer(t *miniov2.Tenant) corev1.Container {
 	return corev1.Container{
 		Name:            miniov2.PrometheusContainerName + "-sidecar",
-		Image:           "alpine",
+		Image:           t.Spec.Prometheus.SideCarImage,
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    prometheusVolumeMounts(t),
 		Env:             prometheusEnvVars(t),
@@ -189,7 +189,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 	initContainers := []corev1.Container{
 		{
 			Name:  "prometheus-init-chown-data",
-			Image: "busybox",
+			Image: t.Spec.Prometheus.InitImage,
 			Command: []string{
 				"chown",
 				"-R",
