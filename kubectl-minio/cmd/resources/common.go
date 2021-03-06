@@ -19,9 +19,11 @@
 package resources
 
 import (
+	"io/ioutil"
 	"log"
-	"net/http"
 	"regexp"
+
+	"github.com/minio/operator/resources"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -31,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/rakyll/statik/fs"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -41,12 +42,12 @@ import (
 
 	"k8s.io/client-go/scale/scheme"
 
-	// Statik CRD assets for our plugin
 	"github.com/minio/kubectl-minio/cmd/helpers"
-	_ "github.com/minio/kubectl-minio/statik"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
+
+var fs = resources.GetStaticResources()
 
 func tenantStorage(q resource.Quantity) corev1.ResourceList {
 	m := make(corev1.ResourceList, 1)
@@ -75,11 +76,9 @@ func Pool(servers, volumes int32, q resource.Quantity, sc string) miniov2.Pool {
 	}
 }
 
-func GetFSAndDecoder() (http.FileSystem, func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) {
-	emfs, err := fs.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+// GetSchemeDecoder returns a decoder for the scheme's that we use
+func GetSchemeDecoder() func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error) {
+
 	sch := runtime.NewScheme()
 	scheme.AddToScheme(sch)
 	apiextensionv1.AddToScheme(sch)
@@ -88,16 +87,20 @@ func GetFSAndDecoder() (http.FileSystem, func(data []byte, defaults *schema.Grou
 	rbacv1.AddToScheme(sch)
 	corev1.AddToScheme(sch)
 	decode := serializer.NewCodecFactory(sch).UniversalDeserializer().Decode
-	return emfs, decode
+	return decode
 }
 
-func LoadTenantCRD(emfs http.FileSystem, decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *apiextensionv1.CustomResourceDefinition {
-	contents, err := fs.ReadFile(emfs, "/base/crds/minio.min.io_tenants.yaml")
+func LoadTenantCRD(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *apiextensionv1.CustomResourceDefinition {
+	contents, err := fs.Open("base/crds/minio.min.io_tenants.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	contentBytes, err := ioutil.ReadAll(contents)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	obj, _, err := decode(contents, nil, nil)
+	obj, _, err := decode(contentBytes, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,13 +113,17 @@ func LoadTenantCRD(emfs http.FileSystem, decode func(data []byte, defaults *sche
 	return crdObj
 }
 
-func LoadClusterRole(emfs http.FileSystem, decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *rbacv1.ClusterRole {
-	contents, err := fs.ReadFile(emfs, "/cluster-role.yaml")
+func LoadClusterRole(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *rbacv1.ClusterRole {
+	contents, err := fs.Open("cluster-role.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
+	contentBytes, err := ioutil.ReadAll(contents)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	obj, _, err := decode(contents, nil, nil)
+	obj, _, err := decode(contentBytes, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,12 +136,16 @@ func LoadClusterRole(emfs http.FileSystem, decode func(data []byte, defaults *sc
 	return resourceObj
 }
 
-func LoadConsoleUI(emfs http.FileSystem, decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error), opts *OperatorOptions) []runtime.Object {
-	contents, err := fs.ReadFile(emfs, "/console-ui.yaml")
+func LoadConsoleUI(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error), opts *OperatorOptions) []runtime.Object {
+	contents, err := fs.Open("console-ui.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
-	contentsString := string(contents)
+	contentBytes, err := ioutil.ReadAll(contents)
+	if err != nil {
+		log.Fatal(err)
+	}
+	contentsString := string(contentBytes)
 
 	regex := regexp.MustCompile("\n---")
 	chunks := regex.Split(contentsString, -1)

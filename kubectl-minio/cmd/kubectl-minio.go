@@ -30,7 +30,6 @@ import (
 
 	// Statik CRD assets for our plugin
 	"github.com/minio/kubectl-minio/cmd/helpers"
-	_ "github.com/minio/kubectl-minio/statik"
 )
 
 var (

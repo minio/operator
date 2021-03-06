@@ -69,11 +69,6 @@ regen-crd-docs:
 	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go get github.com/elastic/crd-ref-docs)
 	@crd-ref-docs --source-path=${GOPATH}/src/github.com/minio/operator/pkg/apis --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/crd.adoc --templates-dir=docs/templates/asciidoctor/
 
-statik:
-	@echo "Building static assets"
-	@GO111MODULE=on go get github.com/rakyll/statik
-	@statik -src=$(KUSTOMIZE_HOME) -dest $(PLUGIN_HOME) -f
-
 plugin: regen-crd
 	@echo "Building 'kubectl-minio' binary"
 	@(cd $(PLUGIN_HOME); go build -o kubectl-minio main.go)
@@ -92,5 +87,4 @@ logsearchapi:
 getconsoleuiyaml:
 	@echo "Getting the latest Console UI"
 	@kustomize build github.com/minio/console/k8s/operator-console/base > resources/console-ui.yaml
-	@make statik
 	@echo "Done"

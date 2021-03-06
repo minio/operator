@@ -107,8 +107,8 @@ func (o *deleteCmd) run() error {
 		return err
 	}
 	// Load Resources
-	emfs, decode := resources.GetFSAndDecoder()
-	crdObj := resources.LoadTenantCRD(emfs, decode)
+	decode := resources.GetSchemeDecoder()
+	crdObj := resources.LoadTenantCRD(decode)
 	if err := client.CoreV1().ServiceAccounts(o.operatorOpts.Namespace).Delete(ctx, helpers.DefaultServiceAccount, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
@@ -121,14 +121,14 @@ func (o *deleteCmd) run() error {
 	if err := extclient.ApiextensionsV1().CustomResourceDefinitions().Delete(ctx, crdObj.Name, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
-	crObj := resources.LoadClusterRole(emfs, decode)
+	crObj := resources.LoadClusterRole(decode)
 	if err := client.RbacV1().ClusterRoles().Delete(ctx, crObj.Name, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
 	if err := client.RbacV1().ClusterRoleBindings().Delete(ctx, helpers.ClusterRoleBindingName, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
 		return err
 	}
-	consoleResources := resources.LoadConsoleUI(emfs, decode, &o.operatorOpts)
+	consoleResources := resources.LoadConsoleUI(decode, &o.operatorOpts)
 	if err := deleteConsoleResources(o.operatorOpts, extclient, dynclient, consoleResources); err != nil && !k8serrors.IsNotFound(err) {
 		klog.Info(err)
 		return errors.New("Cannot delete console resources")
