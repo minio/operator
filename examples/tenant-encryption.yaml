@@ -236,9 +236,6 @@ spec:
     replicas: 2
     kesSecret:
       name: kes-config
-    metadata:
-      labels:
-        app: kes
     ## External secret
     # externalCertSecret:
     #   name: tls-ssl-kes

@@ -170,6 +170,3 @@ spec:
     replicas: 2
     kesSecret:
       name: minio-autocert-encryption-kes-config
-    metadata:
-      labels:
-        app: minio-autocert-encryption-kes
