@@ -23,3 +23,45 @@ console:
     tag: v0.6.3
     pullPolicy: IfNotPresent
   replicaCount: 1
+  secrets:
+    passphrase: ThisIsAVeryLongPasswordForExample
+    salt: ThisIsAVeryLongPasswordForExample
+    accessKey: ThisIsAVeryLongPasswordForExample
+    secretKey: ThisIsAVeryLongPasswordForExample
+
+tenant:
+  image:
+    repository: minio/minio
+    tag: RELEASE.2021-03-01T04-20-55Z
+    pullPolicy: IfNotPresent
+  imagePullSecrets: []
+  scheduler: {}
+  tolerations: {}
+  nodeSelector: {}
+  affinity: {}
+  resources: {}
+  securityContext: {}
+  persistence:
+    enabled: true
+    size: 10Gi
+    mountPath: /export
+    subPath: /data
+  secrets:
+    accessKey: ThisIsAVeryLongPasswordForExample
+    secretKey: ThisIsAVeryLongPasswordForExample
+  metrics:
+    enabled: false
+    port: 9000
+  pools:
+    servers: 4
+    volumesPerServer: 4
+  certificate:
+    externalCertSecret: {}
+    requestAutoCert: true
+    certConfig: {}
+    s3:
+      bucketDNS: false
+  podManagementPolicy: Parallel
+  serviceMetadata: {}
+  env: {}
+  priorityClassName : high-priority
