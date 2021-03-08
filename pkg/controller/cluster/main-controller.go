@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -1101,8 +1102,13 @@ func (c *Controller) syncHandler(key string) error {
 				if podIP == "" {
 					continue
 				}
+				ip := net.ParseIP(podIP)
 				// ping MinIO through that specific pod
 				podAddress := fmt.Sprintf("%s:9000", podIP)
+				// For IPv6 use [] brackets to ensure proper parsing
+				if ip.To4() == nil {
+					podAddress = fmt.Sprintf("[%s]:9000", podIP)
+				}
 				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, minioSecret.Data)
 				if err != nil {
 					return err
