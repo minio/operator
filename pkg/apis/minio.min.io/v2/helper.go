@@ -365,6 +365,18 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 	}
 
+	if t.HasPrometheusEnabled() {
+		if t.Spec.Prometheus.Image == "" {
+			t.Spec.Prometheus.Image = PrometheusImage
+		}
+		if t.Spec.Prometheus.SideCarImage == "" {
+			t.Spec.Prometheus.SideCarImage = PrometheusSideCarImage
+		}
+		if t.Spec.Prometheus.InitImage == "" {
+			t.Spec.Prometheus.InitImage = PrometheusInitImage
+		}
+	}
+
 	return t
 }
 

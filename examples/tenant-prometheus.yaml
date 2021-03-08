@@ -97,4 +97,7 @@ spec:
   podManagementPolicy: Parallel
 
   prometheus:
+    image: "prom/prometheus"
+    sidecarimage: "alpine"
+    initimage: "busybox"
     diskCapacityGB: 5
