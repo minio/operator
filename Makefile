@@ -67,7 +67,7 @@ regen-crd:
 
 regen-crd-docs:
 	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go get github.com/elastic/crd-ref-docs)
-	@crd-ref-docs --source-path=${GOPATH}/src/github.com/minio/operator/pkg/apis --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/crd.adoc --templates-dir=docs/templates/asciidoctor/
+	@crd-ref-docs --source-path=./pkg/apis/minio.min.io/v2 --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/crd.adoc --templates-dir=docs/templates/asciidoctor/
 
 plugin: regen-crd
 	@echo "Building 'kubectl-minio' binary"
