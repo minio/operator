@@ -20,13 +20,20 @@
 [cols="25a,75a", options="header"]
 |===
 | Field | Description
+
 {{ if $type.GVK -}}
-| *`apiVersion`* __string__ | `{{ $type.GVK.Group }}/{{ $type.GVK.Version }}`
-| *`kind`* __string__ | `{{ $type.GVK.Kind }}`
+|*`apiVersion`* __string__ 
+|`{{ $type.GVK.Group }}/{{ $type.GVK.Version }}`
+
+|*`kind`* __string__ 
+|`{{ $type.GVK.Kind }}`
+
 {{ end -}}
 
 {{ range $type.Members -}}
-| *`{{ .Name  }}`* __{{ asciidocRenderType .Type }}__ | {{ template "type_members" . }}
+|*`{{ .Name  }}`* __{{ asciidocRenderType .Type }}__ 
+|{{ template "type_members" . }}
+
 {{ end -}}
 |===
 {{ end -}}
