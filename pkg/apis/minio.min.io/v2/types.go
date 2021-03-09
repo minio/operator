@@ -360,6 +360,17 @@ type AuditConfig struct {
 
 // PrometheusConfig defines configuration for Prometheus metrics server
 type PrometheusConfig struct {
+	// Image defines Prometheus container image.
+	// +optional
+	Image string `json:"image,omitempty"`
+	// SideCarImage defines container image to be used for sidecar
+	// Expects "alpine" image
+	// +optional
+	SideCarImage string `json:"sidecarimage,omitempty"`
+	// InitImage defines init container image to be used for Prometheus
+	// Expects "busybox" image
+	// +optional
+	InitImage string `json:"initimage,omitempty"`
 	// DiskCapacityGB defines the disk capacity in GB available to the
 	// Prometheus server
 	// +optional
