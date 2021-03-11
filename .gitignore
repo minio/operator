@@ -9,3 +9,4 @@ kubectl-minio/kubectl-minio
 kubectl-minio/crds
 logsearchapi/logsearchapi
 *.log
+.vscode
