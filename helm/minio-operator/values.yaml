@@ -112,6 +112,7 @@ tenants:
         pullPolicy: IfNotPresent
       replicaCount: 1
       secrets:
+        name: console-secret
         passphrase: ThisIsAVeryLongPasswordForExample
         salt: ThisIsAVeryLongPasswordForExample
         accessKey: ThisIsAVeryLongPasswordForExample

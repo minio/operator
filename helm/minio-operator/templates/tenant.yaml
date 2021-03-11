@@ -102,7 +102,7 @@ spec:
     image: {{ .console.image.repository }}:{{ .console.image.tag }}
     replicas: {{ .console.replicaCount }}
     consoleSecret:
-      name: console-secret
+      name: {{ .console.secrets.name }}
     {{- with .securityContext }}
     securityContext:
       {{ toYaml . | nindent 6 }}
