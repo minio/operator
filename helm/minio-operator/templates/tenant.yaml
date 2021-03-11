@@ -111,7 +111,7 @@ spec:
   ## accessible as DNS entries of form `<bucketname>.minio.default.svc.cluster.local`
   s3:
     ## This feature is turned off by default
-    bucketDNS: {{ .certificate.s3.bucketDNS }}
+    bucketDNS: {{ .s3.bucketDNS }}
 
   ## This field is used only when "requestAutoCert" is set to true. Use this field to set CommonName
   ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is
