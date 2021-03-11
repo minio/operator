@@ -23,11 +23,6 @@ console:
     tag: v0.6.3
     pullPolicy: IfNotPresent
   replicaCount: 1
-  secrets:
-    passphrase: ThisIsAVeryLongPasswordForExample
-    salt: ThisIsAVeryLongPasswordForExample
-    accessKey: ThisIsAVeryLongPasswordForExample
-    secretKey: ThisIsAVeryLongPasswordForExample
 
 tenants:
   - name: minio1
@@ -72,3 +67,8 @@ tenants:
         tag: v0.6.3
         pullPolicy: IfNotPresent
       replicaCount: 1
+      secrets:
+        passphrase: ThisIsAVeryLongPasswordForExample
+        salt: ThisIsAVeryLongPasswordForExample
+        accessKey: ThisIsAVeryLongPasswordForExample
+        secretKey: ThisIsAVeryLongPasswordForExample
