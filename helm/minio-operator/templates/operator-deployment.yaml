@@ -24,6 +24,11 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          env:
+          - name: CLUSTER_DOMAIN
+            value: {{ .Values.operator.clusterDomain }}
+          - name: WATCHED_NAMESPACE
+            value: {{ .Values.operator.nsToWatch }}
           resources:
             {{- toYaml .Values.operator.resources | nindent 12 }}
           securityContext:
