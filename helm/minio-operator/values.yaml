@@ -1,6 +1,8 @@
 # Default values for minio-operator.
 
 operator:
+  clusterDomain: "cluster.test"
+  nsToWatch: "hello"
   image:
     repository: minio/operator
     tag: v4.0.2
