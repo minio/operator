@@ -62,6 +62,7 @@ tenants:
       ## Sub path inside Mount path where MinIO stores data.
       subPath: /data
     secrets:
+      name: minio1-secret
       accessKey: ThisIsAVeryLongPasswordForExample
       secretKey: ThisIsAVeryLongPasswordForExample
     metrics:

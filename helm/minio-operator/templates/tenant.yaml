@@ -25,7 +25,7 @@ spec:
 
   ## Secret with credentials to be used by MinIO Tenant.
   credsSecret:
-    name: minio-creds-secret
+    name: {{ .secrets.name }}
 
   pools:
     - servers: {{ .pools.servers }}
