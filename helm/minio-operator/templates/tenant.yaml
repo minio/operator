@@ -6,98 +6,82 @@ metadata:
   ## Optionally pass labels to be applied to the statefulset pods
   labels:
     app: minio
+  {{ if .metrics.enabled }}
   ## Annotations for MinIO Tenant Pods
   annotations:
-    {{ if .metrics.enabled }}
     prometheus.io/path: /minio/prometheus/metrics
     prometheus.io/port: {{ .metrics.port }}
     prometheus.io/scrape: "true"
-    {{ end }}
-
+  {{ end }}
   {{ if .scheduler.name }}
   scheduler:
     name: {{ .scheduler.name }}
   {{ end }}
-
 spec:
   image: {{ .image.repository }}:{{ .image.tag }}
   imagePullPolicy: {{ .image.pullPolicy }}
-
   ## Secret with credentials to be used by MinIO Tenant.
   credsSecret:
     name: {{ .secrets.name }}
-
+  {{ range .pools }}
   pools:
-    - servers: {{ .pools.servers }}
-      volumesPerServer: {{ .pools.volumesPerServer }}
-      {{ if .persistence.enabled }}
+    - servers: {{ .servers }}
+      volumesPerServer: {{ .volumesPerServer }}
       volumeClaimTemplate:
         metadata:
           name: data
         spec:
+          storageClassName: {{ .storageClassName }}
           accessModes:
             - ReadWriteOnce
           resources:
             requests:
-              storage: {{ .persistence.size }}
-      {{ end }}
-
+              storage: {{ .size }}
       {{- with .tolerations }}
       tolerations:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-
       {{- with .nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-
       {{- with .affinity }}
       affinity:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-
       {{- with .resources }}
       resources:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-
       {{- with .securityContext }}
       securityContext:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-
-  mountPath: {{ .persistence.mountPath }}
-  subPath: {{ .persistence.subPath }}
-
+  {{ end }}
+  mountPath: {{ .mountPath }}
+  subPath: {{ .subPath }}
   {{- with .certificate.externalCertSecret }}
   externalCertSecret:
     {{ toYaml . | nindent 6 }}
   {{ end }}
-
   requestAutoCert: {{ .certificate.requestAutoCert }}
-
   s3:
     bucketDNS: {{ .s3.bucketDNS }}
-
   {{- with .certificate.certConfig }}
   certConfig:
     {{ toYaml . | nindent 4 }}
   {{- end }}
-
   podManagementPolicy: {{ .podManagementPolicy }}
-
   {{- with .serviceMetadata }}
   serviceMetadata:
     {{ toYaml . | nindent 4 }}
   {{- end }}
-
   {{- with .env }}
     {{ toYaml . | nindent 4 }}
   {{- end }}
-
+  {{ if .priorityClassName }}
   priorityClassName: {{ .priorityClassName }}
-
+  {{ end }}
   console:
     image: {{ .console.image.repository }}:{{ .console.image.tag }}
     replicas: {{ .console.replicaCount }}
