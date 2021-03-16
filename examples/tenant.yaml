@@ -103,6 +103,15 @@ spec:
       #           values:
       #           - hostname1
       #           - hostname2
+      #   podAntiAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #     - labelSelector:
+      #         matchExpressions:
+      #         - key: app
+      #           operator: In
+      #           values:
+      #           - store
+      #       topologyKey: "kubernetes.io/hostname" 
 
       ## Configure resource requests and limits for MinIO containers
       # resources:

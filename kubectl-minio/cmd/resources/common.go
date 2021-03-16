@@ -56,9 +56,9 @@ func tenantStorage(q resource.Quantity) corev1.ResourceList {
 }
 
 // Pool returns a Pool object from given values
-func Pool(servers, volumes int32, q resource.Quantity, sc string) miniov2.Pool {
-	return miniov2.Pool{
-		Servers:          servers,
+func Pool(opts *TenantOptions, volumes int32, q resource.Quantity) miniov2.Pool {
+	p := miniov2.Pool{
+		Servers:          opts.Servers,
 		VolumesPerServer: volumes,
 		VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
 			TypeMeta: metav1.TypeMeta{
@@ -70,10 +70,29 @@ func Pool(servers, volumes int32, q resource.Quantity, sc string) miniov2.Pool {
 				Resources: corev1.ResourceRequirements{
 					Requests: tenantStorage(q),
 				},
-				StorageClassName: storageClass(sc),
+				StorageClassName: storageClass(opts.StorageClass),
 			},
 		},
 	}
+	if !opts.DisableAntiAffinity {
+		p.Affinity = &corev1.Affinity{
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{{
+								Key:      miniov2.TenantLabel,
+								Operator: "In",
+								Values:   []string{opts.Name},
+							}},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			},
+		}
+	}
+	return p
 }
 
 // GetSchemeDecoder returns a decoder for the scheme's that we use
