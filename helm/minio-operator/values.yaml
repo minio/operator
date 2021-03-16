@@ -1,8 +1,8 @@
 # Default values for minio-operator.
 
 operator:
-  clusterDomain: "cluster.test"
-  nsToWatch: "hello"
+  clusterDomain: ""
+  nsToWatch: ""
   image:
     repository: minio/operator
     tag: v4.0.2
@@ -53,14 +53,6 @@ tenants:
     resources: {}
     ## Configure security context
     securityContext: {}
-    ## Persistence is used across all the volumes provisioned for MinIO Tenant in this Pool.
-    persistence:
-      enabled: true
-      size: 10Gi
-      ## Mount path where PV will be mounted inside container(s).
-      mountPath: /export
-      ## Sub path inside Mount path where MinIO stores data.
-      subPath: /data
     secrets:
       name: minio1-secret
       accessKey: ThisIsAVeryLongPasswordForExample
@@ -73,9 +65,17 @@ tenants:
       ## Servers specifies the number of MinIO Tenant Pods / Servers in this pool.
       ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
       ## Note that the operator does not support upgrading from standalone to distributed mode.
-      servers: 4
-      ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
-      volumesPerServer: 4
+      - servers: 4
+        ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
+        volumesPerServer: 4
+        ## size specifies the capacity per volume
+        size: 10Gi
+        ## storageClass specifies the storage class name to be used for this pool
+        storageClassName: standard
+    ## Mount path where PV will be mounted inside container(s).
+    mountPath: /export
+    ## Sub path inside Mount path where MinIO stores data.
+    subPath: /data
     certificate:
       ## Use this field to provide a list of Secrets with external certificates. This can be used to to configure
       ## TLS for MinIO Tenant pods. Create secrets as explained here:
@@ -105,7 +105,7 @@ tenants:
     ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
     ## This is applied to MinIO pods only.
     ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
-    priorityClassName : high-priority
+    priorityClassName : ""
     ## Define configuration for Console (Graphical user interface for MinIO)
     ## Refer https://github.com/minio/console
     console:

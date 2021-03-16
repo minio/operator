@@ -12,7 +12,7 @@ GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
 HELM_HOME=helm/minio-operator
-HELM_CRDS=$(HELM_HOME)/templates
+HELM_CRDS=$(HELM_HOME)/crds
 
 KUSTOMIZE_HOME=resources
 KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/base/crds/
