@@ -1,0 +1,94 @@
+{{ range .Values.tenants }}
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: {{ .name }}
+  ## Optionally pass labels to be applied to the statefulset pods
+  labels:
+    app: minio
+  {{ if .metrics.enabled }}
+  ## Annotations for MinIO Tenant Pods
+  annotations:
+    prometheus.io/path: /minio/prometheus/metrics
+    prometheus.io/port: {{ .metrics.port }}
+    prometheus.io/scrape: "true"
+  {{ end }}
+  {{ if .scheduler.name }}
+  scheduler:
+    name: {{ .scheduler.name }}
+  {{ end }}
+spec:
+  image: {{ .image.repository }}:{{ .image.tag }}
+  imagePullPolicy: {{ .image.pullPolicy }}
+  ## Secret with credentials to be used by MinIO Tenant.
+  credsSecret:
+    name: {{ .secrets.name }}
+  {{ range .pools }}
+  pools:
+    - servers: {{ .servers }}
+      volumesPerServer: {{ .volumesPerServer }}
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          storageClassName: {{ .storageClassName }}
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ .size }}
+      {{- with .tolerations }}
+      tolerations:
+        {{ toYaml . | nindent 8 }}
+      {{ end }}
+      {{- with .nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{ end }}
+      {{- with .affinity }}
+      affinity:
+        {{ toYaml . | nindent 8 }}
+      {{ end }}
+      {{- with .resources }}
+      resources:
+        {{ toYaml . | nindent 8 }}
+      {{ end }}
+      {{- with .securityContext }}
+      securityContext:
+        {{ toYaml . | nindent 8 }}
+      {{ end }}
+  {{ end }}
+  mountPath: {{ .mountPath }}
+  subPath: {{ .subPath }}
+  {{- with .certificate.externalCertSecret }}
+  externalCertSecret:
+    {{ toYaml . | nindent 6 }}
+  {{ end }}
+  requestAutoCert: {{ .certificate.requestAutoCert }}
+  s3:
+    bucketDNS: {{ .s3.bucketDNS }}
+  {{- with .certificate.certConfig }}
+  certConfig:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  podManagementPolicy: {{ .podManagementPolicy }}
+  {{- with .serviceMetadata }}
+  serviceMetadata:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .env }}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{ if .priorityClassName }}
+  priorityClassName: {{ .priorityClassName }}
+  {{ end }}
+  console:
+    image: {{ .console.image.repository }}:{{ .console.image.tag }}
+    replicas: {{ .console.replicaCount }}
+    consoleSecret:
+      name: {{ .console.secrets.name }}
+    {{- with .securityContext }}
+    securityContext:
+      {{ toYaml . | nindent 6 }}
+    {{ end }}
+{{ end }}
