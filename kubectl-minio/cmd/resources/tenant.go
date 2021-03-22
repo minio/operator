@@ -43,6 +43,7 @@ type TenantOptions struct {
 	ConsoleSecret   string
 	DisableTLS      bool
 	ImagePullSecret string
+	DisableAntiAffinity    bool
 }
 
 // Validate Tenant Options
@@ -138,7 +139,7 @@ func NewTenant(opts *TenantOptions) (*miniov2.Tenant, error) {
 			CredsSecret: &v1.LocalObjectReference{
 				Name: opts.SecretName,
 			},
-			Pools:           []miniov2.Pool{Pool(opts.Servers, volumesPerServer, *capacityPerVolume, opts.StorageClass)},
+			Pools:           []miniov2.Pool{Pool(opts, volumesPerServer, *capacityPerVolume)},
 			RequestAutoCert: &autoCert,
 			CertConfig: &miniov2.CertificateConfig{
 				CommonName:       "",

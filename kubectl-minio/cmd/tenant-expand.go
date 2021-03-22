@@ -120,7 +120,7 @@ func (v *expandCmd) run() error {
 		return err
 	}
 
-	t.Spec.Pools = append(t.Spec.Pools, resources.Pool(v.tenantOpts.Servers, volumesPerServer, *capacityPerVolume, v.tenantOpts.StorageClass))
+	t.Spec.Pools = append(t.Spec.Pools, resources.Pool(&v.tenantOpts, volumesPerServer, *capacityPerVolume))
 	expandedCapacity := helpers.TotalCapacity(*t)
 	if !v.output {
 		fmt.Printf(color.Bold(fmt.Sprintf("\nExpanding Tenant '%s/%s' from %s to %s\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace, currentCapacity, expandedCapacity)))

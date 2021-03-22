@@ -43,7 +43,7 @@ Options:
 
 Command: `kubectl minio tenant create TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
 
-Creates a MinIO Tenant based on the passed values.
+Creates a MinIO Tenant based on the passed values. Please note that plugin adds `anti-affinity` rules to the MinIO Tenant pods to ensure multiple pods don't end up on the same physical node. To disable this, use the `-enable-host-sharing` flag during tenant creation.
 
 example: `kubectl minio tenant create tenant1 --servers 4 --volumes 16 --capacity 16Ti`
 

@@ -85,6 +85,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	f.StringVarP(&c.tenantOpts.StorageClass, "storage-class", "s", helpers.DefaultStorageclass, "storage class for this MinIO tenant")
 	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "MinIO image for this tenant")
+	f.BoolVar(&c.tenantOpts.DisableAntiAffinity, "enable-host-sharing", false, "disable anti-affinity to allow pods to be co-located on a single node. Not recommended for production.")
 	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret with details for enabling encryption, refer example https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
 	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
