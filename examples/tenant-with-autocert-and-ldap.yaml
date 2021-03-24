@@ -33,7 +33,7 @@ data:
 
     # Create base group
     dn: ou=groups,dc=example,dc=org
-      objectclass:organizationalunit
+    objectclass:organizationalunit
     ou: groups
     description: generic groups branch
 
@@ -121,8 +121,8 @@ data:
   CONSOLE_PBKDF_PASSPHRASE: U0VDUkVU
   ## Salt to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
   CONSOLE_PBKDF_SALT: U0VDUkVU
-  ## Active Directory account username (used for Console Login), base64 encoded (echo -n 'billy' | base64)
-  CONSOLE_ACCESS_KEY: YmlsbHk=
+  ## Active Directory account username (used for Console Login), base64 encoded (echo -n 'uid=billy,dc=example,dc=org' | base64)
+  CONSOLE_ACCESS_KEY: dWlkPWJpbGx5LGRjPWV4YW1wbGUsZGM9b3Jn
   ## Active Directory account password (used for Console Login), base64 encoded (echo -n 'billy123' | base64)
   CONSOLE_SECRET_KEY: YmlsbHkxMjM=
 ---
