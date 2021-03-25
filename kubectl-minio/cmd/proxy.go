@@ -135,7 +135,7 @@ func servicePortForwardPort(ctx context.Context, namespace, service, port string
 		// service we are going to forward
 		serviceName := fmt.Sprintf("service/%s", service)
 		// command to run
-		cmd := exec.CommandContext(ctx, "kubectl", "port-forward", "-n", namespace, serviceName, port)
+		cmd := exec.CommandContext(ctx, "kubectl", "port-forward", "--address", "0.0.0.0", "-n", namespace, serviceName, port)
 		// prepare to capture the output
 		var errStdout, errStderr error
 		stdoutIn, _ := cmd.StdoutPipe()
