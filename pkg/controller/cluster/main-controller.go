@@ -125,6 +125,7 @@ const (
 	StatusWaitingConsoleCert                 = "Waiting for Console TLS Certificate"
 	StatusUpdatingMinIOVersion               = "Updating MinIO Version"
 	StatusUpdatingConsole                    = "Updating Console"
+	StatusUpdatingKES                        = "Updating KES"
 	StatusUpdatingLogPGStatefulSet           = "Updating Postgres server for Log Search feature"
 	StatusUpdatingLogSearchAPIServer         = "Updating Log Search API server"
 	StatusUpdatingResourceRequirements       = "Updating Resource Requirements"
@@ -1347,8 +1348,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		// Get the StatefulSet with the name specified in spec
-		_, err = c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.KESStatefulSetName())
-		if err != nil {
+		if kesStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.KESStatefulSetName()); err != nil {
 			if k8serrors.IsNotFound(err) {
 				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningKESStatefulSet, 0); err != nil {
 					return err
@@ -1362,6 +1362,23 @@ func (c *Controller) syncHandler(key string) error {
 				}
 			} else {
 				return err
+			}
+		} else {
+			// Verify if this KES StatefulSet matches the spec on the tenant (resources, affinity, sidecars, etc)
+			kesStatefulSetMatchesSpec, err := kesStatefulSetMatchesSpec(tenant, kesStatefulSet)
+			if err != nil {
+				return err
+			}
+
+			// if the KES StatefulSet doesn't match the spec
+			if !kesStatefulSetMatchesSpec {
+				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingKES, totalReplicas); err != nil {
+					return err
+				}
+				ks := statefulsets.NewForKES(tenant, svc.Name)
+				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ks, uOpts); err != nil {
+					return err
+				}
 			}
 		}
 

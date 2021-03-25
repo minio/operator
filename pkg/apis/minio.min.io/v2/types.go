@@ -584,6 +584,11 @@ func (lc *LogConfig) EqualImage(image string) bool {
 	return lc.Image == image
 }
 
+// EqualImage returns true if config image and current input image are same
+func (c KESConfig) EqualImage(currentImage string) bool {
+	return c.Image == currentImage
+}
+
 // LogConfig (`log`) defines the configuration of the MinIO Log Search API deployed as part of the MinIO Tenant. The Operator deploys a PostgreSQL instance as part of the tenant to support storing and querying MinIO logs. +
 //
 // If the tenant specification includes the `console` object, the Operator automatically configures and enables MinIO Log Search via the Console UI.
