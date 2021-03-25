@@ -10,6 +10,7 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/minio/controller-tools v0.4.7 // indirect
 	github.com/minio/minio v0.0.0-20210128013121-e79829b5b368
 	github.com/minio/operator v0.3.23
 	github.com/montanaflynn/stats v0.6.3 // indirect
@@ -22,5 +23,6 @@ require (
 	k8s.io/cli-runtime v0.20.2
 	k8s.io/client-go v0.20.2
 	k8s.io/klog/v2 v2.4.0
+	sigs.k8s.io/kustomize/api v0.8.5
 	sigs.k8s.io/yaml v1.2.0
 )

@@ -299,3 +299,9 @@ const StatefulSetPrefix = "ss"
 
 // StatefulSetLegacyPrefix by old operators
 const StatefulSetLegacyPrefix = "zone"
+
+const tenantMinIOImageEnv = "TENANT_MINIO_IMAGE"
+
+const tenantConsoleImageEnv = "TENANT_CONSOLE_IMAGE"
+
+const tenantKesImageEnv = "TENANT_KES_IMAGE"

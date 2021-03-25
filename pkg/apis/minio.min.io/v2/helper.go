@@ -86,8 +86,14 @@ type hostsTemplateValues struct {
 }
 
 var (
-	once             sync.Once
-	k8sClusterDomain string
+	once                   sync.Once
+	tenantMinIOImageOnce   sync.Once
+	tenantConsoleImageOnce sync.Once
+	tenantKesImageOnce     sync.Once
+	k8sClusterDomain       string
+	tenantMinIOImage       string
+	tenantConsoleImage     string
+	tenantKesImage         string
 )
 
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
@@ -293,7 +299,7 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 	}
 
 	if t.Spec.Image == "" {
-		t.Spec.Image = DefaultMinIOImage
+		t.Spec.Image = GetTenantMinIOImage()
 	}
 
 	if t.Spec.ImagePullPolicy == "" {
@@ -340,7 +346,7 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 
 	if t.HasConsoleEnabled() {
 		if t.Spec.Console.Image == "" {
-			t.Spec.Console.Image = DefaultConsoleImage
+			t.Spec.Console.Image = GetTenantConsoleImage()
 		}
 		if t.Spec.Console.Replicas == 0 {
 			t.Spec.Console.Replicas = DefaultConsoleReplicas
@@ -352,7 +358,7 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 
 	if t.HasKESEnabled() {
 		if t.Spec.KES.Image == "" {
-			t.Spec.KES.Image = DefaultKESImage
+			t.Spec.KES.Image = GetTenantKesImage()
 		}
 		if t.Spec.KES.Replicas == 0 {
 			t.Spec.KES.Replicas = DefaultKESReplicas
@@ -868,4 +874,28 @@ func IsEnvUpdated(old, new map[string]string) bool {
 		return true
 	}
 	return false
+}
+
+// GetTenantMinIOImage returns the default MinIO image for a tenant
+func GetTenantMinIOImage() string {
+	tenantMinIOImageOnce.Do(func() {
+		tenantMinIOImage = env.Get(tenantMinIOImageEnv, DefaultMinIOImage)
+	})
+	return tenantMinIOImage
+}
+
+// GetTenantConsoleImage returns the default Console Image for a tenant
+func GetTenantConsoleImage() string {
+	tenantConsoleImageOnce.Do(func() {
+		tenantConsoleImage = env.Get(tenantConsoleImageEnv, DefaultConsoleImage)
+	})
+	return tenantConsoleImage
+}
+
+// GetTenantKesImage returns the default KES Image for a tenant
+func GetTenantKesImage() string {
+	tenantKesImageOnce.Do(func() {
+		tenantKesImage = env.Get(tenantKesImageEnv, DefaultKESImage)
+	})
+	return tenantKesImage
 }
