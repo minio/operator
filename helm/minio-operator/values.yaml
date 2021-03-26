@@ -25,6 +25,7 @@ console:
     tag: v0.6.3
     pullPolicy: IfNotPresent
   replicaCount: 1
+  resources: {}
 
 ## MinIO Tenant Definition
 tenants:
