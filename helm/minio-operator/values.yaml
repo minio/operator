@@ -5,7 +5,7 @@ operator:
   nsToWatch: ""
   image:
     repository: minio/operator
-    tag: v4.0.3
+    tag: v4.0.4
     pullPolicy: IfNotPresent
   imagePullSecrets: []
   replicaCount: 1
