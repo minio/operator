@@ -96,9 +96,6 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (c *createCmd) validate(args []string) error {
-	c.tenantOpts.Name = args[0]
-	c.tenantOpts.SecretName = c.tenantOpts.Name + tenantSecretSuffix
-	c.tenantOpts.ConsoleSecret = c.tenantOpts.Name + consoleSecretSuffix
 	if args == nil {
 		return errors.New("create command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant create tenant1'")
 	}
@@ -108,6 +105,9 @@ func (c *createCmd) validate(args []string) error {
 	if args[0] == "" {
 		return errors.New("create command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant create tenant1'")
 	}
+	c.tenantOpts.Name = args[0]
+	c.tenantOpts.SecretName = c.tenantOpts.Name + tenantSecretSuffix
+	c.tenantOpts.ConsoleSecret = c.tenantOpts.Name + consoleSecretSuffix
 	return c.tenantOpts.Validate()
 }
 
@@ -157,6 +157,9 @@ func (c *createCmd) run(args []string) error {
 }
 
 func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, t *miniov2.Tenant, s, console *corev1.Secret) error {
+	if _, err := kclient.CoreV1().Namespaces().Get(context.Background(), t.Namespace, metav1.GetOptions{}); err != nil {
+		return errors.New(fmt.Sprintf("Namespace %s not found, please create the namespace using 'kubectl create ns %s'", t.Namespace, t.Namespace))
+	}
 	if _, err := kclient.CoreV1().Secrets(t.Namespace).Create(context.Background(), s, metav1.CreateOptions{}); err != nil {
 		return err
 	}

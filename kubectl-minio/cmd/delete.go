@@ -19,10 +19,19 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
+
+	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/api/types"
+	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/klog/v2"
@@ -39,8 +48,6 @@ import (
 	"github.com/minio/minio/pkg/color"
 	"github.com/spf13/cobra"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -77,7 +84,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 				return errors.New("delete command does not accept arguments")
 			}
 			klog.Info("delete command started")
-			err := o.run()
+			err := o.run(out)
 			if err != nil {
 				klog.Warning(err)
 				return err
@@ -91,48 +98,87 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	return cmd
 }
 
-func (o *deleteCmd) run() error {
-	path, _ := rootCmd.Flags().GetString(kubeconfig)
-	ctx := context.Background()
-	client, err := helpers.GetKubeClient(path)
+func (o *deleteCmd) run(writer io.Writer) error {
+	inMemSys, err := resources.GetResourceFileSys()
 	if err != nil {
 		return err
 	}
-	extclient, err := helpers.GetKubeExtensionClient()
+
+	// write the kustomization file
+
+	kustomizationYaml := types.Kustomization{
+		TypeMeta: types.TypeMeta{
+			Kind:       "Kustomization",
+			APIVersion: "kustomize.config.k8s.io/v1beta1",
+		},
+		Resources: []string{
+			"operator/",
+		},
+	}
+
+	if o.operatorOpts.Namespace != "" {
+		kustomizationYaml.Namespace = o.operatorOpts.Namespace
+	}
+	// Compile the kustomization to a file and create on the in memory filesystem
+	kustYaml, _ := yaml.Marshal(kustomizationYaml)
+	kustFile, err := inMemSys.Create("kustomization.yaml")
+	_, err = kustFile.Write(kustYaml)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	// kustomize build the target location
+	k := krusty.MakeKustomizer(
+		krusty.MakeDefaultOptions(),
+	)
+
+	m, err := k.Run(inMemSys, ".")
 	if err != nil {
 		return err
 	}
-	dynclient, err := helpers.GetKubeDynamicClient()
+
+	yml, err := m.AsYaml()
 	if err != nil {
 		return err
 	}
-	// Load Resources
-	decode := resources.GetSchemeDecoder()
-	crdObj := resources.LoadTenantCRD(decode)
-	if err := client.CoreV1().ServiceAccounts(o.operatorOpts.Namespace).Delete(ctx, helpers.DefaultServiceAccount, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
-		return err
+
+	if o.output {
+		_, err = writer.Write(yml)
+		//done
+		return nil
 	}
-	if err := client.AppsV1().Deployments(o.operatorOpts.Namespace).Delete(ctx, helpers.DeploymentName, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
-		return err
+
+	// do kubectl apply
+	cmd := exec.Command("kubectl", "delete", "-f", "-")
+
+	cmd.Stdin = strings.NewReader(string(yml))
+
+	stdoutReader, _ := cmd.StdoutPipe()
+	stdoutScanner := bufio.NewScanner(stdoutReader)
+	go func() {
+		for stdoutScanner.Scan() {
+			fmt.Println(stdoutScanner.Text())
+		}
+	}()
+	stderrReader, _ := cmd.StderrPipe()
+	stderrScanner := bufio.NewScanner(stderrReader)
+	go func() {
+		for stderrScanner.Scan() {
+			fmt.Println(stderrScanner.Text())
+		}
+	}()
+	err = cmd.Start()
+	if err != nil {
+		fmt.Printf("Error : %v \n", err)
+		os.Exit(1)
 	}
-	if err := client.CoreV1().Services(o.operatorOpts.Namespace).Delete(ctx, helpers.DefaultOperatorServiceName, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
-		return err
+	err = cmd.Wait()
+	if err != nil {
+		fmt.Printf("Error: %v \n", err)
+		os.Exit(1)
 	}
-	if err := extclient.ApiextensionsV1().CustomResourceDefinitions().Delete(ctx, crdObj.Name, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
-	crObj := resources.LoadClusterRole(decode)
-	if err := client.RbacV1().ClusterRoles().Delete(ctx, crObj.Name, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
-	if err := client.RbacV1().ClusterRoleBindings().Delete(ctx, helpers.ClusterRoleBindingName, v1.DeleteOptions{}); err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
-	consoleResources := resources.LoadConsoleUI(decode, &o.operatorOpts)
-	if err := deleteConsoleResources(o.operatorOpts, extclient, dynclient, consoleResources); err != nil && !k8serrors.IsNotFound(err) {
-		klog.Info(err)
-		return errors.New("Cannot delete console resources")
-	}
+
 	return nil
 }
 

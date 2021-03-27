@@ -179,7 +179,7 @@ const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.0.3"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.0.4"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres"
@@ -299,3 +299,9 @@ const StatefulSetPrefix = "ss"
 
 // StatefulSetLegacyPrefix by old operators
 const StatefulSetLegacyPrefix = "zone"
+
+const tenantMinIOImageEnv = "TENANT_MINIO_IMAGE"
+
+const tenantConsoleImageEnv = "TENANT_CONSOLE_IMAGE"
+
+const tenantKesImageEnv = "TENANT_KES_IMAGE"

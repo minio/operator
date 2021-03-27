@@ -19,9 +19,14 @@
 package resources
 
 import (
+	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"log"
-	"regexp"
+	"path"
+	"strings"
+
+	"sigs.k8s.io/kustomize/api/filesys"
 
 	"github.com/minio/operator/resources"
 
@@ -47,7 +52,7 @@ import (
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
-var fs = resources.GetStaticResources()
+var resourcesFS = resources.GetStaticResources()
 
 func tenantStorage(q resource.Quantity) corev1.ResourceList {
 	m := make(corev1.ResourceList, 1)
@@ -110,7 +115,7 @@ func GetSchemeDecoder() func(data []byte, defaults *schema.GroupVersionKind, int
 }
 
 func LoadTenantCRD(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *apiextensionv1.CustomResourceDefinition {
-	contents, err := fs.Open("base/crds/minio.min.io_tenants.yaml")
+	contents, err := resourcesFS.Open("base/crds/minio.min.io_tenants.yaml")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -132,97 +137,69 @@ func LoadTenantCRD(decode func(data []byte, defaults *schema.GroupVersionKind, i
 	return crdObj
 }
 
-func LoadClusterRole(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *rbacv1.ClusterRole {
-	contents, err := fs.Open("cluster-role.yaml")
-	if err != nil {
-		log.Fatal(err)
+func GetResourceFileSys() (filesys.FileSystem, error) {
+	inMemSys := filesys.MakeFsInMemory()
+	// copy from the resources into the target folder on the in memory FS
+	if err := copyDirtoMemFS(".", "operator", inMemSys); err != nil {
+		log.Println(err)
+		return nil, err
 	}
-	contentBytes, err := ioutil.ReadAll(contents)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	obj, _, err := decode(contentBytes, nil, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var ok bool
-	resourceObj, ok := obj.(*rbacv1.ClusterRole)
-	if !ok {
-		log.Fatal("Unable to locate CustomResourceDefinition object")
-	}
-	return resourceObj
+	return inMemSys, nil
 }
 
-func LoadConsoleUI(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error), opts *OperatorOptions) []runtime.Object {
-	contents, err := fs.Open("console-ui.yaml")
-	if err != nil {
-		log.Fatal(err)
+func copyFileToMemFS(src, dst string, memFS filesys.FileSystem) error {
+	// skip .go files
+	if strings.HasSuffix(src, ".go") {
+		return nil
 	}
-	contentBytes, err := ioutil.ReadAll(contents)
-	if err != nil {
-		log.Fatal(err)
+	var err error
+	var srcFileDesc fs.File
+	var dstFileDesc filesys.File
+
+	if srcFileDesc, err = resourcesFS.Open(src); err != nil {
+		return err
 	}
-	contentsString := string(contentBytes)
+	defer srcFileDesc.Close()
 
-	regex := regexp.MustCompile("\n---")
-	chunks := regex.Split(contentsString, -1)
-	var consoleUIChunks []runtime.Object
-	for _, chunk := range chunks {
-		// ignore empty
-		if chunk == "\n" || chunk == "" {
-			continue
-		}
-		obj, _, err := decode([]byte(chunk), nil, nil)
-		if err != nil {
-			log.Fatal(err)
-		}
+	if dstFileDesc, err = memFS.Create(dst); err != nil {
+		return err
+	}
+	defer dstFileDesc.Close()
 
-		if opts != nil {
-			switch obj.(type) {
-			case *appsv1.Deployment:
-				if resourceObj, ok := obj.(*appsv1.Deployment); ok {
-					resourceObj.Namespace = opts.Namespace
-					// console image
-					if opts.ConsoleImage != "" {
-						resourceObj.Spec.Template.Spec.Containers[0].Image = opts.ConsoleImage
-					}
-					// push down image pull secrets
-					if opts.ImagePullSecret != "" {
-						resourceObj.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: opts.ImagePullSecret}}
-					}
-				}
-			case *corev1.Service:
-				if resourceObj, ok := obj.(*corev1.Service); ok {
-					resourceObj.Namespace = opts.Namespace
-				}
-			case *corev1.ConfigMap:
-				if resourceObj, ok := obj.(*corev1.ConfigMap); ok {
-					resourceObj.Namespace = opts.Namespace
-				}
-			case *corev1.ServiceAccount:
-				if resourceObj, ok := obj.(*corev1.ServiceAccount); ok {
-					resourceObj.Namespace = opts.Namespace
-				}
-			case *rbacv1.ClusterRoleBinding:
-				if resourceObj, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
-					updatedSubjects := []rbacv1.Subject{}
-					for _, sub := range resourceObj.Subjects {
-						sub.Namespace = opts.Namespace
-						// store modified subject
-						updatedSubjects = append(updatedSubjects, sub)
-					}
-					// update subjects with modified array
-					resourceObj.Subjects = updatedSubjects
-				}
-			default:
-				// fmt.Println("Unhandled kind:", obj.GetObjectKind())
+	// Note: I had to read the whole string, for some reason io.Copy was not copying the whole content
+	input, err := ioutil.ReadAll(srcFileDesc)
+	_, err = dstFileDesc.Write(input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func copyDirtoMemFS(src string, dst string, memFS filesys.FileSystem) error {
+	var err error
+	var fds []fs.DirEntry
+
+	if err = memFS.MkdirAll(dst); err != nil {
+		return err
+	}
+
+	if fds, err = resourcesFS.ReadDir(src); err != nil {
+		return err
+	}
+	for _, fd := range fds {
+		srcfp := path.Join(src, fd.Name())
+		dstfp := path.Join(dst, fd.Name())
+
+		if fd.IsDir() {
+			if err = copyDirtoMemFS(srcfp, dstfp, memFS); err != nil {
+				fmt.Println(err)
+			}
+		} else {
+			if err = copyFileToMemFS(srcfp, dstfp, memFS); err != nil {
+				fmt.Println(err)
 			}
 		}
-
-		consoleUIChunks = append(consoleUIChunks, obj)
 	}
-
-	return consoleUIChunks
+	return nil
 }
