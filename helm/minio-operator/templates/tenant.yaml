@@ -10,7 +10,7 @@ metadata:
   ## Annotations for MinIO Tenant Pods
   annotations:
     prometheus.io/path: /minio/prometheus/metrics
-    prometheus.io/port: {{ .metrics.port }}
+    prometheus.io/port: {{ .metrics.port |quote }}
     prometheus.io/scrape: "true"
   {{ end }}
   {{ if .scheduler.name }}
@@ -77,6 +77,7 @@ spec:
     {{ toYaml . | nindent 4 }}
   {{- end }}
   {{- with .env }}
+  env:
     {{ toYaml . | nindent 4 }}
   {{- end }}
   {{ if .priorityClassName }}
