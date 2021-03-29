@@ -26,6 +26,11 @@ import (
 	"crypto/x509/pkix"
 	"encoding/hex"
 	"encoding/pem"
+	"errors"
+
+	"github.com/minio/operator/pkg/resources/statefulsets"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 
 	"k8s.io/klog/v2"
 
@@ -149,4 +154,27 @@ func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, tenant *miniov
 	}
 
 	return nil
+}
+
+// kesStatefulSetMatchesSpec checks if the StatefulSet for KES matches what is expected and described from the Tenant
+func kesStatefulSetMatchesSpec(tenant *miniov2.Tenant, kesStatefulSet *appsv1.StatefulSet) (bool, error) {
+	if kesStatefulSet == nil {
+		return false, errors.New("cannot process an empty kes StatefulSet")
+	}
+	if tenant == nil {
+		return false, errors.New("cannot process an empty tenant")
+	}
+	// compare image directly
+	if !tenant.Spec.KES.EqualImage(kesStatefulSet.Spec.Template.Spec.Containers[0].Image) {
+		klog.V(2).Infof("Tenant %s KES version %s doesn't match: %s", tenant.Name,
+			tenant.Spec.KES.Image, kesStatefulSet.Spec.Template.Spec.Containers[0].Image)
+		return false, nil
+	}
+	// compare any other change from what is specified on the tenant
+	expectedStatefulSet := statefulsets.NewForKES(tenant, tenant.KESHLServiceName())
+	if !equality.Semantic.DeepDerivative(expectedStatefulSet.Spec, kesStatefulSet.Spec) {
+		// some field set by the operator has changed
+		return false, nil
+	}
+	return true, nil
 }
