@@ -101,3 +101,6 @@ spec:
     sidecarimage: "alpine"
     initimage: "busybox"
     diskCapacityGB: 5
+
+  prometheusOperator:
+    serviceMonitor: false

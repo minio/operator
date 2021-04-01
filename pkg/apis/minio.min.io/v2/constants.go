@@ -169,12 +169,15 @@ const PrometheusInstanceLabel = "v1.min.io/prometheus"
 // PrometheusPort specifies the default prometheus port number
 const PrometheusPort = 9090
 
-// PrometheusPortName speicfies the default prometheus port's name.
+// PrometheusPortName specifies the default prometheus port's name.
 const PrometheusPortName = "http-prometheus"
 
 // PrometheusHLSvcNameSuffix specifies the suffix added to Tenant name to create
 // a headless service for Prometheus.
 const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
+
+// PrometheusServiceMonitorSecretKey is the entry in the secret
+const PrometheusServiceMonitorSecretKey = "token"
 
 // Log related constants
 
@@ -299,6 +302,18 @@ const StatefulSetPrefix = "ss"
 
 // StatefulSetLegacyPrefix by old operators
 const StatefulSetLegacyPrefix = "zone"
+
+// MinIOPrometheusPathCluster is the path where MinIO tenant exposes cluster Prometheus metrics
+const MinIOPrometheusPathCluster = "/minio/v2/metrics/cluster"
+
+// MinIOPrometheusPathNode is the path where MinIO tenant exposes node Prometheus metrics
+const MinIOPrometheusPathNode = "/minio/v2/metrics/node"
+
+// MinIOPrometheusScrapeInterval defines how frequently to scrape targets.
+const MinIOPrometheusScrapeInterval = 30 * time.Second
+
+// MinIOPrometheusScrapeTimeout defines the timeout for scrape requests
+const MinIOPrometheusScrapeTimeout = 2 * time.Second
 
 const tenantMinIOImageEnv = "TENANT_MINIO_IMAGE"
 

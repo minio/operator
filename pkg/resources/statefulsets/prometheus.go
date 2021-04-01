@@ -156,8 +156,9 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 	volumeClaim := corev1.PersistentVolumeClaim{
 		ObjectMeta: promMeta,
 		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			Resources:   corev1.ResourceRequirements{Requests: volumeReq},
+			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			Resources:        corev1.ResourceRequirements{Requests: volumeReq},
+			StorageClassName: t.Spec.Prometheus.StorageClassName,
 		},
 	}
 

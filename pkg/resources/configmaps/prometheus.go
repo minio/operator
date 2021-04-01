@@ -25,13 +25,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	jwtgo "github.com/dgrijalva/jwt-go"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	defaultPrometheusJWTExpiry = 100 * 365 * 24 * time.Hour
 )
 
 type globalConfig struct {
@@ -61,34 +58,6 @@ type prometheusConfig struct {
 	ScrapeConfigs []scrapeConfig `yaml:"scrape_configs"`
 }
 
-func genBearerToken(accessKey, secretKey string) string {
-	jwt := jwtgo.NewWithClaims(jwtgo.SigningMethodHS512, jwtgo.StandardClaims{
-		ExpiresAt: time.Now().UTC().Add(defaultPrometheusJWTExpiry).Unix(),
-		Subject:   accessKey,
-		Issuer:    "prometheus",
-	})
-
-	token, err := jwt.SignedString([]byte(secretKey))
-	if err != nil {
-		panic(fmt.Sprintf("jwt key generation: %v", err))
-	}
-
-	return token
-}
-
-// getMinioPodAddrs returns a list of stable minio pod addresses.
-func getMinioPodAddrs(t *miniov2.Tenant) []string {
-	targets := []string{}
-	for _, pool := range t.Spec.Pools {
-		poolName := t.PoolStatefulsetName(&pool)
-		for i := 0; i < int(pool.Servers); i++ {
-			target := fmt.Sprintf("%s-%d.%s.%s.svc.%s:%d", poolName, i, t.MinIOHLServiceName(), t.Namespace, miniov2.GetClusterDomain(), miniov2.MinIOPort)
-			targets = append(targets, target)
-		}
-	}
-	return targets
-}
-
 func (p *prometheusConfig) ConfigFile() string {
 	d, err := yaml.Marshal(p)
 	if err != nil {
@@ -104,8 +73,8 @@ func (p *prometheusConfig) ConfigFile() string {
 
 // PrometheusConfigMap returns configuration for Prometheus.
 func getPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *prometheusConfig {
-	bearerToken := genBearerToken(accessKey, secretKey)
-	minioTargets := getMinioPodAddrs(t)
+	bearerToken := t.GenBearerToken(accessKey, secretKey)
+	minioTargets := t.MinIOServerHostAddress()
 	minioScheme := "http"
 	if t.TLS() {
 		minioScheme = "https"
@@ -114,21 +83,21 @@ func getPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *promet
 	// populate config
 	promConfig := &prometheusConfig{
 		Global: globalConfig{
-			ScrapeInterval:     10 * time.Second,
+			ScrapeInterval:     v2.MinIOPrometheusScrapeInterval,
 			EvaluationInterval: 30 * time.Second,
 		},
 		ScrapeConfigs: []scrapeConfig{
 			{
 				JobName:     "minio",
 				BearerToken: bearerToken,
-				MetricsPath: "/minio/prometheus/metrics",
+				MetricsPath: v2.MinIOPrometheusPathCluster,
 				Scheme:      minioScheme,
 				TLSConfig: tlsConfig{
 					CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 				},
 				StaticConfigs: []staticConfig{
 					{
-						Targets: minioTargets,
+						Targets: []string{minioTargets},
 					},
 				},
 			},

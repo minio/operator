@@ -1516,6 +1516,8 @@ spec:
                     type: object
                   sidecarimage:
                     type: string
+                  storageClassName:
+                    type: string
                 type: object
               requestAutoCert:
                 type: boolean
@@ -5471,6 +5473,13 @@ spec:
                     type: object
                   sidecarimage:
                     type: string
+                  storageClassName:
+                    type: string
+                type: object
+              prometheusOperator:
+                properties:
+                  serviceMonitor:
+                    type: boolean
                 type: object
               requestAutoCert:
                 type: boolean
