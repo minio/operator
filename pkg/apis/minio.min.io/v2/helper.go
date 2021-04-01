@@ -47,6 +47,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
+	jwtgo "github.com/dgrijalva/jwt-go"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/minio/minio/pkg/bucket/policy"
 	"github.com/minio/minio/pkg/bucket/policy/condition"
@@ -61,12 +62,12 @@ const (
 	WebhookSecret           = "operator-webhook-secret"
 	WebhookOperatorUsername = "webhookUsername"
 	WebhookOperatorPassword = "webhookPassword"
-)
 
-// Webhook environment variable constants
-const (
+	// Webhook environment variable constants
 	WebhookMinIOArgs   = "MINIO_ARGS"
 	WebhookMinIOBucket = "MINIO_DNS_WEBHOOK_ENDPOINT"
+
+	defaultPrometheusJWTExpiry = 100 * 365 * 24 * time.Hour
 )
 
 // List of webhook APIs
@@ -404,6 +405,22 @@ func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
 	return endpoints
 }
 
+// GenBearerToken returns the JWT token for current Tenant for Prometheus authentication
+func (t *Tenant) GenBearerToken(accessKey, secretKey string) string {
+	jwt := jwtgo.NewWithClaims(jwtgo.SigningMethodHS512, jwtgo.StandardClaims{
+		ExpiresAt: time.Now().UTC().Add(defaultPrometheusJWTExpiry).Unix(),
+		Subject:   accessKey,
+		Issuer:    "prometheus",
+	})
+
+	token, err := jwt.SignedString([]byte(secretKey))
+	if err != nil {
+		panic(fmt.Sprintf("jwt key generation: %v", err))
+	}
+
+	return token
+}
+
 // MinIOHosts returns the domain names in ellipses format created for current Tenant
 func (t *Tenant) MinIOHosts() (hosts []string) {
 	// Create the ellipses style URL
@@ -528,6 +545,11 @@ func (t *Tenant) HasLogEnabled() bool {
 // HasPrometheusEnabled checks if Prometheus metrics has been enabled
 func (t *Tenant) HasPrometheusEnabled() bool {
 	return t.Spec.Prometheus != nil
+}
+
+// HasPrometheusSMEnabled checks if Prometheus service monitor has been enabled
+func (t *Tenant) HasPrometheusSMEnabled() bool {
+	return t.Spec.PrometheusOperator != nil && t.Spec.PrometheusOperator.ServiceMonitor
 }
 
 // HasConsoleEnabled checks if the console has been enabled by the user

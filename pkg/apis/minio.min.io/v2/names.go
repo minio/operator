@@ -215,6 +215,11 @@ func (t *Tenant) LogSecretName() string {
 	return fmt.Sprintf("%s-%s", t.Name, "log-secret")
 }
 
+// PromServiceMonitorSecret returns name of secret with jwt for Prometheus service monitor
+func (t *Tenant) PromServiceMonitorSecret() string {
+	return fmt.Sprintf("%s-%s", t.Name, "prom-sm-secret")
+}
+
 // LogSearchAPIDeploymentName returns name of Log Search API server deployment
 func (t *Tenant) LogSearchAPIDeploymentName() string {
 	return fmt.Sprintf("%s-%s", t.Name, LogSearchAPIContainerName)
@@ -228,6 +233,12 @@ func (t *Tenant) LogSearchAPIServiceName() string {
 // PrometheusStatefulsetName returns name of statefulset meant for Prometheus
 // metrics.
 func (t *Tenant) PrometheusStatefulsetName() string {
+	return fmt.Sprintf("%s-%s", t.Name, "prometheus")
+}
+
+// PrometheusServiceMonitorName returns name of service monitor meant
+// for Prometheus metrics.
+func (t *Tenant) PrometheusServiceMonitorName() string {
 	return fmt.Sprintf("%s-%s", t.Name, "prometheus")
 }
 

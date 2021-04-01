@@ -39,6 +39,8 @@ import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
 	"github.com/minio/operator/pkg/controller/cluster"
+	prominformers "github.com/prometheus-operator/prometheus-operator/pkg/client/informers/externalversions"
+	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -111,6 +113,11 @@ func main() {
 		klog.Errorf("Error building certificate clientset: %v", err.Error())
 	}
 
+	promClient, err := promclientset.NewForConfig(cfg)
+	if err != nil {
+		klog.Errorf("Error building Prometheus clientset: %v", err.Error())
+	}
+
 	namespace, isNamespaced := os.LookupEnv("WATCHED_NAMESPACE")
 
 	ctx := context.Background()
@@ -144,22 +151,25 @@ func main() {
 
 	var kubeInformerFactory kubeinformers.SharedInformerFactory
 	var minioInformerFactory informers.SharedInformerFactory
+	var promInformerFactory prominformers.SharedInformerFactory
 	if isNamespaced {
 		kubeInformerFactory = kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(namespace))
 		minioInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(namespace))
+		promInformerFactory = prominformers.NewSharedInformerFactoryWithOptions(promClient, time.Second*30, prominformers.WithNamespace(namespace))
 	} else {
 		kubeInformerFactory = kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
+		promInformerFactory = prominformers.NewSharedInformerFactory(promClient, time.Second*30)
 	}
 
-	mainController := cluster.NewController(kubeClient, controllerClient, *certClient,
+	mainController := cluster.NewController(kubeClient, controllerClient, *certClient, promClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Batch().V1().Jobs(),
 		minioInformerFactory.Minio().V2().Tenants(),
 		kubeInformerFactory.Core().V1().Services(),
-		hostsTemplate,
-		version)
+		promInformerFactory.Monitoring().V1().ServiceMonitors(),
+		hostsTemplate, version)
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)

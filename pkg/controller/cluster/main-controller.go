@@ -46,6 +46,8 @@ import (
 	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	prominformers "github.com/prometheus-operator/prometheus-operator/pkg/client/informers/externalversions/monitoring/v1"
+	promlisters "github.com/prometheus-operator/prometheus-operator/pkg/client/listers/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -67,6 +69,8 @@ import (
 	batchlisters "k8s.io/client-go/listers/batch/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
+	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
+
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
@@ -87,6 +91,7 @@ import (
 	"github.com/minio/operator/pkg/resources/deployments"
 	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/secrets"
+	"github.com/minio/operator/pkg/resources/servicemonitor"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
@@ -108,31 +113,32 @@ const (
 
 // Standard Status messages for Tenant
 const (
-	StatusInitialized                        = "Initialized"
-	StatusProvisioningCIService              = "Provisioning MinIO Cluster IP Service"
-	StatusProvisioningHLService              = "Provisioning MinIO Headless Service"
-	StatusProvisioningStatefulSet            = "Provisioning MinIO Statefulset"
-	StatusProvisioningConsoleDeployment      = "Provisioning Console Deployment"
-	StatusProvisioningKESStatefulSet         = "Provisioning KES StatefulSet"
-	StatusProvisioningLogPGStatefulSet       = "Provisioning Postgres server for Log Search feature"
-	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server for Log Search feature"
-	StatusProvisioningPrometheusStatefulSet  = "Provisioning Prometheus server for Prometheus metrics feature"
-	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
-	StatusWaitingForLogSearchReadyState      = "Waiting for Log Search Pods to be ready"
-	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"
-	StatusWaitingMinIOClientCert             = "Waiting for MinIO TLS Client Certificate"
-	StatusWaitingKESCert                     = "Waiting for KES TLS Certificate"
-	StatusWaitingConsoleCert                 = "Waiting for Console TLS Certificate"
-	StatusUpdatingMinIOVersion               = "Updating MinIO Version"
-	StatusUpdatingConsole                    = "Updating Console"
-	StatusUpdatingKES                        = "Updating KES"
-	StatusUpdatingLogPGStatefulSet           = "Updating Postgres server for Log Search feature"
-	StatusUpdatingLogSearchAPIServer         = "Updating Log Search API server"
-	StatusUpdatingResourceRequirements       = "Updating Resource Requirements"
-	StatusUpdatingAffinity                   = "Updating Pod Affinity"
-	StatusNotOwned                           = "Statefulset not controlled by operator"
-	StatusFailedAlreadyExists                = "Another MinIO Tenant already exists in the namespace"
-	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
+	StatusInitialized                          = "Initialized"
+	StatusProvisioningCIService                = "Provisioning MinIO Cluster IP Service"
+	StatusProvisioningHLService                = "Provisioning MinIO Headless Service"
+	StatusProvisioningStatefulSet              = "Provisioning MinIO Statefulset"
+	StatusProvisioningConsoleDeployment        = "Provisioning Console Deployment"
+	StatusProvisioningKESStatefulSet           = "Provisioning KES StatefulSet"
+	StatusProvisioningLogPGStatefulSet         = "Provisioning Postgres server for Log Search feature"
+	StatusProvisioningLogSearchAPIDeployment   = "Provisioning Log Search API server for Log Search feature"
+	StatusProvisioningPrometheusStatefulSet    = "Provisioning Prometheus server for Prometheus metrics feature"
+	StatusProvisioningPrometheusServiceMonitor = "Provisioning Prometheus service monitor for Prometheus metrics feature"
+	StatusWaitingForReadyState                 = "Waiting for Pods to be ready"
+	StatusWaitingForLogSearchReadyState        = "Waiting for Log Search Pods to be ready"
+	StatusWaitingMinIOCert                     = "Waiting for MinIO TLS Certificate"
+	StatusWaitingMinIOClientCert               = "Waiting for MinIO TLS Client Certificate"
+	StatusWaitingKESCert                       = "Waiting for KES TLS Certificate"
+	StatusWaitingConsoleCert                   = "Waiting for Console TLS Certificate"
+	StatusUpdatingMinIOVersion                 = "Updating MinIO Version"
+	StatusUpdatingConsole                      = "Updating Console"
+	StatusUpdatingKES                          = "Updating KES"
+	StatusUpdatingLogPGStatefulSet             = "Updating Postgres server for Log Search feature"
+	StatusUpdatingLogSearchAPIServer           = "Updating Log Search API server"
+	StatusUpdatingResourceRequirements         = "Updating Resource Requirements"
+	StatusUpdatingAffinity                     = "Updating Pod Affinity"
+	StatusNotOwned                             = "Statefulset not controlled by operator"
+	StatusFailedAlreadyExists                  = "Another MinIO Tenant already exists in the namespace"
+	StatusInconsistentMinIOVersions            = "Different versions across MinIO Pools"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -149,6 +155,8 @@ type Controller struct {
 	minioClientSet clientset.Interface
 	// certClient is a clientset for our certficate management
 	certClient certapi.CertificatesV1beta1Client
+	// promClient is a clientset for Prometheus service monitor
+	promClient promclientset.Interface
 	// statefulSetLister is able to list/get StatefulSets from a shared
 	// informer's store.
 	statefulSetLister appslisters.StatefulSetLister
@@ -184,6 +192,13 @@ type Controller struct {
 	// has synced at least once.
 	serviceListerSynced cache.InformerSynced
 
+	// serviceMonitorLister is able to list/get Services from a shared informer's
+	// store.
+	serviceMonitorLister promlisters.ServiceMonitorLister
+	// serviceMonitorListerSynced returns true if the Service shared informer
+	// has synced at least once.
+	serviceMonitorListerSynced cache.InformerSynced
+
 	// queue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
 	// means we can ensure we only process a fixed amount of resources at a
@@ -209,11 +224,13 @@ func NewController(
 	kubeClientSet kubernetes.Interface,
 	minioClientSet clientset.Interface,
 	certClient certapi.CertificatesV1beta1Client,
+	promClient promclientset.Interface,
 	statefulSetInformer appsinformers.StatefulSetInformer,
 	deploymentInformer appsinformers.DeploymentInformer,
 	jobInformer batchinformers.JobInformer,
 	tenantInformer informers.TenantInformer,
 	serviceInformer coreinformers.ServiceInformer,
+	serviceMonitorInformer prominformers.ServiceMonitorInformer,
 	hostsTemplate, operatorVersion string) *Controller {
 
 	// Create event broadcaster
@@ -227,23 +244,26 @@ func NewController(
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		kubeClientSet:           kubeClientSet,
-		minioClientSet:          minioClientSet,
-		certClient:              certClient,
-		statefulSetLister:       statefulSetInformer.Lister(),
-		statefulSetListerSynced: statefulSetInformer.Informer().HasSynced,
-		deploymentLister:        deploymentInformer.Lister(),
-		deploymentListerSynced:  deploymentInformer.Informer().HasSynced,
-		jobLister:               jobInformer.Lister(),
-		jobListerSynced:         jobInformer.Informer().HasSynced,
-		tenantsLister:           tenantInformer.Lister(),
-		tenantsSynced:           tenantInformer.Informer().HasSynced,
-		serviceLister:           serviceInformer.Lister(),
-		serviceListerSynced:     serviceInformer.Informer().HasSynced,
-		workqueue:               queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
-		recorder:                recorder,
-		hostsTemplate:           hostsTemplate,
-		operatorVersion:         operatorVersion,
+		kubeClientSet:              kubeClientSet,
+		minioClientSet:             minioClientSet,
+		certClient:                 certClient,
+		promClient:                 promClient,
+		statefulSetLister:          statefulSetInformer.Lister(),
+		statefulSetListerSynced:    statefulSetInformer.Informer().HasSynced,
+		deploymentLister:           deploymentInformer.Lister(),
+		deploymentListerSynced:     deploymentInformer.Informer().HasSynced,
+		jobLister:                  jobInformer.Lister(),
+		jobListerSynced:            jobInformer.Informer().HasSynced,
+		tenantsLister:              tenantInformer.Lister(),
+		tenantsSynced:              tenantInformer.Informer().HasSynced,
+		serviceLister:              serviceInformer.Lister(),
+		serviceListerSynced:        serviceInformer.Informer().HasSynced,
+		serviceMonitorLister:       serviceMonitorInformer.Lister(),
+		serviceMonitorListerSynced: serviceMonitorInformer.Informer().HasSynced,
+		workqueue:                  queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
+		recorder:                   recorder,
+		hostsTemplate:              hostsTemplate,
+		operatorVersion:            operatorVersion,
 	}
 
 	// Initialize operator webhook handlers
@@ -1454,6 +1474,17 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
+	if tenant.HasPrometheusSMEnabled() {
+		err = c.checkAndCreatePrometheusServiceMonitorSecret(ctx, tenant, string(minioSecret.Data["accesskey"]), string(minioSecret.Data["secretkey"]))
+		if err != nil {
+			return err
+		}
+		err = c.checkAndCreatePrometheusServiceMonitor(ctx, tenant)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
 	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalReplicas)
@@ -1826,5 +1857,37 @@ func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, te
 	klog.V(2).Infof("Creating a new Prometheus StatefulSet for %s", tenant.Namespace)
 	prometheusSS := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName())
 	_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, prometheusSS, metav1.CreateOptions{})
+	return err
+}
+
+func (c *Controller) checkAndCreatePrometheusServiceMonitorSecret(ctx context.Context, tenant *miniov2.Tenant, accessKey, secretKey string) error {
+	_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.PromServiceMonitorSecret(), metav1.GetOptions{})
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningPrometheusServiceMonitor, 0); err != nil {
+		return err
+	}
+
+	klog.V(2).Infof("Creating a new Prometheus Service Monitor secret for %s", tenant.Namespace)
+	secret := secrets.PromServiceMonitorSecret(tenant, accessKey, secretKey)
+	_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+	return err
+}
+
+func (c *Controller) checkAndCreatePrometheusServiceMonitor(ctx context.Context, tenant *miniov2.Tenant) error {
+	_, err := c.serviceMonitorLister.ServiceMonitors(tenant.Namespace).Get(tenant.PrometheusServiceMonitorName())
+	if err == nil || !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningPrometheusServiceMonitor, 0); err != nil {
+		return err
+	}
+
+	klog.V(2).Infof("Creating a new Prometheus Service Monitor for %s", tenant.Namespace)
+	prometheusSM := servicemonitor.NewForPrometheus(tenant)
+	_, err = c.promClient.MonitoringV1().ServiceMonitors(tenant.Namespace).Create(ctx, prometheusSM, metav1.CreateOptions{})
 	return err
 }

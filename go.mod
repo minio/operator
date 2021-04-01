@@ -10,6 +10,8 @@ require (
 	github.com/minio/controller-tools v0.4.7 // indirect
 	github.com/minio/minio v0.0.0-20210128013121-e79829b5b368
 	github.com/minio/minio-go/v7 v7.0.8-0.20210127003153-c40722862654
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.46.0
+	github.com/prometheus-operator/prometheus-operator/pkg/client v0.46.0
 	github.com/secure-io/sio-go v0.3.1 // indirect
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e

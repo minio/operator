@@ -240,6 +240,13 @@ type TenantSpec struct {
 	Prometheus *PrometheusConfig `json:"prometheus,omitempty"`
 	// *Optional* +
 	//
+	// Directs the MinIO Operator to deploy a ServiceMonitor object. +
+	//
+	// ServiceMonitor object allows native integration with Prometheus Operator.
+	//+optional
+	PrometheusOperator *PrometheusOperatorConfig `json:"prometheusOperator,omitempty"`
+	// *Optional* +
+	//
 	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO pods created as part of the Tenant. +
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
@@ -702,6 +709,11 @@ type PrometheusConfig struct {
 	DiskCapacityDB *int `json:"diskCapacityGB,omitempty"`
 	// *Optional* +
 	//
+	// Specify the storage class for the PVC to support the Prometheus pod.
+	// +optional
+	StorageClassName *string `json:"storageClassName,omitempty"`
+	// *Optional* +
+	//
 	// If provided, use these annotations for Prometheus Object Meta annotations
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
@@ -739,6 +751,18 @@ type PrometheusConfig struct {
 	// * `seLinuxOptions` +
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+}
+
+// PrometheusOperatorConfig (`prometheus`) defines the configuration of a Prometheus service monitor object as part of the MinIO tenant. The Operator automatically configures the Prometheus service monitor to scrape and store metrics from the MinIO tenant. +
+//
+// The Operator deploys each Prometheus pod using the {prometheus-image} Docker image.
+type PrometheusOperatorConfig struct {
+	// *Optional* +
+	//
+	// Specify if the https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-servicemonitors[Service Monitor] to
+	// be created for this tenant.
+	// +optional
+	ServiceMonitor bool `json:"serviceMonitor,omitempty"`
 }
 
 // LogDbConfig (`db`) defines the configuration of the PostgreSQL StatefulSet deployed to support the MinIO LogSearch API. +
