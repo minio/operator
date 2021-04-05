@@ -2,7 +2,27 @@ apiVersion: v1
 entries:
   minio-operator:
   - apiVersion: v2
-    created: "2021-03-25T15:58:11.923155943-07:00"
+    created: "2021-04-04T23:35:56.216428249-07:00"
+    description: A Helm chart for MinIO Operator
+    digest: 4407196cc9a3e6cea8ddb719e8308985cb49789a3e77c023f0bc680c31f11de3
+    home: https://min.io
+    icon: https://min.io/resources/img/logo/MINIO_wordmark.png
+    keywords:
+    - storage
+    - object-storage
+    - S3
+    maintainers:
+    - email: dev@minio.io
+      name: MinIO, Inc
+    name: minio-operator
+    sources:
+    - https://github.com/minio/operator
+    type: application
+    urls:
+    - https://operator.min.io/helm-releases/minio-operator-4.0.5.tgz
+    version: 4.0.5
+  - apiVersion: v2
+    created: "2021-04-04T23:35:56.213739005-07:00"
     description: A Helm chart for MinIO Operator
     digest: ce4a4d68e66cec8af18c28eee339dd2adf3bb4a7beba851eaa3b8b7783e26cd1
     home: https://min.io
@@ -22,7 +42,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.3.tgz
     version: 4.0.3
   - apiVersion: v2
-    created: "2021-03-25T15:58:11.921572299-07:00"
+    created: "2021-04-04T23:35:56.208559793-07:00"
     description: A Helm chart for MinIO Operator
     digest: b488b7faac263a1d7c70374b20435b6ec3a0288f28a845647f0d5c57bc349c43
     home: https://min.io
@@ -42,7 +62,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.2.tgz
     version: 4.0.2
   - apiVersion: v2
-    created: "2021-03-25T15:58:11.919780747-07:00"
+    created: "2021-04-04T23:35:56.205308887-07:00"
     description: A Helm chart for MinIO Operator
     digest: f69b67cd3dcc8d819994fc4473d07be1e8fd11e8428914195a7f59f17321ea46
     home: https://min.io
@@ -62,7 +82,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.1.tgz
     version: 4.0.1
   - apiVersion: v2
-    created: "2021-03-25T15:58:11.917783489-07:00"
+    created: "2021-04-04T23:35:56.200988505-07:00"
     description: A Helm chart for MinIO Operator
     digest: 8bc6f068743480ed1cecae0ec896ac6f46ffec5e7ed6e4efbb241bc3b47c7f21
     home: https://min.io
@@ -81,4 +101,4 @@ entries:
     urls:
     - https://operator.min.io/helm-releases/minio-operator-4.0.0.tgz
     version: 4.0.0
-generated: "2021-03-25T15:58:11.916346179-07:00"
+generated: "2021-04-04T23:35:56.191363782-07:00"
