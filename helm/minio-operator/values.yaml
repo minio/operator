@@ -72,6 +72,7 @@ tenants:
     subPath: /data
     # pool secrets
     secrets:
+      enabled: true
       name: minio1-secret
       accessKey: ThisIsAVeryLongPasswordForExample
       secretKey: ThisIsAVeryLongPasswordForExample
@@ -118,6 +119,7 @@ tenants:
         pullPolicy: IfNotPresent
       replicaCount: 1
       secrets:
+        enabled: true
         name: console-secret
         passphrase: ThisIsAVeryLongPasswordForExample
         salt: ThisIsAVeryLongPasswordForExample
