@@ -24,6 +24,14 @@ func (t *Tenant) MinIOPodLabels() map[string]string {
 	return m
 }
 
+// MinIOPodLabelsForSM returns the default labels for MinIO Pod
+// that allow selection by a ServiceMonitor
+func (t *Tenant) MinIOPodLabelsForSM() map[string]string {
+	m := make(map[string]string, 1)
+	m[TenantLabel] = t.Name + "prom-service-monitor"
+	return m
+}
+
 // KESPodLabels returns the default labels for KES Pod
 func (t *Tenant) KESPodLabels() map[string]string {
 	m := make(map[string]string, 1)

@@ -96,11 +96,14 @@ spec:
   ## for details.
   podManagementPolicy: Parallel
 
+  ## Prometheus setup for MinIO Tenant. 
   prometheus:
     image: "prom/prometheus"
     sidecarimage: "alpine"
     initimage: "busybox"
     diskCapacityGB: 5
 
+  ## Prometheus Operator's Service Monitor for MinIO Tenant Pods.
   prometheusOperator:
-    serviceMonitor: false
+    labels:
+      app: minio-sm

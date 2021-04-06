@@ -549,7 +549,7 @@ func (t *Tenant) HasPrometheusEnabled() bool {
 
 // HasPrometheusSMEnabled checks if Prometheus service monitor has been enabled
 func (t *Tenant) HasPrometheusSMEnabled() bool {
-	return t.Spec.PrometheusOperator != nil && t.Spec.PrometheusOperator.ServiceMonitor
+	return t.Spec.PrometheusOperator != nil
 }
 
 // HasConsoleEnabled checks if the console has been enabled by the user
