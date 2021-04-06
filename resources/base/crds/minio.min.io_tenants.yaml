@@ -5478,8 +5478,14 @@ spec:
                 type: object
               prometheusOperator:
                 properties:
-                  serviceMonitor:
-                    type: boolean
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
                 type: object
               requestAutoCert:
                 type: boolean

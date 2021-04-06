@@ -83,6 +83,7 @@ func (t *Tenant) MinIOHLServiceName() string {
 // with current MinIO StatefulSet pods
 func (t *Tenant) MinIOCIServiceName() string {
 	// DO NOT CHANGE, this should be constant
+	// This is possible because each namespace has only one Tenant
 	return "minio"
 }
 

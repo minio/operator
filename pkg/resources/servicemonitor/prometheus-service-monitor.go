@@ -39,10 +39,12 @@ func NewForPrometheus(t *miniov2.Tenant) *promv1.ServiceMonitor {
 			Name:            t.PrometheusServiceMonitorName(),
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
+			Labels:          t.Spec.PrometheusOperator.Labels,
+			Annotations:     t.Spec.PrometheusOperator.Annotations,
 		},
 		Spec: promv1.ServiceMonitorSpec{
 			Selector: metav1.LabelSelector{
-				MatchLabels: t.MinIOPodLabels(),
+				MatchLabels: t.MinIOPodLabelsForSM(),
 			},
 			Endpoints: []promv1.Endpoint{{
 				Port:          port,

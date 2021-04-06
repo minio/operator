@@ -755,14 +755,19 @@ type PrometheusConfig struct {
 
 // PrometheusOperatorConfig (`prometheus`) defines the configuration of a Prometheus service monitor object as part of the MinIO tenant. The Operator automatically configures the Prometheus service monitor to scrape and store metrics from the MinIO tenant. +
 //
-// The Operator deploys each Prometheus pod using the {prometheus-image} Docker image.
+// Specify if the https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-servicemonitors[Service Monitor] to
+// be created for this tenant.
 type PrometheusOperatorConfig struct {
 	// *Optional* +
 	//
-	// Specify if the https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-servicemonitors[Service Monitor] to
-	// be created for this tenant.
+	// If provided, use these labels for Console Object Meta labels
 	// +optional
-	ServiceMonitor bool `json:"serviceMonitor,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
+	// *Optional* +
+	//
+	// If provided, use these annotations for Console Object Meta annotations
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // LogDbConfig (`db`) defines the configuration of the PostgreSQL StatefulSet deployed to support the MinIO LogSearch API. +
