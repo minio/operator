@@ -38,6 +38,9 @@ type TenantOptions struct {
 	Capacity        string
 	NS              string
 	Image           string
+	ConsoleImage    string
+	TenantAccessKey string
+	TenantSecretKey string
 	StorageClass    string
 	KmsSecret       string
 	ConsoleSecret   string
@@ -96,11 +99,11 @@ func tenantKESConfig(tenant, secret string) *miniov2.KESConfig {
 	return nil
 }
 
-func tenantConsoleConfig(tenant, secret string) *miniov2.ConsoleConfiguration {
+func tenantConsoleConfig(tenant, secret, consoleImage string) *miniov2.ConsoleConfiguration {
 	if secret != "" {
 		return &miniov2.ConsoleConfiguration{
 			Replicas: helpers.ConsoleReplicas,
-			Image:    helpers.DefaultConsoleImage,
+			Image:    consoleImage,
 			ConsoleSecret: &v1.LocalObjectReference{
 				Name: secret,
 			},
@@ -148,7 +151,7 @@ func NewTenant(opts *TenantOptions) (*miniov2.Tenant, error) {
 			},
 			Mountpath:       helpers.MinIOMountPath,
 			KES:             tenantKESConfig(opts.Name, opts.KmsSecret),
-			Console:         tenantConsoleConfig(opts.Name, opts.ConsoleSecret),
+			Console:         tenantConsoleConfig(opts.Name, opts.ConsoleSecret, opts.ConsoleImage),
 			ImagePullSecret: v1.LocalObjectReference{Name: opts.ImagePullSecret},
 		},
 	}

@@ -25,10 +25,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func tenantSecretData() map[string][]byte {
+func tenantSecretData(t *TenantOptions) map[string][]byte {
 	m := make(map[string][]byte, 2)
-	m["accesskey"] = []byte(uuid.New().String())
-	m["secretkey"] = []byte(uuid.New().String())
+
+	if t.TenantAccessKey == "" {
+	    m["accesskey"] = []byte(uuid.New().String())
+	} else {
+		m["accesskey"] = []byte(t.TenantAccessKey)
+	}
+
+	if t.TenantSecretKey == "" {
+	    m["secretkey"] = []byte(uuid.New().String())
+    } else {
+    	m["secretkey"] = []byte(t.TenantSecretKey)
+    }
+
 	return m
 }
 
@@ -52,7 +63,7 @@ func NewSecretForTenant(opts *TenantOptions) *corev1.Secret {
 			Kind:       "Secret",
 			APIVersion: v1.SchemeGroupVersion.Version,
 		},
-		Data: tenantSecretData(),
+		Data: tenantSecretData(opts),
 	}
 }
 
