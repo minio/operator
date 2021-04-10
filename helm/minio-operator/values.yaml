@@ -73,8 +73,8 @@ tenants:
     # pool secrets
     secrets:
       name: minio1-secret
-      accessKey: ThisIsAVeryLongPasswordForExample
-      secretKey: ThisIsAVeryLongPasswordForExample
+      accessKey: minio
+      secretKey: minio123
     # pool metrics to be read by Prometheus
     metrics:
       enabled: false
@@ -119,7 +119,7 @@ tenants:
       replicaCount: 1
       secrets:
         name: console-secret
-        passphrase: ThisIsAVeryLongPasswordForExample
-        salt: ThisIsAVeryLongPasswordForExample
-        accessKey: ThisIsAVeryLongPasswordForExample
-        secretKey: ThisIsAVeryLongPasswordForExample
+        passphrase: SECRET
+        salt: SECRET
+        accessKey: YOURCONSOLEACCESS
+        secretKey: YOURCONSOLESECRET
