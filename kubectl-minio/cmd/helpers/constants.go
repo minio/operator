@@ -71,10 +71,10 @@ const (
 	DefaultImagePullPolicy = corev1.PullIfNotPresent
 
 	// DefaultOperatorImage is the default operator image to be used
-	DefaultOperatorImage = "minio/operator:v4.0.6"
+	DefaultOperatorImage = "minio/operator:v4.0.7"
 
 	// DefaultTenantImage is the default MinIO image used while creating tenant
-	DefaultTenantImage = "minio/minio:RELEASE.2021-04-06T21-25-49Z"
+	DefaultTenantImage = "minio/minio:RELEASE.2021-04-06T23-11-00Z"
 
 	// DefaultKESImage is the default KES image used while creating tenant
 	DefaultKESImage = "minio/kes:v0.13.4"

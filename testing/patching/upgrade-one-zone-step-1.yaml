@@ -12,7 +12,7 @@ kind: Tenant
 metadata:
   name: upgrade-one-pool
 spec:
-  image: minio/minio:RELEASE.2021-04-06T21-25-49Z
+  image: minio/minio:RELEASE.2021-04-06T23-11-00Z
   pools:
     - servers: 1
       volumesPerServer: 4
