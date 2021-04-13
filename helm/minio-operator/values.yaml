@@ -22,7 +22,7 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.6.3
+    tag: v0.6.6
     pullPolicy: IfNotPresent
   replicaCount: 1
   resources: {}
@@ -114,7 +114,7 @@ tenants:
     console:
       image:
         repository: minio/console
-        tag: v0.6.3
+        tag: v0.6.6
         pullPolicy: IfNotPresent
       replicaCount: 1
       secrets:
