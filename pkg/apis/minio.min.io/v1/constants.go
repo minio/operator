@@ -38,7 +38,7 @@ const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
 const DefaultUpdateStrategy = "RollingUpdate"
 
 // DefaultImagePullPolicy specifies the policy to image pulls
-const DefaultImagePullPolicy = corev1.PullAlways
+const DefaultImagePullPolicy = corev1.PullIfNotPresent
 
 // CSRNameSuffix specifies the suffix added to Tenant name to create a CSR
 const CSRNameSuffix = "-csr"
