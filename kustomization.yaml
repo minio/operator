@@ -7,5 +7,13 @@ commonAnnotations:
   operator.min.io/support: "https://subnet.min.io"
 
 resources:
-  - resources/
+  - resources/base/namespace.yaml
+  - resources/base/service-account.yaml
+  - resources/base/cluster-role.yaml
+  - resources/base/cluster-role-binding.yaml
+  - resources/base/crds/minio.min.io_tenants.yaml
+  - resources/base/service.yaml
+  - resources/base/deployment.yaml
+  - resources/base/console-ui.yaml
+
 
