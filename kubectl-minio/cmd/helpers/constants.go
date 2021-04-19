@@ -80,7 +80,7 @@ const (
 	DefaultKESImage = "minio/kes:v0.13.4"
 
 	// DefaultConsoleImage is the default console image used while creating tenant
-	DefaultConsoleImage = "minio/console:v0.6.3"
+	DefaultConsoleImage = "minio/console:v0.6.8"
 
 	// DefaultOperatorServiceName is the default service name for operator
 	DefaultOperatorServiceName = "operator"
