@@ -111,7 +111,7 @@ spec:
       #           operator: In
       #           values:
       #           - store
-      #       topologyKey: "kubernetes.io/hostname" 
+      #       topologyKey: "kubernetes.io/hostname"
 
       ## Configure resource requests and limits for MinIO containers
       # resources:
@@ -122,7 +122,7 @@ spec:
       #     cpu: 500m
       #      memory: 16Gi
 
-      ## Configure security context 
+      ## Configure security context
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -163,7 +163,7 @@ spec:
   ## for details.
   podManagementPolicy: Parallel
 
-  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific 
+  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
   ## services created by the operator.
   serviceMetadata:
     minioServiceLabels:
@@ -181,9 +181,9 @@ spec:
   #   value: "off" # to turn-off browser
   # - name: MINIO_STORAGE_CLASS_STANDARD
   #   value: "EC:2"
-  #   ## For secure env vars like passwords, create an opaque Kubernetes secret and specify the secret in 
+  #   ## For secure env vars like passwords, create an opaque Kubernetes secret and specify the secret in
   #   ## the `valueFrom` field. The `valueFrom` object must contain the following fields:
-  #   ## `name` - the secret from which MinIO extracts the password, `key` - the data field 
+  #   ## `name` - the secret from which MinIO extracts the password, `key` - the data field
   #   ## within secret, whose value will be set to the env variable's value
   # - name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
   #   valueFrom:
