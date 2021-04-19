@@ -181,6 +181,15 @@ spec:
   #   value: "off" # to turn-off browser
   # - name: MINIO_STORAGE_CLASS_STANDARD
   #   value: "EC:2"
+  #   ## For secure env vars like passwords, create an opaque Kubernetes secret and specify the secret in 
+  #   ## the `valueFrom` field. The `valueFrom` object must contain the following fields:
+  #   ## `name` - the secret from which MinIO extracts the password, `key` - the data field 
+  #   ## within secret, whose value will be set to the env variable's value
+  # - name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: ldap-minio-secret
+  #       key: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
 
   ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
   ## This is applied to MinIO pods only.
