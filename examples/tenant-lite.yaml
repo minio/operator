@@ -181,7 +181,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.6.3
+    image: minio/console:v0.6.8
     replicas: 2
     consoleSecret:
       name: console-secret
