@@ -51,6 +51,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -858,6 +859,17 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		} else {
 			return err
+		}
+	} else {
+		// Create the clusterIP service for the Tenant
+		svcToCreate := services.NewClusterIPForMinIO(tenant)
+		if !equality.Semantic.DeepDerivative(svcToCreate, svc) {
+			// service found and service to be created are not equal
+			// try updating the service
+			_, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, svcToCreate, uOpts)
+			if err != nil {
+				return fmt.Errorf("Tenant ClusterIP service update failed with %s", err.Error())
+			}
 		}
 	}
 
