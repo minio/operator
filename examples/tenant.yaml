@@ -61,7 +61,21 @@ spec:
       ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
       ## Note that the operator does not support upgrading from standalone to distributed mode.
     - servers: 4
-
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: v1.min.io/tenant
+                    operator: In
+                    values:
+                      - minio
+                  - key: v1.min.io/pool
+                    operator: In
+                    values:
+                      - pool-0
+              topologyKey: kubernetes.io/hostname
+      name: pool-0
       ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
       volumesPerServer: 4
 
@@ -75,7 +89,7 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 1Ti
+              storage: 10Gi
 
       ## Used to specify a toleration for a pod
       # tolerations:
@@ -127,6 +141,7 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
+        fsGroup: 1000
 
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
@@ -207,3 +222,4 @@ spec:
       runAsUser: 1000
       runAsGroup: 2000
       runAsNonRoot: true
+      fsGroup: 2000

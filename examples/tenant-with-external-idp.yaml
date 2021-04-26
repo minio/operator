@@ -118,6 +118,7 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
+        fsGroup: 1000
 
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
@@ -194,6 +195,7 @@ spec:
       runAsUser: 1000
       runAsGroup: 2000
       runAsNonRoot: true
+      fsGroup: 2000
     env:
       - name: CONSOLE_IDP_URL
         value: "https://your-extenal-idp.com/" # Your external identity provide URL
