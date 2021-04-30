@@ -1,7 +1,8 @@
 apiVersion: v2
 description: A Helm chart for MinIO Operator
 name: minio-operator
-version: 4.0.9
+version: 4.0.10
+appVersion: v4.0.9
 keywords:
 - storage
 - object-storage
