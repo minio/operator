@@ -1787,7 +1787,7 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 }
 
 func (c *Controller) checkLogSearchAPIReady(tenant *miniov2.Tenant) error {
-	endpoint := fmt.Sprintf("http://%s.%s.svc.cluster.local:8080", tenant.LogSearchAPIServiceName(), tenant.Namespace)
+	endpoint := fmt.Sprintf("http://%s.%s.svc.%s:8080", tenant.LogSearchAPIServiceName(), tenant.Namespace, miniov2.GetClusterDomain())
 	client := http.Client{Timeout: 100 * time.Millisecond}
 	resp, err := client.Get(endpoint)
 	if err != nil {
