@@ -1,4 +1,4 @@
-By contributing to minio-controller, you agree to assign the copyright to MinIO.
+By contributing to operator, you agree to assign the copyright to MinIO.
 
 The contributed source files should have the following notice:
 

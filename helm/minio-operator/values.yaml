@@ -5,7 +5,7 @@ operator:
   nsToWatch: ""
   image:
     repository: minio/operator
-    tag: v4.0.8
+    tag: v4.0.9
     pullPolicy: IfNotPresent
   imagePullSecrets: []
   replicaCount: 1
@@ -13,6 +13,7 @@ operator:
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
+    fsGroup: 1000
   resources:
     requests:
       cpu: 200m
@@ -22,7 +23,7 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.6.6
+    tag: v0.6.8
     pullPolicy: IfNotPresent
   replicaCount: 1
   resources: {}
@@ -73,6 +74,7 @@ tenants:
     subPath: /data
     # pool secrets
     secrets:
+      enabled: true
       name: minio1-secret
       accessKey: minio
       secretKey: minio123
@@ -115,10 +117,11 @@ tenants:
     console:
       image:
         repository: minio/console
-        tag: v0.6.6
+        tag: v0.6.8
         pullPolicy: IfNotPresent
       replicaCount: 1
       secrets:
+        enabled: true
         name: console-secret
         passphrase: SECRET
         salt: SECRET

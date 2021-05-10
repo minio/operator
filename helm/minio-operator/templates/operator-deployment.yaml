@@ -20,6 +20,10 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       serviceAccountName: minio-operator
+    {{- with .Values.operator.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
@@ -37,5 +41,3 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.operator.resources | nindent 12 }}
-          securityContext:
-            {{- toYaml .Values.operator.securityContext | nindent 12 }}

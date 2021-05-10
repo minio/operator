@@ -128,7 +128,7 @@ type TenantSpec struct {
 	CredsSecret *corev1.LocalObjectReference `json:"credsSecret,omitempty"`
 	// *Optional* +
 	//
-	// If provided, the MinIO Operator the specified environment variables when deploying the Tenant resource.
+	// If provided, the MinIO Operator adds the specified environment variables when deploying the Tenant resource.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
 	// *Optional* +

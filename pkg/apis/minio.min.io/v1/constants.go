@@ -38,7 +38,7 @@ const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
 const DefaultUpdateStrategy = "RollingUpdate"
 
 // DefaultImagePullPolicy specifies the policy to image pulls
-const DefaultImagePullPolicy = corev1.PullAlways
+const DefaultImagePullPolicy = corev1.PullIfNotPresent
 
 // CSRNameSuffix specifies the suffix added to Tenant name to create a CSR
 const CSRNameSuffix = "-csr"
@@ -104,7 +104,7 @@ const DefaultZoneName = "zone-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.6.3"
+const DefaultConsoleImage = "minio/console:v0.6.8"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
