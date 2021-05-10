@@ -1,8 +1,10 @@
 {{ range .Values.tenants }}
+---
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: {{ .name }}
+  namespace: {{ .namespace }}
   ## Optionally pass labels to be applied to the statefulset pods
   labels:
     app: minio

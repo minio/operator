@@ -32,6 +32,7 @@ console:
 tenants:
   # Tenant name
   - name: minio1
+    namespace:
     ## Registry location and Tag to download MinIO Server image
     image:
       repository: minio/minio
