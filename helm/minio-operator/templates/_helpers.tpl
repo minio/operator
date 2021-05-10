@@ -49,8 +49,8 @@ Common labels for operator
 {{- define "minio-operator.labels" -}}
 helm.sh/chart: {{ include "minio-operator.chart" . }}
 {{ include "minio-operator.selectorLabels" . }}
-{{- if .Chart.Version }}
-app.kubernetes.io/version: {{ .Chart.Version | quote }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
@@ -69,8 +69,8 @@ Common labels for console
 {{- define "minio-operator.console-labels" -}}
 helm.sh/chart: {{ include "minio-operator.chart" . }}
 {{ include "minio-operator.console-selectorLabels" . }}
-{{- if .Chart.Version }}
-app.kubernetes.io/version: {{ .Chart.Version | quote }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
