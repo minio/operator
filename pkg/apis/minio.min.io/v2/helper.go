@@ -384,6 +384,12 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 	}
 
+	if t.HasLogEnabled() {
+		if t.Spec.Log.Image == "" {
+			t.Spec.Log.Image = DefaultLogSearchAPIImage
+		}
+	}
+
 	return t
 }
 
