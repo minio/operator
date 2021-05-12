@@ -90,6 +90,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 	if t.HasCredsSecret() {
 		secretName := t.Spec.CredsSecret.Name
 		envVars = append(envVars, corev1.EnvVar{
+			// TODO: remove MINIO_ACCESS_KEY since MinIO server has deprecated it since RELEASE.2021-04-22T15-44-28Z.
 			Name: "MINIO_ACCESS_KEY",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -100,7 +101,28 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 				},
 			},
 		}, corev1.EnvVar{
+			// TODO: remove MINIO_SECRET_KEY since MinIO server has deprecated it since RELEASE.2021-04-22T15-44-28Z.
 			Name: "MINIO_SECRET_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "secretkey",
+				},
+			},
+		}, corev1.EnvVar{
+			Name: "MINIO_ROOT_USER",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secretName,
+					},
+					Key: "accesskey",
+				},
+			},
+		}, corev1.EnvVar{
+			Name: "MINIO_ROOT_PASSWORD",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
