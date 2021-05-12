@@ -403,40 +403,41 @@ func NewForMinIOPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool,
 				},
 			})
 		}
-		// Will mount into ~/.minio/certs/CAs folder the user provided CA certificates.
-		// This is used for MinIO to verify TLS connections with other applications.
-		//	certs
-		//		+ CAs
-		//			 + ca-0.crt
-		//			 + ca-1.crt
-		//			 + ca-2.crt
-		if t.ExternalCaCerts() {
-			for index, secret := range t.Spec.ExternalCaCertSecret {
-				var caCertPaths []corev1.KeyToPath
-				// This covers both secrets of type "kubernetes.io/tls" and
-				// "cert-manager.io/v1alpha2" because of same keys in both.
-				if secret.Type == "kubernetes.io/tls" {
-					caCertPaths = []corev1.KeyToPath{
-						{Key: "tls.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-					}
-				} else if secret.Type == "cert-manager.io/v1alpha2" {
-					caCertPaths = []corev1.KeyToPath{
-						{Key: "ca.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-					}
-				} else {
-					caCertPaths = []corev1.KeyToPath{
-						{Key: "public.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-					}
+	}
+
+	// Will mount into ~/.minio/certs/CAs folder the user provided CA certificates.
+	// This is used for MinIO to verify TLS connections with other applications.
+	//	certs
+	//		+ CAs
+	//			 + ca-0.crt
+	//			 + ca-1.crt
+	//			 + ca-2.crt
+	if t.ExternalCaCerts() {
+		for index, secret := range t.Spec.ExternalCaCertSecret {
+			var caCertPaths []corev1.KeyToPath
+			// This covers both secrets of type "kubernetes.io/tls" and
+			// "cert-manager.io/v1alpha2" because of same keys in both.
+			if secret.Type == "kubernetes.io/tls" {
+				caCertPaths = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
 				}
-				podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
-					Secret: &corev1.SecretProjection{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: secret.Name,
-						},
-						Items: caCertPaths,
-					},
-				})
+			} else if secret.Type == "cert-manager.io/v1alpha2" {
+				caCertPaths = []corev1.KeyToPath{
+					{Key: "ca.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+				}
+			} else {
+				caCertPaths = []corev1.KeyToPath{
+					{Key: "public.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+				}
 			}
+			podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secret.Name,
+					},
+					Items: caCertPaths,
+				},
+			})
 		}
 	}
 
