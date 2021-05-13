@@ -24,7 +24,6 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/hex"
 	"encoding/pem"
 	"errors"
 
@@ -140,13 +139,10 @@ func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, tenant *miniov
 		return err
 	}
 
-	// Store the Identity to be used later during KES container creation
-	miniov2.KESIdentity = hex.EncodeToString(h.Sum(nil))
-
 	// PEM encode private ECDSA key
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
-	// Create secret for KES Statefulset to use
+	// Create secret for KES StatefulSet to use
 	err = c.createSecret(ctx, tenant, tenant.MinIOPodLabels(), tenant.MinIOClientTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", tenant.MinIOClientTLSSecretName(), err)

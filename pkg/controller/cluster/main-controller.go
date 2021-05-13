@@ -1352,6 +1352,12 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
+		} else {
+			// Calculate identity based on auto generated KES client certificate
+			miniov2.KESIdentity, err = c.getCertIdentity(tenant.Namespace, &miniov2.LocalCertificateReference{Name: tenant.MinIOClientTLSSecretName()})
+			if err != nil {
+				return err
+			}
 		}
 
 		svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.KESHLServiceName())
