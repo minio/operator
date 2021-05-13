@@ -17,7 +17,7 @@
 
 package v1
 
-import "github.com/minio/minio/pkg/env"
+import "os"
 
 // ClusterDomain is used to store the Kubernetes cluster domain
 var ClusterDomain string
@@ -28,5 +28,9 @@ var KESIdentity string
 
 // InitGlobals initiates the global variables while Operator starts
 func InitGlobals(t *Tenant) {
-	ClusterDomain = env.Get("CLUSTER_DOMAIN", "cluster.local")
+	var ok bool
+	ClusterDomain, ok = os.LookupEnv("CLUSTER_DOMAIN")
+	if !ok {
+		ClusterDomain = "cluster.local"
+	}
 }

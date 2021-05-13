@@ -27,7 +27,6 @@ import (
 	"strings"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
-	"github.com/minio/minio/pkg/color"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 
@@ -114,14 +113,14 @@ func printTenantInfo(tenant miniov2.Tenant) {
 	for _, p := range conSvc.Spec.Ports {
 		consolePorts = consolePorts + strconv.Itoa(int(p.Port)) + ","
 	}
-	fmt.Printf(color.Bold(fmt.Sprintf("\nTenant '%s/%s', total capacity %s\n\n", tenant.Name, tenant.ObjectMeta.Namespace, helpers.TotalCapacity(tenant))))
-	fmt.Printf(color.Blue("  Current status: %s \n", tenant.Status.CurrentState))
-	fmt.Printf(color.Blue("  MinIO version: %s \n", tenant.Spec.Image))
-	fmt.Printf(color.Blue("  MinIO service: %s/ClusterIP (port %s)\n\n", minSvc.Name, strings.TrimSuffix(minPorts, ",")))
-	fmt.Printf(color.Blue("  Console version: %s \n", tenant.Spec.Console.Image))
-	fmt.Printf(color.Blue("  Console service: %s/ClusterIP (port %s)\n\n", conSvc.Name, strings.TrimSuffix(consolePorts, ",")))
+	fmt.Printf(Bold(fmt.Sprintf("\nTenant '%s/%s', total capacity %s\n\n", tenant.Name, tenant.ObjectMeta.Namespace, helpers.TotalCapacity(tenant))))
+	fmt.Printf(Blue("  Current status: %s \n", tenant.Status.CurrentState))
+	fmt.Printf(Blue("  MinIO version: %s \n", tenant.Spec.Image))
+	fmt.Printf(Blue("  MinIO service: %s/ClusterIP (port %s)\n\n", minSvc.Name, strings.TrimSuffix(minPorts, ",")))
+	fmt.Printf(Blue("  Console version: %s \n", tenant.Spec.Console.Image))
+	fmt.Printf(Blue("  Console service: %s/ClusterIP (port %s)\n\n", conSvc.Name, strings.TrimSuffix(consolePorts, ",")))
 	if tenant.Spec.KES != nil && tenant.Spec.KES.Image != "" {
-		fmt.Printf(color.Blue("  KES version: %s \n\n", tenant.Spec.KES.Image))
+		fmt.Printf(Blue("  KES version: %s \n\n", tenant.Spec.KES.Image))
 	}
 
 	t := helpers.GetTable()

@@ -46,11 +46,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
+	"github.com/minio/madmin-go"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/bucket/policy/condition"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
-	"github.com/minio/minio/pkg/madmin"
 )
 
 // Webhook API constants
@@ -597,34 +594,11 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 	return madmClnt, nil
 }
 
-// CreateConsoleUser function creates an admin user
+// CreateConsoleUser function creates an admin users
 func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	// Create policy
-	p := iampolicy.Policy{
-		Version: iampolicy.DefaultVersion,
-		Statements: []iampolicy.Statement{
-			{
-				SID:        policy.ID(""),
-				Effect:     policy.Allow,
-				Actions:    iampolicy.NewActionSet(iampolicy.AllAdminActions),
-				Resources:  iampolicy.NewResourceSet(),
-				Conditions: condition.NewFunctions(),
-			},
-			{
-				SID:        policy.ID(""),
-				Effect:     policy.Allow,
-				Actions:    iampolicy.NewActionSet(iampolicy.AllActions),
-				Resources:  iampolicy.NewResourceSet(iampolicy.NewResource("*", "")),
-				Conditions: condition.NewFunctions(),
-			},
-		},
-	}
-	if err := madmClnt.AddCannedPolicy(context.Background(), ConsoleAdminPolicyName, &p); err != nil {
-		return err
-	}
 	for _, secret := range userCredentialSecrets {
 		consoleAccessKey, ok := secret.Data["CONSOLE_ACCESS_KEY"]
 		if !ok {
@@ -638,9 +612,9 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialS
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 				return err
 			}
-		}
-		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
-			return err
+			if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

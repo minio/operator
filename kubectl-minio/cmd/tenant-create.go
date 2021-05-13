@@ -28,7 +28,6 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
-	"github.com/minio/minio/pkg/color"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/minio/operator/pkg/resources/services"
@@ -172,7 +171,7 @@ func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, 
 	}
 	minSvc := services.NewClusterIPForMinIO(to)
 	conSvc := services.NewClusterIPForConsole(to)
-	if color.IsTerminal() {
+	if IsTerminal() {
 		printBanner(to.ObjectMeta.Name, to.ObjectMeta.Namespace, string(console.Data["CONSOLE_ACCESS_KEY"]), string(console.Data["CONSOLE_SECRET_KEY"]),
 			minSvc, conSvc)
 	}
@@ -180,10 +179,10 @@ func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, 
 }
 
 func printBanner(tenantName, ns, user, pwd string, s, c *corev1.Service) {
-	fmt.Printf(color.Bold(fmt.Sprintf("\nTenant '%s' created in '%s' Namespace\n\n", tenantName, ns)))
-	fmt.Printf(color.Blue("  Username: %s \n", user))
-	fmt.Printf(color.Blue("  Password: %s \n", pwd))
-	fmt.Printf(color.Blue("  Note: Copy the credentials to a secure location. MinIO will not display these again.\n\n"))
+	fmt.Printf(Bold(fmt.Sprintf("\nTenant '%s' created in '%s' Namespace\n\n", tenantName, ns)))
+	fmt.Printf(Blue("  Username: %s \n", user))
+	fmt.Printf(Blue("  Password: %s \n", pwd))
+	fmt.Printf(Blue("  Note: Copy the credentials to a secure location. MinIO will not display these again.\n\n"))
 	var minPorts, consolePorts string
 	for _, p := range s.Spec.Ports {
 		minPorts = minPorts + strconv.Itoa(int(p.Port)) + ","

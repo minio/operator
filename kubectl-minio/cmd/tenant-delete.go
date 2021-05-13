@@ -25,7 +25,6 @@ import (
 	"io"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
-	"github.com/minio/minio/pkg/color"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -60,7 +59,7 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 				return err
 			}
 			if !helpers.Ask(fmt.Sprintf("This will delete the Tenant %s and ALL its data. Do you want to proceed?", args[0])) {
-				return fmt.Errorf(color.Bold("Aborting Tenant deletion\n"))
+				return fmt.Errorf(Bold("Aborting Tenant deletion\n"))
 			}
 			return nil
 		},

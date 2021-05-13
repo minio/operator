@@ -26,6 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -35,7 +36,7 @@ import (
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/minio/madmin-go"
 
 	"golang.org/x/time/rate"
 
@@ -81,7 +82,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
-	"github.com/minio/minio/pkg/auth"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
@@ -346,16 +346,24 @@ func (c *Controller) validateRequest(r *http.Request, secret *v1.Secret) error {
 	return nil
 }
 
+func generateRandomKey(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ" +
+		"abcdefghijklmnopqrstuvwxyzåäö" +
+		"0123456789")
+	var b strings.Builder
+	for i := 0; i < length; i++ {
+		b.WriteRune(chars[rand.Intn(len(chars))])
+	}
+	return b.String()
+}
+
 func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *miniov2.Tenant) (*v1.Secret, error) {
 	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx,
 		miniov2.WebhookSecret, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			cred, err := auth.GetNewCredentials()
-			if err != nil {
-				return nil, err
-			}
-			secret = getSecretForTenant(tenant, cred)
+			secret = getSecretForTenant(tenant, generateRandomKey(20), generateRandomKey(40))
 			return c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 		}
 		return nil, err
@@ -381,7 +389,7 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *min
 	return secret, nil
 }
 
-func getSecretForTenant(tenant *miniov2.Tenant, cred auth.Credentials) *v1.Secret {
+func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1.Secret {
 	secret := &corev1.Secret{
 		Type: "Opaque",
 		ObjectMeta: metav1.ObjectMeta{
@@ -396,12 +404,12 @@ func getSecretForTenant(tenant *miniov2.Tenant, cred auth.Credentials) *v1.Secre
 			},
 		},
 		Data: map[string][]byte{
-			miniov2.WebhookOperatorUsername: []byte(cred.AccessKey),
-			miniov2.WebhookOperatorPassword: []byte(cred.SecretKey),
+			miniov2.WebhookOperatorUsername: []byte(accessKey),
+			miniov2.WebhookOperatorPassword: []byte(secretKey),
 			miniov2.WebhookMinIOArgs: []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
 				"env+tls",
-				cred.AccessKey,
-				cred.SecretKey,
+				accessKey,
+				secretKey,
 				fmt.Sprintf("operator.%s.svc.%s",
 					miniov2.GetNSFromFile(),
 					miniov2.GetClusterDomain()),
