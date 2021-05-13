@@ -31,19 +31,19 @@ import (
 
 // TenantOptions encapsulates the CLI options for a MinIO Tenant
 type TenantOptions struct {
-	Name            string
-	SecretName      string
-	Servers         int32
-	Volumes         int32
-	Capacity        string
-	NS              string
-	Image           string
-	StorageClass    string
-	KmsSecret       string
-	ConsoleSecret   string
-	DisableTLS      bool
-	ImagePullSecret string
-	DisableAntiAffinity    bool
+	Name                string
+	SecretName          string
+	Servers             int32
+	Volumes             int32
+	Capacity            string
+	NS                  string
+	Image               string
+	StorageClass        string
+	KmsSecret           string
+	ConsoleSecret       string
+	DisableTLS          bool
+	ImagePullSecret     string
+	DisableAntiAffinity bool
 }
 
 // Validate Tenant Options

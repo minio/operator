@@ -27,7 +27,6 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
-	"github.com/minio/minio/pkg/color"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
@@ -123,7 +122,7 @@ func (v *expandCmd) run() error {
 	t.Spec.Pools = append(t.Spec.Pools, resources.Pool(&v.tenantOpts, volumesPerServer, *capacityPerVolume))
 	expandedCapacity := helpers.TotalCapacity(*t)
 	if !v.output {
-		fmt.Printf(color.Bold(fmt.Sprintf("\nExpanding Tenant '%s/%s' from %s to %s\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace, currentCapacity, expandedCapacity)))
+		fmt.Printf(Bold(fmt.Sprintf("\nExpanding Tenant '%s/%s' from %s to %s\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace, currentCapacity, expandedCapacity)))
 		return addPoolToTenant(client, t)
 	}
 
