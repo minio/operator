@@ -484,14 +484,11 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 // AllMinIOHosts returns the all the individual domain names relevant for current Tenant
 func (t *Tenant) AllMinIOHosts() []string {
 	hosts := make([]string, 0)
-	hosts = append(hosts, t.MinIOServerHost())
+	hosts = append(hosts, t.MinIOFQDNServiceName())
+	hosts = append(hosts, t.MinIOFQDNServiceNameAndNamespace())
+	hosts = append(hosts, t.MinIOFQDNShortServiceName())
 	hosts = append(hosts, "*."+t.MinIOHeadlessServiceHost())
 	return hosts
-}
-
-// MinIOServerHost returns ClusterIP service Host for current Tenant
-func (t *Tenant) MinIOServerHost() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // ConsoleServerHost returns ClusterIP service Host for current Console Tenant
@@ -597,7 +594,7 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 	return u.String(), nil
 }
 
-// MinIOServerHostAddress similar to MinIOServerHost but returns host with port
+// MinIOServerHostAddress similar to MinIOFQDNServiceName but returns host with port
 func (t *Tenant) MinIOServerHostAddress() string {
 	var port int
 
@@ -607,7 +604,7 @@ func (t *Tenant) MinIOServerHostAddress() string {
 		port = MinIOPortLoadBalancerSVC
 	}
 
-	return net.JoinHostPort(t.MinIOServerHost(), strconv.Itoa(port))
+	return net.JoinHostPort(t.MinIOFQDNServiceName(), strconv.Itoa(port))
 }
 
 // MinIOServerEndpoint similar to MinIOServerHostAddress but a URL with current scheme
