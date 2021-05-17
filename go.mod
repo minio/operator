@@ -9,7 +9,6 @@ require (
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/google/go-containerregistry v0.1.2
 	github.com/gorilla/mux v1.8.0
-	github.com/minio/controller-tools v0.4.7 // indirect
 	github.com/minio/madmin-go v1.0.5
 	github.com/minio/minio-go/v7 v7.0.11-0.20210302210017-6ae69c73ce78
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.46.0

@@ -102,6 +102,16 @@ func (t *Tenant) MinIOFQDNServiceName() string {
 	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, GetClusterDomain())
 }
 
+// MinIOFQDNServiceNameAndNamespace returns the name of the service created for the tenant up to namespace, ie: minio.default
+func (t *Tenant) MinIOFQDNServiceNameAndNamespace() string {
+	return fmt.Sprintf("%s.%s", t.MinIOCIServiceName(), t.Namespace)
+}
+
+// MinIOFQDNShortServiceName returns the name of the service created for the tenant up to svc, ie: minio.default.svc
+func (t *Tenant) MinIOFQDNShortServiceName() string {
+	return fmt.Sprintf("%s.svc", t.MinIOFQDNServiceNameAndNamespace())
+}
+
 // MinIOCSRName returns the name of CSR that is generated if AutoTLS is enabled
 // Namespace adds uniqueness to the CSR name (single MinIO tenant per namsepace)
 // since CSR is not a namespaced resource
