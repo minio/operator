@@ -127,10 +127,7 @@ func prometheusSidecarContainer(t *miniov2.Tenant) corev1.Container {
 		Command:         []string{"/bin/sh"},
 		Args: []string{
 			"-c",
-			`apk --no-cache add curl && \
-echo -e '#!/bin/sh\necho got event >> /tmp/testlog\ncurl -XPOST http://localhost:9090/-/reload\n' > /tmp/run.sh && \
-echo "ok" && chmod +x /tmp/run.sh && \
-inotifyd /tmp/run.sh /etc/prometheus/prometheus.yml:w`,
+			`echo -e '#!/bin/sh\n\nset -e\nset -x\necho "POST /-/reload HTTP/1.1\r\nHost:localhost:9090\r\nConnection: close\r\n\r\n" | nc localhost 9090\n' > /tmp/run.sh && echo "ok" && chmod +x /tmp/run.sh && inotifyd /tmp/run.sh /etc/prometheus/prometheus.yml:w`,
 		},
 	}
 
