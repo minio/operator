@@ -1007,12 +1007,6 @@ func (c *Controller) syncHandler(key string) error {
 						return err
 					}
 				}
-				// AutoCert will generate Console server certificates if user didn't provide any
-				if tenant.HasConsoleEnabled() && !tenant.ConsoleExternalCert() {
-					if err = c.checkAndCreateConsoleCSR(ctx, nsName, tenant); err != nil {
-						return err
-					}
-				}
 			}
 
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
