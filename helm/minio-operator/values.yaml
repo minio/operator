@@ -23,7 +23,7 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.6.8
+    tag: v0.7.1
     pullPolicy: IfNotPresent
   replicaCount: 1
   resources: {}

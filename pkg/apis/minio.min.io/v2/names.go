@@ -92,6 +92,11 @@ func (t *Tenant) MinIOBucketBaseDomain() string {
 	return fmt.Sprintf("%s.svc.%s", t.Namespace, GetClusterDomain())
 }
 
+// MinIOHLPodHostname returns the full address of a particular MinIO pod.
+func (t *Tenant) MinIOHLPodHostname(podName string) string {
+	return fmt.Sprintf("%s.%s.%s.svc.%s", podName, t.MinIOHLServiceName(), t.Namespace, GetClusterDomain())
+}
+
 // MinIOBucketBaseWildcardDomain returns the base domain name for buckets
 func (t *Tenant) MinIOBucketBaseWildcardDomain() string {
 	return fmt.Sprintf("*.%s.svc.%s", t.Namespace, GetClusterDomain())
