@@ -944,11 +944,9 @@ func GetMonitoringInterval() int {
 // GetTenantServiceURL gets tenant's service url with the proper scheme and port
 func (t *Tenant) GetTenantServiceURL() (svcURL string) {
 	scheme := "http"
-	port := MinIOPortLoadBalancerSVC
-	if t.AutoCert() || t.ExternalCert() {
+	if t.TLS() {
 		scheme = "https"
-		port = MinIOTLSPortLoadBalancerSVC
 	}
-	svc := fmt.Sprintf("%s.%s.svc.cluster.local", t.MinIOCIServiceName(), t.Namespace)
-	return fmt.Sprintf("%s://%s", scheme, net.JoinHostPort(svc, strconv.Itoa(port)))
+	svc := t.MinIOServerHostAddress()
+	return fmt.Sprintf("%s://%s", scheme, svc)
 }
