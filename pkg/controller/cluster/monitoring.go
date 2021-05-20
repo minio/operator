@@ -131,7 +131,7 @@ func (c *Controller) tenantsHealthMonitor() error {
 
 		tenant.Status.HealthStatus = miniov2.HealthStatusGreen
 
-		if tenant.Status.DrivesOffline > 0 {
+		if tenant.Status.DrivesOffline > 0 || tenant.Status.DrivesHealing > 0 {
 			tenant.Status.HealthStatus = miniov2.HealthStatusYellow
 		}
 		if tenant.Status.DrivesOnline < tenant.Status.WriteQuorum {
