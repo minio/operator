@@ -68,7 +68,7 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 		svc.ObjectMeta.Annotations = expectedSvc.ObjectMeta.Annotations
 		svc.ObjectMeta.Labels = expectedSvc.ObjectMeta.Labels
 		// we can only expose the service, not un-expose it
-		if tenant.Spec.ExposeServices.MinIO && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
+		if tenant.Spec.ExposeServices != nil && tenant.Spec.ExposeServices.MinIO && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
 			svc.Spec.Type = v1.ServiceTypeLoadBalancer
 		}
 		_, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, svc, metav1.UpdateOptions{})

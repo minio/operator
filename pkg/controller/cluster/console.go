@@ -320,7 +320,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 		consoleSvc.ObjectMeta.Annotations = expectedSvc.ObjectMeta.Annotations
 		consoleSvc.ObjectMeta.Labels = expectedSvc.ObjectMeta.Labels
 		// we can only expose the service, not un-expose it
-		if tenant.Spec.ExposeServices.Console && consoleSvc.Spec.Type != v1.ServiceTypeLoadBalancer {
+		if tenant.Spec.ExposeServices != nil && tenant.Spec.ExposeServices.Console && consoleSvc.Spec.Type != v1.ServiceTypeLoadBalancer {
 			consoleSvc.Spec.Type = v1.ServiceTypeLoadBalancer
 		}
 		_, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, consoleSvc, metav1.UpdateOptions{})
