@@ -27,7 +27,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -1119,25 +1118,7 @@ func (c *Controller) syncHandler(key string) error {
 			}
 			if len(pods.Items) > 0 {
 				ssPod := pods.Items[0]
-				podIP := ssPod.Status.PodIP
-				if podIP == "" {
-					for _, ip := range ssPod.Status.PodIPs {
-						if ip.IP != "" {
-							podIP = ip.IP
-						}
-					}
-				}
-				// still empty ip? pass on this pod/pool
-				if podIP == "" {
-					continue
-				}
-				ip := net.ParseIP(podIP)
-				// ping MinIO through that specific pod
-				podAddress := fmt.Sprintf("%s:9000", podIP)
-				// For IPv6 use [] brackets to ensure proper parsing
-				if ip.To4() == nil {
-					podAddress = fmt.Sprintf("[%s]:9000", podIP)
-				}
+				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
 				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, minioSecret.Data)
 				if err != nil {
 					return err

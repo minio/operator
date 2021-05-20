@@ -594,6 +594,19 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 	return u.String(), nil
 }
 
+// MinIOHLPodAddress similar to MinIOFQDNServiceName but returns pod hostname with port
+func (t *Tenant) MinIOHLPodAddress(podName string) string {
+	var port int
+
+	if t.TLS() {
+		port = MinIOTLSPortLoadBalancerSVC
+	} else {
+		port = MinIOPortLoadBalancerSVC
+	}
+
+	return net.JoinHostPort(t.MinIOHLPodHostname(podName), strconv.Itoa(port))
+}
+
 // MinIOServerHostAddress similar to MinIOFQDNServiceName but returns host with port
 func (t *Tenant) MinIOServerHostAddress() string {
 	var port int
@@ -719,17 +732,18 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialS
 		if !ok {
 			return errors.New("CONSOLE_ACCESS_KEY not provided")
 		}
-		consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
-		if !ok || skipCreateUser {
-			return errors.New("CONSOLE_SECRET_KEY not provided")
-		}
+		// skipCreateUser handles the scenario of LDAP users that are not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
+			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+			if !ok {
+				return errors.New("CONSOLE_SECRET_KEY not provided")
+			}
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 				return err
 			}
-			if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
-				return err
-			}
+		}
+		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
+			return err
 		}
 	}
 	return nil
