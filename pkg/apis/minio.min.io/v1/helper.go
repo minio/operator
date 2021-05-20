@@ -604,17 +604,18 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialS
 		if !ok {
 			return errors.New("CONSOLE_ACCESS_KEY not provided")
 		}
-		consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
-		if !ok || skipCreateUser {
-			return errors.New("CONSOLE_SECRET_KEY not provided")
-		}
+		// skipCreateUser handles the scenario of LDAP users that are not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
+			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+			if !ok {
+				return errors.New("CONSOLE_SECRET_KEY not provided")
+			}
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 				return err
 			}
-			if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
-				return err
-			}
+		}
+		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
+			return err
 		}
 	}
 	return nil
