@@ -27,7 +27,6 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
-	"github.com/minio/minio/pkg/color"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
@@ -152,14 +151,14 @@ func (u *upgradeCmd) run() error {
 
 func (u *upgradeCmd) upgradeTenant(client *operatorv1.Clientset, t *miniov2.Tenant, c, p string) error {
 	if helpers.Ask(fmt.Sprintf("Upgrade is a one way process. Are you sure to upgrade Tenant '%s/%s' from version %s to %s?", t.ObjectMeta.Name, t.ObjectMeta.Namespace, c, p)) {
-		fmt.Printf(color.Bold(fmt.Sprintf("\nUpgrading Tenant '%s/%s'\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace)))
+		fmt.Printf(Bold(fmt.Sprintf("\nUpgrading Tenant '%s/%s'\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace)))
 		// update the image
 		t.Spec.Image = u.tenantOpts.Image
 		if _, err := client.MinioV2().Tenants(t.Namespace).Update(context.Background(), t, v1.UpdateOptions{}); err != nil {
 			return err
 		}
 	} else {
-		fmt.Printf(color.Bold(fmt.Sprintf("\nAborting Tenant upgrade\n\n")))
+		fmt.Printf(Bold(fmt.Sprintf("\nAborting Tenant upgrade\n\n")))
 	}
 	return nil
 }

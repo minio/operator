@@ -39,8 +39,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/minio/minio/pkg/env"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,11 +46,8 @@ import (
 	"k8s.io/klog/v2"
 
 	jwtgo "github.com/dgrijalva/jwt-go"
+	"github.com/minio/madmin-go"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/bucket/policy/condition"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
-	"github.com/minio/minio/pkg/madmin"
 )
 
 // Webhook API constants
@@ -69,6 +64,17 @@ const (
 
 	defaultPrometheusJWTExpiry = 100 * 365 * 24 * time.Hour
 )
+
+// envGet retrieves the value of the environment variable named
+// by the key. If the variable is present in the environment the
+// value (which may be empty) is returned. Otherwise it returns
+// the specified default value.
+func envGet(key, defaultValue string) string {
+	if v, ok := os.LookupEnv(key); ok {
+		return v
+	}
+	return defaultValue
+}
 
 // List of webhook APIs
 const (
@@ -478,14 +484,11 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 // AllMinIOHosts returns the all the individual domain names relevant for current Tenant
 func (t *Tenant) AllMinIOHosts() []string {
 	hosts := make([]string, 0)
-	hosts = append(hosts, t.MinIOServerHost())
+	hosts = append(hosts, t.MinIOFQDNServiceName())
+	hosts = append(hosts, t.MinIOFQDNServiceNameAndNamespace())
+	hosts = append(hosts, t.MinIOFQDNShortServiceName())
 	hosts = append(hosts, "*."+t.MinIOHeadlessServiceHost())
 	return hosts
-}
-
-// MinIOServerHost returns ClusterIP service Host for current Tenant
-func (t *Tenant) MinIOServerHost() string {
-	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOCIServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // ConsoleServerHost returns ClusterIP service Host for current Console Tenant
@@ -591,7 +594,7 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 	return u.String(), nil
 }
 
-// MinIOServerHostAddress similar to MinIOServerHost but returns host with port
+// MinIOServerHostAddress similar to MinIOFQDNServiceName but returns host with port
 func (t *Tenant) MinIOServerHostAddress() string {
 	var port int
 
@@ -601,7 +604,7 @@ func (t *Tenant) MinIOServerHostAddress() string {
 		port = MinIOPortLoadBalancerSVC
 	}
 
-	return net.JoinHostPort(t.MinIOServerHost(), strconv.Itoa(port))
+	return net.JoinHostPort(t.MinIOFQDNServiceName(), strconv.Itoa(port))
 }
 
 // MinIOServerEndpoint similar to MinIOServerHostAddress but a URL with current scheme
@@ -706,34 +709,11 @@ func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string]
 	return madmClnt, nil
 }
 
-// CreateConsoleUser function creates an admin user
+// CreateConsoleUser function creates an admin users
 func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	// Create policy
-	p := iampolicy.Policy{
-		Version: iampolicy.DefaultVersion,
-		Statements: []iampolicy.Statement{
-			{
-				SID:        policy.ID(""),
-				Effect:     policy.Allow,
-				Actions:    iampolicy.NewActionSet(iampolicy.AllAdminActions),
-				Resources:  iampolicy.NewResourceSet(),
-				Conditions: condition.NewFunctions(),
-			},
-			{
-				SID:        policy.ID(""),
-				Effect:     policy.Allow,
-				Actions:    iampolicy.NewActionSet(iampolicy.AllActions),
-				Resources:  iampolicy.NewResourceSet(iampolicy.NewResource("*", "")),
-				Conditions: condition.NewFunctions(),
-			},
-		},
-	}
-	if err := madmClnt.AddCannedPolicy(context.Background(), ConsoleAdminPolicyName, &p); err != nil {
-		return err
-	}
 	for _, secret := range userCredentialSecrets {
 		consoleAccessKey, ok := secret.Data["CONSOLE_ACCESS_KEY"]
 		if !ok {
@@ -747,9 +727,9 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialS
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 				return err
 			}
-		}
-		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
-			return err
+			if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -870,7 +850,7 @@ func (t *Tenant) TLS() bool {
 // GetClusterDomain returns the Kubernetes cluster domain
 func GetClusterDomain() string {
 	once.Do(func() {
-		k8sClusterDomain = env.Get(clusterDomain, "cluster.local")
+		k8sClusterDomain = envGet(clusterDomain, "cluster.local")
 	})
 	return k8sClusterDomain
 }
@@ -907,7 +887,7 @@ func IsEnvUpdated(old, new map[string]string) bool {
 // GetTenantMinIOImage returns the default MinIO image for a tenant
 func GetTenantMinIOImage() string {
 	tenantMinIOImageOnce.Do(func() {
-		tenantMinIOImage = env.Get(tenantMinIOImageEnv, DefaultMinIOImage)
+		tenantMinIOImage = envGet(tenantMinIOImageEnv, DefaultMinIOImage)
 	})
 	return tenantMinIOImage
 }
@@ -915,7 +895,7 @@ func GetTenantMinIOImage() string {
 // GetTenantConsoleImage returns the default Console Image for a tenant
 func GetTenantConsoleImage() string {
 	tenantConsoleImageOnce.Do(func() {
-		tenantConsoleImage = env.Get(tenantConsoleImageEnv, DefaultConsoleImage)
+		tenantConsoleImage = envGet(tenantConsoleImageEnv, DefaultConsoleImage)
 	})
 	return tenantConsoleImage
 }
@@ -923,7 +903,7 @@ func GetTenantConsoleImage() string {
 // GetTenantKesImage returns the default KES Image for a tenant
 func GetTenantKesImage() string {
 	tenantKesImageOnce.Do(func() {
-		tenantKesImage = env.Get(tenantKesImageEnv, DefaultKESImage)
+		tenantKesImage = envGet(tenantKesImageEnv, DefaultKESImage)
 	})
 	return tenantKesImage
 }
