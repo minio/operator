@@ -36,7 +36,6 @@ build: regen-crd verify plugin
 	@docker build -t $(TAG) .
 
 install: all
-	@docker push $(TAG)
 
 lint:
 	@echo "Running $@ check"
@@ -57,8 +56,8 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@GO111MODULE=on go get github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
-	@echo "WARNING: for the time being, you need to clone and build github.com/minio/controller-tools/cmd/controller-gen@v0.4.7"
+	@GO111MODULE=on go install github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
+	@echo "WARNING: installing our fork github.com/minio/controller-tools/cmd/controller-gen@v0.4.7"
 	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
 	@controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@kustomize build resources/patch-crd > $(TMPFILE)
@@ -66,7 +65,7 @@ regen-crd:
 	@cp -f resources/base/crds/minio.min.io_tenants.yaml $(HELM_CRDS)/minio.min.io_tenants.yaml
 
 regen-crd-docs:
-	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go get github.com/elastic/crd-ref-docs)
+	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go install github.com/elastic/crd-ref-docs)
 	@crd-ref-docs --source-path=./pkg/apis/minio.min.io/v2 --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/crd.adoc --templates-dir=docs/templates/asciidoctor/
 
 plugin: regen-crd
