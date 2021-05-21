@@ -674,6 +674,9 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
+	// Launch a goroutine to monitor all Tenants
+	go c.recurrentTenantStatusMonitor(stopCh)
+
 	return nil
 }
 

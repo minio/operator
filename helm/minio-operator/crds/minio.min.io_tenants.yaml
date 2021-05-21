@@ -3440,6 +3440,17 @@ spec:
                 type: object
               currentState:
                 type: string
+              drivesHealing:
+                format: int32
+                type: integer
+              drivesOffline:
+                format: int32
+                type: integer
+              drivesOnline:
+                format: int32
+                type: integer
+              healthStatus:
+                type: string
               pools:
                 items:
                   properties:
@@ -3458,6 +3469,9 @@ spec:
                 type: integer
               syncVersion:
                 type: string
+              writeQuorum:
+                format: int32
+                type: integer
             required:
             - availableReplicas
             - certificates
@@ -6915,6 +6929,17 @@ spec:
                 type: object
               currentState:
                 type: string
+              drivesHealing:
+                format: int32
+                type: integer
+              drivesOffline:
+                format: int32
+                type: integer
+              drivesOnline:
+                format: int32
+                type: integer
+              healthStatus:
+                type: string
               pools:
                 items:
                   properties:
@@ -6933,6 +6958,9 @@ spec:
                 type: integer
               syncVersion:
                 type: string
+              writeQuorum:
+                format: int32
+                type: integer
             required:
             - availableReplicas
             - certificates
