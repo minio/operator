@@ -288,17 +288,17 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 			if t.Spec.CertConfig.CommonName == "" {
 				t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
 			}
-			if t.Spec.CertConfig.DNSNames == nil {
+			if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
 				t.Spec.CertConfig.DNSNames = t.MinIOHosts()
 			}
-			if t.Spec.CertConfig.OrganizationName == nil {
-				t.Spec.CertConfig.OrganizationName = DefaultOrgName
+			if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
+				t.Spec.CertConfig.OrganizationName = miniov2.DefaultOrgName
 			}
 		} else {
 			t.Spec.CertConfig = &miniov2.CertificateConfig{
 				CommonName:       t.MinIOWildCardName(),
 				DNSNames:         t.MinIOHosts(),
-				OrganizationName: DefaultOrgName,
+				OrganizationName: miniov2.DefaultOrgName,
 			}
 		}
 	} else {

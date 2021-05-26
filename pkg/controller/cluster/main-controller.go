@@ -63,7 +63,7 @@ import (
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
+	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	batchlisters "k8s.io/client-go/listers/batch/v1"
@@ -153,7 +153,7 @@ type Controller struct {
 	// minioClientSet is a clientset for our own API group
 	minioClientSet clientset.Interface
 	// certClient is a clientset for our certficate management
-	certClient certapi.CertificatesV1beta1Client
+	certClient certapi.CertificatesV1Client
 	// promClient is a clientset for Prometheus service monitor
 	promClient promclientset.Interface
 	// statefulSetLister is able to list/get StatefulSets from a shared
@@ -222,7 +222,7 @@ type Controller struct {
 func NewController(
 	kubeClientSet kubernetes.Interface,
 	minioClientSet clientset.Interface,
-	certClient certapi.CertificatesV1beta1Client,
+	certClient certapi.CertificatesV1Client,
 	promClient promclientset.Interface,
 	statefulSetInformer appsinformers.StatefulSetInformer,
 	deploymentInformer appsinformers.DeploymentInformer,
@@ -1383,7 +1383,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 				return err
 			}
 			klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Server Certs, cluster %q", nsName)
-			if err = c.createCSR(ctx, tenant); err != nil {
+			if err = c.createMinIOCSR(ctx, tenant); err != nil {
 				return err
 			}
 			// we want to re-queue this tenant so we can re-check for the health at a later stage
@@ -1399,7 +1399,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 					return err
 				}
 				klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Client Certs, cluster %q", nsName)
-				if err = c.createMinIOClientTLSCSR(ctx, tenant); err != nil {
+				if err = c.createMinIOClientCSR(ctx, tenant); err != nil {
 					return err
 				}
 				// we want to re-queue this tenant so we can re-check for the health at a later stage
@@ -1419,7 +1419,7 @@ func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.Name
 				return err
 			}
 			klog.V(2).Infof("Creating a new Certificate Signing Request for KES Server Certs, cluster %q", nsName)
-			if err = c.createKESTLSCSR(ctx, tenant); err != nil {
+			if err = c.createKESCSR(ctx, tenant); err != nil {
 				return err
 			}
 			return errors.New("waiting for kes cert")

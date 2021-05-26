@@ -49,7 +49,6 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	apiextensionv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 var resourcesFS = resources.GetStaticResources()
@@ -106,7 +105,6 @@ func GetSchemeDecoder() func(data []byte, defaults *schema.GroupVersionKind, int
 	sch := runtime.NewScheme()
 	scheme.AddToScheme(sch)
 	apiextensionv1.AddToScheme(sch)
-	apiextensionv1beta1.AddToScheme(sch)
 	appsv1.AddToScheme(sch)
 	rbacv1.AddToScheme(sch)
 	corev1.AddToScheme(sch)

@@ -25,6 +25,8 @@ import (
 	"errors"
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -56,8 +58,25 @@ func generateOperatorCryptoData() ([]byte, []byte, error) {
 
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
-			CommonName:   opCommonNoDomain,
-			Organization: []string{"Acme Co"},
+			CommonName:   fmt.Sprintf("system:node:%s", opCommonNoDomain),
+			Organization: []string{"system:nodes"},
+		},
+		Extensions: []pkix.Extension{
+			{
+				Id:       nil,
+				Critical: false,
+				Value:    []byte("operator"),
+			},
+			{
+				Id:       nil,
+				Critical: false,
+				Value:    []byte(opCommonNoDomain),
+			},
+			{
+				Id:       nil,
+				Critical: false,
+				Value:    []byte(opCommon),
+			},
 		},
 		SignatureAlgorithm: x509.ECDSAWithSHA512,
 		DNSNames:           []string{"operator", opCommonNoDomain, opCommon},
@@ -71,13 +90,20 @@ func generateOperatorCryptoData() ([]byte, []byte, error) {
 	return privKeyBytes, csrBytes, nil
 }
 
-func (c *Controller) createOperatorTLSSecret(ctx context.Context, operator metav1.Object, labels map[string]string, secretName string, pkBytes, certBytes []byte) error {
+func (c *Controller) createOperatorSecret(ctx context.Context, operator metav1.Object, labels map[string]string, secretName string, pkBytes, certBytes []byte) error {
 	secret := &corev1.Secret{
 		Type: "Opaque",
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
 			Namespace: miniov2.GetNSFromFile(),
 			Labels:    labels,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(operator, schema.GroupVersionKind{
+					Group:   miniov2.SchemeGroupVersion.Group,
+					Version: miniov2.SchemeGroupVersion.Version,
+					Kind:    miniov2.OperatorCRDResourceKind,
+				}),
+			},
 		},
 		Data: map[string][]byte{
 			"private.key": pkBytes,
@@ -88,10 +114,10 @@ func (c *Controller) createOperatorTLSSecret(ctx context.Context, operator metav
 	return err
 }
 
-// createOperatorTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
+// createOperatorCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that Operator deployment will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createOperatorTLSCSR(ctx context.Context, operator metav1.Object) error {
+func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Object) error {
 	privKeysBytes, csrBytes, err := generateOperatorCryptoData()
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
@@ -99,7 +125,7 @@ func (c *Controller) createOperatorTLSCSR(ctx context.Context, operator metav1.O
 	}
 	namespace := miniov2.GetNSFromFile()
 	operatorCSRName := fmt.Sprintf("operator-%s-csr", namespace)
-	err = c.createCertificate(ctx, map[string]string{}, operatorCSRName, namespace, csrBytes, operator)
+	err = c.createCertificateSigningRequest(ctx, map[string]string{}, operatorCSRName, namespace, csrBytes, operator, "server")
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", operatorCSRName, err)
 		return err
@@ -116,7 +142,7 @@ func (c *Controller) createOperatorTLSCSR(ctx context.Context, operator metav1.O
 	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
 	// Create secret for operator to use
-	err = c.createOperatorTLSSecret(ctx, operator, map[string]string{}, "operator-tls", encodedPrivKey, certBytes)
+	err = c.createOperatorSecret(ctx, operator, map[string]string{}, "operator-tls", encodedPrivKey, certBytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", "operator-tls", err)
 		return err
@@ -128,7 +154,7 @@ func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator met
 	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, "operator-auto-tls", metav1.GetOptions{}); err != nil {
 		if k8serrors.IsNotFound(err) {
 			klog.V(2).Infof("Creating a new Certificate Signing Request for Operator Server Certs, cluster %q")
-			if err = c.createOperatorTLSCSR(ctx, operator); err != nil {
+			if err = c.createOperatorCSR(ctx, operator); err != nil {
 				return err
 			}
 			return errOperatorWaitForTLS

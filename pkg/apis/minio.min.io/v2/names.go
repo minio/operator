@@ -127,7 +127,7 @@ func (t *Tenant) MinIOCSRName() string {
 // MinIOClientCSRName returns the name of CSR that is generated for Client side authentication
 // Used by KES Pods
 func (t *Tenant) MinIOClientCSRName() string {
-	return t.Name + "-client" + CSRNameSuffix
+	return t.Name + "-client-" + t.Namespace + CSRNameSuffix
 }
 
 // KES Related Names
