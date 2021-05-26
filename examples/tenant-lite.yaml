@@ -47,7 +47,7 @@ metadata:
 
 spec:
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2021-05-11T23-27-41Z 
+  image: minio/minio:RELEASE.2021-05-26T00-22-46Z
   imagePullPolicy: IfNotPresent
 
   ## Secret with credentials to be used by MinIO Tenant.
@@ -113,7 +113,7 @@ spec:
       #     cpu: 500m
       #      memory: 16Gi
 
-      ## Configure security context 
+      ## Configure security context
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
@@ -155,7 +155,7 @@ spec:
   ## for details.
   podManagementPolicy: Parallel
 
-  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific 
+  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
   ## services created by the operator.
   serviceMetadata:
     minioServiceLabels:

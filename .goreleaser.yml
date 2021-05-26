@@ -55,7 +55,7 @@ builds:
     env:
       - CGO_ENABLED=0
     ldflags:
-      - -s -w -X main.version={{.Tag}}
+      - -s -w -X github.com/minio/kubectl-minio/cmd.version={{.Tag}}
     flags:
       - -trimpath
     hooks:

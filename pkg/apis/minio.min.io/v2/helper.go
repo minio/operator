@@ -97,10 +97,12 @@ var (
 	tenantMinIOImageOnce   sync.Once
 	tenantConsoleImageOnce sync.Once
 	tenantKesImageOnce     sync.Once
+	monitoringIntervalOnce sync.Once
 	k8sClusterDomain       string
 	tenantMinIOImage       string
 	tenantConsoleImage     string
 	tenantKesImage         string
+	monitoringInterval     int
 )
 
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
@@ -920,4 +922,31 @@ func GetTenantKesImage() string {
 		tenantKesImage = envGet(tenantKesImageEnv, DefaultKESImage)
 	})
 	return tenantKesImage
+}
+
+// GetMonitoringInterval returns how ofter we should query tenants for cluster/health
+func GetMonitoringInterval() int {
+	monitoringIntervalOnce.Do(func() {
+		monitoringIntervalStr := envGet(monitoringIntervalEnv, "")
+		if monitoringIntervalStr == "" {
+			monitoringInterval = DefaultMonitoringInterval
+		}
+		val, err := strconv.Atoi(monitoringIntervalStr)
+		if err != nil {
+			monitoringInterval = DefaultMonitoringInterval
+		} else {
+			monitoringInterval = val
+		}
+	})
+	return monitoringInterval
+}
+
+// GetTenantServiceURL gets tenant's service url with the proper scheme and port
+func (t *Tenant) GetTenantServiceURL() (svcURL string) {
+	scheme := "http"
+	if t.TLS() {
+		scheme = "https"
+	}
+	svc := t.MinIOServerHostAddress()
+	return fmt.Sprintf("%s://%s", scheme, svc)
 }

@@ -147,7 +147,7 @@ metadata:
 
 spec:
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2021-05-11T23-27-41Z
+  image: minio/minio:RELEASE.2021-05-26T00-22-46Z
   imagePullPolicy: IfNotPresent
 
   ## Secret with credentials to be used by MinIO Tenant.
