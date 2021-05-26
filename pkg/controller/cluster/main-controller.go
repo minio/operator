@@ -824,7 +824,7 @@ func (c *Controller) syncHandler(key string) error {
 		} else {
 			autoCertEnabled = tenant.AutoCert()
 		}
-		if tenant, err = c.updateCertificatesStatus(ctx, tenant, autoCertEnabled); err != nil {
+		if tenant, err = c.updateCertificatesStatus(ctx, tenant, autoCertEnabled, tenant.ExternalCert()); err != nil {
 			klog.V(2).Infof(err.Error())
 		}
 	}
@@ -1047,6 +1047,25 @@ func (c *Controller) syncHandler(key string) error {
 			}
 			// if the pool doesn't match the spec
 			if !poolMatchesSS {
+				// If auto cert is enabled, create certificates for MinIO and
+				// optionally KES
+				if tenant.AutoCert() {
+					// Only generate Client certs if KES is enabled and user didnt provide external Client certificates
+					createClientCert := false
+					if tenant.HasKESEnabled() && !tenant.ExternalClientCert() {
+						createClientCert = true
+					}
+					// Client cert is needed only with KES for mTLS authentication
+					if err = c.checkAndCreateMinIOCSR(ctx, nsName, tenant, createClientCert); err != nil {
+						return err
+					}
+					// AutoCert will generate KES server certificates if user didn't provide any
+					if tenant.HasKESEnabled() && !tenant.KESExternalCert() {
+						if err = c.checkAndCreateKESCSR(ctx, nsName, tenant); err != nil {
+							return err
+						}
+					}
+				}
 				// for legacy reasons, if the zone label is present in SS we must carry it over
 				carryOverLabels := make(map[string]string)
 				if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
@@ -1369,7 +1388,9 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 	}
-
+	if tenant, err = c.updateCertificatesStatus(ctx, tenant, tenant.AutoCert(), tenant.ExternalCert()); err != nil {
+		klog.V(2).Infof(err.Error())
+	}
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
 	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalReplicas)

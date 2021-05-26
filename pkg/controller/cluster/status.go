@@ -130,11 +130,11 @@ func (c *Controller) updatePoolStatusWithRetry(ctx context.Context, tenant *mini
 	return t, nil
 }
 
-func (c *Controller) updateCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, autoCertEnabled bool) (*miniov2.Tenant, error) {
-	return c.updateCertificatesWithRetry(ctx, tenant, autoCertEnabled, true)
+func (c *Controller) updateCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, autoCertEnabled, externalCertEnabled bool) (*miniov2.Tenant, error) {
+	return c.updateCertificatesWithRetry(ctx, tenant, autoCertEnabled, externalCertEnabled, true)
 }
 
-func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *miniov2.Tenant, autoCertEnabled bool, retry bool) (*miniov2.Tenant, error) {
+func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *miniov2.Tenant, autoCertEnabled, externalCertEnabled, retry bool) (*miniov2.Tenant, error) {
 
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
@@ -142,6 +142,7 @@ func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *mi
 	tenantCopy := tenant.DeepCopy()
 	tenantCopy.Status = *tenant.Status.DeepCopy()
 	tenantCopy.Status.Certificates.AutoCertEnabled = &autoCertEnabled
+	tenantCopy.Status.Certificates.ExternalCertEnabled = &externalCertEnabled
 	// If the CustomResourceSubresources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
@@ -157,7 +158,7 @@ func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *mi
 			if err != nil {
 				return tenant, err
 			}
-			return c.updateCertificatesWithRetry(ctx, tenant, autoCertEnabled, false)
+			return c.updateCertificatesWithRetry(ctx, tenant, autoCertEnabled, externalCertEnabled, false)
 		}
 		return t, err
 	}

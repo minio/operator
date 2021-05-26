@@ -341,6 +341,9 @@ type CertificateStatus struct {
 	// AutoCertEnabled registers whether we know if the tenant has autocert enabled
 	// +nullable
 	AutoCertEnabled *bool `json:"autoCertEnabled,omitempty"`
+	// ExternalCertEnabled registers whether we know if the tenant has external certs enabled
+	// +nullable
+	ExternalCertEnabled *bool `json:"externalCertEnabled,omitempty"`
 }
 
 // PoolState represents the state of a pool
