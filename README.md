@@ -298,7 +298,7 @@ Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICE
 
 # Explore Further
 
-- [Create a MinIO Tenant](https://github.com/minio/operator#create-a-minio-instance).
+- [Create a MinIO Tenant](https://github.com/minio/operator#create-a-minio-tenant).
 - [TLS for MinIO Tenant](https://github.com/minio/operator/blob/master/docs/tls.md).
 - [Examples for MinIO Tenant Settings](https://github.com/minio/operator/blob/master/docs/examples.md)
 - [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md).
