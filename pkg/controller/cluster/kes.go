@@ -18,14 +18,13 @@
 package cluster
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
+	"fmt"
 
 	"github.com/minio/operator/pkg/resources/statefulsets"
 	appsv1 "k8s.io/api/apps/v1"
@@ -49,13 +48,24 @@ func generateKESCryptoData(tenant *miniov2.Tenant) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 
+	var csrExtensions []pkix.Extension
+	kesHosts := tenant.KESHosts()
+	for _, host := range kesHosts {
+		csrExtensions = append(csrExtensions, pkix.Extension{
+			Id:       nil,
+			Critical: false,
+			Value:    []byte(host),
+		})
+	}
+
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
-			CommonName:   tenant.KESWildCardName(),
+			CommonName:   fmt.Sprintf("system:node:%s", tenant.KESWildCardName()),
 			Organization: tenant.Spec.CertConfig.OrganizationName,
 		},
 		SignatureAlgorithm: x509.ECDSAWithSHA512,
 		DNSNames:           tenant.KESHosts(),
+		Extensions:         csrExtensions,
 	}
 
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privateKey)
@@ -66,17 +76,17 @@ func generateKESCryptoData(tenant *miniov2.Tenant) ([]byte, []byte, error) {
 	return privKeyBytes, csrBytes, nil
 }
 
-// createKESTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
+// createKESCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that KES Statefulset will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createKESTLSCSR(ctx context.Context, tenant *miniov2.Tenant) error {
+func (c *Controller) createKESCSR(ctx context.Context, tenant *miniov2.Tenant) error {
 	privKeysBytes, csrBytes, err := generateKESCryptoData(tenant)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err
 	}
 
-	err = c.createCertificate(ctx, tenant.KESPodLabels(), tenant.KESCSRName(), tenant.Namespace, csrBytes, tenant)
+	err = c.createCertificateSigningRequest(ctx, tenant.KESPodLabels(), tenant.KESCSRName(), tenant.Namespace, csrBytes, tenant, "server")
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
 		return err
@@ -96,56 +106,6 @@ func (c *Controller) createKESTLSCSR(ctx context.Context, tenant *miniov2.Tenant
 	err = c.createSecret(ctx, tenant, tenant.KESPodLabels(), tenant.KESTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", tenant.KESTLSSecretName(), err)
-		return err
-	}
-
-	return nil
-}
-
-// createMinIOClientTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
-// finally creating a secret that KES Statefulset will use for MinIO Client Auth
-func (c *Controller) createMinIOClientTLSCSR(ctx context.Context, tenant *miniov2.Tenant) error {
-	privKeysBytes, csrBytes, err := generateCryptoData(tenant, c.hostsTemplate)
-	if err != nil {
-		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
-		return err
-	}
-
-	err = c.createCertificate(ctx, tenant.MinIOPodLabels(), tenant.MinIOClientCSRName(), tenant.Namespace, csrBytes, tenant)
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
-		return err
-	}
-
-	// fetch certificate from CSR
-	certbytes, err := c.fetchCertificate(ctx, tenant.MinIOClientCSRName())
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
-		return err
-	}
-
-	// parse the certificate here to generate the identity for this certifcate.
-	// This is later used to update the identity in KES Server Config File
-	h := sha256.New()
-	cert, err := parseCertificate(bytes.NewReader(certbytes))
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
-		return err
-	}
-
-	_, err = h.Write(cert.RawSubjectPublicKeyInfo)
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
-		return err
-	}
-
-	// PEM encode private ECDSA key
-	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
-
-	// Create secret for KES StatefulSet to use
-	err = c.createSecret(ctx, tenant, tenant.MinIOPodLabels(), tenant.MinIOClientTLSSecretName(), encodedPrivKey, certbytes)
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", tenant.MinIOClientTLSSecretName(), err)
 		return err
 	}
 

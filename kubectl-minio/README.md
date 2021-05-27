@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Kubernetes >= v1.17.0.
+- Kubernetes >= v1.19.0.
 - kubectl installed on your local machine, configured to talk to the Kubernetes cluster.
 - Create PVs.
 
@@ -84,7 +84,7 @@ Command: `kubectl minio tenant upgrade TENANT_NAME --image IMAGE_TAG [options]`
 
 Upgrade MinIO Docker image for the given MinIO Tenant.
 
-example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2021-05-26T00-22-46Z`
+example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2021-05-27T22-06-31Z`
 
 Options:
 

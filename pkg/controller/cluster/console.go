@@ -24,6 +24,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
+	"fmt"
 
 	"github.com/minio/madmin-go"
 
@@ -197,11 +198,18 @@ func generateConsoleCryptoData(tenant *miniov2.Tenant) ([]byte, []byte, error) {
 
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
-			CommonName:   tenant.ConsoleCommonName(),
+			CommonName:   fmt.Sprintf("system:node:%s", tenant.ConsoleCommonName()),
 			Organization: tenant.Spec.CertConfig.OrganizationName,
 		},
 		SignatureAlgorithm: x509.ECDSAWithSHA512,
 		DNSNames:           []string{tenant.ConsoleCIServiceName()},
+		Extensions: []pkix.Extension{
+			{
+				Id:       nil,
+				Critical: false,
+				Value:    []byte(tenant.ConsoleCIServiceName()),
+			},
+		},
 	}
 
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privateKey)
@@ -212,17 +220,17 @@ func generateConsoleCryptoData(tenant *miniov2.Tenant) ([]byte, []byte, error) {
 	return privKeyBytes, csrBytes, nil
 }
 
-// createConsoleTLSCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
+// createConsoleCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
 // finally creating a secret that Console deployment will use to mount private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createConsoleTLSCSR(ctx context.Context, tenant *miniov2.Tenant) error {
+func (c *Controller) createConsoleCSR(ctx context.Context, tenant *miniov2.Tenant) error {
 	privKeysBytes, csrBytes, err := generateConsoleCryptoData(tenant)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err
 	}
 
-	err = c.createCertificate(ctx, tenant.ConsolePodLabels(), tenant.ConsoleCSRName(), tenant.Namespace, csrBytes, tenant)
+	err = c.createCertificateSigningRequest(ctx, tenant.ConsolePodLabels(), tenant.ConsoleCSRName(), tenant.Namespace, csrBytes, tenant, "server")
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.ConsoleCSRName(), err)
 		return err
@@ -278,7 +286,7 @@ func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.
 				return err
 			}
 			klog.V(2).Infof("Creating a new Certificate Signing Request for Console Server Certs, cluster %q", nsName)
-			if err = c.createConsoleTLSCSR(ctx, tenant); err != nil {
+			if err = c.createConsoleCSR(ctx, tenant); err != nil {
 				return err
 			}
 			// we want to re-queue this tenant so we can re-check for the console certificate

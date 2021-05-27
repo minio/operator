@@ -23,7 +23,6 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
-	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -38,7 +37,7 @@ import (
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
-	certificates "k8s.io/api/certificates/v1beta1"
+	certificates "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,95 +67,26 @@ func isEqual(a, b []string) bool {
 	return true
 }
 
-func generateCryptoData(tenant *miniov2.Tenant, hostsTemplate string) ([]byte, []byte, error) {
-	var dnsNames []string
-	klog.V(0).Infof("Generating private key")
-	privateKey, err := newPrivateKey(miniov2.DefaultEllipticCurve)
-	if err != nil {
-		klog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)
-		return nil, nil, err
+// createCertificateSigningRequest is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
+func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, owner metav1.Object, usage string) error {
+	csrSignerName := "kubernetes.io/kubelet-serving"
+	csrKeyUsage := []certificates.KeyUsage{
+		certificates.UsageDigitalSignature,
+		certificates.UsageKeyEncipherment,
+		certificates.UsageServerAuth,
 	}
-
-	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
-	if err != nil {
-		klog.Errorf("Unexpected error during encoding the ECDSA Private Key: %v", err)
-		return nil, nil, err
+	if usage == "client" {
+		csrSignerName = "kubernetes.io/kube-apiserver-client"
+		csrKeyUsage = []certificates.KeyUsage{
+			certificates.UsageDigitalSignature,
+			certificates.UsageKeyEncipherment,
+			certificates.UsageClientAuth,
+		}
 	}
-
-	klog.V(0).Infof("Generating CSR with CN=%s", tenant.Spec.CertConfig.CommonName)
-
-	hosts := tenant.AllMinIOHosts()
-	if hostsTemplate != "" {
-		hosts = tenant.TemplatedMinIOHosts(hostsTemplate)
-	}
-
-	if isEqual(tenant.Spec.CertConfig.DNSNames, hosts) {
-		dnsNames = tenant.Spec.CertConfig.DNSNames
-	} else {
-		dnsNames = append(tenant.Spec.CertConfig.DNSNames, hosts...)
-	}
-	dnsNames = append(dnsNames, tenant.MinIOBucketBaseWildcardDomain())
-
-	csrTemplate := x509.CertificateRequest{
-		Subject: pkix.Name{
-			CommonName:   tenant.Spec.CertConfig.CommonName,
-			Organization: tenant.Spec.CertConfig.OrganizationName,
-		},
-		SignatureAlgorithm: x509.ECDSAWithSHA512,
-		DNSNames:           dnsNames,
-	}
-
-	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privateKey)
-	if err != nil {
-		klog.Errorf("Unexpected error during creating the CSR: %v", err)
-		return nil, nil, err
-	}
-	return privKeyBytes, csrBytes, nil
-}
-
-// createCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
-// finally creating a secret that MinIO statefulset will use to mount private key and certificate for TLS
-// This Method Blocks till the CSR Request is approved via kubectl approve
-func (c *Controller) createCSR(ctx context.Context, tenant *miniov2.Tenant) error {
-	privKeysBytes, csrBytes, err := generateCryptoData(tenant, c.hostsTemplate)
-	if err != nil {
-		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
-		return err
-	}
-
-	err = c.createCertificate(ctx, tenant.MinIOPodLabels(), tenant.MinIOCSRName(), tenant.Namespace, csrBytes, tenant)
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
-		return err
-	}
-
-	// fetch certificate from CSR
-	certbytes, err := c.fetchCertificate(ctx, tenant.MinIOCSRName())
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
-		return err
-	}
-
-	// PEM encode private ECDSA key
-	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
-
-	// Create secret for MinIO Statefulset to use
-	err = c.createSecret(ctx, tenant, tenant.MinIOPodLabels(), tenant.MinIOTLSSecretName(), encodedPrivKey, certbytes)
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", tenant.MinIOTLSSecretName(), err)
-		return err
-	}
-
-	return nil
-}
-
-// createCertificate is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificate(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, owner metav1.Object) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
-
 	kubeCSR := &certificates.CertificateSigningRequest{
 		TypeMeta: v1.TypeMeta{
-			APIVersion: "certificates.k8s.io/v1beta1",
+			APIVersion: "certificates.k8s.io/v1",
 			Kind:       "CertificateSigningRequest",
 		},
 		ObjectMeta: v1.ObjectMeta{
@@ -172,13 +102,10 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 			},
 		},
 		Spec: certificates.CertificateSigningRequestSpec{
-			Request: encodedBytes,
-			Groups:  []string{"system:authenticated"},
-			Usages: []certificates.KeyUsage{
-				certificates.UsageDigitalSignature,
-				certificates.UsageServerAuth,
-				certificates.UsageClientAuth,
-			},
+			SignerName: csrSignerName,
+			Request:    encodedBytes,
+			Groups:     []string{"system:authenticated", "system:nodes"},
+			Usages:     csrKeyUsage,
 		},
 	}
 
@@ -200,11 +127,12 @@ func (c *Controller) createCertificate(ctx context.Context, labels map[string]st
 				Reason:         "MinIOOperatorAutoApproval",
 				Message:        "Automatically approved by MinIO Operator",
 				LastUpdateTime: metav1.NewTime(time.Now()),
+				Status:         "True",
 			},
 		},
 	}
 
-	_, err = c.certClient.CertificateSigningRequests().UpdateApproval(ctx, ks, metav1.UpdateOptions{})
+	_, err = c.certClient.CertificateSigningRequests().UpdateApproval(ctx, name, ks, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
