@@ -17,20 +17,9 @@
 
 package v1
 
-import "os"
-
 // ClusterDomain is used to store the Kubernetes cluster domain
 var ClusterDomain string
 
 // KESIdentity is the public identity generated for MinIO Server based on
 // Used only during KES Deployments
 var KESIdentity string
-
-// InitGlobals initiates the global variables while Operator starts
-func InitGlobals(t *Tenant) {
-	var ok bool
-	ClusterDomain, ok = os.LookupEnv("CLUSTER_DOMAIN")
-	if !ok {
-		ClusterDomain = "cluster.local"
-	}
-}

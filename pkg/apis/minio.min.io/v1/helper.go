@@ -288,17 +288,17 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 			if t.Spec.CertConfig.CommonName == "" {
 				t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
 			}
-			if t.Spec.CertConfig.DNSNames == nil {
+			if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
 				t.Spec.CertConfig.DNSNames = t.MinIOHosts()
 			}
-			if t.Spec.CertConfig.OrganizationName == nil {
-				t.Spec.CertConfig.OrganizationName = DefaultOrgName
+			if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
+				t.Spec.CertConfig.OrganizationName = miniov2.DefaultOrgName
 			}
 		} else {
 			t.Spec.CertConfig = &miniov2.CertificateConfig{
 				CommonName:       t.MinIOWildCardName(),
 				DNSNames:         t.MinIOHosts(),
-				OrganizationName: DefaultOrgName,
+				OrganizationName: miniov2.DefaultOrgName,
 			}
 		}
 	} else {
@@ -604,17 +604,18 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialS
 		if !ok {
 			return errors.New("CONSOLE_ACCESS_KEY not provided")
 		}
-		consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
-		if !ok || skipCreateUser {
-			return errors.New("CONSOLE_SECRET_KEY not provided")
-		}
+		// skipCreateUser handles the scenario of LDAP users that are not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
+			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+			if !ok {
+				return errors.New("CONSOLE_SECRET_KEY not provided")
+			}
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 				return err
 			}
-			if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
-				return err
-			}
+		}
+		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
+			return err
 		}
 	}
 	return nil

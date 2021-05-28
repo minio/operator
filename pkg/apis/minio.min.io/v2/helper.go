@@ -97,10 +97,12 @@ var (
 	tenantMinIOImageOnce   sync.Once
 	tenantConsoleImageOnce sync.Once
 	tenantKesImageOnce     sync.Once
+	monitoringIntervalOnce sync.Once
 	k8sClusterDomain       string
 	tenantMinIOImage       string
 	tenantConsoleImage     string
 	tenantKesImage         string
+	monitoringInterval     int
 )
 
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
@@ -334,10 +336,10 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 			if t.Spec.CertConfig.CommonName == "" {
 				t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
 			}
-			if t.Spec.CertConfig.DNSNames == nil {
+			if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
 				t.Spec.CertConfig.DNSNames = t.MinIOHosts()
 			}
-			if t.Spec.CertConfig.OrganizationName == nil {
+			if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
 				t.Spec.CertConfig.OrganizationName = DefaultOrgName
 			}
 		} else {
@@ -594,6 +596,19 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 	return u.String(), nil
 }
 
+// MinIOHLPodAddress similar to MinIOFQDNServiceName but returns pod hostname with port
+func (t *Tenant) MinIOHLPodAddress(podName string) string {
+	var port int
+
+	if t.TLS() {
+		port = MinIOTLSPortLoadBalancerSVC
+	} else {
+		port = MinIOPortLoadBalancerSVC
+	}
+
+	return net.JoinHostPort(t.MinIOHLPodHostname(podName), strconv.Itoa(port))
+}
+
 // MinIOServerHostAddress similar to MinIOFQDNServiceName but returns host with port
 func (t *Tenant) MinIOServerHostAddress() string {
 	var port int
@@ -719,17 +734,18 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialS
 		if !ok {
 			return errors.New("CONSOLE_ACCESS_KEY not provided")
 		}
-		consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
-		if !ok || skipCreateUser {
-			return errors.New("CONSOLE_SECRET_KEY not provided")
-		}
+		// skipCreateUser handles the scenario of LDAP users that are not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
+			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+			if !ok {
+				return errors.New("CONSOLE_SECRET_KEY not provided")
+			}
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 				return err
 			}
-			if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
-				return err
-			}
+		}
+		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -906,4 +922,31 @@ func GetTenantKesImage() string {
 		tenantKesImage = envGet(tenantKesImageEnv, DefaultKESImage)
 	})
 	return tenantKesImage
+}
+
+// GetMonitoringInterval returns how ofter we should query tenants for cluster/health
+func GetMonitoringInterval() int {
+	monitoringIntervalOnce.Do(func() {
+		monitoringIntervalStr := envGet(monitoringIntervalEnv, "")
+		if monitoringIntervalStr == "" {
+			monitoringInterval = DefaultMonitoringInterval
+		}
+		val, err := strconv.Atoi(monitoringIntervalStr)
+		if err != nil {
+			monitoringInterval = DefaultMonitoringInterval
+		} else {
+			monitoringInterval = val
+		}
+	})
+	return monitoringInterval
+}
+
+// GetTenantServiceURL gets tenant's service url with the proper scheme and port
+func (t *Tenant) GetTenantServiceURL() (svcURL string) {
+	scheme := "http"
+	if t.TLS() {
+		scheme = "https"
+	}
+	svc := t.MinIOServerHostAddress()
+	return fmt.Sprintf("%s://%s", scheme, svc)
 }

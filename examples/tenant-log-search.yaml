@@ -31,7 +31,7 @@ metadata:
 
 spec:
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2021-05-11T23-27-41Z
+  image: minio/minio:RELEASE.2021-05-27T22-06-31Z
   imagePullPolicy: IfNotPresent
 
   ## Secret with credentials to be used by MinIO Tenant.
@@ -97,6 +97,6 @@ spec:
   podManagementPolicy: Parallel
 
   log:
-    image: minio/logsearchapi:v4.0.11
+    image: minio/logsearchapi:v4.1.0
     audit:
       diskCapacityGB: 10

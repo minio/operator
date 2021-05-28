@@ -76,7 +76,7 @@ metadata:
 #  name: my-custom-scheduler
 spec:
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2021-05-11T23-27-41Z
+  image: minio/minio:RELEASE.2021-05-27T22-06-31Z
   ## Service account to be used for all the MinIO Pods
   serviceAccountName: minio-pods
   pools:

@@ -83,7 +83,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-05-11T23-27-41Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-05-27T22-06-31Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -104,7 +104,7 @@ const DefaultZoneName = "zone-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.7.1"
+const DefaultConsoleImage = "minio/console:v0.7.4"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -182,7 +182,7 @@ const DefaultKESReplicas = 2
 var DefaultEllipticCurve = elliptic.P256()
 
 // DefaultOrgName specifies the default Org name to be used in automatic certificate generation
-var DefaultOrgName = []string{"Acme Co"}
+var DefaultOrgName = []string{"system:nodes"}
 
 // DefaultQueryInterval specifies the interval between each query for CSR Status
 var DefaultQueryInterval = time.Second * 5

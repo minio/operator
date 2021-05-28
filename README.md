@@ -7,12 +7,6 @@ MinIO is a Kubernetes-native high performance object store with an S3-compatible
 MinIO Kubernetes Operator supports deploying MinIO Tenants onto private and public
 cloud infrastructures ("Hybrid" Cloud).
 
-*IMPORTANT*: This documentation reflects the *latest bleeding-edge release* of the MinIO Operator. The API and syntax may differ from
-previous releases. For documentation on previous releases, please visit the documentation in context of that release tag:
-
-- [v3.0.29](https://github.com/minio/operator/blob/v3.0.29/README.md)
-- [v3.0.28](https://github.com/minio/operator/blob/v3.0.28/README.md)
-
 ## Table of Contents
 
 * [Architecture](#architecture)
@@ -66,7 +60,7 @@ early development using MinIO for object storage.
 
 ## Prerequisites
 
-- MinIO Operator requires Kubernetes version 1.17.0 or later.
+- Starting with Operator v4.0.0, MinIO requires Kubernetes version 1.19.0 or later. Previous versions of the Operator supported Kubernetes 1.17.0 or later. You must upgrade your Kubernetes cluster to 1.19.0 or later to use Operator v4.0.0+.
 
 - This procedure assumes the cluster contains a
   [namespace](https://github.com/minio/operator/blob/master/README.md#minio-tenant-namespace) for
@@ -196,7 +190,7 @@ to temporarily forward traffic from the local host to the MinIO Tenant.
 
 MinIO supports expanding an existing MinIO Tenant onto additional hosts and storage.
 
-- MinIO requires Kubernetes version 1.17.0 or later.
+- Starting with Operator v4.0.0, MinIO requires Kubernetes version 1.19.0 or later. Previous versions of the Operator supported Kubernetes 1.17.0 or later. You must upgrade your Kubernetes cluster to 1.19.0 or later to use Operator v4.0.0+.
 
 - This procedure assumes the cluster contains a
   [namespace](https://github.com/minio/operator#create-a-namespace) for
@@ -298,7 +292,7 @@ Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICE
 
 # Explore Further
 
-- [Create a MinIO Tenant](https://github.com/minio/operator#create-a-minio-instance).
+- [Create a MinIO Tenant](https://github.com/minio/operator#create-a-minio-tenant).
 - [TLS for MinIO Tenant](https://github.com/minio/operator/blob/master/docs/tls.md).
 - [Examples for MinIO Tenant Settings](https://github.com/minio/operator/blob/master/docs/examples.md)
 - [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md).

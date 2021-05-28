@@ -141,7 +141,7 @@ metadata:
 
 spec:
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2021-05-11T23-27-41Z
+  image: minio/minio:RELEASE.2021-05-27T22-06-31Z
   imagePullPolicy: IfNotPresent
 
   ## Secret with credentials to be used by MinIO Tenant.
@@ -223,7 +223,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.7.1
+    image: minio/console:v0.7.4
     replicas: 2
     consoleSecret:
       name: minio-custom-cert-encryption-console-secret

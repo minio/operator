@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Kubernetes >= v1.17.0.
+- Kubernetes >= v1.19.0.
 - kubectl installed on your local machine, configured to talk to the Kubernetes cluster.
 - Create PVs.
 
@@ -20,7 +20,7 @@ Creates MinIO Operator Deployment along with MinIO Tenant CRD, Service account, 
 
 Options:
 
-- `--image=minio/operator:v4.0.11`
+- `--image=minio/operator:v4.1.0`
 - `--namespace=minio-operator`
 - `--cluster-domain=cluster.local`
 - `--namespace-to-watch=default`
@@ -84,7 +84,7 @@ Command: `kubectl minio tenant upgrade TENANT_NAME --image IMAGE_TAG [options]`
 
 Upgrade MinIO Docker image for the given MinIO Tenant.
 
-example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2021-05-11T23-27-41Z`
+example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2021-05-27T22-06-31Z`
 
 Options:
 
