@@ -26,12 +26,32 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/minio/minio/cmd/logger/message/audit"
 )
 
-// Entry is an alias for the type from the minio code.
-type Entry audit.Entry
+// Entry - audit entry logs.
+type Entry struct {
+	Version      string `json:"version"`
+	DeploymentID string `json:"deploymentid,omitempty"`
+	Time         string `json:"time"`
+	Trigger      string `json:"trigger"`
+	API          struct {
+		Name            string `json:"name,omitempty"`
+		Bucket          string `json:"bucket,omitempty"`
+		Object          string `json:"object,omitempty"`
+		Status          string `json:"status,omitempty"`
+		StatusCode      int    `json:"statusCode,omitempty"`
+		TimeToFirstByte string `json:"timeToFirstByte,omitempty"`
+		TimeToResponse  string `json:"timeToResponse,omitempty"`
+	} `json:"api"`
+	RemoteHost string                 `json:"remotehost,omitempty"`
+	RequestID  string                 `json:"requestID,omitempty"`
+	UserAgent  string                 `json:"userAgent,omitempty"`
+	ReqClaims  map[string]interface{} `json:"requestClaims,omitempty"`
+	ReqQuery   map[string]string      `json:"requestQuery,omitempty"`
+	ReqHeader  map[string]string      `json:"requestHeader,omitempty"`
+	RespHeader map[string]string      `json:"responseHeader,omitempty"`
+	Tags       map[string]interface{} `json:"tags,omitempty"`
+}
 
 // API is struct with same info an Entry.API, but with more strong types.
 type API struct {
