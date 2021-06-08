@@ -32,7 +32,7 @@ import (
 
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
-// that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
+// that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
 func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate string, opVersion string) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
@@ -90,28 +90,6 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 	if t.HasCredsSecret() {
 		secretName := t.Spec.CredsSecret.Name
 		envVars = append(envVars, corev1.EnvVar{
-			// TODO: remove MINIO_ACCESS_KEY since MinIO server has deprecated it since RELEASE.2021-04-22T15-44-28Z.
-			Name: "MINIO_ACCESS_KEY",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "accesskey",
-				},
-			},
-		}, corev1.EnvVar{
-			// TODO: remove MINIO_SECRET_KEY since MinIO server has deprecated it since RELEASE.2021-04-22T15-44-28Z.
-			Name: "MINIO_SECRET_KEY",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "secretkey",
-				},
-			},
-		}, corev1.EnvVar{
 			Name: "MINIO_ROOT_USER",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
