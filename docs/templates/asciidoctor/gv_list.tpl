@@ -7,7 +7,7 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2021-05-27T22-06-31Z]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2021-06-07T21-40-51Z]
 :console-image: https://hub.docker.com/r/minio/console/tags[minio/console:v0.7.4]
 :kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:v0.14.0]
 :prometheus-image: https://quay.io/prometheus/prometheus:latest[prometheus/prometheus:latest]
