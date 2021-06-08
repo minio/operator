@@ -113,7 +113,7 @@ func printTenantInfo(tenant miniov2.Tenant) {
 	for _, p := range conSvc.Spec.Ports {
 		consolePorts = consolePorts + strconv.Itoa(int(p.Port)) + ","
 	}
-	fmt.Printf(Bold(fmt.Sprintf("\nTenant '%s/%s', total capacity %s\n\n", tenant.Name, tenant.ObjectMeta.Namespace, helpers.TotalCapacity(tenant))))
+	fmt.Printf(Bold(fmt.Sprintf("\nTenant '%s', Namespace '%s', Total capacity %s\n\n", tenant.Name, tenant.ObjectMeta.Namespace, helpers.TotalCapacity(tenant))))
 	fmt.Printf(Blue("  Current status: %s \n", tenant.Status.CurrentState))
 	fmt.Printf(Blue("  MinIO version: %s \n", tenant.Spec.Image))
 	fmt.Printf(Blue("  MinIO service: %s/ClusterIP (port %s)\n\n", minSvc.Name, strings.TrimSuffix(minPorts, ",")))
