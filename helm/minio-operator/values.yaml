@@ -36,7 +36,7 @@ tenants:
     ## Registry location and Tag to download MinIO Server image
     image:
       repository: minio/minio
-      tag: RELEASE.2021-04-06T23-11-00Z
+      tag: RELEASE.2021-06-07T21-40-51Z
       pullPolicy: IfNotPresent
     imagePullSecrets: []
     ## If a scheduler is specified here, Tenant pods will be dispatched by specified scheduler.
@@ -117,7 +117,7 @@ tenants:
     console:
       image:
         repository: minio/console
-        tag: v0.6.8
+        tag: v0.7.4
         pullPolicy: IfNotPresent
       replicaCount: 1
       secrets:
