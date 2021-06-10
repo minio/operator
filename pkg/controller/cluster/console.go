@@ -45,26 +45,36 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// checkConsoleStatus checks for the current status of console and it's service
-func (c *Controller) checkConsoleStatus(ctx context.Context, tenant *miniov2.Tenant, totalReplicas int32, adminClnt *madmin.AdminClient, cOpts metav1.CreateOptions, uOpts metav1.UpdateOptions, nsName types.NamespacedName) error {
-	if tenant.HasConsoleEnabled() {
-		if tenant.AutoCert() {
-			// AutoCert will generate Console server certificates if user didn't provide any
-			if !tenant.ConsoleExternalCert() {
-				// check if there's already a TLS secret for console
-				_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.ConsoleTLSSecretName(), metav1.GetOptions{})
-				if err != nil {
-					if k8serrors.IsNotFound(err) {
-						if err := c.checkAndCreateConsoleCSR(ctx, nsName, tenant); err != nil {
-							return err
-						}
-					} else {
+func (c *Controller) checkConsoleCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+	if tenant.AutoCert() {
+		// AutoCert will generate Console server certificates if user didn't provide any
+		if !tenant.ConsoleExternalCert() {
+			// check if there's already a TLS secret for console
+			_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.ConsoleTLSSecretName(), metav1.GetOptions{})
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					if err := c.checkAndCreateConsoleCSR(ctx, nsName, tenant); err != nil {
 						return err
 					}
+					// TLS secret not found, delete CSR if exists and start certificate generation process again
+					if err = c.certClient.CertificateSigningRequests().Delete(ctx, tenant.ConsoleCSRName(), metav1.DeleteOptions{}); err != nil {
+						return err
+					}
+				} else {
+					return err
 				}
 			}
 		}
+	}
+	return nil
+}
 
+// checkConsoleStatus checks for the current status of console and it's service
+func (c *Controller) checkConsoleStatus(ctx context.Context, tenant *miniov2.Tenant, totalReplicas int32, adminClnt *madmin.AdminClient, cOpts metav1.CreateOptions, uOpts metav1.UpdateOptions, nsName types.NamespacedName) error {
+	if tenant.HasConsoleEnabled() {
+		if err := c.checkConsoleCertificatesStatus(ctx, tenant, nsName); err != nil {
+			return err
+		}
 		// Get the Deployment with the name specified in MirrorInstace.spec
 		consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())
 		if err != nil {
@@ -327,6 +337,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 	if !consoleSvcMatchesSpec {
 		consoleSvc.ObjectMeta.Annotations = expectedSvc.ObjectMeta.Annotations
 		consoleSvc.ObjectMeta.Labels = expectedSvc.ObjectMeta.Labels
+		consoleSvc.Spec.Ports = expectedSvc.Spec.Ports
 		// we can only expose the service, not un-expose it
 		if tenant.Spec.ExposeServices != nil && tenant.Spec.ExposeServices.Console && consoleSvc.Spec.Type != v1.ServiceTypeLoadBalancer {
 			consoleSvc.Spec.Type = v1.ServiceTypeLoadBalancer

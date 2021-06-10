@@ -20,8 +20,6 @@ package cluster
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -88,7 +86,6 @@ import (
 	listers "github.com/minio/operator/pkg/client/listers/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/configmaps"
 	"github.com/minio/operator/pkg/resources/deployments"
-	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/secrets"
 	"github.com/minio/operator/pkg/resources/servicemonitor"
 	"github.com/minio/operator/pkg/resources/services"
@@ -624,12 +621,17 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			// operator TLS certificates
 			operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, operatorTLSSecretName, metav1.GetOptions{})
 			if err != nil {
-				klog.Infof("operator TLS secret not found", err.Error())
-				// we will request the certificates for operator via CSR
-				if err = c.checkAndCreateOperatorCSR(ctx, operatorDeployment); err != nil {
-					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
+				if k8serrors.IsNotFound(err) {
+					klog.Infof("operator TLS secret not found", err.Error())
+					if err = c.checkAndCreateOperatorCSR(ctx, operatorDeployment); err != nil {
+						klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
+						time.Sleep(time.Second * 10)
+					} else {
+						if err = c.certClient.CertificateSigningRequests().Delete(ctx, "operator-auto-tls", metav1.DeleteOptions{}); err != nil {
+							klog.Infof(err.Error())
+						}
+					}
 				}
-				time.Sleep(time.Second * 10)
 			} else {
 				if val, ok := operatorTLSCert.Data["public.crt"]; ok {
 					err := ioutil.WriteFile(publicCertPath, val, 0644)
@@ -834,24 +836,8 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// TLS is mandatory if KES is enabled
-	// AutoCert if enabled takes care of MinIO and KES certs
-	if tenant.HasKESEnabled() && !tenant.AutoCert() {
-		// if AutoCert is not enabled, user needs to provide external secrets for
-		// KES and MinIO pods
-		if !(tenant.ExternalCert() && tenant.ExternalClientCert() && tenant.KESExternalCert()) {
-			msg := "Please provide certificate secrets for MinIO and KES, since automatic TLS is disabled"
-			klog.V(2).Infof(msg)
-			if _, err = c.updateTenantStatus(ctx, tenant, msg, 0); err != nil {
-				klog.V(2).Infof(err.Error())
-			}
-			// return nil so we don't re-queue this work item
-			return nil
-		}
-	}
-
 	// validate the minio service
-	err = c.checkMinIOSvc(ctx, tenant, nsName)
+	err = c.checkMinIOSCertificatesStatus(ctx, tenant, nsName)
 	if err != nil {
 		klog.V(2).Infof("Error when consolidating tenant service: %v", err)
 		return err
@@ -908,6 +894,12 @@ func (c *Controller) syncHandler(key string) error {
 	// For each pool check if there is a stateful set
 	var totalReplicas int32
 	var images []string
+
+	err = c.checkKESStatus(ctx, tenant, totalReplicas, cOpts, uOpts, nsName)
+	if err != nil {
+		klog.V(2).Infof("Error checking KES state %v", err)
+		return err
+	}
 
 	// Copy Operator TLS certificate to Tenant Namespace
 	operatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, operatorTLSSecretName, metav1.GetOptions{})
@@ -989,26 +981,6 @@ func (c *Controller) syncHandler(key string) error {
 			if !freshSetup && !tenant.MinIOHealthCheck() {
 				klog.Infof("Deploying pool failed %s", pool.Name)
 				return ErrMinIONotReady
-			}
-
-			// If auto cert is enabled, create certificates for MinIO and
-			// optionally KES
-			if tenant.AutoCert() && freshSetup {
-				// Only generate Client certs if KES is enabled and user didnt provide external Client certificates
-				createClientCert := false
-				if tenant.HasKESEnabled() && !tenant.ExternalClientCert() {
-					createClientCert = true
-				}
-				// Client cert is needed only with KES for mTLS authentication
-				if err = c.checkAndCreateMinIOCSR(ctx, nsName, tenant, createClientCert); err != nil {
-					return err
-				}
-				// AutoCert will generate KES server certificates if user didn't provide any
-				if tenant.HasKESEnabled() && !tenant.KESExternalCert() {
-					if err = c.checkAndCreateKESCSR(ctx, nsName, tenant); err != nil {
-						return err
-					}
-				}
 			}
 
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
@@ -1224,85 +1196,6 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	if tenant.HasKESEnabled() && tenant.TLS() {
-		if tenant.ExternalClientCert() {
-			// Since we're using external secret, store the identity for later use
-			miniov2.KESIdentity, err = c.getCertIdentity(tenant.Namespace, tenant.Spec.ExternalClientCertSecret)
-			if err != nil {
-				return err
-			}
-		} else {
-			// Calculate identity based on auto generated KES client certificate
-			miniov2.KESIdentity, err = c.getCertIdentity(tenant.Namespace, &miniov2.LocalCertificateReference{Name: tenant.MinIOClientTLSSecretName()})
-			if err != nil {
-				return err
-			}
-		}
-
-		svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.KESHLServiceName())
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
-				svc = services.NewHeadlessForKES(tenant)
-				if _, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts); err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
-		}
-
-		// Get the StatefulSet with the name specified in spec
-		if kesStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.KESStatefulSetName()); err != nil {
-			if k8serrors.IsNotFound(err) {
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningKESStatefulSet, 0); err != nil {
-					return err
-				}
-
-				ks := statefulsets.NewForKES(tenant, svc.Name)
-				klog.V(2).Infof("Creating a new StatefulSet for cluster %q", nsName)
-				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ks, cOpts); err != nil {
-					klog.V(2).Infof(err.Error())
-					return err
-				}
-			} else {
-				return err
-			}
-		} else {
-			// Verify if this KES StatefulSet matches the spec on the tenant (resources, affinity, sidecars, etc)
-			kesStatefulSetMatchesSpec, err := kesStatefulSetMatchesSpec(tenant, kesStatefulSet)
-			if err != nil {
-				return err
-			}
-
-			// if the KES StatefulSet doesn't match the spec
-			if !kesStatefulSetMatchesSpec {
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingKES, totalReplicas); err != nil {
-					return err
-				}
-				ks := statefulsets.NewForKES(tenant, svc.Name)
-				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ks, uOpts); err != nil {
-					return err
-				}
-			}
-		}
-
-		// After KES and MinIO are deployed successfully, create the MinIO Key on KES KMS Backend
-		_, err = c.jobLister.Jobs(tenant.Namespace).Get(tenant.KESJobName())
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				j := jobs.NewForKES(tenant)
-				klog.V(2).Infof("Creating a new Job for cluster %q", nsName)
-				if _, err = c.kubeClientSet.BatchV1().Jobs(tenant.Namespace).Create(ctx, j, cOpts); err != nil {
-					klog.V(2).Infof(err.Error())
-					return err
-				}
-			} else {
-				return err
-			}
-		}
-	}
-
 	if tenant.HasLogEnabled() {
 		var logSecret *corev1.Secret
 		logSecret, err = c.checkAndCreateLogSecret(ctx, tenant)
@@ -1374,90 +1267,6 @@ func (c *Controller) syncHandler(key string) error {
 	// current state of the world
 	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalReplicas)
 	return err
-}
-
-func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant, createClientCert bool) error {
-	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{}); err != nil {
-		if k8serrors.IsNotFound(err) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingMinIOCert, 0); err != nil {
-				return err
-			}
-			klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Server Certs, cluster %q", nsName)
-			if err = c.createMinIOCSR(ctx, tenant); err != nil {
-				return err
-			}
-			// we want to re-queue this tenant so we can re-check for the health at a later stage
-			return errors.New("waiting for minio cert")
-		}
-		return err
-	}
-
-	if createClientCert {
-		if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{}); err != nil {
-			if k8serrors.IsNotFound(err) {
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingMinIOClientCert, 0); err != nil {
-					return err
-				}
-				klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Client Certs, cluster %q", nsName)
-				if err = c.createMinIOClientCSR(ctx, tenant); err != nil {
-					return err
-				}
-				// we want to re-queue this tenant so we can re-check for the health at a later stage
-				return errors.New("waiting for minio client cert")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
-	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.KESCSRName(), metav1.GetOptions{}); err != nil {
-		if k8serrors.IsNotFound(err) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingKESCert, 0); err != nil {
-				return err
-			}
-			klog.V(2).Infof("Creating a new Certificate Signing Request for KES Server Certs, cluster %q", nsName)
-			if err = c.createKESCSR(ctx, tenant); err != nil {
-				return err
-			}
-			return errors.New("waiting for kes cert")
-		}
-		return err
-	}
-	return nil
-}
-
-func (c *Controller) getCertIdentity(ns string, cert *miniov2.LocalCertificateReference) (string, error) {
-	var certbytes []byte
-	secret, err := c.kubeClientSet.CoreV1().Secrets(ns).Get(context.Background(), cert.Name, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	// Store the Identity to be used later during KES container creation
-	if secret.Type == "kubernetes.io/tls" || secret.Type == "cert-manager.io/v1alpha2" {
-		certbytes = secret.Data["tls.crt"]
-	} else {
-		certbytes = secret.Data["public.crt"]
-	}
-
-	// parse the certificate here to generate the identity for this certifcate.
-	// This is later used to update the identity in KES Server Config File
-	h := sha256.New()
-	parsedCert, err := parseCertificate(bytes.NewReader(certbytes))
-	if err != nil {
-		klog.Errorf("Unexpected error during the parsing the secret/%s: %v", cert.Name, err)
-		return "", err
-	}
-
-	_, err = h.Write(parsedCert.RawSubjectPublicKeyInfo)
-	if err != nil {
-		klog.Errorf("Unexpected error during the parsing the secret/%s: %v", cert.Name, err)
-		return "", err
-	}
-
-	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // enqueueTenant takes a Tenant resource and converts it into a namespace/name

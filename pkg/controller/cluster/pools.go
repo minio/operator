@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"reflect"
+	"strings"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -102,8 +103,16 @@ func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.St
 	// Merge the statefulset env with incoming tenant envs and compare with statefulset envs.
 	new := miniov2.MergeMaps(miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env), miniov2.ToMap(tenant.Spec.Env))
 	current := miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env)
-	if miniov2.IsEnvUpdated(new, current) {
+	if miniov2.IsEnvUpdated(current, new) {
 		poolMatchesSS = false
+	}
+	// Check if endpoints protocol changed because of TLS configuration and pods need to be restarted
+	if new["MINIO_ENDPOINTS"] != "" {
+		if tenant.TLS() && !strings.HasPrefix(new["MINIO_ENDPOINTS"], "https") {
+			poolMatchesSS = false
+		} else if !tenant.TLS() && strings.HasPrefix(new["MINIO_ENDPOINTS"], "http") {
+			poolMatchesSS = false
+		}
 	}
 	return poolMatchesSS, nil
 }

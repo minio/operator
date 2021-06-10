@@ -25,11 +25,114 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
+
+	"github.com/minio/operator/pkg/resources/services"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"k8s.io/klog/v2"
 )
+
+func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
+	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{}); err != nil {
+		if k8serrors.IsNotFound(err) {
+			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingMinIOCert, 0); err != nil {
+				return err
+			}
+			klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Server Certs, cluster %q", nsName)
+			if err = c.createMinIOCSR(ctx, tenant); err != nil {
+				return err
+			}
+			// we want to re-queue this tenant so we can re-check for the health at a later stage
+			return errors.New("waiting for minio cert")
+		}
+		return err
+	}
+	return nil
+}
+
+// checkMinIOSCertificatesStatus checks for the current status of MinIO and it's service
+func (c *Controller) checkMinIOSCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+	if tenant.AutoCert() {
+		// check if there's already a TLS secret for MinIO
+		_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.MinIOTLSSecretName(), metav1.GetOptions{})
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				if err := c.checkAndCreateMinIOCSR(ctx, nsName, tenant); err != nil {
+					return err
+				}
+				// TLS secret not found, delete CSR if exists and start certificate generation process again
+				if err = c.certClient.CertificateSigningRequests().Delete(ctx, tenant.MinIOCSRName(), metav1.DeleteOptions{}); err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+	}
+
+	err := c.checkMinIOSvc(ctx, tenant, nsName)
+	if err != nil {
+		klog.V(2).Infof("error consolidating console service: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// checkMinIOSvc validates the existence of the MinIO service and validate it's status against what the specification
+// states
+func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+	// Handle the Internal ClusterIP Service for Tenant
+	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.MinIOCIServiceName())
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningCIService, 0); err != nil {
+				return err
+			}
+			klog.V(2).Infof("Creating a new Cluster IP Service for cluster %q", nsName)
+			// Create the clusterIP service for the Tenant
+			svc = services.NewClusterIPForMinIO(tenant)
+			svc, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Create(ctx, svc, metav1.CreateOptions{})
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	// check the expose status of the MinIO ClusterIP service
+	minioSvcMatchesSpec := true
+	// compare any other change from what is specified on the tenant
+	expectedSvc := services.NewClusterIPForMinIO(tenant)
+	if !equality.Semantic.DeepDerivative(expectedSvc.Spec, svc.Spec) {
+		// some field set by the operator has changed
+		minioSvcMatchesSpec = false
+	}
+
+	// check the specification of the MinIO ClusterIP service
+	if !minioSvcMatchesSpec {
+		svc.ObjectMeta.Annotations = expectedSvc.ObjectMeta.Annotations
+		svc.ObjectMeta.Labels = expectedSvc.ObjectMeta.Labels
+		svc.Spec.Ports = expectedSvc.Spec.Ports
+		// we can only expose the service, not un-expose it
+		if tenant.Spec.ExposeServices != nil && tenant.Spec.ExposeServices.MinIO && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
+			svc.Spec.Type = v1.ServiceTypeLoadBalancer
+		}
+		_, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, svc, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
 
 func generateMinIOCryptoData(tenant *miniov2.Tenant, hostsTemplate string) ([]byte, []byte, error) {
 	var dnsNames []string
