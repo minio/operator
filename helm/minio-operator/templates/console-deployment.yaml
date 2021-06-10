@@ -20,6 +20,18 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       serviceAccountName: console-sa
+    {{- with .Values.console.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.console.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.console.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.console.image.repository }}:{{ .Values.console.image.tag }}"
