@@ -1,8 +1,10 @@
 {{ range .Values.tenants }}
+---
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: {{ .name }}
+  namespace: {{ .namespace }}
   ## Optionally pass labels to be applied to the statefulset pods
   labels:
     app: minio
@@ -20,6 +22,10 @@ metadata:
 spec:
   image: {{ .image.repository }}:{{ .image.tag }}
   imagePullPolicy: {{ .image.pullPolicy }}
+  {{- with .imagePullSecrets }}
+  imagePullSecrets:
+    {{- toYaml . | nindent 8 }}
+  {{- end }}
   ## Secret with credentials to be used by MinIO Tenant.
   credsSecret:
     name: {{ .secrets.name }}

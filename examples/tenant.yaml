@@ -47,7 +47,7 @@ metadata:
 
 spec:
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2021-04-06T23-11-00Z
+  image: minio/minio:RELEASE.2021-06-07T21-40-51Z
   imagePullPolicy: IfNotPresent
 
   ## Secret with credentials to be used by MinIO Tenant.
@@ -61,7 +61,21 @@ spec:
       ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
       ## Note that the operator does not support upgrading from standalone to distributed mode.
     - servers: 4
-
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: v1.min.io/tenant
+                    operator: In
+                    values:
+                      - minio
+                  - key: v1.min.io/pool
+                    operator: In
+                    values:
+                      - pool-0
+              topologyKey: kubernetes.io/hostname
+      name: pool-0
       ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
       volumesPerServer: 4
 
@@ -75,7 +89,7 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 1Ti
+              storage: 10Gi
 
       ## Used to specify a toleration for a pod
       # tolerations:
@@ -111,7 +125,7 @@ spec:
       #           operator: In
       #           values:
       #           - store
-      #       topologyKey: "kubernetes.io/hostname" 
+      #       topologyKey: "kubernetes.io/hostname"
 
       ## Configure resource requests and limits for MinIO containers
       # resources:
@@ -122,11 +136,12 @@ spec:
       #     cpu: 500m
       #      memory: 16Gi
 
-      ## Configure security context 
+      ## Configure security context
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
+        fsGroup: 1000
 
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
@@ -163,7 +178,7 @@ spec:
   ## for details.
   podManagementPolicy: Parallel
 
-  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific 
+  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
   ## services created by the operator.
   serviceMetadata:
     minioServiceLabels:
@@ -181,6 +196,15 @@ spec:
   #   value: "off" # to turn-off browser
   # - name: MINIO_STORAGE_CLASS_STANDARD
   #   value: "EC:2"
+  #   ## For secure env vars like passwords, create an opaque Kubernetes secret and specify the secret in
+  #   ## the `valueFrom` field. The `valueFrom` object must contain the following fields:
+  #   ## `name` - the secret from which MinIO extracts the password, `key` - the data field
+  #   ## within secret, whose value will be set to the env variable's value
+  # - name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: ldap-minio-secret
+  #       key: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
 
   ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
   ## This is applied to MinIO pods only.
@@ -190,7 +214,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.6.3
+    image: minio/console:v0.7.4
     replicas: 2
     consoleSecret:
       name: console-secret
@@ -198,3 +222,4 @@ spec:
       runAsUser: 1000
       runAsGroup: 2000
       runAsNonRoot: true
+      fsGroup: 2000

@@ -45,7 +45,6 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
-	"github.com/minio/minio/pkg/color"
 	"github.com/spf13/cobra"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -75,7 +74,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Example: deleteExample,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if !helpers.Ask(fmt.Sprintf("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator?")) {
-				return fmt.Errorf(color.Bold("Aborting Operator deletion\n"))
+				return fmt.Errorf(Bold("Aborting Operator deletion\n"))
 			}
 			return nil
 		},

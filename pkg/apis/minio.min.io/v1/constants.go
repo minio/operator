@@ -38,7 +38,7 @@ const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
 const DefaultUpdateStrategy = "RollingUpdate"
 
 // DefaultImagePullPolicy specifies the policy to image pulls
-const DefaultImagePullPolicy = corev1.PullAlways
+const DefaultImagePullPolicy = corev1.PullIfNotPresent
 
 // CSRNameSuffix specifies the suffix added to Tenant name to create a CSR
 const CSRNameSuffix = "-csr"
@@ -83,7 +83,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-04-06T23-11-00Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-06-07T21-40-51Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -104,7 +104,7 @@ const DefaultZoneName = "zone-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.6.3"
+const DefaultConsoleImage = "minio/console:v0.7.4"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -146,7 +146,7 @@ const ConsoleCertPath = "/tmp/certs"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.13.4"
+const DefaultKESImage = "minio/kes:v0.14.0"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"
@@ -182,7 +182,7 @@ const DefaultKESReplicas = 2
 var DefaultEllipticCurve = elliptic.P256()
 
 // DefaultOrgName specifies the default Org name to be used in automatic certificate generation
-var DefaultOrgName = []string{"Acme Co"}
+var DefaultOrgName = []string{"system:nodes"}
 
 // DefaultQueryInterval specifies the interval between each query for CSR Status
 var DefaultQueryInterval = time.Second * 5

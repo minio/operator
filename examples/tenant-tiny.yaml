@@ -47,7 +47,7 @@ metadata:
 
 spec:
   ## Registry location and Tag to download MinIO Server image
-  image: minio/minio:RELEASE.2021-04-06T23-11-00Z 
+  image: minio/minio:RELEASE.2021-06-07T21-40-51Z
   imagePullPolicy: IfNotPresent
 
   ## Secret with credentials to be used by MinIO Tenant.
@@ -113,11 +113,12 @@ spec:
       #     cpu: 500m
       #      memory: 16Gi
 
-      ## Configure security context 
+      ## Configure security context
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
+        fsGroup: 1000
 
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
@@ -154,7 +155,7 @@ spec:
   ## for details.
   podManagementPolicy: Parallel
 
-  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific 
+  ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
   ## services created by the operator.
   serviceMetadata:
     minioServiceLabels:
@@ -181,7 +182,7 @@ spec:
   ## Define configuration for Console (Graphical user interface for MinIO)
   ## Refer https://github.com/minio/console
   console:
-    image: minio/console:v0.6.6
+    image: minio/console:v0.7.4
     replicas: 2
     consoleSecret:
       name: console-secret
@@ -189,3 +190,4 @@ spec:
       runAsUser: 1000
       runAsGroup: 2000
       runAsNonRoot: true
+      fsGroup: 2000

@@ -32,7 +32,7 @@ import (
 
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
-// that to set MINIO_ACCESS_KEY & MINIO_SECRET_KEY.
+// that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
 func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate string, opVersion string) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
@@ -90,7 +90,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 	if t.HasCredsSecret() {
 		secretName := t.Spec.CredsSecret.Name
 		envVars = append(envVars, corev1.EnvVar{
-			Name: "MINIO_ACCESS_KEY",
+			Name: "MINIO_ROOT_USER",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -100,7 +100,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 				},
 			},
 		}, corev1.EnvVar{
-			Name: "MINIO_SECRET_KEY",
+			Name: "MINIO_ROOT_PASSWORD",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -403,40 +403,41 @@ func NewForMinIOPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool,
 				},
 			})
 		}
-		// Will mount into ~/.minio/certs/CAs folder the user provided CA certificates.
-		// This is used for MinIO to verify TLS connections with other applications.
-		//	certs
-		//		+ CAs
-		//			 + ca-0.crt
-		//			 + ca-1.crt
-		//			 + ca-2.crt
-		if t.ExternalCaCerts() {
-			for index, secret := range t.Spec.ExternalCaCertSecret {
-				var caCertPaths []corev1.KeyToPath
-				// This covers both secrets of type "kubernetes.io/tls" and
-				// "cert-manager.io/v1alpha2" because of same keys in both.
-				if secret.Type == "kubernetes.io/tls" {
-					caCertPaths = []corev1.KeyToPath{
-						{Key: "tls.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-					}
-				} else if secret.Type == "cert-manager.io/v1alpha2" {
-					caCertPaths = []corev1.KeyToPath{
-						{Key: "ca.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-					}
-				} else {
-					caCertPaths = []corev1.KeyToPath{
-						{Key: "public.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-					}
+	}
+
+	// Will mount into ~/.minio/certs/CAs folder the user provided CA certificates.
+	// This is used for MinIO to verify TLS connections with other applications.
+	//	certs
+	//		+ CAs
+	//			 + ca-0.crt
+	//			 + ca-1.crt
+	//			 + ca-2.crt
+	if t.ExternalCaCerts() {
+		for index, secret := range t.Spec.ExternalCaCertSecret {
+			var caCertPaths []corev1.KeyToPath
+			// This covers both secrets of type "kubernetes.io/tls" and
+			// "cert-manager.io/v1alpha2" because of same keys in both.
+			if secret.Type == "kubernetes.io/tls" {
+				caCertPaths = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
 				}
-				podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
-					Secret: &corev1.SecretProjection{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: secret.Name,
-						},
-						Items: caCertPaths,
-					},
-				})
+			} else if secret.Type == "cert-manager.io/v1alpha2" {
+				caCertPaths = []corev1.KeyToPath{
+					{Key: "ca.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+				}
+			} else {
+				caCertPaths = []corev1.KeyToPath{
+					{Key: "public.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+				}
 			}
+			podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: secret.Name,
+					},
+					Items: caCertPaths,
+				},
+			})
 		}
 	}
 

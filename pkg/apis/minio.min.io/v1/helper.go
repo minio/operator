@@ -46,11 +46,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
+	"github.com/minio/madmin-go"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/bucket/policy/condition"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
-	"github.com/minio/minio/pkg/madmin"
 )
 
 // Webhook API constants
@@ -291,17 +288,17 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 			if t.Spec.CertConfig.CommonName == "" {
 				t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
 			}
-			if t.Spec.CertConfig.DNSNames == nil {
+			if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
 				t.Spec.CertConfig.DNSNames = t.MinIOHosts()
 			}
-			if t.Spec.CertConfig.OrganizationName == nil {
-				t.Spec.CertConfig.OrganizationName = DefaultOrgName
+			if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
+				t.Spec.CertConfig.OrganizationName = miniov2.DefaultOrgName
 			}
 		} else {
 			t.Spec.CertConfig = &miniov2.CertificateConfig{
 				CommonName:       t.MinIOWildCardName(),
 				DNSNames:         t.MinIOHosts(),
-				OrganizationName: DefaultOrgName,
+				OrganizationName: miniov2.DefaultOrgName,
 			}
 		}
 	} else {
@@ -597,44 +594,22 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 	return madmClnt, nil
 }
 
-// CreateConsoleUser function creates an admin user
+// CreateConsoleUser function creates an admin users
 func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	// Create policy
-	p := iampolicy.Policy{
-		Version: iampolicy.DefaultVersion,
-		Statements: []iampolicy.Statement{
-			{
-				SID:        policy.ID(""),
-				Effect:     policy.Allow,
-				Actions:    iampolicy.NewActionSet(iampolicy.AllAdminActions),
-				Resources:  iampolicy.NewResourceSet(),
-				Conditions: condition.NewFunctions(),
-			},
-			{
-				SID:        policy.ID(""),
-				Effect:     policy.Allow,
-				Actions:    iampolicy.NewActionSet(iampolicy.AllActions),
-				Resources:  iampolicy.NewResourceSet(iampolicy.NewResource("*", "")),
-				Conditions: condition.NewFunctions(),
-			},
-		},
-	}
-	if err := madmClnt.AddCannedPolicy(context.Background(), ConsoleAdminPolicyName, &p); err != nil {
-		return err
-	}
 	for _, secret := range userCredentialSecrets {
 		consoleAccessKey, ok := secret.Data["CONSOLE_ACCESS_KEY"]
 		if !ok {
 			return errors.New("CONSOLE_ACCESS_KEY not provided")
 		}
-		consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
-		if !ok || skipCreateUser {
-			return errors.New("CONSOLE_SECRET_KEY not provided")
-		}
+		// skipCreateUser handles the scenario of LDAP users that are not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
+			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+			if !ok {
+				return errors.New("CONSOLE_SECRET_KEY not provided")
+			}
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 				return err
 			}

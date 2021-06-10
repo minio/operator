@@ -26,7 +26,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -35,7 +35,7 @@ import (
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/minio/madmin-go"
 
 	"golang.org/x/time/rate"
 
@@ -63,7 +63,7 @@ import (
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
+	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	batchlisters "k8s.io/client-go/listers/batch/v1"
@@ -81,7 +81,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
-	"github.com/minio/minio/pkg/auth"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
@@ -154,7 +153,7 @@ type Controller struct {
 	// minioClientSet is a clientset for our own API group
 	minioClientSet clientset.Interface
 	// certClient is a clientset for our certficate management
-	certClient certapi.CertificatesV1beta1Client
+	certClient certapi.CertificatesV1Client
 	// promClient is a clientset for Prometheus service monitor
 	promClient promclientset.Interface
 	// statefulSetLister is able to list/get StatefulSets from a shared
@@ -223,7 +222,7 @@ type Controller struct {
 func NewController(
 	kubeClientSet kubernetes.Interface,
 	minioClientSet clientset.Interface,
-	certClient certapi.CertificatesV1beta1Client,
+	certClient certapi.CertificatesV1Client,
 	promClient promclientset.Interface,
 	statefulSetInformer appsinformers.StatefulSetInformer,
 	deploymentInformer appsinformers.DeploymentInformer,
@@ -346,16 +345,24 @@ func (c *Controller) validateRequest(r *http.Request, secret *v1.Secret) error {
 	return nil
 }
 
+func generateRandomKey(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ" +
+		"abcdefghijklmnopqrstuvwxyzåäö" +
+		"0123456789")
+	var b strings.Builder
+	for i := 0; i < length; i++ {
+		b.WriteRune(chars[rand.Intn(len(chars))])
+	}
+	return b.String()
+}
+
 func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *miniov2.Tenant) (*v1.Secret, error) {
 	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx,
 		miniov2.WebhookSecret, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			cred, err := auth.GetNewCredentials()
-			if err != nil {
-				return nil, err
-			}
-			secret = getSecretForTenant(tenant, cred)
+			secret = getSecretForTenant(tenant, generateRandomKey(20), generateRandomKey(40))
 			return c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
 		}
 		return nil, err
@@ -381,7 +388,7 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *min
 	return secret, nil
 }
 
-func getSecretForTenant(tenant *miniov2.Tenant, cred auth.Credentials) *v1.Secret {
+func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1.Secret {
 	secret := &corev1.Secret{
 		Type: "Opaque",
 		ObjectMeta: metav1.ObjectMeta{
@@ -396,12 +403,12 @@ func getSecretForTenant(tenant *miniov2.Tenant, cred auth.Credentials) *v1.Secre
 			},
 		},
 		Data: map[string][]byte{
-			miniov2.WebhookOperatorUsername: []byte(cred.AccessKey),
-			miniov2.WebhookOperatorPassword: []byte(cred.SecretKey),
+			miniov2.WebhookOperatorUsername: []byte(accessKey),
+			miniov2.WebhookOperatorPassword: []byte(secretKey),
 			miniov2.WebhookMinIOArgs: []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
 				"env+tls",
-				cred.AccessKey,
-				cred.SecretKey,
+				accessKey,
+				secretKey,
 				fmt.Sprintf("operator.%s.svc.%s",
 					miniov2.GetNSFromFile(),
 					miniov2.GetClusterDomain()),
@@ -667,6 +674,9 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
+	// Launch a goroutine to monitor all Tenants
+	go c.recurrentTenantStatusMonitor(stopCh)
+
 	return nil
 }
 
@@ -765,8 +775,6 @@ func (c *Controller) syncHandler(key string) error {
 	uOpts := metav1.UpdateOptions{}
 	gOpts := metav1.GetOptions{}
 
-	var consoleDeployment *appsv1.Deployment
-
 	// Convert the namespace/name string into a distinct namespace and name
 	if key == "" {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))
@@ -842,23 +850,11 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// Handle the Internal ClusterIP Service for Tenant
-	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.MinIOCIServiceName())
+	// validate the minio service
+	err = c.checkMinIOSvc(ctx, tenant, nsName)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningCIService, 0); err != nil {
-				return err
-			}
-			klog.V(2).Infof("Creating a new Cluster IP Service for cluster %q", nsName)
-			// Create the clusterIP service for the Tenant
-			svc = services.NewClusterIPForMinIO(tenant)
-			_, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Create(ctx, svc, cOpts)
-			if err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
+		klog.V(2).Infof("Error when consolidating tenant service: %v", err)
+		return err
 	}
 
 	// Handle the Internal Headless Service for Tenant StatefulSet
@@ -1013,12 +1009,6 @@ func (c *Controller) syncHandler(key string) error {
 						return err
 					}
 				}
-				// AutoCert will generate Console server certificates if user didn't provide any
-				if tenant.HasConsoleEnabled() && !tenant.ConsoleExternalCert() {
-					if err = c.checkAndCreateConsoleCSR(ctx, nsName, tenant); err != nil {
-						return err
-					}
-				}
 			}
 
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
@@ -1111,25 +1101,7 @@ func (c *Controller) syncHandler(key string) error {
 			}
 			if len(pods.Items) > 0 {
 				ssPod := pods.Items[0]
-				podIP := ssPod.Status.PodIP
-				if podIP == "" {
-					for _, ip := range ssPod.Status.PodIPs {
-						if ip.IP != "" {
-							podIP = ip.IP
-						}
-					}
-				}
-				// still empty ip? pass on this pod/pool
-				if podIP == "" {
-					continue
-				}
-				ip := net.ParseIP(podIP)
-				// ping MinIO through that specific pod
-				podAddress := fmt.Sprintf("%s:9000", podIP)
-				// For IPv6 use [] brackets to ensure proper parsing
-				if ip.To4() == nil {
-					podAddress = fmt.Sprintf("[%s]:9000", podIP)
-				}
+				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
 				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, minioSecret.Data)
 				if err != nil {
 					return err
@@ -1245,110 +1217,23 @@ func (c *Controller) syncHandler(key string) error {
 
 	}
 
-	if tenant.HasConsoleEnabled() {
-		// Get the Deployment with the name specified in MirrorInstace.spec
-		if consoleDeployment, err = c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName()); err != nil {
-			if !k8serrors.IsNotFound(err) {
-				return err
-			}
-			var userCredentials []*v1.Secret
-			if tenant.Spec.Users != nil {
-				for _, credential := range tenant.Spec.Users {
-					credentialSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, gOpts)
-					if sErr == nil && credentialSecret != nil {
-						userCredentials = append(userCredentials, credentialSecret)
-					}
-				}
-			}
-			if tenant.HasCredsSecret() && tenant.HasConsoleSecret() {
-				consoleSecretName := tenant.Spec.Console.ConsoleSecret.Name
-				consoleSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, consoleSecretName, gOpts)
-				if sErr == nil && consoleSecret != nil {
-					_, accessKeyExist := consoleSecret.Data["CONSOLE_ACCESS_KEY"]
-					_, secretKeyExist := consoleSecret.Data["CONSOLE_SECRET_KEY"]
-					if accessKeyExist && secretKeyExist {
-						userCredentials = append(userCredentials, consoleSecret)
-					}
-				} else {
-					// just log the error
-					klog.Info(sErr)
-				}
-			}
-			if len(userCredentials) == 0 {
-				msg := "Please set the credentials"
-				klog.V(2).Infof(msg)
-				if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalReplicas); terr != nil {
-					return err
-				}
-				// return nil so we don't re-queue this work item
-				return nil
-			}
-			// Make sure that MinIO is up and running to enable MinIO console user.
-			if !tenant.MinIOHealthCheck() {
-				if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
-					return err
-				}
-				return ErrMinIONotReady
-			}
-
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningConsoleDeployment, totalReplicas); err != nil {
-				return err
-			}
-
-			skipCreateConsoleUser := false
-			// If Console is deployed with the CONSOLE_LDAP_ENABLED="on" configuration that means MinIO is running with LDAP enabled
-			// and we need to skip the console user creation
-			for _, env := range tenant.GetConsoleEnvVars() {
-				if env.Name == "CONSOLE_LDAP_ENABLED" && env.Value == "on" {
-					skipCreateConsoleUser = true
-					break
-				}
-			}
-
-			if pErr := tenant.CreateConsoleUser(adminClnt, userCredentials, skipCreateConsoleUser); pErr != nil {
-				klog.V(2).Infof(pErr.Error())
-				return pErr
-			}
-
-			// Create Console Deployment
-			consoleDeployment = deployments.NewConsole(tenant)
-			_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, consoleDeployment, cOpts)
-			if err != nil {
-				klog.V(2).Infof(err.Error())
-				return err
-			}
-			// Create Console service
-			consoleSvc := services.NewClusterIPForConsole(tenant)
-			_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, consoleSvc, cOpts)
-			if err != nil {
-				klog.V(2).Infof(err.Error())
-				return err
-			}
-		} else {
-
-			// Verify if this console deployment matches the spec on the tenant (resources, affinity, sidecars, etc)
-			consoleDeploymentMatchesSpec, err := consoleDeploymentMatchesSpec(tenant, consoleDeployment)
-			if err != nil {
-				return err
-			}
-
-			// if the console deployment doesn't match the spec
-			if !consoleDeploymentMatchesSpec {
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingConsole, totalReplicas); err != nil {
-					return err
-				}
-				consoleDeployment = deployments.NewConsole(tenant)
-				if _, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Update(ctx, consoleDeployment, uOpts); err != nil {
-					return err
-				}
-			}
-		}
+	// Check whether console is enabled or if it should be removed and the state of it's service
+	err = c.checkConsoleStatus(ctx, tenant, totalReplicas, adminClnt, cOpts, uOpts, nsName)
+	if err != nil {
+		klog.V(2).Infof("Error checking console state %v", err)
+		return err
 	}
 
 	if tenant.HasKESEnabled() && tenant.TLS() {
 		if tenant.ExternalClientCert() {
 			// Since we're using external secret, store the identity for later use
 			miniov2.KESIdentity, err = c.getCertIdentity(tenant.Namespace, tenant.Spec.ExternalClientCertSecret)
+			if err != nil {
+				return err
+			}
+		} else {
+			// Calculate identity based on auto generated KES client certificate
+			miniov2.KESIdentity, err = c.getCertIdentity(tenant.Namespace, &miniov2.LocalCertificateReference{Name: tenant.MinIOClientTLSSecretName()})
 			if err != nil {
 				return err
 			}
@@ -1498,7 +1383,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 				return err
 			}
 			klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Server Certs, cluster %q", nsName)
-			if err = c.createCSR(ctx, tenant); err != nil {
+			if err = c.createMinIOCSR(ctx, tenant); err != nil {
 				return err
 			}
 			// we want to re-queue this tenant so we can re-check for the health at a later stage
@@ -1514,7 +1399,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 					return err
 				}
 				klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Client Certs, cluster %q", nsName)
-				if err = c.createMinIOClientTLSCSR(ctx, tenant); err != nil {
+				if err = c.createMinIOClientCSR(ctx, tenant); err != nil {
 					return err
 				}
 				// we want to re-queue this tenant so we can re-check for the health at a later stage
@@ -1534,7 +1419,7 @@ func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.Name
 				return err
 			}
 			klog.V(2).Infof("Creating a new Certificate Signing Request for KES Server Certs, cluster %q", nsName)
-			if err = c.createKESTLSCSR(ctx, tenant); err != nil {
+			if err = c.createKESCSR(ctx, tenant); err != nil {
 				return err
 			}
 			return errors.New("waiting for kes cert")
@@ -1625,24 +1510,6 @@ func (c *Controller) handleObject(obj interface{}) {
 		c.enqueueTenant(tenant)
 		return
 	}
-}
-
-func (c *Controller) checkAndCreateConsoleCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
-	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.ConsoleCSRName(), metav1.GetOptions{}); err != nil {
-		if k8serrors.IsNotFound(err) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingConsoleCert, 0); err != nil {
-				return err
-			}
-			klog.V(2).Infof("Creating a new Certificate Signing Request for Console Server Certs, cluster %q", nsName)
-			if err = c.createConsoleTLSCSR(ctx, tenant); err != nil {
-				return err
-			}
-			// we want to re-queue this tenant so we can re-check for the console certificate
-			return errors.New("waiting for console cert")
-		}
-		return err
-	}
-	return nil
 }
 
 // MinIOControllerRateLimiter is a no-arg constructor for a default rate limiter for a workqueue for our controller.
@@ -1787,7 +1654,7 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 }
 
 func (c *Controller) checkLogSearchAPIReady(tenant *miniov2.Tenant) error {
-	endpoint := fmt.Sprintf("http://%s.%s.svc.cluster.local:8080", tenant.LogSearchAPIServiceName(), tenant.Namespace)
+	endpoint := fmt.Sprintf("http://%s.%s.svc.%s:8080", tenant.LogSearchAPIServiceName(), tenant.Namespace, miniov2.GetClusterDomain())
 	client := http.Client{Timeout: 100 * time.Millisecond}
 	resp, err := client.Get(endpoint)
 	if err != nil {
