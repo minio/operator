@@ -3,7 +3,28 @@ entries:
   minio-operator:
   - apiVersion: v2
     appVersion: v4.1.1
-    created: "2021-06-09T09:25:51.389045561-07:00"
+    created: "2021-06-12T13:40:09.01907588-07:00"
+    description: A Helm chart for MinIO Operator
+    digest: 6bf8dd70e500ea0970a477cc12c6a40fc062102055c911b96eef6dc748500b03
+    home: https://min.io
+    icon: https://min.io/resources/img/logo/MINIO_wordmark.png
+    keywords:
+    - storage
+    - object-storage
+    - S3
+    maintainers:
+    - email: dev@minio.io
+      name: MinIO, Inc
+    name: minio-operator
+    sources:
+    - https://github.com/minio/operator
+    type: application
+    urls:
+    - https://operator.min.io/helm-releases/minio-operator-4.1.2.tgz
+    version: 4.1.2
+  - apiVersion: v2
+    appVersion: v4.1.1
+    created: "2021-06-12T13:40:09.017598416-07:00"
     description: A Helm chart for MinIO Operator
     digest: 8fa3dcd6c40ee405127f1836526b78d473b1f02e690213072fde78712d63c655
     home: https://min.io
@@ -24,7 +45,7 @@ entries:
     version: 4.1.1
   - apiVersion: v2
     appVersion: v4.1.1
-    created: "2021-06-09T09:25:51.385473283-07:00"
+    created: "2021-06-12T13:40:09.016160338-07:00"
     description: A Helm chart for MinIO Operator
     digest: 5926ba1a622fc2887f3fb24c43f567bb308ef652941e592f58371224759b3e24
     home: https://min.io
@@ -45,7 +66,7 @@ entries:
     version: 4.1.0
   - apiVersion: v2
     appVersion: v4.0.11
-    created: "2021-06-09T09:25:51.333207929-07:00"
+    created: "2021-06-12T13:40:09.000862254-07:00"
     description: A Helm chart for MinIO Operator
     digest: cbae4fb31f83e426a7ea0decdfd57f6eb64a43e5b6e2726ab899d1d72c9f54e0
     home: https://min.io
@@ -66,7 +87,7 @@ entries:
     version: 4.0.11
   - apiVersion: v2
     appVersion: v4.0.9
-    created: "2021-06-09T09:25:51.330793985-07:00"
+    created: "2021-06-12T13:40:08.998185067-07:00"
     description: A Helm chart for MinIO Operator
     digest: b74d8011ce86b534c7ebae8d84e7eb0552c701b511e32f0cebdab56551e30638
     home: https://min.io
@@ -86,7 +107,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.10.tgz
     version: 4.0.10
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.380176819-07:00"
+    created: "2021-06-12T13:40:09.014693426-07:00"
     description: A Helm chart for MinIO Operator
     digest: 40bd65d9a8144a5bda8f1e7a74720f526bbaf540e812e7eabc2ccad3ca7b439c
     home: https://min.io
@@ -106,7 +127,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.9.tgz
     version: 4.0.9
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.374639434-07:00"
+    created: "2021-06-12T13:40:09.012196703-07:00"
     description: A Helm chart for MinIO Operator
     digest: a7dd16236a42c6b6731542e9c19744da76a50ac3a7524cb2ce64e95e8e3e5d30
     home: https://min.io
@@ -126,7 +147,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.8.tgz
     version: 4.0.8
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.365558361-07:00"
+    created: "2021-06-12T13:40:09.010716477-07:00"
     description: A Helm chart for MinIO Operator
     digest: 87f6ac2a98a96dd6ce20fded82f45e4eed79c0933ebed069d6f2167079597c27
     home: https://min.io
@@ -146,7 +167,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.7.tgz
     version: 4.0.7
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.351060556-07:00"
+    created: "2021-06-12T13:40:09.009270051-07:00"
     description: A Helm chart for MinIO Operator
     digest: 2c7dbe86e2950f48d7b44e702969b67c8b1b5308f18e8e16cdc52e4ec7b6cdbd
     home: https://min.io
@@ -166,7 +187,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.7-1.tgz
     version: 4.0.7-1
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.345367018-07:00"
+    created: "2021-06-12T13:40:09.007755431-07:00"
     description: A Helm chart for MinIO Operator
     digest: b25a95e0312b16fab2097db2f45cec540d39d416ce05adcb142dba2f8f300ace
     home: https://min.io
@@ -186,7 +207,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.6.tgz
     version: 4.0.6
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.343277648-07:00"
+    created: "2021-06-12T13:40:09.005081368-07:00"
     description: A Helm chart for MinIO Operator
     digest: 4407196cc9a3e6cea8ddb719e8308985cb49789a3e77c023f0bc680c31f11de3
     home: https://min.io
@@ -206,7 +227,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.5.tgz
     version: 4.0.5
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.336563269-07:00"
+    created: "2021-06-12T13:40:09.003562564-07:00"
     description: A Helm chart for MinIO Operator
     digest: ce4a4d68e66cec8af18c28eee339dd2adf3bb4a7beba851eaa3b8b7783e26cd1
     home: https://min.io
@@ -226,7 +247,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.3.tgz
     version: 4.0.3
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.334854098-07:00"
+    created: "2021-06-12T13:40:09.002035575-07:00"
     description: A Helm chart for MinIO Operator
     digest: b488b7faac263a1d7c70374b20435b6ec3a0288f28a845647f0d5c57bc349c43
     home: https://min.io
@@ -246,7 +267,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.2.tgz
     version: 4.0.2
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.327748498-07:00"
+    created: "2021-06-12T13:40:08.996483776-07:00"
     description: A Helm chart for MinIO Operator
     digest: f69b67cd3dcc8d819994fc4473d07be1e8fd11e8428914195a7f59f17321ea46
     home: https://min.io
@@ -266,7 +287,7 @@ entries:
     - https://operator.min.io/helm-releases/minio-operator-4.0.1.tgz
     version: 4.0.1
   - apiVersion: v2
-    created: "2021-06-09T09:25:51.325720892-07:00"
+    created: "2021-06-12T13:40:08.995179628-07:00"
     description: A Helm chart for MinIO Operator
     digest: 8bc6f068743480ed1cecae0ec896ac6f46ffec5e7ed6e4efbb241bc3b47c7f21
     home: https://min.io
@@ -285,4 +306,4 @@ entries:
     urls:
     - https://operator.min.io/helm-releases/minio-operator-4.0.0.tgz
     version: 4.0.0
-generated: "2021-06-09T09:25:51.320461972-07:00"
+generated: "2021-06-12T13:40:08.993274558-07:00"

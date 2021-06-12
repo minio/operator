@@ -22,10 +22,10 @@ metadata:
 spec:
   image: {{ .image.repository }}:{{ .image.tag }}
   imagePullPolicy: {{ .image.pullPolicy }}
-  {{- with .imagePullSecrets }}
-  imagePullSecrets:
-    {{- toYaml . | nindent 8 }}
-  {{- end }}
+  {{ if .imagePullSecret.name }}
+  imagePullSecret:
+    name: {{ .imagePullSecret.name }}
+  {{ end }}
   ## Secret with credentials to be used by MinIO Tenant.
   credsSecret:
     name: {{ .secrets.name }}
