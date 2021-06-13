@@ -4866,6 +4866,15 @@ spec:
                       type: object
                     type: array
                 type: object
+              logging:
+                properties:
+                  anonymous:
+                    type: boolean
+                  json:
+                    type: boolean
+                  quiet:
+                    type: boolean
+                type: object
               mountPath:
                 type: string
               podManagementPolicy:
