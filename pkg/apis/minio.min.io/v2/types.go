@@ -75,21 +75,6 @@ type S3Features struct {
 //
 //
 type TenantSpec struct {
-	// *Optional* +
-	//
-	// An array of https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secrets] to use for generating MinIO users during tenant provisioning. +
-	//
-	// Each element in the array is an object consisting of a key-value pair `name: <string>`, where the `<string>` references an opaque Kubernetes secret. +
-	//
-	// Each referenced Kubernetes secret must include the following fields: +
-	//
-	// * `CONSOLE_ACCESS_KEY` - The "Username" for the MinIO user +
-	//
-	// * `CONSOLE_SECRET_KEY` - The "Password" for the MinIO user +
-	//
-	// The Operator creates each user with the `consoleAdmin` policy by default. You can change the assigned policy after the Tenant starts. +
-	// +optional
-	Users []*corev1.LocalObjectReference `json:"users,omitempty"`
 	// *Required* +
 	//
 	// An array of objects describing each MinIO server pool deployed in the MinIO Tenant. Each pool consists of a set of MinIO server pods which "pool" their storage resources for supporting object storage and retrieval requests. Each server pool is independent of all others and supports horizontal scaling of available storage resources in the MinIO Tenant. +
@@ -284,6 +269,33 @@ type TenantSpec struct {
 	// Specify custom labels and annotations to append to the MinIO service and/or Console service.
 	// +optional
 	ServiceMetadata *ServiceMetadata `json:"serviceMetadata,omitempty"`
+	// *Optional* +
+	//
+	// An array of https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secrets] to use for generating MinIO users during tenant provisioning. +
+	//
+	// Each element in the array is an object consisting of a key-value pair `name: <string>`, where the `<string>` references an opaque Kubernetes secret. +
+	//
+	// Each referenced Kubernetes secret must include the following fields: +
+	//
+	// * `CONSOLE_ACCESS_KEY` - The "Username" for the MinIO user +
+	//
+	// * `CONSOLE_SECRET_KEY` - The "Password" for the MinIO user +
+	//
+	// The Operator creates each user with the `consoleAdmin` policy by default. You can change the assigned policy after the Tenant starts. +
+	// +optional
+	Users []*corev1.LocalObjectReference `json:"users,omitempty"`
+	// *Optional* +
+	//
+	// Enable JSON, Anonymous logging for MinIO tenants.
+	// +optional
+	Logging *Logging `json:"logging,omitempty"`
+}
+
+// Logging describes Logging for MinIO tenants.
+type Logging struct {
+	JSON      bool `json:"json,omitempty"`
+	Anonymous bool `json:"anonymous,omitempty"`
+	Quiet     bool `json:"quiet,omitempty"`
 }
 
 // ServiceMetadata (`serviceMetadata`) defines custom labels and annotations for the MinIO Object Storage service and/or MinIO Console service. +

@@ -208,6 +208,24 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 // Builds the MinIO container for a Tenant.
 func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string) corev1.Container {
 	args := []string{"server", "--certs-dir", miniov2.MinIOCertPath}
+	if t.Spec.Logging == nil {
+		// By default enable --json and --anonymous flags.
+		// allow them to be turned off selectively.
+		args = append(args, "--json", "--anonymous")
+	} else {
+		// If logging is specified, expect users to
+		// provide the right set of settings to toggle
+		// various flags.
+		if t.Spec.Logging.JSON {
+			args = append(args, "--json")
+		}
+		if t.Spec.Logging.Anonymous {
+			args = append(args, "--anonymous")
+		}
+		if t.Spec.Logging.Quiet {
+			args = append(args, "--quiet")
+		}
+	}
 
 	return corev1.Container{
 		Name:  miniov2.MinIOServerName,
@@ -254,8 +272,8 @@ func minioSecurityContext(pool *miniov2.Pool) *corev1.PodSecurityContext {
 	return &securityContext
 }
 
-// NewForMinIOPool creates a new StatefulSet for the given Cluster.
-func NewForMinIOPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
+// NewPool creates a new StatefulSet for the given Cluster.
+func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = pool.Servers
 	var podVolumeSources []corev1.VolumeProjection
@@ -509,12 +527,13 @@ func NewForMinIOPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool,
 	}
 
 	// Add information labels, such as which pool we are building this pod about
-	ssMeta.Labels[miniov2.TenantLabel] = t.Name
 	ssMeta.Labels[miniov2.PoolLabel] = pool.Name
+	ssMeta.Labels[miniov2.TenantLabel] = t.Name
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion),
 	}
+
 	// attach any sidecar containers and volumes
 	if t.Spec.SideCars != nil && len(t.Spec.SideCars.Containers) > 0 {
 		containers = append(containers, t.Spec.SideCars.Containers...)
