@@ -1015,7 +1015,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			ss = statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			ss = statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -1052,8 +1052,8 @@ func (c *Controller) syncHandler(key string) error {
 				if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
 					carryOverLabels[miniov1.ZoneLabel] = val
 				}
-				nss := statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 
+				nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 				ssCopy := ss.DeepCopy()
 
 				ssCopy.Spec.Template = nss.Spec.Template
@@ -1209,7 +1209,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		for _, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewForMinIOPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			ss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}

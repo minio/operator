@@ -215,6 +215,18 @@ ExposeServices (`exposeServices`) defines the exposure of the MinIO object stora
 |===
 
 
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-healthstatus"]
+==== HealthStatus (string) 
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantstatus[$$TenantStatus$$]
+****
+
+
+
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-kesconfig"]
 ==== KESConfig 
 
@@ -455,6 +467,32 @@ LogDbConfig (`db`) defines the configuration of the PostgreSQL StatefulSet deplo
 |===
 
 
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-logging"]
+==== Logging 
+
+Logging describes Logging for MinIO tenants.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`json`* __boolean__ 
+|
+
+|*`anonymous`* __boolean__ 
+|
+
+|*`quiet`* __boolean__ 
+|
+
+|===
+
+
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-pool"]
 ==== Pool 
 
@@ -521,7 +559,7 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-poolstate"]
 ==== PoolState (string) 
 
-PoolState represents the state of a pool
+
 
 .Appears In:
 ****
@@ -799,15 +837,6 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |===
 | Field | Description
 
-|*`users`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ 
-|*Optional* + 
- An array of https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secrets] to use for generating MinIO users during tenant provisioning. + 
- Each element in the array is an object consisting of a key-value pair `name: <string>`, where the `<string>` references an opaque Kubernetes secret. + 
- Each referenced Kubernetes secret must include the following fields: + 
- * `CONSOLE_ACCESS_KEY` - The "Username" for the MinIO user + 
- * `CONSOLE_SECRET_KEY` - The "Password" for the MinIO user + 
- The Operator creates each user with the `consoleAdmin` policy by default. You can change the assigned policy after the Tenant starts. +
-
 |*`pools`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-pool[$$Pool$$] array__ 
 |*Required* + 
  An array of objects describing each MinIO server pool deployed in the MinIO Tenant. Each pool consists of a set of MinIO server pods which "pool" their storage resources for supporting object storage and retrieval requests. Each server pool is independent of all others and supports horizontal scaling of available storage resources in the MinIO Tenant. + 
@@ -939,6 +968,19 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*`serviceMetadata`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-servicemetadata[$$ServiceMetadata$$]__ 
 |*Optional* + 
  Specify custom labels and annotations to append to the MinIO service and/or Console service.
+
+|*`users`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
+|*Optional* + 
+ An array of https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secrets] to use for generating MinIO users during tenant provisioning. + 
+ Each element in the array is an object consisting of a key-value pair `name: <string>`, where the `<string>` references an opaque Kubernetes secret. + 
+ Each referenced Kubernetes secret must include the following fields: + 
+ * `CONSOLE_ACCESS_KEY` - The "Username" for the MinIO user + 
+ * `CONSOLE_SECRET_KEY` - The "Password" for the MinIO user + 
+ The Operator creates each user with the `consoleAdmin` policy by default. You can change the assigned policy after the Tenant starts. +
+
+|*`logging`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-logging[$$Logging$$]__ 
+|*Optional* + 
+ Enable JSON, Anonymous logging for MinIO tenants.
 
 |===
 
