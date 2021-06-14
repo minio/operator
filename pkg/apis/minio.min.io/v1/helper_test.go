@@ -17,9 +17,9 @@ func TestEnsureDefaults(t *testing.T) {
 	mt.EnsureDefaults()
 
 	t.Run("defaults", func(t *testing.T) {
-		assert.Equal(t, mt.Spec.Image, DefaultMinIOImage)
-		assert.Equal(t, mt.Spec.Mountpath, MinIOVolumeMountPath)
-		assert.Equal(t, mt.Spec.Subpath, MinIOVolumeSubPath)
+		assert.Equal(t, mt.Spec.Image, miniov2.DefaultMinIOImage)
+		assert.Equal(t, mt.Spec.Mountpath, miniov2.MinIOVolumeMountPath)
+		assert.Equal(t, mt.Spec.Subpath, miniov2.MinIOVolumeSubPath)
 		// default behavior is autoCert will be enabled
 		assert.True(t, mt.AutoCert())
 		require.True(t, mt.HasCertConfig())
@@ -130,7 +130,7 @@ func TestTenant_KESServiceEndpoint(t1 *testing.T) {
 					RequestAutoCert: &autoCertEnabled,
 				},
 			},
-			want: "https://kes" + KESHLSvcNameSuffix + ".namespace.svc.cluster.local:7373",
+			want: "https://kes" + miniov2.KESHLSvcNameSuffix + ".namespace.svc.cluster.local:7373",
 		},
 	}
 	for _, tt := range tests {
