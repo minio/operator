@@ -31,8 +31,8 @@ func TestEnsureDefaults(t *testing.T) {
 		mt.EnsureDefaults()
 
 		assert.False(t, mt.AutoCert())
-		assert.False(t, mt.HasCertConfig())
-		require.Nil(t, mt.Spec.CertConfig)
+		assert.True(t, mt.HasCertConfig())
+		require.NotNil(t, mt.Spec.CertConfig)
 
 		// enable autoCert explicitly
 		autoCertEnabled = true

@@ -45,7 +45,7 @@ func NewForKES(t *miniov2.Tenant) *batchv1.Job {
 				{Key: "tls.key", Path: "minio.key"},
 			}
 		}
-	} else if t.AutoCert() {
+	} else {
 		clientCertSecret = t.MinIOClientTLSSecretName()
 	}
 
