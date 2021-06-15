@@ -186,11 +186,6 @@ func (t *Tenant) ConsoleExternalCaCerts() bool {
 
 // AutoCert is enabled by default, otherwise we return the user provided value
 func (t *Tenant) AutoCert() bool {
-	// AutoCertEnabled will take priority over RequestAutoCert and
-	// will be removed in the future
-	if t.Status.Certificates.AutoCertEnabled != nil {
-		return *t.Status.Certificates.AutoCertEnabled
-	}
 	if t.Spec.RequestAutoCert == nil {
 		return true
 	}
@@ -331,26 +326,22 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.Subpath = MinIOVolumeSubPath
 	}
 
-	if t.AutoCert() {
-		if t.Spec.CertConfig != nil {
-			if t.Spec.CertConfig.CommonName == "" {
-				t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
-			}
-			if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
-				t.Spec.CertConfig.DNSNames = t.MinIOHosts()
-			}
-			if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
-				t.Spec.CertConfig.OrganizationName = DefaultOrgName
-			}
-		} else {
-			t.Spec.CertConfig = &CertificateConfig{
-				CommonName:       t.MinIOWildCardName(),
-				DNSNames:         t.MinIOHosts(),
-				OrganizationName: DefaultOrgName,
-			}
+	if t.Spec.CertConfig != nil {
+		if t.Spec.CertConfig.CommonName == "" {
+			t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
+		}
+		if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
+			t.Spec.CertConfig.DNSNames = t.MinIOHosts()
+		}
+		if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
+			t.Spec.CertConfig.OrganizationName = DefaultOrgName
 		}
 	} else {
-		t.Spec.CertConfig = nil
+		t.Spec.CertConfig = &CertificateConfig{
+			CommonName:       t.MinIOWildCardName(),
+			DNSNames:         t.MinIOHosts(),
+			OrganizationName: DefaultOrgName,
+		}
 	}
 
 	if t.HasConsoleEnabled() {
@@ -522,12 +513,8 @@ func (t *Tenant) KESHosts() []string {
 
 // KESServiceEndpoint similar to KESServiceHost but a URL with current scheme
 func (t *Tenant) KESServiceEndpoint() string {
-	scheme := "http"
-	if t.TLS() {
-		scheme = "https"
-	}
 	u := &url.URL{
-		Scheme: scheme,
+		Scheme: "https",
 		Host:   net.JoinHostPort(t.KESServiceHost(), strconv.Itoa(KESPort)),
 	}
 	return u.String()

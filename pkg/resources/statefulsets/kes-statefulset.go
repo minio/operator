@@ -124,7 +124,7 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 				{Key: "tls.key", Path: keyPath},
 			}
 		}
-	} else if t.AutoCert() {
+	} else {
 		serverCertSecret = t.KESTLSSecretName()
 	}
 
