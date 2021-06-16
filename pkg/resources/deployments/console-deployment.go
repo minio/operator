@@ -138,7 +138,7 @@ func ConsoleVolumeMounts(t *miniov2.Tenant, oldConsole bool) (mounts []corev1.Vo
 func consoleContainer(t *miniov2.Tenant, oldConsole bool) corev1.Container {
 	args := []string{"server"}
 
-	// apply old args for console versions older than v.0.4.4
+	// apply old args for console versions older than v0.4.4
 	if oldConsole {
 		if t.AutoCert() || t.ConsoleExternalCert() {
 			args = append(args, "--tls-certificate=/tmp/console/server.crt", "--tls-key=/tmp/console/server.key")

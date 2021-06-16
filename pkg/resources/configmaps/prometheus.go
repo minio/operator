@@ -88,7 +88,7 @@ func getPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *promet
 		},
 		ScrapeConfigs: []scrapeConfig{
 			{
-				JobName:     "minio",
+				JobName:     "minio-job",
 				BearerToken: bearerToken,
 				MetricsPath: v2.MinIOPrometheusPathCluster,
 				Scheme:      minioScheme,
