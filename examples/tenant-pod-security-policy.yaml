@@ -67,7 +67,7 @@ metadata:
   labels:
     app: minio
   annotations:
-    prometheus.io/path: /minio/prometheus/metrics
+    prometheus.io/path: /minio/v2/metrics/cluster
     prometheus.io/port: "9000"
     prometheus.io/scrape: "true"
 ## If specified, Tenant pods will be dispatched by specified scheduler.
