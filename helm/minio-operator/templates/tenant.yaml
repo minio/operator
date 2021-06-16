@@ -11,7 +11,7 @@ metadata:
   {{ if .metrics.enabled }}
   ## Annotations for MinIO Tenant Pods
   annotations:
-    prometheus.io/path: /minio/prometheus/metrics
+    prometheus.io/path: /minio/v2/metrics/cluster
     prometheus.io/port: {{ .metrics.port |quote }}
     prometheus.io/scrape: "true"
   {{ end }}

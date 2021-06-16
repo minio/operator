@@ -56,7 +56,7 @@ const (
 	DefaultServiceNameSuffix = "-internal-service"
 
 	// MinIOPrometheusPath is the path where MinIO tenant exposes Prometheus metrics
-	MinIOPrometheusPath = "/minio/prometheus/metrics"
+	MinIOPrometheusPath = "/minio/v2/metrics/cluster"
 
 	// MinIOPrometheusPort is the port where MinIO tenant exposes Prometheus metrics
 	MinIOPrometheusPort = "9000"
