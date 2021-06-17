@@ -5,7 +5,7 @@ operator:
   nsToWatch: ""
   image:
     repository: minio/operator
-    tag: v4.1.1
+    tag: v4.1.2
     pullPolicy: IfNotPresent
   imagePullSecrets: []
   replicaCount: 1
@@ -36,7 +36,7 @@ tenants:
     ## Registry location and Tag to download MinIO Server image
     image:
       repository: minio/minio
-      tag: RELEASE.2021-06-07T21-40-51Z
+      tag: RELEASE.2021-06-17T00-10-46Z
       pullPolicy: IfNotPresent
     ## Customize namespace for tenant deployment
     namespace: default
