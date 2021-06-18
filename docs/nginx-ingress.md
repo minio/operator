@@ -1,0 +1,65 @@
+# Ingress Configuration [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
+
+Ingress exposes HTTP and HTTPS routes from outside the cluster to services within the cluster. Traffic routing is controlled by rules defined on the Ingress resource. This document explains how to enable Ingress for a MinIO Tenant using the [Nginx Ingress Controller](https://kubernetes.github.io/ingress-nginx/).
+
+## Getting Started
+
+### Prerequisites
+
+- MinIO Operator up and running as explained in the [document here](https://github.com/minio/operator#operator-setup).
+- Nginx Ingress Controller installed and running as explained [here](https://kubernetes.github.io/ingress-nginx/deploy/).
+
+### Create MinIO Tenant
+
+Use `kubectl minio` plugin to create the MinIO tenant. Ensure to change the values as relevant.
+
+```sh
+kubectl create ns tenant1-ns
+kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns --storage-class default
+```
+
+### TLS Certificate
+
+To enable TLS termination at Ingress, we'll need to either acquire a CA certificate or create a self signed certificate. Either way, after acquiring the certificate, we'll need to create a secret with the certificate as its content. We'll then need to refer this secret from the Ingress rule.
+
+Create a self-signed certificate for `minio.example.com` and then add it to a Kubernetes secret using the below commands.
+
+```sh
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.cert -subj "/CN=minio.example.com/O=minio.example.com"
+kubectl create secret tls nginx-tls --key  tls.key --cert tls.cert -n tenant1-ns
+```
+
+### Create Ingress Rule
+
+Finally create the Ingress object using the yaml file below. Once created successfully, you should be able to access the MinIO Tenant from outside the cluster
+on the domain specified in the rule.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-minio
+  namespace: tenant1-ns
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ## Remove if using CA signed certificate
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      client_max_body_size 0;
+spec:
+  tls:
+  - hosts:
+      - minio.example.com
+    secretName: nginx-tls
+  rules:
+  - host: minio.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: minio
+          servicePort: 443
+```
