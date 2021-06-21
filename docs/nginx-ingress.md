@@ -29,6 +29,8 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.cer
 kubectl create secret tls nginx-tls --key  tls.key --cert tls.cert -n tenant1-ns
 ```
 
+*Note*: Using self-signed certificates may prevent client applications which require strict TLS validation and trust from connecting to the cluster. You may need to disable TLS validation / verification to allow connections to the Tenant. 
+
 ### Create Ingress Rule
 
 Finally create the Ingress object using the yaml file below. Once created successfully, you should be able to access the MinIO Tenant from outside the cluster
