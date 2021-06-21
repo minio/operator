@@ -8,8 +8,8 @@ Ingress exposes HTTP and HTTPS routes from outside the cluster to services withi
 
 - MinIO Operator up and running as explained in the [document here](https://docs.min.io/minio/k8s/deployment/deploy-minio-operator.html).
 - Nginx Ingress Controller installed and running as explained [here](https://kubernetes.github.io/ingress-nginx/deploy/).
+- Network routing rules that enable external client access to Kubernetes worker nodes. For example, this tutorial assumes `minio.example.com` and `console.minio.example.com` as an externally resolvable URL.
 
-- Network routing rules that enable external client access to Kubernetes worker nodes. For example, this tutorial assumes `minio.example.net` as an externally resolvable URL. 
 ### Create MinIO Tenant
 
 Use the `kubectl minio` plugin to create the MinIO tenant if one does not already exist. See [Deploy a MinIO Tenant using the MinIO Plugin](https://docs.min.io/minio/k8s/tenant-management/deploy-minio-tenant.html) for more complete documentation. 
@@ -57,6 +57,8 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/server-snippet: |
       client_max_body_size 0;
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      chunked_transfer_encoding off;
 spec:
   tls:
   - hosts:
@@ -89,13 +91,15 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
     nginx.ingress.kubernetes.io/server-snippet: |
       client_max_body_size 0;
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      chunked_transfer_encoding off;
 spec:
   tls:
   - hosts:
-      - console.example.com
+      - console.minio.example.com
     secretName: nginx-tls-console
   rules:
-  - host: console.example.com
+  - host: console.minio.example.com
     http:
       paths:
       - path: /
