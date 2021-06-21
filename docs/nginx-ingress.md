@@ -6,7 +6,7 @@ Ingress exposes HTTP and HTTPS routes from outside the cluster to services withi
 
 ### Prerequisites
 
-- MinIO Operator up and running as explained in the [document here](https://github.com/minio/operator#operator-setup).
+- MinIO Operator up and running as explained in the [document here](https://docs.min.io/minio/k8s/deployment/deploy-minio-operator.html).
 - Nginx Ingress Controller installed and running as explained [here](https://kubernetes.github.io/ingress-nginx/deploy/).
 
 - Network routing rules that enable external client access to Kubernetes worker nodes. For example, this tutorial assumes `minio.example.net` as an externally resolvable URL. 
