@@ -38,7 +38,8 @@ kubectl create secret tls nginx-tls --key  tls.key --cert tls.cert -n tenant1-ns
 
 ### Create Ingress Rule
 
-Finally create the Ingress object using the yaml file below. Once created successfully, you should be able to access the MinIO Tenant from outside the cluster
+Use the `kubectl apply -f ingress.yaml -n tenant1-ns`` using the example YAML file below to create the Ingress object in the `tenant1-ns` namespace. Once created successfully, you should be able to access the MinIO Tenant from clients outside the Kubernetes cluster using the specified hostname
+
 on the domain specified in the rule.
 
 ```yaml
