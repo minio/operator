@@ -36,13 +36,11 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.cer
 kubectl create secret tls nginx-tls --key  tls.key --cert tls.cert -n tenant1-ns
 ```
 
-*Note*: Using self-signed certificates may prevent client applications which require strict TLS validation and trust from connecting to the cluster. You may need to disable TLS validation / verification to allow connections to the Tenant. 
+*Note*: Using self-signed certificates may prevent client applications which require strict TLS validation and trust from connecting to the cluster. You may need to disable TLS validation / verification to allow connections to the Tenant.
 
 ### Create Ingress Rule
 
-Use the `kubectl apply -f ingress.yaml -n tenant1-ns`` using the example YAML file below to create the Ingress object in the `tenant1-ns` namespace. Once created successfully, you should be able to access the MinIO Tenant from clients outside the Kubernetes cluster using the specified hostname
-
-on the domain specified in the rule.
+Use the `kubectl apply -f ingress.yaml -n tenant1-ns` using the example YAML file below to create the Ingress object in the `tenant1-ns` namespace. Once created successfully, you should be able to access the MinIO Tenant from clients outside the Kubernetes cluster using the specified hostname on the domain specified in the rule.
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -72,4 +70,36 @@ spec:
         backend:
           serviceName: minio
           servicePort: 443
+```
+
+To enable Ingress route for the Tenant Console, we'll need to create a new Ingress rule. Note that this would require a separate TLS certificate with relevant domain and a secret with this TLS certificate as well (`nginx-tls-console` in below example).
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-console
+  namespace: tenant1-ns
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ## Remove if using CA signed certificate
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      client_max_body_size 0;
+spec:
+  tls:
+  - hosts:
+      - console.example.com
+    secretName: nginx-tls-console
+  rules:
+  - host: console.example.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: minio-console
+          servicePort: 9443
 ```
