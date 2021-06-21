@@ -12,7 +12,9 @@ Ingress exposes HTTP and HTTPS routes from outside the cluster to services withi
 - Network routing rules that enable external client access to Kubernetes worker nodes. For example, this tutorial assumes `minio.example.net` as an externally resolvable URL. 
 ### Create MinIO Tenant
 
-Use `kubectl minio` plugin to create the MinIO tenant. Ensure to change the values as relevant.
+Use the `kubectl minio` plugin to create the MinIO tenant if one does not already exist. See [Deploy a MinIO Tenant using the MinIO Plugin](https://docs.min.io/minio/k8s/tenant-management/deploy-minio-tenant.html) for more complete documentation. 
+
+The following example deploys a MinIO Tenant with 4 servers and 16 volumes in total and a total capacity of 16 Terabytes into the `tenant1-ns` namespace using the default Kubernetes storage class. Change these values as appropriate for your requirements.
 
 ```sh
 kubectl create ns tenant1-ns
