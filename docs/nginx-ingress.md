@@ -22,7 +22,11 @@ kubectl minio tenant create --name tenant1 --servers 4 --volumes 16 --capacity 1
 
 To enable TLS termination at Ingress, we'll need to either acquire a CA certificate or create a self signed certificate. Either way, after acquiring the certificate, we'll need to create a secret with the certificate as its content. We'll then need to refer this secret from the Ingress rule.
 
-Create a self-signed certificate for `minio.example.com` and then add it to a Kubernetes secret using the below commands.
+The following example creates a self-signed certificate for `minio.example.com` and then adds it to a Kubernetes secret using the below commands.
+
+- If you want to use a different hostname for your tenants, replace `minio.example.com` with the preferred hostname throughout this procedure.
+
+- If specifying a certificate signed by your preferred CA, perform only the `kubectl create` command, replacing the values for `--key` and `-cert` with your TLS `.key` and `.cert` files respectively.
 
 ```sh
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.cert -subj "/CN=minio.example.com/O=minio.example.com"
