@@ -98,4 +98,8 @@ spec:
     securityContext:
       {{ toYaml . | nindent 6 }}
     {{ end }}
+    {{- with .console.env }}
+    env:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
 {{ end }}
