@@ -71,6 +71,13 @@ func (c *Controller) checkConsoleCertificatesStatus(ctx context.Context, tenant 
 
 // checkConsoleStatus checks for the current status of console and it's service
 func (c *Controller) checkConsoleStatus(ctx context.Context, tenant *miniov2.Tenant, totalReplicas int32, adminClnt *madmin.AdminClient, cOpts metav1.CreateOptions, uOpts metav1.UpdateOptions, nsName types.NamespacedName) error {
+	var userCredentials []*v1.Secret
+	for _, credential := range tenant.Spec.Users {
+		credentialSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, metav1.GetOptions{})
+		if err == nil && credentialSecret != nil {
+			userCredentials = append(userCredentials, credentialSecret)
+		}
+	}
 	if tenant.HasConsoleEnabled() {
 		if err := c.checkConsoleCertificatesStatus(ctx, tenant, nsName); err != nil {
 			return err
@@ -80,15 +87,6 @@ func (c *Controller) checkConsoleStatus(ctx context.Context, tenant *miniov2.Ten
 		if err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return err
-			}
-			var userCredentials []*v1.Secret
-			if tenant.Spec.Users != nil {
-				for _, credential := range tenant.Spec.Users {
-					credentialSecret, sErr := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, metav1.GetOptions{})
-					if sErr == nil && credentialSecret != nil {
-						userCredentials = append(userCredentials, credentialSecret)
-					}
-				}
 			}
 			if tenant.HasCredsSecret() && tenant.HasConsoleSecret() {
 				consoleSecretName := tenant.Spec.Console.ConsoleSecret.Name
@@ -113,33 +111,6 @@ func (c *Controller) checkConsoleStatus(ctx context.Context, tenant *miniov2.Ten
 				// return nil so we don't re-queue this work item
 				return err
 			}
-			// Make sure that MinIO is up and running to enable MinIO console user.
-			if !tenant.MinIOHealthCheck() {
-				if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
-					return err
-				}
-				return err
-			}
-
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningConsoleDeployment, totalReplicas); err != nil {
-				return err
-			}
-
-			skipCreateConsoleUser := false
-			// If Console is deployed with the CONSOLE_LDAP_ENABLED="on" configuration that means MinIO is running with LDAP enabled
-			// and we need to skip the console user creation
-			for _, env := range tenant.GetConsoleEnvVars() {
-				if env.Name == "CONSOLE_LDAP_ENABLED" && env.Value == "on" {
-					skipCreateConsoleUser = true
-					break
-				}
-			}
-
-			if pErr := tenant.CreateConsoleUser(adminClnt, userCredentials, skipCreateConsoleUser); pErr != nil {
-				klog.V(2).Infof(pErr.Error())
-				return err
-			}
-
 			// Create Console Deployment
 			consoleDeployment = deployments.NewConsole(tenant)
 			_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, consoleDeployment, cOpts)
@@ -148,7 +119,6 @@ func (c *Controller) checkConsoleStatus(ctx context.Context, tenant *miniov2.Ten
 				return err
 			}
 		} else {
-
 			// Verify if this console deployment matches the spec on the tenant (resources, affinity, sidecars, etc)
 			consoleDeploymentMatchesSpec, err := consoleDeploymentMatchesSpec(tenant, consoleDeployment)
 			if err != nil {
@@ -190,6 +160,35 @@ func (c *Controller) checkConsoleStatus(ctx context.Context, tenant *miniov2.Ten
 			}
 		}
 	}
+
+	var err error
+	// Make sure that MinIO is up and running to enable MinIO console user.
+	if !tenant.MinIOHealthCheck() {
+		if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
+			return err
+		}
+		return err
+	}
+
+	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningConsoleDeployment, totalReplicas); err != nil {
+		return err
+	}
+
+	skipCreateUsers := false
+	// configuration that means MinIO is running with LDAP enabled
+	// and we need to skip the console user creation
+	for _, env := range tenant.GetEnvVars() {
+		if env.Name == "MINIO_IDENTITY_LDAP_SERVER_ADDR" && env.Value != "" {
+			skipCreateUsers = true
+			break
+		}
+	}
+
+	if err := tenant.CreateUsers(adminClnt, userCredentials, skipCreateUsers); err != nil {
+		klog.V(2).Infof("Unable to create MinIO users: %v", err)
+		return err
+	}
+
 	return nil
 }
 
