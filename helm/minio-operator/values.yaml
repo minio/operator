@@ -28,6 +28,9 @@ console:
   imagePullSecrets: []
   replicaCount: 1
   resources: {}
+  securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
 
 ## MinIO Tenant Definition
 tenants:
