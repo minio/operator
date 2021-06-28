@@ -34,6 +34,13 @@ console:
   affinity: {}
   tolerations: []
   resources: {}
+  ingress:
+    enabled: false
+    labels: {}
+    annotations: {}
+    tls: []
+    host: console.local
+    path: /
 
 ## MinIO Tenant Definition
 tenants:
