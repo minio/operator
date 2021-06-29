@@ -138,7 +138,7 @@ tenants:
         accessKey: YOURCONSOLEACCESS
         secretKey: YOURCONSOLESECRET
       ## Used to specify a toleration for Tenant Console pods.
-      tolerations: ()
+      tolerations: []
       ## nodeSelector parameters for Tenant Console Pods. It specifies a map of key-value pairs. For the pod to be
       ## eligible to run on a node, the node must have each of the
       ## indicated key-value pairs as labels.
