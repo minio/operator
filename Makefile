@@ -85,5 +85,5 @@ logsearchapi:
 
 getconsoleuiyaml:
 	@echo "Getting the latest Console UI"
-	@kustomize build github.com/minio/console/k8s/operator-console/base > resources/console-ui.yaml
+	@kustomize build github.com/minio/console/k8s/operator-console/base > resources/base/console-ui.yaml
 	@echo "Done"
