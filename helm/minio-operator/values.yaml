@@ -37,6 +37,13 @@ console:
   securityContext:
     runAsUser: 1000
     runAsNonRoot: true
+  ingress:
+    enabled: false
+    labels: {}
+    annotations: {}
+    tls: []
+    host: console.local
+    path: /
 
 ## MinIO Tenant Definition
 tenants:
