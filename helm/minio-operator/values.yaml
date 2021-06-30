@@ -100,6 +100,10 @@ tenants:
       enabled: false
       port: 9000
     certificate:
+      ## Use this field to provide one or more external CA certificates. This is used by MinIO
+      ## to verify TLS connections with other applications:
+      ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+      externalCaCertSecret: {}
       ## Use this field to provide a list of Secrets with external certificates. This can be used to to configure
       ## TLS for MinIO Tenant pods. Create secrets as explained here:
       ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret

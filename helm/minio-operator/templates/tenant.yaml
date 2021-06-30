@@ -66,6 +66,10 @@ spec:
   {{ end }}
   mountPath: {{ .mountPath }}
   subPath: {{ .subPath }}
+  {{- with .certificate.externalCaCertSecret }}
+  externalCaCertSecret:
+    {{ toYaml . | nindent 6 }}
+  {{ end }}
   {{- with .certificate.externalCertSecret }}
   externalCertSecret:
     {{ toYaml . | nindent 6 }}
