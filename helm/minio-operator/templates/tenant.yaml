@@ -102,4 +102,24 @@ spec:
     securityContext:
       {{ toYaml . | nindent 6 }}
     {{ end }}
+    {{- with .tolerations }}
+    tolerations:
+      {{ toYaml . | nindent 6 }}
+    {{ end }}
+    {{- with .nodeSelector }}
+    nodeSelector:
+      {{ toYaml . | nindent 6 }}
+    {{ end }}
+    {{- with .affinity }}
+    affinity:
+      {{ toYaml . | nindent 6 }}
+    {{ end }}
+    {{- with .resources }}
+    resources:
+      {{ toYaml . | nindent 6 }}
+    {{ end }}
+    {{- with .env }}
+    env:
+      {{ toYaml . | nindent 6 }}
+    {{- end }}
 {{ end }}
