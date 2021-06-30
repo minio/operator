@@ -77,6 +77,7 @@ dockers:
     - CREDITS
   build_flag_templates:
   - "--platform=linux/amd64"
+  - "--build-arg=TAG={{ .Tag }}"
 - image_templates:
   - "minio/operator:{{ .Tag }}-ppc64le"
   use_buildx: true
@@ -87,6 +88,7 @@ dockers:
     - CREDITS
   build_flag_templates:
   - "--platform=linux/ppc64le"
+  - "--build-arg=TAG={{ .Tag }}"
 - image_templates:
   - "minio/operator:{{ .Tag }}-s390x"
   use_buildx: true
@@ -97,6 +99,7 @@ dockers:
     - CREDITS
   build_flag_templates:
   - "--platform=linux/s390x"
+  - "--build-arg=TAG={{ .Tag }}"
 - image_templates:
   - "minio/operator:{{ .Tag }}-arm64"
   use_buildx: true
@@ -107,6 +110,7 @@ dockers:
     - CREDITS
   build_flag_templates:
   - "--platform=linux/arm64"
+  - "--build-arg=TAG={{ .Tag }}"
 - image_templates:
   - "quay.io/minio/operator:{{ .Tag }}-amd64"
   use_buildx: true
@@ -117,6 +121,7 @@ dockers:
     - CREDITS
   build_flag_templates:
   - "--platform=linux/amd64"
+  - "--build-arg=TAG={{ .Tag }}"
 - image_templates:
   - "quay.io/minio/operator:{{ .Tag }}-ppc64le"
   use_buildx: true
@@ -127,6 +132,7 @@ dockers:
     - CREDITS
   build_flag_templates:
   - "--platform=linux/ppc64le"
+  - "--build-arg=TAG={{ .Tag }}"
 - image_templates:
   - "quay.io/minio/operator:{{ .Tag }}-s390x"
   use_buildx: true
@@ -137,6 +143,7 @@ dockers:
     - CREDITS
   build_flag_templates:
   - "--platform=linux/s390x"
+  - "--build-arg=TAG={{ .Tag }}"
 - image_templates:
   - "quay.io/minio/operator:{{ .Tag }}-arm64"
   use_buildx: true
@@ -147,6 +154,7 @@ dockers:
     - CREDITS
   build_flag_templates:
   - "--platform=linux/arm64"
+  - "--build-arg=TAG={{ .Tag }}"
 docker_manifests:
 - name_template: minio/operator:{{ .Tag }}
   image_templates:
