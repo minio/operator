@@ -8,37 +8,66 @@ metadata:
             "apiVersion": "minio.min.io/v2",
             "kind": "Tenant",
             "metadata": {
-              "name": "minio"
+              "name": "minio",
+              "labels": {
+                "app": "minio"
+              },
+              "annotations": {
+                "prometheus.io/path": "/minio/v2/metrics/cluster",
+                "prometheus.io/port": "9000",
+                "prometheus.io/scrape": "true"
+              }
             },
             "spec": {
-              "pools": {
-                "servers": 4,
-                "volumesPerServer": 4,
-                "volumeClaimTemplate": {
-                  "metadata": {
-                    "name": "data"
-                  },
-                  "spec": {
-                    "accessModes": [
-                      "ReadWriteOnce"
-                    ],
-                    "storageClassName": "local-storage",
-                    "resources": {
-                      "requests": {
-                        "storage": "1Ti"
-                      }
-                    }
-                  }
-                }
-              },
+              "image": "minio/minio:RELEASE.2021-06-17T00-10-46Z",
+              "imagePullPolicy": "IfNotPresent",
               "credsSecret": {
                 "name": "minio-creds-secret"
               },
-              "requestAutoCert": false,
+              "pools": [
+                {
+                  "servers": 4,
+                  "name": "pool-0",
+                  "volumesPerServer": 4,
+                  "volumeClaimTemplate": {
+                    "metadata": {
+                      "name": "minio-"
+                    },
+                    "spec": {
+                      "accessModes": [
+                        "ReadWriteOnce"
+                      ],
+                      "resources": {
+                        "requests": {
+                          "storage": "10Gi"
+                        }
+                      }
+                    }
+                  },
+                  "securityContext": {
+                    "runAsUser": 1000,
+                    "runAsGroup": 1000,
+                    "runAsNonRoot": true,
+                    "fsGroup": 1000
+                  }
+                }
+              ],
+              "requestAutoCert": true,
+              "s3": {
+                "bucketDNS": false
+              },
+              "podManagementPolicy": "Parallel",
               "console": {
-                "replicas": 2,
+                "image": "minio/console:v0.7.4",
+                "replicas": 1,
                 "consoleSecret": {
                   "name": "console-secret"
+                },
+                "securityContext": {
+                  "runAsUser": 1000,
+                  "runAsGroup": 2000,
+                  "runAsNonRoot": true,
+                  "fsGroup": 2000
                 }
               }
             }
@@ -47,12 +76,12 @@ metadata:
     capabilities: "Full Lifecycle"
     categories: "Storage, Big Data, AI/Machine Learning"
     certified: "false"
-    containerImage: "minio/operator:v4.0.11"
+    containerImage: "minio/operator:v4.1.2"
     createdAt: 2021-03-17 00:00:00 +00:00
     description: " MinIO Operator allows creating distributed MinIO Clusters and manage their lifecycle"
     repository: "https://github.com/minio/operator"
     support: "MinIO, Inc."
-  name: minio-operator.v4.0.11
+  name: minio-operator.v4.1.2
   namespace: placeholder
 spec: 
   customresourcedefinitions: 
@@ -173,7 +202,7 @@ spec:
               spec: 
                 containers: 
                   - 
-                    image: "docker.io/minio/operator:v4.0.11"
+                    image: "docker.io/minio/operator:v4.1.2"
                     name: minio-operator
                 serviceAccountName: minio-operator
       permissions: 
@@ -339,4 +368,4 @@ spec:
     name: "MinIO, Inc."
   selector: 
     matchLabels: {}
-  version: "4.0.11"
+  version: "4.1.2"
