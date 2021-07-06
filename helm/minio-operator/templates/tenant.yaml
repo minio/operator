@@ -98,28 +98,36 @@ spec:
     replicas: {{ .console.replicaCount }}
     consoleSecret:
       name: {{ .console.secrets.name }}
-    {{- with .securityContext }}
+    {{- with .console.securityContext }}
     securityContext:
       {{ toYaml . | nindent 6 }}
     {{ end }}
-    {{- with .tolerations }}
+    {{- with .console.tolerations }}
     tolerations:
       {{ toYaml . | nindent 6 }}
     {{ end }}
-    {{- with .nodeSelector }}
+    {{- with .console.nodeSelector }}
     nodeSelector:
       {{ toYaml . | nindent 6 }}
     {{ end }}
-    {{- with .affinity }}
+    {{- with .console.affinity }}
     affinity:
       {{ toYaml . | nindent 6 }}
     {{ end }}
-    {{- with .resources }}
+    {{- with .console.resources }}
     resources:
       {{ toYaml . | nindent 6 }}
     {{ end }}
-    {{- with .env }}
+    {{- with .console.env }}
     env:
       {{ toYaml . | nindent 6 }}
     {{- end }}
+    {{- with .console.externalCaCertSecret }}
+    externalCaCertSecret:
+      {{ toYaml . | nindent 6 }}
+    {{ end }}
+    {{- with .console.externalCertSecret }}
+    externalCertSecret:
+      {{ toYaml . | nindent 6 }}
+    {{ end }}
 {{ end }}
