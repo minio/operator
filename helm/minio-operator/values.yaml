@@ -100,6 +100,10 @@ tenants:
       enabled: false
       port: 9000
     certificate:
+      ## Use this field to provide one or more external CA certificates. This is used by MinIO
+      ## to verify TLS connections with other applications:
+      ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+      externalCaCertSecret: {}
       ## Use this field to provide a list of Secrets with external certificates. This can be used to to configure
       ## TLS for MinIO Tenant pods. Create secrets as explained here:
       ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
@@ -144,3 +148,27 @@ tenants:
         salt: SECRET
         accessKey: YOURCONSOLEACCESS
         secretKey: YOURCONSOLESECRET
+      ## Used to specify a toleration for Tenant Console pods.
+      tolerations: []
+      ## nodeSelector parameters for Tenant Console Pods. It specifies a map of key-value pairs. For the pod to be
+      ## eligible to run on a node, the node must have each of the
+      ## indicated key-value pairs as labels.
+      ## Read more here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+      nodeSelector: {}
+      ## Affinity settings for Tenant Console Pods. Read more about affinity
+      ## here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity.
+      affinity: {}
+      ## Configure resource requests and limits for Tenant Console containers
+      resources: {}
+      ## Configure security context
+      securityContext: {}
+      ## Add environment variables to be set in Tenant Console container (https://github.com/minio/minio/tree/master/docs/config)
+      env: {}
+      ## Use this field to provide one or more external CA certificates. This is used by Console
+      ## to verify TLS connections with other applications:
+      ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+      externalCaCertSecret: {}
+      ## Use this field to provide a list of Secrets with external certificates. This can be used to to configure
+      ## TLS for MinIO Console pods. Create secrets as explained here:
+      ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+      externalCertSecret: {}

@@ -1,6 +1,6 @@
 # MinIO ![license](https://img.shields.io/badge/license-AGPL%20V3-blue)
 
-[MinIO](https://min.io) is a High Performance Object Storage released under Apache License v2.0. It is API compatible with Amazon S3 cloud storage service. Use MinIO to build high performance infrastructure for machine learning, analytics and application data workloads.
+[MinIO](https://min.io) is a High Performance Object Storage released under GNU AGPLv3 or later. It is API compatible with Amazon S3 cloud storage service. Use MinIO to build high performance infrastructure for machine learning, analytics and application data workloads.
 
 For more detailed documentation please visit [here](https://docs.minio.io/)
 
