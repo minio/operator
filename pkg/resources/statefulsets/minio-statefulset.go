@@ -195,7 +195,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 		}
 	}
 
-	if t.AutoCert() || t.ExternalCert() || t.HasKESEnabled() {
+	if t.AutoCert() || t.ExternalCaCerts() || t.ExternalCert() || t.HasKESEnabled() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      t.MinIOTLSSecretName(),
 			MountPath: miniov2.MinIOCertPath,
