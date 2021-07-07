@@ -564,10 +564,12 @@ func (t *Tenant) HasConsoleSecret() bool {
 // GetConsoleEnvVars returns the environment variables for the console
 // deployment of a particular tenant
 func (t *Tenant) GetConsoleEnvVars() (env []corev1.EnvVar) {
-	if t.Spec.Console != nil {
-		return t.Spec.Console.Env
-	}
-	return env
+	return t.Spec.Console.Env
+}
+
+// GetEnvVars returns the environment variables for tenant deployment.
+func (t *Tenant) GetEnvVars() (env []corev1.EnvVar) {
+	return t.Spec.Env
 }
 
 // UpdateURL returns the URL for the sha256sum location of the new binary
@@ -711,8 +713,8 @@ func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string]
 	return madmClnt, nil
 }
 
-// CreateConsoleUser function creates an admin users
-func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
+// CreateUsers creates a list of admin users on MinIO, optionally creating users is disabled.
+func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
@@ -721,17 +723,20 @@ func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialS
 		if !ok {
 			return errors.New("CONSOLE_ACCESS_KEY not provided")
 		}
-		// skipCreateUser handles the scenario of LDAP users that are not created in MinIO but still need to have a policy assigned
+		// skipCreateUser handles the scenario of LDAP users that are
+		// not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
 			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
 			if !ok {
 				return errors.New("CONSOLE_SECRET_KEY not provided")
 			}
-			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
+			if err := madmClnt.AddUser(ctx, string(consoleAccessKey),
+				string(consoleSecretKey)); err != nil {
 				return err
 			}
 		}
-		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, string(consoleAccessKey), false); err != nil {
+		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName,
+			string(consoleAccessKey), false); err != nil {
 			return err
 		}
 	}
