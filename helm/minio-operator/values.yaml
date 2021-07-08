@@ -34,6 +34,9 @@ console:
   affinity: {}
   tolerations: []
   resources: {}
+  securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
   ingress:
     enabled: false
     labels: {}
