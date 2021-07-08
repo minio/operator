@@ -182,7 +182,7 @@ const PrometheusServiceMonitorSecretKey = "token"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.1.2"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.1.3"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres"
