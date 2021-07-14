@@ -44,6 +44,7 @@ type tenantDeleteCmd struct {
 	out    io.Writer
 	errOut io.Writer
 	ns     string
+	force  bool
 }
 
 func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
@@ -58,8 +59,10 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if err := c.validate(args); err != nil {
 				return err
 			}
-			if !helpers.Ask(fmt.Sprintf("This will delete the Tenant %s and ALL its data. Do you want to proceed?", args[0])) {
-				return fmt.Errorf(Bold("Aborting Tenant deletion\n"))
+			if !c.force {
+				if !helpers.Ask(fmt.Sprintf("This will delete the Tenant %s and ALL its data. Do you want to proceed?", args[0])) {
+					return fmt.Errorf(Bold("Aborting Tenant deletion\n"))
+				}
 			}
 			return nil
 		},
@@ -76,6 +79,8 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
 	f.StringVarP(&c.ns, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.BoolVarP(&c.force, "force", "f", false, "force delete the tenant")
+
 	return cmd
 }
 
