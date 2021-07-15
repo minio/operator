@@ -208,11 +208,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 // Builds the MinIO container for a Tenant.
 func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string) corev1.Container {
 	args := []string{"server", "--certs-dir", miniov2.MinIOCertPath}
-	if t.Spec.Logging == nil {
-		// By default enable --json and --anonymous flags.
-		// allow them to be turned off selectively.
-		args = append(args, "--json", "--anonymous")
-	} else {
+	if t.Spec.Logging != nil {
 		// If logging is specified, expect users to
 		// provide the right set of settings to toggle
 		// various flags.
