@@ -67,6 +67,11 @@ spec:
                       type: string
                     type: array
                 type: object
+              configuration:
+                properties:
+                  name:
+                    type: string
+                type: object
               console:
                 properties:
                   annotations:
@@ -1148,6 +1153,8 @@ spec:
                                 type: string
                             type: object
                         type: object
+                      serviceAccountName:
+                        type: string
                       tolerations:
                         items:
                           properties:
@@ -1390,6 +1397,8 @@ spec:
                             type: string
                         type: object
                     type: object
+                  serviceAccountName:
+                    type: string
                   tolerations:
                     items:
                       properties:
@@ -1514,6 +1523,8 @@ spec:
                             type: string
                         type: object
                     type: object
+                  serviceAccountName:
+                    type: string
                   sidecarimage:
                     type: string
                   storageClassName:
@@ -3526,6 +3537,11 @@ spec:
                       type: string
                     type: array
                 type: object
+              configuration:
+                properties:
+                  name:
+                    type: string
+                type: object
               console:
                 properties:
                   annotations:
@@ -4607,6 +4623,8 @@ spec:
                                 type: string
                             type: object
                         type: object
+                      serviceAccountName:
+                        type: string
                       tolerations:
                         items:
                           properties:
@@ -4849,6 +4867,8 @@ spec:
                             type: string
                         type: object
                     type: object
+                  serviceAccountName:
+                    type: string
                   tolerations:
                     items:
                       properties:
@@ -5494,6 +5514,8 @@ spec:
                             type: string
                         type: object
                     type: object
+                  serviceAccountName:
+                    type: string
                   sidecarimage:
                     type: string
                   storageClassName:

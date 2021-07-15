@@ -128,6 +128,14 @@ func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d
 
 	fmt.Printf("Deleting MinIO Tenant %s\n", tenant.ObjectMeta.Name)
 	fmt.Printf("Deleting MinIO Tenant Credentials Secret %s\n", tenant.Spec.CredsSecret.Name)
+
+	if tenant.HasConfigurationSecret() {
+		if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Configuration.Name, metav1.DeleteOptions{}); err != nil {
+			return err
+		}
+		fmt.Printf("Deleting MinIO Tenant Configuration Secret %s\n", tenant.Spec.Configuration.Name)
+	}
+
 	fmt.Printf("Deleting MinIO Tenant Console Secret %s\n", tenant.Spec.Console.ConsoleSecret.Name)
 	return nil
 }
