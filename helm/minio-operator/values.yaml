@@ -1,8 +1,18 @@
 # Default values for minio-operator.
 
 operator:
-  clusterDomain: ""
-  nsToWatch: ""
+  ## DEPRECATED: Please use the "CLUSTER_DOMAIN" or "WATCHED_NAMESPACE" env variable
+  ## instead of clusterDomain and nsToWatch.
+  # clusterDomain: "cluster.local"
+  # nsToWatch: ""
+  ## Setup environment variables for the Operator
+  # env:
+  #   - name: MINIO_OPERATOR_TLS_ENABLE
+  #     value: "off"
+  #   - name: CLUSTER_DOMAIN
+  #     value: "cluster.domain"
+  #   - name: WATCHED_NAMESPACE
+  #     value: ""
   image:
     repository: minio/operator
     tag: v4.1.3

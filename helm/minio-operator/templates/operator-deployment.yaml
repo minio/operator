@@ -50,6 +50,11 @@ spec:
             - name: WATCHED_NAMESPACE
               value: {{ .Values.operator.nsToWatch }}
             {{- end }}
+          {{ else }}
+          {{- with .Values.operator.env }}
+          env:
+            {{ toYaml . | nindent 10 }}
+          {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.operator.resources | nindent 12 }}
