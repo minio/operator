@@ -168,9 +168,3 @@ docker_manifests:
   - quay.io/minio/operator:{{ .Tag }}-arm64
   - quay.io/minio/operator:{{ .Tag }}-ppc64le
   - quay.io/minio/operator:{{ .Tag }}-s390x
-- name_template: minio/operator:latest
-  image_templates:
-  - minio/operator:{{ .Tag }}-amd64
-  - minio/operator:{{ .Tag }}-arm64
-  - minio/operator:{{ .Tag }}-ppc64le
-  - minio/operator:{{ .Tag }}-s390x
