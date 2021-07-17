@@ -24,6 +24,9 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -36,9 +39,74 @@ import (
 	"k8s.io/klog/v2"
 )
 
+const (
+	// OperatorTLS is the ENV var to turn on / off Operator TLS.
+	OperatorTLS = "MINIO_OPERATOR_TLS_ENABLE"
+	// OperatorTLSSecretName is the name of secret created with Operator TLS certs
+	OperatorTLSSecretName = "operator-tls"
+)
+
 var (
 	errOperatorWaitForTLS = errors.New("waiting for Operator cert")
 )
+
+func isOperatorTLS() bool {
+	value, set := os.LookupEnv(OperatorTLS)
+	// By default Operator TLS is used.
+	return (set && value == "on") || !set
+}
+
+func (c *Controller) generateTLSCert() (string, string) {
+	ctx := context.Background()
+	namespace := miniov2.GetNSFromFile()
+	// operator deployment for owner reference
+	operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, "minio-operator", metav1.GetOptions{})
+	if err != nil {
+		panic(err)
+	}
+
+	publicCertPath := "/tmp/public.crt"
+	publicKeyPath := "/tmp/private.key"
+
+	for {
+		// operator TLS certificates
+		operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				klog.Infof("operator TLS secret not found", err.Error())
+				if err = c.checkAndCreateOperatorCSR(ctx, operatorDeployment); err != nil {
+					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
+					time.Sleep(time.Second * 10)
+				} else {
+					if err = c.certClient.CertificateSigningRequests().Delete(ctx, "operator-auto-tls", metav1.DeleteOptions{}); err != nil {
+						klog.Infof(err.Error())
+					}
+				}
+			}
+		} else {
+			if val, ok := operatorTLSCert.Data["public.crt"]; ok {
+				err := ioutil.WriteFile(publicCertPath, val, 0644)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				panic(errors.New("operator TLS wrong format"))
+			}
+
+			if val, ok := operatorTLSCert.Data["private.key"]; ok {
+				err := ioutil.WriteFile(publicKeyPath, val, 0644)
+				if err != nil {
+					panic(err)
+				}
+			} else {
+				panic(errors.New("operator TLS wrong format"))
+			}
+			break
+		}
+	}
+
+	return publicCertPath, publicKeyPath
+}
 
 func generateOperatorCryptoData() ([]byte, []byte, error) {
 	privateKey, err := newPrivateKey(miniov2.DefaultEllipticCurve)

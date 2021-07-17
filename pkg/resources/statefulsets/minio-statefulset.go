@@ -269,7 +269,7 @@ func minioSecurityContext(pool *miniov2.Pool) *corev1.PodSecurityContext {
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
-func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, serviceName string, hostsTemplate, operatorVersion string) *appsv1.StatefulSet {
+func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, serviceName string, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = pool.Servers
 	var podVolumeSources []corev1.VolumeProjection
@@ -426,21 +426,22 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 		}
 	}
 
-	// Mount Operator TLS certificate to MinIO ~/cert/CAs
-	operatorTLSSecretName := "operator-tls"
-	podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
-		{
-			Secret: &corev1.SecretProjection{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: operatorTLSSecretName,
-				},
-				Items: []corev1.KeyToPath{
-					{Key: "public.crt", Path: "CAs/operator.crt"},
+	if operatorTLS {
+		// Mount Operator TLS certificate to MinIO ~/cert/CAs
+		operatorTLSSecretName := "operator-tls"
+		podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: operatorTLSSecretName,
+					},
+					Items: []corev1.KeyToPath{
+						{Key: "public.crt", Path: "CAs/operator.crt"},
+					},
 				},
 			},
-		},
-	}...)
-
+		}...)
+	}
 	// If KES is enable mount TLS certificate secrets
 	if t.HasKESEnabled() {
 		// External Client certificates will have priority over AutoCert generated certificates

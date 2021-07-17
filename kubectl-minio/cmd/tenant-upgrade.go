@@ -60,6 +60,7 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if err := c.validate(args); err != nil {
 				return err
 			}
+			c.tenantOpts.Name = args[0]
 			klog.Info("upgrade tenant command started")
 			err := c.run()
 			if err != nil {
@@ -80,12 +81,11 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (u *upgradeCmd) validate(args []string) error {
-	u.tenantOpts.Name = args[0]
 	if args == nil {
 		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant upgrade tenant1'")
 	}
 	if len(args) != 1 {
-		return errors.New("info command supports a single argument, e.g. 'kubectl minio tenant upgrade tenant1'")
+		return errors.New("upgrade command requires a single argument, e.g. 'kubectl minio tenant upgrade tenant1'")
 	}
 	if args[0] == "" {
 		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant upgrade tenant1'")

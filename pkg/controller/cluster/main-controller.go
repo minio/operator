@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
@@ -366,7 +365,7 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *min
 	}
 	// check the secret has the desired values
 	minioArgs := string(secret.Data[miniov2.WebhookMinIOArgs])
-	if strings.Contains(minioArgs, "env://") {
+	if strings.Contains(minioArgs, "env://") && isOperatorTLS() {
 		// update the secret
 		minioArgs = strings.ReplaceAll(minioArgs, "env://", "env+tls://")
 		secret.Data[miniov2.WebhookMinIOArgs] = []byte(minioArgs)
@@ -383,6 +382,24 @@ func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *min
 	}
 
 	return secret, nil
+}
+
+func secretData(tenant *miniov2.Tenant, accessKey, secretKey string) []byte {
+	scheme := "env"
+	if isOperatorTLS() {
+		scheme = "env+tls"
+	}
+	return []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
+		scheme,
+		accessKey,
+		secretKey,
+		fmt.Sprintf("operator.%s.svc.%s",
+			miniov2.GetNSFromFile(),
+			miniov2.GetClusterDomain()),
+		miniov2.WebhookDefaultPort,
+		miniov2.WebhookAPIGetenv,
+		tenant.Namespace,
+		tenant.Name))
 }
 
 func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1.Secret {
@@ -402,17 +419,7 @@ func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1
 		Data: map[string][]byte{
 			miniov2.WebhookOperatorUsername: []byte(accessKey),
 			miniov2.WebhookOperatorPassword: []byte(secretKey),
-			miniov2.WebhookMinIOArgs: []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
-				"env+tls",
-				accessKey,
-				secretKey,
-				fmt.Sprintf("operator.%s.svc.%s",
-					miniov2.GetNSFromFile(),
-					miniov2.GetClusterDomain()),
-				miniov2.WebhookDefaultPort,
-				miniov2.WebhookAPIGetenv,
-				tenant.Namespace,
-				tenant.Name)),
+			miniov2.WebhookMinIOArgs:        secretData(tenant, accessKey, secretKey),
 		},
 	}
 	return secret
@@ -598,66 +605,27 @@ func (c *Controller) removeArtifacts() error {
 	return os.RemoveAll(updatePath)
 }
 
-var operatorTLSSecretName = "operator-tls"
-
 // Start will set up the event handlers for types we are interested in, as well
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	go func() {
-		ctx := context.Background()
-		namespace := miniov2.GetNSFromFile()
-		// operator deployment for owner reference
-		operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, "minio-operator", metav1.GetOptions{})
-		if err != nil {
-			panic(err)
-		}
-
-		publicCertPath := "/tmp/public.crt"
-		publicKeyPath := "/tmp/private.key"
-
-		for {
-			// operator TLS certificates
-			operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, operatorTLSSecretName, metav1.GetOptions{})
-			if err != nil {
-				if k8serrors.IsNotFound(err) {
-					klog.Infof("operator TLS secret not found", err.Error())
-					if err = c.checkAndCreateOperatorCSR(ctx, operatorDeployment); err != nil {
-						klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
-						time.Sleep(time.Second * 10)
-					} else {
-						if err = c.certClient.CertificateSigningRequests().Delete(ctx, "operator-auto-tls", metav1.DeleteOptions{}); err != nil {
-							klog.Infof(err.Error())
-						}
-					}
-				}
-			} else {
-				if val, ok := operatorTLSCert.Data["public.crt"]; ok {
-					err := ioutil.WriteFile(publicCertPath, val, 0644)
-					if err != nil {
-						panic(err)
-					}
-				} else {
-					panic(errors.New("operator TLS wrong format"))
-				}
-
-				if val, ok := operatorTLSCert.Data["private.key"]; ok {
-					err := ioutil.WriteFile(publicKeyPath, val, 0644)
-					if err != nil {
-						panic(err)
-					}
-				} else {
-					panic(errors.New("operator TLS wrong format"))
-				}
-				break
+		if isOperatorTLS() {
+			publicCertPath, publicKeyPath := c.generateTLSCert()
+			klog.Infof("Starting HTTPS api server")
+			// use those certificates to configure the web server
+			if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
+				klog.Infof("HTTPS server ListenAndServeTLS: %v", err)
+				return
 			}
-		}
-		klog.Infof("Starting api server")
-		// use those certificates to configure the web server
-		if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
-			klog.Infof("HTTPS server ListenAndServeTLS: %v", err)
-			return
+		} else {
+			klog.Infof("Starting HTTP api server")
+			// start server without TLS
+			if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
+				klog.Infof("HTTP server ListenAndServe: %v", err)
+				return
+			}
 		}
 	}()
 
@@ -901,35 +869,38 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// Copy Operator TLS certificate to Tenant Namespace
-	operatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, operatorTLSSecretName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	if val, ok := operatorTLSSecret.Data["public.crt"]; ok {
-		secret := &corev1.Secret{
-			Type: "Opaque",
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      operatorTLSSecretName,
-				Namespace: tenant.Namespace,
-				Labels:    tenant.MinIOPodLabels(),
-				OwnerReferences: []metav1.OwnerReference{
-					*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-						Group:   miniov2.SchemeGroupVersion.Group,
-						Version: miniov2.SchemeGroupVersion.Version,
-						Kind:    miniov2.MinIOCRDResourceKind,
-					}),
-				},
-			},
-			Data: map[string][]byte{
-				"public.crt": val,
-			},
-		}
-		_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
-		if err != nil && !k8serrors.IsAlreadyExists(err) {
+	if isOperatorTLS() {
+		// Copy Operator TLS certificate to Tenant Namespace
+		operatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
+		if err != nil {
 			return err
 		}
+		if val, ok := operatorTLSSecret.Data["public.crt"]; ok {
+			secret := &corev1.Secret{
+				Type: "Opaque",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      OperatorTLSSecretName,
+					Namespace: tenant.Namespace,
+					Labels:    tenant.MinIOPodLabels(),
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
+							Group:   miniov2.SchemeGroupVersion.Group,
+							Version: miniov2.SchemeGroupVersion.Version,
+							Kind:    miniov2.MinIOCRDResourceKind,
+						}),
+					},
+				},
+				Data: map[string][]byte{
+					"public.crt": val,
+				},
+			}
+			_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+			if err != nil && !k8serrors.IsAlreadyExists(err) {
+				return err
+			}
+		}
 	}
+
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
 	// this status value is zero only for new tenants or legacy tenants
 	if len(tenant.Status.Pools) == 0 {
@@ -987,7 +958,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			ss = statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			ss = statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -1025,7 +996,7 @@ func (c *Controller) syncHandler(key string) error {
 					carryOverLabels[miniov1.ZoneLabel] = val
 				}
 
-				nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+				nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 				ssCopy := ss.DeepCopy()
 
 				ssCopy.Spec.Template = nss.Spec.Template
@@ -1181,7 +1152,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		for _, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion)
+			ss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
