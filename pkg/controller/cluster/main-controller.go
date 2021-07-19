@@ -849,13 +849,24 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	minioSecretName := tenant.Spec.CredsSecret.Name
-	minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, gOpts)
-	if err != nil {
-		return err
-	}
+	var tenantConfiguration map[string][]byte
 
-	adminClnt, err := tenant.NewMinIOAdmin(minioSecret.Data)
+	if tenant.HasConfigurationSecret() {
+		minioConfigurationSecretName := tenant.Spec.Configuration.Name
+		minioConfigurationSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioConfigurationSecretName, gOpts)
+		if err != nil {
+			return err
+		}
+		tenantConfiguration = miniov2.ParseRawConfiguration(minioConfigurationSecret.Data["config.env"])
+	} else {
+		minioSecretName := tenant.Spec.CredsSecret.Name
+		minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, gOpts)
+		if err != nil {
+			return err
+		}
+		tenantConfiguration = minioSecret.Data
+	}
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 	if err != nil {
 		return err
 	}
@@ -1045,7 +1056,7 @@ func (c *Controller) syncHandler(key string) error {
 			if len(pods.Items) > 0 {
 				ssPod := pods.Items[0]
 				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
-				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, minioSecret.Data)
+				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration)
 				if err != nil {
 					return err
 				}
@@ -1207,7 +1218,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if tenant.HasPrometheusEnabled() {
-		_, err := c.checkAndCreatePrometheusConfigMap(ctx, tenant, string(minioSecret.Data["accesskey"]), string(minioSecret.Data["secretkey"]))
+		_, err := c.checkAndCreatePrometheusConfigMap(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
 			return err
 		}
@@ -1224,7 +1235,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if tenant.HasPrometheusSMEnabled() {
-		err = c.checkAndCreatePrometheusServiceMonitorSecret(ctx, tenant, string(minioSecret.Data["accesskey"]), string(minioSecret.Data["secretkey"]))
+		err = c.checkAndCreatePrometheusServiceMonitorSecret(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
 			return err
 		}
