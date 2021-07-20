@@ -287,6 +287,10 @@ spec:
         image: minio/console:v0.7.5
         imagePullPolicy: IfNotPresent
         name: console
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
         ports:
         - containerPort: 9090
           name: http
