@@ -45,7 +45,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
-	jwtgo "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/minio/madmin-go"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -412,7 +412,7 @@ func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
 
 // GenBearerToken returns the JWT token for current Tenant for Prometheus authentication
 func (t *Tenant) GenBearerToken(accessKey, secretKey string) string {
-	jwt := jwtgo.NewWithClaims(jwtgo.SigningMethodHS512, jwtgo.StandardClaims{
+	jwt := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.StandardClaims{
 		ExpiresAt: time.Now().UTC().Add(defaultPrometheusJWTExpiry).Unix(),
 		Subject:   accessKey,
 		Issuer:    "prometheus",

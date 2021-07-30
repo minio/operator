@@ -22,8 +22,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	jwtgo "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"gopkg.in/yaml.v2"
@@ -138,7 +137,7 @@ func (p *prometheusConfig) getConfigMap(tenant *miniov2.Tenant) *corev1.ConfigMa
 // can't be verified using the given secretKey
 func (p *prometheusConfig) bearerTokenNeedsUpdate(secretKey string) bool {
 	tokenStr := p.ScrapeConfigs[0].BearerToken
-	_, err := jwtgo.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+	_, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
