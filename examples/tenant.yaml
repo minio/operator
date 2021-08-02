@@ -10,22 +10,6 @@ data:
   ## Secret Key for MinIO Tenant, base64 encoded (echo -n 'minio123' | base64)
   secretkey: bWluaW8xMjM=
 ---
-## Secret to be used for MinIO Console
-apiVersion: v1
-kind: Secret
-metadata:
-  name: console-secret
-type: Opaque
-data:
-  ## Passphrase to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
-  CONSOLE_PBKDF_PASSPHRASE: U0VDUkVU
-  ## Salt to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
-  CONSOLE_PBKDF_SALT: U0VDUkVU
-  ## MinIO User Access Key (used for Console Login), base64 encoded (echo -n 'YOURCONSOLEACCESS' | base64)
-  CONSOLE_ACCESS_KEY: WU9VUkNPTlNPTEVBQ0NFU1M=
-  ## MinIO User Secret Key (used for Console Login), base64 encoded (echo -n 'YOURCONSOLESECRET' | base64)
-  CONSOLE_SECRET_KEY: WU9VUkNPTlNPTEVTRUNSRVQ=
----
 ## MinIO Tenant Definition
 apiVersion: minio.min.io/v2
 kind: Tenant
@@ -61,20 +45,6 @@ spec:
       ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
       ## Note that the operator does not support upgrading from standalone to distributed mode.
     - servers: 4
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: v1.min.io/tenant
-                    operator: In
-                    values:
-                      - minio
-                  - key: v1.min.io/pool
-                    operator: In
-                    values:
-                      - pool-0
-              topologyKey: kubernetes.io/hostname
       name: pool-0
       ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
       volumesPerServer: 4
@@ -184,6 +154,12 @@ spec:
   ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
   ## for details.
   podManagementPolicy: Parallel
+
+  ## Create users in the Tenant using this field. Make sure to create secrets per user added here. 
+  ## Secret should follow the format used in `minio-creds-secret`.
+  # users:
+  #   - name: minio-user1
+  #   - name: minio-user2
 
   ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
   ## services created by the operator.

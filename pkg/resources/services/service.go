@@ -19,6 +19,7 @@ package services
 
 import (
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,51 +29,51 @@ import (
 )
 
 // NewClusterIPForMinIO will return a new ClusterIP Kubernetes service for a Tenant
-func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
-	var port int32 = miniov2.MinIOPortLoadBalancerSVC
-	var name string = miniov2.MinIOServiceHTTPPortName
+func NewClusterIPForMinIO(t *miniov2.Tenant, portNumber int32, svcName, portName string) *corev1.Service {
 	var internalLabels, labels, annotations map[string]string
-
+	port := corev1.ServicePort{
+		Port: portNumber,
+		Name: portName,
+	}
 	internalLabels = t.MinIOPodLabels()
-	// Add these labels so this service can be targeted by Prometheus ServiceMonitor
-	if t.HasPrometheusSMEnabled() {
-		internalLabels = miniov2.MergeMaps(internalLabels, t.MinIOPodLabelsForSM())
-	}
-	if t.TLS() {
-		port = miniov2.MinIOTLSPortLoadBalancerSVC
-		name = miniov2.MinIOServiceHTTPSPortName
-	}
-	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.MinIOServiceLabels != nil {
-		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.MinIOServiceLabels)
-		annotations = t.Spec.ServiceMetadata.MinIOServiceAnnotations
+	// MinIO / S3 API Service
+	if !strings.Contains(svcName, "console") {
+		port.TargetPort = intstr.FromInt(miniov2.MinIOPort)
+		// Add these labels so this service can be targeted by Prometheus ServiceMonitor
+		if t.HasPrometheusSMEnabled() {
+			internalLabels = miniov2.MergeMaps(internalLabels, t.MinIOPodLabelsForSM())
+		}
+		if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.MinIOServiceLabels != nil {
+			labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.MinIOServiceLabels)
+			annotations = t.Spec.ServiceMetadata.MinIOServiceAnnotations
+		} else {
+			labels = internalLabels
+		}
 	} else {
-		labels = internalLabels
-	}
-	minioPort := corev1.ServicePort{
-		Port:       port,
-		Name:       name,
-		TargetPort: intstr.FromInt(miniov2.MinIOPort),
+		// Console / Dashboard Service
+		if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceLabels != nil {
+			labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.ConsoleServiceLabels)
+			annotations = t.Spec.ServiceMetadata.ConsoleServiceAnnotations
+		}
 	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          labels,
-			Name:            t.MinIOCIServiceName(),
+			Name:            svcName,
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
 			Annotations:     annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:    []corev1.ServicePort{minioPort},
+			Ports:    []corev1.ServicePort{port},
 			Selector: t.MinIOPodLabels(),
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
-
 	// check if the service is meant to be exposed
 	if t.Spec.ExposeServices != nil && t.Spec.ExposeServices.MinIO {
 		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
 	}
-
 	return svc
 }
 
@@ -185,43 +186,6 @@ func NewHeadlessForPrometheus(t *miniov2.Tenant) *corev1.Service {
 			ClusterIP: corev1.ClusterIPNone,
 		},
 	}
-}
-
-// NewClusterIPForConsole will return a new cluster IP service for Console Deployment
-func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
-	var internalLabels, labels, annotations map[string]string
-	internalLabels = t.ConsolePodLabels()
-
-	consolePort := corev1.ServicePort{Port: miniov2.ConsolePort, Name: miniov2.ConsoleServicePortName}
-	if t.TLS() || t.ConsoleExternalCert() {
-		consolePort = corev1.ServicePort{Port: miniov2.ConsoleTLSPort, Name: miniov2.ConsoleServiceTLSPortName}
-	}
-	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceLabels != nil {
-		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.ConsoleServiceLabels)
-		annotations = t.Spec.ServiceMetadata.ConsoleServiceAnnotations
-	}
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:          labels,
-			Name:            t.ConsoleCIServiceName(),
-			Namespace:       t.Namespace,
-			OwnerReferences: t.OwnerRef(),
-			Annotations:     annotations,
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				consolePort,
-			},
-			Selector: t.ConsolePodLabels(),
-			Type:     corev1.ServiceTypeClusterIP,
-		},
-	}
-	// check if the service is meant to be exposed
-	if t.Spec.ExposeServices != nil && t.Spec.ExposeServices.Console {
-		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
-	}
-
-	return svc
 }
 
 // NewClusterIPForLogSearchAPI will return a new cluster IP service object for log-search-api deployment

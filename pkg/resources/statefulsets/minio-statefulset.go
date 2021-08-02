@@ -30,6 +30,45 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// Adds required Console environment variables
+func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
+	envVars := []corev1.EnvVar{
+		{
+			Name:  "MINIO_SERVER_URL",
+			Value: t.MinIOServerEndpoint(),
+		},
+	}
+	if t.HasLogEnabled() {
+		envVars = append(envVars, corev1.EnvVar{
+			Name: miniov2.LogQueryTokenKey,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: t.LogSecretName(),
+					},
+					Key: miniov2.LogQueryTokenKey,
+				},
+			},
+		})
+		url := fmt.Sprintf("http://%s:%d", t.LogSearchAPIServiceName(), miniov2.LogSearchAPIPort)
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "MINIO_LOG_QUERY_URL",
+			Value: url,
+		})
+	}
+	if t.HasPrometheusEnabled() {
+		url := fmt.Sprintf("http://%s:%d", t.PrometheusHLServiceName(), miniov2.PrometheusAPIPort)
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  miniov2.ConsolePrometheusURL,
+			Value: url,
+		})
+	}
+
+	// Add all the environment variables
+	envVars = append(envVars, t.Spec.Console.Env...)
+	return envVars
+}
+
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
@@ -147,31 +186,44 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	// Copy Labels and Annotations from Tenant
-	meta.Labels = t.ObjectMeta.Labels
-	meta.Annotations = t.ObjectMeta.Annotations
+	labels := t.ObjectMeta.Labels
+	annotations := t.ObjectMeta.Annotations
 
-	if meta.Annotations == nil {
-		meta.Annotations = make(map[string]string)
+	if annotations == nil {
+		annotations = make(map[string]string)
 	}
 
-	meta.Annotations[miniov2.Revision] = fmt.Sprintf("%d", t.Status.Revision)
+	annotations[miniov2.Revision] = fmt.Sprintf("%d", t.Status.Revision)
 
-	if meta.Labels == nil {
-		meta.Labels = make(map[string]string)
+	if labels == nil {
+		labels = make(map[string]string)
 	}
 	// Add the additional label used by StatefulSet spec selector
 	for k, v := range t.MinIOPodLabels() {
-		meta.Labels[k] = v
+		labels[k] = v
 	}
 	// Add information labels, such as which pool we are building this pod about
-	meta.Labels[miniov2.PoolLabel] = pool.Name
-	meta.Labels[miniov2.OperatorLabel] = opVersion
+	labels[miniov2.PoolLabel] = pool.Name
+	labels[miniov2.OperatorLabel] = opVersion
+	// Add the additional label used by Console spec selector
+	for k, v := range t.ConsolePodLabels() {
+		labels[k] = v
+	}
+
+	if t.Spec.Console != nil {
+		meta.Labels = miniov2.MergeMaps(labels, t.Spec.Console.Labels)
+		meta.Annotations = miniov2.MergeMaps(annotations, t.Spec.Console.Annotations)
+	} else {
+		meta.Labels = labels
+		meta.Annotations = annotations
+	}
+
 	return meta
 }
 
 // ContainerMatchLabels Returns the labels that match the Pods in the statefulset
 func ContainerMatchLabels(t *miniov2.Tenant, pool *miniov2.Pool) *metav1.LabelSelector {
-	labels := t.MinIOPodLabels()
+	labels := miniov2.MergeMaps(t.MinIOPodLabels(), t.ConsolePodLabels())
 	// Add pool information so it's passed down to the underlying PVCs
 	labels[miniov2.PoolLabel] = pool.Name
 	return &metav1.LabelSelector{
@@ -221,7 +273,11 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 
 // Builds the MinIO container for a Tenant.
 func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string) corev1.Container {
-	args := []string{"server", "--certs-dir", miniov2.MinIOCertPath}
+	consolePort := miniov2.ConsolePort
+	if t.TLS() {
+		consolePort = miniov2.ConsoleTLSPort
+	}
+	args := []string{"server", "--certs-dir", miniov2.MinIOCertPath, "--console-address", ":" + strconv.Itoa(consolePort)}
 	if t.Spec.Logging != nil {
 		// If logging is specified, expect users to
 		// provide the right set of settings to toggle
@@ -244,11 +300,14 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *mini
 			{
 				ContainerPort: miniov2.MinIOPort,
 			},
+			{
+				ContainerPort: int32(consolePort),
+			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, pool),
 		Args:            args,
-		Env:             minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion),
+		Env:             append(minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion), consoleEnvVars(t)...),
 		Resources:       pool.Resources,
 	}
 }

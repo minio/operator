@@ -77,20 +77,40 @@ func (c *Controller) checkMinIOSCertificatesStatus(ctx context.Context, tenant *
 		}
 	}
 
-	err := c.checkMinIOSvc(ctx, tenant, nsName)
+	// Check MinIO S3 Endpoint Service
+	var tenantPortNum int32 = miniov2.MinIOPortLoadBalancerSVC
+	var tenantPortName string = miniov2.MinIOServiceHTTPPortName
+	if tenant.TLS() {
+		tenantPortNum = miniov2.MinIOTLSPortLoadBalancerSVC
+		tenantPortName = miniov2.MinIOServiceHTTPSPortName
+	}
+	err := c.checkMinIOSvc(ctx, tenant, nsName, tenant.MinIOCIServiceName(), tenantPortName, tenantPortNum)
 	if err != nil {
 		klog.V(2).Infof("error consolidating console service: %s", err.Error())
 		return err
 	}
 
+	// Check MinIO Console Endpoint Service
+	var consolePortNum int32 = miniov2.ConsolePort
+	var consolePortName string = miniov2.ConsoleServicePortName
+	if tenant.TLS() || tenant.ConsoleExternalCert() {
+		consolePortNum = miniov2.ConsoleTLSPort
+		consolePortName = miniov2.ConsoleServiceTLSPortName
+	}
+	err = c.checkMinIOSvc(ctx, tenant, nsName, tenant.ConsoleCIServiceName(), consolePortName, consolePortNum)
+	if err != nil {
+		klog.V(2).Infof("error consolidating console service: %s", err.Error())
+		return err
+	}
 	return nil
 }
 
 // checkMinIOSvc validates the existence of the MinIO service and validate it's status against what the specification
 // states
-func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName, svcName, svcPortName string, svcPortNum int32) error {
+
 	// Handle the Internal ClusterIP Service for Tenant
-	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.MinIOCIServiceName())
+	svc, err := c.serviceLister.Services(tenant.Namespace).Get(svcName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningCIService, 0); err != nil {
@@ -98,7 +118,7 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 			}
 			klog.V(2).Infof("Creating a new Cluster IP Service for cluster %q", nsName)
 			// Create the clusterIP service for the Tenant
-			svc = services.NewClusterIPForMinIO(tenant)
+			svc = services.NewClusterIPForMinIO(tenant, svcPortNum, svcName, svcPortName)
 			svc, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Create(ctx, svc, metav1.CreateOptions{})
 			if err != nil {
 				return err
@@ -111,7 +131,7 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 	// check the expose status of the MinIO ClusterIP service
 	minioSvcMatchesSpec := true
 	// compare any other change from what is specified on the tenant
-	expectedSvc := services.NewClusterIPForMinIO(tenant)
+	expectedSvc := services.NewClusterIPForMinIO(tenant, svcPortNum, svcName, svcPortName)
 	if !equality.Semantic.DeepDerivative(expectedSvc.Spec, svc.Spec) {
 		// some field set by the operator has changed
 		minioSvcMatchesSpec = false
@@ -271,6 +291,22 @@ func (c *Controller) createMinIOClientCSR(ctx context.Context, tenant *miniov2.T
 	err = c.createSecret(ctx, tenant, tenant.MinIOPodLabels(), tenant.MinIOClientTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", tenant.MinIOClientTLSSecretName(), err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *Controller) deleteOldConsoleDeployment(ctx context.Context, tenant *miniov2.Tenant, consoleDeployment string) error {
+
+	err := c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Delete(ctx, consoleDeployment, metav1.DeleteOptions{})
+	if err != nil {
+		klog.V(2).Infof(err.Error())
+		return err
+	}
+	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.ConsoleCIServiceName(), metav1.DeleteOptions{})
+	if err != nil {
+		klog.V(2).Infof(err.Error())
 		return err
 	}
 
