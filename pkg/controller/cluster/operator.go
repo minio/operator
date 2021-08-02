@@ -33,6 +33,7 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -229,5 +230,46 @@ func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator met
 		}
 		return err
 	}
+	return nil
+}
+
+func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant) error {
+	var userCredentials []*v1.Secret
+	for _, credential := range tenant.Spec.Users {
+		credentialSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, metav1.GetOptions{})
+		if err == nil && credentialSecret != nil {
+			userCredentials = append(userCredentials, credentialSecret)
+		}
+	}
+
+	// get mc admin info
+	minioSecretName := tenant.Spec.CredsSecret.Name
+	minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), minioSecretName, metav1.GetOptions{})
+	if err != nil {
+		// show the error and continue
+		klog.V(2).Infof(err.Error())
+	}
+
+	adminClnt, err := tenant.NewMinIOAdmin(minioSecret.Data)
+	if err != nil {
+		// show the error and continue
+		klog.V(2).Infof(err.Error())
+	}
+
+	skipCreateUsers := false
+	// configuration that means MinIO is running with LDAP enabled
+	// and we need to skip the console user creation
+	for _, env := range tenant.GetEnvVars() {
+		if env.Name == "MINIO_IDENTITY_LDAP_SERVER_ADDR" && env.Value != "" {
+			skipCreateUsers = true
+			break
+		}
+	}
+
+	if err := tenant.CreateUsers(adminClnt, userCredentials, skipCreateUsers); err != nil {
+		klog.V(2).Infof("Unable to create MinIO users: %v", err)
+		return err
+	}
+
 	return nil
 }

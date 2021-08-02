@@ -92,7 +92,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-06-17T00-10-46Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-07-30T00-02-00Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -232,10 +232,10 @@ const LogAuditTokenKey = "LOGSEARCH_AUDIT_AUTH_TOKEN"
 
 // LogQueryTokenKey is the k8s secret/environment variable key name referring to
 // the token used to perform search query on audit logs persisted.
-const LogQueryTokenKey = "LOGSEARCH_QUERY_AUTH_TOKEN"
+const LogQueryTokenKey = "MINIO_QUERY_AUTH_TOKEN"
 
 // ConsolePrometheusURL is the url to the prometheus the console should use to pull metrics from.
-const ConsolePrometheusURL = "CONSOLE_PROMETHEUS_URL"
+const ConsolePrometheusURL = "MINIO_PROMETHEUS_URL"
 
 // PrometheusAPIPort specifies the default Prometheus API Service's port number.
 const PrometheusAPIPort = 9090

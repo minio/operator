@@ -169,8 +169,24 @@ func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, 
 	if err != nil {
 		return err
 	}
-	minSvc := services.NewClusterIPForMinIO(to)
-	conSvc := services.NewClusterIPForConsole(to)
+	// Check MinIO S3 Endpoint Service
+	var tenantPortNum int32 = miniov2.MinIOPortLoadBalancerSVC
+	var tenantPortName string = miniov2.MinIOServiceHTTPPortName
+	if t.TLS() {
+		tenantPortNum = miniov2.MinIOTLSPortLoadBalancerSVC
+		tenantPortName = miniov2.MinIOServiceHTTPSPortName
+	}
+	minSvc := services.NewClusterIPForMinIO(to, tenantPortNum, t.MinIOCIServiceName(), tenantPortName)
+
+	// Check MinIO Console Endpoint Service
+	var consolePortNum int32 = miniov2.ConsolePort
+	var consolePortName string = miniov2.ConsoleServicePortName
+	if t.TLS() || t.ConsoleExternalCert() {
+		consolePortNum = miniov2.ConsoleTLSPort
+		consolePortName = miniov2.ConsoleServiceTLSPortName
+	}
+	conSvc := services.NewClusterIPForMinIO(to, consolePortNum, t.ConsoleCIServiceName(), consolePortName)
+
 	if IsTerminal() {
 		printBanner(to.ObjectMeta.Name, to.ObjectMeta.Namespace, string(console.Data["CONSOLE_ACCESS_KEY"]), string(console.Data["CONSOLE_SECRET_KEY"]),
 			minSvc, conSvc)

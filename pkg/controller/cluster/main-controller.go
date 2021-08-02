@@ -112,7 +112,7 @@ const (
 	StatusProvisioningCIService                = "Provisioning MinIO Cluster IP Service"
 	StatusProvisioningHLService                = "Provisioning MinIO Headless Service"
 	StatusProvisioningStatefulSet              = "Provisioning MinIO Statefulset"
-	StatusProvisioningConsoleDeployment        = "Provisioning Console Deployment"
+	StatusProvisioningConsoleService           = "Provisioning Console Service"
 	StatusProvisioningKESStatefulSet           = "Provisioning KES StatefulSet"
 	StatusProvisioningLogPGStatefulSet         = "Provisioning Postgres server for Log Search feature"
 	StatusProvisioningLogSearchAPIDeployment   = "Provisioning Log Search API server for Log Search feature"
@@ -123,9 +123,7 @@ const (
 	StatusWaitingMinIOCert                     = "Waiting for MinIO TLS Certificate"
 	StatusWaitingMinIOClientCert               = "Waiting for MinIO TLS Client Certificate"
 	StatusWaitingKESCert                       = "Waiting for KES TLS Certificate"
-	StatusWaitingConsoleCert                   = "Waiting for Console TLS Certificate"
 	StatusUpdatingMinIOVersion                 = "Updating MinIO Version"
-	StatusUpdatingConsole                      = "Updating Console"
 	StatusUpdatingKES                          = "Updating KES"
 	StatusUpdatingLogPGStatefulSet             = "Updating Postgres server for Log Search feature"
 	StatusUpdatingLogSearchAPIServer           = "Updating Log Search API server"
@@ -1136,6 +1134,21 @@ func (c *Controller) syncHandler(key string) error {
 		if us.CurrentVersion != us.UpdatedVersion {
 			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
 				tenantName, us.CurrentVersion, us.UpdatedVersion)
+			// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
+			// MinIO server integrated with Console), we need to delete the old console deployment and service.
+			// We do this only when MinIO server is successfully updated and
+			unifiedConsoleReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("RELEASE.2021-07-27T02-40-15Z")
+			newVer, err := miniov2.ReleaseTagToReleaseTime(us.UpdatedVersion)
+			if err != nil {
+				klog.Errorf("Unsupported release tag on new image, non-disruptive update not allowed %w", err)
+				return err
+			}
+			consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())
+			if unifiedConsoleReleaseTime.Before(newVer) && consoleDeployment != nil && err == nil {
+				if err := c.deleteOldConsoleDeployment(ctx, tenant, consoleDeployment.Name); err != nil {
+					return err
+				}
+			}
 		} else {
 			msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
 				tenantName,
@@ -1158,13 +1171,6 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		}
 
-	}
-
-	// Check whether console is enabled or if it should be removed and the state of it's service
-	err = c.checkConsoleStatus(ctx, tenant, totalReplicas, adminClnt, cOpts, uOpts, nsName)
-	if err != nil {
-		klog.V(2).Infof("Error checking console state %v", err)
-		return err
 	}
 
 	if tenant.HasLogEnabled() {
@@ -1232,6 +1238,11 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if err := c.createUsers(ctx, tenant); err != nil {
+		klog.V(2).Infof("Unable to create MinIO users: %v", err)
+		return err
 	}
 
 	// Finally, we update the status block of the Tenant resource to reflect the

@@ -104,8 +104,24 @@ func (d *infoCmd) run(args []string) error {
 }
 
 func printTenantInfo(tenant miniov2.Tenant) {
-	minSvc := services.NewClusterIPForMinIO(&tenant)
-	conSvc := services.NewClusterIPForConsole(&tenant)
+	// Check MinIO S3 Endpoint Service
+	var tenantPortNum int32 = miniov2.MinIOPortLoadBalancerSVC
+	var tenantPortName string = miniov2.MinIOServiceHTTPPortName
+	if tenant.TLS() {
+		tenantPortNum = miniov2.MinIOTLSPortLoadBalancerSVC
+		tenantPortName = miniov2.MinIOServiceHTTPSPortName
+	}
+	minSvc := services.NewClusterIPForMinIO(&tenant, tenantPortNum, tenant.MinIOCIServiceName(), tenantPortName)
+
+	// Check MinIO Console Endpoint Service
+	var consolePortNum int32 = miniov2.ConsolePort
+	var consolePortName string = miniov2.ConsoleServicePortName
+	if tenant.TLS() || tenant.ConsoleExternalCert() {
+		consolePortNum = miniov2.ConsoleTLSPort
+		consolePortName = miniov2.ConsoleServiceTLSPortName
+	}
+	conSvc := services.NewClusterIPForMinIO(&tenant, consolePortNum, tenant.ConsoleCIServiceName(), consolePortName)
+
 	var minPorts, consolePorts string
 	for _, p := range minSvc.Spec.Ports {
 		minPorts = minPorts + strconv.Itoa(int(p.Port)) + ","
