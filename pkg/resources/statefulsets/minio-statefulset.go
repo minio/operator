@@ -36,7 +36,7 @@ import (
 func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate string, opVersion string) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Add all the environment variables
-	envVars = append(envVars, t.Spec.Env...)
+	envVars = append(envVars, t.GetEnvVars()...)
 
 	// Enable `mc admin update` style updates to MinIO binaries
 	// within the container, only operator is supposed to perform
@@ -87,7 +87,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 
 	// Add env variables from credentials secret, if no secret provided, dont use
 	// env vars. MinIO server automatically creates default credentials
-	if t.HasCredsSecret() {
+	if !t.HasConfigurationSecret() && t.HasCredsSecret() {
 		secretName := t.Spec.CredsSecret.Name
 		envVars = append(envVars, corev1.EnvVar{
 			Name: "MINIO_ROOT_USER",
@@ -128,6 +128,13 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 		}, corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
 			Value: t.Spec.KES.KeyName,
+		})
+	}
+
+	if t.HasConfigurationSecret() {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "MINIO_CONFIG_ENV_FILE",
+			Value: miniov2.TmpPath + "/config.env",
 		})
 	}
 
@@ -195,10 +202,17 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 		}
 	}
 
-	if t.AutoCert() || t.ExternalCaCerts() || t.ExternalCert() || t.HasKESEnabled() {
+	// CertPath (/tmp/certs) will always be mounted even if the tenant doesnt have any TLS certificate
+	// operator will still mount the operator public cert under /tmp/certs/CAs/operator.crt
+	mounts = append(mounts, corev1.VolumeMount{
+		Name:      t.MinIOTLSSecretName(),
+		MountPath: miniov2.MinIOCertPath,
+	})
+
+	if t.HasConfigurationSecret() {
 		mounts = append(mounts, corev1.VolumeMount{
-			Name:      t.MinIOTLSSecretName(),
-			MountPath: miniov2.MinIOCertPath,
+			Name:      "configuration",
+			MountPath: miniov2.TmpPath,
 		})
 	}
 
@@ -499,6 +513,25 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
 					Sources: podVolumeSources,
+				},
+			},
+		})
+	}
+
+	if t.HasConfigurationSecret() {
+		podVolumes = append(podVolumes, corev1.Volume{
+			Name: "configuration",
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: t.Spec.Configuration.Name,
+								},
+							},
+						},
+					},
 				},
 			},
 		})

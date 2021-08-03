@@ -101,7 +101,7 @@ func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.St
 	}
 	// Try to detect changes in Env Vars
 	// Merge the statefulset env with incoming tenant envs and compare with statefulset envs.
-	new := miniov2.MergeMaps(miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env), miniov2.ToMap(tenant.Spec.Env))
+	new := miniov2.MergeMaps(miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env), miniov2.ToMap(tenant.GetEnvVars()))
 	current := miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env)
 	if miniov2.IsEnvUpdated(current, new) {
 		poolMatchesSS = false

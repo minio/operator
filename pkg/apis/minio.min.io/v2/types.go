@@ -289,6 +289,12 @@ type TenantSpec struct {
 	// Enable JSON, Anonymous logging for MinIO tenants.
 	// +optional
 	Logging *Logging `json:"logging,omitempty"`
+	// *Optional* +
+	//
+	// Specify a secret that contains additional environment variable configurations to be used for the MinIO pools.
+	// The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
+	// +optional
+	Configuration *corev1.LocalObjectReference `json:"configuration,omitempty"`
 }
 
 // Logging describes Logging for MinIO tenants.
@@ -707,6 +713,11 @@ type LogConfig struct {
 	// * `seLinuxOptions` +
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// *Optional* +
+	//
+	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // AuditConfig defines configuration parameters for Audit (type) logs
@@ -794,6 +805,11 @@ type PrometheusConfig struct {
 	// * `seLinuxOptions` +
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// *Optional* +
+	//
+	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // PrometheusOperatorConfig (`prometheus`) defines the configuration of a Prometheus service monitor object as part of the MinIO tenant. The Operator automatically configures the Prometheus service monitor to scrape and store metrics from the MinIO tenant. +
@@ -873,6 +889,11 @@ type LogDbConfig struct {
 	// * `seLinuxOptions` +
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// *Optional* +
+	//
+	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
+	// +optional
+	ServiceAccountName string `json:"serviceAccountName,omitempty"`
 }
 
 // KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[MinIO Key Encryption Service] (KES) StatefulSet deployed as part of the MinIO Tenant. KES supports Server-Side Encryption of objects using an external Key Management Service (KMS). +

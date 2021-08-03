@@ -51,6 +51,9 @@ const CSRNameSuffix = "-csr"
 // MinIOCertPath is the path where all MinIO certs are mounted
 const MinIOCertPath = "/tmp/certs"
 
+// TmpPath /tmp path inside the container file system
+const TmpPath = "/tmp"
+
 // OperatorLabel denotes the version of the Tenant operator
 // running in the cluster.
 const OperatorLabel = "v1.min.io/version"
@@ -92,7 +95,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-06-17T00-10-46Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-07-30T00-02-00Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -113,7 +116,7 @@ const DefaultPoolName = "pool-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.7.5"
+const DefaultConsoleImage = "minio/console:v0.8.2"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -247,7 +250,7 @@ const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.14.0"
+const DefaultKESImage = "minio/kes:v0.15.1"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"

@@ -198,6 +198,11 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 		},
 	}
 
+	serviceAccount := t.Spec.ServiceAccountName
+	if t.Spec.Prometheus.ServiceAccountName != "" {
+		serviceAccount = t.Spec.Prometheus.ServiceAccountName
+	}
+
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: promMeta,
 		Spec: appsv1.StatefulSetSpec{
@@ -212,7 +217,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: prometheusMetadata(t),
 				Spec: corev1.PodSpec{
-					ServiceAccountName: t.Spec.ServiceAccountName,
+					ServiceAccountName: serviceAccount,
 					Containers:         containers,
 					Volumes:            podVolumes,
 					RestartPolicy:      corev1.RestartPolicyAlways,
