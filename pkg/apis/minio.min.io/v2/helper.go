@@ -19,6 +19,7 @@ package v2
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
@@ -45,7 +46,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
-	jwtgo "github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt"
 	"github.com/minio/madmin-go"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -134,6 +135,12 @@ func genEllipsis(start, end int) string {
 // for a Tenant else false
 func (t *Tenant) HasCredsSecret() bool {
 	return t.Spec.CredsSecret != nil
+}
+
+// HasConfigurationSecret returns true if the user has provided a configuration
+// for a Tenant else false
+func (t *Tenant) HasConfigurationSecret() bool {
+	return t.Spec.Configuration != nil
 }
 
 // HasCertConfig returns true if the user has provided a certificate
@@ -412,7 +419,7 @@ func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
 
 // GenBearerToken returns the JWT token for current Tenant for Prometheus authentication
 func (t *Tenant) GenBearerToken(accessKey, secretKey string) string {
-	jwt := jwtgo.NewWithClaims(jwtgo.SigningMethodHS512, jwtgo.StandardClaims{
+	jwt := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.StandardClaims{
 		ExpiresAt: time.Now().UTC().Add(defaultPrometheusJWTExpiry).Unix(),
 		Subject:   accessKey,
 		Issuer:    "prometheus",
@@ -941,4 +948,32 @@ func (t *Tenant) GetTenantServiceURL() (svcURL string) {
 	}
 	svc := t.MinIOServerHostAddress()
 	return fmt.Sprintf("%s://%s", scheme, svc)
+}
+
+// ParseRawConfiguration map[string][]byte representation of the MinIO config.env file
+func ParseRawConfiguration(configuration []byte) (config map[string][]byte) {
+	config = map[string][]byte{}
+	if configuration != nil {
+		scanner := bufio.NewScanner(strings.NewReader(string(configuration)))
+		for scanner.Scan() {
+			line := scanner.Text()
+			// parse only exported environment variables and ignore everything else
+			if strings.HasPrefix(line, "export") {
+				envVar := strings.Split(line, "=")
+				if len(envVar) == 2 {
+					// extract env variable key
+					confKey := strings.TrimSpace(strings.TrimPrefix(envVar[0], "export"))
+					// remove first and last quotes from value and trim spaces
+					confValue := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(envVar[1], "\""), "\""))
+					config[confKey] = []byte(confValue)
+					if confKey == "MINIO_ROOT_USER" || confKey == "MINIO_ACCESS_KEY" {
+						config["accesskey"] = config[confKey]
+					} else if confKey == "MINIO_ROOT_PASSWORD" || confKey == "MINIO_SECRET_KEY" {
+						config["secretkey"] = config[confKey]
+					}
+				}
+			}
+		}
+	}
+	return config
 }

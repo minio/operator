@@ -3,9 +3,9 @@ module github.com/minio/operator
 go 1.16
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/cli v0.0.0-20191017083524-a8ff7f821017
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-containerregistry v0.1.2
 	github.com/gorilla/mux v1.8.0

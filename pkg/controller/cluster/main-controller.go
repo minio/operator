@@ -72,8 +72,8 @@ import (
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
 
-	"github.com/dgrijalva/jwt-go"
-	jwtreq "github.com/dgrijalva/jwt-go/request"
+	"github.com/golang-jwt/jwt"
+	jwtreq "github.com/golang-jwt/jwt/request"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -849,13 +849,41 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	minioSecretName := tenant.Spec.CredsSecret.Name
-	minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, gOpts)
-	if err != nil {
-		return err
+	// Configuration for tenant can be passed using 3 different sources, tenant.spec.env, k8s credsSecret and config.env secret
+	// If the user provides duplicated configuration the override order will be:
+	// tenant.Spec.Env < credsSecret (k8s secret) < config.env file (k8s secret)
+	tenantConfiguration := map[string][]byte{}
+
+	for _, config := range tenant.GetEnvVars() {
+		tenantConfiguration[config.Name] = []byte(config.Value)
 	}
 
-	adminClnt, err := tenant.NewMinIOAdmin(minioSecret.Data)
+	if tenant.HasCredsSecret() {
+		minioSecretName := tenant.Spec.CredsSecret.Name
+		minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, gOpts)
+		if err != nil {
+			return err
+		}
+		configFromCredsSecret := minioSecret.Data
+		for key, val := range configFromCredsSecret {
+			tenantConfiguration[key] = val
+		}
+	}
+
+	// Load tenant configuration from file
+	if tenant.HasConfigurationSecret() {
+		minioConfigurationSecretName := tenant.Spec.Configuration.Name
+		minioConfigurationSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioConfigurationSecretName, gOpts)
+		if err != nil {
+			return err
+		}
+		configFromFile := miniov2.ParseRawConfiguration(minioConfigurationSecret.Data["config.env"])
+		for key, val := range configFromFile {
+			tenantConfiguration[key] = val
+		}
+	}
+
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 	if err != nil {
 		return err
 	}
@@ -1045,7 +1073,7 @@ func (c *Controller) syncHandler(key string) error {
 			if len(pods.Items) > 0 {
 				ssPod := pods.Items[0]
 				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
-				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, minioSecret.Data)
+				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration)
 				if err != nil {
 					return err
 				}
@@ -1159,9 +1187,16 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 	}
+	// Create logSecret before deploying console
+	if tenant.HasLogEnabled() {
+		_, err = c.checkAndCreateLogSecret(ctx, tenant)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Check whether console is enabled or if it should be removed and the state of it's service
-	err = c.checkConsoleStatus(ctx, tenant, totalReplicas, adminClnt, cOpts, uOpts, nsName)
+	err = c.checkConsoleStatus(ctx, tenant, tenantConfiguration, totalReplicas, adminClnt, cOpts, uOpts, nsName)
 	if err != nil {
 		klog.V(2).Infof("Error checking console state %v", err)
 		return err
@@ -1207,7 +1242,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if tenant.HasPrometheusEnabled() {
-		_, err := c.checkAndCreatePrometheusConfigMap(ctx, tenant, string(minioSecret.Data["accesskey"]), string(minioSecret.Data["secretkey"]))
+		_, err := c.checkAndCreatePrometheusConfigMap(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
 			return err
 		}
@@ -1224,7 +1259,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if tenant.HasPrometheusSMEnabled() {
-		err = c.checkAndCreatePrometheusServiceMonitorSecret(ctx, tenant, string(minioSecret.Data["accesskey"]), string(minioSecret.Data["secretkey"]))
+		err = c.checkAndCreatePrometheusServiceMonitorSecret(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
 			return err
 		}

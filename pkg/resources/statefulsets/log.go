@@ -172,6 +172,11 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 		dbPod.Spec.NodeSelector = t.Spec.Log.Db.NodeSelector
 		// attach tolerations
 		dbPod.Spec.Tolerations = t.Spec.Log.Db.Tolerations
+		// attach serviceAccount
+		dbPod.Spec.ServiceAccountName = t.Spec.ServiceAccountName
+		if t.Spec.Log.Db.ServiceAccountName != "" {
+			dbPod.Spec.ServiceAccountName = t.Spec.Log.Db.ServiceAccountName
+		}
 	}
 
 	ss := &appsv1.StatefulSet{

@@ -127,10 +127,15 @@ func logSearchAPISelector(t *miniov2.Tenant) *metav1.LabelSelector {
 func NewForLogSearchAPI(t *miniov2.Tenant) *appsv1.Deployment {
 	var replicas int32 = 1
 
+	serviceAccount := t.Spec.ServiceAccountName
+	if t.Spec.Log.ServiceAccountName != "" {
+		serviceAccount = t.Spec.Log.ServiceAccountName
+	}
+
 	apiPod := corev1.PodTemplateSpec{
 		ObjectMeta: logSearchAPIMeta(t),
 		Spec: corev1.PodSpec{
-			ServiceAccountName: t.Spec.ServiceAccountName,
+			ServiceAccountName: serviceAccount,
 			Containers:         []corev1.Container{logSearchAPIContainer(t)},
 			RestartPolicy:      corev1.RestartPolicyAlways,
 			SecurityContext:    t.Spec.Log.SecurityContext,
