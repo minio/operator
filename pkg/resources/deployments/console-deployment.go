@@ -222,7 +222,7 @@ func NewConsole(t *miniov2.Tenant) *appsv1.Deployment {
 		serverCertSecret := t.Spec.Console.ExternalCertSecret.Name
 		// This covers both secrets of type "kubernetes.io/tls" and
 		// "cert-manager.io/v1alpha2" because of same keys in both.
-		if t.Spec.Console.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.Console.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+		if t.Spec.Console.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.Console.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.Console.ExternalCertSecret.Type == "cert-manager.io/v1" {
 			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: certPath},
 				{Key: "tls.key", Path: keyPath},
@@ -275,7 +275,7 @@ func NewConsole(t *miniov2.Tenant) *appsv1.Deployment {
 		for index, secret := range t.Spec.ExternalCertSecret {
 			// This covers both secrets of type "kubernetes.io/tls" and
 			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if secret.Type == "kubernetes.io/tls" || secret.Type == "cert-manager.io/v1alpha2" {
+			if secret.Type == "kubernetes.io/tls" || secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
 				tenantCertPaths = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: fmt.Sprintf("CAs/minio-hostname-%d.crt", index)},
 				}
@@ -311,7 +311,7 @@ func NewConsole(t *miniov2.Tenant) *appsv1.Deployment {
 				caCertPaths = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
 				}
-			} else if secret.Type == "cert-manager.io/v1alpha2" {
+			} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
 				caCertPaths = []corev1.KeyToPath{
 					{Key: "ca.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
 				}

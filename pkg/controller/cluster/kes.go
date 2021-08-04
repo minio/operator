@@ -307,7 +307,7 @@ func (c *Controller) getCertIdentity(ns string, cert *miniov2.LocalCertificateRe
 		return "", err
 	}
 	// Store the Identity to be used later during KES container creation
-	if secret.Type == "kubernetes.io/tls" || secret.Type == "cert-manager.io/v1alpha2" {
+	if secret.Type == "kubernetes.io/tls" || secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
 		certbytes = secret.Data["tls.crt"]
 	} else {
 		certbytes = secret.Data["public.crt"]
