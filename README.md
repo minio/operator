@@ -133,8 +133,8 @@ You can estimate the number of PVC by multiplying the number of `minio` server p
 
 MinIO *strongly recommends* using the following CSI drivers for creating local PV to ensure best object storage performance:
 
+- [MinIO DirectCSI](https://github.com/minio/direct-csi)
 - [Local Persistent Volume](https://kubernetes.io/docs/concepts/storage/volumes/#local)
-- [OpenEBS Local PV](https://docs.openebs.io/docs/next/localpv.html)
 
 ## Procedure
   
