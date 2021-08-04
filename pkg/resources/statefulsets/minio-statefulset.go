@@ -288,12 +288,6 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 	var replicas = pool.Servers
 	var podVolumeSources []corev1.VolumeProjection
 
-	var serverCertPaths = []corev1.KeyToPath{
-		{Key: "public.crt", Path: "public.crt"},
-		{Key: "private.key", Path: "private.key"},
-		{Key: "public.crt", Path: "CAs/public.crt"},
-	}
-
 	var clientCertSecret string
 	var clientCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: "client.crt"},
@@ -304,104 +298,96 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 		{Key: "public.crt", Path: "CAs/kes.crt"},
 	}
 
-	// AutoCert certificates will be used for internal communication if requested
-	if t.AutoCert() {
+	// Multiple certificates will be mounted using the following folder structure:
+	//
+	//	certs
+	//		+ public.crt
+	//		+ private.key
+	//		|
+	//		+ hostname-0
+	//		|			+ public.crt
+	//		|			+ private.key
+	//		+ hostname-1
+	//		|			+ public.crt
+	//		|			+ private.key
+	//		+ hostname-2
+	//		|			+ public.crt
+	//		|			+ private.key
+	//		+ CAs
+	//			 + hostname-0.crt
+	//			 + hostname-1.crt
+	//			 + hostname-2.crt
+	//			 + public.crt
+	//
+	// Iterate over all provided TLS certificates and store them on the list of Volumes that will be mounted to the Pod
+	for index, secret := range t.Spec.ExternalCertSecret {
+		crtMountPath := fmt.Sprintf("hostname-%d/public.crt", index)
+		keyMountPath := fmt.Sprintf("hostname-%d/private.key", index)
+		caMountPath := fmt.Sprintf("CAs/hostname-%d.crt", index)
+		// MinIO requires to have at least 1 certificate keyPair under the `certs` folder, by default
+		// we will take the first secret as the default certificate
+		//
+		//	certs
+		//		+ public.crt
+		//		+ private.key
+		if index == 0 {
+			crtMountPath = "public.crt"
+			keyMountPath = "private.key"
+			caMountPath = "CAs/public.crt"
+		}
+
+		var serverCertPaths []corev1.KeyToPath
+		if secret.Type == "kubernetes.io/tls" {
+			serverCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: crtMountPath},
+				{Key: "tls.key", Path: keyMountPath},
+				{Key: "tls.crt", Path: caMountPath},
+			}
+		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
+			serverCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: crtMountPath},
+				{Key: "tls.key", Path: keyMountPath},
+				{Key: "ca.crt", Path: caMountPath},
+			}
+		} else {
+			serverCertPaths = []corev1.KeyToPath{
+				{Key: "public.crt", Path: crtMountPath},
+				{Key: "private.key", Path: keyMountPath},
+				{Key: "public.crt", Path: caMountPath},
+			}
+		}
 		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
 			Secret: &corev1.SecretProjection{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: t.MinIOTLSSecretName(),
+					Name: secret.Name,
 				},
 				Items: serverCertPaths,
 			},
 		})
 	}
-
-	if t.ExternalCert() {
-		// MinIO requires to have at least 1 certificate keyPair under the `certs` folder, by default
-		// we will take the first secret as the main certificate keyPair if AutoCert is not enabled
-		//
-		//	certs
-		//		+ public.crt
-		//		+ private.key
-		if len(t.Spec.ExternalCertSecret) > 0 && !t.AutoCert() {
-			secret := t.Spec.ExternalCertSecret[0]
-			// if secret type is `cert-manager.io/v1alpha2` user is providing his own CA in the ca.crt file, if not by default
-			// we are going to use public.crt as the ca certificate
-			if secret.Type == "kubernetes.io/tls" {
-				serverCertPaths = []corev1.KeyToPath{
-					{Key: "tls.crt", Path: "public.crt"},
-					{Key: "tls.key", Path: "private.key"},
-					{Key: "tls.crt", Path: "CAs/public.crt"},
-				}
-			} else if secret.Type == "cert-manager.io/v1alpha2" {
-				serverCertPaths = []corev1.KeyToPath{
-					{Key: "public.crt", Path: "public.crt"},
-					{Key: "private.key", Path: "private.key"},
-					{Key: "ca.crt", Path: "CAs/public.crt"},
-				}
-			}
-			podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
-				Secret: &corev1.SecretProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secret.Name,
-					},
-					Items: serverCertPaths,
-				},
-			})
+	// AutoCert certificates will be used for internal communication if requested
+	if t.AutoCert() {
+		crtMountPath := "public.crt"
+		keyMountPath := "private.key"
+		caMountPath := "CAs/public.crt"
+		if len(t.Spec.ExternalCertSecret) > 0 {
+			index := len(t.Spec.ExternalCertSecret)
+			crtMountPath = fmt.Sprintf("hostname-%d/public.crt", index)
+			keyMountPath = fmt.Sprintf("hostname-%d/private.key", index)
+			caMountPath = fmt.Sprintf("CAs/hostname-%d.crt", index)
 		}
-		// Multiple certificates will be mounted using the following folder structure:
-		//
-		//	certs
-		//		+ public.crt
-		//		+ private.key
-		//		|
-		//		+ hostname-0
-		//		|			+ public.crt
-		//		|			+ private.key
-		//		+ hostname-1
-		//		|			+ public.crt
-		//		|			+ private.key
-		//		+ hostname-2
-		//		|			+ public.crt
-		//		|			+ private.key
-		//		+ CAs
-		//			 + hostname-0.crt
-		//			 + hostname-1.crt
-		//			 + hostname-2.crt
-		//			 + public.crt
-		//
-		// Iterate over all provided TLS certificates (including the one we already mounted) and store them on the list of
-		// Volumes that will be mounted to the Pod
-		for index, secret := range t.Spec.ExternalCertSecret {
-			var serverCertPaths []corev1.KeyToPath
-			if secret.Type == "kubernetes.io/tls" {
-				serverCertPaths = []corev1.KeyToPath{
-					{Key: "tls.crt", Path: fmt.Sprintf("hostname-%d/public.crt", index)},
-					{Key: "tls.key", Path: fmt.Sprintf("hostname-%d/private.key", index)},
-					{Key: "tls.crt", Path: fmt.Sprintf("CAs/hostname-%d.crt", index)},
-				}
-			} else if secret.Type == "cert-manager.io/v1alpha2" {
-				serverCertPaths = []corev1.KeyToPath{
-					{Key: "tls.crt", Path: fmt.Sprintf("hostname-%d/public.crt", index)},
-					{Key: "tls.key", Path: fmt.Sprintf("hostname-%d/private.key", index)},
-					{Key: "ca.crt", Path: fmt.Sprintf("CAs/hostname-%d.crt", index)},
-				}
-			} else {
-				serverCertPaths = []corev1.KeyToPath{
-					{Key: "public.crt", Path: fmt.Sprintf("hostname-%d/public.crt", index)},
-					{Key: "private.key", Path: fmt.Sprintf("hostname-%d/private.key", index)},
-					{Key: "public.crt", Path: fmt.Sprintf("CAs/hostname-%d.crt", index)},
-				}
-			}
-			podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
-				Secret: &corev1.SecretProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secret.Name,
-					},
-					Items: serverCertPaths,
+		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: t.MinIOTLSSecretName(),
 				},
-			})
-		}
+				Items: []corev1.KeyToPath{
+					{Key: "public.crt", Path: crtMountPath},
+					{Key: "private.key", Path: keyMountPath},
+					{Key: "public.crt", Path: caMountPath},
+				},
+			},
+		})
 	}
 
 	// Will mount into ~/.minio/certs/CAs folder the user provided CA certificates.
@@ -411,33 +397,31 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 	//			 + ca-0.crt
 	//			 + ca-1.crt
 	//			 + ca-2.crt
-	if t.ExternalCaCerts() {
-		for index, secret := range t.Spec.ExternalCaCertSecret {
-			var caCertPaths []corev1.KeyToPath
-			// This covers both secrets of type "kubernetes.io/tls" and
-			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if secret.Type == "kubernetes.io/tls" {
-				caCertPaths = []corev1.KeyToPath{
-					{Key: "tls.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-				}
-			} else if secret.Type == "cert-manager.io/v1alpha2" {
-				caCertPaths = []corev1.KeyToPath{
-					{Key: "ca.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-				}
-			} else {
-				caCertPaths = []corev1.KeyToPath{
-					{Key: "public.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
-				}
+	for index, secret := range t.Spec.ExternalCaCertSecret {
+		var caCertPaths []corev1.KeyToPath
+		// This covers both secrets of type "kubernetes.io/tls" and
+		// "cert-manager.io/v1alpha2" because of same keys in both.
+		if secret.Type == "kubernetes.io/tls" {
+			caCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
 			}
-			podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
-				Secret: &corev1.SecretProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secret.Name,
-					},
-					Items: caCertPaths,
-				},
-			})
+		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
+			caCertPaths = []corev1.KeyToPath{
+				{Key: "ca.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+			}
+		} else {
+			caCertPaths = []corev1.KeyToPath{
+				{Key: "public.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+			}
 		}
+		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secret.Name,
+				},
+				Items: caCertPaths,
+			},
+		})
 	}
 
 	if operatorTLS {
@@ -478,7 +462,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 			kesCertSecret = t.Spec.KES.ExternalCertSecret.Name
 			// This covers both secrets of type "kubernetes.io/tls" and
 			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+			if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 				KESCertPath = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: "CAs/kes.crt"},
 				}

@@ -118,7 +118,7 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 		serverCertSecret = t.Spec.KES.ExternalCertSecret.Name
 		// This covers both secrets of type "kubernetes.io/tls" and
 		// "cert-manager.io/v1alpha2" because of same keys in both.
-		if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" {
+		if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: certPath},
 				{Key: "tls.key", Path: keyPath},

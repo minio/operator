@@ -39,7 +39,7 @@ func NewForKES(t *miniov2.Tenant) *batchv1.Job {
 		clientCertSecret = t.Spec.ExternalClientCertSecret.Name
 		// This covers both secrets of type "kubernetes.io/tls" and
 		// "cert-manager.io/v1alpha2" because of same keys in both.
-		if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" {
+		if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1" {
 			clientCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: "minio.crt"},
 				{Key: "tls.key", Path: "minio.key"},
