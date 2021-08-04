@@ -52,3 +52,7 @@ spec:
             value: "on"
           resources:
             {{- toYaml .Values.console.resources | nindent 12 }}
+      {{- with .Values.console.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end}}
