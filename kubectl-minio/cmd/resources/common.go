@@ -74,9 +74,12 @@ func Pool(opts *TenantOptions, volumes int32, q resource.Quantity) miniov2.Pool 
 				Resources: corev1.ResourceRequirements{
 					Requests: tenantStorage(q),
 				},
-				StorageClassName: storageClass(opts.StorageClass),
 			},
 		},
+	}
+	// only pass the storage class if specified
+	if opts.StorageClass != "" {
+		p.VolumeClaimTemplate.Spec.StorageClassName = storageClass(opts.StorageClass)
 	}
 	if !opts.DisableAntiAffinity {
 		p.Affinity = &corev1.Affinity{
