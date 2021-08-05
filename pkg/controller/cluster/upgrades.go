@@ -19,6 +19,10 @@ package cluster
 import (
 	"context"
 
+	"k8s.io/klog/v2"
+
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,31 +32,34 @@ import (
 // stand-alone console deployment. I swear the name of the function is a coincidence.
 func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.LogSecretName(), metav1.GetOptions{})
-	if err != nil {
+	if err != nil && !k8serrors.IsNotFound(err) {
 		return nil, err
 	}
 
-	secretChanged := false
-	if _, ok := logSearchSecret.Data["LOGSEARCH_QUERY_AUTH_TOKEN"]; ok {
-		logSearchSecret.Data["MINIO_QUERY_AUTH_TOKEN"] = logSearchSecret.Data["LOGSEARCH_QUERY_AUTH_TOKEN"]
-		delete(logSearchSecret.Data, "LOGSEARCH_QUERY_AUTH_TOKEN")
-		secretChanged = true
-	}
-
-	if _, ok := logSearchSecret.Data["CONSOLE_PROMETHEUS_URL"]; ok {
-		logSearchSecret.Data["MINIO_PROMETHEUS_URL"] = logSearchSecret.Data["CONSOLE_PROMETHEUS_URL"]
-		delete(logSearchSecret.Data, "CONSOLE_PROMETHEUS_URL")
-		secretChanged = true
-	}
-
-	if secretChanged {
-		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, logSearchSecret, metav1.UpdateOptions{})
-		if err != nil {
-			return nil, err
+	if k8serrors.IsNotFound(err) {
+		klog.Infof("%s has no log secret", tenant.Name)
+	} else {
+		secretChanged := false
+		if _, ok := logSearchSecret.Data["LOGSEARCH_QUERY_AUTH_TOKEN"]; ok {
+			logSearchSecret.Data["MINIO_QUERY_AUTH_TOKEN"] = logSearchSecret.Data["LOGSEARCH_QUERY_AUTH_TOKEN"]
+			delete(logSearchSecret.Data, "LOGSEARCH_QUERY_AUTH_TOKEN")
+			secretChanged = true
 		}
-	}
 
-	// Update users secrets
+		if _, ok := logSearchSecret.Data["CONSOLE_PROMETHEUS_URL"]; ok {
+			logSearchSecret.Data["MINIO_PROMETHEUS_URL"] = logSearchSecret.Data["CONSOLE_PROMETHEUS_URL"]
+			delete(logSearchSecret.Data, "CONSOLE_PROMETHEUS_URL")
+			secretChanged = true
+		}
+
+		if secretChanged {
+			_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, logSearchSecret, metav1.UpdateOptions{})
+			if err != nil {
+				return nil, err
+			}
+		}
+
+	}
 
 	if tenant, err = c.updateTenantSyncVersion(ctx, tenant, "v4.2.0"); err != nil {
 		return nil, err

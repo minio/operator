@@ -83,17 +83,12 @@ import (
 
 const (
 	controllerAgentName = "minio-operator"
-	// SuccessSynced is used as part of the Event 'reason' when a Tenant is synced
-	SuccessSynced = "Synced"
 	// ErrResourceExists is used as part of the Event 'reason' when a Tenant fails
 	// to sync due to a StatefulSet of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
 	// MessageResourceExists is the message used for Events when a Tenant
 	// fails to sync due to a StatefulSet already existing
 	MessageResourceExists = "Resource %q already exists and is not managed by MinIO Operator"
-	// MessageResourceSynced is the message used for an Event fired when a Tenant
-	// is synced successfully
-	MessageResourceSynced = "Tenant synced successfully"
 )
 
 // Standard Status messages for Tenant
@@ -104,10 +99,10 @@ const (
 	StatusProvisioningStatefulSet              = "Provisioning MinIO Statefulset"
 	StatusProvisioningConsoleService           = "Provisioning Console Service"
 	StatusProvisioningKESStatefulSet           = "Provisioning KES StatefulSet"
-	StatusProvisioningLogPGStatefulSet         = "Provisioning Postgres server for Log Search feature"
-	StatusProvisioningLogSearchAPIDeployment   = "Provisioning Log Search API server for Log Search feature"
-	StatusProvisioningPrometheusStatefulSet    = "Provisioning Prometheus server for Prometheus metrics feature"
-	StatusProvisioningPrometheusServiceMonitor = "Provisioning Prometheus service monitor for Prometheus metrics feature"
+	StatusProvisioningLogPGStatefulSet         = "Provisioning Postgres server"
+	StatusProvisioningLogSearchAPIDeployment   = "Provisioning Log Search API server"
+	StatusProvisioningPrometheusStatefulSet    = "Provisioning Prometheus server"
+	StatusProvisioningPrometheusServiceMonitor = "Provisioning Prometheus service monitor"
 	StatusWaitingForReadyState                 = "Waiting for Pods to be ready"
 	StatusWaitingForLogSearchReadyState        = "Waiting for Log Search Pods to be ready"
 	StatusWaitingMinIOCert                     = "Waiting for MinIO TLS Certificate"
@@ -115,7 +110,7 @@ const (
 	StatusWaitingKESCert                       = "Waiting for KES TLS Certificate"
 	StatusUpdatingMinIOVersion                 = "Updating MinIO Version"
 	StatusUpdatingKES                          = "Updating KES"
-	StatusUpdatingLogPGStatefulSet             = "Updating Postgres server for Log Search feature"
+	StatusUpdatingLogPGStatefulSet             = "Updating Postgres server"
 	StatusUpdatingLogSearchAPIServer           = "Updating Log Search API server"
 	StatusUpdatingResourceRequirements         = "Updating Resource Requirements"
 	StatusUpdatingAffinity                     = "Updating Pod Affinity"
@@ -783,6 +778,9 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Check if this is fresh setup not an expansion.
 	freshSetup := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
+
+	// Check if we need to create any of the pools. It's important not to update the statefulsets
+	// in this loop because we need all the pools "as they are" for the hot-update below
 	for i, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 
@@ -835,61 +833,13 @@ func (c *Controller) syncHandler(key string) error {
 			if !freshSetup {
 				adminClnt.ServiceRestart(ctx) //nolint:errcheck
 			}
-		} else {
-			if pool.Servers != *ss.Spec.Replicas {
-				// warn the user that replica count of an existing pool can't be changed
-				if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for pool %s", pool.Name), 0); err != nil {
-					return err
-				}
-			}
-			// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
-			poolMatchesSS, err := poolSSMatchesSpec(tenant, &pool, ss, c.operatorVersion)
-			if err != nil {
-				return err
-			}
-			// if the pool doesn't match the spec
-			if !poolMatchesSS {
-				// for legacy reasons, if the zone label is present in SS we must carry it over
-				carryOverLabels := make(map[string]string)
-				if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
-					carryOverLabels[miniov1.ZoneLabel] = val
-				}
-
-				nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
-				ssCopy := ss.DeepCopy()
-
-				ssCopy.Spec.Template = nss.Spec.Template
-				ssCopy.Spec.UpdateStrategy = nss.Spec.UpdateStrategy
-
-				if ss.Spec.Template.ObjectMeta.Labels == nil {
-					ssCopy.Spec.Template.ObjectMeta.Labels = make(map[string]string)
-				}
-				for k, v := range carryOverLabels {
-					ssCopy.Spec.Template.ObjectMeta.Labels[k] = v
-				}
-
-				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ssCopy, uOpts); err != nil {
-					return err
-				}
-			}
-
-		}
-		// If the StatefulSet is not controlled by this Tenant resource, we should log
-		// a warning to the event recorder and ret
-		if !metav1.IsControlledBy(ss, tenant) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusNotOwned, ss.Status.Replicas); err != nil {
-				return err
-			}
-			msg := fmt.Sprintf(MessageResourceExists, ss.Name)
-			c.recorder.Event(tenant, corev1.EventTypeWarning, ErrResourceExists, msg)
-			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
-			return nil
 		}
 
 		// keep track of all replicas
 		totalReplicas += ss.Status.Replicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 	}
+
 	// validate each pool if it's initialized
 	for pi, pool := range tenant.Spec.Pools {
 		// get a pod for the established statefulset
@@ -960,7 +910,7 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 			return err
 		}
-		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
+		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("https://operator.%s.svc.%s:%s%s",
 			miniov2.GetNSFromFile(), miniov2.GetClusterDomain(),
 			miniov2.WebhookDefaultPort, miniov2.WebhookAPIUpdate,
 		))
@@ -993,7 +943,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		if us.CurrentVersion != us.UpdatedVersion {
-			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
+			klog.Infof("Updating '%s' MinIO from: %s, to: %s",
 				tenantName, us.CurrentVersion, us.UpdatedVersion)
 			// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
 			// MinIO server integrated with Console), we need to delete the old console deployment and service.
@@ -1010,6 +960,8 @@ func (c *Controller) syncHandler(key string) error {
 					return err
 				}
 			}
+			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
+				tenantName, us.CurrentVersion, us.UpdatedVersion)
 		} else {
 			msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
 				tenantName,
@@ -1033,6 +985,82 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 	}
+
+	// This loop will take care of updating the statefulset for each pool
+	for i, pool := range tenant.Spec.Pools {
+		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
+		// if this index is in the status of pools use it, else capture the desired name in the status and store it
+		var ssName string
+		if len(tenant.Status.Pools) > i {
+			ssName = tenant.Status.Pools[i].SSName
+		} else {
+			ssName = tenant.PoolStatefulsetName(&pool)
+			tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
+				SSName: ssName,
+				State:  miniov2.PoolNotCreated,
+			})
+			// push updates to status
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				return err
+			}
+		}
+		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
+		// at this point the ss should already exist, error out
+		if k8serrors.IsNotFound(err) {
+			klog.Errorf("%s's pool %s doesn't exist: %v", tenant.Name, ssName, err)
+			return err
+		}
+		if pool.Servers != *ss.Spec.Replicas {
+
+			// warn the user that replica count of an existing pool can't be changed
+			if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for pool %s", pool.Name), 0); err != nil {
+				return err
+			}
+		}
+		// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
+		poolMatchesSS, err := poolSSMatchesSpec(tenant, &pool, ss, c.operatorVersion)
+		if err != nil {
+			return err
+		}
+		// if the pool doesn't match the spec
+		if !poolMatchesSS {
+			// for legacy reasons, if the zone label is present in SS we must carry it over
+			carryOverLabels := make(map[string]string)
+			if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
+				carryOverLabels[miniov1.ZoneLabel] = val
+			}
+
+			nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ssCopy := ss.DeepCopy()
+
+			ssCopy.Spec.Template = nss.Spec.Template
+			ssCopy.Spec.UpdateStrategy = nss.Spec.UpdateStrategy
+
+			if ss.Spec.Template.ObjectMeta.Labels == nil {
+				ssCopy.Spec.Template.ObjectMeta.Labels = make(map[string]string)
+			}
+			for k, v := range carryOverLabels {
+				ssCopy.Spec.Template.ObjectMeta.Labels[k] = v
+			}
+
+			if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ssCopy, uOpts); err != nil {
+				return err
+			}
+		}
+
+		// If the StatefulSet is not controlled by this Tenant resource, we should log
+		// a warning to the event recorder and ret
+		if !metav1.IsControlledBy(ss, tenant) {
+			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusNotOwned, ss.Status.Replicas); err != nil {
+				return err
+			}
+			msg := fmt.Sprintf(MessageResourceExists, ss.Name)
+			c.recorder.Event(tenant, corev1.EventTypeWarning, ErrResourceExists, msg)
+			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
+			return nil
+		}
+	}
+
 	// Create logSecret before deploying console
 	if tenant.HasLogEnabled() {
 		_, err = c.checkAndCreateLogSecret(ctx, tenant)
@@ -1263,7 +1291,7 @@ func (c *Controller) checkAndCreateLogSearchAPIDeployment(ctx context.Context, t
 	}
 	if !apiDeploymentMatches {
 		// Note: using current spec replica count works as long as we don't expose replicas via tenant spec.
-		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingLogSearchAPIServer, *logSearchDeployment.Spec.Replicas); err != nil {
+		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingLogSearchAPIServer, 0); err != nil {
 			return err
 		}
 		logSearchDeployment = deployments.NewForLogSearchAPI(tenant)
@@ -1293,6 +1321,9 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 		// check if log search is ready
 		if err = c.checkLogSearchAPIReady(tenant); err != nil {
 			klog.V(2).Info(err)
+			if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForLogSearchReadyState, 0); err != nil {
+				return err
+			}
 			return ErrLogSearchNotReady
 		}
 		restart, err := adminClnt.SetConfigKV(ctx, auditCfg.args)
@@ -1302,10 +1333,10 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 		if restart {
 			// Restart MinIO for config update to take effect
 			if err = adminClnt.ServiceRestart(ctx); err != nil {
-				fmt.Println("error restarting minio")
+				klog.V(2).Info("error restarting minio")
 				klog.V(2).Info(err)
 			}
-			fmt.Println("done restarting minio")
+			klog.V(2).Info("done restarting minio")
 		}
 		return nil
 	}
