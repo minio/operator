@@ -87,3 +87,9 @@ getconsoleuiyaml:
 	@echo "Getting the latest Console UI"
 	@kustomize build github.com/minio/console/k8s/operator-console/base > resources/base/console-ui.yaml
 	@echo "Done"
+
+generate-code:
+	@./k8s/update-codegen.sh && rm -Rf pkg/client
+	@mv github.com/minio/operator/pkg/client pkg/
+	@mv github.com/minio/operator/pkg/apis/minio.min.io/v1/zz_generated.deepcopy.go pkg/apis/minio.min.io/v1/zz_generated.deepcopy.go
+	@mv github.com/minio/operator/pkg/apis/minio.min.io/v2/zz_generated.deepcopy.go pkg/apis/minio.min.io/v2/zz_generated.deepcopy.go
