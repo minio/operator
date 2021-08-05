@@ -96,19 +96,6 @@ func tenantKESConfig(tenant, secret string) *miniov2.KESConfig {
 	return nil
 }
 
-func tenantConsoleConfig(tenant, secret string) *miniov2.ConsoleConfiguration {
-	if secret != "" {
-		return &miniov2.ConsoleConfiguration{
-			Replicas: helpers.ConsoleReplicas,
-			Image:    helpers.DefaultConsoleImage,
-			ConsoleSecret: &v1.LocalObjectReference{
-				Name: secret,
-			},
-		}
-	}
-	return nil
-}
-
 func storageClass(sc string) *string {
 	if sc != "" {
 		return &sc
@@ -117,7 +104,7 @@ func storageClass(sc string) *string {
 }
 
 // NewTenant will return a new Tenant for a MinIO Operator
-func NewTenant(opts *TenantOptions) (*miniov2.Tenant, error) {
+func NewTenant(opts *TenantOptions, user *v1.Secret) (*miniov2.Tenant, error) {
 	autoCert := true
 	volumesPerServer := helpers.VolumesPerServer(opts.Volumes, opts.Servers)
 	capacityPerVolume, err := helpers.CapacityPerVolume(opts.Capacity, opts.Volumes)
@@ -148,8 +135,12 @@ func NewTenant(opts *TenantOptions) (*miniov2.Tenant, error) {
 			},
 			Mountpath:       helpers.MinIOMountPath,
 			KES:             tenantKESConfig(opts.Name, opts.KmsSecret),
-			Console:         tenantConsoleConfig(opts.Name, opts.ConsoleSecret),
 			ImagePullSecret: v1.LocalObjectReference{Name: opts.ImagePullSecret},
+			Users: []*v1.LocalObjectReference{
+				{
+					Name: user.Name,
+				},
+			},
 		},
 	}
 	return t, t.Validate()

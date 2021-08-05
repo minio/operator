@@ -96,7 +96,6 @@ func printTenantList(tenants miniov2.TenantList) {
 		fmt.Printf(Bold(fmt.Sprintf("\nTenant '%s', Namespace '%s', Total capacity %s\n\n", tenant.Name, tenant.ObjectMeta.Namespace, helpers.TotalCapacity(tenant))))
 		fmt.Printf(Blue("  Current status: %s \n", tenant.Status.CurrentState))
 		fmt.Printf(Blue("  MinIO version: %s \n", tenant.Spec.Image))
-		fmt.Printf(Blue("  Console version: %s \n", tenant.Spec.Console.Image))
 		if tenant.Spec.KES != nil && tenant.Spec.KES.Image != "" {
 			fmt.Printf(Blue("  KES version: %s \n\n", tenant.Spec.KES.Image))
 		}

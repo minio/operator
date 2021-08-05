@@ -64,8 +64,6 @@ func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 		})
 	}
 
-	// Add all the environment variables
-	envVars = append(envVars, t.Spec.Console.Env...)
 	return envVars
 }
 
@@ -210,13 +208,8 @@ func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1
 		labels[k] = v
 	}
 
-	if t.Spec.Console != nil {
-		meta.Labels = miniov2.MergeMaps(labels, t.Spec.Console.Labels)
-		meta.Annotations = miniov2.MergeMaps(annotations, t.Spec.Console.Annotations)
-	} else {
-		meta.Labels = labels
-		meta.Annotations = annotations
-	}
+	meta.Labels = labels
+	meta.Annotations = annotations
 
 	return meta
 }

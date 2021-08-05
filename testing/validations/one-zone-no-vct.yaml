@@ -1,9 +1,0 @@
-apiVersion: minio.min.io/v1
-kind: Tenant
-metadata:
-  name: one-pool-no-vct
-spec:
-  pools:
-    - servers: 1
-      volumesPerServer: 1
-

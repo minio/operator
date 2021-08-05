@@ -223,18 +223,4 @@ spec:
   ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
   # priorityClassName: high-priority
 
-  ## Define configuration for Console (Graphical user interface for MinIO)
-  ## Refer https://github.com/minio/console
-  console:
-    image: minio/console:v0.8.2
-    imagePullPolicy: IfNotPresent
-    replicas: 2
-    consoleSecret:
-      name: minio-autocert-ldap-console-secret
-    env:
-      - name: CONSOLE_PBKDF_PASSPHRASE
-        value: "GLNZDFK21QTVWWNFGN2LR1UGOHN1QG2YM5I3PUSNCRA1LISR3B1FDTD5T4AKYTQY"
-      - name: CONSOLE_PBKDF_SALT
-        value: "GLNZDFK21QTVWWNFGN2LR1UGOHN1QG2YM5I3PUSNCRA1LISR3B1FDTD5T4AKYTQY"
-      - name: CONSOLE_LDAP_ENABLED
-        value: "on"
+

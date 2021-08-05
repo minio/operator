@@ -182,26 +182,3 @@ spec:
   ## This is applied to MinIO pods only.
   ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
   # priorityClassName: high-priority
-
-  ## Define configuration for Console (Graphical user interface for MinIO)
-  ## Refer https://github.com/minio/console
-  console:
-    image: minio/console:v0.8.2
-    imagePullPolicy: "IfNotPresent"
-    replicas: 2
-    consoleSecret:
-      name: console-secret
-    securityContext:
-      runAsUser: 1000
-      runAsGroup: 2000
-      runAsNonRoot: true
-      fsGroup: 2000
-    env:
-      - name: CONSOLE_IDP_URL
-        value: "https://your-extenal-idp.com/" # Your external identity provide URL
-      - name: CONSOLE_IDP_CLIENT_ID
-        value: "IDP CLIENT ID"
-      - name: CONSOLE_IDP_SECRET
-        value: "IDP SECRET TOKEN"
-      - name: CONSOLE_IDP_CALLBACK
-        value: "https://your-console-service:9443/oauth_callback" # Callback URL for users to authenticate with Console, this is your console service exposes outisde of the cluster

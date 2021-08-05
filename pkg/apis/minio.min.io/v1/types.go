@@ -98,9 +98,6 @@ type TenantSpec struct {
 	// Security Context allows user to set entries like runAsUser, privilege escalation etc.
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
-	// ConsoleConfiguration is for setting up minio/console for graphical user interface
-	//+optional
-	Console *miniov2.ConsoleConfiguration `json:"console,omitempty"`
 	// KES is for setting up minio/kes as MinIO KMS
 	//+optional
 	KES *miniov2.KESConfig `json:"kes,omitempty"`

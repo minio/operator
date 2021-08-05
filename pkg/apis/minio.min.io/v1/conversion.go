@@ -77,7 +77,6 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.RequestAutoCert = src.Spec.RequestAutoCert
 	dst.Spec.S3 = src.Spec.S3
 	dst.Spec.CertConfig = src.Spec.CertConfig
-	dst.Spec.Console = src.Spec.Console
 	dst.Spec.KES = src.Spec.KES
 	dst.Spec.Log = src.Spec.Log
 	dst.Spec.Prometheus = src.Spec.Prometheus
@@ -147,7 +146,6 @@ func (dst *Tenant) ConvertFrom(srcRaw conversion.Hub) error { //nolint
 	dst.Spec.RequestAutoCert = src.Spec.RequestAutoCert
 	dst.Spec.S3 = src.Spec.S3
 	dst.Spec.CertConfig = src.Spec.CertConfig
-	dst.Spec.Console = src.Spec.Console
 	dst.Spec.KES = src.Spec.KES
 	dst.Spec.Log = src.Spec.Log
 	dst.Spec.Prometheus = src.Spec.Prometheus

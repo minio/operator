@@ -120,12 +120,6 @@ func (t *Tenant) KESClientCert() bool {
 	return t.Spec.KES != nil && t.Spec.KES.ClientCertSecret != nil
 }
 
-// ConsoleExternalCert returns true is the user has provided a secret
-// that contains CA cert, server cert and server key for Console pods
-func (t *Tenant) ConsoleExternalCert() bool {
-	return t.Spec.Console != nil && t.Spec.Console.ExternalCertSecret != nil
-}
-
 // AutoCert is enabled by default, otherwise we return the user provided value
 func (t *Tenant) AutoCert() bool {
 	if t.Spec.RequestAutoCert == nil {
@@ -289,18 +283,6 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.CertConfig = nil
 	}
 
-	if t.HasConsoleEnabled() {
-		if t.Spec.Console.Image == "" {
-			t.Spec.Console.Image = miniov2.DefaultConsoleImage
-		}
-		if t.Spec.Console.Replicas == 0 {
-			t.Spec.Console.Replicas = miniov2.DefaultConsoleReplicas
-		}
-		if t.Spec.Console.ImagePullPolicy == "" {
-			t.Spec.Console.ImagePullPolicy = miniov2.DefaultImagePullPolicy
-		}
-	}
-
 	if t.HasKESEnabled() {
 		if t.Spec.KES.Image == "" {
 			t.Spec.KES.Image = miniov2.DefaultKESImage
@@ -445,17 +427,6 @@ func (t *Tenant) S3BucketDNS() bool {
 // HasKESEnabled checks if kes configuration is provided by user
 func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
-}
-
-// HasConsoleEnabled checks if the console has been enabled by the user
-func (t *Tenant) HasConsoleEnabled() bool {
-	return t.Spec.Console != nil
-}
-
-// HasConsoleSecret returns true if the user has provided an console secret
-// for a Tenant else false
-func (t *Tenant) HasConsoleSecret() bool {
-	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
 }
 
 // UpdateURL returns the URL for the sha256sum location of the new binary

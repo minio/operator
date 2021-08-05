@@ -1,8 +1,0 @@
-apiVersion: minio.min.io/v1
-kind: Tenant
-metadata:
-  name: one-pool-zero-servers
-spec:
-  pools:
-    - servers: 0
-

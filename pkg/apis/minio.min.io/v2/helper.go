@@ -179,18 +179,6 @@ func (t *Tenant) KESClientCert() bool {
 	return t.Spec.KES != nil && t.Spec.KES.ClientCertSecret != nil
 }
 
-// ConsoleExternalCert returns true is the user has provided a secret
-// that contains CA cert, server cert and server key for Console pods
-func (t *Tenant) ConsoleExternalCert() bool {
-	return t.Spec.Console != nil && t.Spec.Console.ExternalCertSecret != nil
-}
-
-// ConsoleExternalCaCerts returns true is the user has provided a
-// additional CA certificates for Console
-func (t *Tenant) ConsoleExternalCaCerts() bool {
-	return t.Spec.Console != nil && len(t.Spec.Console.ExternalCaCertSecret) > 0
-}
-
 // AutoCert is enabled by default, otherwise we return the user provided value
 func (t *Tenant) AutoCert() bool {
 	if t.Spec.RequestAutoCert == nil {
@@ -348,18 +336,6 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 			CommonName:       t.MinIOWildCardName(),
 			DNSNames:         t.MinIOHosts(),
 			OrganizationName: DefaultOrgName,
-		}
-	}
-
-	if t.HasConsoleEnabled() {
-		if t.Spec.Console.Image == "" {
-			t.Spec.Console.Image = GetTenantConsoleImage()
-		}
-		if t.Spec.Console.Replicas == 0 {
-			t.Spec.Console.Replicas = DefaultConsoleReplicas
-		}
-		if t.Spec.Console.ImagePullPolicy == "" {
-			t.Spec.Console.ImagePullPolicy = DefaultImagePullPolicy
 		}
 	}
 
@@ -557,23 +533,6 @@ func (t *Tenant) HasPrometheusSMEnabled() bool {
 	return t.Spec.PrometheusOperator != nil
 }
 
-// HasConsoleEnabled checks if the console has been enabled by the user
-func (t *Tenant) HasConsoleEnabled() bool {
-	return t.Spec.Console != nil
-}
-
-// HasConsoleSecret returns true if the user has provided an console secret
-// for a Tenant else false
-func (t *Tenant) HasConsoleSecret() bool {
-	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
-}
-
-// GetConsoleEnvVars returns the environment variables for the console
-// deployment of a particular tenant
-func (t *Tenant) GetConsoleEnvVars() (env []corev1.EnvVar) {
-	return t.Spec.Console.Env
-}
-
 // GetEnvVars returns the environment variables for tenant deployment.
 func (t *Tenant) GetEnvVars() (env []corev1.EnvVar) {
 	return t.Spec.Env
@@ -726,16 +685,16 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	for _, secret := range userCredentialSecrets {
-		consoleAccessKey, ok := secret.Data["MINIO_ACCESS_KEY"]
+		consoleAccessKey, ok := secret.Data["CONSOLE_ACCESS_KEY"]
 		if !ok {
-			return errors.New("MINIO_ACCESS_KEY not provided")
+			return errors.New("CONSOLE_ACCESS_KEY not provided")
 		}
 		// skipCreateUser handles the scenario of LDAP users that are
 		// not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
-			consoleSecretKey, ok := secret.Data["MINIO_SECRET_KEY"]
+			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
 			if !ok {
-				return errors.New("MINIO_SECRET_KEY not provided")
+				return errors.New("CONSOLE_SECRET_KEY not provided")
 			}
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey),
 				string(consoleSecretKey)); err != nil {

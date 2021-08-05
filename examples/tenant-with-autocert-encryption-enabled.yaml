@@ -156,17 +156,11 @@ spec:
   ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
   # priorityClassName: high-priority
 
-  ## Define configuration for Console (Graphical user interface for MinIO)
-  ## Refer https://github.com/minio/console
-  console:
-    image: minio/console:v0.8.2
-    replicas: 2
-    consoleSecret:
-      name: minio-autocert-encryption-console-secret
+
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   kes:
-    image: minio/kes:v0.15.1
+    image: minio/kes:v0.14.0
     replicas: 2
     kesSecret:
       name: minio-autocert-encryption-kes-config
