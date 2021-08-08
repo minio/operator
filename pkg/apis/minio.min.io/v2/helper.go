@@ -370,6 +370,15 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		if t.Spec.Log.Image == "" {
 			t.Spec.Log.Image = DefaultLogSearchAPIImage
 		}
+
+		if t.Spec.Log.Db != nil {
+			if t.Spec.Log.Db.Image != "" {
+				t.Spec.Log.Db.Image = LogPgImage
+			}
+			if t.Spec.Log.Db.InitImage != "" {
+				t.Spec.Log.Db.InitImage = InitContainerImage
+			}
+		}
 	}
 
 	return t

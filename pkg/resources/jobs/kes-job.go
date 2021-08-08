@@ -83,6 +83,7 @@ func NewForKES(t *miniov2.Tenant) *batchv1.Job {
 					Containers:      containers,
 					Volumes:         podVolumes,
 					Tolerations:     t.Spec.KES.Tolerations,
+					Affinity:        t.Spec.KES.Affinity,
 					NodeSelector:    t.Spec.KES.NodeSelector,
 					SecurityContext: t.Spec.KES.SecurityContext,
 				},
