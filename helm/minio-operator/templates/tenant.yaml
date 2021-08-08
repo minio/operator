@@ -43,6 +43,10 @@ spec:
           resources:
             requests:
               storage: {{ .size }}
+        {{- with .volumeClaimSelectors }}
+          selector:
+        {{ toYaml . | nindent 12 }}
+        {{ end }}
       {{- with .tolerations }}
       tolerations:
         {{ toYaml . | nindent 8 }}
