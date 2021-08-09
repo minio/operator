@@ -36,8 +36,6 @@ func consoleSecretData() map[string][]byte {
 	m := make(map[string][]byte, 5)
 	m["CONSOLE_ACCESS_KEY"] = []byte("admin")
 	m["CONSOLE_SECRET_KEY"] = []byte(uuid.New().String())
-	m["CONSOLE_PBKDF_PASSPHRASE"] = []byte(uuid.New().String())
-	m["CONSOLE_PBKDF_SALT"] = []byte(uuid.New().String())
 	return m
 }
 
@@ -57,10 +55,10 @@ func NewSecretForTenant(opts *TenantOptions) *corev1.Secret {
 }
 
 // NewSecretForConsole will return a new secret a MinIO Tenant Console
-func NewSecretForConsole(opts *TenantOptions) *corev1.Secret {
+func NewSecretForConsole(opts *TenantOptions, name string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      opts.ConsoleSecret,
+			Name:      name,
 			Namespace: opts.NS,
 		},
 		TypeMeta: metav1.TypeMeta{

@@ -197,12 +197,6 @@ type TenantSpec struct {
 	CertConfig *CertificateConfig `json:"certConfig,omitempty"`
 	// *Optional* +
 	//
-	// Directs the MinIO Operator to deploy the https://github.com/minio/console[MinIO Console] using the specified configuration. The MinIO Console is a first-party graphical user interface for performing administration on the MinIO Tenant. +
-	//
-	//+optional
-	Console *ConsoleConfiguration `json:"console,omitempty"`
-	// *Optional* +
-	//
 	// Directs the MinIO Operator to deploy the https://github.com/minio/kes[MinIO Key Encryption Service] (KES) using the specified configuration. The MinIO KES supports performing server-side encryption of objects on the MiNIO Tenant. +
 	//
 	//
@@ -212,7 +206,7 @@ type TenantSpec struct {
 	//
 	// Directs the MinIO Operator to deploy and configure the MinIO Log Search API. The Operator deploys a PostgreSQL instance as part of the tenant to support storing and querying MinIO logs. +
 	//
-	// If the tenant spec includes the `console` configuration, the Operator automatically configures and enables MinIO log search via the Console UI. +
+	// If the tenant spec includes the `log` configuration, the Operator automatically configures and enables MinIO log search via the Console UI. +
 	//+optional
 	Log *LogConfig `json:"log,omitempty"`
 	// *Optional* +
@@ -509,129 +503,6 @@ type Pool struct {
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
 }
 
-// ConsoleConfiguration (`console`) defines configuration of the https://github.com/minio/console[MinIO Console] deployed as part of the MinIO Tenant. The Operator automatically configures the Console for connectivity to MinIO server pods in the tenant. +
-//
-// For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation].
-type ConsoleConfiguration struct {
-	// *Optional* +
-	//
-	// Specify the number of replica Console pods to deploy in the tenant. Defaults to `2`.
-	// +optional
-	Replicas int32 `json:"replicas,omitempty"`
-	// *Optional* +
-	//
-	// The Docker image to use for deploying the MinIO Console. Defaults to {console-image}.+
-	// +optional
-	Image string `json:"image,omitempty"`
-	// *Optional* +
-	//
-	// The pull policy for the MinIO Console Docker image. Specify one of the following: +
-	//
-	// * `Always` +
-	//
-	// * `Never` +
-	//
-	// * `IfNotPresent` (Default) +
-	//
-	// Refer to the Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
-	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
-	// *Required* +
-	//
-	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] which contains environment variables to use for setting up the MinIO Console service. +
-	//
-	// See the https://github.com/minio/operator/blob/master/examples/console-secret.yaml[MinIO Operator `console-secret.yaml`] for an example.
-	ConsoleSecret *corev1.LocalObjectReference `json:"consoleSecret"`
-	// *Optional* +
-	//
-	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO Console pods created as part of the Tenant. +
-	// +optional
-	ServiceAccountName string `json:"serviceAccountName,omitempty"`
-	// *Optional* +
-	//
-	// Specify one or more https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#envvar-v1-core[Environment Variables] for use by the MinIO Console.
-	// +optional
-	Env []corev1.EnvVar `json:"env,omitempty"`
-	// *Optional* +
-	//
-	// Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits in the MinIO tenant. +
-	// +optional
-	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-	// *Optional* +
-	//
-	// Enables TLS with SNI support on each MinIO Console pod in the tenant. If `externalCertSecret` is omitted *and* `spec.requestAutoCert` is set to `false`, MinIO Console pods deploy *without* TLS enabled. +
-	//
-	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secret]. The MinIO Operator copies the specified certificate to every MinIO Console pod in the tenant. When the MinIO Console pod/service responds to a TLS connection request, it uses SNI to select the certificate with matching `subjectAlternativeName`. +
-	//
-	// Specify an object containing the following fields: +
-	//
-	// * - `name` - The name of the Kubernetes secret containing the TLS certificate. +
-	//
-	// * - `type` - Specify `kubernetes.io/tls` +
-	//
-	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
-	// +optional
-	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
-	// *Optional* +
-	//
-	// Allows MinIO Console pods to verify client TLS certificates signed by a Certificate Authority not in the pod's trust store. +
-	//
-	// Specify one or more https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified CA files to every MinIO Console pod in the tenant. +
-	//
-	// Each element in the `externalCertSecret` array is an object containing the following fields: +
-	//
-	// * - `name` - The name of the Kubernetes secret containing the Certificate Authority files. +
-	//
-	// * - `type` - Specify `kubernetes.io/tls`. +
-	//
-	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
-	// +optional
-	ExternalCaCertSecret []*LocalCertificateReference `json:"externalCaCertSecret,omitempty"`
-	// *Optional* +
-	//
-	// If provided, use these annotations for Console Object Meta annotations
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-	// *Optional* +
-	//
-	// If provided, use these labels for Console Object Meta labels
-	// +optional
-	Labels map[string]string `json:"labels,omitempty"`
-	// *Optional* +
-	//
-	// The filter for the Operator to apply when selecting which nodes on which to deploy MinIO Console pods. The Operator only selects those nodes whose labels match the specified selector. +
-	//
-	// See the Kubernetes documentation on https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Assigning Pods to Nodes] for more information.
-	// +optional
-	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
-	// *Optional* +
-	//
-	// Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to MinIO Console pods.
-	// +optional
-	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
-	// *Optional* +
-	//
-	// Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of MinIO Console pods. The Operator supports only the following pod security fields: +
-	//
-	// * `fsGroup` +
-	//
-	// * `fsGroupChangePolicy` +
-	//
-	// * `runAsGroup` +
-	//
-	// * `runAsNonRoot` +
-	//
-	// * `runAsUser` +
-	//
-	// * `seLinuxOptions` +
-	// +optional
-	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
-}
-
-// EqualImage returns true if config image and current input image are same
-func (c ConsoleConfiguration) EqualImage(currentImage string) bool {
-	return c.Image == currentImage
-}
-
 // EqualImage returns true if image specified in `LogConfig` is equal to `image`
 func (lc *LogConfig) EqualImage(image string) bool {
 	if lc == nil {
@@ -819,12 +690,12 @@ type PrometheusConfig struct {
 type PrometheusOperatorConfig struct {
 	// *Optional* +
 	//
-	// If provided, use these labels for Console Object Meta labels
+	// If provided, use these labels for Prometheus Object Meta labels
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
 	// *Optional* +
 	//
-	// If provided, use these annotations for Console Object Meta annotations
+	// If provided, use these annotations for Prometheus Object Meta annotations
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
@@ -910,7 +781,7 @@ type KESConfig struct {
 	Image string `json:"image,omitempty"`
 	// *Optional* +
 	//
-	// The pull policy for the MinIO Console Docker image. Specify one of the following: +
+	// The pull policy for the MinIO Docker image. Specify one of the following: +
 	//
 	// * `Always` +
 	//
@@ -935,7 +806,7 @@ type KESConfig struct {
 	//
 	// Enables TLS with SNI support on each MinIO KES pod in the tenant. If `externalCertSecret` is omitted *and* `spec.requestAutoCert` is set to `false`, MinIO KES pods deploy *without* TLS enabled. +
 	//
-	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secret]. The MinIO Operator copies the specified certificate to every MinIO Console pod in the tenant. When the MinIO Console pod/service responds to a TLS connection request, it uses SNI to select the certificate with matching `subjectAlternativeName`. +
+	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secret]. The MinIO Operator copies the specified certificate to every MinIO pod in the tenant. When the MinIO pod/service responds to a TLS connection request, it uses SNI to select the certificate with matching `subjectAlternativeName`. +
 	//
 	// Specify an object containing the following fields: +
 	//

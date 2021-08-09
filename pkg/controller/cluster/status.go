@@ -163,3 +163,40 @@ func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *mi
 	}
 	return t, nil
 }
+
+func (c *Controller) updateTenantSyncVersion(ctx context.Context, tenant *miniov2.Tenant, syncVersion string) (*miniov2.Tenant, error) {
+	return c.updateTenantSyncVersionWithRetry(ctx, tenant, syncVersion, true)
+}
+
+func (c *Controller) updateTenantSyncVersionWithRetry(ctx context.Context, tenant *miniov2.Tenant, syncVersion string, retry bool) (*miniov2.Tenant, error) {
+	// If we are updating the tenant with the same sync version as before we are going to skip it as to avoid a resource number
+	// change and have the operator loop re-processing the tenant endlessly
+	if tenant.Status.SyncVersion == syncVersion {
+		return tenant, nil
+	}
+	// NEVER modify objects from the store. It's a read-only, local cache.
+	// You can use DeepCopy() to make a deep copy of original object and modify this copy
+	// Or create a copy manually for better performance
+	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Status.SyncVersion = syncVersion
+	// If the CustomResourceSubresources feature gate is not enabled,
+	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
+	// UpdateStatus will not allow changes to the Spec of the resource,
+	// which is ideal for ensuring nothing other than resource status has been updated.
+	opts := metav1.UpdateOptions{}
+	t, err := c.minioClientSet.MinioV2().Tenants(tenant.Namespace).UpdateStatus(ctx, tenantCopy, opts)
+	t.EnsureDefaults()
+	if err != nil {
+		// if rejected due to conflict, get the latest tenant and retry once
+		if k8serrors.IsConflict(err) && retry {
+			klog.Info("Hit conflict issue, getting latest version of tenant")
+			tenant, err = c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Get(ctx, tenant.Name, metav1.GetOptions{})
+			if err != nil {
+				return tenant, err
+			}
+			return c.updateTenantSyncVersionWithRetry(ctx, tenant, syncVersion, false)
+		}
+		return t, err
+	}
+	return t, nil
+}

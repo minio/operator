@@ -13,7 +13,7 @@ docker run --rm -it -e "POSTGRES_PASSWORD=example" -p 5432:5432 postgres:13-alpi
 ```shell
 export LOGSEARCH_PG_CONN_STR="postgres://postgres:example@localhost/postgres"
 export LOGSEARCH_AUDIT_AUTH_TOKEN=xxx
-export LOGSEARCH_QUERY_AUTH_TOKEN=yyy
+export MINIO_QUERY_AUTH_TOKEN=yyy
 export LOGSEARCH_DISK_CAPACITY_GB=5
 go build && ./logsearchapi
 ```
@@ -56,7 +56,7 @@ GET /api/query?token=xxx&...
 
 This API is used to query MinIO audit logs stored by the API service.
 
-The `token` parameter is used to authenticate the request and should be equal to the `LOGSEARCH_QUERY_AUTH_TOKEN` environment variable passed to the server.
+The `token` parameter is used to authenticate the request and should be equal to the `MINIO_QUERY_AUTH_TOKEN` environment variable passed to the server.
 
 Additional query parameters specify the logs to be retrieved.
 

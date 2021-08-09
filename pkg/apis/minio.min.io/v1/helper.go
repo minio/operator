@@ -120,12 +120,6 @@ func (t *Tenant) KESClientCert() bool {
 	return t.Spec.KES != nil && t.Spec.KES.ClientCertSecret != nil
 }
 
-// ConsoleExternalCert returns true is the user has provided a secret
-// that contains CA cert, server cert and server key for Console pods
-func (t *Tenant) ConsoleExternalCert() bool {
-	return t.Spec.Console != nil && t.Spec.Console.ExternalCertSecret != nil
-}
-
 // AutoCert is enabled by default, otherwise we return the user provided value
 func (t *Tenant) AutoCert() bool {
 	if t.Spec.RequestAutoCert == nil {
@@ -289,18 +283,6 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		t.Spec.CertConfig = nil
 	}
 
-	if t.HasConsoleEnabled() {
-		if t.Spec.Console.Image == "" {
-			t.Spec.Console.Image = miniov2.DefaultConsoleImage
-		}
-		if t.Spec.Console.Replicas == 0 {
-			t.Spec.Console.Replicas = miniov2.DefaultConsoleReplicas
-		}
-		if t.Spec.Console.ImagePullPolicy == "" {
-			t.Spec.Console.ImagePullPolicy = miniov2.DefaultImagePullPolicy
-		}
-	}
-
 	if t.HasKESEnabled() {
 		if t.Spec.KES.Image == "" {
 			t.Spec.KES.Image = miniov2.DefaultKESImage
@@ -447,17 +429,6 @@ func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
 }
 
-// HasConsoleEnabled checks if the console has been enabled by the user
-func (t *Tenant) HasConsoleEnabled() bool {
-	return t.Spec.Console != nil
-}
-
-// HasConsoleSecret returns true if the user has provided an console secret
-// for a Tenant else false
-func (t *Tenant) HasConsoleSecret() bool {
-	return t.Spec.Console != nil && t.Spec.Console.ConsoleSecret != nil
-}
-
 // UpdateURL returns the URL for the sha256sum location of the new binary
 func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error) {
 	if overrideURL == "" {
@@ -578,21 +549,21 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 	return madmClnt, nil
 }
 
-// CreateConsoleUser function creates an admin users
-func (t *Tenant) CreateConsoleUser(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
+// CreateUser function creates users on the given Tenant
+func (t *Tenant) CreateUser(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	for _, secret := range userCredentialSecrets {
-		consoleAccessKey, ok := secret.Data["CONSOLE_ACCESS_KEY"]
+		consoleAccessKey, ok := secret.Data["MINIO_ACCESS_KEY"]
 		if !ok {
-			return errors.New("CONSOLE_ACCESS_KEY not provided")
+			return errors.New("MINIO_ACCESS_KEY not provided")
 		}
 		// skipCreateUser handles the scenario of LDAP users that are not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
-			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+			consoleSecretKey, ok := secret.Data["MINIO_SECRET_KEY"]
 			if !ok {
-				return errors.New("CONSOLE_SECRET_KEY not provided")
+				return errors.New("MINIO_SECRET_KEY not provided")
 			}
 			if err := madmClnt.AddUser(ctx, string(consoleAccessKey), string(consoleSecretKey)); err != nil {
 				return err

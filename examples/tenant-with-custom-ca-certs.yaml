@@ -167,18 +167,4 @@ spec:
   ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
   # priorityClassName: high-priority
 
-  ## Define configuration for Console (Graphical user interface for MinIO)
-  ## Refer https://github.com/minio/console
-  console:
-    image: minio/console:v0.8.2
-    replicas: 2
-    consoleSecret:
-      name: minio-custom-cert-no-encryption-console-secret
-    externalCertSecret:
-      name: minio-custom-cert-no-encryption-cluster-cert
-      type: kubernetes.io/tls
-    ## Use this field to provide one or more external CA certificates. This is used by Console
-    ## to verify TLS connections with other applications:
-    ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
-    externalCaCertSecret:
-      - name: external-ca-certificate
+

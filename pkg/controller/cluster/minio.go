@@ -57,8 +57,8 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 	return nil
 }
 
-// checkMinIOSCertificatesStatus checks for the current status of MinIO and it's service
-func (c *Controller) checkMinIOSCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+// checkMinIOCertificatesStatus checks for the current status of MinIO and it's service
+func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
 	if tenant.AutoCert() {
 		// check if there's already a TLS secret for MinIO
 		_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.MinIOTLSSecretName(), metav1.GetOptions{})
@@ -77,18 +77,13 @@ func (c *Controller) checkMinIOSCertificatesStatus(ctx context.Context, tenant *
 		}
 	}
 
-	err := c.checkMinIOSvc(ctx, tenant, nsName)
-	if err != nil {
-		klog.V(2).Infof("error consolidating console service: %s", err.Error())
-		return err
-	}
-
 	return nil
 }
 
 // checkMinIOSvc validates the existence of the MinIO service and validate it's status against what the specification
 // states
 func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+
 	// Handle the Internal ClusterIP Service for Tenant
 	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.MinIOCIServiceName())
 	if err != nil {
@@ -271,6 +266,22 @@ func (c *Controller) createMinIOClientCSR(ctx context.Context, tenant *miniov2.T
 	err = c.createSecret(ctx, tenant, tenant.MinIOPodLabels(), tenant.MinIOClientTLSSecretName(), encodedPrivKey, certbytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", tenant.MinIOClientTLSSecretName(), err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *Controller) deleteOldConsoleDeployment(ctx context.Context, tenant *miniov2.Tenant, consoleDeployment string) error {
+
+	err := c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Delete(ctx, consoleDeployment, metav1.DeleteOptions{})
+	if err != nil {
+		klog.V(2).Infof(err.Error())
+		return err
+	}
+	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.ConsoleCIServiceName(), metav1.DeleteOptions{})
+	if err != nil {
+		klog.V(2).Infof(err.Error())
 		return err
 	}
 

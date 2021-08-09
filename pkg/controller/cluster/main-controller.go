@@ -18,15 +18,11 @@
 package cluster
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -35,8 +31,6 @@ import (
 	"github.com/minio/madmin-go"
 
 	"golang.org/x/time/rate"
-
-	"github.com/docker/cli/cli/config/configfile"
 
 	"k8s.io/klog/v2"
 
@@ -74,10 +68,6 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	jwtreq "github.com/golang-jwt/jwt/request"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
@@ -93,17 +83,12 @@ import (
 
 const (
 	controllerAgentName = "minio-operator"
-	// SuccessSynced is used as part of the Event 'reason' when a Tenant is synced
-	SuccessSynced = "Synced"
 	// ErrResourceExists is used as part of the Event 'reason' when a Tenant fails
 	// to sync due to a StatefulSet of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
 	// MessageResourceExists is the message used for Events when a Tenant
 	// fails to sync due to a StatefulSet already existing
 	MessageResourceExists = "Resource %q already exists and is not managed by MinIO Operator"
-	// MessageResourceSynced is the message used for an Event fired when a Tenant
-	// is synced successfully
-	MessageResourceSynced = "Tenant synced successfully"
 )
 
 // Standard Status messages for Tenant
@@ -112,22 +97,20 @@ const (
 	StatusProvisioningCIService                = "Provisioning MinIO Cluster IP Service"
 	StatusProvisioningHLService                = "Provisioning MinIO Headless Service"
 	StatusProvisioningStatefulSet              = "Provisioning MinIO Statefulset"
-	StatusProvisioningConsoleDeployment        = "Provisioning Console Deployment"
+	StatusProvisioningConsoleService           = "Provisioning Console Service"
 	StatusProvisioningKESStatefulSet           = "Provisioning KES StatefulSet"
-	StatusProvisioningLogPGStatefulSet         = "Provisioning Postgres server for Log Search feature"
-	StatusProvisioningLogSearchAPIDeployment   = "Provisioning Log Search API server for Log Search feature"
-	StatusProvisioningPrometheusStatefulSet    = "Provisioning Prometheus server for Prometheus metrics feature"
-	StatusProvisioningPrometheusServiceMonitor = "Provisioning Prometheus service monitor for Prometheus metrics feature"
+	StatusProvisioningLogPGStatefulSet         = "Provisioning Postgres server"
+	StatusProvisioningLogSearchAPIDeployment   = "Provisioning Log Search API server"
+	StatusProvisioningPrometheusStatefulSet    = "Provisioning Prometheus server"
+	StatusProvisioningPrometheusServiceMonitor = "Provisioning Prometheus service monitor"
 	StatusWaitingForReadyState                 = "Waiting for Pods to be ready"
 	StatusWaitingForLogSearchReadyState        = "Waiting for Log Search Pods to be ready"
 	StatusWaitingMinIOCert                     = "Waiting for MinIO TLS Certificate"
 	StatusWaitingMinIOClientCert               = "Waiting for MinIO TLS Client Certificate"
 	StatusWaitingKESCert                       = "Waiting for KES TLS Certificate"
-	StatusWaitingConsoleCert                   = "Waiting for Console TLS Certificate"
 	StatusUpdatingMinIOVersion                 = "Updating MinIO Version"
-	StatusUpdatingConsole                      = "Updating Console"
 	StatusUpdatingKES                          = "Updating KES"
-	StatusUpdatingLogPGStatefulSet             = "Updating Postgres server for Log Search feature"
+	StatusUpdatingLogPGStatefulSet             = "Updating Postgres server"
 	StatusUpdatingLogSearchAPIServer           = "Updating Log Search API server"
 	StatusUpdatingResourceRequirements         = "Updating Resource Requirements"
 	StatusUpdatingAffinity                     = "Updating Pod Affinity"
@@ -425,186 +408,6 @@ func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1
 	return secret
 }
 
-func (c *Controller) fetchTag(path string) (string, error) {
-	cmd := exec.Command(path, "--version")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
-		return "", err
-	}
-	op := strings.Fields(out.String())
-	if len(op) != 3 {
-		return "", fmt.Errorf("incorrect output while fetching tag value - %d", len((op)))
-	}
-	return op[2], nil
-}
-
-// minioKeychain implements Keychain to pass custom credentials
-type minioKeychain struct {
-	authn.Keychain
-	Username      string
-	Password      string
-	Auth          string
-	IdentityToken string
-	RegistryToken string
-}
-
-// Resolve implements Keychain.
-func (mk *minioKeychain) Resolve(_ authn.Resource) (authn.Authenticator, error) {
-	return authn.FromConfig(authn.AuthConfig{
-		Username:      mk.Username,
-		Password:      mk.Password,
-		Auth:          mk.Auth,
-		IdentityToken: mk.IdentityToken,
-		RegistryToken: mk.RegistryToken,
-	}), nil
-}
-
-// getKeychainForTenant attempts to build a new authn.Keychain from the image pull secret on the Tenant
-func (c *Controller) getKeychainForTenant(ctx context.Context, ref name.Reference, tenant *miniov2.Tenant) (authn.Keychain, error) {
-	// Get the secret
-	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.Spec.ImagePullSecret.Name, metav1.GetOptions{})
-	if err != nil {
-		return authn.DefaultKeychain, errors.New("can't retrieve the tenant image pull secret")
-	}
-	// if we can't find .dockerconfigjson, error out
-	dockerConfigJSON, ok := secret.Data[".dockerconfigjson"]
-	if !ok {
-		return authn.DefaultKeychain, fmt.Errorf("unable to find `.dockerconfigjson` in image pull secret")
-	}
-	var config configfile.ConfigFile
-	if err = json.Unmarshal(dockerConfigJSON, &config); err != nil {
-		return authn.DefaultKeychain, fmt.Errorf("Unable to decode docker config secrets %w", err)
-	}
-	cfg, ok := config.AuthConfigs[ref.Context().RegistryStr()]
-	if !ok {
-		return authn.DefaultKeychain, fmt.Errorf("unable to locate auth config registry context %s", ref.Context().RegistryStr())
-	}
-	return &minioKeychain{
-		Username:      cfg.Username,
-		Password:      cfg.Password,
-		Auth:          cfg.Auth,
-		IdentityToken: cfg.IdentityToken,
-		RegistryToken: cfg.RegistryToken,
-	}, nil
-}
-
-// Attempts to fetch given image and then extracts and keeps relevant files
-// (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
-func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest time.Time, err error) {
-	basePath := updatePath
-
-	if err = os.MkdirAll(basePath, 1777); err != nil {
-		return latest, err
-	}
-
-	ref, err := name.ParseReference(tenant.Spec.Image)
-	if err != nil {
-		return latest, err
-	}
-
-	keychain := authn.DefaultKeychain
-
-	// if the tenant has imagePullSecret use that for pulling the image, but if we fail to extract the secret or we
-	// can't find the expected registry in the secret we will continue with the default keychain. This is because the
-	// needed pull secret could be attached to the service-account.
-	if tenant.Spec.ImagePullSecret.Name != "" {
-		// Get the secret
-		keychain, err = c.getKeychainForTenant(context.Background(), ref, tenant)
-		if err != nil {
-			klog.Info(err)
-		}
-	}
-
-	img, err := remote.Image(ref, remote.WithAuthFromKeychain(keychain))
-	if err != nil {
-		return latest, err
-	}
-
-	ls, err := img.Layers()
-	if err != nil {
-		return latest, err
-	}
-
-	// Find the file with largest size among all layers.
-	// This is the tar file with all minio relevant files.
-	start := 0
-	if len(ls) >= 2 { // skip the base layer
-		start = 1
-	}
-	maxSizeHash, _ := ls[start].Digest()
-	maxSize, _ := ls[start].Size()
-	for i := range ls {
-		if i < start {
-			continue
-		}
-		s, _ := ls[i].Size()
-		if s > maxSize {
-			maxSize, _ = ls[i].Size()
-			maxSizeHash, _ = ls[i].Digest()
-		}
-	}
-
-	f, err := os.OpenFile(basePath+"image.tar", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
-	if err != nil {
-		return latest, err
-	}
-	defer func() {
-		_ = f.Close()
-	}()
-
-	// Tarball writes a file called image.tar
-	// This file in turn has each container layer present inside in the form `<layer-hash>.tar.gz`
-	if err = tarball.Write(ref, img, f); err != nil {
-		return latest, err
-	}
-
-	// Extract the <layer-hash>.tar.gz file that has minio contents from `image.tar`
-	fileNameToExtract := strings.Split(maxSizeHash.String(), ":")[1] + ".tar.gz"
-	if err = miniov2.ExtractTar([]string{fileNameToExtract}, basePath, "image.tar"); err != nil {
-		return latest, err
-	}
-
-	// Extract the minio update related files (minio, minio.sha256sum and minio.minisig) from `<layer-hash>.tar.gz`
-	if err = miniov2.ExtractTar([]string{"usr/bin/minio", "usr/bin/minio.sha256sum", "usr/bin/minio.minisig"}, basePath, fileNameToExtract); err != nil {
-		return latest, err
-	}
-
-	srcBinary := "minio"
-	srcShaSum := "minio.sha256sum"
-	srcSig := "minio.minisig"
-
-	tag, err := c.fetchTag(basePath + srcBinary)
-	if err != nil {
-		return latest, err
-	}
-
-	latest, err = miniov2.ReleaseTagToReleaseTime(tag)
-	if err != nil {
-		return latest, err
-	}
-
-	destBinary := "minio." + tag
-	destShaSum := "minio." + tag + ".sha256sum"
-	destSig := "minio." + tag + ".minisig"
-	filesToRename := map[string]string{srcBinary: destBinary, srcShaSum: destShaSum, srcSig: destSig}
-
-	// rename all files to add tag specific values in the name.
-	// this is because minio updater looks for files in this name format.
-	for s, d := range filesToRename {
-		if err = os.Rename(basePath+s, basePath+d); err != nil {
-			return latest, err
-		}
-	}
-	return latest, nil
-}
-
-// Remove all the files created during upload process
-func (c *Controller) removeArtifacts() error {
-	return os.RemoveAll(updatePath)
-}
-
 // Start will set up the event handlers for types we are interested in, as well
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
@@ -778,6 +581,15 @@ func (c *Controller) syncHandler(key string) error {
 		// return nil so we don't re-queue this work item
 		return nil
 	}
+
+	// Check the Sync Version to see if the tenant needs upgrade
+	if tenant.Status.SyncVersion == "" {
+		if tenant, err = c.upgrade420(ctx, tenant); err != nil {
+			klog.V(2).Infof("Error upgrading tenant: %v", err.Error())
+			return err
+		}
+	}
+
 	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2
 	// Previous behavior was that AutoCert is disabled by default if RequestAutoCert is nil
 	// New behavior is that AutoCert is enabled by default if RequestAutoCert is nil
@@ -804,10 +616,24 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// validate the minio service
-	err = c.checkMinIOSCertificatesStatus(ctx, tenant, nsName)
+	// validate the minio certificates
+	err = c.checkMinIOCertificatesStatus(ctx, tenant, nsName)
 	if err != nil {
 		klog.V(2).Infof("Error when consolidating tenant service: %v", err)
+		return err
+	}
+
+	// validate services
+	// Check MinIO S3 Endpoint Service
+	err = c.checkMinIOSvc(ctx, tenant, nsName)
+	if err != nil {
+		klog.V(2).Infof("error consolidating minio service: %s", err.Error())
+		return err
+	}
+	// Check Console Endpoint Service
+	err = c.checkConsoleSvc(ctx, tenant, nsName)
+	if err != nil {
+		klog.V(2).Infof("error consolidating console service: %s", err.Error())
 		return err
 	}
 
@@ -952,6 +778,9 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Check if this is fresh setup not an expansion.
 	freshSetup := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
+
+	// Check if we need to create any of the pools. It's important not to update the statefulsets
+	// in this loop because we need all the pools "as they are" for the hot-update below
 	for i, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 
@@ -1004,61 +833,13 @@ func (c *Controller) syncHandler(key string) error {
 			if !freshSetup {
 				adminClnt.ServiceRestart(ctx) //nolint:errcheck
 			}
-		} else {
-			if pool.Servers != *ss.Spec.Replicas {
-				// warn the user that replica count of an existing pool can't be changed
-				if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for pool %s", pool.Name), 0); err != nil {
-					return err
-				}
-			}
-			// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
-			poolMatchesSS, err := poolSSMatchesSpec(tenant, &pool, ss, c.operatorVersion)
-			if err != nil {
-				return err
-			}
-			// if the pool doesn't match the spec
-			if !poolMatchesSS {
-				// for legacy reasons, if the zone label is present in SS we must carry it over
-				carryOverLabels := make(map[string]string)
-				if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
-					carryOverLabels[miniov1.ZoneLabel] = val
-				}
-
-				nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
-				ssCopy := ss.DeepCopy()
-
-				ssCopy.Spec.Template = nss.Spec.Template
-				ssCopy.Spec.UpdateStrategy = nss.Spec.UpdateStrategy
-
-				if ss.Spec.Template.ObjectMeta.Labels == nil {
-					ssCopy.Spec.Template.ObjectMeta.Labels = make(map[string]string)
-				}
-				for k, v := range carryOverLabels {
-					ssCopy.Spec.Template.ObjectMeta.Labels[k] = v
-				}
-
-				if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ssCopy, uOpts); err != nil {
-					return err
-				}
-			}
-
-		}
-		// If the StatefulSet is not controlled by this Tenant resource, we should log
-		// a warning to the event recorder and ret
-		if !metav1.IsControlledBy(ss, tenant) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusNotOwned, ss.Status.Replicas); err != nil {
-				return err
-			}
-			msg := fmt.Sprintf(MessageResourceExists, ss.Name)
-			c.recorder.Event(tenant, corev1.EventTypeWarning, ErrResourceExists, msg)
-			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
-			return nil
 		}
 
 		// keep track of all replicas
 		totalReplicas += ss.Status.Replicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 	}
+
 	// validate each pool if it's initialized
 	for pi, pool := range tenant.Spec.Pools {
 		// get a pod for the established statefulset
@@ -1129,7 +910,7 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 			return err
 		}
-		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
+		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("https://operator.%s.svc.%s:%s%s",
 			miniov2.GetNSFromFile(), miniov2.GetClusterDomain(),
 			miniov2.WebhookDefaultPort, miniov2.WebhookAPIUpdate,
 		))
@@ -1162,6 +943,23 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		if us.CurrentVersion != us.UpdatedVersion {
+			klog.Infof("Updating '%s' MinIO from: %s, to: %s",
+				tenantName, us.CurrentVersion, us.UpdatedVersion)
+			// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
+			// MinIO server integrated with Console), we need to delete the old console deployment and service.
+			// We do this only when MinIO server is successfully updated and
+			unifiedConsoleReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("RELEASE.2021-07-27T02-40-15Z")
+			newVer, err := miniov2.ReleaseTagToReleaseTime(us.UpdatedVersion)
+			if err != nil {
+				klog.Errorf("Unsupported release tag on new image, non-disruptive update not allowed %w", err)
+				return err
+			}
+			consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())
+			if unifiedConsoleReleaseTime.Before(newVer) && consoleDeployment != nil && err == nil {
+				if err := c.deleteOldConsoleDeployment(ctx, tenant, consoleDeployment.Name); err != nil {
+					return err
+				}
+			}
 			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
 				tenantName, us.CurrentVersion, us.UpdatedVersion)
 		} else {
@@ -1187,19 +985,88 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 	}
+
+	// This loop will take care of updating the statefulset for each pool
+	for i, pool := range tenant.Spec.Pools {
+		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
+		// if this index is in the status of pools use it, else capture the desired name in the status and store it
+		var ssName string
+		if len(tenant.Status.Pools) > i {
+			ssName = tenant.Status.Pools[i].SSName
+		} else {
+			ssName = tenant.PoolStatefulsetName(&pool)
+			tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
+				SSName: ssName,
+				State:  miniov2.PoolNotCreated,
+			})
+			// push updates to status
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				return err
+			}
+		}
+		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
+		// at this point the ss should already exist, error out
+		if k8serrors.IsNotFound(err) {
+			klog.Errorf("%s's pool %s doesn't exist: %v", tenant.Name, ssName, err)
+			return err
+		}
+		if pool.Servers != *ss.Spec.Replicas {
+
+			// warn the user that replica count of an existing pool can't be changed
+			if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for pool %s", pool.Name), 0); err != nil {
+				return err
+			}
+		}
+		// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
+		poolMatchesSS, err := poolSSMatchesSpec(tenant, &pool, ss, c.operatorVersion)
+		if err != nil {
+			return err
+		}
+		// if the pool doesn't match the spec
+		if !poolMatchesSS {
+			// for legacy reasons, if the zone label is present in SS we must carry it over
+			carryOverLabels := make(map[string]string)
+			if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
+				carryOverLabels[miniov1.ZoneLabel] = val
+			}
+
+			nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ssCopy := ss.DeepCopy()
+
+			ssCopy.Spec.Template = nss.Spec.Template
+			ssCopy.Spec.UpdateStrategy = nss.Spec.UpdateStrategy
+
+			if ss.Spec.Template.ObjectMeta.Labels == nil {
+				ssCopy.Spec.Template.ObjectMeta.Labels = make(map[string]string)
+			}
+			for k, v := range carryOverLabels {
+				ssCopy.Spec.Template.ObjectMeta.Labels[k] = v
+			}
+
+			if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ssCopy, uOpts); err != nil {
+				return err
+			}
+		}
+
+		// If the StatefulSet is not controlled by this Tenant resource, we should log
+		// a warning to the event recorder and ret
+		if !metav1.IsControlledBy(ss, tenant) {
+			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusNotOwned, ss.Status.Replicas); err != nil {
+				return err
+			}
+			msg := fmt.Sprintf(MessageResourceExists, ss.Name)
+			c.recorder.Event(tenant, corev1.EventTypeWarning, ErrResourceExists, msg)
+			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
+			return nil
+		}
+	}
+
 	// Create logSecret before deploying console
 	if tenant.HasLogEnabled() {
 		_, err = c.checkAndCreateLogSecret(ctx, tenant)
 		if err != nil {
 			return err
 		}
-	}
-
-	// Check whether console is enabled or if it should be removed and the state of it's service
-	err = c.checkConsoleStatus(ctx, tenant, tenantConfiguration, totalReplicas, adminClnt, cOpts, uOpts, nsName)
-	if err != nil {
-		klog.V(2).Infof("Error checking console state %v", err)
-		return err
 	}
 
 	if tenant.HasLogEnabled() {
@@ -1267,6 +1134,11 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if err := c.createUsers(ctx, tenant); err != nil {
+		klog.V(2).Infof("Unable to create MinIO users: %v", err)
+		return err
 	}
 
 	// Finally, we update the status block of the Tenant resource to reflect the
@@ -1419,7 +1291,7 @@ func (c *Controller) checkAndCreateLogSearchAPIDeployment(ctx context.Context, t
 	}
 	if !apiDeploymentMatches {
 		// Note: using current spec replica count works as long as we don't expose replicas via tenant spec.
-		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingLogSearchAPIServer, *logSearchDeployment.Spec.Replicas); err != nil {
+		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingLogSearchAPIServer, 0); err != nil {
 			return err
 		}
 		logSearchDeployment = deployments.NewForLogSearchAPI(tenant)
@@ -1449,6 +1321,9 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 		// check if log search is ready
 		if err = c.checkLogSearchAPIReady(tenant); err != nil {
 			klog.V(2).Info(err)
+			if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForLogSearchReadyState, 0); err != nil {
+				return err
+			}
 			return ErrLogSearchNotReady
 		}
 		restart, err := adminClnt.SetConfigKV(ctx, auditCfg.args)
@@ -1458,10 +1333,10 @@ func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *
 		if restart {
 			// Restart MinIO for config update to take effect
 			if err = adminClnt.ServiceRestart(ctx); err != nil {
-				fmt.Println("error restarting minio")
+				klog.V(2).Info("error restarting minio")
 				klog.V(2).Info(err)
 			}
-			fmt.Println("done restarting minio")
+			klog.V(2).Info("done restarting minio")
 		}
 		return nil
 	}

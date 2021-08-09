@@ -106,7 +106,6 @@ func (c *createCmd) validate(args []string) error {
 	}
 	c.tenantOpts.Name = args[0]
 	c.tenantOpts.SecretName = c.tenantOpts.Name + tenantSecretSuffix
-	c.tenantOpts.ConsoleSecret = c.tenantOpts.Name + consoleSecretSuffix
 	return c.tenantOpts.Validate()
 }
 
@@ -123,17 +122,19 @@ func (c *createCmd) run(args []string) error {
 		return err
 	}
 
+	// Generate console suer
+	consoleUser := resources.NewSecretForConsole(&c.tenantOpts, fmt.Sprintf("%s-user-1", c.tenantOpts.Name))
+
 	// generate the resources
-	t, err := resources.NewTenant(&c.tenantOpts)
+	t, err := resources.NewTenant(&c.tenantOpts, consoleUser)
 	if err != nil {
 		return err
 	}
 	s := resources.NewSecretForTenant(&c.tenantOpts)
-	console := resources.NewSecretForConsole(&c.tenantOpts)
 
 	// create resources
 	if !c.output {
-		return createTenant(oclient, kclient, t, s, console)
+		return createTenant(oclient, kclient, t, s, consoleUser)
 	}
 	ot, err := yaml.Marshal(&t)
 	if err != nil {
@@ -143,7 +144,7 @@ func (c *createCmd) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	oc, err := yaml.Marshal(&console)
+	oc, err := yaml.Marshal(&consoleUser)
 	if err != nil {
 		return err
 	}
@@ -169,8 +170,12 @@ func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, 
 	if err != nil {
 		return err
 	}
+	// Check MinIO S3 Endpoint Service
 	minSvc := services.NewClusterIPForMinIO(to)
+
+	// Check MinIO Console Endpoint Service
 	conSvc := services.NewClusterIPForConsole(to)
+
 	if IsTerminal() {
 		printBanner(to.ObjectMeta.Name, to.ObjectMeta.Namespace, string(console.Data["CONSOLE_ACCESS_KEY"]), string(console.Data["CONSOLE_SECRET_KEY"]),
 			minSvc, conSvc)

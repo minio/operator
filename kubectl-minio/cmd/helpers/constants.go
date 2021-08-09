@@ -38,8 +38,8 @@ const (
 	// DefaultNamespace is the default namespace for all operations
 	DefaultNamespace = "minio-operator"
 
-	// DefaultStorageclass is the default storage class for MinIO Tenant PVC
-	DefaultStorageclass = "default"
+	// DefaultStorageclass is empty so the cluster pick its own native storage class as default
+	DefaultStorageclass = ""
 
 	// DefaultServiceAccount is the service account for all
 	DefaultServiceAccount = "minio-operator"

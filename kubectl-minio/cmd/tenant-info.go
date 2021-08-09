@@ -104,8 +104,12 @@ func (d *infoCmd) run(args []string) error {
 }
 
 func printTenantInfo(tenant miniov2.Tenant) {
+	// Check MinIO S3 Endpoint Service
 	minSvc := services.NewClusterIPForMinIO(&tenant)
+
+	// Check MinIO Console Endpoint Service
 	conSvc := services.NewClusterIPForConsole(&tenant)
+
 	var minPorts, consolePorts string
 	for _, p := range minSvc.Spec.Ports {
 		minPorts = minPorts + strconv.Itoa(int(p.Port)) + ","
@@ -117,7 +121,6 @@ func printTenantInfo(tenant miniov2.Tenant) {
 	fmt.Printf(Blue("  Current status: %s \n", tenant.Status.CurrentState))
 	fmt.Printf(Blue("  MinIO version: %s \n", tenant.Spec.Image))
 	fmt.Printf(Blue("  MinIO service: %s/ClusterIP (port %s)\n\n", minSvc.Name, strings.TrimSuffix(minPorts, ",")))
-	fmt.Printf(Blue("  Console version: %s \n", tenant.Spec.Console.Image))
 	fmt.Printf(Blue("  Console service: %s/ClusterIP (port %s)\n\n", conSvc.Name, strings.TrimSuffix(consolePorts, ",")))
 	if tenant.Spec.KES != nil && tenant.Spec.KES.Image != "" {
 		fmt.Printf(Blue("  KES version: %s \n\n", tenant.Spec.KES.Image))

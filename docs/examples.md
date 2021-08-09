@@ -96,13 +96,6 @@ You need to provide those `kubernetes secrets` in your Tenant `YAML` file using 
       type: kubernetes.io/tls
     - name: minio-hl-cert
       type: kubernetes.io/tls
-  ...
-  console:
-    image: minio/console:v0.4.6
-    ...
-    externalCertSecret:
-      name: console-tls-cert
-      type: kubernetes.io/tls
 ```
 
 You can deploy a preconfigured example by running the following command:
