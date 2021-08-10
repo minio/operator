@@ -338,12 +338,12 @@ type LocalCertificateReference struct {
 type ExposeServices struct {
 	// *Optional* +
 	//
-	// Directs the Operator to expose the MinIO service. Defaults to `true`. +
+	// Directs the Operator to expose the MinIO service. +
 	// +optional
 	MinIO bool `json:"minio,omitempty"`
 	// *Optional* +
 	//
-	// Directs the Operator to expose the MinIO Console service. Defaults to `true`. +
+	// Directs the Operator to expose the MinIO Console service. +
 	// +optional
 	Console bool `json:"console,omitempty"`
 }
