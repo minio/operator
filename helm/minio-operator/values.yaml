@@ -148,7 +148,7 @@ tenants:
     ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
     ## This is applied to MinIO pods only.
     ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
-    priorityClassName : ""
+    priorityClassName: ""
     ## Define configuration for Console (Graphical user interface for MinIO)
     ## Refer https://github.com/minio/console
     console:
