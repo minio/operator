@@ -141,6 +141,9 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	var volumeClaim corev1.PersistentVolumeClaim
 	if t.Spec.Log.Db != nil && t.Spec.Log.Db.VolumeClaimTemplate != nil {
 		volumeClaim = *t.Spec.Log.Db.VolumeClaimTemplate
+		if volumeClaim.ObjectMeta.Name == "" {
+			volumeClaim.ObjectMeta = logMeta
+		}
 	} else {
 		// Create a PVC to store log data
 		volumeReq := corev1.ResourceList{
