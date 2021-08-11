@@ -48,7 +48,7 @@ const LogSearchAPIContainerName = "log-search-api"
 const PrometheusContainerName = "prometheus"
 
 // InitContainerImage name for init container.
-const InitContainerImage = "busybox:1.32"
+const InitContainerImage = "busybox:1.33.1"
 
 // MinIO Related Names
 

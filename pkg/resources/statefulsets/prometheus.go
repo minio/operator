@@ -18,6 +18,9 @@
 package statefulsets
 
 import (
+	"fmt"
+	"strconv"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -184,18 +187,39 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 	//    volumeMounts:
 	//    - name: prometheus-kube-prometheus-db
 	//      mountPath: /var/prometheus/data
-	initContainers := []corev1.Container{
-		{
-			Name:  "prometheus-init-chown-data",
-			Image: t.Spec.Prometheus.InitImage,
-			Command: []string{
-				"chown",
-				"-R",
-				"1000:2000",
-				"/prometheus",
+
+	var initContainerSecurityContext corev1.SecurityContext
+	var initContainers []corev1.Container
+	// If securityContext is present InitContainer still requires running with elevated privileges
+	// and user will have to provide a serviceAccount that allows this
+	if t.Spec.Prometheus.SecurityContext != nil {
+		var prometheusRunAsUser int64
+		var prometheusRunAsNonRoot bool
+		var prometheusAllowPrivilegeEscalation bool
+
+		prometheusRunAsUser = 0
+		prometheusRunAsNonRoot = false
+		prometheusAllowPrivilegeEscalation = true
+
+		initContainerSecurityContext = corev1.SecurityContext{
+			RunAsUser:                &prometheusRunAsUser,
+			RunAsNonRoot:             &prometheusRunAsNonRoot,
+			AllowPrivilegeEscalation: &prometheusAllowPrivilegeEscalation,
+		}
+		initContainers = []corev1.Container{
+			{
+				Name:  "prometheus-init-chown-data",
+				Image: t.Spec.Prometheus.InitImage,
+				Command: []string{
+					"chown",
+					"-R",
+					fmt.Sprintf("%s:%s", strconv.FormatInt(*t.Spec.Prometheus.SecurityContext.RunAsUser, 10), strconv.FormatInt(*t.Spec.Prometheus.SecurityContext.RunAsGroup, 10)),
+					"/prometheus",
+				},
+				SecurityContext: &initContainerSecurityContext,
+				VolumeMounts:    prometheusVolumeMounts(t),
 			},
-			VolumeMounts: prometheusVolumeMounts(t),
-		},
+		}
 	}
 
 	serviceAccount := t.Spec.ServiceAccountName
@@ -223,6 +247,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 					RestartPolicy:      corev1.RestartPolicyAlways,
 					SchedulerName:      t.Scheduler.Name,
 					NodeSelector:       t.Spec.Prometheus.NodeSelector,
+					Affinity:           t.Spec.Prometheus.Affinity,
 					InitContainers:     initContainers,
 					SecurityContext:    t.Spec.Prometheus.SecurityContext,
 				},

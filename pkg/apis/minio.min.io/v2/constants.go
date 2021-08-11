@@ -164,7 +164,7 @@ const PrometheusImage = "quay.io/prometheus/prometheus:latest"
 const PrometheusSideCarImage = "alpine"
 
 // PrometheusInitImage specifies the init container image for prometheus server
-const PrometheusInitImage = "busybox"
+const PrometheusInitImage = "busybox:1.33.1"
 
 // PrometheusInstanceLabel is applied to the prometheus server pod
 const PrometheusInstanceLabel = "v1.min.io/prometheus"

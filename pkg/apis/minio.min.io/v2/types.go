@@ -656,6 +656,11 @@ type PrometheusConfig struct {
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 	// *Optional* +
 	//
+	// Specify node affinity, pod affinity, and pod anti-affinity for the Prometheus pods. +
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// *Optional* +
+	//
 	// Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits of the Prometheus pod. +
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -707,6 +712,13 @@ type LogDbConfig struct {
 	// The Docker image to use for deploying PostgreSQL. Defaults to {postgres-image}. +
 	// +optional
 	Image string `json:"image,omitempty"`
+	// *Optional* +
+	//
+	// Defines the Docker image to use as the init container for running the postgres server. Defaults to `busybox`. +
+	//
+	// The specified Docker image *must* be the https://hub.docker.com/_/busybox[`busybox`] package. +
+	// +optional
+	InitImage string `json:"initimage,omitempty"`
 	// *Optional* +
 	//
 	// Specify the configuration options for the MinIO Operator to use when generating Persistent Volume Claims for the PostgreSQL pod. +
@@ -850,6 +862,11 @@ type KESConfig struct {
 	// Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to MinIO KES pods.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// *Optional* +
+	//
+	// Specify node affinity, pod affinity, and pod anti-affinity for the KES pods. +
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// *Optional* +
 	//
 	// If provided, use this as the name of the key that KES creates on the KMS backend
