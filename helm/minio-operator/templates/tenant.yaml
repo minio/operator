@@ -93,41 +93,4 @@ spec:
   {{ if .priorityClassName }}
   priorityClassName: {{ .priorityClassName }}
   {{ end }}
-  console:
-    image: {{ .console.image.repository }}:{{ .console.image.tag }}
-    replicas: {{ .console.replicaCount }}
-    consoleSecret:
-      name: {{ .console.secrets.name }}
-    {{- with .console.securityContext }}
-    securityContext:
-      {{ toYaml . | nindent 6 }}
-    {{ end }}
-    {{- with .console.tolerations }}
-    tolerations:
-      {{ toYaml . | nindent 6 }}
-    {{ end }}
-    {{- with .console.nodeSelector }}
-    nodeSelector:
-      {{ toYaml . | nindent 6 }}
-    {{ end }}
-    {{- with .console.affinity }}
-    affinity:
-      {{ toYaml . | nindent 6 }}
-    {{ end }}
-    {{- with .console.resources }}
-    resources:
-      {{ toYaml . | nindent 6 }}
-    {{ end }}
-    {{- with .console.env }}
-    env:
-      {{ toYaml . | nindent 6 }}
-    {{- end }}
-    {{- with .console.externalCaCertSecret }}
-    externalCaCertSecret:
-      {{ toYaml . | nindent 6 }}
-    {{ end }}
-    {{- with .console.externalCertSecret }}
-    externalCertSecret:
-      {{ toYaml . | nindent 6 }}
-    {{ end }}
 {{ end }}
