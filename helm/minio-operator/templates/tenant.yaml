@@ -8,89 +8,91 @@ metadata:
   ## Optionally pass labels to be applied to the statefulset pods
   labels:
     app: minio
-  {{ if .metrics.enabled }}
+  {{ if dig "metrics" "enabled" false . }}
   ## Annotations for MinIO Tenant Pods
   annotations:
     prometheus.io/path: /minio/v2/metrics/cluster
-    prometheus.io/port: {{ .metrics.port |quote }}
+    prometheus.io/port: {{ dig "metrics" "port" 9000 . | quote }}
     prometheus.io/scrape: "true"
   {{ end }}
-  {{ if .scheduler.name }}
+  {{ if dig "scheduler" "name" "" . }}
   scheduler:
-    name: {{ .scheduler.name }}
+    name: {{ dig "scheduler" "name" "" . }}
   {{ end }}
 spec:
-  image: {{ .image.repository }}:{{ .image.tag }}
-  imagePullPolicy: {{ .image.pullPolicy }}
-  {{ if .imagePullSecret.name }}
+  image: {{ dig "image" "repository" "minio/minio" . }}:{{ dig "image" "tag" "RELEASE.2021-08-05T22-01-19Z" . }}
+  imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" . }}
+  {{ if dig "imagePullSecret" "name" "" . }}
   imagePullSecret:
-    name: {{ .imagePullSecret.name }}
+    name: {{ dig "imagePullSecret" "name" "" . }}
   {{ end }}
   ## Secret with credentials to be used by MinIO Tenant.
+  {{ if dig "secrets" "enabled" false . }}
   credsSecret:
-    name: {{ .secrets.name }}
-  {{ range .pools }}
+    name: {{ dig "secrets" "name" "" . }}
+  {{ end }}
+  {{ range (dig "pools" (list) .) }}
   pools:
-    - servers: {{ .servers }}
-      volumesPerServer: {{ .volumesPerServer }}
+    - servers: {{ dig "servers" 4 . }}
+      volumesPerServer: {{ dig "volumesPerServer" 4 . }}
       volumeClaimTemplate:
         metadata:
           name: data
         spec:
-          storageClassName: {{ .storageClassName }}
+          storageClassName: {{ dig "storageClassName" "" . }}
           accessModes:
             - ReadWriteOnce
           resources:
             requests:
-              storage: {{ .size }}
-      {{- with .tolerations }}
+              storage: {{ dig "size" "10Gi" . }}
+      {{- with (dig "tolerations" (list) .) }}
       tolerations:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-      {{- with .nodeSelector }}
+      {{- with (dig "nodeSelector" (dict) .) }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-      {{- with .affinity }}
+      {{- with (dig "affinity" (dict) .) }}
       affinity:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-      {{- with .resources }}
+      {{- with (dig "resources" (dict) .) }}
       resources:
         {{ toYaml . | nindent 8 }}
       {{ end }}
-      {{- with .securityContext }}
+      {{- with (dig "securityContext" (dict) .) }}
       securityContext:
         {{ toYaml . | nindent 8 }}
       {{ end }}
   {{ end }}
-  mountPath: {{ .mountPath }}
-  subPath: {{ .subPath }}
-  {{- with .certificate.externalCaCertSecret }}
+  mountPath: {{ dig "mountPath" "/export" . }}
+  subPath: {{ dig "subPath" "/data" . }}
+  {{- with (dig "certificate" "externalCaCertSecret" (dict) .) }}
   externalCaCertSecret:
     {{ toYaml . | nindent 6 }}
   {{ end }}
-  {{- with .certificate.externalCertSecret }}
+  {{- with (dig "certificate" "externalCertSecret" (dict) .) }}
   externalCertSecret:
     {{ toYaml . | nindent 6 }}
   {{ end }}
-  requestAutoCert: {{ .certificate.requestAutoCert }}
+  requestAutoCert: {{ dig "certificate" "requestAutoCert" false . }}
   s3:
-    bucketDNS: {{ .s3.bucketDNS }}
-  {{- with .certificate.certConfig }}
+    bucketDNS: {{ dig "s3" "bucketDNS" false . }}
+  {{- with (dig "certificate" "certConfig" (dict) .) }}
   certConfig:
     {{ toYaml . | nindent 4 }}
   {{- end }}
-  podManagementPolicy: {{ .podManagementPolicy }}
-  {{- with .serviceMetadata }}
+  podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" . }}
+  {{- with (dig "serviceMetadata" (dict) .) }}
   serviceMetadata:
     {{ toYaml . | nindent 4 }}
   {{- end }}
-  {{- with .env }}
+  {{- with (dig "env" (dict) .) }}
   env:
     {{ toYaml . | nindent 4 }}
   {{- end }}
-  {{ if .priorityClassName }}
-  priorityClassName: {{ .priorityClassName }}
+  {{ if dig "priorityClassName" "" . }}
+  priorityClassName: {{ dig "priorityClassName" "" . }}
   {{ end }}
 {{ end }}
