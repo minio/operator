@@ -16,7 +16,7 @@ complete documentation on the MinIO Operator.
 * [Architecture](#architecture)
   * [MinIO Console](#minio-console)
   * [MinIO Operator and `kubectl` Plugin](#minio-operator-and-kubectl-plugin)
-* [Deploy the MinIO Operator and Create a Tenant](#create-a-minio-tenant)
+* [Deploy the MinIO Operator and Create a Tenant](#deploy-the-minio-operator-and-create-a-tenant)
   * [Prerequisites](#prerequisites)
   * [Procedure](#procedure)
 
