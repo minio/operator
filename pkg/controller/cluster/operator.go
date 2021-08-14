@@ -233,7 +233,7 @@ func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator met
 	return nil
 }
 
-func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant) error {
+func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) error {
 	var userCredentials []*v1.Secret
 	for _, credential := range tenant.Spec.Users {
 		credentialSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, metav1.GetOptions{})
@@ -243,14 +243,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant) er
 	}
 
 	// get mc admin info
-	minioSecretName := tenant.Spec.CredsSecret.Name
-	minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), minioSecretName, metav1.GetOptions{})
-	if err != nil {
-		// show the error and continue
-		klog.V(2).Infof(err.Error())
-	}
-
-	adminClnt, err := tenant.NewMinIOAdmin(minioSecret.Data)
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 	if err != nil {
 		// show the error and continue
 		klog.V(2).Infof(err.Error())
