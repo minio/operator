@@ -1136,7 +1136,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if err := c.createUsers(ctx, tenant); err != nil {
+	if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 		klog.V(2).Infof("Unable to create MinIO users: %v", err)
 		return err
 	}
