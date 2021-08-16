@@ -96,10 +96,12 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	// certificate files used by the KES server
 	var certPath = "server.crt"
 	var keyPath = "server.key"
+	var caCertPath = "/tmp/ca/ca-cert.pem"
 
 	var volumeProjections []corev1.VolumeProjection
 
 	var serverCertSecret string
+	var serverCaCertSecret string
 	// clientCertSecret holds certificate files (public.crt, private.key and ca.crt) used by KES
 	// in mTLS with a KMS (eg: authentication with Vault)
 	var clientCertSecret string
@@ -107,6 +109,10 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	var serverCertPaths = []corev1.KeyToPath{
 		{Key: "public.crt", Path: certPath},
 		{Key: "private.key", Path: keyPath},
+	}
+
+	var serverCaCertPaths = []corev1.KeyToPath{
+		{Key: "ca-cert.pem", Path: caCertPath},
 	}
 
 	var configPath = []corev1.KeyToPath{
@@ -118,7 +124,9 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 		serverCertSecret = t.Spec.KES.ExternalCertSecret.Name
 		// This covers both secrets of type "kubernetes.io/tls" and
 		// "cert-manager.io/v1alpha2" because of same keys in both.
-		if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
+		if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" ||
+			t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" ||
+			t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 			serverCertPaths = []corev1.KeyToPath{
 				{Key: "tls.crt", Path: certPath},
 				{Key: "tls.key", Path: keyPath},
@@ -126,6 +134,17 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 		}
 	} else {
 		serverCertSecret = t.KESTLSSecretName()
+	}
+
+	if t.Spec.KES != nil && t.Spec.KES.ExternalCaCertSecret != nil {
+		serverCaCertSecret = t.Spec.KES.ExternalCaCertSecret.Name
+		if t.Spec.KES.ExternalCaCertSecret.Type == "kubernetes.io/tls" ||
+			t.Spec.KES.ExternalCaCertSecret.Type == "cert-manager.io/v1alpha2" ||
+			t.Spec.KES.ExternalCaCertSecret.Type == "cert-manager.io/v1" {
+			serverCaCertPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: caCertPath},
+			}
+		}
 	}
 
 	if t.KESClientCert() {
@@ -150,6 +169,17 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 					Name: serverCertSecret,
 				},
 				Items: serverCertPaths,
+			},
+		})
+	}
+
+	if serverCaCertSecret != "" {
+		volumeProjections = append(volumeProjections, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: serverCaCertSecret,
+				},
+				Items: serverCaCertPaths,
 			},
 		})
 	}

@@ -831,6 +831,21 @@ type KESConfig struct {
 	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
 	// *Optional* +
 	//
+	// Allows KES server pods to verify client TLS certificates signed by a Certificate Authority not in the pod's trust store. +
+	//
+	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified certificates to every KES server pod in the tenant. +
+	//
+	// The `externalCertSecret` contains the following fields: +
+	//
+	// * - `name` - The name of the Kubernetes secret containing the Certificate Authority. +
+	//
+	// * - `type` - Specify `kubernetes.io/tls`. +
+	//
+	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+	// +optional
+	ExternalCaCertSecret *LocalCertificateReference `json:"externalCaCertSecret,omitempty"`
+	// *Optional* +
+	//
 	// Specify a a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secret] containing a custom root Certificate Authority and x.509 certificate to use for performing mTLS authentication with an external Key Management Service, such as Hashicorp Vault. +
 	//
 	// Specify an object containing the following fields: +
