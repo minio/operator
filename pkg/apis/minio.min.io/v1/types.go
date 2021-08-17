@@ -132,6 +132,12 @@ type TenantSpec struct {
 	// The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
 	// +optional
 	Configuration *corev1.LocalObjectReference `json:"configuration,omitempty"`
+	// *Optional* +
+	//
+	// Allows for the tenant to be frozen by removing the pods for all the pools but keeping the ConfigMaps, Secrets,
+	// Services and PVCs that support the tenant itself.
+	// +optional
+	Freeze *bool `json:"freeze,omitempty"`
 }
 
 // Zone defines the spec for a MinIO Zone

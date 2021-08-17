@@ -175,6 +175,8 @@ spec:
                 required:
                 - name
                 type: object
+              freeze:
+                type: boolean
               image:
                 type: string
               imagePullPolicy:
@@ -3783,11 +3785,15 @@ spec:
               pools:
                 items:
                   properties:
+                    servers:
+                      format: int32
+                      type: integer
                     ssName:
                       type: string
                     state:
                       type: string
                   required:
+                  - servers
                   - ssName
                   - state
                   type: object
@@ -3966,6 +3972,8 @@ spec:
                 required:
                 - name
                 type: object
+              freeze:
+                type: boolean
               image:
                 type: string
               imagePullPolicy:
@@ -7613,11 +7621,15 @@ spec:
               pools:
                 items:
                   properties:
+                    servers:
+                      format: int32
+                      type: integer
                     ssName:
                       type: string
                     state:
                       type: string
                   required:
+                  - servers
                   - ssName
                   - state
                   type: object

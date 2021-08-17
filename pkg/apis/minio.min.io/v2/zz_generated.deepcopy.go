@@ -781,6 +781,11 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(v1.LocalObjectReference)
 		**out = **in
 	}
+	if in.Freeze != nil {
+		in, out := &in.Freeze, &out.Freeze
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 

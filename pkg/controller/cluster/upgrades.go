@@ -58,7 +58,14 @@ func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*m
 				return nil, err
 			}
 		}
-
+	}
+	// store the number of severs of each pool on the status field
+	for i := range tenant.Spec.Pools {
+		tenant.Status.Pools[i].Servers = tenant.Spec.Pools[i].Servers
+	}
+	// push updates to status
+	if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+		return tenant, err
 	}
 	// delete the previous operator secrets, they may be in a bad state
 	err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx,

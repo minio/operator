@@ -289,6 +289,12 @@ type TenantSpec struct {
 	// The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
 	// +optional
 	Configuration *corev1.LocalObjectReference `json:"configuration,omitempty"`
+	// *Optional* +
+	//
+	// Allows for the tenant to be frozen by removing the pods for all the pools but keeping the ConfigMaps, Secrets,
+	// Services and PVCs that support the tenant itself.
+	// +optional
+	Freeze *bool `json:"freeze,omitempty"`
 }
 
 // Logging describes Logging for MinIO tenants.
@@ -371,6 +377,9 @@ const (
 type PoolStatus struct {
 	SSName string    `json:"ssName"`
 	State  PoolState `json:"state"`
+	// The number of MinIO server pods to deploy in the pool. The minimum value is `2`. We register it here so if
+	// the user attempts to chage the number of servers after pool creation, we deny it.
+	Servers int32 `json:"servers"`
 }
 
 // HealthStatus represents whether the tenant is healthy, with decreased service or offline

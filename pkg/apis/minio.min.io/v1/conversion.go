@@ -85,6 +85,7 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.ImagePullPolicy = src.Spec.ImagePullPolicy
 	dst.Spec.SideCars = src.Spec.SideCars
 	dst.Spec.ExposeServices = src.Spec.ExposeServices
+	dst.Spec.Freeze = src.Spec.Freeze
 	// Apply the securityContext to all the Pools
 	for _, p := range dst.Spec.Pools {
 		p.SecurityContext = src.Spec.SecurityContext
