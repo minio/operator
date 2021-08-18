@@ -97,6 +97,6 @@ spec:
   podManagementPolicy: Parallel
 
   log:
-    image: minio/logsearchapi:v4.1.3
+    image: minio/logsearchapi:v4.2.0
     audit:
       diskCapacityGB: 10

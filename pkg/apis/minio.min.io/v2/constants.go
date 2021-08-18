@@ -116,7 +116,7 @@ const DefaultPoolName = "pool-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.8.2"
+const DefaultConsoleImage = "minio/console:v0.9.2"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -185,7 +185,7 @@ const PrometheusServiceMonitorSecretKey = "token"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.1.3"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.2.0"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres"

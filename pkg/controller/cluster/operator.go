@@ -28,6 +28,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/minio/pkg/env"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,11 +47,17 @@ const (
 	OperatorTLS = "MINIO_OPERATOR_TLS_ENABLE"
 	// OperatorTLSSecretName is the name of secret created with Operator TLS certs
 	OperatorTLSSecretName = "operator-tls"
+	// DefaultDeploymentName is the default name of the operator deployment
+	DefaultDeploymentName = "minio-operator"
 )
 
 var (
 	errOperatorWaitForTLS = errors.New("waiting for Operator cert")
 )
+
+func getOperatorDeploymentName() string {
+	return env.Get("MINIO_OPERATOR_DEPLOYMENT_NAME", DefaultDeploymentName)
+}
 
 func isOperatorTLS() bool {
 	value, set := os.LookupEnv(OperatorTLS)
@@ -61,7 +69,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 	ctx := context.Background()
 	namespace := miniov2.GetNSFromFile()
 	// operator deployment for owner reference
-	operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, "minio-operator", metav1.GetOptions{})
+	operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, getOperatorDeploymentName(), metav1.GetOptions{})
 	if err != nil {
 		panic(err)
 	}
