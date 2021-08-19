@@ -244,11 +244,11 @@ You can monitor Tenant creation from the Operator Console.
 
 ### 4) Connect to the Tenant
 
-Use the following command to list the pods and services created by the MinIO
+Use the following command to list the services created by the MinIO
 Operator:
 
 ```sh
-kubectl get pods -n NAMESPACE
+kubectl get svc -n NAMESPACE
 ```
 
 Replace `NAMESPACE` with the namespace for the MinIO Tenant. The output
