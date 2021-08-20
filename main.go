@@ -44,7 +44,6 @@ import (
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -103,11 +102,6 @@ func main() {
 		klog.Fatalf("Error building MinIO clientset: %s", err.Error())
 	}
 
-	certClient, err := certapi.NewForConfig(cfg)
-	if err != nil {
-		klog.Errorf("Error building certificate clientset: %v", err.Error())
-	}
-
 	extClient, err := apiextension.NewForConfig(cfg)
 	if err != nil {
 		klog.Errorf("Error building certificate clientset: %v", err.Error())
@@ -162,7 +156,7 @@ func main() {
 		promInformerFactory = prominformers.NewSharedInformerFactory(promClient, time.Second*30)
 	}
 
-	mainController := cluster.NewController(kubeClient, controllerClient, *certClient, promClient,
+	mainController := cluster.NewController(kubeClient, controllerClient, promClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Batch().V1().Jobs(),

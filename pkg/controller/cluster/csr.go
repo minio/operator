@@ -109,7 +109,7 @@ func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels
 		},
 	}
 
-	ks, err := c.certClient.CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
+	ks, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return err
 	}
@@ -132,7 +132,7 @@ func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels
 		},
 	}
 
-	_, err = c.certClient.CertificateSigningRequests().UpdateApproval(ctx, name, ks, metav1.UpdateOptions{})
+	_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().UpdateApproval(ctx, name, ks, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 			return nil, fmt.Errorf("%s", s.String())
 
 		case <-tick.C:
-			r, err := c.certClient.CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
+			r, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
 			if err != nil {
 				klog.Errorf("Unexpected error during certificate fetching of csr/%s: %s", csrName, err)
 				return nil, err

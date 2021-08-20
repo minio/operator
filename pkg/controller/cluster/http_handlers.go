@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -86,7 +87,7 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Find the tenant
-	tenant, err := c.tenantsLister.Tenants(namespace).Get(name)
+	tenant, err := c.minioClientSet.MinioV2().Tenants(namespace).Get(r.Context(), name, metav1.GetOptions{})
 	if err != nil {
 		klog.Errorf("Unable to lookup tenant:%s/%s for the bucket:%s request. err:%s", namespace, name, bucket, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -149,7 +150,7 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get the Tenant resource with this namespace/name
-	tenant, err := c.tenantsLister.Tenants(namespace).Get(name)
+	tenant, err := c.minioClientSet.MinioV2().Tenants(namespace).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			// The Tenant resource may no longer exist, in which case we stop processing.
@@ -167,7 +168,7 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	// correct all statefulset names by loading them, this will fix their name on the tenant pool namess
+	// correct all statefulset names by loading them, this will fix their name on the tenant pool names
 	_, err = c.getAllSSForTenant(tenant)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
