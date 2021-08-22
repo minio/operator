@@ -806,7 +806,6 @@ func (c *Controller) syncHandler(key string) error {
 					}
 
 					if minioRestarted {
-						klog.Infof("%s revision %d", key, tenant.ObjectMeta.ResourceVersion)
 						return ErrMinIORestarting
 					}
 
@@ -817,7 +816,6 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		}
 	}
-	klog.Infof("%s revision %d", key, tenant.ObjectMeta.ResourceVersion)
 	// wait here until all pools are initialized, so we can continue with updating versions and the ss resources.
 	for _, poolStatus := range tenant.Status.Pools {
 		if poolStatus.State != miniov2.PoolInitialized {
