@@ -3798,6 +3798,9 @@ spec:
                 type: integer
               syncVersion:
                 type: string
+              waitingOnReady:
+                format: date-time
+                type: string
               writeQuorum:
                 format: int32
                 type: integer
@@ -7624,6 +7627,9 @@ spec:
                 format: int32
                 type: integer
               syncVersion:
+                type: string
+              waitingOnReady:
+                format: date-time
                 type: string
               writeQuorum:
                 format: int32

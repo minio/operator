@@ -27,11 +27,9 @@ import (
 	"strconv"
 	"time"
 
-	"k8s.io/klog/v2"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/klog/v2"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
@@ -52,7 +50,7 @@ func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
 		select {
 		case <-ticker.C:
 			if err := c.tenantsHealthMonitor(); err != nil {
-				log.Println(err)
+				klog.Infof("%v", err)
 			}
 		case <-stopCh:
 			ticker.Stop()
@@ -64,11 +62,11 @@ func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
 
 func (c *Controller) tenantsHealthMonitor() error {
 	// list all tenants and get their cluster health
-	tenants, err := c.tenantsLister.Tenants("").List(labels.NewSelector())
+	tenants, err := c.minioClientSet.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	for _, tenant := range tenants {
+	for _, tenant := range tenants.Items {
 		// don't get the tenant cluster health if it doesn't have at least 1 pool initialized
 		oneInitialized := false
 		for _, pool := range tenant.Status.Pools {
@@ -77,39 +75,33 @@ func (c *Controller) tenantsHealthMonitor() error {
 			}
 		}
 		if !oneInitialized {
+			klog.Infof("'%s/%s' no pool is initialized", tenant.Namespace, tenant.Name)
 			continue
 		}
 
 		// get cluster health for tenant
-		healthResult, err := getMinIOHealthStatus(tenant, RegularMode)
+		healthResult, err := getMinIOHealthStatus(&tenant, RegularMode)
 		if err != nil {
 			// show the error and continue
-			klog.V(2).Infof(err.Error())
+			klog.Infof("'%s/%s' Failed to get cluster health: %v", tenant.Namespace, tenant.Name, err)
 			continue
 		}
-
-		// get mc admin info
-		minioSecretName := tenant.Spec.CredsSecret.Name
-		minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(context.Background(), minioSecretName, metav1.GetOptions{})
+		tenantConfiguration, err := c.getTenantCredentials(context.Background(), &tenant)
+		if err != nil {
+			return err
+		}
+		adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 		if err != nil {
 			// show the error and continue
-			klog.V(2).Infof(err.Error())
+			klog.Infof("'%s/%s': %v", tenant.Namespace, tenant.Name, err)
 			continue
 		}
-
-		adminClnt, err := tenant.NewMinIOAdmin(minioSecret.Data)
-		if err != nil {
-			// show the error and continue
-			klog.V(2).Infof(err.Error())
-			continue
-		}
-
-		srvInfoCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		srvInfoCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 		storageInfo, err := adminClnt.StorageInfo(srvInfoCtx)
 		if err != nil {
 			// show the error and continue
-			klog.V(2).Infof(err.Error())
+			klog.Infof("'%s/%s' Failed to get storage info: %v", tenant.Namespace, tenant.Name, err)
 			continue
 		}
 
@@ -138,10 +130,9 @@ func (c *Controller) tenantsHealthMonitor() error {
 			tenant.Status.HealthStatus = miniov2.HealthStatusRed
 		}
 
-		if _, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
-			klog.V(2).Infof(err.Error())
+		if _, err = c.updatePoolStatus(context.Background(), &tenant); err != nil {
+			klog.Infof("'%s/%s' Can't update tenant status: %v", tenant.Namespace, tenant.Name, err)
 		}
-
 	}
 	return nil
 }
@@ -210,7 +201,7 @@ func getMinIOHealthStatusWithRetry(tenant *miniov2.Tenant, mode HealthMode, tryC
 
 	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
-		log.Println("error request pinging", err)
+		klog.Infof("error request pinging: %v", err)
 		return nil, err
 	}
 
@@ -223,18 +214,18 @@ func getMinIOHealthStatusWithRetry(tenant *miniov2.Tenant, mode HealthMode, tryC
 	if err != nil {
 		// if we fail due to timeout, retry
 		if err, ok := err.(net.Error); ok && err.Timeout() && tryCount > 0 {
-			log.Printf("health check failed, retrying %d, err: %s", tryCount, err)
+			klog.Infof("health check failed, retrying %d, err: %s", tryCount, err)
 			time.Sleep(10 * time.Second)
 			return getMinIOHealthStatusWithRetry(tenant, mode, tryCount-1)
 		}
-		log.Println("error pinging", err)
+		klog.Infof("error pinging: %v", err)
 		return nil, err
 	}
 	driveskHealing := 0
 	if resp.Header.Get("X-Minio-Healing-Drives") != "" {
 		val, err := strconv.Atoi(resp.Header.Get("X-Minio-Healing-Drives"))
 		if err != nil {
-			log.Println("Cannot parse healing drives from health check")
+			klog.Infof("Cannot parse healing drives from health check")
 		} else {
 			driveskHealing = val
 		}
@@ -243,7 +234,7 @@ func getMinIOHealthStatusWithRetry(tenant *miniov2.Tenant, mode HealthMode, tryC
 	if resp.Header.Get("X-Minio-Write-Quorum") != "" {
 		val, err := strconv.Atoi(resp.Header.Get("X-Minio-Write-Quorum"))
 		if err != nil {
-			log.Println("Cannot parse min write drives from health check")
+			klog.Infof("Cannot parse min write drives from health check")
 		} else {
 			minDriveWrites = val
 		}

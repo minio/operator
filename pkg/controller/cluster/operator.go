@@ -87,7 +87,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
 					time.Sleep(time.Second * 10)
 				} else {
-					if err = c.certClient.CertificateSigningRequests().Delete(ctx, "operator-auto-tls", metav1.DeleteOptions{}); err != nil {
+					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, "operator-auto-tls", metav1.DeleteOptions{}); err != nil {
 						klog.Infof(err.Error())
 					}
 				}
@@ -228,7 +228,7 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 }
 
 func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator metav1.Object) error {
-	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, "operator-auto-tls", metav1.GetOptions{}); err != nil {
+	if _, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, "operator-auto-tls", metav1.GetOptions{}); err != nil {
 		if k8serrors.IsNotFound(err) {
 			klog.V(2).Infof("Creating a new Certificate Signing Request for Operator Server Certs, cluster %q")
 			if err = c.createOperatorCSR(ctx, operator); err != nil {
@@ -254,7 +254,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 	if err != nil {
 		// show the error and continue
-		klog.V(2).Infof(err.Error())
+		klog.Errorf("Error instantiating madmin: %v", err.Error())
 	}
 
 	skipCreateUsers := false

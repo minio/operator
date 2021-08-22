@@ -60,6 +60,12 @@ func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*m
 		}
 
 	}
+	// delete the previous operator secrets, they may be in a bad state
+	err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx,
+		miniov2.WebhookSecret, metav1.DeleteOptions{})
+	if err != nil {
+		klog.Errorf("Error deleting operator webhook secret, manual deletion is needed: %v", err)
+	}
 
 	if tenant, err = c.updateTenantSyncVersion(ctx, tenant, "v4.2.0"); err != nil {
 		return nil, err
