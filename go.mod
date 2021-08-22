@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/docker/cli v0.0.0-20191017083524-a8ff7f821017
 	github.com/golang-jwt/jwt v3.2.1+incompatible
+	github.com/golangci/golangci-lint v1.41.1 // indirect
 	github.com/google/go-containerregistry v0.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/minio/madmin-go v1.0.12
@@ -13,7 +14,6 @@ require (
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.46.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.46.0
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/yaml.v2 v2.4.0
