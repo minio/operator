@@ -28,7 +28,7 @@ import (
 func (c *Controller) checkFreezeState(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, bool, error) {
 	// if the tenant is market for freezing, and it's not a fresh setup, freeze it.
 	if tenant.Spec.Freeze != nil && *tenant.Spec.Freeze {
-		var zero int32 = 0
+		var zero int32
 		// if it's not already frozen, freeze tenant
 		if tenant.Status.CurrentState != StatusFrozen {
 			// Check if we need to create any of the pools. It's important not to update the statefulsets
