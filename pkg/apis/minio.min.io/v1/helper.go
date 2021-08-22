@@ -392,7 +392,7 @@ func (t *Tenant) MinIOHeadlessServiceHost() string {
 // KESHosts returns the host names created for current KES StatefulSet
 func (t *Tenant) KESHosts() []string {
 	hosts := make([]string, 0)
-	var i int32 = 0
+	var i int32
 	for i < t.Spec.KES.Replicas {
 		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(i))+".%s.%s.svc.%s", t.KESStatefulSetName(), t.KESHLServiceName(), t.Namespace, ClusterDomain))
 		i++

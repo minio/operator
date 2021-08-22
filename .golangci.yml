@@ -11,7 +11,7 @@ linters:
     - goimports
     - misspell
     - govet
-    - golint
+    - revive
     - ineffassign
     - gosimple
     - deadcode
@@ -26,7 +26,7 @@ issues:
     # Exclude linters from running on auto-generated files.
     - path: pkg/client
       linters:
-        - golint
+        - revive
         - deadcode
 
 service:

@@ -27,8 +27,8 @@ import (
 
 // NewForPrometheus creates a new Prometheus ServiceMonitor for prometheus metrics
 func NewForPrometheus(t *miniov2.Tenant) *promv1.ServiceMonitor {
-	var port string = miniov2.MinIOServiceHTTPPortName
-	var scheme string = "http"
+	port := miniov2.MinIOServiceHTTPPortName
+	scheme := "http"
 	if t.TLS() {
 		port = miniov2.MinIOServiceHTTPSPortName
 		scheme = "https"
