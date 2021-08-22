@@ -803,6 +803,10 @@ func (in *TenantStatus) DeepCopyInto(out *TenantStatus) {
 		*out = make([]PoolStatus, len(*in))
 		copy(*out, *in)
 	}
+	if in.WaitingOnReady != nil {
+		in, out := &in.WaitingOnReady, &out.WaitingOnReady
+		*out = (*in).DeepCopy()
+	}
 	return
 }
 

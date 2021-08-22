@@ -111,10 +111,14 @@ const (
 	StatusNotOwned                             = "Statefulset not controlled by operator"
 	StatusFailedAlreadyExists                  = "Another MinIO Tenant already exists in the namespace"
 	StatusInconsistentMinIOVersions            = "Different versions across MinIO Pools"
+	StatusRestartingMinIO                      = "Different versions across MinIO Pools"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
 var ErrMinIONotReady = fmt.Errorf("MinIO is not ready")
+
+// ErrMinIORestarting is the error returned when MinIO is restarting
+var ErrMinIORestarting = fmt.Errorf("MinIO is restarting")
 
 // ErrLogSearchNotReady is the error returned when Log Search is not Ready
 var ErrLogSearchNotReady = fmt.Errorf("Log Search is not ready")
@@ -756,6 +760,7 @@ func (c *Controller) syncHandler(key string) error {
 					// Restart the services to fetch the new args, ignore any error.
 					// only perform `restart()` of server deployment when we are truly
 					// expanding an existing deployment. (a pool became initialized)
+					minioRestarted := false
 					if len(tenant.Spec.Pools) > 1 && addingNewPool {
 						// get a new admin client that points to a pod of an already initialized pool (ie: pool-0)
 						livePods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
@@ -783,6 +788,14 @@ func (c *Controller) syncHandler(key string) error {
 						if err = livePodAdminClnt.ServiceRestart(ctx); err != nil {
 							klog.Infof("We failed to restart MinIO to adopt the new pool: %v", err)
 						}
+						minioRestarted = true
+						metaNowTime := metav1.Now()
+						tenant.Status.WaitingOnReady = &metaNowTime
+						tenant.Status.CurrentState = StatusRestartingMinIO
+						if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+							klog.Infof("'%s' Can't update tenant status: %v", key, err)
+						}
+						klog.Infof("'%s' Was restarted", key)
 					}
 
 					// Report the pool is properly created
@@ -792,6 +805,11 @@ func (c *Controller) syncHandler(key string) error {
 						return err
 					}
 
+					if minioRestarted {
+						klog.Infof("%s revision %d", key, tenant.ObjectMeta.ResourceVersion)
+						return ErrMinIORestarting
+					}
+
 				} else {
 					klog.Infof("'%s/%s' Error waiting for pool to be ready: %v", tenant.Namespace, tenant.Name,
 						err)
@@ -799,12 +817,33 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		}
 	}
-
+	klog.Infof("%s revision %d", key, tenant.ObjectMeta.ResourceVersion)
 	// wait here until all pools are initialized, so we can continue with updating versions and the ss resources.
 	for _, poolStatus := range tenant.Status.Pools {
 		if poolStatus.State != miniov2.PoolInitialized {
 			// at least 1 is not initialized, stop here until they all are.
-			return fmt.Errorf("'%s' Waiting for all pools to initialize", key)
+			return errors.New("Waiting for all pools to initialize")
+		}
+	}
+
+	// wait here if `waitOnReady` is set to a given time
+	if tenant.Status.WaitingOnReady != nil {
+		// if it's been longer than the default time 5 minutes, unset the field and continue
+		someTimeAgo := time.Now().Add(-5 * time.Minute)
+		if tenant.Status.WaitingOnReady.Time.Before(someTimeAgo) {
+			tenant.Status.WaitingOnReady = nil
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				klog.Infof("'%s' Can't update tenant status: %v", key, err)
+			}
+		} else {
+			// check if MinIO is already online after the previous restart
+			if tenant.MinIOHealthCheck() {
+				tenant.Status.WaitingOnReady = nil
+				if _, err = c.updatePoolStatus(ctx, tenant); err != nil {
+					klog.Infof("'%s' Can't update tenant status: %v", key, err)
+				}
+				return ErrMinIORestarting
+			}
 		}
 	}
 

@@ -20,7 +20,6 @@ package cluster
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -68,7 +67,6 @@ func (c *Controller) tenantsHealthMonitor() error {
 		return err
 	}
 	for _, tenant := range tenants.Items {
-		klog.Infof("'%s/%s' getting health", tenant.Namespace, tenant.Name)
 		// don't get the tenant cluster health if it doesn't have at least 1 pool initialized
 		oneInitialized := false
 		for _, pool := range tenant.Status.Pools {
@@ -88,7 +86,6 @@ func (c *Controller) tenantsHealthMonitor() error {
 			klog.Infof("'%s/%s' Failed to get cluster health: %v", tenant.Namespace, tenant.Name, err)
 			continue
 		}
-		klog.Infof("uno %+v", healthResult)
 		tenantConfiguration, err := c.getTenantCredentials(context.Background(), &tenant)
 		if err != nil {
 			return err
@@ -96,10 +93,9 @@ func (c *Controller) tenantsHealthMonitor() error {
 		adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 		if err != nil {
 			// show the error and continue
-			klog.V(2).Infof(err.Error())
+			klog.Infof("'%s/%s': %v", tenant.Namespace, tenant.Name, err)
 			continue
 		}
-		klog.Infof("dos")
 		srvInfoCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 		storageInfo, err := adminClnt.StorageInfo(srvInfoCtx)
@@ -109,23 +105,15 @@ func (c *Controller) tenantsHealthMonitor() error {
 			continue
 		}
 
-		klog.Infof("dos.5 %+v", storageInfo)
-
-		j, _ := json.Marshal(storageInfo)
-		klog.Infof("%s", string(j))
-
 		onlineDisks := 0
 		offlineDisks := 0
 		for _, d := range storageInfo.Disks {
-			klog.Infof("endpoint %s", d.Endpoint)
 			if d.State == "ok" {
 				onlineDisks++
 			} else {
 				offlineDisks++
 			}
 		}
-
-		klog.Infof("online %d offline %d", onlineDisks, offlineDisks)
 
 		tenant.Status.DrivesHealing = int32(healthResult.HealingDrives)
 		tenant.Status.WriteQuorum = int32(healthResult.WriteQuorumDrives)
@@ -141,14 +129,10 @@ func (c *Controller) tenantsHealthMonitor() error {
 		if tenant.Status.DrivesOnline < tenant.Status.WriteQuorum {
 			tenant.Status.HealthStatus = miniov2.HealthStatusRed
 		}
-		klog.Infof("trres")
 
 		if _, err = c.updatePoolStatus(context.Background(), &tenant); err != nil {
 			klog.Infof("'%s/%s' Can't update tenant status: %v", tenant.Namespace, tenant.Name, err)
 		}
-
-		klog.Infof("safe")
-
 	}
 	return nil
 }
