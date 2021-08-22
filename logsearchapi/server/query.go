@@ -111,7 +111,7 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 		timeEnd = &ts
 	}
 
-	var pageSize int = 10
+	var pageSize = 10
 	if psParam := values.Get("pageSize"); psParam != "" {
 		pageSize, err = strconv.Atoi(psParam)
 		if err != nil {
@@ -122,7 +122,7 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 		}
 	}
 
-	var pageNumber int = 0
+	var pageNumber int
 	if pnParam := values.Get("pageStart"); pnParam != "" {
 		pageNumber, err = strconv.Atoi(pnParam)
 		if err != nil {
