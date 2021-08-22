@@ -117,7 +117,7 @@ func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
 // ServiceForBucket will return a external name based service
 func ServiceForBucket(t *miniov2.Tenant, bucket string) *corev1.Service {
 	var port int32 = miniov2.MinIOPortLoadBalancerSVC
-	var name string = miniov2.MinIOServiceHTTPPortName
+	name := miniov2.MinIOServiceHTTPPortName
 	if t.TLS() {
 		port = miniov2.MinIOTLSPortLoadBalancerSVC
 		name = miniov2.MinIOServiceHTTPSPortName

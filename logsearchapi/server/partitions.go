@@ -226,8 +226,8 @@ func (c *DBClient) maintainLowWatermarkUsage(ctx context.Context, diskCapacityGB
 // vacuumData should be called in a new go routine.
 func (c *DBClient) vacuumData(diskCapacityGBs int) {
 	var (
-		normalInterval time.Duration = 1 * time.Hour
-		retryInterval  time.Duration = 2 * time.Minute
+		normalInterval = 1 * time.Hour
+		retryInterval  = 2 * time.Minute
 	)
 	timer := time.NewTimer(normalInterval)
 	defer timer.Stop()
