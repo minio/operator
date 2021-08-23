@@ -20,13 +20,11 @@ rules:
   - list
   - patch
   - update
-  - delete
   - deletecollection
 - apiGroups:
   - ""
   resources:
   - namespaces
-  - pods
   - services
   - events
   - resourcequotas
@@ -37,6 +35,18 @@ rules:
   - create
   - list
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - watch
+  - create
+  - list
+  - patch
+  - delete
+  - deletecollection
 - apiGroups:
   - ""
   resources:
