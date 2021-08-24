@@ -116,7 +116,7 @@ const DefaultPoolName = "pool-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.9.3"
+const DefaultConsoleImage = "minio/console:v0.9.4"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -250,7 +250,7 @@ const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.15.1"
+const DefaultKESImage = "minio/kes:v0.16.1"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"
