@@ -15,7 +15,7 @@ operator:
   #     value: ""
   image:
     repository: minio/operator
-    tag: v4.2.1
+    tag: v4.2.2
     pullPolicy: IfNotPresent
   imagePullSecrets: []
   initcontainers: []
@@ -37,7 +37,7 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.9.2
+    tag: v0.9.4
     pullPolicy: IfNotPresent
   imagePullSecrets: []
   initcontainers: []
@@ -64,7 +64,7 @@ tenants:
     ## Registry location and Tag to download MinIO Server image
     image:
       repository: minio/minio
-      tag: RELEASE.2021-08-17T20-53-08Z
+      tag: RELEASE.2021-08-25T00-41-18Z
       pullPolicy: IfNotPresent
     ## Customize namespace for tenant deployment
     namespace: default
