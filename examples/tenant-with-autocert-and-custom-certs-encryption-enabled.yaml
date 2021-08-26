@@ -64,22 +64,6 @@ data:
   ## Secret Key for MinIO Tenant, base64 encoded (echo -n 'minio123' | base64)
   secretkey: bWluaW8xMjM=
 ---
-## Secret to be used for MinIO Console
-apiVersion: v1
-kind: Secret
-metadata:
-  name: minio-autocert-custom-cert-encryption-console-secret
-type: Opaque
-data:
-  ## Passphrase to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
-  CONSOLE_PBKDF_PASSPHRASE: U0VDUkVU
-  ## Salt to encrypt jwt payload, base64 encoded (echo -n 'SECRET' | base64)
-  CONSOLE_PBKDF_SALT: U0VDUkVU
-  ## MinIO User Access Key (used for Console Login), base64 encoded (echo -n 'YOURCONSOLEACCESS' | base64)
-  CONSOLE_ACCESS_KEY: WU9VUkNPTlNPTEVBQ0NFU1M=
-  ## MinIO User Secret Key (used for Console Login), base64 encoded (echo -n 'YOURCONSOLESECRET' | base64)
-  CONSOLE_SECRET_KEY: WU9VUkNPTlNPTEVTRUNSRVQ=
----
 ## MinIO Tenant Definition
 apiVersion: minio.min.io/v2
 kind: Tenant

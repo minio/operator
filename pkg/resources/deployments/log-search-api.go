@@ -123,6 +123,24 @@ func logSearchAPISelector(t *miniov2.Tenant) *metav1.LabelSelector {
 	}
 }
 
+// logSearchAPISecurityContext builds the security context for log search api pods
+func logSearchAPISecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
+	var runAsNonRoot = true
+	var runAsUser int64 = 1000
+	var runAsGroup int64 = 1000
+	var fsGroup int64 = 1000
+	var securityContext = corev1.PodSecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+		RunAsUser:    &runAsUser,
+		RunAsGroup:   &runAsGroup,
+		FSGroup:      &fsGroup,
+	}
+	if t.HasLogEnabled() && t.Spec.Log.SecurityContext != nil {
+		securityContext = *t.Spec.Log.SecurityContext
+	}
+	return &securityContext
+}
+
 // NewForLogSearchAPI returns k8s deployment object for Log Search API server
 func NewForLogSearchAPI(t *miniov2.Tenant) *appsv1.Deployment {
 	var replicas int32 = 1
@@ -138,7 +156,7 @@ func NewForLogSearchAPI(t *miniov2.Tenant) *appsv1.Deployment {
 			ServiceAccountName: serviceAccount,
 			Containers:         []corev1.Container{logSearchAPIContainer(t)},
 			RestartPolicy:      corev1.RestartPolicyAlways,
-			SecurityContext:    t.Spec.Log.SecurityContext,
+			SecurityContext:    logSearchAPISecurityContext(t),
 		},
 	}
 

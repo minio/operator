@@ -327,7 +327,16 @@ func minioPoolTolerations(z *miniov2.Pool) []corev1.Toleration {
 
 // Builds the security context for a Pool
 func minioSecurityContext(pool *miniov2.Pool) *corev1.PodSecurityContext {
-	var securityContext = corev1.PodSecurityContext{}
+	var runAsNonRoot = true
+	var runAsUser int64 = 1000
+	var runAsGroup int64 = 1000
+	var fsGroup int64 = 1000
+	var securityContext = corev1.PodSecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+		RunAsUser:    &runAsUser,
+		RunAsGroup:   &runAsGroup,
+		FSGroup:      &fsGroup,
+	}
 	if pool != nil && pool.SecurityContext != nil {
 		securityContext = *pool.SecurityContext
 	}
