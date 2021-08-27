@@ -3778,6 +3778,8 @@ spec:
               drivesOnline:
                 format: int32
                 type: integer
+              healthMessage:
+                type: string
               healthStatus:
                 type: string
               pools:
@@ -7608,6 +7610,8 @@ spec:
               drivesOnline:
                 format: int32
                 type: integer
+              healthMessage:
+                type: string
               healthStatus:
                 type: string
               pools:
