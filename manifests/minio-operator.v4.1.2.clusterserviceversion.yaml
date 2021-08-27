@@ -269,6 +269,7 @@ spec:
               resources: 
                 - statefulsets
                 - deployments
+                - deployments/finalizers
               verbs: 
                 - get
                 - create
@@ -307,6 +308,8 @@ spec:
                 - certificates.k8s.io
               resourceNames: 
                 - kubernetes.io/legacy-unknown
+                - kubernetes.io/kube-apiserver-client
+                - kubernetes.io/kubelet-serving
               resources: 
                 - signers
               verbs: 
@@ -326,6 +329,13 @@ spec:
                 - "*"
               verbs: 
                 - "*"
+            - 
+              apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - '*'
           serviceAccountName: minio-operator
     strategy: deployment
   installModes: 
