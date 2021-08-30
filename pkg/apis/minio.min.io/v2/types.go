@@ -428,6 +428,10 @@ type TenantStatus struct {
 	HealthStatus HealthStatus `json:"healthStatus,omitempty"`
 	// *Optional* +
 	//
+	// Health Message regarding the State of the tenant
+	HealthMessage string `json:"healthMessage,omitempty"`
+	// *Optional* +
+	//
 	// If set, we will wait until cleared for up a given time
 	WaitingOnReady *metav1.Time `json:"waitingOnReady,omitempty"`
 }

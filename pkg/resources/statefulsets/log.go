@@ -128,6 +128,24 @@ func logDbContainer(t *miniov2.Tenant) corev1.Container {
 // defaultLogVolumeSize is a fallback value if the volume claim template for the DB is not provided
 const defaultLogVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
+// postgresSecurityContext builds the security context for postgres pods
+func postgresSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
+	var runAsNonRoot = true
+	var runAsUser int64 = 999
+	var runAsGroup int64 = 999
+	var fsGroup int64 = 999
+	var securityContext = corev1.PodSecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+		RunAsUser:    &runAsUser,
+		RunAsGroup:   &runAsGroup,
+		FSGroup:      &fsGroup,
+	}
+	if t.HasLogEnabled() && t.Spec.Log.Db != nil && t.Spec.Log.Db.SecurityContext != nil {
+		securityContext = *t.Spec.Log.Db.SecurityContext
+	}
+	return &securityContext
+}
+
 // NewForLogDb creates a new Log StatefulSet for Log feature
 func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	var replicas int32 = 1
@@ -169,24 +187,25 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	// if we have DB configurations to honor
 	if t.Spec.Log.Db != nil {
 
+		// Attach security Policy
+		dbPod.Spec.SecurityContext = postgresSecurityContext(t)
+
 		var initContainerSecurityContext corev1.SecurityContext
 		var initContainers []corev1.Container
 
 		// If securityContext is present InitContainer still requires running with elevated privileges
 		// and user will have to provide a serviceAccount that allows this
-		if t.Spec.Log.Db.SecurityContext != nil {
-			var postgresRunAsUser int64
-			var postgresRunAsNonRoot bool
-			var postgresAllowPrivilegeEscalation bool
+		if dbPod.Spec.SecurityContext != nil &&
+			dbPod.Spec.SecurityContext.RunAsUser != nil &&
+			dbPod.Spec.SecurityContext.RunAsGroup != nil {
 
-			postgresRunAsUser = 0
-			postgresRunAsNonRoot = false
-			postgresAllowPrivilegeEscalation = true
-
+			var runAsUser int64
+			var runAsNonRoot = false
+			var allowPrivilegeEscalation = true
 			initContainerSecurityContext = corev1.SecurityContext{
-				RunAsUser:                &postgresRunAsUser,
-				RunAsNonRoot:             &postgresRunAsNonRoot,
-				AllowPrivilegeEscalation: &postgresAllowPrivilegeEscalation,
+				RunAsUser:                &runAsUser,
+				RunAsNonRoot:             &runAsNonRoot,
+				AllowPrivilegeEscalation: &allowPrivilegeEscalation,
 			}
 			initContainers = []corev1.Container{
 				{
@@ -195,7 +214,7 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 					Command: []string{
 						"chown",
 						"-R",
-						fmt.Sprintf("%s:%s", strconv.FormatInt(*t.Spec.Log.Db.SecurityContext.RunAsUser, 10), strconv.FormatInt(*t.Spec.Log.Db.SecurityContext.RunAsGroup, 10)),
+						fmt.Sprintf("%s:%s", strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsUser, 10), strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsGroup, 10)),
 						"/var/lib/postgresql/data",
 					},
 					SecurityContext: &initContainerSecurityContext,
@@ -204,8 +223,6 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 			}
 		}
 
-		// Attach security Policy
-		dbPod.Spec.SecurityContext = t.Spec.Log.Db.SecurityContext
 		// attach affinity clauses
 		if t.Spec.Log.Db.Affinity != nil {
 			dbPod.Spec.Affinity = t.Spec.Log.Db.Affinity

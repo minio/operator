@@ -159,6 +159,7 @@ func main() {
 	mainController := cluster.NewController(kubeClient, controllerClient, promClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
+		kubeInformerFactory.Core().V1().Pods(),
 		kubeInformerFactory.Batch().V1().Jobs(),
 		minioInformerFactory.Minio().V2().Tenants(),
 		kubeInformerFactory.Core().V1().Services(),

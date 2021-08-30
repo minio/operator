@@ -185,20 +185,20 @@ type Controller struct {
 
 	// Webhook server instance
 	ws *http.Server
+
+	// monitor pods in the cluster to update the health information
+	podInformer cache.SharedIndexInformer
+
+	// healthCheckQueue is a rate limited work queue. This is used to queue work to be
+	// processed instead of performing it as soon as a change happens. This
+	// means we can ensure we only process a fixed amount of resources at a
+	// time, and makes it easy to ensure we are never processing the same item
+	// simultaneously in two different workers.
+	healthCheckQueue queue.RateLimitingInterface
 }
 
 // NewController returns a new sample controller
-func NewController(
-	kubeClientSet kubernetes.Interface,
-	minioClientSet clientset.Interface,
-	promClient promclientset.Interface,
-	statefulSetInformer appsinformers.StatefulSetInformer,
-	deploymentInformer appsinformers.DeploymentInformer,
-	jobInformer batchinformers.JobInformer,
-	tenantInformer informers.TenantInformer,
-	serviceInformer coreinformers.ServiceInformer,
-	serviceMonitorInformer prominformers.ServiceMonitorInformer,
-	hostsTemplate, operatorVersion string) *Controller {
+func NewController(kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, serviceMonitorInformer prominformers.ServiceMonitorInformer, hostsTemplate, operatorVersion string) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -216,6 +216,7 @@ func NewController(
 		promClient:                 promClient,
 		statefulSetLister:          statefulSetInformer.Lister(),
 		statefulSetListerSynced:    statefulSetInformer.Informer().HasSynced,
+		podInformer:                podInformer.Informer(),
 		deploymentLister:           deploymentInformer.Lister(),
 		deploymentListerSynced:     deploymentInformer.Informer().HasSynced,
 		jobLister:                  jobInformer.Lister(),
@@ -226,6 +227,7 @@ func NewController(
 		serviceMonitorLister:       serviceMonitorInformer.Lister(),
 		serviceMonitorListerSynced: serviceMonitorInformer.Informer().HasSynced,
 		workqueue:                  queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
+		healthCheckQueue:           queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "TenantsHealth"),
 		recorder:                   recorder,
 		hostsTemplate:              hostsTemplate,
 		operatorVersion:            operatorVersion,
@@ -284,6 +286,22 @@ func NewController(
 		},
 		DeleteFunc: controller.handleObject,
 	})
+
+	podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.handlePodChange,
+		UpdateFunc: func(old, new interface{}) {
+			newDepl := new.(*corev1.Pod)
+			oldDepl := old.(*corev1.Pod)
+			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same Deployments will always have different RVs.
+				return
+			}
+			controller.handlePodChange(new)
+		},
+		DeleteFunc: controller.handlePodChange,
+	})
+
 	return controller
 }
 
@@ -349,6 +367,9 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
+	// Launcha  single worker for Health Check reacting to Pod Changes
+	go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
+
 	// Launch a goroutine to monitor all Tenants
 	go c.recurrentTenantStatusMonitor(stopCh)
 
@@ -365,6 +386,7 @@ func (c *Controller) Stop() {
 
 	klog.Info("Stopping the minio controller")
 	c.workqueue.ShutDown()
+	c.healthCheckQueue.ShutDown()
 }
 
 // runWorker is a long-running function that will continually call the
@@ -373,6 +395,15 @@ func (c *Controller) Stop() {
 func (c *Controller) runWorker() {
 	defer runtime.HandleCrash()
 	for c.processNextWorkItem() {
+	}
+}
+
+// runHealthCheckWorker is a long-running function that will continually call the
+// processNextWorkItem function in order to read and process a message on the
+// healthCheckQueue.
+func (c *Controller) runHealthCheckWorker() {
+	defer runtime.HandleCrash()
+	for c.processNextHealthCheckItem() {
 	}
 }
 

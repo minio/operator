@@ -155,12 +155,7 @@ func (c *DBClient) createTables(ctx context.Context) error {
 	if err := c.createTableAndPartition(ctx, auditLogEventsTable); err != nil {
 		return err
 	}
-
-	if err := c.createTableAndPartition(ctx, requestInfoTable); err != nil {
-		return err
-	}
-
-	return nil
+	return c.createTableAndPartition(ctx, requestInfoTable)
 }
 
 // InitDBTables Creates tables in the DB.
