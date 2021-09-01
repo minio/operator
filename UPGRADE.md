@@ -24,5 +24,5 @@ securityContext:
   runAsUser: 0
 ```
 
-This scenario is automatically handled by the operator, however if the tenant is updated from a pre-stored source (i.e: a yaml file) which is missing the added `securityContext` this problem may arise again, to update your yamls respectively. 
+This scenario is automatically handled by the operator, however if the tenant is updated from a pre-stored source (i.e: a yaml file) which is missing the added `securityContext` this problem may arise again, so update your stored yamls respectively. 
 
