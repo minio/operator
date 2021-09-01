@@ -808,6 +808,11 @@ func (in *TenantStatus) DeepCopyInto(out *TenantStatus) {
 		in, out := &in.WaitingOnReady, &out.WaitingOnReady
 		*out = (*in).DeepCopy()
 	}
+	if in.Notes != nil {
+		in, out := &in.Notes, &out.Notes
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

@@ -518,11 +518,8 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Check the Sync Version to see if the tenant needs upgrade
-	if tenant.Status.SyncVersion == "" {
-		if tenant, err = c.upgrade420(ctx, tenant); err != nil {
-			klog.V(2).Infof("'%s' Error upgrading tenant: %v", key, err.Error())
-			return err
-		}
+	if tenant, err = c.checkForUpgrades(ctx, tenant); err != nil {
+		return err
 	}
 
 	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2

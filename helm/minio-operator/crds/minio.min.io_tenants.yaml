@@ -3782,6 +3782,10 @@ spec:
                 type: string
               healthStatus:
                 type: string
+              notes:
+                items:
+                  type: string
+                type: array
               pools:
                 items:
                   properties:
@@ -7614,6 +7618,10 @@ spec:
                 type: string
               healthStatus:
                 type: string
+              notes:
+                items:
+                  type: string
+                type: array
               pools:
                 items:
                   properties:

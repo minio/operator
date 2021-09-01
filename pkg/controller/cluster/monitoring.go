@@ -170,7 +170,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	}
 
 	// partial status update, since the storage info might take a while
-	if _, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
+	if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
 		klog.Infof("'%s/%s' Can't update tenant status: %v", tenant.Namespace, tenant.Name, err)
 	}
 
@@ -216,7 +216,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		tenant.Status.HealthMessage = ""
 	}
 
-	if _, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
+	if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
 		klog.Infof("'%s/%s' Can't update tenant status: %v", tenant.Namespace, tenant.Name, err)
 	}
 	return nil
