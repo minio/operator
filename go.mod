@@ -8,6 +8,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/google/go-containerregistry v0.1.2
 	github.com/gorilla/mux v1.8.0
+	github.com/hashicorp/go-version v1.3.0 // indirect
 	github.com/minio/madmin-go v1.0.12
 	github.com/minio/minio-go/v7 v7.0.11-0.20210302210017-6ae69c73ce78
 	github.com/minio/pkg v1.0.11
