@@ -47,6 +47,8 @@ const (
 	HealthUnavailableMessage = "Service Unavailable"
 	// HealthHealingMessage means MinIO is healing one of more drives
 	HealthHealingMessage = "Healing"
+	// HealthReduceAvailabilityMessage some drives are offline
+	HealthReduceAvailabilityMessage = "Reduced Availability"
 	// HealthAboutToLoseQuorumMessage means we are close to losing write capabilities
 	HealthAboutToLoseQuorumMessage = "About to lose quorum"
 )
@@ -163,7 +165,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 			allPodsRunning = false
 		}
 	}
-	if !allPodsRunning {
+	if !allPodsRunning && tenant.Status.HealthStatus != miniov2.HealthStatusRed {
 		tenant.Status.HealthStatus = miniov2.HealthStatusYellow
 	}
 
@@ -197,14 +199,21 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 
 	if tenant.Status.DrivesOffline > 0 || tenant.Status.DrivesHealing > 0 {
 		tenant.Status.HealthStatus = miniov2.HealthStatusYellow
+		if tenant.Status.DrivesHealing > 0 {
+			tenant.Status.HealthMessage = HealthHealingMessage
+		} else {
+			tenant.Status.HealthMessage = HealthReduceAvailabilityMessage
+		}
 	}
 	if tenant.Status.DrivesOnline < tenant.Status.WriteQuorum {
 		tenant.Status.HealthStatus = miniov2.HealthStatusRed
+		tenant.Status.HealthMessage = HealthUnavailableMessage
 	}
 
-	// only if no disks are offline, we are green
-	if tenant.Status.DrivesOffline == 0 {
+	// only if no disks are offline and we are not healing, we are green
+	if tenant.Status.DrivesOffline == 0 && tenant.Status.DrivesHealing == 0 {
 		tenant.Status.HealthStatus = miniov2.HealthStatusGreen
+		tenant.Status.HealthMessage = ""
 	}
 
 	if _, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
