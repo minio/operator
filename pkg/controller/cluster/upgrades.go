@@ -174,8 +174,7 @@ func (c *Controller) upgrade424(ctx context.Context, tenant *miniov2.Tenant) (*m
 		}
 	}
 
-	var err error
-	if tenant, err = c.updateTenantSyncVersion(ctx, tenant, version424, notes); err != nil {
+	return c.updateTenantSyncVersion(ctx, tenant, version424, notes)
 		return nil, err
 	}
 
