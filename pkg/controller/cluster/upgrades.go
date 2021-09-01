@@ -121,11 +121,7 @@ func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*m
 		klog.Errorf("Error deleting operator webhook secret, manual deletion is needed: %v", err)
 	}
 
-	if tenant, err = c.updateTenantSyncVersion(ctx, tenant, version420, nil); err != nil {
-		return nil, err
-	}
-
-	return tenant, nil
+	return c.updateTenantSyncVersion(ctx, tenant, version420, nil)
 }
 
 // Upgrades the sync version to v4.2.4
