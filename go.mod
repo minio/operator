@@ -8,7 +8,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/google/go-containerregistry v0.1.2
 	github.com/gorilla/mux v1.8.0
-	github.com/hashicorp/go-version v1.3.0 // indirect
+	github.com/hashicorp/go-version v1.3.0
 	github.com/minio/madmin-go v1.0.12
 	github.com/minio/minio-go/v7 v7.0.11-0.20210302210017-6ae69c73ce78
 	github.com/minio/pkg v1.0.11
@@ -28,6 +28,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.20.2
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
+	k8s.io/code-generator v0.20.2
 	k8s.io/klog/v2 v2.4.0
 	sigs.k8s.io/controller-runtime v0.8.0
 )
