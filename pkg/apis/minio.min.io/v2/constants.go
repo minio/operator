@@ -95,7 +95,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-08-25T00-41-18Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-08-31T05-46-54Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -116,7 +116,7 @@ const DefaultPoolName = "pool-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.9.4"
+const DefaultConsoleImage = "minio/console:v0.9.6"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -185,7 +185,7 @@ const PrometheusServiceMonitorSecretKey = "token"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.2.3"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.2.4"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres"
