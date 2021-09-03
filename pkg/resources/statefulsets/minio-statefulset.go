@@ -224,7 +224,7 @@ func ContainerMatchLabels(t *miniov2.Tenant, pool *miniov2.Pool) *metav1.LabelSe
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.VolumeMount) {
+func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool) (mounts []corev1.VolumeMount) {
 	// This is the case where user didn't provide a pool and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
 	name := miniov2.MinIOVolumeName
@@ -248,10 +248,12 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 
 	// CertPath (/tmp/certs) will always be mounted even if the tenant doesnt have any TLS certificate
 	// operator will still mount the operator public cert under /tmp/certs/CAs/operator.crt
-	mounts = append(mounts, corev1.VolumeMount{
-		Name:      t.MinIOTLSSecretName(),
-		MountPath: miniov2.MinIOCertPath,
-	})
+	if operatorTLS {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      t.MinIOTLSSecretName(),
+			MountPath: miniov2.MinIOCertPath,
+		})
+	}
 
 	if t.HasConfigurationSecret() {
 		mounts = append(mounts, corev1.VolumeMount{
@@ -264,7 +266,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string) corev1.Container {
+func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool) corev1.Container {
 	consolePort := miniov2.ConsolePort
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
@@ -297,7 +299,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *mini
 			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
-		VolumeMounts:    volumeMounts(t, pool),
+		VolumeMounts:    volumeMounts(t, pool, operatorTLS),
 		Args:            args,
 		Env:             append(minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion), consoleEnvVars(t)...),
 		Resources:       pool.Resources,
@@ -605,7 +607,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 	ssMeta.Labels[miniov2.TenantLabel] = t.Name
 
 	containers := []corev1.Container{
-		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion),
+		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion, operatorTLS),
 	}
 
 	// attach any sidecar containers and volumes
