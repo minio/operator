@@ -54,10 +54,6 @@ const MinIOCertPath = "/tmp/certs"
 // TmpPath /tmp path inside the container file system
 const TmpPath = "/tmp"
 
-// OperatorLabel denotes the version of the Tenant operator
-// running in the cluster.
-const OperatorLabel = "v1.min.io/version"
-
 // TenantLabel is applied to all components of a Tenant cluster
 const TenantLabel = "v1.min.io/tenant"
 

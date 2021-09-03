@@ -31,9 +31,3 @@ type OperatorOptions struct {
 	TenantConsoleImage string
 	TenantKesImage     string
 }
-
-func operatorLabels() map[string]string {
-	m := make(map[string]string)
-	m["name"] = "minio-operator"
-	return m
-}

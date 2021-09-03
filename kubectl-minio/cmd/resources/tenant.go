@@ -70,12 +70,6 @@ func (t TenantOptions) Validate() error {
 	return nil
 }
 
-func tenantLabels(name string) map[string]string {
-	m := make(map[string]string, 1)
-	m["app"] = name
-	return m
-}
-
 func tenantKESLabels(name string) map[string]string {
 	m := make(map[string]string, 1)
 	m["app"] = name + "-kes"

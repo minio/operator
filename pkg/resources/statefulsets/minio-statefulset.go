@@ -202,7 +202,6 @@ func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1
 	}
 	// Add information labels, such as which pool we are building this pod about
 	labels[miniov2.PoolLabel] = pool.Name
-	labels[miniov2.OperatorLabel] = opVersion
 	// Add the additional label used by Console spec selector
 	for k, v := range t.ConsolePodLabels() {
 		labels[k] = v
