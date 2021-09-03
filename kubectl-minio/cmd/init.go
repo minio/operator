@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -41,10 +40,8 @@ import (
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
-	rsc "github.com/minio/operator/resources"
 	"github.com/spf13/cobra"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/kustomize/api/krusty"
 )
 
@@ -59,7 +56,6 @@ type operatorInitCmd struct {
 	errOut       io.Writer
 	output       bool
 	operatorOpts resources.OperatorOptions
-	steps        []runtime.Object
 }
 
 func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
@@ -99,19 +95,13 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	return cmd
 }
 
-var resourcesFS = rsc.GetStaticResources()
-
-type OpInt struct {
-	Op    string `json:"op"`
-	Path  string `json:"path"`
-	Value int    `json:"value"`
-}
-type OpStr struct {
+type opStr struct {
 	Op    string `json:"op"`
 	Path  string `json:"path"`
 	Value string `json:"value"`
 }
-type OpInterface struct {
+
+type opInterface struct {
 	Op    string      `json:"op"`
 	Path  string      `json:"path"`
 	Value interface{} `json:"value"`
@@ -140,21 +130,21 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	var operatorDepPatches []interface{}
 	// create patches for the supplied arguments
 	if o.operatorOpts.Image != "" {
-		operatorDepPatches = append(operatorDepPatches, OpStr{
+		operatorDepPatches = append(operatorDepPatches, opStr{
 			Op:    "replace",
 			Path:  "/spec/template/spec/containers/0/image",
 			Value: o.operatorOpts.Image,
 		})
 	}
 	// create an empty array
-	operatorDepPatches = append(operatorDepPatches, OpInterface{
+	operatorDepPatches = append(operatorDepPatches, opInterface{
 		Op:    "add",
 		Path:  "/spec/template/spec/containers/0/env",
 		Value: []interface{}{},
 	})
 
 	if o.operatorOpts.ClusterDomain != "" {
-		operatorDepPatches = append(operatorDepPatches, OpInterface{
+		operatorDepPatches = append(operatorDepPatches, opInterface{
 			Op:   "add",
 			Path: "/spec/template/spec/containers/0/env/0",
 			Value: corev1.EnvVar{
@@ -164,7 +154,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		})
 	}
 	if o.operatorOpts.NSToWatch != "" {
-		operatorDepPatches = append(operatorDepPatches, OpInterface{
+		operatorDepPatches = append(operatorDepPatches, opInterface{
 			Op:   "add",
 			Path: "/spec/template/spec/containers/0/env/0",
 			Value: corev1.EnvVar{
@@ -174,7 +164,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		})
 	}
 	if o.operatorOpts.TenantMinIOImage != "" {
-		operatorDepPatches = append(operatorDepPatches, OpInterface{
+		operatorDepPatches = append(operatorDepPatches, opInterface{
 			Op:   "add",
 			Path: "/spec/template/spec/containers/0/env/0",
 			Value: corev1.EnvVar{
@@ -184,7 +174,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		})
 	}
 	if o.operatorOpts.TenantConsoleImage != "" {
-		operatorDepPatches = append(operatorDepPatches, OpInterface{
+		operatorDepPatches = append(operatorDepPatches, opInterface{
 			Op:   "add",
 			Path: "/spec/template/spec/containers/0/env/0",
 			Value: corev1.EnvVar{
@@ -194,7 +184,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		})
 	}
 	if o.operatorOpts.TenantKesImage != "" {
-		operatorDepPatches = append(operatorDepPatches, OpInterface{
+		operatorDepPatches = append(operatorDepPatches, opInterface{
 			Op:   "add",
 			Path: "/spec/template/spec/containers/0/env/0",
 			Value: corev1.EnvVar{
@@ -204,7 +194,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		})
 	}
 	if o.operatorOpts.ImagePullSecret != "" {
-		operatorDepPatches = append(operatorDepPatches, OpInterface{
+		operatorDepPatches = append(operatorDepPatches, opInterface{
 			Op:    "add",
 			Path:  "/spec/template/spec/imagePullSecrets",
 			Value: []corev1.LocalObjectReference{{Name: o.operatorOpts.ImagePullSecret}},
@@ -213,7 +203,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	// attach the patches to the kustomization file
 	if len(operatorDepPatches) > 0 {
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
-			Patch: o.serializeJsonPachOps(operatorDepPatches),
+			Patch: o.serializeJSONPachOps(operatorDepPatches),
 			Target: &types.Selector{
 				Gvk: resid.Gvk{
 					Group:   "apps",
@@ -228,8 +218,8 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	if o.operatorOpts.ConsoleImage != "" {
 
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
-			Patch: o.serializeJsonPachOps([]interface{}{
-				OpStr{
+			Patch: o.serializeJSONPachOps([]interface{}{
+				opStr{
 					Op:    "replace",
 					Path:  "/spec/template/spec/containers/0/image",
 					Value: o.operatorOpts.ConsoleImage,
@@ -250,11 +240,18 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		kustomizationYaml.Namespace = o.operatorOpts.Namespace
 	}
 	// Compile the kustomization to a file and create on the in memory filesystem
-	kustYaml, _ := yaml.Marshal(kustomizationYaml)
+	kustYaml, err := yaml.Marshal(kustomizationYaml)
+	if err != nil {
+		return err
+	}
+
 	kustFile, err := inMemSys.Create("kustomization.yaml")
+	if err != nil {
+		return err
+	}
+
 	_, err = kustFile.Write(kustYaml)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
@@ -275,8 +272,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 
 	if o.output {
 		_, err = writer.Write(yml)
-		//done
-		return nil
+		return err
 	}
 
 	// do kubectl apply
@@ -326,7 +322,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	return nil
 }
 
-func (o *operatorInitCmd) serializeJsonPachOps(jp []interface{}) string {
-	jpJson, _ := json.Marshal(jp)
-	return string(jpJson)
+func (o *operatorInitCmd) serializeJSONPachOps(jp []interface{}) string {
+	jpJSON, _ := json.Marshal(jp)
+	return string(jpJSON)
 }

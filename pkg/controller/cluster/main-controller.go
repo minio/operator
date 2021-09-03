@@ -346,16 +346,16 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			close(apiWillStart)
 			// use those certificates to configure the web server
 			if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
-				klog.Infof("HTTPS server ListenAndServeTLS: %v", err)
-				return
+				klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
+				panic(err)
 			}
 		} else {
 			klog.Infof("Starting HTTP api server")
 			close(apiWillStart)
 			// start server without TLS
 			if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
-				klog.Infof("HTTP server ListenAndServe: %v", err)
-				return
+				klog.Infof("HTTP server ListenAndServe failed: %v", err)
+				panic(err)
 			}
 		}
 	}()

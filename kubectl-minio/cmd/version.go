@@ -41,7 +41,6 @@ const (
 type operatorVersionCmd struct {
 	out    io.Writer
 	errOut io.Writer
-	output bool
 }
 
 func newVersionCmd(out io.Writer, errOut io.Writer) *cobra.Command {
