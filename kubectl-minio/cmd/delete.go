@@ -20,11 +20,9 @@ package cmd
 
 import (
 	"bufio"
-	"context"
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -33,21 +31,11 @@ import (
 	"sigs.k8s.io/kustomize/api/types"
 	"sigs.k8s.io/yaml"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/klog/v2"
-
-	rbacv1 "k8s.io/api/rbac/v1"
-	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/restmapper"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/spf13/cobra"
-
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -61,7 +49,6 @@ type deleteCmd struct {
 	errOut       io.Writer
 	output       bool
 	operatorOpts resources.OperatorOptions
-	steps        []runtime.Object
 }
 
 func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
@@ -73,7 +60,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Long:    deleteDesc,
 		Example: deleteExample,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if !helpers.Ask(fmt.Sprintf("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator?")) {
+			if !helpers.Ask("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator?") {
 				return fmt.Errorf(Bold("Aborting Operator deletion\n"))
 			}
 			return nil
@@ -118,12 +105,20 @@ func (o *deleteCmd) run(writer io.Writer) error {
 	if o.operatorOpts.Namespace != "" {
 		kustomizationYaml.Namespace = o.operatorOpts.Namespace
 	}
+
 	// Compile the kustomization to a file and create on the in memory filesystem
-	kustYaml, _ := yaml.Marshal(kustomizationYaml)
+	kustYaml, err := yaml.Marshal(kustomizationYaml)
+	if err != nil {
+		return err
+	}
+
 	kustFile, err := inMemSys.Create("kustomization.yaml")
+	if err != nil {
+		return err
+	}
+
 	_, err = kustFile.Write(kustYaml)
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
@@ -144,8 +139,7 @@ func (o *deleteCmd) run(writer io.Writer) error {
 
 	if o.output {
 		_, err = writer.Write(yml)
-		//done
-		return nil
+		return err
 	}
 
 	// do kubectl apply
@@ -178,67 +172,5 @@ func (o *deleteCmd) run(writer io.Writer) error {
 		os.Exit(1)
 	}
 
-	return nil
-}
-
-func deleteConsoleResources(opts resources.OperatorOptions, clientset *apiextension.Clientset, dynClient dynamic.Interface, consoleResources []runtime.Object) error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	groupResources, err := restmapper.GetAPIGroupResources(clientset.Discovery())
-	if err != nil {
-		klog.Info(err)
-		return errors.New("Cannot get group resources")
-	}
-	rm := restmapper.NewDiscoveryRESTMapper(groupResources)
-
-	for _, obj := range consoleResources {
-		gvk := obj.GetObjectKind().GroupVersionKind()
-		gk := schema.GroupKind{Group: gvk.Group, Kind: gvk.Kind}
-
-		mapping, err := rm.RESTMapping(gk, gvk.Version)
-
-		// convert the runtime.Object to unstructured.Unstructured
-		unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
-		if err != nil {
-			return err
-		}
-		var resourceName string
-		if metaobj, ok := unstructuredObj["metadata"]; ok {
-			mtobj := metaobj.(map[string]interface{})
-			if name, ok2 := mtobj["name"]; ok2 {
-				resourceName = name.(string)
-			}
-		}
-
-		switch obj.(type) {
-		case *rbacv1.ClusterRoleBinding:
-			if err := clusterScopeDelete(dynClient, mapping, ctx, resourceName); err != nil {
-				return err
-			}
-		case *rbacv1.ClusterRole:
-			if err := clusterScopeDelete(dynClient, mapping, ctx, resourceName); err != nil {
-				return err
-			}
-		default:
-			if err := namespaceScopeDelete(opts, dynClient, mapping, ctx, resourceName); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func clusterScopeDelete(dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, name string) error {
-	if err := dynClient.Resource(mapping.Resource).Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
-		return err
-	}
-	return nil
-}
-
-func namespaceScopeDelete(opts resources.OperatorOptions, dynClient dynamic.Interface, mapping *meta.RESTMapping, ctx context.Context, name string) error {
-	if err := dynClient.Resource(mapping.Resource).Namespace(opts.Namespace).Delete(ctx, name, metav1.DeleteOptions{}); err != nil {
-		return err
-	}
 	return nil
 }

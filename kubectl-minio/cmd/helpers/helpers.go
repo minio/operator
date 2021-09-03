@@ -95,8 +95,7 @@ func GetKubeDynamicClient() (dynamic.Interface, error) {
 		return nil, err
 	}
 
-	dynClient, err := dynamic.NewForConfig(config)
-	return dynClient, nil
+	return dynamic.NewForConfig(config)
 }
 
 // GetKubeOperatorClient provides k8s client for operator

@@ -34,12 +34,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	tenantDeleteDesc = `
-'delete' command deletes a MinIO tenant`
-	tenantDeleteExample = `  kubectl minio tenant delete tenant1 --namespace tenant1-ns`
-)
-
 type tenantDeleteCmd struct {
 	out    io.Writer
 	errOut io.Writer

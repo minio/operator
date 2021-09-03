@@ -19,6 +19,7 @@ package cluster
 import (
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -82,7 +83,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 		operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				klog.Infof("operator TLS secret not found", err.Error())
+				klog.Infof("operator TLS secret not found %v", err)
 				if err = c.checkAndCreateOperatorCSR(ctx, operatorDeployment); err != nil {
 					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
 					time.Sleep(time.Second * 10)
@@ -99,7 +100,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 					panic(err)
 				}
 			} else {
-				panic(errors.New("operator TLS wrong format"))
+				panic(errors.New("operator TLS 'public.crt' missing"))
 			}
 
 			if val, ok := operatorTLSCert.Data["private.key"]; ok {
@@ -108,10 +109,15 @@ func (c *Controller) generateTLSCert() (string, string) {
 					panic(err)
 				}
 			} else {
-				panic(errors.New("operator TLS wrong format"))
+				panic(errors.New("operator TLS 'private.key' missing"))
 			}
 			break
 		}
+	}
+
+	// validate certificates if they are valid, if not panic right here.
+	if _, err = tls.LoadX509KeyPair(publicCertPath, publicKeyPath); err != nil {
+		panic(err)
 	}
 
 	return publicCertPath, publicKeyPath

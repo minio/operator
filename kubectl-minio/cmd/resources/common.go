@@ -115,6 +115,7 @@ func GetSchemeDecoder() func(data []byte, defaults *schema.GroupVersionKind, int
 	return decode
 }
 
+// LoadTenantCRD loads tenant crds as k8s runtime object.
 func LoadTenantCRD(decode func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error)) *apiextensionv1.CustomResourceDefinition {
 	contents, err := resourcesFS.Open("base/crds/minio.min.io_tenants.yaml")
 	if err != nil {
@@ -138,6 +139,7 @@ func LoadTenantCRD(decode func(data []byte, defaults *schema.GroupVersionKind, i
 	return crdObj
 }
 
+// GetResourceFileSys file
 func GetResourceFileSys() (filesys.FileSystem, error) {
 	inMemSys := filesys.MakeFsInMemory()
 	// copy from the resources into the target folder on the in memory FS
@@ -169,12 +171,12 @@ func copyFileToMemFS(src, dst string, memFS filesys.FileSystem) error {
 
 	// Note: I had to read the whole string, for some reason io.Copy was not copying the whole content
 	input, err := ioutil.ReadAll(srcFileDesc)
-	_, err = dstFileDesc.Write(input)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	_, err = dstFileDesc.Write(input)
+	return err
 }
 
 func copyDirtoMemFS(src string, dst string, memFS filesys.FileSystem) error {

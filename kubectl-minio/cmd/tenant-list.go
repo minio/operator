@@ -33,9 +33,7 @@ import (
 )
 
 const (
-	listDesc = `
- 'list' command lists all MinIO tenant managed by the Operator`
-	listExample = `  kubectl minio tenant list `
+	listDesc = `'list' command lists all MinIO tenant managed by the Operator`
 )
 
 type listCmd struct {

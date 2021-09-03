@@ -53,29 +53,28 @@ func configureWebhookServer(c *Controller) *http.Server {
 		Path(miniov2.WebhookAPIGetenv + "/{namespace}/{name:.+}").
 		HandlerFunc(c.GetenvHandler).
 		Queries(restQueries("key")...)
+
 	router.Methods(http.MethodPost).
 		Path(miniov2.WebhookAPIBucketService + "/{namespace}/{name:.+}").
 		HandlerFunc(c.BucketSrvHandler).
 		Queries(restQueries("bucket")...)
+
 	router.Methods(http.MethodGet).
 		PathPrefix(miniov2.WebhookAPIUpdate).
 		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
+
 	// CRD Conversion
 	router.Methods(http.MethodPost).
 		Path(miniov2.WebhookCRDConversaion).
 		HandlerFunc(c.CRDConversionHandler)
-	//.
-	//		Queries(restQueries("bucket")...)
 
-	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println(r)
-	})
+	router.NotFoundHandler = http.NotFoundHandler()
 
 	s := &http.Server{
 		Addr:           ":" + miniov2.WebhookDefaultPort,
 		Handler:        router,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		ReadTimeout:    time.Minute,
+		WriteTimeout:   time.Minute,
 		MaxHeaderBytes: 1 << 20,
 	}
 
