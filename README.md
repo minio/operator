@@ -114,7 +114,7 @@ spec:
    accessModes:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
-   storage-class: local-storage
+   storageClassName: local-storage
    local:
       path: </mnt/disks/ssd1>
    nodeAffinity:
@@ -122,9 +122,9 @@ spec:
          nodeSelectorTerms:
          - matchExpressions:
             - key: kubernetes.io/hostname
-               operator: In
-               values:
-               - <NODE-NAME>
+              operator: In
+              values:
+              - <NODE-NAME>
 ```
 
 Replace values in brackets `<VALUE>` with the appropriate value for the local drive.
