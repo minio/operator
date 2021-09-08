@@ -152,7 +152,7 @@ func (t *Tenant) HasCertConfig() bool {
 // ExternalCert returns true is the user has provided a secret
 // that contains CA cert, server cert and server key
 func (t *Tenant) ExternalCert() bool {
-	return t.Spec.ExternalCertSecret != nil
+	return len(t.Spec.ExternalCertSecret) > 0
 }
 
 // ExternalCaCerts returns true is the user has provided a
@@ -697,20 +697,22 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 		if !ok {
 			return errors.New("CONSOLE_ACCESS_KEY not provided")
 		}
+		// remove spaces and line breaks from access key
+		userAccessKey := strings.TrimSpace(string(consoleAccessKey))
 		// skipCreateUser handles the scenario of LDAP users that are
 		// not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
 			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+			// remove spaces and line breaks from secret key
+			userSecretKey := strings.TrimSpace(string(consoleSecretKey))
 			if !ok {
 				return errors.New("CONSOLE_SECRET_KEY not provided")
 			}
-			if err := madmClnt.AddUser(ctx, string(consoleAccessKey),
-				string(consoleSecretKey)); err != nil {
+			if err := madmClnt.AddUser(ctx, userAccessKey, userSecretKey); err != nil {
 				return err
 			}
 		}
-		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName,
-			string(consoleAccessKey), false); err != nil {
+		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, userAccessKey, false); err != nil {
 			return err
 		}
 	}

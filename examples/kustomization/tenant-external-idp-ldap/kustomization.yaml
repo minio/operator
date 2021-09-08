@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+  - openldap.yaml
+namespace: tenant-external-idp-ldap
+patchesStrategicMerge:
+  - tenant.yaml
+  - storage-user.yaml
+patchesJson6902:
+  - target:
+      group: minio.min.io
+      version: v2
+      kind: Tenant
+      name: storage
+    path: tenantNamePatch.yaml

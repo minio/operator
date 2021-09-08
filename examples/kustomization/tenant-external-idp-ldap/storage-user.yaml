@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  CONSOLE_ACCESS_KEY: dWlkPWJpbGx5LGRjPWV4YW1wbGUsZGM9b3Jn # "uid=billy,dc=example,dc=org"
+  CONSOLE_SECRET_KEY: ""
+kind: Secret
+metadata:
+  name: storage-user
+  namespace: default
+type: Opaque
