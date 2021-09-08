@@ -281,7 +281,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 		return err
 	}
 
-	// get mc admin info
+	// get a new admin client
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 	if err != nil {
 		// show the error and continue
@@ -303,7 +303,29 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 		return err
 	}
 
-	if tenant, err = c.updateProvisionedUsersStatus(ctx, tenant, true); err != nil {
+	if _, err = c.updateProvisionedUsersStatus(ctx, tenant, true); err != nil {
+		klog.V(2).Infof(err.Error())
+	}
+
+	return nil
+}
+
+func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) error {
+	var buckets []miniov2.Bucket
+	buckets = append(buckets, tenant.Spec.Buckets...)
+	// get minio client
+	minioClnt, err := tenant.NewMinIOClient(tenantConfiguration)
+	if err != nil {
+		// show the error and continue
+		klog.Errorf("Error instantiating minio Client: %v", err.Error())
+	}
+
+	if err := tenant.CreateBuckets(minioClnt, buckets); err != nil {
+		klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
+		return err
+	}
+
+	if _, err = c.updateProvisionedBucketStatus(ctx, tenant, true); err != nil {
 		klog.V(2).Infof(err.Error())
 	}
 

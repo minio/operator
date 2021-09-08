@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-lite
+---
+apiVersion: v1
+data:
+  config.env: ZXhwb3J0IE1JTklPX1JPT1RfVVNFUj0ibWluaW8iCmV4cG9ydCBNSU5JT19ST09UX1BBU1NXT1JEPSJtaW5pbzEyMyIKZXhwb3J0IE1JTklPX1NUT1JBR0VfQ0xBU1NfU1RBTkRBUkQ9IkVDOjIiCmV4cG9ydCBNSU5JT19CUk9XU0VSPSJvbiI=
+kind: Secret
+metadata:
+  name: storage-configuration
+  namespace: tenant-lite
+type: Opaque
+---
+apiVersion: v1
+data:
+  accessKey: ""
+  secretKey: ""
+kind: Secret
+metadata:
+  name: storage-creds-secret
+  namespace: tenant-lite
+type: Opaque
+---
+apiVersion: v1
+data:
+  CONSOLE_ACCESS_KEY: Y29uc29sZQ==
+  CONSOLE_SECRET_KEY: Y29uc29sZTEyMw==
+kind: Secret
+metadata:
+  name: storage-user
+  namespace: tenant-lite
+type: Opaque
+---
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  annotations:
+    prometheus.io/path: /minio/v2/metrics/cluster
+    prometheus.io/port: "9000"
+    prometheus.io/scrape: "true"
+  labels:
+    app: minio
+  name: storage-lite
+  namespace: tenant-lite
+spec:
+  buckets:
+  - name: bucket-one
+    objectlock: true
+    region: us-west-1
+  certConfig: {}
+  configuration:
+    name: storage-configuration
+  credsSecret:
+    name: storage-creds-secret
+  env: []
+  externalCaCertSecret: []
+  externalCertSecret: []
+  image: minio/minio:RELEASE.2021-11-09T03-21-45Z
+  imagePullSecret: {}
+  log:
+    affinity:
+      nodeAffinity: {}
+      podAffinity: {}
+      podAntiAffinity: {}
+    annotations: {}
+    audit:
+      diskCapacityGB: 10
+    db:
+      affinity:
+        nodeAffinity: {}
+        podAffinity: {}
+        podAntiAffinity: {}
+      annotations: {}
+      image: ""
+      initimage: ""
+      labels: {}
+      nodeSelector: {}
+      resources: {}
+      securityContext:
+        fsGroup: 999
+        runAsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+      serviceAccountName: ""
+      tolerations: []
+      volumeClaimTemplate:
+        metadata: {}
+        spec:
+          accessModes:
+          - ReadWriteOnce
+          resources:
+            requests:
+              storage: 10Gi
+          storageClassName: standard
+    image: ""
+    labels: {}
+    nodeSelector: {}
+    resources: {}
+    securityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    serviceAccountName: ""
+    tolerations: []
+  mountPath: /export
+  podManagementPolicy: Parallel
+  pools:
+  - servers: 4
+    volumeClaimTemplate:
+      metadata:
+        name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
+    volumesPerServer: 2
+  priorityClassName: ""
+  prometheus:
+    affinity:
+      nodeAffinity: {}
+      podAffinity: {}
+      podAntiAffinity: {}
+    annotations: {}
+    diskCapacityGB: 10
+    image: ""
+    initimage: ""
+    labels: {}
+    nodeSelector: {}
+    resources: {}
+    securityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+    serviceAccountName: ""
+    sidecarimage: ""
+    storageClassName: standard
+  requestAutoCert: true
+  s3:
+    bucketDNS: false
+  serviceAccountName: ""
+  serviceMetadata:
+    consoleServiceAnnotations: {}
+    consoleServiceLabels: {}
+    minioServiceAnnotations: {}
+    minioServiceLabels: {}
+  subPath: ""
+  users:
+  - name: storage-user1

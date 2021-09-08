@@ -1265,11 +1265,21 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 	}
-
+	klog.Info("Ashish Kumar Sinha One")
 	// Ensure we are only provisioning users one time
 	if !tenant.Status.ProvisionedUsers {
 		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO users: %v", err)
+			return err
+		}
+	}
+
+	klog.Info("Ashish Kumar Sinha Two ")
+	// Ensure we are only creating the bucket once
+	if !tenant.Status.ProvisionedBuckets {
+		klog.Info("Ashish Kumar Sinha Three")
+		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
+			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
 			return err
 		}
 	}
