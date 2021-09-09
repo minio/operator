@@ -53,6 +53,8 @@ helm.sh/chart: {{ include "minio-operator.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: operator
+app.kubernetes.io/part-of: minio
 {{- end -}}
 
 {{/*
@@ -73,6 +75,8 @@ helm.sh/chart: {{ include "minio-operator.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: console
+app.kubernetes.io/part-of: minio
 {{- end -}}
 
 {{/*
@@ -81,4 +85,27 @@ Selector labels Operator
 {{- define "minio-operator.console-selectorLabels" -}}
 app.kubernetes.io/name: {{ include "minio-operator.name" . }}
 app.kubernetes.io/instance: {{ printf "%s-%s" .Release.Name "console" }}
+{{- end -}}
+
+
+{{/*
+Common labels for Tenant
+*/}}
+{{- define "minio-operator.tenant-labels" -}}
+helm.sh/chart: {{ include "minio-operator.chart" . }}
+{{ include "minio-operator.tenant-selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/component: tenant
+app.kubernetes.io/part-of: minio
+{{- end -}}
+
+{{/*
+Selector labels Operator
+*/}}
+{{- define "minio-operator.tenant-selectorLabels" -}}
+app.kubernetes.io/name: {{ include "minio-operator.name" . }}
+app.kubernetes.io/instance: {{ printf "%s-%s" .Release.Name "tenant" }}
 {{- end -}}

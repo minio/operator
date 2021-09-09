@@ -13,7 +13,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "minio-operator.selectorLabels" . | nindent 8 }}
+        {{- include "minio-operator.labels" . | nindent 4 }}
     spec:
     {{- with .Values.operator.imagePullSecrets }}
       imagePullSecrets:

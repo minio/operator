@@ -4,7 +4,7 @@ metadata:
   name: "console"
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "minio-operator.labels" . | nindent 4 }}
+    {{- include "minio-operator.console-labels" . | nindent 4 }}
 spec:
   ports:
   - name: http

@@ -10,9 +10,11 @@ kind: Ingress
 metadata:
   name: {{ include "minio-operator.console-fullname" . }}
   namespace: {{ .Release.Namespace }}
-  {{- with .Values.console.ingress.labels }}
-  labels: {{ toYaml . | nindent 4 }}
-  {{- end }}
+  labels: 
+    {{- include "minio-operator.console-labels" . | nindent 4 }}
+    {{- with .Values.console.ingress.labels }}
+    {{ toYaml . | nindent 4 }}
+    {{- end }}
   {{- with .Values.console.ingress.annotations }}
   annotations: {{ toYaml . | nindent 4 }}
   {{- end }}

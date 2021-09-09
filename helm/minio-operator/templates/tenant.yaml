@@ -8,6 +8,7 @@ metadata:
   ## Optionally pass labels to be applied to the statefulset pods
   labels:
     app: minio
+    {{- include "minio-operator.tenant-labels" $ | nindent 4 }}
   {{ if dig "metrics" "enabled" false . }}
   ## Annotations for MinIO Tenant Pods
   annotations:
