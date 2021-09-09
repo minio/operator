@@ -55,6 +55,9 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/component: operator
 app.kubernetes.io/part-of: minio
+{{- if .Values.additionalLabels }}
+{{ toYaml .Values.additionalLabels }}
+{{- end }}
 {{- end -}}
 
 {{/*
@@ -77,6 +80,9 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/component: console
 app.kubernetes.io/part-of: minio
+{{- if .Values.additionalLabels }}
+{{ toYaml .Values.additionalLabels }}
+{{- end }}
 {{- end -}}
 
 {{/*
@@ -100,6 +106,9 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/component: tenant
 app.kubernetes.io/part-of: minio
+{{- if .Values.additionalLabels }}
+{{ toYaml .Values.additionalLabels }}
+{{- end }}
 {{- end -}}
 
 {{/*

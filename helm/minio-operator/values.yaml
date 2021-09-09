@@ -1,5 +1,9 @@
 # Default values for minio-operator.
 
+# -- Additional labels for all resources
+additionalLabels: {}
+  # app: minio
+
 operator:
   ## DEPRECATED: Please use the "CLUSTER_DOMAIN" or "WATCHED_NAMESPACE" env variable
   ## instead of clusterDomain and nsToWatch.
