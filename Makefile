@@ -70,7 +70,11 @@ regen-crd-docs:
 
 plugin: regen-crd
 	@echo "Building 'kubectl-minio' binary"
-	@(cd $(PLUGIN_HOME); go build -o kubectl-minio main.go)
+	@(cd $(PLUGIN_HOME); \
+		go vet ./... && \
+		go test -race ./... && \
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml)
 
 .PHONY: logsearchapi
 logsearchapi:
@@ -89,7 +93,4 @@ getconsoleuiyaml:
 	@echo "Done"
 
 generate-code:
-	@./k8s/update-codegen.sh && rm -Rf pkg/client
-	@mv github.com/minio/operator/pkg/client pkg/
-	@mv github.com/minio/operator/pkg/apis/minio.min.io/v1/zz_generated.deepcopy.go pkg/apis/minio.min.io/v1/zz_generated.deepcopy.go
-	@mv github.com/minio/operator/pkg/apis/minio.min.io/v2/zz_generated.deepcopy.go pkg/apis/minio.min.io/v2/zz_generated.deepcopy.go
+	@./k8s/update-codegen.sh

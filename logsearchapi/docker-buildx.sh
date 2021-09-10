@@ -33,13 +33,6 @@ function main() {
 
     release=$(git describe --abbrev=0 --tags)
 
-    docker buildx build --push --no-cache -t "minio/logsearchapi:latest" \
-           --build-arg TAG="${release}" \
-           --platform=linux/arm64,linux/amd64,linux/ppc64le,linux/s390x \
-           -f Dockerfile .
-
-    docker buildx prune -f
-
     docker buildx build --push --no-cache -t "minio/logsearchapi:${release}" \
            --build-arg TAG="${release}" \
            --platform=linux/arm64,linux/amd64,linux/ppc64le,linux/s390x \

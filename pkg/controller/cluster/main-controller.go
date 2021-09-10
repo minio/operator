@@ -336,24 +336,32 @@ func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
+	// we need to make sure the API is ready before starting operator
+	apiWillStart := make(chan interface{})
+
 	go func() {
 		if isOperatorTLS() {
 			publicCertPath, publicKeyPath := c.generateTLSCert()
 			klog.Infof("Starting HTTPS api server")
+			close(apiWillStart)
 			// use those certificates to configure the web server
 			if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
-				klog.Infof("HTTPS server ListenAndServeTLS: %v", err)
-				return
+				klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
+				panic(err)
 			}
 		} else {
 			klog.Infof("Starting HTTP api server")
+			close(apiWillStart)
 			// start server without TLS
 			if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
-				klog.Infof("HTTP server ListenAndServe: %v", err)
-				return
+				klog.Infof("HTTP server ListenAndServe failed: %v", err)
+				panic(err)
 			}
 		}
 	}()
+
+	klog.Info("Waiting for API to start")
+	<-apiWillStart
 
 	// Start the informer factories to begin populating the informer caches
 	klog.Info("Starting Tenant controller")
@@ -518,11 +526,8 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Check the Sync Version to see if the tenant needs upgrade
-	if tenant.Status.SyncVersion == "" {
-		if tenant, err = c.upgrade420(ctx, tenant); err != nil {
-			klog.V(2).Infof("'%s' Error upgrading tenant: %v", key, err.Error())
-			return err
-		}
+	if tenant, err = c.checkForUpgrades(ctx, tenant); err != nil {
+		return err
 	}
 
 	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2

@@ -6,6 +6,7 @@ linters-settings:
     locale: US
 
 linters:
+  disable-all: true
   enable:
     - typecheck
     - goimports
@@ -16,6 +17,12 @@ linters:
     - gosimple
     - deadcode
     - structcheck
+    - gomodguard
+    - gofmt
+    - unused
+    - structcheck
+    - unconvert
+    - varcheck
 
 issues:
   exclude-use-default: false

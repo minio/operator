@@ -35,8 +35,6 @@ import (
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/minio/kubectl-minio/cmd/resources"
 	"github.com/spf13/cobra"
-
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -48,9 +46,7 @@ const (
 type operatorProxyCmd struct {
 	out          io.Writer
 	errOut       io.Writer
-	output       bool
 	operatorOpts resources.OperatorOptions
-	steps        []runtime.Object
 }
 
 func newProxyCmd(out io.Writer, errOut io.Writer) *cobra.Command {

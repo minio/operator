@@ -1,0 +1,57 @@
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: storage
+  namespace: minio-tenant
+spec:
+  ## Define configuration for KES (stateless and distributed key-management system)
+  ## Refer https://github.com/minio/kes
+  kes:
+    image: "" # minio/kes:v0.16.1
+    replicas: 2
+    kesSecret:
+      name: kes-configuration
+    imagePullPolicy: "IfNotPresent"
+    ## Use this field to provide external certificates for the KES server. TLS for KES pods will be configured
+    ## by mounting a Kubernetes secret under /tmp/kes folder, supported types:
+    ## Opaque | kubernetes.io/tls | cert-manager.io/v1alpha2 | cert-manager.io/v1
+    ##
+    ## ie:
+    ##
+    ##  externalCertSecret:
+    ##    name: tls-certificates-for-kes
+    ##    type: kubernetes.io/tls
+    ##
+    ## Create secrets as explained here:
+    ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+    externalCertSecret: null
+    ## Use this field to provide client certificates for KES. This can be used to configure
+    ## mTLS for KES and your KMS. Files will be mounted under /tmp/kes folder, supported types:
+    ## Opaque | kubernetes.io/tls | cert-manager.io/v1alpha2 | cert-manager.io/v1
+    ##
+    ## ie:
+    ##
+    ##  clientCertSecret:
+    ##    name: mtls-certificates-for-kms
+    ##    type: Opaque
+    ##
+    ## Create secrets as explained here:
+    ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+    clientCertSecret: null
+    ## Key name to be created on the KMS, default is "my-minio-key"
+    keyName: ""
+    resources: {}
+    nodeSelector: {}
+    affinity:
+      nodeAffinity: {}
+      podAffinity: {}
+      podAntiAffinity: {}
+    tolerations: []
+    annotations: {}
+    labels: {}
+    serviceAccountName: ""
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      fsGroup: 1000

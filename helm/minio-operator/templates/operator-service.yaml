@@ -10,7 +10,5 @@ spec:
   ports:
     - port: 4222
       name: http
-    - port: 4233
-      name: https
   selector:
     {{- include "minio-operator.selectorLabels" . | nindent 4 }}

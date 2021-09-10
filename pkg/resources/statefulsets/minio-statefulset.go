@@ -202,7 +202,6 @@ func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1
 	}
 	// Add information labels, such as which pool we are building this pod about
 	labels[miniov2.PoolLabel] = pool.Name
-	labels[miniov2.OperatorLabel] = opVersion
 	// Add the additional label used by Console spec selector
 	for k, v := range t.ConsolePodLabels() {
 		labels[k] = v
@@ -225,7 +224,7 @@ func ContainerMatchLabels(t *miniov2.Tenant, pool *miniov2.Pool) *metav1.LabelSe
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.VolumeMount) {
+func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool) (mounts []corev1.VolumeMount) {
 	// This is the case where user didn't provide a pool and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
 	name := miniov2.MinIOVolumeName
@@ -249,10 +248,12 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 
 	// CertPath (/tmp/certs) will always be mounted even if the tenant doesnt have any TLS certificate
 	// operator will still mount the operator public cert under /tmp/certs/CAs/operator.crt
-	mounts = append(mounts, corev1.VolumeMount{
-		Name:      t.MinIOTLSSecretName(),
-		MountPath: miniov2.MinIOCertPath,
-	})
+	if operatorTLS {
+		mounts = append(mounts, corev1.VolumeMount{
+			Name:      t.MinIOTLSSecretName(),
+			MountPath: miniov2.MinIOCertPath,
+		})
+	}
 
 	if t.HasConfigurationSecret() {
 		mounts = append(mounts, corev1.VolumeMount{
@@ -265,7 +266,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool) (mounts []corev1.Volume
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string) corev1.Container {
+func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool) corev1.Container {
 	consolePort := miniov2.ConsolePort
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
@@ -298,7 +299,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *mini
 			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
-		VolumeMounts:    volumeMounts(t, pool),
+		VolumeMounts:    volumeMounts(t, pool, operatorTLS),
 		Args:            args,
 		Env:             append(minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion), consoleEnvVars(t)...),
 		Resources:       pool.Resources,
@@ -507,11 +508,16 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 		if t.ExternalClientCert() {
 			clientCertSecret = t.Spec.ExternalClientCertSecret.Name
 			// This covers both secrets of type "kubernetes.io/tls" and
-			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" {
+			// "cert-manager.io/v1alpha2" / cert-manager.io/v1 because of same keys in both.
+			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 				clientCertPaths = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: "client.crt"},
 					{Key: "tls.key", Path: "client.key"},
+				}
+			} else {
+				clientCertPaths = []corev1.KeyToPath{
+					{Key: "public.crt", Path: "client.crt"},
+					{Key: "private.key", Path: "client.key"},
 				}
 			}
 		} else {
@@ -606,7 +612,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 	ssMeta.Labels[miniov2.TenantLabel] = t.Name
 
 	containers := []corev1.Container{
-		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion),
+		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion, operatorTLS),
 	}
 
 	// attach any sidecar containers and volumes

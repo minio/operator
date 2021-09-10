@@ -36,9 +36,7 @@ import (
 )
 
 const (
-	infoDesc = `
-'info' command lists pools from a MinIO tenant`
-	infoExample = `  kubectl minio tenant info tenant1 --namespace tenant1-ns`
+	infoDesc = `'info' command lists pools from a MinIO tenant`
 )
 
 type infoCmd struct {

@@ -19,6 +19,7 @@ package cluster
 import (
 	"context"
 	"crypto/rand"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -82,12 +83,12 @@ func (c *Controller) generateTLSCert() (string, string) {
 		operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				klog.Infof("operator TLS secret not found", err.Error())
+				klog.Infof("operator TLS secret not found: %v", err)
 				if err = c.checkAndCreateOperatorCSR(ctx, operatorDeployment); err != nil {
 					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
 					time.Sleep(time.Second * 10)
 				} else {
-					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, "operator-auto-tls", metav1.DeleteOptions{}); err != nil {
+					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, c.operatorCSRName(), metav1.DeleteOptions{}); err != nil {
 						klog.Infof(err.Error())
 					}
 				}
@@ -99,7 +100,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 					panic(err)
 				}
 			} else {
-				panic(errors.New("operator TLS wrong format"))
+				panic(errors.New("operator TLS 'public.crt' missing"))
 			}
 
 			if val, ok := operatorTLSCert.Data["private.key"]; ok {
@@ -108,10 +109,15 @@ func (c *Controller) generateTLSCert() (string, string) {
 					panic(err)
 				}
 			} else {
-				panic(errors.New("operator TLS wrong format"))
+				panic(errors.New("operator TLS 'private.key' missing"))
 			}
 			break
 		}
+	}
+
+	// validate certificates if they are valid, if not panic right here.
+	if _, err = tls.LoadX509KeyPair(publicCertPath, publicKeyPath); err != nil {
+		panic(err)
 	}
 
 	return publicCertPath, publicKeyPath
@@ -201,25 +207,24 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 		return err
 	}
 	namespace := miniov2.GetNSFromFile()
-	operatorCSRName := fmt.Sprintf("operator-%s-csr", namespace)
-	err = c.createCertificateSigningRequest(ctx, map[string]string{}, operatorCSRName, namespace, csrBytes, operator, "server")
+	err = c.createCertificateSigningRequest(ctx, map[string]string{}, c.operatorCSRName(), namespace, csrBytes, operator, "server")
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", operatorCSRName, err)
+		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", c.operatorCSRName(), err)
 		return err
 	}
 
 	// fetch certificate from CSR
-	certBytes, err := c.fetchCertificate(ctx, operatorCSRName)
+	certBytes, err := c.fetchCertificate(ctx, c.operatorCSRName())
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", operatorCSRName, err)
+		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", c.operatorCSRName(), err)
 		return err
 	}
 
 	// PEM encode private ECDSA key
-	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
+	encodedPrivateKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
 	// Create secret for operator to use
-	err = c.createOperatorSecret(ctx, operator, map[string]string{}, "operator-tls", encodedPrivKey, certBytes)
+	err = c.createOperatorSecret(ctx, operator, map[string]string{}, "operator-tls", encodedPrivateKey, certBytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", "operator-tls", err)
 		return err
@@ -228,7 +233,7 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 }
 
 func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator metav1.Object) error {
-	if _, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, "operator-auto-tls", metav1.GetOptions{}); err != nil {
+	if _, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{}); err != nil {
 		if k8serrors.IsNotFound(err) {
 			klog.V(2).Infof("Creating a new Certificate Signing Request for Operator Server Certs, cluster %q")
 			if err = c.createOperatorCSR(ctx, operator); err != nil {
@@ -273,4 +278,9 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	}
 
 	return nil
+}
+
+func (c *Controller) operatorCSRName() string {
+	namespace := miniov2.GetNSFromFile()
+	return fmt.Sprintf("operator-%s-csr", namespace)
 }

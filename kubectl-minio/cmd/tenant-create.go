@@ -43,9 +43,8 @@ import (
 const (
 	createDesc = `
 'create' command creates a new MinIO tenant`
-	createExample       = `  kubectl minio tenant create tenant1 --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
-	tenantSecretSuffix  = "-creds-secret"
-	consoleSecretSuffix = "-console-secret"
+	createExample      = ` kubectl minio tenant create tenant1 --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
+	tenantSecretSuffix = "-creds-secret"
 )
 
 type createCmd struct {
@@ -158,7 +157,7 @@ func (c *createCmd) run(args []string) error {
 
 func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, t *miniov2.Tenant, s, console *corev1.Secret) error {
 	if _, err := kclient.CoreV1().Namespaces().Get(context.Background(), t.Namespace, metav1.GetOptions{}); err != nil {
-		return errors.New(fmt.Sprintf("Namespace %s not found, please create the namespace using 'kubectl create ns %s'", t.Namespace, t.Namespace))
+		return fmt.Errorf("Namespace %s not found, please create the namespace using 'kubectl create ns %s'", t.Namespace, t.Namespace)
 	}
 	if _, err := kclient.CoreV1().Secrets(t.Namespace).Create(context.Background(), s, metav1.CreateOptions{}); err != nil {
 		return err

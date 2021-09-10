@@ -18,6 +18,13 @@ package cluster
 
 import (
 	"context"
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/hashicorp/go-version"
+
+	"github.com/minio/minio-go/v7/pkg/set"
 
 	"k8s.io/klog/v2"
 
@@ -26,6 +33,53 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const (
+	version420 = "v4.2.0"
+	version424 = "v4.2.4"
+)
+
+// checkForUpgrades verifies if the tenant definition needs any upgrades
+func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
+
+	upgradesToDo := set.NewStringSet()
+
+	// if the version is empty, do all upgrades
+	if tenant.Status.SyncVersion == "" {
+		upgradesToDo.Add(version420)
+		upgradesToDo.Add(version424)
+	} else {
+		currentSyncVersion, err := version.NewVersion(tenant.Status.SyncVersion)
+		if err != nil {
+			return tenant, err
+		}
+		// check which upgrades we need to do
+		versionsThatNeedUpgrades := []string{
+			version420,
+			version424,
+		}
+		for _, v := range versionsThatNeedUpgrades {
+			vp, _ := version.NewVersion(v)
+			if currentSyncVersion.LessThan(vp) {
+				upgradesToDo.Add(v)
+			}
+		}
+	}
+
+	if upgradesToDo.Contains(version420) {
+		if tenant, err := c.upgrade420(ctx, tenant); err != nil {
+			klog.V(2).Infof("'%s/%s' Error upgrading tenant: %v", tenant.Namespace, tenant.Name, err.Error())
+			return tenant, err
+		}
+	}
+	if upgradesToDo.Contains(version424) {
+		if tenant, err := c.upgrade424(ctx, tenant); err != nil {
+			klog.V(2).Infof("'%s/%s' Error upgrading tenant: %v", tenant.Namespace, tenant.Name, err.Error())
+			return tenant, err
+		}
+	}
+	return tenant, nil
+}
 
 // Upgrades the sync version to v4.2.0
 // in this version we renamed a bunch of environment variables and removed the
@@ -67,9 +121,58 @@ func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*m
 		klog.Errorf("Error deleting operator webhook secret, manual deletion is needed: %v", err)
 	}
 
-	if tenant, err = c.updateTenantSyncVersion(ctx, tenant, "v4.2.0"); err != nil {
-		return nil, err
+	return c.updateTenantSyncVersion(ctx, tenant, version420, nil)
+}
+
+// Upgrades the sync version to v4.2.4
+// we started running all deployment with a default non-root `securityContext` which breaks previous tenants
+// running without a security context, so to preserve the behavior, we will add the root securityContext to
+// the tenant definition
+func (c *Controller) upgrade424(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
+	// only do this update if the Tenant has at least 1 pool initialized which means it's not a fresh deployment
+	atLeastOnePoolInitialized := false
+	for _, pool := range tenant.Status.Pools {
+		if pool.State == miniov2.PoolInitialized {
+			atLeastOnePoolInitialized = true
+			break
+		}
 	}
 
-	return tenant, nil
+	var notes []string
+	// if we found at least 1 pool initialized this is not a fresh tenant and needs upgrade
+	if atLeastOnePoolInitialized {
+		securityContextWasChanged := false
+		var poolsToUpdate []int
+		for i, pool := range tenant.Spec.Pools {
+			if pool.SecurityContext == nil {
+				securityContextWasChanged = true
+				poolsToUpdate = append(poolsToUpdate, i)
+				notes = append(notes, fmt.Sprintf("Pool %s had no security context so we added one for running as root (not recommended)", pool.Name))
+			}
+		}
+		if securityContextWasChanged {
+
+			// Use the implicit defaults from kubernetes
+			var runAsNonRoot bool
+			var runAsUser int64
+			var runAsGroup int64
+			var fsGroup int64
+			var securityContext = corev1.PodSecurityContext{
+				RunAsNonRoot: &runAsNonRoot,
+				RunAsUser:    &runAsUser,
+				RunAsGroup:   &runAsGroup,
+				FSGroup:      &fsGroup,
+			}
+			for i := range poolsToUpdate {
+				tenant.Spec.Pools[i].SecurityContext = &securityContext
+			}
+
+			klog.Infof("'%s/%s' Updating tenant's pools security context", tenant.Namespace, tenant.Name)
+			if tenant, err := c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Update(ctx, tenant, metav1.UpdateOptions{}); err != nil {
+				klog.Errorf("'%s/%s' Error upgrading implicit tenant security context, MinIO may not start: %v", tenant.Namespace, tenant.Name, err)
+			}
+		}
+	}
+
+	return c.updateTenantSyncVersion(ctx, tenant, version424, notes)
 }

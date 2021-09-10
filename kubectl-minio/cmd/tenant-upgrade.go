@@ -37,9 +37,7 @@ import (
 )
 
 const (
-	upgradeDesc = `
-'upgrade' command upgrades a MinIO tenant to the specified MinIO version`
-	upgradeExample = `  kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2021-08-25T00-41-18Z --namespace tenant1-ns`
+	upgradeDesc = `'upgrade' command upgrades a MinIO tenant to the specified MinIO version`
 )
 
 type upgradeCmd struct {
@@ -158,7 +156,7 @@ func (u *upgradeCmd) upgradeTenant(client *operatorv1.Clientset, t *miniov2.Tena
 			return err
 		}
 	} else {
-		fmt.Printf(Bold(fmt.Sprintf("\nAborting Tenant upgrade\n\n")))
+		fmt.Printf(Bold("\nAborting Tenant upgrade\n\n"))
 	}
 	return nil
 }
