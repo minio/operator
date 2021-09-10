@@ -109,6 +109,7 @@ func kesJobContainer(t *miniov2.Tenant) corev1.Container {
 		Args:            args,
 		Env:             kesEnvironmentVars(t),
 		VolumeMounts:    kesVolumeMounts(t),
+		Resources:       t.Spec.KES.Resources,
 	}
 }
 

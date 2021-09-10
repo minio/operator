@@ -508,11 +508,16 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 		if t.ExternalClientCert() {
 			clientCertSecret = t.Spec.ExternalClientCertSecret.Name
 			// This covers both secrets of type "kubernetes.io/tls" and
-			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" {
+			// "cert-manager.io/v1alpha2" / cert-manager.io/v1 because of same keys in both.
+			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 				clientCertPaths = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: "client.crt"},
 					{Key: "tls.key", Path: "client.key"},
+				}
+			} else {
+				clientCertPaths = []corev1.KeyToPath{
+					{Key: "public.crt", Path: "client.crt"},
+					{Key: "private.key", Path: "client.key"},
 				}
 			}
 		} else {
