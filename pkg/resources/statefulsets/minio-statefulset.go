@@ -171,7 +171,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 	if t.HasConfigurationSecret() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_CONFIG_ENV_FILE",
-			Value: miniov2.TmpPath + "/config.env",
+			Value: miniov2.TmpPath + "/minio-config/config.env",
 		})
 	}
 
@@ -258,7 +258,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool) (moun
 	if t.HasConfigurationSecret() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      "configuration",
-			MountPath: miniov2.TmpPath,
+			MountPath: miniov2.TmpPath + "/minio-config",
 		})
 	}
 
