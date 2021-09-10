@@ -88,7 +88,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
 					time.Sleep(time.Second * 10)
 				} else {
-					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, c.operatorCSRName(), metav1.DeleteOptions{}); err != nil {
+					if err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, c.operatorCSRName(), metav1.DeleteOptions{}); err != nil {
 						klog.Infof(err.Error())
 					}
 				}
@@ -233,7 +233,7 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 }
 
 func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator metav1.Object) error {
-	if _, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{}); err != nil {
+	if _, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{}); err != nil {
 		if k8serrors.IsNotFound(err) {
 			klog.V(2).Infof("Creating a new Certificate Signing Request for Operator Server Certs, cluster %q")
 			if err = c.createOperatorCSR(ctx, operator); err != nil {

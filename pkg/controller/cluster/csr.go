@@ -37,7 +37,7 @@ import (
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
-	certificates "k8s.io/api/certificates/v1"
+	certificates "k8s.io/api/certificates/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,14 +69,15 @@ func isEqual(a, b []string) bool {
 
 // createCertificateSigningRequest is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
 func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, owner metav1.Object, usage string) error {
-	csrSignerName := "kubernetes.io/kubelet-serving"
+	//csrSignerName := "kubernetes.io/kubelet-serving"
 	csrKeyUsage := []certificates.KeyUsage{
 		certificates.UsageDigitalSignature,
-		certificates.UsageKeyEncipherment,
+		//certificates.UsageKeyEncipherment,
 		certificates.UsageServerAuth,
+		certificates.UsageClientAuth,
 	}
 	if usage == "client" {
-		csrSignerName = "kubernetes.io/kube-apiserver-client"
+		//csrSignerName = "kubernetes.io/kube-apiserver-client"
 		csrKeyUsage = []certificates.KeyUsage{
 			certificates.UsageDigitalSignature,
 			certificates.UsageKeyEncipherment,
@@ -102,14 +103,14 @@ func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels
 			},
 		},
 		Spec: certificates.CertificateSigningRequestSpec{
-			SignerName: csrSignerName,
-			Request:    encodedBytes,
-			Groups:     []string{"system:authenticated", "system:nodes"},
-			Usages:     csrKeyUsage,
+			//SignerName: csrSignerName,
+			Request: encodedBytes,
+			Groups:  []string{"system:authenticated", "system:nodes"},
+			Usages:  csrKeyUsage,
 		},
 	}
 
-	ks, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
+	ks, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
 	if err != nil && !k8serrors.IsAlreadyExists(err) {
 		return err
 	}
@@ -132,7 +133,7 @@ func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels
 		},
 	}
 
-	_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().UpdateApproval(ctx, name, ks, metav1.UpdateOptions{})
+	_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().UpdateApproval(ctx, ks, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -161,7 +162,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 			return nil, fmt.Errorf("%s", s.String())
 
 		case <-tick.C:
-			r, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
+			r, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
 			if err != nil {
 				klog.Errorf("Unexpected error during certificate fetching of csr/%s: %s", csrName, err)
 				return nil, err

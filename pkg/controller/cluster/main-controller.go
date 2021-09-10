@@ -539,7 +539,7 @@ func (c *Controller) syncHandler(key string) error {
 		if tenant.Spec.RequestAutoCert == nil && tenant.APIVersion != "" {
 			// If we get certificate signing requests for MinIO is safe to assume the Tenant v1 was deployed using AutoCert
 			// otherwise AutoCert will be false
-			tenantCSR, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
+			tenantCSR, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
 			if err != nil || tenantCSR == nil {
 				autoCertEnabled = false
 			}
