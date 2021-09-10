@@ -1,0 +1,89 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: billy-ldif
+data:
+  billy.ldif: |
+    # LDIF fragment to create group branch under root
+    dn: uid=billy,dc=example,dc=org
+    uid: billy
+    cn: billy
+    sn: 3
+    objectClass: top
+    objectClass: posixAccount
+    objectClass: inetOrgPerson
+    loginShell: /bin/bash
+    homeDirectory: /home/billy
+    uidNumber: 14583102
+    gidNumber: 14564100
+    userPassword: billy123
+    mail: billy@example.org
+    gecos: Billy User
+
+    # Create base group
+    dn: ou=groups,dc=example,dc=org
+    objectclass:organizationalunit
+    ou: groups
+    description: generic groups branch
+
+    # create consoleAdmin group (this already exists on minio and have a policy of s3::*)
+    dn: cn=consoleAdmin,ou=groups,dc=example,dc=org
+    objectClass: top
+    objectClass: posixGroup
+    gidNumber: 678
+
+    # Assing group to new user
+    dn: cn=consoleAdmin,ou=groups,dc=example,dc=org
+    changetype: modify
+    add: memberuid
+    memberuid: billy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openldap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openldap
+  template:
+    metadata:
+      labels:
+        app: openldap
+    spec:
+      volumes:
+        - name: billy-configuration
+          configMap:
+            name: billy-ldif
+      containers:
+        - name: openldap
+          image: osixia/openldap:1.3.0
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 389
+              name: tcp-ldap
+            - containerPort: 636
+              name: tcp-ldap2
+          volumeMounts:
+            - name: billy-configuration
+              mountPath: /tmp/billy.ldif
+              subPath: billy.ldif
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap
+  labels:
+    name: openldap
+spec:
+  ports:
+    - name: tcp-ldap
+      port: 389
+      targetPort: tcp-ldap
+    - name: tcp-ldap2
+      port: 636
+      targetPort: tcp-ldap2
+  selector:
+    app: openldap

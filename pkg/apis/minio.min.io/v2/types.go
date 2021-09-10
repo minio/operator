@@ -864,6 +864,11 @@ type KESConfig struct {
 	Labels map[string]string `json:"labels,omitempty"`
 	// *Optional* +
 	//
+	// Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits in the MinIO tenant. +
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	// *Optional* +
+	//
 	// The filter for the Operator to apply when selecting which nodes on which to deploy MinIO KES pods. The Operator only selects those nodes whose labels match the specified selector. +
 	//
 	// See the Kubernetes documentation on https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Assigning Pods to Nodes] for more information.
