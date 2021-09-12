@@ -340,6 +340,10 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	apiWillStart := make(chan interface{})
 
 	go func() {
+
+		// Request kubernetes version from Kube ApiServer
+		c.getKubeAPIServerVersion()
+
 		if isOperatorTLS() {
 			publicCertPath, publicKeyPath := c.generateTLSCert()
 			klog.Infof("Starting HTTPS api server")
@@ -539,9 +543,16 @@ func (c *Controller) syncHandler(key string) error {
 		if tenant.Spec.RequestAutoCert == nil && tenant.APIVersion != "" {
 			// If we get certificate signing requests for MinIO is safe to assume the Tenant v1 was deployed using AutoCert
 			// otherwise AutoCert will be false
-			tenantCSR, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
-			if err != nil || tenantCSR == nil {
-				autoCertEnabled = false
+			if useCertificatesV1API {
+				tenantCSR, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
+				if err != nil || tenantCSR == nil {
+					autoCertEnabled = false
+				}
+			} else {
+				tenantCSR, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
+				if err != nil || tenantCSR == nil {
+					autoCertEnabled = false
+				}
 			}
 		} else {
 			autoCertEnabled = tenant.AutoCert()

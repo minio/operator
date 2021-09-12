@@ -29,6 +29,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/version"
+
 	"github.com/minio/pkg/env"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -66,6 +68,18 @@ func isOperatorTLS() bool {
 	return (set && value == "on") || !set
 }
 
+var kubeAPIServerVersion *version.Info
+var useCertificatesV1API bool
+
+func (c *Controller) getKubeAPIServerVersion() {
+	var err error
+	kubeAPIServerVersion, err = c.kubeClientSet.Discovery().ServerVersion()
+	if err != nil {
+		panic(err)
+	}
+	useCertificatesV1API = versionCompare(kubeAPIServerVersion.String(), "v1.22.0") >= 0
+}
+
 func (c *Controller) generateTLSCert() (string, string) {
 	ctx := context.Background()
 	namespace := miniov2.GetNSFromFile()
@@ -88,8 +102,14 @@ func (c *Controller) generateTLSCert() (string, string) {
 					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
 					time.Sleep(time.Second * 10)
 				} else {
-					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, c.operatorCSRName(), metav1.DeleteOptions{}); err != nil {
-						klog.Infof(err.Error())
+					if useCertificatesV1API {
+						if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, c.operatorCSRName(), metav1.DeleteOptions{}); err != nil {
+							klog.Infof(err.Error())
+						}
+					} else {
+						if err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, c.operatorCSRName(), metav1.DeleteOptions{}); err != nil {
+							klog.Infof(err.Error())
+						}
 					}
 				}
 			}
@@ -207,7 +227,7 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 		return err
 	}
 	namespace := miniov2.GetNSFromFile()
-	err = c.createCertificateSigningRequest(ctx, map[string]string{}, c.operatorCSRName(), namespace, csrBytes, operator, "server")
+	err = c.createCertificateSigningRequest(ctx, map[string]string{}, c.operatorCSRName(), namespace, csrBytes, "server")
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", c.operatorCSRName(), err)
 		return err
@@ -233,7 +253,13 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 }
 
 func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator metav1.Object) error {
-	if _, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{}); err != nil {
+	var err error
+	if useCertificatesV1API {
+		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
+	} else {
+		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
+	}
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			klog.V(2).Infof("Creating a new Certificate Signing Request for Operator Server Certs, cluster %q")
 			if err = c.createOperatorCSR(ctx, operator); err != nil {
