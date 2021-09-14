@@ -145,7 +145,7 @@ version](https://github.com/minio/operator/releases/) of the MinIO
 Kubernetes Plugin:
 
 ```sh
-wget https://github.com/minio/operator/releases/download/v4.2.2/kubectl-minio_4.2.2_linux_amd64 -O kubectl-minio
+wget https://github.com/minio/operator/releases/download/v4.2.7/kubectl-minio_4.2.7_linux_amd64 -O kubectl-minio
 chmod +x kubectl-minio
 
 # The following command may require sudo if the current user does not have root permissions
