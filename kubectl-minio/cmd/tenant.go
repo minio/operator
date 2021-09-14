@@ -66,6 +66,7 @@ func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd.AddCommand(newTenantExpandCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 	cmd.AddCommand(newTenantUpgradeCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 	cmd.AddCommand(newTenantDeleteCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
+	cmd.AddCommand(newTenantReportCmd(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 
 	return cmd
 }
