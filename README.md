@@ -85,20 +85,25 @@ The plugin defaults to creating each `PVC` with the `default` Kubernetes [`Stora
 
 MinIO Tenants *require* that the `StorageClass` sets `volumeBindingMode` to `WaitForFirstConsumer`. The default `StorageClass` may use the `Immediate` setting, which can cause complications during `PVC` binding. MinIO strongly recommends creating a custom `StorageClass` for use by `PV` supporting a MinIO Tenant.
 
-The following `StorageClass` object contains the appropriate fields for supporting a MinIO Tenant:
+The following `StorageClass` object contains the appropriate fields for supporting a MinIO Tenant using
+[MinIO DirectCSI-managed drives](https://github.com/minio/direct-csi):
 
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-    name: local-storage
+    name: direct-csi-min-io
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
 ```
 
 ### Tenant Persistent Volumes
 
-MinIO automatically creates Persistent Volume Claims (PVC) as part of Tenant creation. Ensure the cluster has at least one [Persistent Volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) for each PVC MinIO requests.
+The MinIO Operator generates one Persistent Volume Claim (PVC) for each volume in the tenant *plus* two PVC to support collecting Tenant Metrics and logs. The cluster *must* have sufficient [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) that meet the capacity requirements of each PVC for the tenant to start correctly. For example, deploying a Tenant with 16 volumes requires 18 (16 + 2). If each PVC requests 1TB capacity, then each PV must also provide *at least* 1TB of capacity. 
+
+MinIO recommends using the [MinIO DirectCSI Driver](https://github.com/minio/direct-csi) to automatically provision Persistent Volumes from locally attached drives. This procedure assumes MinIO DirectCSI is installed and configured.
+
+For clusters which cannot deploy MinIO DirectCSI, use [Local Persistent Volumes](https://kubernetes.io/docs/concepts/storage/volumes/#local). The following example YAML describes a local persistent volume:
 
 The following YAML describes a `local` PV:
 
@@ -140,25 +145,30 @@ MinIO *strongly recommends* using the following CSI drivers for creating local P
   
 ### 1) Install the MinIO Operator
 
-Download the [latest stable
-version](https://github.com/minio/operator/releases/) of the MinIO 
-Kubernetes Plugin:
+Run the following commands to install the MinIO Operator and Plugin using the Kubernetes ``krew`` plugin manager:
 
 ```sh
-wget https://github.com/minio/operator/releases/download/v4.2.2/kubectl-minio_4.2.2_linux_amd64 -O kubectl-minio
-chmod +x kubectl-minio
-
-# The following command may require sudo if the current user does not have root permissions
-mv kubectl-minio /usr/local/bin/
+kubectl krew update
+kubectl krew install minio
 ```
-
-Run the following command to verify installation:
+   
+See the ``krew`` [installation documentation](https://krew.sigs.k8s.io/docs/user-guide/setup/install/) for instructions on installing ``krew``.
+   
+Run the following command to verify installation of the plugin:
 
 ```sh
 kubectl minio version
 ```
 
-The output should reflect the installed version of the MinIO Kubernetes Plugin.
+As an alternative to `krew`, you can download the `kubectl-minio` plugin from the [Operator Releases Page](https://github.com/minio/operator/releases).  Download the `kubectl-minio` package appropriate for your operating system and extract the contents as `kubectl-minio`. Set the `kubectl-minio` binary to be executable (e.g. `chmod +x`) and place it in your system `PATH`.
+
+For example, the following code downloads the latest stable version 4.2.7 of the MinIO Kubernetes Plugin and installs it to the system ``$PATH``. The example assumes a Linux operating system:
+
+```sh
+wget https://github.com/minio/operator/releases/download/v4.2.7/kubectl-minio_4.2.7_linux_amd64 -O kubectl-minio
+chmod +x kubectl-minio
+mv kubectl-minio /usr/local/bin/
+```
 
 Run the following command to initialize the Operator:
 
