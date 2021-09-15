@@ -58,7 +58,7 @@ metadata:
               },
               "podManagementPolicy": "Parallel",
               "console": {
-                "image": "minio/console:v0.9.6",
+                "image": "minio/console:v0.10.0",
                 "replicas": 1,
                 "consoleSecret": {
                   "name": "console-secret"
@@ -76,7 +76,7 @@ metadata:
     capabilities: "Full Lifecycle"
     categories: "Storage, Big Data, AI/Machine Learning"
     certified: "false"
-    containerImage: "minio/operator:v4.2.7"
+    containerImage: "minio/operator:v4.2.8"
     createdAt: 2021-03-17 00:00:00 +00:00
     description: " MinIO Operator allows creating distributed MinIO Clusters and manage their lifecycle"
     repository: "https://github.com/minio/operator"
@@ -202,7 +202,7 @@ spec:
               spec: 
                 containers: 
                   - 
-                    image: "docker.io/minio/operator:v4.2.7"
+                    image: "docker.io/minio/operator:v4.2.8"
                     name: minio-operator
                 serviceAccountName: minio-operator
       permissions: 
