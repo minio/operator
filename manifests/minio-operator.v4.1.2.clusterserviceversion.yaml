@@ -19,7 +19,7 @@ metadata:
               }
             },
             "spec": {
-              "image": "minio/minio:RELEASE.2021-09-03T03-56-13Z",
+              "image": "minio/minio:RELEASE.2021-09-15T04-54-25Z",
               "imagePullPolicy": "IfNotPresent",
               "credsSecret": {
                 "name": "minio-creds-secret"

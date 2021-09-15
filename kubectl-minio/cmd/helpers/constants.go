@@ -74,7 +74,7 @@ const (
 	DefaultOperatorImage = "minio/operator:v4.2.8"
 
 	// DefaultTenantImage is the default MinIO image used while creating tenant
-	DefaultTenantImage = "minio/minio:RELEASE.2021-09-03T03-56-13Z"
+	DefaultTenantImage = "minio/minio:RELEASE.2021-09-15T04-54-25Z"
 
 	// DefaultKESImage is the default KES image used while creating tenant
 	DefaultKESImage = "minio/kes:v0.16.1"
