@@ -134,13 +134,13 @@ func genEllipsis(start, end int) string {
 // HasCredsSecret returns true if the user has provided a secret
 // for a Tenant else false
 func (t *Tenant) HasCredsSecret() bool {
-	return t.Spec.CredsSecret != nil
+	return t.Spec.CredsSecret != nil && t.Spec.CredsSecret.Name != ""
 }
 
 // HasConfigurationSecret returns true if the user has provided a configuration
 // for a Tenant else false
 func (t *Tenant) HasConfigurationSecret() bool {
-	return t.Spec.Configuration != nil
+	return t.Spec.Configuration != nil && t.Spec.Configuration.Name != ""
 }
 
 // HasCertConfig returns true if the user has provided a certificate
@@ -164,19 +164,19 @@ func (t *Tenant) ExternalCaCerts() bool {
 // ExternalClientCert returns true is the user has provided a secret
 // that contains CA client cert, server cert and server key
 func (t *Tenant) ExternalClientCert() bool {
-	return t.Spec.ExternalClientCertSecret != nil
+	return t.Spec.ExternalClientCertSecret != nil && t.Spec.ExternalClientCertSecret.Name != ""
 }
 
 // KESExternalCert returns true is the user has provided a secret
 // that contains CA cert, server cert and server key for KES pods
 func (t *Tenant) KESExternalCert() bool {
-	return t.Spec.KES != nil && t.Spec.KES.ExternalCertSecret != nil
+	return t.Spec.KES != nil && t.Spec.KES.ExternalCertSecret != nil && t.Spec.KES.ExternalCertSecret.Name != ""
 }
 
 // KESClientCert returns true is the user has provided a secret
 // that contains CA cert, client cert and client key for KES pods
 func (t *Tenant) KESClientCert() bool {
-	return t.Spec.KES != nil && t.Spec.KES.ClientCertSecret != nil
+	return t.Spec.KES != nil && t.Spec.KES.ClientCertSecret != nil && t.Spec.KES.ClientCertSecret.Name != ""
 }
 
 // AutoCert is enabled by default, otherwise we return the user provided value

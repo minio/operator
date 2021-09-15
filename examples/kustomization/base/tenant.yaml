@@ -101,7 +101,7 @@ spec:
   ##
   ## Create secrets as explained here:
   ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
-  externalClientCertSecret: null
+  # externalClientCertSecret: {}
   ## Registry location and Tag to download MinIO Server image
   image: minio/minio:RELEASE.2021-09-15T04-54-25Z
   imagePullSecret: {}
