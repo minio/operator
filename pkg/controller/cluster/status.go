@@ -164,11 +164,11 @@ func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *mi
 	return t, nil
 }
 
-func (c *Controller) updateTenantSyncVersion(ctx context.Context, tenant *miniov2.Tenant, syncVersion string, notes []string) (*miniov2.Tenant, error) {
-	return c.updateTenantSyncVersionWithRetry(ctx, tenant, syncVersion, notes, true)
+func (c *Controller) updateTenantSyncVersion(ctx context.Context, tenant *miniov2.Tenant, syncVersion string) (*miniov2.Tenant, error) {
+	return c.updateTenantSyncVersionWithRetry(ctx, tenant, syncVersion, true)
 }
 
-func (c *Controller) updateTenantSyncVersionWithRetry(ctx context.Context, tenant *miniov2.Tenant, syncVersion string, notes []string, retry bool) (*miniov2.Tenant, error) {
+func (c *Controller) updateTenantSyncVersionWithRetry(ctx context.Context, tenant *miniov2.Tenant, syncVersion string, retry bool) (*miniov2.Tenant, error) {
 	// If we are updating the tenant with the same sync version as before we are going to skip it as to avoid a resource number
 	// change and have the operator loop re-processing the tenant endlessly
 	if tenant.Status.SyncVersion == syncVersion {
@@ -179,9 +179,6 @@ func (c *Controller) updateTenantSyncVersionWithRetry(ctx context.Context, tenan
 	// Or create a copy manually for better performance
 	tenantCopy := tenant.DeepCopy()
 	tenantCopy.Status.SyncVersion = syncVersion
-	if len(notes) > 0 {
-		tenantCopy.Status.Notes = append(tenantCopy.Status.Notes, notes...)
-	}
 	// If the CustomResourceSubresources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
 	// UpdateStatus will not allow changes to the Spec of the resource,
@@ -197,7 +194,7 @@ func (c *Controller) updateTenantSyncVersionWithRetry(ctx context.Context, tenan
 			if err != nil {
 				return tenant, err
 			}
-			return c.updateTenantSyncVersionWithRetry(ctx, tenant, syncVersion, notes, false)
+			return c.updateTenantSyncVersionWithRetry(ctx, tenant, syncVersion, false)
 		}
 		return t, err
 	}

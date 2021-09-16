@@ -3801,13 +3801,11 @@ spec:
                 type: string
               healthStatus:
                 type: string
-              notes:
-                items:
-                  type: string
-                type: array
               pools:
                 items:
                   properties:
+                    legacySecurityContext:
+                      type: boolean
                     ssName:
                       type: string
                     state:
@@ -7656,13 +7654,11 @@ spec:
                 type: string
               healthStatus:
                 type: string
-              notes:
-                items:
-                  type: string
-                type: array
               pools:
                 items:
                   properties:
+                    legacySecurityContext:
+                      type: boolean
                     ssName:
                       type: string
                     state:

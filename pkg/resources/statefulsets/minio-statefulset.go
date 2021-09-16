@@ -321,13 +321,13 @@ func GetContainerArgs(t *miniov2.Tenant, hostsTemplate string) []string {
 }
 
 // Builds the tolerations for a Pool.
-func minioPoolTolerations(z *miniov2.Pool) []corev1.Toleration {
+func poolTolerations(z *miniov2.Pool) []corev1.Toleration {
 	var tolerations []corev1.Toleration
 	return append(tolerations, z.Tolerations...)
 }
 
 // Builds the security context for a Pool
-func minioSecurityContext(pool *miniov2.Pool) *corev1.PodSecurityContext {
+func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.PodSecurityContext {
 	var runAsNonRoot = true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
@@ -338,14 +338,19 @@ func minioSecurityContext(pool *miniov2.Pool) *corev1.PodSecurityContext {
 		RunAsGroup:   &runAsGroup,
 		FSGroup:      &fsGroup,
 	}
+
 	if pool != nil && pool.SecurityContext != nil {
 		securityContext = *pool.SecurityContext
+		// if the pool has no security context, and it's market as legacy security context return nil
+	} else if status.LegacySecurityContext {
+		return nil
 	}
+
 	return &securityContext
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
-func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, serviceName string, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
+func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = pool.Servers
 	var podVolumeSources []corev1.VolumeProjection
@@ -640,8 +645,8 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 					Affinity:           pool.Affinity,
 					NodeSelector:       pool.NodeSelector,
 					SchedulerName:      t.Scheduler.Name,
-					Tolerations:        minioPoolTolerations(pool),
-					SecurityContext:    minioSecurityContext(pool),
+					Tolerations:        poolTolerations(pool),
+					SecurityContext:    poolSecurityContext(pool, poolStatus),
 					ServiceAccountName: t.Spec.ServiceAccountName,
 					PriorityClassName:  t.Spec.PriorityClassName,
 				},
