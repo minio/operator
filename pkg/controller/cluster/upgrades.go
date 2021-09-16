@@ -19,6 +19,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -37,6 +38,7 @@ import (
 const (
 	version420 = "v4.2.0"
 	version424 = "v4.2.4"
+	version428 = "v4.2.8"
 )
 
 // checkForUpgrades verifies if the tenant definition needs any upgrades
@@ -57,6 +59,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		versionsThatNeedUpgrades := []string{
 			version420,
 			version424,
+			version428,
 		}
 		for _, v := range versionsThatNeedUpgrades {
 			vp, _ := version.NewVersion(v)
@@ -78,6 +81,13 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 			return tenant, err
 		}
 	}
+	if upgradesToDo.Contains(version428) {
+		if tenant, err := c.upgrade428(ctx, tenant); err != nil {
+			klog.V(2).Infof("'%s/%s' Error upgrading tenant: %v", tenant.Namespace, tenant.Name, err.Error())
+			return tenant, err
+		}
+	}
+
 	return tenant, nil
 }
 
@@ -210,4 +220,47 @@ func versionCompare(version1 string, version2 string) int {
 		j++
 	}
 	return 0
+}
+
+// Upgrades the sync version to v4.2.8
+// we needed to clean `operator-webhook-secrets` with non-alphanumerical characters
+func (c *Controller) upgrade428(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
+
+	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, miniov2.WebhookSecret, metav1.GetOptions{})
+	if err != nil {
+		return tenant, err
+	}
+
+	unsupportedChars := false
+	var re = regexp.MustCompile(`(?m)^[a-zA-Z0-9]+$`)
+
+	// if any of the keys contains non alphanumerical characters,
+	accessKey := string(secret.Data[miniov2.WebhookOperatorUsername])
+	if !re.MatchString(accessKey) {
+		unsupportedChars = true
+	}
+	secretKey := string(secret.Data[miniov2.WebhookOperatorUsername])
+	if !re.MatchString(secretKey) {
+		unsupportedChars = true
+	}
+
+	if unsupportedChars {
+		// delete the secret
+		err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, miniov2.WebhookSecret, metav1.DeleteOptions{})
+		if err != nil {
+			return tenant, err
+		}
+		// regen the secret
+		_, err = c.applyOperatorWebhookSecret(ctx, tenant)
+		if err != nil {
+			return tenant, err
+		}
+		// update the revision of the tenant to force a rolling restart across all statefulsets of the tenant
+		tenant, err = c.increaseTenantRevision(ctx, tenant)
+		if err != nil {
+			return tenant, err
+		}
+	}
+
+	return c.updateTenantSyncVersion(ctx, tenant, version428, nil)
 }
