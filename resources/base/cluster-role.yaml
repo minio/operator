@@ -58,6 +58,7 @@ rules:
     resources:
       - statefulsets
       - deployments
+      - deployments/finalizers
     verbs:
       - get
       - create
