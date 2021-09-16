@@ -202,9 +202,9 @@ func (c *Controller) createOperatorSecret(ctx context.Context, operator metav1.O
 			Labels:    labels,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(operator, schema.GroupVersionKind{
-					Group:   miniov2.SchemeGroupVersion.Group,
-					Version: miniov2.SchemeGroupVersion.Version,
-					Kind:    miniov2.OperatorCRDResourceKind,
+					Group:   "apps",
+					Version: "v1",
+					Kind:    "Deployment",
 				}),
 			},
 		},
