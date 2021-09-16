@@ -22,8 +22,6 @@ import (
 
 	"github.com/hashicorp/go-version"
 
-	"github.com/minio/minio-go/v7/pkg/set"
-
 	"k8s.io/klog/v2"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -44,7 +42,7 @@ type upgradeFunction func(ctx context.Context, tenant *miniov2.Tenant) (*miniov2
 // checkForUpgrades verifies if the tenant definition needs any upgrades
 func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 
-	upgradesToDo := set.NewStringSet()
+	var upgradesToDo []string
 	upgrades := map[string]upgradeFunction{
 		version420: c.upgrade420,
 		version424: c.upgrade424,
@@ -54,10 +52,10 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 
 	// if the version is empty, do all upgrades
 	if tenant.Status.SyncVersion == "" {
-		upgradesToDo.Add(version420)
-		upgradesToDo.Add(version424)
-		upgradesToDo.Add(version428)
-		upgradesToDo.Add(version429)
+		upgradesToDo = append(upgradesToDo, version420)
+		upgradesToDo = append(upgradesToDo, version424)
+		upgradesToDo = append(upgradesToDo, version428)
+		upgradesToDo = append(upgradesToDo, version429)
 	} else {
 		currentSyncVersion, err := version.NewVersion(tenant.Status.SyncVersion)
 		if err != nil {
@@ -73,12 +71,12 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		for _, v := range versionsThatNeedUpgrades {
 			vp, _ := version.NewVersion(v)
 			if currentSyncVersion.LessThan(vp) {
-				upgradesToDo.Add(v)
+				upgradesToDo = append(upgradesToDo, v)
 			}
 		}
 	}
 
-	for _, u := range upgradesToDo.ToSlice() {
+	for _, u := range upgradesToDo {
 		klog.Infof("Upgrading %s", u)
 		if tenant, err := upgrades[u](ctx, tenant); err != nil {
 			klog.V(2).Infof("'%s/%s' Error upgrading tenant: %v", tenant.Namespace, tenant.Name, err.Error())
@@ -260,7 +258,7 @@ func (c *Controller) upgrade429(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if atLeastOnePoolInitialized {
 		for i, pool := range tenant.Spec.Pools {
 			// if they have a security context, and is having them run as root
-			if pool.SecurityContext != nil && *pool.SecurityContext.RunAsNonRoot == false && *pool.SecurityContext.RunAsUser == 0 {
+			if pool.SecurityContext != nil && !*pool.SecurityContext.RunAsNonRoot && *pool.SecurityContext.RunAsUser == 0 {
 				// Report the pool is now Legacy Security Context
 				tenant.Status.Pools[i].LegacySecurityContext = true
 				// push updates to status
