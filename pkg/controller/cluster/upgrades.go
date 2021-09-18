@@ -202,38 +202,44 @@ func versionCompare(version1 string, version2 string) int {
 func (c *Controller) upgrade428(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 
 	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, miniov2.WebhookSecret, metav1.GetOptions{})
-	if err != nil {
+	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
+	// this secret not found, means it's a fresh tenant
+	if err == nil {
 
-	unsupportedChars := false
-	var re = regexp.MustCompile(`(?m)^[a-zA-Z0-9]+$`)
+		unsupportedChars := false
+		var re = regexp.MustCompile(`(?m)^[a-zA-Z0-9]+$`)
 
-	// if any of the keys contains non alphanumerical characters,
-	accessKey := string(secret.Data[miniov2.WebhookOperatorUsername])
-	if !re.MatchString(accessKey) {
-		unsupportedChars = true
-	}
-	secretKey := string(secret.Data[miniov2.WebhookOperatorUsername])
-	if !re.MatchString(secretKey) {
-		unsupportedChars = true
-	}
-
-	if unsupportedChars {
-		// delete the secret
-		err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, miniov2.WebhookSecret, metav1.DeleteOptions{})
-		if err != nil {
-			return tenant, err
+		// if any of the keys contains non alphanumerical characters,
+		accessKey := string(secret.Data[miniov2.WebhookOperatorUsername])
+		if !re.MatchString(accessKey) {
+			unsupportedChars = true
 		}
-		// regen the secret
-		_, err = c.applyOperatorWebhookSecret(ctx, tenant)
-		if err != nil {
-			return tenant, err
+		secretKey := string(secret.Data[miniov2.WebhookOperatorUsername])
+		if !re.MatchString(secretKey) {
+			unsupportedChars = true
 		}
-		// update the revision of the tenant to force a rolling restart across all statefulsets of the tenant
-		tenant, err = c.increaseTenantRevision(ctx, tenant)
-		if err != nil {
-			return tenant, err
+
+		if unsupportedChars {
+			// delete the secret
+			err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, miniov2.WebhookSecret, metav1.DeleteOptions{})
+			if err != nil && !k8serrors.IsNotFound(err) {
+				return tenant, err
+			}
+			if err == nil {
+				// regen the secret
+				_, err = c.applyOperatorWebhookSecret(ctx, tenant)
+				if err != nil {
+					return tenant, err
+				}
+				// update the revision of the tenant to force a rolling restart across all statefulsets of the tenant
+				tenant, err = c.increaseTenantRevision(ctx, tenant)
+				if err != nil {
+					return tenant, err
+				}
+			}
+
 		}
 	}
 
