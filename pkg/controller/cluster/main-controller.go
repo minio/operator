@@ -744,7 +744,7 @@ func (c *Controller) syncHandler(key string) error {
 			klog.Infof("'%s/%s': Deploying pool %s", tenant.Namespace, tenant.Name, pool.Name)
 			// Check healthcheck for previous pool only if it's not a new setup,
 			// and check if they are online before adding this pool.
-			if addingNewPool && !tenant.MinIOHealthCheck() {
+			if addingNewPool && !tenant.MinIOHealthCheck() && len(tenant.Spec.Pools) > 1 {
 				klog.Infof("'%s/%s': Deploying new pool failed %s: MinIO is not Ready", tenant.Namespace, tenant.Name, pool.Name)
 				return ErrMinIONotReady
 			}
@@ -753,7 +753,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			ss = statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss = statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -994,9 +994,9 @@ func (c *Controller) syncHandler(key string) error {
 		// clean the local directory
 		_ = c.removeArtifacts()
 
-		for _, pool := range tenant.Spec.Pools {
+		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
@@ -1048,7 +1048,7 @@ func (c *Controller) syncHandler(key string) error {
 				carryOverLabels[miniov1.ZoneLabel] = val
 			}
 
-			nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			nss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			ssCopy := ss.DeepCopy()
 
 			ssCopy.Spec.Template = nss.Spec.Template
