@@ -199,7 +199,7 @@ const LogPgPort = 5432
 const LogSearchAPIPort = 8080
 
 // LogPgPortName specifies the default Log Service Postgres server's port name.
-const LogPgPortName = "http-log-pg"
+const LogPgPortName = "tcp-log-pg"
 
 // LogSearchAPIPortName specifies the default Log Search API server's port name.
 const LogSearchAPIPortName = "http-logsearchapi"
