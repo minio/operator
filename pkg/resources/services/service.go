@@ -45,9 +45,12 @@ func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 	}
 	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.MinIOServiceLabels != nil {
 		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.MinIOServiceLabels)
-		annotations = t.Spec.ServiceMetadata.MinIOServiceAnnotations
 	} else {
 		labels = internalLabels
+	}
+
+	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.MinIOServiceAnnotations != nil {
+		annotations = t.Spec.ServiceMetadata.MinIOServiceAnnotations
 	}
 
 	minioPort := corev1.ServicePort{
@@ -88,8 +91,12 @@ func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
 	}
 	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceLabels != nil {
 		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.ConsoleServiceLabels)
+	}
+
+	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceAnnotations != nil {
 		annotations = t.Spec.ServiceMetadata.ConsoleServiceAnnotations
 	}
+
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          labels,
