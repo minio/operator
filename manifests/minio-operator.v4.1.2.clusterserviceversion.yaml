@@ -19,7 +19,7 @@ metadata:
               }
             },
             "spec": {
-              "image": "minio/minio:RELEASE.2021-08-05T22-01-19Z",
+              "image": "minio/minio:RELEASE.2021-09-15T04-54-25Z",
               "imagePullPolicy": "IfNotPresent",
               "credsSecret": {
                 "name": "minio-creds-secret"
@@ -58,7 +58,7 @@ metadata:
               },
               "podManagementPolicy": "Parallel",
               "console": {
-                "image": "minio/console:v0.8.2",
+                "image": "minio/console:v0.10.0",
                 "replicas": 1,
                 "consoleSecret": {
                   "name": "console-secret"
@@ -76,12 +76,12 @@ metadata:
     capabilities: "Full Lifecycle"
     categories: "Storage, Big Data, AI/Machine Learning"
     certified: "false"
-    containerImage: "minio/operator:v4.1.2"
+    containerImage: "minio/operator:v4.2.10"
     createdAt: 2021-03-17 00:00:00 +00:00
     description: " MinIO Operator allows creating distributed MinIO Clusters and manage their lifecycle"
     repository: "https://github.com/minio/operator"
     support: "MinIO, Inc."
-  name: minio-operator.v4.1.2
+  name: minio-operator.v4.2.2
   namespace: placeholder
 spec: 
   customresourcedefinitions: 
@@ -202,7 +202,7 @@ spec:
               spec: 
                 containers: 
                   - 
-                    image: "docker.io/minio/operator:v4.1.2"
+                    image: "docker.io/minio/operator:v4.2.10"
                     name: minio-operator
                 serviceAccountName: minio-operator
       permissions: 
@@ -269,6 +269,7 @@ spec:
               resources: 
                 - statefulsets
                 - deployments
+                - deployments/finalizers
               verbs: 
                 - get
                 - create
@@ -307,6 +308,8 @@ spec:
                 - certificates.k8s.io
               resourceNames: 
                 - kubernetes.io/legacy-unknown
+                - kubernetes.io/kube-apiserver-client
+                - kubernetes.io/kubelet-serving
               resources: 
                 - signers
               verbs: 
@@ -326,6 +329,13 @@ spec:
                 - "*"
               verbs: 
                 - "*"
+            - 
+              apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - servicemonitors
+              verbs:
+                - '*'
           serviceAccountName: minio-operator
     strategy: deployment
   installModes: 

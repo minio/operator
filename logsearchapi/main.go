@@ -1,3 +1,4 @@
+//go:build go1.13
 // +build go1.13
 
 /*
@@ -37,5 +38,6 @@ func main() {
 		Addr:    ":8080",
 		Handler: ls,
 	}
+	log.Print("Log Search API Listening on Port :8080")
 	log.Fatal(s.ListenAndServe())
 }

@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -44,7 +43,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/runtime"
@@ -54,7 +52,6 @@ import (
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	certapi "k8s.io/client-go/kubernetes/typed/certificates/v1"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	batchlisters "k8s.io/client-go/listers/batch/v1"
@@ -66,13 +63,10 @@ import (
 	"k8s.io/client-go/tools/record"
 	queue "k8s.io/client-go/util/workqueue"
 
-	"github.com/golang-jwt/jwt"
-	jwtreq "github.com/golang-jwt/jwt/request"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
-	listers "github.com/minio/operator/pkg/client/listers/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/configmaps"
 	"github.com/minio/operator/pkg/resources/deployments"
 	"github.com/minio/operator/pkg/resources/secrets"
@@ -117,10 +111,14 @@ const (
 	StatusNotOwned                             = "Statefulset not controlled by operator"
 	StatusFailedAlreadyExists                  = "Another MinIO Tenant already exists in the namespace"
 	StatusInconsistentMinIOVersions            = "Different versions across MinIO Pools"
+	StatusRestartingMinIO                      = "Different versions across MinIO Pools"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
 var ErrMinIONotReady = fmt.Errorf("MinIO is not ready")
+
+// ErrMinIORestarting is the error returned when MinIO is restarting
+var ErrMinIORestarting = fmt.Errorf("MinIO is restarting")
 
 // ErrLogSearchNotReady is the error returned when Log Search is not Ready
 var ErrLogSearchNotReady = fmt.Errorf("Log Search is not ready")
@@ -131,8 +129,6 @@ type Controller struct {
 	kubeClientSet kubernetes.Interface
 	// minioClientSet is a clientset for our own API group
 	minioClientSet clientset.Interface
-	// certClient is a clientset for our certficate management
-	certClient certapi.CertificatesV1Client
 	// promClient is a clientset for Prometheus service monitor
 	promClient promclientset.Interface
 	// statefulSetLister is able to list/get StatefulSets from a shared
@@ -156,9 +152,6 @@ type Controller struct {
 	// has synced at least once.
 	jobListerSynced cache.InformerSynced
 
-	// tenantsLister lists Tenant from a shared informer's
-	// store.
-	tenantsLister listers.TenantLister
 	// tenantsSynced returns true if the StatefulSet shared informer
 	// has synced at least once.
 	tenantsSynced cache.InformerSynced
@@ -195,21 +188,20 @@ type Controller struct {
 
 	// Webhook server instance
 	ws *http.Server
+
+	// monitor pods in the cluster to update the health information
+	podInformer cache.SharedIndexInformer
+
+	// healthCheckQueue is a rate limited work queue. This is used to queue work to be
+	// processed instead of performing it as soon as a change happens. This
+	// means we can ensure we only process a fixed amount of resources at a
+	// time, and makes it easy to ensure we are never processing the same item
+	// simultaneously in two different workers.
+	healthCheckQueue queue.RateLimitingInterface
 }
 
 // NewController returns a new sample controller
-func NewController(
-	kubeClientSet kubernetes.Interface,
-	minioClientSet clientset.Interface,
-	certClient certapi.CertificatesV1Client,
-	promClient promclientset.Interface,
-	statefulSetInformer appsinformers.StatefulSetInformer,
-	deploymentInformer appsinformers.DeploymentInformer,
-	jobInformer batchinformers.JobInformer,
-	tenantInformer informers.TenantInformer,
-	serviceInformer coreinformers.ServiceInformer,
-	serviceMonitorInformer prominformers.ServiceMonitorInformer,
-	hostsTemplate, operatorVersion string) *Controller {
+func NewController(kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, serviceMonitorInformer prominformers.ServiceMonitorInformer, hostsTemplate, operatorVersion string) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -224,21 +216,21 @@ func NewController(
 	controller := &Controller{
 		kubeClientSet:              kubeClientSet,
 		minioClientSet:             minioClientSet,
-		certClient:                 certClient,
 		promClient:                 promClient,
 		statefulSetLister:          statefulSetInformer.Lister(),
 		statefulSetListerSynced:    statefulSetInformer.Informer().HasSynced,
+		podInformer:                podInformer.Informer(),
 		deploymentLister:           deploymentInformer.Lister(),
 		deploymentListerSynced:     deploymentInformer.Informer().HasSynced,
 		jobLister:                  jobInformer.Lister(),
 		jobListerSynced:            jobInformer.Informer().HasSynced,
-		tenantsLister:              tenantInformer.Lister(),
 		tenantsSynced:              tenantInformer.Informer().HasSynced,
 		serviceLister:              serviceInformer.Lister(),
 		serviceListerSynced:        serviceInformer.Informer().HasSynced,
 		serviceMonitorLister:       serviceMonitorInformer.Lister(),
 		serviceMonitorListerSynced: serviceMonitorInformer.Informer().HasSynced,
 		workqueue:                  queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
+		healthCheckQueue:           queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "TenantsHealth"),
 		recorder:                   recorder,
 		hostsTemplate:              hostsTemplate,
 		operatorVersion:            operatorVersion,
@@ -297,92 +289,23 @@ func NewController(
 		},
 		DeleteFunc: controller.handleObject,
 	})
-	return controller
-}
 
-func (c *Controller) validateRequest(r *http.Request, secret *v1.Secret) error {
-	tokenStr, err := jwtreq.AuthorizationHeaderExtractor.ExtractToken(r)
-	if err != nil {
-		return err
-	}
-
-	stdClaims := &jwt.StandardClaims{}
-	token, err := jwt.ParseWithClaims(tokenStr, stdClaims, func(token *jwt.Token) (interface{}, error) {
-		return secret.Data[miniov2.WebhookOperatorPassword], nil
+	podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.handlePodChange,
+		UpdateFunc: func(old, new interface{}) {
+			newDepl := new.(*corev1.Pod)
+			oldDepl := old.(*corev1.Pod)
+			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same Deployments will always have different RVs.
+				return
+			}
+			controller.handlePodChange(new)
+		},
+		DeleteFunc: controller.handlePodChange,
 	})
-	if err != nil {
-		return err
-	}
 
-	if !token.Valid {
-		return fmt.Errorf(http.StatusText(http.StatusForbidden))
-	}
-	if stdClaims.Issuer != string(secret.Data[miniov2.WebhookOperatorUsername]) {
-		return fmt.Errorf(http.StatusText(http.StatusForbidden))
-	}
-
-	return nil
-}
-
-func generateRandomKey(length int) string {
-	rand.Seed(time.Now().UnixNano())
-	chars := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ" +
-		"abcdefghijklmnopqrstuvwxyzåäö" +
-		"0123456789")
-	var b strings.Builder
-	for i := 0; i < length; i++ {
-		b.WriteRune(chars[rand.Intn(len(chars))])
-	}
-	return b.String()
-}
-
-func (c *Controller) applyOperatorWebhookSecret(ctx context.Context, tenant *miniov2.Tenant) (*v1.Secret, error) {
-	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx,
-		miniov2.WebhookSecret, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			secret = getSecretForTenant(tenant, generateRandomKey(20), generateRandomKey(40))
-			return c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
-		}
-		return nil, err
-	}
-	// check the secret has the desired values
-	minioArgs := string(secret.Data[miniov2.WebhookMinIOArgs])
-	if strings.Contains(minioArgs, "env://") && isOperatorTLS() {
-		// update the secret
-		minioArgs = strings.ReplaceAll(minioArgs, "env://", "env+tls://")
-		secret.Data[miniov2.WebhookMinIOArgs] = []byte(minioArgs)
-		secret, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, secret, metav1.UpdateOptions{})
-		if err != nil {
-			return nil, err
-		}
-		// update the revision of the tenant to force a rolling restart across all statefulsets
-		t2, err := c.increaseTenantRevision(ctx, tenant)
-		if err != nil {
-			return nil, err
-		}
-		*tenant = *t2
-	}
-
-	return secret, nil
-}
-
-func secretData(tenant *miniov2.Tenant, accessKey, secretKey string) []byte {
-	scheme := "env"
-	if isOperatorTLS() {
-		scheme = "env+tls"
-	}
-	return []byte(fmt.Sprintf("%s://%s:%s@%s:%s%s/%s/%s",
-		scheme,
-		accessKey,
-		secretKey,
-		fmt.Sprintf("operator.%s.svc.%s",
-			miniov2.GetNSFromFile(),
-			miniov2.GetClusterDomain()),
-		miniov2.WebhookDefaultPort,
-		miniov2.WebhookAPIGetenv,
-		tenant.Namespace,
-		tenant.Name))
+	return controller
 }
 
 func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1.Secret {
@@ -413,24 +336,36 @@ func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
+	// we need to make sure the API is ready before starting operator
+	apiWillStart := make(chan interface{})
+
 	go func() {
+
+		// Request kubernetes version from Kube ApiServer
+		c.getKubeAPIServerVersion()
+
 		if isOperatorTLS() {
 			publicCertPath, publicKeyPath := c.generateTLSCert()
 			klog.Infof("Starting HTTPS api server")
+			close(apiWillStart)
 			// use those certificates to configure the web server
 			if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
-				klog.Infof("HTTPS server ListenAndServeTLS: %v", err)
-				return
+				klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
+				panic(err)
 			}
 		} else {
 			klog.Infof("Starting HTTP api server")
+			close(apiWillStart)
 			// start server without TLS
 			if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
-				klog.Infof("HTTP server ListenAndServe: %v", err)
-				return
+				klog.Infof("HTTP server ListenAndServe failed: %v", err)
+				panic(err)
 			}
 		}
 	}()
+
+	klog.Info("Waiting for API to start")
+	<-apiWillStart
 
 	// Start the informer factories to begin populating the informer caches
 	klog.Info("Starting Tenant controller")
@@ -446,6 +381,9 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
+
+	// Launcha  single worker for Health Check reacting to Pod Changes
+	go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
 
 	// Launch a goroutine to monitor all Tenants
 	go c.recurrentTenantStatusMonitor(stopCh)
@@ -463,6 +401,7 @@ func (c *Controller) Stop() {
 
 	klog.Info("Stopping the minio controller")
 	c.workqueue.ShutDown()
+	c.healthCheckQueue.ShutDown()
 }
 
 // runWorker is a long-running function that will continually call the
@@ -471,6 +410,15 @@ func (c *Controller) Stop() {
 func (c *Controller) runWorker() {
 	defer runtime.HandleCrash()
 	for c.processNextWorkItem() {
+	}
+}
+
+// runHealthCheckWorker is a long-running function that will continually call the
+// processNextWorkItem function in order to read and process a message on the
+// healthCheckQueue.
+func (c *Controller) runHealthCheckWorker() {
+	defer runtime.HandleCrash()
+	for c.processNextHealthCheckItem() {
 	}
 }
 
@@ -517,7 +465,7 @@ func (c *Controller) processNextWorkItem() bool {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
 		c.workqueue.Forget(obj)
-		klog.Infof("Successfully synced '%s'", key)
+		klog.V(4).Infof("Successfully synced '%s'", key)
 		return nil
 	}
 
@@ -546,7 +494,6 @@ func (c *Controller) syncHandler(key string) error {
 	ctx := context.Background()
 	cOpts := metav1.CreateOptions{}
 	uOpts := metav1.UpdateOptions{}
-	gOpts := metav1.GetOptions{}
 
 	// Convert the namespace/name string into a distinct namespace and name
 	if key == "" {
@@ -557,7 +504,7 @@ func (c *Controller) syncHandler(key string) error {
 	namespace, tenantName := key2NamespaceName(key)
 
 	// Get the Tenant resource with this namespace/name
-	tenant, err := c.tenantsLister.Tenants(namespace).Get(tenantName)
+	tenant, err := c.minioClientSet.MinioV2().Tenants(namespace).Get(context.Background(), tenantName, metav1.GetOptions{})
 	if err != nil {
 		// The Tenant resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
@@ -583,11 +530,8 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Check the Sync Version to see if the tenant needs upgrade
-	if tenant.Status.SyncVersion == "" {
-		if tenant, err = c.upgrade420(ctx, tenant); err != nil {
-			klog.V(2).Infof("Error upgrading tenant: %v", err.Error())
-			return err
-		}
+	if tenant, err = c.checkForUpgrades(ctx, tenant); err != nil {
+		return err
 	}
 
 	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2
@@ -599,9 +543,16 @@ func (c *Controller) syncHandler(key string) error {
 		if tenant.Spec.RequestAutoCert == nil && tenant.APIVersion != "" {
 			// If we get certificate signing requests for MinIO is safe to assume the Tenant v1 was deployed using AutoCert
 			// otherwise AutoCert will be false
-			tenantCSR, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
-			if err != nil || tenantCSR == nil {
-				autoCertEnabled = false
+			if useCertificatesV1API {
+				tenantCSR, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
+				if err != nil || tenantCSR == nil {
+					autoCertEnabled = false
+				}
+			} else {
+				tenantCSR, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
+				if err != nil || tenantCSR == nil {
+					autoCertEnabled = false
+				}
 			}
 		} else {
 			autoCertEnabled = tenant.AutoCert()
@@ -657,16 +608,16 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// List all MinIO Tenants in this namespace.
-	li, err := c.tenantsLister.Tenants(tenant.Namespace).List(labels.NewSelector())
+	li, err := c.minioClientSet.MinioV2().Tenants(tenant.Namespace).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
 	// Only 1 minio tenant per namespace allowed.
-	if len(li) > 1 {
-		for _, t := range li {
+	if len(li.Items) > 1 {
+		for _, t := range li.Items {
 			if t.Status.CurrentState != StatusInitialized {
-				if _, err = c.updateTenantStatus(ctx, t, StatusFailedAlreadyExists, 0); err != nil {
+				if _, err = c.updateTenantStatus(ctx, &t, StatusFailedAlreadyExists, 0); err != nil {
 					return err
 				}
 				// return nil so we don't re-queue this work item
@@ -675,40 +626,10 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// Configuration for tenant can be passed using 3 different sources, tenant.spec.env, k8s credsSecret and config.env secret
-	// If the user provides duplicated configuration the override order will be:
-	// tenant.Spec.Env < credsSecret (k8s secret) < config.env file (k8s secret)
-	tenantConfiguration := map[string][]byte{}
-
-	for _, config := range tenant.GetEnvVars() {
-		tenantConfiguration[config.Name] = []byte(config.Value)
+	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
+	if err != nil {
+		return err
 	}
-
-	if tenant.HasCredsSecret() {
-		minioSecretName := tenant.Spec.CredsSecret.Name
-		minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, gOpts)
-		if err != nil {
-			return err
-		}
-		configFromCredsSecret := minioSecret.Data
-		for key, val := range configFromCredsSecret {
-			tenantConfiguration[key] = val
-		}
-	}
-
-	// Load tenant configuration from file
-	if tenant.HasConfigurationSecret() {
-		minioConfigurationSecretName := tenant.Spec.Configuration.Name
-		minioConfigurationSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioConfigurationSecretName, gOpts)
-		if err != nil {
-			return err
-		}
-		configFromFile := miniov2.ParseRawConfiguration(minioConfigurationSecret.Data["config.env"])
-		for key, val := range configFromFile {
-			tenantConfiguration[key] = val
-		}
-	}
-
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 	if err != nil {
 		return err
@@ -755,6 +676,14 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
+	// Create logSecret before deploying any statefulset
+	if tenant.HasLogEnabled() {
+		_, err = c.checkAndCreateLogSecret(ctx, tenant)
+		if err != nil {
+			return err
+		}
+	}
+
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
 	// this status value is zero only for new tenants or legacy tenants
 	if len(tenant.Status.Pools) == 0 {
@@ -777,7 +706,18 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Check if this is fresh setup not an expansion.
-	freshSetup := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
+	//addingNewPool := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
+	addingNewPool := false
+	// count the number of initialized pools, if at least 1 is not Initialized, we are still adding a new pool
+	for _, poolStatus := range tenant.Status.Pools {
+		if poolStatus.State != miniov2.PoolInitialized {
+			addingNewPool = true
+			break
+		}
+	}
+	if addingNewPool {
+		klog.Infof("%s Detected we are adding a new pool", key)
+	}
 
 	// Check if we need to create any of the pools. It's important not to update the statefulsets
 	// in this loop because we need all the pools "as they are" for the hot-update below
@@ -801,13 +741,11 @@ func (c *Controller) syncHandler(key string) error {
 		}
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
 		if k8serrors.IsNotFound(err) {
-
-			klog.Infof("Deploying pool %s", pool.Name)
-
-			// Check healthcheck for previous pool only if its not a fresh setup,
-			// if they are online before adding this pool.
-			if !freshSetup && !tenant.MinIOHealthCheck() {
-				klog.Infof("Deploying pool failed %s", pool.Name)
+			klog.Infof("'%s/%s': Deploying pool %s", tenant.Namespace, tenant.Name, pool.Name)
+			// Check healthcheck for previous pool only if it's not a new setup,
+			// and check if they are online before adding this pool.
+			if addingNewPool && !tenant.MinIOHealthCheck() && len(tenant.Spec.Pools) > 1 {
+				klog.Infof("'%s/%s': Deploying new pool failed %s: MinIO is not Ready", tenant.Namespace, tenant.Name, pool.Name)
 				return ErrMinIONotReady
 			}
 
@@ -815,7 +753,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			ss = statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss = statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -827,12 +765,6 @@ func (c *Controller) syncHandler(key string) error {
 			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
 				return err
 			}
-			// Restart the services to fetch the new args, ignore any error.
-			// only perform `restart()` of server deployment when we are truly
-			// expanding an existing deployment.
-			if !freshSetup {
-				adminClnt.ServiceRestart(ctx) //nolint:errcheck
-			}
 		}
 
 		// keep track of all replicas
@@ -840,11 +772,11 @@ func (c *Controller) syncHandler(key string) error {
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 	}
 
-	// validate each pool if it's initialized
+	// validate each pool if it's initialized, and mark it if it is.
 	for pi, pool := range tenant.Spec.Pools {
 		// get a pod for the established statefulset
 		if tenant.Status.Pools[pi].State == miniov2.PoolCreated {
-			// get a pod for the ss
+			// get the first pod for the ss and try to reach the pool via that single pod.
 			pods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
 				LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, pool.Name),
 			})
@@ -852,7 +784,16 @@ func (c *Controller) syncHandler(key string) error {
 				klog.Warning("Could not validate state of statefulset for pool", err)
 			}
 			if len(pods.Items) > 0 {
-				ssPod := pods.Items[0]
+				var ssPod *corev1.Pod
+				for _, p := range pods.Items {
+					if strings.HasSuffix(p.Name, "-0") {
+						ssPod = &p
+						break
+					}
+				}
+				if ssPod == nil {
+					break
+				}
 				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
 				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration)
 				if err != nil {
@@ -860,17 +801,93 @@ func (c *Controller) syncHandler(key string) error {
 				}
 
 				_, err = podAdminClnt.ServerInfo(ctx)
-				// any error means we are not ready, if the call succeeds, the ss is ready
-				if err == nil {
+				// any error means we are not ready, if the call succeeds or we get `server not initialized`, the ss is ready
+				if err == nil || madmin.ToErrorResponse(err).Code == "XMinioServerNotInitialized" {
+
+					// Restart the services to fetch the new args, ignore any error.
+					// only perform `restart()` of server deployment when we are truly
+					// expanding an existing deployment. (a pool became initialized)
+					minioRestarted := false
+					if len(tenant.Spec.Pools) > 1 && addingNewPool {
+						// get a new admin client that points to a pod of an already initialized pool (ie: pool-0)
+						livePods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
+							LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, tenant.Spec.Pools[0].Name),
+						})
+						if err != nil {
+							klog.Warning("Could not validate state of statefulset for pool", err)
+						}
+						var livePod *corev1.Pod
+						for _, p := range livePods.Items {
+							if p.Status.Phase == v1.PodRunning {
+								livePod = &p
+								break
+							}
+						}
+						if livePod == nil {
+							break
+						}
+						livePodAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(livePod.Name))
+						livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration)
+						if err != nil {
+							return err
+						}
+						// Now tell MinIO to restart
+						if err = livePodAdminClnt.ServiceRestart(ctx); err != nil {
+							klog.Infof("We failed to restart MinIO to adopt the new pool: %v", err)
+						}
+						minioRestarted = true
+						metaNowTime := metav1.Now()
+						tenant.Status.WaitingOnReady = &metaNowTime
+						tenant.Status.CurrentState = StatusRestartingMinIO
+						if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+							klog.Infof("'%s' Can't update tenant status: %v", key, err)
+						}
+						klog.Infof("'%s' Was restarted", key)
+					}
+
 					// Report the pool is properly created
 					tenant.Status.Pools[pi].State = miniov2.PoolInitialized
 					// push updates to status
 					if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
 						return err
 					}
+
+					if minioRestarted {
+						return ErrMinIORestarting
+					}
+
 				} else {
-					fmt.Println(err)
+					klog.Infof("'%s/%s' Error waiting for pool to be ready: %v", tenant.Namespace, tenant.Name,
+						err)
 				}
+			}
+		}
+	}
+	// wait here until all pools are initialized, so we can continue with updating versions and the ss resources.
+	for _, poolStatus := range tenant.Status.Pools {
+		if poolStatus.State != miniov2.PoolInitialized {
+			// at least 1 is not initialized, stop here until they all are.
+			return errors.New("Waiting for all pools to initialize")
+		}
+	}
+
+	// wait here if `waitOnReady` is set to a given time
+	if tenant.Status.WaitingOnReady != nil {
+		// if it's been longer than the default time 5 minutes, unset the field and continue
+		someTimeAgo := time.Now().Add(-5 * time.Minute)
+		if tenant.Status.WaitingOnReady.Time.Before(someTimeAgo) {
+			tenant.Status.WaitingOnReady = nil
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				klog.Infof("'%s' Can't update tenant status: %v", key, err)
+			}
+		} else {
+			// check if MinIO is already online after the previous restart
+			if tenant.MinIOHealthCheck() {
+				tenant.Status.WaitingOnReady = nil
+				if _, err = c.updatePoolStatus(ctx, tenant); err != nil {
+					klog.Infof("'%s' Can't update tenant status: %v", key, err)
+				}
+				return ErrMinIORestarting
 			}
 		}
 	}
@@ -892,6 +909,7 @@ func (c *Controller) syncHandler(key string) error {
 	// So comparing tenant.Spec.Image (version to update to) against one value from images slice is fine.
 	if tenant.Spec.Image != images[0] && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
 		if !tenant.MinIOHealthCheck() {
+			klog.Infof("%s is not running can't update image online", key)
 			return ErrMinIONotReady
 		}
 
@@ -976,9 +994,9 @@ func (c *Controller) syncHandler(key string) error {
 		// clean the local directory
 		_ = c.removeArtifacts()
 
-		for _, pool := range tenant.Spec.Pools {
+		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
@@ -1030,7 +1048,7 @@ func (c *Controller) syncHandler(key string) error {
 				carryOverLabels[miniov1.ZoneLabel] = val
 			}
 
-			nss := statefulsets.NewPool(tenant, secret, &pool, hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			nss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			ssCopy := ss.DeepCopy()
 
 			ssCopy.Spec.Template = nss.Spec.Template
@@ -1058,14 +1076,6 @@ func (c *Controller) syncHandler(key string) error {
 			c.recorder.Event(tenant, corev1.EventTypeWarning, ErrResourceExists, msg)
 			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
 			return nil
-		}
-	}
-
-	// Create logSecret before deploying console
-	if tenant.HasLogEnabled() {
-		_, err = c.checkAndCreateLogSecret(ctx, tenant)
-		if err != nil {
-			return err
 		}
 	}
 
@@ -1100,6 +1110,7 @@ func (c *Controller) syncHandler(key string) error {
 			if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
 				return err
 			}
+			klog.Infof("Can't reach minio for log config")
 			return ErrMinIONotReady
 		}
 		err = c.checkAndConfigureLogSearchAPI(ctx, tenant, logSecret, adminClnt)
@@ -1188,7 +1199,7 @@ func (c *Controller) handleObject(obj interface{}) {
 			return
 		}
 
-		tenant, err := c.tenantsLister.Tenants(object.GetNamespace()).Get(ownerRef.Name)
+		tenant, err := c.minioClientSet.MinioV2().Tenants(object.GetNamespace()).Get(context.Background(), ownerRef.Name, metav1.GetOptions{})
 		if err != nil {
 			klog.V(4).Infof("ignoring orphaned object '%s' of tenant '%s'", object.GetSelfLink(), ownerRef.Name)
 			return

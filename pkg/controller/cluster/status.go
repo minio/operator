@@ -189,7 +189,7 @@ func (c *Controller) updateTenantSyncVersionWithRetry(ctx context.Context, tenan
 	if err != nil {
 		// if rejected due to conflict, get the latest tenant and retry once
 		if k8serrors.IsConflict(err) && retry {
-			klog.Info("Hit conflict issue, getting latest version of tenant")
+			klog.Info("Hit conflict issue, getting latest version of tenant to update version")
 			tenant, err = c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Get(ctx, tenant.Name, metav1.GetOptions{})
 			if err != nil {
 				return tenant, err

@@ -95,7 +95,7 @@ func (c *Controller) createKESCSR(ctx context.Context, tenant *miniov2.Tenant) e
 		return err
 	}
 
-	err = c.createCertificateSigningRequest(ctx, tenant.KESPodLabels(), tenant.KESCSRName(), tenant.Namespace, csrBytes, tenant, "server")
+	err = c.createCertificateSigningRequest(ctx, tenant.KESPodLabels(), tenant.KESCSRName(), tenant.Namespace, csrBytes, "server")
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
 		return err
@@ -154,8 +154,14 @@ func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *min
 					return err
 				}
 				// TLS secret not found, delete CSR if exists and start certificate generation process again
-				if err = c.certClient.CertificateSigningRequests().Delete(ctx, tenant.MinIOClientCSRName(), metav1.DeleteOptions{}); err != nil {
-					return err
+				if useCertificatesV1API {
+					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, tenant.MinIOClientCSRName(), metav1.DeleteOptions{}); err != nil {
+						return err
+					}
+				} else {
+					if err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, tenant.MinIOClientCSRName(), metav1.DeleteOptions{}); err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -169,8 +175,14 @@ func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *min
 					return err
 				}
 				// TLS secret not found, delete CSR if exists and start certificate generation process again
-				if err = c.certClient.CertificateSigningRequests().Delete(ctx, tenant.KESCSRName(), metav1.DeleteOptions{}); err != nil {
-					return err
+				if useCertificatesV1API {
+					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, tenant.KESCSRName(), metav1.DeleteOptions{}); err != nil {
+						return err
+					}
+				} else {
+					if err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, tenant.KESCSRName(), metav1.DeleteOptions{}); err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -265,7 +277,13 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 }
 
 func (c *Controller) checkAndCreateMinIOClientCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
-	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{}); err != nil {
+	var err error
+	if useCertificatesV1API {
+		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{})
+	} else {
+		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{})
+	}
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingMinIOClientCert, 0); err != nil {
 				return err
@@ -284,7 +302,13 @@ func (c *Controller) checkAndCreateMinIOClientCSR(ctx context.Context, nsName ty
 }
 
 func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
-	if _, err := c.certClient.CertificateSigningRequests().Get(ctx, tenant.KESCSRName(), metav1.GetOptions{}); err != nil {
+	var err error
+	if useCertificatesV1API {
+		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.KESCSRName(), metav1.GetOptions{})
+	} else {
+		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.KESCSRName(), metav1.GetOptions{})
+	}
+	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingKESCert, 0); err != nil {
 				return err

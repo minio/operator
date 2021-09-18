@@ -54,10 +54,6 @@ const MinIOCertPath = "/tmp/certs"
 // TmpPath /tmp path inside the container file system
 const TmpPath = "/tmp"
 
-// OperatorLabel denotes the version of the Tenant operator
-// running in the cluster.
-const OperatorLabel = "v1.min.io/version"
-
 // TenantLabel is applied to all components of a Tenant cluster
 const TenantLabel = "v1.min.io/tenant"
 
@@ -95,7 +91,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-08-05T22-01-19Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-09-15T04-54-25Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -116,7 +112,7 @@ const DefaultPoolName = "pool-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.8.2"
+const DefaultConsoleImage = "minio/console:v0.10.0"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -185,7 +181,7 @@ const PrometheusServiceMonitorSecretKey = "token"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.1.3"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.2.10"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres"
@@ -250,7 +246,7 @@ const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.15.1"
+const DefaultKESImage = "minio/kes:v0.16.1"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"

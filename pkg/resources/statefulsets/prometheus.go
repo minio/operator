@@ -79,16 +79,6 @@ func prometheusVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
 
 // prometheusServerContainer returns a container for Prometheus StatefulSet.
 func prometheusServerContainer(t *miniov2.Tenant) corev1.Container {
-	// as per https://github.com/prometheus-operator/prometheus-operator/issues/3459 we need to set a security
-	// context.
-	//
-	//  securityContext:
-	//    fsGroup: 2000
-	//    runAsNonRoot: true
-	//    runAsUser: 1000
-	runAsNonRoot := true
-	var fsGroup int64 = 2000
-	var runAsUser int64 = 1000
 	return corev1.Container{
 		Name:  miniov2.PrometheusContainerName,
 		Image: t.Spec.Prometheus.Image,
@@ -107,11 +97,6 @@ func prometheusServerContainer(t *miniov2.Tenant) corev1.Container {
 			"--web.console.libraries=/usr/share/prometheus/console_libraries",
 			"--web.console.templates=/usr/share/prometheus/consoles",
 			"--web.enable-lifecycle",
-		},
-		SecurityContext: &corev1.SecurityContext{
-			RunAsUser:    &runAsUser,
-			RunAsGroup:   &fsGroup,
-			RunAsNonRoot: &runAsNonRoot,
 		},
 	}
 }
@@ -137,6 +122,24 @@ func prometheusSidecarContainer(t *miniov2.Tenant) corev1.Container {
 }
 
 const prometheusDefaultVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
+
+// prometheusSecurityContext builds the security context for prometheus pods
+func prometheusSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
+	var runAsNonRoot = true
+	var runAsUser int64 = 1000
+	var runAsGroup int64 = 1000
+	var fsGroup int64 = 1000
+	var securityContext = corev1.PodSecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+		RunAsUser:    &runAsUser,
+		RunAsGroup:   &runAsGroup,
+		FSGroup:      &fsGroup,
+	}
+	if t.HasPrometheusEnabled() && t.Spec.Prometheus.SecurityContext != nil {
+		securityContext = *t.Spec.Prometheus.SecurityContext
+	}
+	return &securityContext
+}
 
 // NewForPrometheus creates a new Prometheus StatefulSet for prometheus metrics
 func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
@@ -188,23 +191,21 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 	//    - name: prometheus-kube-prometheus-db
 	//      mountPath: /var/prometheus/data
 
+	// Attach security Policy
+	securityContext := prometheusSecurityContext(t)
+
 	var initContainerSecurityContext corev1.SecurityContext
 	var initContainers []corev1.Container
 	// If securityContext is present InitContainer still requires running with elevated privileges
 	// and user will have to provide a serviceAccount that allows this
-	if t.Spec.Prometheus.SecurityContext != nil {
-		var prometheusRunAsUser int64
-		var prometheusRunAsNonRoot bool
-		var prometheusAllowPrivilegeEscalation bool
-
-		prometheusRunAsUser = 0
-		prometheusRunAsNonRoot = false
-		prometheusAllowPrivilegeEscalation = true
-
+	if securityContext != nil && securityContext.RunAsUser != nil && securityContext.RunAsGroup != nil {
+		var runAsUser int64
+		var runAsNonRoot = false
+		var allowPrivilegeEscalation = true
 		initContainerSecurityContext = corev1.SecurityContext{
-			RunAsUser:                &prometheusRunAsUser,
-			RunAsNonRoot:             &prometheusRunAsNonRoot,
-			AllowPrivilegeEscalation: &prometheusAllowPrivilegeEscalation,
+			RunAsUser:                &runAsUser,
+			RunAsNonRoot:             &runAsNonRoot,
+			AllowPrivilegeEscalation: &allowPrivilegeEscalation,
 		}
 		initContainers = []corev1.Container{
 			{
@@ -213,7 +214,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 				Command: []string{
 					"chown",
 					"-R",
-					fmt.Sprintf("%s:%s", strconv.FormatInt(*t.Spec.Prometheus.SecurityContext.RunAsUser, 10), strconv.FormatInt(*t.Spec.Prometheus.SecurityContext.RunAsGroup, 10)),
+					fmt.Sprintf("%s:%s", strconv.FormatInt(*securityContext.RunAsUser, 10), strconv.FormatInt(*securityContext.RunAsGroup, 10)),
 					"/prometheus",
 				},
 				SecurityContext: &initContainerSecurityContext,
@@ -249,7 +250,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 					NodeSelector:       t.Spec.Prometheus.NodeSelector,
 					Affinity:           t.Spec.Prometheus.Affinity,
 					InitContainers:     initContainers,
-					SecurityContext:    t.Spec.Prometheus.SecurityContext,
+					SecurityContext:    securityContext,
 				},
 			},
 		},

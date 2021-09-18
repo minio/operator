@@ -87,7 +87,26 @@ func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 		VolumeMounts:    KESVolumeMounts(t),
 		Args:            args,
 		Env:             KESEnvironmentVars(t),
+		Resources:       t.Spec.KES.Resources,
 	}
+}
+
+// kesSecurityContext builds the security context for KES statefulset pods
+func kesSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
+	var runAsNonRoot = true
+	var runAsUser int64 = 1000
+	var runAsGroup int64 = 1000
+	var fsGroup int64 = 1000
+	var securityContext = corev1.PodSecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+		RunAsUser:    &runAsUser,
+		RunAsGroup:   &runAsGroup,
+		FSGroup:      &fsGroup,
+	}
+	if t.HasKESEnabled() && t.Spec.KES.SecurityContext != nil {
+		securityContext = *t.Spec.KES.SecurityContext
+	}
+	return &securityContext
 }
 
 // NewForKES creates a new KES StatefulSet for the given Cluster.
@@ -203,7 +222,7 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 					NodeSelector:       t.Spec.KES.NodeSelector,
 					Tolerations:        t.Spec.KES.Tolerations,
 					Affinity:           t.Spec.KES.Affinity,
-					SecurityContext:    t.Spec.KES.SecurityContext,
+					SecurityContext:    kesSecurityContext(t),
 				},
 			},
 		},

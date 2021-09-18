@@ -58,7 +58,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						Labels: map[string]string{
 							miniov2.PoolLabel:          "pool-0",
 							miniov2.TenantLabel:        "tenant-a",
-							miniov2.OperatorLabel:      "0.1",
 							miniov2.ConsoleTenantLabel: "tenant-a-console",
 						},
 						Annotations: map[string]string{
@@ -106,9 +105,8 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",
@@ -153,9 +151,8 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",
@@ -207,9 +204,8 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",
@@ -270,9 +266,8 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",
@@ -323,9 +318,8 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",
@@ -418,9 +412,8 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",
@@ -465,9 +458,8 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",
@@ -536,9 +528,8 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",
@@ -608,10 +599,9 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							miniov2.PoolLabel:     "pool-0",
-							miniov2.TenantLabel:   "tenant-a",
-							miniov2.OperatorLabel: "0.1",
-							"x":                   "x",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+							"x":                 "x",
 						},
 						Annotations: map[string]string{
 							miniov2.Revision: "0",

@@ -17,8 +17,11 @@
 package cluster
 
 import (
+	"context"
 	"reflect"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -29,13 +32,13 @@ import (
 )
 
 func (c *Controller) getSSForPool(tenant *miniov2.Tenant, pool *miniov2.Pool) (*appsv1.StatefulSet, error) {
-	ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PoolStatefulsetName(pool))
+	ss, err := c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Get(context.Background(), tenant.PoolStatefulsetName(pool), metav1.GetOptions{})
 	if err != nil {
 		if !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
 		// check if there are legacy statefulsets
-		ss, err = c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LegacyStatefulsetName(pool))
+		ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Get(context.Background(), tenant.LegacyStatefulsetName(pool), metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

@@ -69,9 +69,12 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: minio
-          servicePort: 443
+          service:
+            name: minio
+            port:
+              number: 443
 ```
 
 To enable Ingress route for the Tenant Console, we'll need to create a new Ingress rule. Note that this would require a separate TLS certificate with relevant domain and a secret with this TLS certificate as well (`nginx-tls-console` in below example).
@@ -103,7 +106,10 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
-          serviceName: minio-console
-          servicePort: 9443
+          service:
+            name: api-mgmt-console
+            port:
+              number: 9443
 ```

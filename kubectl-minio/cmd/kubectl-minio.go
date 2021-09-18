@@ -23,19 +23,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 
 	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	// Statik CRD assets for our plugin
 	"github.com/minio/kubectl-minio/cmd/helpers"
-)
-
-var (
-	kubeConfig string
-	namespace  string
-	kubeClient *kubernetes.Clientset
 )
 
 const (
