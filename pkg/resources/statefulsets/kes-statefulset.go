@@ -87,6 +87,7 @@ func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 		VolumeMounts:    KESVolumeMounts(t),
 		Args:            args,
 		Env:             KESEnvironmentVars(t),
+		Resources:       t.Spec.KES.Resources,
 	}
 }
 

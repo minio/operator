@@ -184,9 +184,15 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest time.Time, e
 		return latest, err
 	}
 
+	latestAssets := []string{"opt/bin/minio", "opt/bin/minio.sha256sum", "opt/bin/minio.minisig"}
+	legacyAssets := []string{"usr/bin/minio", "usr/bin/minio.sha256sum", "usr/bin/minio.minisig"}
+
 	// Extract the minio update related files (minio, minio.sha256sum and minio.minisig) from `<layer-hash>.tar.gz`
-	if err = miniov2.ExtractTar([]string{"usr/bin/minio", "usr/bin/minio.sha256sum", "usr/bin/minio.minisig"}, basePath, fileNameToExtract); err != nil {
-		return latest, err
+	if err = miniov2.ExtractTar(latestAssets, basePath, fileNameToExtract); err != nil {
+		// attempt legacy if latest failed to extract artifacts
+		if err = miniov2.ExtractTar(legacyAssets, basePath, fileNameToExtract); err != nil {
+			return latest, err
+		}
 	}
 
 	srcBinary := "minio"

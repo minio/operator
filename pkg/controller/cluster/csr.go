@@ -33,11 +33,13 @@ import (
 	"syscall"
 	"time"
 
+	certificatesV1 "k8s.io/api/certificates/v1"
+
 	"k8s.io/klog/v2"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
-	certificates "k8s.io/api/certificates/v1"
+	certificatesV1beta1 "k8s.io/api/certificates/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,73 +70,118 @@ func isEqual(a, b []string) bool {
 }
 
 // createCertificateSigningRequest is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, owner metav1.Object, usage string) error {
-	csrSignerName := "kubernetes.io/kubelet-serving"
-	csrKeyUsage := []certificates.KeyUsage{
-		certificates.UsageDigitalSignature,
-		certificates.UsageKeyEncipherment,
-		certificates.UsageServerAuth,
-	}
-	if usage == "client" {
-		csrSignerName = "kubernetes.io/kube-apiserver-client"
-		csrKeyUsage = []certificates.KeyUsage{
-			certificates.UsageDigitalSignature,
-			certificates.UsageKeyEncipherment,
-			certificates.UsageClientAuth,
-		}
-	}
+func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, usage string) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
-	kubeCSR := &certificates.CertificateSigningRequest{
-		TypeMeta: v1.TypeMeta{
-			APIVersion: "certificates.k8s.io/v1",
-			Kind:       "CertificateSigningRequest",
-		},
-		ObjectMeta: v1.ObjectMeta{
-			Name:      name,
-			Labels:    labels,
-			Namespace: namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(owner, schema.GroupVersionKind{
-					Group:   miniov2.SchemeGroupVersion.Group,
-					Version: miniov2.SchemeGroupVersion.Version,
-					Kind:    miniov2.MinIOCRDResourceKind,
-				}),
+	// for the right set of csr configurations regarding CSR signers and Key usages please read:
+	// https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#kubernetes-signers
+	if useCertificatesV1API {
+		csrSignerName := certificatesV1.KubeletServingSignerName
+		csrKeyUsage := []certificatesV1.KeyUsage{
+			certificatesV1.UsageDigitalSignature,
+			certificatesV1.UsageKeyEncipherment,
+			certificatesV1.UsageServerAuth,
+		}
+		if usage == "client" {
+			csrSignerName = certificatesV1.KubeAPIServerClientSignerName
+			csrKeyUsage = []certificatesV1.KeyUsage{
+				certificatesV1.UsageDigitalSignature,
+				certificatesV1.UsageKeyEncipherment,
+				certificatesV1.UsageClientAuth,
+			}
+		}
+		kubeCSR := &certificatesV1.CertificateSigningRequest{
+			TypeMeta: v1.TypeMeta{
+				APIVersion: "certificates.k8s.io/v1",
+				Kind:       "CertificateSigningRequest",
 			},
-		},
-		Spec: certificates.CertificateSigningRequestSpec{
-			SignerName: csrSignerName,
-			Request:    encodedBytes,
-			Groups:     []string{"system:authenticated", "system:nodes"},
-			Usages:     csrKeyUsage,
-		},
-	}
-
-	ks, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
-	if err != nil && !k8serrors.IsAlreadyExists(err) {
-		return err
-	}
-
-	// Return if certificate already exists.
-	if k8serrors.IsAlreadyExists(err) {
-		return nil
-	}
-
-	// Update the CSR to be approved automatically
-	ks.Status = certificates.CertificateSigningRequestStatus{
-		Conditions: []certificates.CertificateSigningRequestCondition{
-			{
-				Type:           certificates.CertificateApproved,
-				Reason:         "MinIOOperatorAutoApproval",
-				Message:        "Automatically approved by MinIO Operator",
-				LastUpdateTime: metav1.NewTime(time.Now()),
-				Status:         "True",
+			ObjectMeta: v1.ObjectMeta{
+				Name:      name,
+				Labels:    labels,
+				Namespace: namespace,
 			},
-		},
-	}
+			Spec: certificatesV1.CertificateSigningRequestSpec{
+				SignerName: csrSignerName,
+				Request:    encodedBytes,
+				Groups:     []string{"system:authenticated", "system:nodes"},
+				Usages:     csrKeyUsage,
+			},
+		}
+		ks, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return err
+		}
+		// Return if certificate already exists.
+		if k8serrors.IsAlreadyExists(err) {
+			return nil
+		}
+		// Update the CSR to be approved automatically
+		ks.Status = certificatesV1.CertificateSigningRequestStatus{
+			Conditions: []certificatesV1.CertificateSigningRequestCondition{
+				{
+					Type:           certificatesV1.CertificateApproved,
+					Reason:         "MinIOOperatorAutoApproval",
+					Message:        "Automatically approved by MinIO Operator",
+					LastUpdateTime: metav1.NewTime(time.Now()),
+					Status:         "True",
+				},
+			},
+		}
+		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().UpdateApproval(ctx, name, ks, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	} else {
+		csrSignerName := certificatesV1beta1.LegacyUnknownSignerName
+		csrKeyUsage := []certificatesV1beta1.KeyUsage{
+			certificatesV1beta1.UsageDigitalSignature,
+			certificatesV1beta1.UsageKeyEncipherment,
+			certificatesV1beta1.UsageServerAuth,
+			certificatesV1beta1.UsageClientAuth,
+		}
+		kubeCSR := &certificatesV1beta1.CertificateSigningRequest{
+			TypeMeta: v1.TypeMeta{
+				APIVersion: "certificates.k8s.io/v1beta1",
+				Kind:       "CertificateSigningRequest",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name:      name,
+				Labels:    labels,
+				Namespace: namespace,
+			},
+			Spec: certificatesV1beta1.CertificateSigningRequestSpec{
+				SignerName: &csrSignerName,
+				Request:    encodedBytes,
+				Usages:     csrKeyUsage,
+			},
+		}
 
-	_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().UpdateApproval(ctx, name, ks, metav1.UpdateOptions{})
-	if err != nil {
-		return err
+		ks, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Create(ctx, kubeCSR, metav1.CreateOptions{})
+		if err != nil && !k8serrors.IsAlreadyExists(err) {
+			return err
+		}
+
+		// Return if certificate already exists.
+		if k8serrors.IsAlreadyExists(err) {
+			return nil
+		}
+
+		// Update the CSR to be approved automatically
+		ks.Status = certificatesV1beta1.CertificateSigningRequestStatus{
+			Conditions: []certificatesV1beta1.CertificateSigningRequestCondition{
+				{
+					Type:           certificatesV1beta1.CertificateApproved,
+					Reason:         "MinIOOperatorAutoApproval",
+					Message:        "Automatically approved by MinIO Operator",
+					LastUpdateTime: metav1.NewTime(time.Now()),
+					Status:         "True",
+				},
+			},
+		}
+
+		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().UpdateApproval(ctx, ks, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -161,22 +208,42 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 			return nil, fmt.Errorf("%s", s.String())
 
 		case <-tick.C:
-			r, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
-			if err != nil {
-				klog.Errorf("Unexpected error during certificate fetching of csr/%s: %s", csrName, err)
-				return nil, err
-			}
-			if r.Status.Certificate != nil {
-				klog.V(0).Infof("Certificate successfully fetched, creating secret with Private key and Certificate")
-				return r.Status.Certificate, nil
-			}
-			for _, c := range r.Status.Conditions {
-				if c.Type == certificates.CertificateDenied {
-					err := fmt.Errorf("csr/%s uid: %s is %q: %s", r.Name, r.UID, c.Type, c.String())
-					klog.Errorf("Unexpected error during fetch: %v", err)
+			if useCertificatesV1API {
+				r, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
+				if err != nil {
+					klog.Errorf("Unexpected error during certificate fetching of csr/%s V1: %s", csrName, err)
 					return nil, err
 				}
+				if r.Status.Certificate != nil {
+					klog.V(0).Infof("Certificate successfully fetched, creating secret with Private key and Certificate")
+					return r.Status.Certificate, nil
+				}
+				for _, c := range r.Status.Conditions {
+					if c.Type == certificatesV1.CertificateDenied {
+						err := fmt.Errorf("csr/%s V1 uid: %s is %q: %s", r.Name, r.UID, c.Type, c.String())
+						klog.Errorf("Unexpected error during fetch: %v", err)
+						return nil, err
+					}
+				}
+			} else {
+				r, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
+				if err != nil {
+					klog.Errorf("Unexpected error during certificate fetching of csr/%s V1beta1: %s", csrName, err)
+					return nil, err
+				}
+				if r.Status.Certificate != nil {
+					klog.V(0).Infof("Certificate successfully fetched, creating secret with Private key and Certificate")
+					return r.Status.Certificate, nil
+				}
+				for _, c := range r.Status.Conditions {
+					if c.Type == certificatesV1beta1.CertificateDenied {
+						err := fmt.Errorf("csr/%s V1beta1 uid: %s is %q: %s", r.Name, r.UID, c.Type, c.String())
+						klog.Errorf("Unexpected error during fetch: %v", err)
+						return nil, err
+					}
+				}
 			}
+
 			klog.V(1).Infof("Certificate of csr/%s still not available, next try in %d", csrName, miniov2.DefaultQueryInterval)
 
 		case <-timeout.C:

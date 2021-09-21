@@ -492,6 +492,25 @@ spec:
                   replicas:
                     format: int32
                     type: integer
+                  resources:
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        type: object
+                    type: object
                   securityContext:
                     properties:
                       fsGroup:
@@ -3782,13 +3801,11 @@ spec:
                 type: string
               healthStatus:
                 type: string
-              notes:
-                items:
-                  type: string
-                type: array
               pools:
                 items:
                   properties:
+                    legacySecurityContext:
+                      type: boolean
                     ssName:
                       type: string
                     state:
@@ -4289,6 +4306,25 @@ spec:
                   replicas:
                     format: int32
                     type: integer
+                  resources:
+                    properties:
+                      limits:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        type: object
+                      requests:
+                        additionalProperties:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        type: object
+                    type: object
                   securityContext:
                     properties:
                       fsGroup:
@@ -7618,13 +7654,11 @@ spec:
                 type: string
               healthStatus:
                 type: string
-              notes:
-                items:
-                  type: string
-                type: array
               pools:
                 items:
                   properties:
+                    legacySecurityContext:
+                      type: boolean
                     ssName:
                       type: string
                     state:

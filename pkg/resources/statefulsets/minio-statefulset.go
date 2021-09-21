@@ -171,7 +171,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 	if t.HasConfigurationSecret() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_CONFIG_ENV_FILE",
-			Value: miniov2.TmpPath + "/config.env",
+			Value: miniov2.TmpPath + "/minio-config/config.env",
 		})
 	}
 
@@ -258,7 +258,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool) (moun
 	if t.HasConfigurationSecret() {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      "configuration",
-			MountPath: miniov2.TmpPath,
+			MountPath: miniov2.TmpPath + "/minio-config",
 		})
 	}
 
@@ -321,13 +321,13 @@ func GetContainerArgs(t *miniov2.Tenant, hostsTemplate string) []string {
 }
 
 // Builds the tolerations for a Pool.
-func minioPoolTolerations(z *miniov2.Pool) []corev1.Toleration {
+func poolTolerations(z *miniov2.Pool) []corev1.Toleration {
 	var tolerations []corev1.Toleration
 	return append(tolerations, z.Tolerations...)
 }
 
 // Builds the security context for a Pool
-func minioSecurityContext(pool *miniov2.Pool) *corev1.PodSecurityContext {
+func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.PodSecurityContext {
 	var runAsNonRoot = true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
@@ -338,14 +338,19 @@ func minioSecurityContext(pool *miniov2.Pool) *corev1.PodSecurityContext {
 		RunAsGroup:   &runAsGroup,
 		FSGroup:      &fsGroup,
 	}
+
 	if pool != nil && pool.SecurityContext != nil {
 		securityContext = *pool.SecurityContext
+		// if the pool has no security context, and it's market as legacy security context return nil
+	} else if status.LegacySecurityContext {
+		return nil
 	}
+
 	return &securityContext
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
-func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, serviceName string, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
+func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = pool.Servers
 	var podVolumeSources []corev1.VolumeProjection
@@ -508,11 +513,16 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 		if t.ExternalClientCert() {
 			clientCertSecret = t.Spec.ExternalClientCertSecret.Name
 			// This covers both secrets of type "kubernetes.io/tls" and
-			// "cert-manager.io/v1alpha2" because of same keys in both.
-			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" {
+			// "cert-manager.io/v1alpha2" / cert-manager.io/v1 because of same keys in both.
+			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 				clientCertPaths = []corev1.KeyToPath{
 					{Key: "tls.crt", Path: "client.crt"},
 					{Key: "tls.key", Path: "client.key"},
+				}
+			} else {
+				clientCertPaths = []corev1.KeyToPath{
+					{Key: "public.crt", Path: "client.crt"},
+					{Key: "private.key", Path: "client.key"},
 				}
 			}
 		} else {
@@ -635,8 +645,8 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, service
 					Affinity:           pool.Affinity,
 					NodeSelector:       pool.NodeSelector,
 					SchedulerName:      t.Scheduler.Name,
-					Tolerations:        minioPoolTolerations(pool),
-					SecurityContext:    minioSecurityContext(pool),
+					Tolerations:        poolTolerations(pool),
+					SecurityContext:    poolSecurityContext(pool, poolStatus),
 					ServiceAccountName: t.Spec.ServiceAccountName,
 					PriorityClassName:  t.Spec.PriorityClassName,
 				},

@@ -1,0 +1,20 @@
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: storage
+  namespace: minio-tenant
+spec:
+  users:
+    - name: storage-user
+  ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
+  env:
+    - name: MINIO_IDENTITY_LDAP_SERVER_ADDR
+      value: "openldap.tenant-external-idp-ldap.svc.cluster.local:389"
+    - name: MINIO_IDENTITY_LDAP_USERNAME_FORMAT
+      value: "uid=%s,dc=example,dc=org"
+    - name: MINIO_IDENTITY_LDAP_USERNAME_SEARCH_FILTER
+      value: "(|(objectclass=posixAccount)(uid=%s))"
+    - name: MINIO_IDENTITY_LDAP_TLS_SKIP_VERIFY
+      value: "on"
+    - name: MINIO_IDENTITY_LDAP_SERVER_INSECURE
+      value: "on"

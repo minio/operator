@@ -1,0 +1,10 @@
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: storage
+  namespace: minio-tenant
+spec:
+  env:
+    ## Encrypt data using local encryption key from env variables, not recommended for production environments
+    - name: MINIO_KMS_SECRET_KEY
+      value: "my-minio-key:OSMM+vkKUTCvQs9YL/CVMIMt43HFhkUpqJxTmGl6rYw="

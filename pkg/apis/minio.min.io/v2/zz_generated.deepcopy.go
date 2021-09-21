@@ -142,6 +142,7 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 			(*out)[key] = val
 		}
 	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	if in.NodeSelector != nil {
 		in, out := &in.NodeSelector, &out.NodeSelector
 		*out = make(map[string]string, len(*in))
@@ -807,11 +808,6 @@ func (in *TenantStatus) DeepCopyInto(out *TenantStatus) {
 	if in.WaitingOnReady != nil {
 		in, out := &in.WaitingOnReady, &out.WaitingOnReady
 		*out = (*in).DeepCopy()
-	}
-	if in.Notes != nil {
-		in, out := &in.Notes, &out.Notes
-		*out = make([]string, len(*in))
-		copy(*out, *in)
 	}
 	return
 }
