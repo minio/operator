@@ -514,6 +514,20 @@ type Pool struct {
 	//
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// *Optional* +
+	//
+	// Specify custom labels and annotations to append to the Pool.
+	// +optional
+	// *Optional* +
+	//
+	// If provided, use these annotations for the Pool Objects Meta annotations (Statefulset and Pod template)
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// *Optional* +
+	//
+	// If provided, use these labels for the Pool Objects Meta annotations (Statefulset and Pod template)
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // EqualImage returns true if image specified in `LogConfig` is equal to `image`

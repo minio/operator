@@ -5583,6 +5583,14 @@ spec:
                               type: array
                           type: object
                       type: object
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    labels:
+                      additionalProperties:
+                        type: string
+                      type: object
                     name:
                       type: string
                     nodeSelector:
