@@ -74,7 +74,8 @@ plugin: regen-crd
 		go vet ./... && \
 		go test -race ./... && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
-		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml)
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
+		go build -o kubectl-minio main.go)
 
 .PHONY: logsearchapi
 logsearchapi:
