@@ -247,6 +247,9 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	bearerToken := tenant.GenBearerToken(string(accessKey), string(secretKey))
 
 	metrics, err := getPrometheusMetricsForTenant(tenant, bearerToken)
+	if err != nil {
+		klog.Infof("'%s/%s' Can't generate tenant prometheus token: %v", tenant.Namespace, tenant.Name, err)
+	}
 	tenant.Status.Usage.Usage = metrics.Usage
 	tenant.Status.Usage.Capacity = metrics.UsableCapacity
 
