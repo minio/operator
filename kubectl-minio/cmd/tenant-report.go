@@ -126,20 +126,20 @@ func (d *reportCmd) run(args []string) error {
 		}
 		podEvents, err := events.List(ctx, metav1.ListOptions{FieldSelector: fmt.Sprintf("involvedObject.uid=%s", pods.Items[i].UID)})
 		if err == nil {
-			podEventsJson, err := json.Marshal(podEvents)
+			podEventsJSON, err := json.Marshal(podEvents)
 			if err == nil {
 				f, err := zipw.Create(pods.Items[i].Name + "-events.txt")
 				if err == nil {
-					f.Write(podEventsJson)
+					f.Write(podEventsJSON)
 				}
 			}
 		}
 		status := pods.Items[i].Status
-		statusJson, err := json.Marshal(status)
+		statusJSON, err := json.Marshal(status)
 		if err == nil {
 			f, err := zipw.Create(pods.Items[i].Name + "-status.txt")
 			if err == nil {
-				f.Write(statusJson)
+				f.Write(statusJSON)
 			}
 		}
 	}
