@@ -392,16 +392,16 @@ const (
 
 // TenantUsage are metrics regarding the usage and capacity of the tenant
 type TenantUsage struct {
-	// Capacity the usage capacity of this tenant.
+	// Capacity the usage capacity of this tenant in bytes.
 	// +optional
 	Capacity int64 `json:"capacity,omitempty"`
-	// Capacity the raw capacity of this tenant.
+	// Capacity the raw capacity of this tenant in bytes.
 	// +optional
 	RawCapacity int64 `json:"rawCapacity,omitempty"`
-	// Usage is how much data is managed by MinIO
+	// Usage is how much data is managed by MinIO in bytes.
 	// +optional
 	Usage int64 `json:"usage,omitempty"`
-	// Usage is the raw usage on disks
+	// Usage is the raw usage on disks in bytes.
 	// +optional
 	RawUsage int64 `json:"rawUsage,omitempty"`
 }
