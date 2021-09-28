@@ -3821,6 +3821,21 @@ spec:
                 type: integer
               syncVersion:
                 type: string
+              usage:
+                properties:
+                  capacity:
+                    format: int64
+                    type: integer
+                  rawCapacity:
+                    format: int64
+                    type: integer
+                  rawUsage:
+                    format: int64
+                    type: integer
+                  usage:
+                    format: int64
+                    type: integer
+                type: object
               waitingOnReady:
                 format: date-time
                 type: string
@@ -7674,6 +7689,21 @@ spec:
                 type: integer
               syncVersion:
                 type: string
+              usage:
+                properties:
+                  capacity:
+                    format: int64
+                    type: integer
+                  rawCapacity:
+                    format: int64
+                    type: integer
+                  rawUsage:
+                    format: int64
+                    type: integer
+                  usage:
+                    format: int64
+                    type: integer
+                type: object
               waitingOnReady:
                 format: date-time
                 type: string
