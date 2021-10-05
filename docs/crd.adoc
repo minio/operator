@@ -18,8 +18,6 @@ Package v2 - This page provides a quick automatically generated reference for th
 
 The `minio.min.io/v2` API was released with the v4.0.0 MinIO Operator. The MinIO Operator automatically converts existing tenants using the `/v1` API to `/v2`. +
 
-The `minio.min.io/v1` API is deprecated and will be removed in a future release. Update your existing MinIO Tenant object specifications to the `/v2` API. For documentation on the `v1` API, see the https://github.com/minio/operator/blob/v4.0.0/docs/crd.adoc#k8s-api-minio-min-io-v1[MinIO Operator CRD v1 reference]. +
-
 
 
 
@@ -93,102 +91,6 @@ CertificateStatus keeps track of all the certificates managed by the operator
 |===
 
 
-[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-consoleconfiguration"]
-==== ConsoleConfiguration 
-
-ConsoleConfiguration (`console`) defines configuration of the https://github.com/minio/console[MinIO Console] deployed as part of the MinIO Tenant. The Operator automatically configures the Console for connectivity to MinIO server pods in the tenant. + 
- For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation].
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantspec[$$TenantSpec$$]
-****
-
-[cols="25a,75a", options="header"]
-|===
-| Field | Description
-
-|*`replicas`* __integer__ 
-|*Optional* + 
- Specify the number of replica Console pods to deploy in the tenant. Defaults to `2`.
-
-|*`image`* __string__ 
-|*Optional* + 
- The Docker image to use for deploying the MinIO Console. Defaults to {console-image}.+
-
-|*`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#pullpolicy-v1-core[$$PullPolicy$$]__ 
-|*Optional* + 
- The pull policy for the MinIO Console Docker image. Specify one of the following: + 
- * `Always` + 
- * `Never` + 
- * `IfNotPresent` (Default) + 
- Refer to the Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
-
-|*`consoleSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
-|*Required* + 
- Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] which contains environment variables to use for setting up the MinIO Console service. + 
- See the https://github.com/minio/operator/blob/master/examples/console-secret.yaml[MinIO Operator `console-secret.yaml`] for an example.
-
-|*`serviceAccountName`* __string__ 
-|*Optional* + 
- The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO Console pods created as part of the Tenant. +
-
-|*`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#envvar-v1-core[$$EnvVar$$]__ 
-|*Optional* + 
- Specify one or more https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#envvar-v1-core[Environment Variables] for use by the MinIO Console.
-
-|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
-|*Optional* + 
- Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits in the MinIO tenant. +
-
-|*`externalCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$]__ 
-|*Optional* + 
- Enables TLS with SNI support on each MinIO Console pod in the tenant. If `externalCertSecret` is omitted *and* `spec.requestAutoCert` is set to `false`, MinIO Console pods deploy *without* TLS enabled. + 
- Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secret]. The MinIO Operator copies the specified certificate to every MinIO Console pod in the tenant. When the MinIO Console pod/service responds to a TLS connection request, it uses SNI to select the certificate with matching `subjectAlternativeName`. + 
- Specify an object containing the following fields: + 
- * - `name` - The name of the Kubernetes secret containing the TLS certificate. + 
- * - `type` - Specify `kubernetes.io/tls` + 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
-
-|*`externalCaCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$]__ 
-|*Optional* + 
- Allows MinIO Console pods to verify client TLS certificates signed by a Certificate Authority not in the pod's trust store. + 
- Specify one or more https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified CA files to every MinIO Console pod in the tenant. + 
- Each element in the `externalCertSecret` array is an object containing the following fields: + 
- * - `name` - The name of the Kubernetes secret containing the Certificate Authority files. + 
- * - `type` - Specify `kubernetes.io/tls`. + 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
-
-|*`annotations`* __object (keys:string, values:string)__ 
-|*Optional* + 
- If provided, use these annotations for Console Object Meta annotations
-
-|*`labels`* __object (keys:string, values:string)__ 
-|*Optional* + 
- If provided, use these labels for Console Object Meta labels
-
-|*`nodeSelector`* __object (keys:string, values:string)__ 
-|*Optional* + 
- The filter for the Operator to apply when selecting which nodes on which to deploy MinIO Console pods. The Operator only selects those nodes whose labels match the specified selector. + 
- See the Kubernetes documentation on https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Assigning Pods to Nodes] for more information.
-
-|*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#toleration-v1-core[$$Toleration$$]__ 
-|*Optional* + 
- Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to MinIO Console pods.
-
-|*`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ 
-|*Optional* + 
- Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of MinIO Console pods. The Operator supports only the following pod security fields: + 
- * `fsGroup` + 
- * `fsGroupChangePolicy` + 
- * `runAsGroup` + 
- * `runAsNonRoot` + 
- * `runAsUser` + 
- * `seLinuxOptions` +
-
-|===
-
-
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-exposeservices"]
 ==== ExposeServices 
 
@@ -250,7 +152,7 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 
 |*`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#pullpolicy-v1-core[$$PullPolicy$$]__ 
 |*Optional* + 
- The pull policy for the MinIO Console Docker image. Specify one of the following: + 
+ The pull policy for the MinIO Docker image. Specify one of the following: + 
  * `Always` + 
  * `Never` + 
  * `IfNotPresent` (Default) + 
@@ -268,7 +170,7 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |*`externalCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$]__ 
 |*Optional* + 
  Enables TLS with SNI support on each MinIO KES pod in the tenant. If `externalCertSecret` is omitted *and* `spec.requestAutoCert` is set to `false`, MinIO KES pods deploy *without* TLS enabled. + 
- Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secret]. The MinIO Operator copies the specified certificate to every MinIO Console pod in the tenant. When the MinIO Console pod/service responds to a TLS connection request, it uses SNI to select the certificate with matching `subjectAlternativeName`. + 
+ Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secret]. The MinIO Operator copies the specified certificate to every MinIO pod in the tenant. When the MinIO pod/service responds to a TLS connection request, it uses SNI to select the certificate with matching `subjectAlternativeName`. + 
  Specify an object containing the following fields: + 
  * - `name` - The name of the Kubernetes secret containing the TLS certificate. + 
  * - `type` - Specify `kubernetes.io/tls` + 
@@ -289,6 +191,10 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |*Optional* + 
  If provided, use these labels for KES Object Meta labels
 
+|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
+|*Optional* + 
+ Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits in the MinIO tenant. +
+
 |*`nodeSelector`* __object (keys:string, values:string)__ 
 |*Optional* + 
  The filter for the Operator to apply when selecting which nodes on which to deploy MinIO KES pods. The Operator only selects those nodes whose labels match the specified selector. + 
@@ -297,6 +203,10 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#toleration-v1-core[$$Toleration$$]__ 
 |*Optional* + 
  Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to MinIO KES pods.
+
+|*`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#affinity-v1-core[$$Affinity$$]__ 
+|*Optional* + 
+ Specify node affinity, pod affinity, and pod anti-affinity for the KES pods. +
 
 |*`keyName`* __string__ 
 |*Optional* + 
@@ -314,6 +224,10 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |===
 
 
+
+
+
+
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference"]
 ==== LocalCertificateReference 
 
@@ -321,7 +235,6 @@ LocalCertificateReference (`externalCertSecret`, `externalCaCertSecret`,`clientC
 
 .Appears In:
 ****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-consoleconfiguration[$$ConsoleConfiguration$$]
 - xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-kesconfig[$$KESConfig$$]
 - xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantspec[$$TenantSpec$$]
 ****
@@ -403,6 +316,10 @@ LogConfig (`log`) defines the configuration of the MinIO Log Search API deployed
  * `runAsUser` + 
  * `seLinuxOptions` +
 
+|*`serviceAccountName`* __string__ 
+|*Optional* + 
+ The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
+
 |===
 
 
@@ -423,6 +340,11 @@ LogDbConfig (`db`) defines the configuration of the PostgreSQL StatefulSet deplo
 |*`image`* __string__ 
 |*Optional* + 
  The Docker image to use for deploying PostgreSQL. Defaults to {postgres-image}. +
+
+|*`initimage`* __string__ 
+|*Optional* + 
+ Defines the Docker image to use as the init container for running the postgres server. Defaults to `busybox`. + 
+ The specified Docker image *must* be the https://hub.docker.com/_/busybox[`busybox`] package. +
 
 |*`volumeClaimTemplate`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$]__ 
 |*Optional* + 
@@ -462,6 +384,10 @@ LogDbConfig (`db`) defines the configuration of the PostgreSQL StatefulSet deplo
  * `runAsNonRoot` + 
  * `runAsUser` + 
  * `seLinuxOptions` +
+
+|*`serviceAccountName`* __string__ 
+|*Optional* + 
+ The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
 
 |===
 
@@ -587,6 +513,9 @@ PoolStatus keeps track of all the pools and their current state
 |*`state`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-poolstate[$$PoolState$$]__ 
 |
 
+|*`legacySecurityContext`* __boolean__ 
+|LegacySecurityContext stands for Legacy SecurityContext. It represents that these pool was created before v4.2.3 when we introduced the default securityContext as non-root, thus we should keep running this Pool without a Security Context
+
 |===
 
 
@@ -642,6 +571,10 @@ PrometheusConfig (`prometheus`) defines the configuration of a Prometheus instan
  The filter for the Operator to apply when selecting which nodes on which to deploy the Prometheus pod. The Operator only selects those nodes whose labels match the specified selector. + 
  See the Kubernetes documentation on https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Assigning Pods to Nodes] for more information.
 
+|*`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#affinity-v1-core[$$Affinity$$]__ 
+|*Optional* + 
+ Specify node affinity, pod affinity, and pod anti-affinity for the Prometheus pods. +
+
 |*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
 |*Optional* + 
  Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits of the Prometheus pod. +
@@ -655,6 +588,10 @@ PrometheusConfig (`prometheus`) defines the configuration of a Prometheus instan
  * `runAsNonRoot` + 
  * `runAsUser` + 
  * `seLinuxOptions` +
+
+|*`serviceAccountName`* __string__ 
+|*Optional* + 
+ The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
 
 |===
 
@@ -676,11 +613,11 @@ PrometheusOperatorConfig (`prometheus`) defines the configuration of a Prometheu
 
 |*`labels`* __object (keys:string, values:string)__ 
 |*Optional* + 
- If provided, use these labels for Console Object Meta labels
+ If provided, use these labels for Prometheus Object Meta labels
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 
- If provided, use these annotations for Console Object Meta annotations
+ If provided, use these annotations for Prometheus Object Meta annotations
 
 |===
 
@@ -908,6 +845,12 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  If `requestAutoCert` is set to `false` *and* `externalCertSecret` is omitted, the MinIO Tenant deploys *without* TLS enabled. 
  See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 
+|*`liveness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#probe-v1-core[$$Probe$$]__ 
+|Liveness Probe for container liveness. Container will be restarted if the probe fails.
+
+|*`readiness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#probe-v1-core[$$Probe$$]__ 
+|Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
+
 |*`s3`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-s3features[$$S3Features$$]__ 
 |*Optional* + 
  S3 related features can be disabled or enabled such as `bucketDNS` etc.
@@ -916,10 +859,6 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*Optional* + 
  Enables setting the `CommonName`, `Organization`, and `dnsName` attributes for all TLS certificates automatically generated by the Operator. Configuring this object has no effect if `requestAutoCert` is `false`. +
 
-|*`console`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-consoleconfiguration[$$ConsoleConfiguration$$]__ 
-|*Optional* + 
- Directs the MinIO Operator to deploy the https://github.com/minio/console[MinIO Console] using the specified configuration. The MinIO Console is a first-party graphical user interface for performing administration on the MinIO Tenant. +
-
 |*`kes`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-kesconfig[$$KESConfig$$]__ 
 |*Optional* + 
  Directs the MinIO Operator to deploy the https://github.com/minio/kes[MinIO Key Encryption Service] (KES) using the specified configuration. The MinIO KES supports performing server-side encryption of objects on the MiNIO Tenant. +
@@ -927,7 +866,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*`log`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-logconfig[$$LogConfig$$]__ 
 |*Optional* + 
  Directs the MinIO Operator to deploy and configure the MinIO Log Search API. The Operator deploys a PostgreSQL instance as part of the tenant to support storing and querying MinIO logs. + 
- If the tenant spec includes the `console` configuration, the Operator automatically configures and enables MinIO log search via the Console UI. +
+ If the tenant spec includes the `log` configuration, the Operator automatically configures and enables MinIO log search via the Console UI. +
 
 |*`prometheus`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-prometheusconfig[$$PrometheusConfig$$]__ 
 |*Optional* + 
@@ -981,8 +920,41 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*Optional* + 
  Enable JSON, Anonymous logging for MinIO tenants.
 
+|*`configuration`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
+|*Optional* + 
+ Specify a secret that contains additional environment variable configurations to be used for the MinIO pools. The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
+
 |===
 
 
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantusage"]
+==== TenantUsage 
+
+TenantUsage are metrics regarding the usage and capacity of the tenant
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantstatus[$$TenantStatus$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`capacity`* __integer__ 
+|Capacity the usage capacity of this tenant in bytes.
+
+|*`rawCapacity`* __integer__ 
+|Capacity the raw capacity of this tenant in bytes.
+
+|*`usage`* __integer__ 
+|Usage is how much data is managed by MinIO in bytes.
+
+|*`rawUsage`* __integer__ 
+|Usage is the raw usage on disks in bytes.
+
+|===
 
 

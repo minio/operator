@@ -186,6 +186,15 @@ type TenantSpec struct {
 	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 	// +optional
 	RequestAutoCert *bool `json:"requestAutoCert,omitempty"`
+
+	// Liveness Probe for container liveness. Container will be restarted if the probe fails.
+	// +optional
+	Liveness *corev1.Probe `json:"liveness,omitempty"`
+
+	// Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
+	// +optional
+	Readiness *corev1.Probe `json:"readiness,omitempty"`
+
 	// *Optional* +
 	//
 	// S3 related features can be disabled or enabled such as `bucketDNS` etc.
@@ -289,6 +298,16 @@ type TenantSpec struct {
 	// The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
 	// +optional
 	Configuration *corev1.LocalObjectReference `json:"configuration,omitempty"`
+}
+
+// Liveness specifies the spec for liveness probe
+type Liveness Readiness
+
+// Readiness specifies the spec for readiness probe
+type Readiness struct {
+	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
+	PeriodSeconds       int32 `json:"periodSeconds"`
+	TimeoutSeconds      int32 `json:"timeoutSeconds"`
 }
 
 // Logging describes Logging for MinIO tenants.

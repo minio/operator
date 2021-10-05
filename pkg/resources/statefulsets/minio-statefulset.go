@@ -303,6 +303,8 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *mini
 		Args:            args,
 		Env:             append(minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion), consoleEnvVars(t)...),
 		Resources:       pool.Resources,
+		LivenessProbe:   t.Spec.Liveness,
+		ReadinessProbe:  t.Spec.Readiness,
 	}
 }
 
