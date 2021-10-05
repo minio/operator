@@ -207,6 +207,15 @@ func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1
 		labels[k] = v
 	}
 
+	// Add user specific annotations
+	if pool.Annotations != nil {
+		annotations = miniov2.MergeMaps(annotations, pool.Annotations)
+	}
+
+	if pool.Labels != nil {
+		labels = miniov2.MergeMaps(labels, pool.Labels)
+	}
+
 	meta.Labels = labels
 	meta.Annotations = annotations
 
@@ -615,6 +624,15 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 	// Add information labels, such as which pool we are building this pod about
 	ssMeta.Labels[miniov2.PoolLabel] = pool.Name
 	ssMeta.Labels[miniov2.TenantLabel] = t.Name
+
+	// Add user specific annotations
+	if pool.Annotations != nil {
+		ssMeta.Annotations = miniov2.MergeMaps(ssMeta.Annotations, pool.Annotations)
+	}
+
+	if pool.Labels != nil {
+		ssMeta.Labels = miniov2.MergeMaps(ssMeta.Labels, pool.Labels)
+	}
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion, operatorTLS),
