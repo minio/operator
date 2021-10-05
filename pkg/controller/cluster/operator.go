@@ -255,7 +255,7 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator metav1.Object) error {
 	var err error
 	if useCertificatesV1API {
-		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
+		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
 	} else {
 		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
 	}
