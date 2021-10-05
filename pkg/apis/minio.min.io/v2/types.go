@@ -300,16 +300,6 @@ type TenantSpec struct {
 	Configuration *corev1.LocalObjectReference `json:"configuration,omitempty"`
 }
 
-// Liveness specifies the spec for liveness probe
-type Liveness Readiness
-
-// Readiness specifies the spec for readiness probe
-type Readiness struct {
-	InitialDelaySeconds int32 `json:"initialDelaySeconds"`
-	PeriodSeconds       int32 `json:"periodSeconds"`
-	TimeoutSeconds      int32 `json:"timeoutSeconds"`
-}
-
 // Logging describes Logging for MinIO tenants.
 type Logging struct {
 	JSON      bool `json:"json,omitempty"`
