@@ -337,6 +337,12 @@ func poolTolerations(z *miniov2.Pool) []corev1.Toleration {
 	return append(tolerations, z.Tolerations...)
 }
 
+// Builds the topology spread constraints for a Pool.
+func poolTopologySpreadConstraints(z *miniov2.Pool) []corev1.TopologySpreadConstraint {
+	var constraints []corev1.TopologySpreadConstraint
+	return append(constraints, z.TopologySpreadConstraints...)
+}
+
 // Builds the security context for a Pool
 func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.PodSecurityContext {
 	var runAsNonRoot = true
@@ -659,16 +665,17 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: PodMetadata(t, pool, operatorVersion),
 				Spec: corev1.PodSpec{
-					Containers:         containers,
-					Volumes:            podVolumes,
-					RestartPolicy:      corev1.RestartPolicyAlways,
-					Affinity:           pool.Affinity,
-					NodeSelector:       pool.NodeSelector,
-					SchedulerName:      t.Scheduler.Name,
-					Tolerations:        poolTolerations(pool),
-					SecurityContext:    poolSecurityContext(pool, poolStatus),
-					ServiceAccountName: t.Spec.ServiceAccountName,
-					PriorityClassName:  t.Spec.PriorityClassName,
+					Containers:                containers,
+					Volumes:                   podVolumes,
+					RestartPolicy:             corev1.RestartPolicyAlways,
+					Affinity:                  pool.Affinity,
+					NodeSelector:              pool.NodeSelector,
+					SchedulerName:             t.Scheduler.Name,
+					Tolerations:               poolTolerations(pool),
+					TopologySpreadConstraints: poolTopologySpreadConstraints(pool),
+					SecurityContext:           poolSecurityContext(pool, poolStatus),
+					ServiceAccountName:        t.Spec.ServiceAccountName,
+					PriorityClassName:         t.Spec.PriorityClassName,
 				},
 			},
 		},

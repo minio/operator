@@ -28,6 +28,7 @@ operator:
   nodeSelector: {}
   affinity: {}
   tolerations: []
+  topologySpreadConstraints: []
   resources:
     requests:
       cpu: 200m
@@ -45,6 +46,7 @@ console:
   nodeSelector: {}
   affinity: {}
   tolerations: []
+  topologySpreadConstraints: []
   resources: {}
   securityContext:
     runAsUser: 1000
@@ -100,6 +102,8 @@ tenants:
         resources: {}
         ## Configure security context
         securityContext: {}
+        ## Configure topology constraints
+        topologySpreadConstraints: []
     ## Mount path where PV will be mounted inside container(s).
     mountPath: /export
     ## Sub path inside Mount path where MinIO stores data.

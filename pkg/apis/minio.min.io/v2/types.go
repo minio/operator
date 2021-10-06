@@ -527,6 +527,11 @@ type Pool struct {
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	// *Optional* +
 	//
+	// Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// *Optional* +
+	//
 	// Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of pods in the pool. The Operator supports only the following pod security fields: +
 	//
 	// * `fsGroup` +
@@ -603,6 +608,11 @@ type LogConfig struct {
 	// Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to MinIO Log Search API pods.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// *Optional* +
+	//
+	// Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// *Optional* +
 	//
 	// If provided, use these annotations for Log Search Object Meta annotations
@@ -717,6 +727,11 @@ type PrometheusConfig struct {
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// *Optional* +
 	//
+	// Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// *Optional* +
+	//
 	// Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits of the Prometheus pod. +
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -801,6 +816,11 @@ type LogDbConfig struct {
 	// Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to the PostgreSQL pods.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// *Optional* +
+	//
+	// Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// *Optional* +
 	//
 	// If provided, use these annotations for PostgreSQL Object Meta annotations
@@ -928,6 +948,11 @@ type KESConfig struct {
 	// Specify node affinity, pod affinity, and pod anti-affinity for the KES pods. +
 	// +optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// *Optional* +
+	//
+	// Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// *Optional* +
 	//
 	// If provided, use this as the name of the key that KES creates on the KMS backend

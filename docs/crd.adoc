@@ -119,7 +119,7 @@ ExposeServices (`exposeServices`) defines the exposure of the MinIO object stora
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-healthstatus"]
 ==== HealthStatus (string) 
 
-
+HealthStatus represents whether the tenant is healthy, with decreased service or offline
 
 .Appears In:
 ****
@@ -208,6 +208,10 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |*Optional* + 
  Specify node affinity, pod affinity, and pod anti-affinity for the KES pods. +
 
+|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$]__ 
+|*Optional* + 
+ Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
+
 |*`keyName`* __string__ 
 |*Optional* + 
  If provided, use this as the name of the key that KES creates on the KMS backend
@@ -222,10 +226,6 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
  * `seLinuxOptions` +
 
 |===
-
-
-
-
 
 
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference"]
@@ -289,6 +289,10 @@ LogConfig (`log`) defines the configuration of the MinIO Log Search API deployed
 |*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#toleration-v1-core[$$Toleration$$]__ 
 |*Optional* + 
  Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to MinIO Log Search API pods.
+
+|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$]__ 
+|*Optional* + 
+ Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 
@@ -366,6 +370,10 @@ LogDbConfig (`db`) defines the configuration of the PostgreSQL StatefulSet deplo
 |*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#toleration-v1-core[$$Toleration$$]__ 
 |*Optional* + 
  Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to the PostgreSQL pods.
+
+|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$]__ 
+|*Optional* + 
+ Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 
@@ -468,6 +476,10 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
 |*Optional* + 
  Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to pods deployed in the MinIO pool.
 
+|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ 
+|*Optional* + 
+ Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
+
 |*`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ 
 |*Optional* + 
  Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of pods in the pool. The Operator supports only the following pod security fields: + 
@@ -478,13 +490,22 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
  * `runAsUser` + 
  * `seLinuxOptions` +
 
+|*`annotations`* __object (keys:string, values:string)__ 
+|*Optional* + 
+ Specify custom labels and annotations to append to the Pool. *Optional* + 
+ If provided, use these annotations for the Pool Objects Meta annotations (Statefulset and Pod template)
+
+|*`labels`* __object (keys:string, values:string)__ 
+|*Optional* + 
+ If provided, use these labels for the Pool Objects Meta annotations (Statefulset and Pod template)
+
 |===
 
 
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-poolstate"]
 ==== PoolState (string) 
 
-
+PoolState represents the state of a pool
 
 .Appears In:
 ****
@@ -574,6 +595,10 @@ PrometheusConfig (`prometheus`) defines the configuration of a Prometheus instan
 |*`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#affinity-v1-core[$$Affinity$$]__ 
 |*Optional* + 
  Specify node affinity, pod affinity, and pod anti-affinity for the Prometheus pods. +
+
+|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$]__ 
+|*Optional* + 
+ Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
 
 |*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
 |*Optional* + 
