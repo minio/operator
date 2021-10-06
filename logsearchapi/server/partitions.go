@@ -261,7 +261,7 @@ func (c *DBClient) partitionTables() {
 				continue
 			}
 
-			if err := c.createTablePartition(bgCtx, table); err != nil {
+			if err := c.createTablePartition(bgCtx, table, aDayLater); err != nil {
 				log.Printf("Error while creating partition for %s", table.Name)
 			}
 		}
