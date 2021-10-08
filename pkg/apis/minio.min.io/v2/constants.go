@@ -184,7 +184,7 @@ const PrometheusServiceMonitorSecretKey = "token"
 const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.2.12"
 
 // LogPgImage specifies the latest Postgres container image
-const LogPgImage = "library/postgres"
+const LogPgImage = "library/postgres:13"
 
 // LogDBInstanceLabel is applied to the Log (Postgres server) pods
 const LogDBInstanceLabel = "v1.min.io/log-pg"
