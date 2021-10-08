@@ -10,7 +10,7 @@
 :minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2021-10-06T23-36-31Z]
 :kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:v0.16.1]
 :prometheus-image: https://quay.io/prometheus/prometheus:latest[prometheus/prometheus:latest]
-:logsearch-image: https://hub.docker.com/r/minio/logsearchapi/tags[minio/logsearchapi:v4.2.10]
+:logsearch-image: https://hub.docker.com/r/minio/logsearchapi/tags[minio/logsearchapi:v4.2.12]
 :postgres-image: https://github.com/docker-library/postgres[library/postgres]
 
 {{ range $groupVersions }}
