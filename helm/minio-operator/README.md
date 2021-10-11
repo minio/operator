@@ -33,7 +33,9 @@ Creating a Tenant
 Once Chart is successfully installed, create a MinIO Tenant using:
 
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/examples/tenant.yaml
+kubectl apply -f https://raw.githubusercontent.com/minio/operator/master/examples/kustomization/tenant-lite/tenant.yaml
+
+
 ```
 
 This creates a 4 Node MinIO Tenant (cluster). To change the default values, take a look at various [examples](https://github.com/minio/operator/tree/master/examples).
