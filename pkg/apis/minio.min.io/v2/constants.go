@@ -91,7 +91,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-09-15T04-54-25Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-10-06T23-36-31Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -112,7 +112,7 @@ const DefaultPoolName = "pool-0"
 // Console Related Constants
 
 // DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.10.0"
+const DefaultConsoleImage = "minio/console:v0.10.3"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -181,10 +181,10 @@ const PrometheusServiceMonitorSecretKey = "token"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.2.10"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.2.12"
 
 // LogPgImage specifies the latest Postgres container image
-const LogPgImage = "library/postgres"
+const LogPgImage = "library/postgres:13"
 
 // LogDBInstanceLabel is applied to the Log (Postgres server) pods
 const LogDBInstanceLabel = "v1.min.io/log-pg"
@@ -231,7 +231,7 @@ const LogAuditTokenKey = "LOGSEARCH_AUDIT_AUTH_TOKEN"
 
 // LogQueryTokenKey is the k8s secret/environment variable key name referring to
 // the token used to perform search query on audit logs persisted.
-const LogQueryTokenKey = "MINIO_QUERY_AUTH_TOKEN"
+const LogQueryTokenKey = "MINIO_LOG_QUERY_AUTH_TOKEN"
 
 // ConsolePrometheusURL is the url to the prometheus the console should use to pull metrics from.
 const ConsolePrometheusURL = "MINIO_PROMETHEUS_URL"
