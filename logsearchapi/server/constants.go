@@ -22,7 +22,7 @@ package server
 
 const (
 	// QueryAuthTokenEnv environment variable
-	QueryAuthTokenEnv = "MINIO_QUERY_AUTH_TOKEN"
+	QueryAuthTokenEnv = "MINIO_LOG_QUERY_AUTH_TOKEN"
 	// PgConnStrEnv environment variable
 	PgConnStrEnv = "LOGSEARCH_PG_CONN_STR"
 	// AuditAuthTokenEnv environment variable
