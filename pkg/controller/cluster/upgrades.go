@@ -101,7 +101,7 @@ func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*m
 	} else {
 		secretChanged := false
 		if _, ok := logSearchSecret.Data["LOGSEARCH_QUERY_AUTH_TOKEN"]; ok {
-			logSearchSecret.Data["MINIO_QUERY_AUTH_TOKEN"] = logSearchSecret.Data["LOGSEARCH_QUERY_AUTH_TOKEN"]
+			logSearchSecret.Data["MINIO_LOG_QUERY_AUTH_TOKEN"] = logSearchSecret.Data["LOGSEARCH_QUERY_AUTH_TOKEN"]
 			delete(logSearchSecret.Data, "LOGSEARCH_QUERY_AUTH_TOKEN")
 			secretChanged = true
 		}
