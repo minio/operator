@@ -309,5 +309,5 @@ func (c *Controller) upgrade4215(ctx context.Context, tenant *miniov2.Tenant) (*
 
 	}
 
-	return c.updateTenantSyncVersion(ctx, tenant, version420)
+	return c.updateTenantSyncVersion(ctx, tenant, version4215)
 }
