@@ -29,11 +29,13 @@ import (
 	"syscall"
 	"time"
 
+	"k8s.io/client-go/tools/clientcmd"
+
+	"k8s.io/client-go/rest"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"k8s.io/client-go/tools/clientcmd"
 
 	"k8s.io/klog/v2"
 
@@ -45,7 +47,6 @@ import (
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 // version provides the version of this operator
@@ -156,8 +157,12 @@ func main() {
 		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 		promInformerFactory = prominformers.NewSharedInformerFactory(promClient, time.Second*30)
 	}
+	podName := os.Getenv("POD_NAME")
+	if podName == "" {
+		podName = "operator-pod"
+	}
 
-	mainController := cluster.NewController(kubeClient, controllerClient, promClient,
+	mainController := cluster.NewController(podName, kubeClient, controllerClient, promClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Core().V1().Pods(),

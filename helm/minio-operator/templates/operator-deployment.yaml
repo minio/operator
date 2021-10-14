@@ -42,6 +42,11 @@ spec:
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
           {{- if or .Values.operator.clusterDomain .Values.operator.nsToWatch }}
           env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
             {{- if .Values.operator.clusterDomain }}
             - name: CLUSTER_DOMAIN
               value: {{ .Values.operator.clusterDomain }}

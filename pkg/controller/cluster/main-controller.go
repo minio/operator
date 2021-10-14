@@ -19,11 +19,18 @@ package cluster
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
+
+	"k8s.io/client-go/tools/leaderelection"
+	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 
@@ -125,6 +132,8 @@ var ErrLogSearchNotReady = fmt.Errorf("Log Search is not ready")
 
 // Controller struct watches the Kubernetes API for changes to Tenant resources
 type Controller struct {
+	// podName is the identifier of this instance
+	podName string
 	// kubeClientSet is a standard kubernetes clientset
 	kubeClientSet kubernetes.Interface
 	// minioClientSet is a clientset for our own API group
@@ -201,7 +210,7 @@ type Controller struct {
 }
 
 // NewController returns a new sample controller
-func NewController(kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, serviceMonitorInformer prominformers.ServiceMonitorInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, serviceMonitorInformer prominformers.ServiceMonitorInformer, hostsTemplate, operatorVersion string) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -214,6 +223,7 @@ func NewController(kubeClientSet kubernetes.Interface, minioClientSet clientset.
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
+		podName:                    podName,
 		kubeClientSet:              kubeClientSet,
 		minioClientSet:             minioClientSet,
 		promClient:                 promClient,
@@ -370,23 +380,112 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	// Start the informer factories to begin populating the informer caches
 	klog.Info("Starting Tenant controller")
 
-	// Wait for the caches to be synced before starting workers
-	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced); !ok {
-		return fmt.Errorf("failed to wait for caches to sync")
+	run := func(ctx context.Context) {
+		klog.Info("Controller loop...")
+
+		// Wait for the caches to be synced before starting workers
+		klog.Info("Waiting for informer caches to sync")
+		if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced); !ok {
+			panic("failed to wait for caches to sync")
+		}
+
+		klog.Info("Starting workers")
+		// Launch two workers to process Tenant resources
+		for i := 0; i < threadiness; i++ {
+			go wait.Until(c.runWorker, time.Second, stopCh)
+		}
+
+		// Launch a single worker for Health Check reacting to Pod Changes
+		go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
+
+		// Launch a goroutine to monitor all Tenants
+		go c.recurrentTenantStatusMonitor(stopCh)
+
+		select {}
 	}
 
-	klog.Info("Starting workers")
-	// Launch two workers to process Tenant resources
-	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
+	// use a Go context so we can tell the leaderelection code when we
+	// want to step down
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// listen for interrupts or the Linux SIGTERM signal and cancel
+	// our context, which the leader election code will observe and
+	// step down
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-ch
+		klog.Info("Received termination, signaling shutdown")
+		cancel()
+	}()
+
+	leaseLockName := "minio-operator-lock"
+	leaseLockNamespace := miniov2.GetNSFromFile()
+
+	// we use the Lease lock type since edits to Leases are less common
+	// and fewer objects in the cluster watch "all Leases".
+	lock := &resourcelock.LeaseLock{
+		LeaseMeta: metav1.ObjectMeta{
+			Name:      leaseLockName,
+			Namespace: leaseLockNamespace,
+		},
+		Client: c.kubeClientSet.CoordinationV1(),
+		LockConfig: resourcelock.ResourceLockConfig{
+			Identity: c.podName,
+		},
 	}
 
-	// Launcha  single worker for Health Check reacting to Pod Changes
-	go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
+	// start the leader election code loop
+	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+		Lock: lock,
+		// IMPORTANT: you MUST ensure that any code you have that
+		// is protected by the lease must terminate **before**
+		// you call cancel. Otherwise, you could have a background
+		// loop still running and another process could
+		// get elected before your background loop finished, violating
+		// the stated goal of the lease.
+		ReleaseOnCancel: true,
+		LeaseDuration:   60 * time.Second,
+		RenewDeadline:   15 * time.Second,
+		RetryPeriod:     5 * time.Second,
+		Callbacks: leaderelection.LeaderCallbacks{
+			OnStartedLeading: func(ctx context.Context) {
+				// we're notified when we start - this is where you would
+				// usually put your code
+				run(ctx)
+			},
+			OnStoppedLeading: func() {
+				// we can do cleanup here
+				klog.Infof("leader lost: %s", c.podName)
+				os.Exit(0)
+			},
+			OnNewLeader: func(identity string) {
+				// we're notified when new leader elected
+				if identity == c.podName {
+					klog.Infof("%s: I've become the leader", c.podName)
+					// Patch this pod so the main service uses it
+					p := []patchAnnotation{{
+						Op:    "add",
+						Path:  fmt.Sprintf("/metadata/labels/%s", strings.Replace("operator", "/", "~1", -1)),
+						Value: "leader",
+					}}
 
-	// Launch a goroutine to monitor all Tenants
-	go c.recurrentTenantStatusMonitor(stopCh)
+					payloadBytes, err := json.Marshal(p)
+					if err != nil {
+						klog.Errorf("failed to marshal patch: %+v", err)
+					}
+					_, err = c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+					if err != nil {
+						klog.Errorf("failed to patch operator leader pod: %+v", err)
+					}
+
+					return
+				}
+				klog.Infof("new leader elected: %s", identity)
+			},
+		},
+	})
 
 	return nil
 }
@@ -1458,4 +1557,10 @@ func (c *Controller) checkAndCreatePrometheusServiceMonitor(ctx context.Context,
 	prometheusSM := servicemonitor.NewForPrometheus(tenant)
 	_, err = c.promClient.MonitoringV1().ServiceMonitors(tenant.Namespace).Create(ctx, prometheusSM, metav1.CreateOptions{})
 	return err
+}
+
+type patchAnnotation struct {
+	Op    string `json:"op"`
+	Path  string `json:"path"`
+	Value string `json:"value"`
 }

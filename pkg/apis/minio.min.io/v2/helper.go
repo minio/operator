@@ -876,14 +876,6 @@ func GetTenantMinIOImage() string {
 	return tenantMinIOImage
 }
 
-// GetTenantConsoleImage returns the default Console Image for a tenant
-func GetTenantConsoleImage() string {
-	tenantConsoleImageOnce.Do(func() {
-		tenantConsoleImage = envGet(tenantConsoleImageEnv, DefaultConsoleImage)
-	})
-	return tenantConsoleImage
-}
-
 // GetTenantKesImage returns the default KES Image for a tenant
 func GetTenantKesImage() string {
 	tenantKesImageOnce.Do(func() {
