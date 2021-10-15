@@ -157,7 +157,7 @@ func main() {
 		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 		promInformerFactory = prominformers.NewSharedInformerFactory(promClient, time.Second*30)
 	}
-	podName := os.Getenv("POD_NAME")
+	podName := os.Getenv("HOSTNAME")
 	if podName == "" {
 		podName = "operator-pod"
 	}
