@@ -18,12 +18,6 @@ spec:
         - name: minio-operator
           image: minio/operator:v4.2.14
           imagePullPolicy: IfNotPresent
-          env:
-            - name: POD_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.name
           resources:
             requests:
               cpu: 200m

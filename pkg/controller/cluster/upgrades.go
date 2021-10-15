@@ -31,11 +31,11 @@ import (
 )
 
 const (
-	version420  = "v4.2.0"
-	version424  = "v4.2.4"
-	version428  = "v4.2.8"
-	version429  = "v4.2.9"
-	version4215 = "v4.2.15"
+	version420 = "v4.2.0"
+	version424 = "v4.2.4"
+	version428 = "v4.2.8"
+	version429 = "v4.2.9"
+	version430 = "v4.3.0"
 )
 
 type upgradeFunction func(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error)
@@ -45,11 +45,11 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 
 	var upgradesToDo []string
 	upgrades := map[string]upgradeFunction{
-		version420:  c.upgrade420,
-		version424:  c.upgrade424,
-		version428:  c.upgrade428,
-		version429:  c.upgrade429,
-		version4215: c.upgrade4215,
+		version420: c.upgrade420,
+		version424: c.upgrade424,
+		version428: c.upgrade428,
+		version429: c.upgrade429,
+		version430: c.upgrade430,
 	}
 
 	// if the version is empty, do all upgrades
@@ -58,7 +58,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		upgradesToDo = append(upgradesToDo, version424)
 		upgradesToDo = append(upgradesToDo, version428)
 		upgradesToDo = append(upgradesToDo, version429)
-		upgradesToDo = append(upgradesToDo, version4215)
+		upgradesToDo = append(upgradesToDo, version430)
 	} else {
 		currentSyncVersion, err := version.NewVersion(tenant.Status.SyncVersion)
 		if err != nil {
@@ -70,7 +70,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 			version424,
 			version428,
 			version429,
-			version4215,
+			version430,
 		}
 		for _, v := range versionsThatNeedUpgrades {
 			vp, _ := version.NewVersion(v)
@@ -282,9 +282,9 @@ func (c *Controller) upgrade429(ctx context.Context, tenant *miniov2.Tenant) (*m
 	return c.updateTenantSyncVersion(ctx, tenant, version429)
 }
 
-// Upgrades the sync version to v4.2.15
+// Upgrades the sync version to v4.3.0
 // in this version we renamed MINIO_QUERY_AUTH_TOKEN to MINIO_LOG_QUERY_AUTH_TOKEN.
-func (c *Controller) upgrade4215(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
+func (c *Controller) upgrade430(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.LogSecretName(), metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return nil, err
@@ -309,5 +309,5 @@ func (c *Controller) upgrade4215(ctx context.Context, tenant *miniov2.Tenant) (*
 
 	}
 
-	return c.updateTenantSyncVersion(ctx, tenant, version4215)
+	return c.updateTenantSyncVersion(ctx, tenant, version430)
 }
