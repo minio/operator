@@ -96,12 +96,10 @@ type hostsTemplateValues struct {
 var (
 	once                   sync.Once
 	tenantMinIOImageOnce   sync.Once
-	tenantConsoleImageOnce sync.Once
 	tenantKesImageOnce     sync.Once
 	monitoringIntervalOnce sync.Once
 	k8sClusterDomain       string
 	tenantMinIOImage       string
-	tenantConsoleImage     string
 	tenantKesImage         string
 	monitoringInterval     int
 )
