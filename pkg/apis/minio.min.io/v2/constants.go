@@ -29,9 +29,6 @@ import (
 // MinIOCRDResourceKind is the Kind of a Cluster.
 const MinIOCRDResourceKind = "Tenant"
 
-// OperatorCRDResourceKind is the Kind of a Cluster.
-const OperatorCRDResourceKind = "Operator"
-
 // DefaultPodManagementPolicy specifies default pod management policy as expllained here
 // https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
 const DefaultPodManagementPolicy = appsv1.ParallelPodManagement
@@ -100,19 +97,7 @@ const DefaultMinIOUpdateURL = "https://dl.min.io/server/minio/release/" + runtim
 // MinIOHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service
 const MinIOHLSvcNameSuffix = "-hl"
 
-// DefaultServers specifies the default MinIO replicas to use for distributed deployment if not specified explicitly by user
-const DefaultServers = 1
-
-// DefaultVolumesPerServer specifies the default number of volumes per MinIO Tenant
-const DefaultVolumesPerServer = 1
-
-// DefaultPoolName specifies the default pool name
-const DefaultPoolName = "pool-0"
-
 // Console Related Constants
-
-// DefaultConsoleImage specifies the latest Console Docker hub image
-const DefaultConsoleImage = "minio/console:v0.10.3"
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
 const ConsoleTenantLabel = "v1.min.io/console"
@@ -137,19 +122,6 @@ const ConsoleName = "-console"
 
 // ConsoleAdminPolicyName denotes the policy name for Console user
 const ConsoleAdminPolicyName = "consoleAdmin"
-
-// ConsoleRestartPolicy defines the default restart policy for Console Containers
-const ConsoleRestartPolicy = corev1.RestartPolicyAlways
-
-// ConsoleConfigMountPath specifies the path where Console config file and all secrets are mounted
-// We keep this to /tmp so it doesn't require any special permissions
-const ConsoleConfigMountPath = "/tmp/console"
-
-// DefaultConsoleReplicas specifies the default number of Console pods to be created if not specified
-const DefaultConsoleReplicas = 2
-
-// ConsoleCertPath is the path where all Console certs are mounted
-const ConsoleCertPath = "/tmp/certs"
 
 // Prometheus related constants
 
@@ -315,8 +287,6 @@ const MinIOPrometheusScrapeInterval = 30 * time.Second
 const MinIOPrometheusScrapeTimeout = 2 * time.Second
 
 const tenantMinIOImageEnv = "TENANT_MINIO_IMAGE"
-
-const tenantConsoleImageEnv = "TENANT_CONSOLE_IMAGE"
 
 const tenantKesImageEnv = "TENANT_KES_IMAGE"
 

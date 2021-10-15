@@ -96,12 +96,10 @@ type hostsTemplateValues struct {
 var (
 	once                   sync.Once
 	tenantMinIOImageOnce   sync.Once
-	tenantConsoleImageOnce sync.Once
 	tenantKesImageOnce     sync.Once
 	monitoringIntervalOnce sync.Once
 	k8sClusterDomain       string
 	tenantMinIOImage       string
-	tenantConsoleImage     string
 	tenantKesImage         string
 	monitoringInterval     int
 )
@@ -874,14 +872,6 @@ func GetTenantMinIOImage() string {
 		tenantMinIOImage = envGet(tenantMinIOImageEnv, DefaultMinIOImage)
 	})
 	return tenantMinIOImage
-}
-
-// GetTenantConsoleImage returns the default Console Image for a tenant
-func GetTenantConsoleImage() string {
-	tenantConsoleImageOnce.Do(func() {
-		tenantConsoleImage = envGet(tenantConsoleImageEnv, DefaultConsoleImage)
-	})
-	return tenantConsoleImage
 }
 
 // GetTenantKesImage returns the default KES Image for a tenant

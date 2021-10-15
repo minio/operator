@@ -2,9 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: minio-operator
-  namespace: default
+  namespace: minio-operator
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       name: minio-operator
@@ -27,3 +27,13 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
             runAsNonRoot: true
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: name
+                    operator: In
+                    values:
+                      - minio-operator
+              topologyKey: kubernetes.io/hostname

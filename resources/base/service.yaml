@@ -12,3 +12,4 @@ spec:
       name: https
   selector:
     name: minio-operator
+    operator: leader
