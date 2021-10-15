@@ -11,4 +11,5 @@ spec:
     - port: 4222
       name: https
   selector:
+    operator: leader
     {{- include "minio-operator.selectorLabels" . | nindent 4 }}

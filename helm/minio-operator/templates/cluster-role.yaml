@@ -36,6 +36,7 @@ rules:
     verbs:
       - get
       - watch
+      - patch
       - create
       - list
       - delete
@@ -120,3 +121,11 @@ rules:
       - get
       - create
       - list
+  - apiGroups:
+      - "coordination.k8s.io"
+    resources:
+      - leases
+    verbs:
+      - get
+      - update
+      - create
