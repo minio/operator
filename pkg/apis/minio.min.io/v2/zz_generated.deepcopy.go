@@ -162,6 +162,13 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.TopologySpreadConstraints != nil {
+		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
 		*out = new(v1.PodSecurityContext)
@@ -215,6 +222,13 @@ func (in *LogConfig) DeepCopyInto(out *LogConfig) {
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.TopologySpreadConstraints != nil {
+		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -285,6 +299,13 @@ func (in *LogDbConfig) DeepCopyInto(out *LogDbConfig) {
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.TopologySpreadConstraints != nil {
+		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -361,6 +382,13 @@ func (in *Pool) DeepCopyInto(out *Pool) {
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.TopologySpreadConstraints != nil {
+		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -451,6 +479,13 @@ func (in *PrometheusConfig) DeepCopyInto(out *PrometheusConfig) {
 		in, out := &in.Affinity, &out.Affinity
 		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.TopologySpreadConstraints != nil {
+		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	if in.SecurityContext != nil {
@@ -730,6 +765,16 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		in, out := &in.RequestAutoCert, &out.RequestAutoCert
 		*out = new(bool)
 		**out = **in
+	}
+	if in.Liveness != nil {
+		in, out := &in.Liveness, &out.Liveness
+		*out = new(v1.Probe)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.Readiness != nil {
+		in, out := &in.Readiness, &out.Readiness
+		*out = new(v1.Probe)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.S3 != nil {
 		in, out := &in.S3, &out.S3
