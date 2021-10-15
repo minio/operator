@@ -169,6 +169,8 @@ func NewForLogSearchAPI(t *miniov2.Tenant) *appsv1.Deployment {
 		apiPod.Spec.NodeSelector = t.Spec.Log.Db.NodeSelector
 		// attach tolerations
 		apiPod.Spec.Tolerations = t.Spec.Log.Db.Tolerations
+		// attach topology spread constraints
+		apiPod.Spec.TopologySpreadConstraints = t.Spec.Log.Db.TopologySpreadConstraints
 	}
 
 	d := &appsv1.Deployment{

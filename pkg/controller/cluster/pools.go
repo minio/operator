@@ -117,5 +117,11 @@ func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.St
 			poolMatchesSS = false
 		}
 	}
+
+	// Check for topology spread constraints changes
+	if !reflect.DeepEqual(pool.TopologySpreadConstraints, ss.Spec.Template.Spec.TopologySpreadConstraints) {
+		poolMatchesSS = false
+	}
+
 	return poolMatchesSS, nil
 }

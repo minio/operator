@@ -645,6 +645,72 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 			want:    false,
 			wantErr: false,
 		},
+		{
+			name: "Topology Spread Constraints Changed",
+			args: args{
+				tenant: &miniov2.Tenant{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a",
+						Labels: map[string]string{
+							"x": "y",
+						},
+					},
+					Spec: miniov2.TenantSpec{
+						Pools: []miniov2.Pool{
+							{
+								Name: "pool-0",
+								TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
+									{
+										MaxSkew:           1,
+										TopologyKey:       "zone",
+										WhenUnsatisfiable: "DoNotSchedule",
+										LabelSelector: &metav1.LabelSelector{
+											MatchExpressions: []metav1.LabelSelectorRequirement{
+												{
+													Key:      miniov2.PoolLabel,
+													Operator: metav1.LabelSelectorOpIn,
+													Values:   []string{"pool-0"},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				pool: &miniov2.Pool{
+					Name: "pool-0",
+				},
+				ss: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+							"x":                 "x",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
+				operatorVersion: "0.1",
+			},
+			want:    false,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
