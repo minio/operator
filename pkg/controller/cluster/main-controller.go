@@ -346,42 +346,41 @@ func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
-	// we need to make sure the API is ready before starting operator
-	apiWillStart := make(chan interface{})
-
-	go func() {
-
-		// Request kubernetes version from Kube ApiServer
-		c.getKubeAPIServerVersion()
-
-		if isOperatorTLS() {
-			publicCertPath, publicKeyPath := c.generateTLSCert()
-			klog.Infof("Starting HTTPS api server")
-			close(apiWillStart)
-			// use those certificates to configure the web server
-			if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
-				klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
-				panic(err)
-			}
-		} else {
-			klog.Infof("Starting HTTP api server")
-			close(apiWillStart)
-			// start server without TLS
-			if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
-				klog.Infof("HTTP server ListenAndServe failed: %v", err)
-				panic(err)
-			}
-		}
-	}()
-
-	klog.Info("Waiting for API to start")
-	<-apiWillStart
-
-	// Start the informer factories to begin populating the informer caches
-	klog.Info("Starting Tenant controller")
-
+	// Start the API and the Controller, but only if this pod is the leader
 	run := func(ctx context.Context) {
-		klog.Info("Controller loop...")
+		// we need to make sure the API is ready before starting operator
+		apiWillStart := make(chan interface{})
+
+		go func() {
+
+			// Request kubernetes version from Kube ApiServer
+			c.getKubeAPIServerVersion()
+
+			if isOperatorTLS() {
+				publicCertPath, publicKeyPath := c.generateTLSCert()
+				klog.Infof("Starting HTTPS API server")
+				close(apiWillStart)
+				// use those certificates to configure the web server
+				if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
+					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
+					panic(err)
+				}
+			} else {
+				klog.Infof("Starting HTTP API server")
+				close(apiWillStart)
+				// start server without TLS
+				if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
+					klog.Infof("HTTP server ListenAndServe failed: %v", err)
+					panic(err)
+				}
+			}
+		}()
+
+		klog.Info("Waiting for API to start")
+		<-apiWillStart
+
+		// Start the informer factories to begin populating the informer caches
+		klog.Info("Starting Tenant controller")
 
 		// Wait for the caches to be synced before starting workers
 		klog.Info("Waiting for informer caches to sync")
@@ -451,8 +450,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		RetryPeriod:     5 * time.Second,
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
-				// we're notified when we start - this is where you would
-				// usually put your code
+				// start the controller + API code
 				run(ctx)
 			},
 			OnStoppedLeading: func() {
