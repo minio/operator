@@ -91,12 +91,12 @@ func (c *Controller) recreateMinIOCertsIfRequired(ctx context.Context) error {
 		return err
 	}
 
-	expired, err := c.isCertificateExpired(ctx, operatorTLSSecret)
+	needsRenewal, err := c.certNeedsRenewal(ctx, operatorTLSSecret)
 	if err != nil {
 		return err
 	}
 
-	if !expired {
+	if !needsRenewal {
 		return nil
 	}
 
@@ -166,12 +166,12 @@ func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *m
 			}
 		}
 
-		expired, err := c.isCertificateExpired(ctx, tlsSecret)
+		needsRenewal, err := c.certNeedsRenewal(ctx, tlsSecret)
 		if err != nil {
 			return err
 		}
 
-		if expired {
+		if needsRenewal {
 			return c.recreateMinIOCertsOnTenant(ctx, tenant, nsName)
 		}
 	}
@@ -179,7 +179,9 @@ func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *m
 	return nil
 }
 
-func (c *Controller) isCertificateExpired(ctx context.Context, tlsSecret *v1.Secret) (bool, error) {
+// certNeedsRenewal - returns true if the TLS certificate from given secret has expired or is
+// about to expire within the next two days.
+func (c *Controller) certNeedsRenewal(ctx context.Context, tlsSecret *v1.Secret) (bool, error) {
 	if pubCert, ok := tlsSecret.Data["public.crt"]; ok {
 		if privKey, ok := tlsSecret.Data["private.key"]; ok {
 			tlsCert, err := tls.X509KeyPair(pubCert, privKey)
@@ -194,8 +196,8 @@ func (c *Controller) isCertificateExpired(ctx context.Context, tlsSecret *v1.Sec
 					return false, err
 				}
 			}
-			if leaf.NotAfter.Before(time.Now()) {
-				klog.V(2).Infof("TLS Certificate expired on %s", leaf.NotAfter.String())
+			if leaf.NotAfter.Before(time.Now().Add(time.Hour * 48)) {
+				klog.V(2).Infof("TLS Certificate expiry on %s", leaf.NotAfter.String())
 				return true, nil
 			}
 		}
