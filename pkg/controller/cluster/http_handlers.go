@@ -183,8 +183,12 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(args))
 		w.(http.Flusher).Flush()
 	case envMinIOServiceTarget:
+		schema := "https"
+		if !isOperatorTLS() {
+			schema = "http"
+		}
 		target := fmt.Sprintf("%s://%s:%s%s/%s/%s",
-			"https",
+			schema,
 			fmt.Sprintf("operator.%s.svc.%s",
 				miniov2.GetNSFromFile(),
 				miniov2.GetClusterDomain()),
