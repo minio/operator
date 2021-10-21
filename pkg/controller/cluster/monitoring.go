@@ -250,10 +250,12 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	if err != nil {
 		klog.Infof("'%s/%s' Can't generate tenant prometheus token: %v", tenant.Namespace, tenant.Name, err)
 	} else {
-		tenant.Status.Usage.Usage = metrics.Usage
-		tenant.Status.Usage.Capacity = metrics.UsableCapacity
-		if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
-			klog.Infof("'%s/%s' Can't update tenant status for usage: %v", tenant.Namespace, tenant.Name, err)
+		if metrics != nil {
+			tenant.Status.Usage.Usage = metrics.Usage
+			tenant.Status.Usage.Capacity = metrics.UsableCapacity
+			if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
+				klog.Infof("'%s/%s' Can't update tenant status for usage: %v", tenant.Namespace, tenant.Name, err)
+			}
 		}
 	}
 
