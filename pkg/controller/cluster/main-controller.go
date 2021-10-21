@@ -118,7 +118,7 @@ const (
 	StatusNotOwned                             = "Statefulset not controlled by operator"
 	StatusFailedAlreadyExists                  = "Another MinIO Tenant already exists in the namespace"
 	StatusInconsistentMinIOVersions            = "Different versions across MinIO Pools"
-	StatusRestartingMinIO                      = "Different versions across MinIO Pools"
+	StatusRestartingMinIO                      = "Restarting MinIO"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
