@@ -233,7 +233,7 @@ func ContainerMatchLabels(t *miniov2.Tenant, pool *miniov2.Pool) *metav1.LabelSe
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool) (mounts []corev1.VolumeMount) {
+func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool, certVolumeSources []v1.VolumeProjection) (mounts []v1.VolumeMount) {
 	// This is the case where user didn't provide a pool and we deploy a EmptyDir based
 	// single node single drive (FS) MinIO deployment
 	name := miniov2.MinIOVolumeName
@@ -257,7 +257,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool) (moun
 
 	// CertPath (/tmp/certs) will always be mounted even if the tenant doesnt have any TLS certificate
 	// operator will still mount the operator public cert under /tmp/certs/CAs/operator.crt
-	if operatorTLS {
+	if operatorTLS || len(certVolumeSources) > 0 {
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      t.MinIOTLSSecretName(),
 			MountPath: miniov2.MinIOCertPath,
@@ -275,7 +275,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool) (moun
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool) corev1.Container {
+func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool, certVolumeSources []v1.VolumeProjection) v1.Container {
 	consolePort := miniov2.ConsolePort
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
@@ -308,7 +308,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *mini
 			},
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
-		VolumeMounts:    volumeMounts(t, pool, operatorTLS),
+		VolumeMounts:    volumeMounts(t, pool, operatorTLS, certVolumeSources),
 		Args:            args,
 		Env:             append(minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion), consoleEnvVars(t)...),
 		Resources:       pool.Resources,
@@ -370,7 +370,7 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	var replicas = pool.Servers
-	var podVolumeSources []corev1.VolumeProjection
+	var certVolumeSources []corev1.VolumeProjection
 
 	var clientCertSecret string
 	var clientCertPaths = []corev1.KeyToPath{
@@ -440,7 +440,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 				{Key: "public.crt", Path: caMountPath},
 			}
 		}
-		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
 			Secret: &corev1.SecretProjection{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: secret.Name,
@@ -460,7 +460,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 			keyMountPath = fmt.Sprintf("hostname-%d/private.key", index)
 			caMountPath = fmt.Sprintf("CAs/hostname-%d.crt", index)
 		}
-		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
 			Secret: &corev1.SecretProjection{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: t.MinIOTLSSecretName(),
@@ -498,7 +498,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 				{Key: "public.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
 			}
 		}
-		podVolumeSources = append(podVolumeSources, corev1.VolumeProjection{
+		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
 			Secret: &corev1.SecretProjection{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: secret.Name,
@@ -511,7 +511,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 	if operatorTLS {
 		// Mount Operator TLS certificate to MinIO ~/cert/CAs
 		operatorTLSSecretName := "operator-tls"
-		podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
+		certVolumeSources = append(certVolumeSources, []corev1.VolumeProjection{
 			{
 				Secret: &corev1.SecretProjection{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -560,7 +560,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 			kesCertSecret = t.KESTLSSecretName()
 		}
 
-		podVolumeSources = append(podVolumeSources, []corev1.VolumeProjection{
+		certVolumeSources = append(certVolumeSources, []corev1.VolumeProjection{
 			{
 				Secret: &corev1.SecretProjection{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -580,12 +580,12 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 		}...)
 	}
 
-	if len(podVolumeSources) > 0 {
+	if len(certVolumeSources) > 0 {
 		podVolumes = append(podVolumes, corev1.Volume{
 			Name: t.MinIOTLSSecretName(),
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					Sources: podVolumeSources,
+					Sources: certVolumeSources,
 				},
 			},
 		})
@@ -643,7 +643,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 	}
 
 	containers := []corev1.Container{
-		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion, operatorTLS),
+		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion, operatorTLS, certVolumeSources),
 	}
 
 	// attach any sidecar containers and volumes

@@ -184,7 +184,7 @@ spec:
   #     app: minio-sm
   ## LogSearch API setup for MinIO Tenant.
   log:
-    image: "" # defaults to minio/logsearchapi:v4.2.14
+    image: "" # defaults to minio/logsearchapi:v4.3.1
     resources: {}
     nodeSelector: {}
     affinity:

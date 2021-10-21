@@ -103,7 +103,7 @@ func logVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
 func logDbContainer(t *miniov2.Tenant) corev1.Container {
 	container := corev1.Container{
 		Name:  miniov2.LogPgContainerName,
-		Image: t.Spec.Log.Db.Image,
+		Image: miniov2.LogPgImage,
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: miniov2.LogPgPort,
@@ -207,19 +207,24 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 				RunAsNonRoot:             &runAsNonRoot,
 				AllowPrivilegeEscalation: &allowPrivilegeEscalation,
 			}
-			initContainers = []corev1.Container{
-				{
-					Name:  "postgres-init-chown-data",
-					Image: t.Spec.Log.Db.InitImage,
-					Command: []string{
-						"chown",
-						"-R",
-						fmt.Sprintf("%s:%s", strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsUser, 10), strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsGroup, 10)),
-						"/var/lib/postgresql/data",
-					},
-					SecurityContext: &initContainerSecurityContext,
-					VolumeMounts:    logVolumeMounts(t),
-				},
+
+			if t.Spec.Log != nil && t.Spec.Log.Db != nil {
+				if t.Spec.Log.Db.InitImage != "" {
+					initContainers = []corev1.Container{
+						{
+							Name:  "postgres-init-chown-data",
+							Image: t.Spec.Log.Db.InitImage,
+							Command: []string{
+								"chown",
+								"-R",
+								fmt.Sprintf("%s:%s", strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsUser, 10), strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsGroup, 10)),
+								"/var/lib/postgresql/data",
+							},
+							SecurityContext: &initContainerSecurityContext,
+							VolumeMounts:    logVolumeMounts(t),
+						},
+					}
+				}
 			}
 		}
 
