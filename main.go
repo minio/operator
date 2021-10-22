@@ -160,6 +160,7 @@ func main() {
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	podName := os.Getenv("HOSTNAME")
 	if podName == "" {
+		klog.Info("Could not determine $HOSTNAME, defaulting to pod name: operator-pod")
 		podName = "operator-pod"
 	}
 
