@@ -168,13 +168,21 @@ func (c *DBClient) InitDBTables(ctx context.Context) error {
 }
 
 // InsertEvent inserts audit event in the DB.
-func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) error {
+func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) (err error) {
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
 	if isEmptyEvent(eventBytes) {
 		return nil
 	}
+
+	// Log the event-data if we are unable to save it in db for some reason.
+	defer func() {
+		if err != nil {
+			log.Printf("audit event not saved: %s (cause: %v)", string(eventBytes), err)
+		}
+	}()
+
 	event, err := parseJSONEvent(eventBytes)
 	if err != nil {
 		return err
