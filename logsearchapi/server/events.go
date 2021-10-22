@@ -109,8 +109,11 @@ func EventFromEntry(e *Entry) (*Event, error) {
 	}
 
 	parseNanosec := func(s string) (time.Duration, error) {
+		if s == "" || strings.TrimSpace(s) == "0" {
+			return 0, nil
+		}
 		if !strings.HasSuffix(s, "ns") {
-			return 0, errors.New("'ns' suffix not present")
+			return 0, fmt.Errorf("duration value %s does not have 'ns' suffix", s)
 		}
 		s = s[:len(s)-2]
 		n, err := strconv.ParseInt(s, 10, 64)
@@ -120,15 +123,14 @@ func EventFromEntry(e *Entry) (*Event, error) {
 		return time.Duration(n) * time.Nanosecond, nil
 	}
 
-	//Parse durations
+	// Parse durations
 
-	// TTFB can be absent
-	if e.API.TimeToFirstByte != "" {
-		dur, err := parseNanosec(e.API.TimeToFirstByte)
-		if err != nil {
-			return nil, err
-		}
-		ret.API.TimeToFirstByte = &dur
+	// TTFB can be absent or maybe 0 (which is meaningless) - in both cases
+	// we do not set an output TTFB.
+	if v, err := parseNanosec(e.API.TimeToFirstByte); err != nil {
+		return nil, err
+	} else if v != 0 {
+		ret.API.TimeToFirstByte = &v
 	}
 	ret.API.TimeToResponse, err = parseNanosec(e.API.TimeToResponse)
 	if err != nil {
