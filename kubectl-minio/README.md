@@ -20,7 +20,7 @@ Creates MinIO Operator Deployment along with MinIO Tenant CRD, Service account, 
 
 Options:
 
-- `--image=minio/operator:v4.3.1`
+- `--image=minio/operator:v4.3.2`
 - `--namespace=minio-operator`
 - `--cluster-domain=cluster.local`
 - `--namespace-to-watch=default`
