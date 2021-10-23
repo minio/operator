@@ -710,7 +710,7 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 				return err
 			}
 		}
-		if err := madmClnt.SetPolicy(context.Background(), ConsoleAdminPolicyName, userAccessKey, false); err != nil {
+		if err := madmClnt.SetPolicy(ctx, ConsoleAdminPolicyName, userAccessKey, false); err != nil {
 			return err
 		}
 	}
