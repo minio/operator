@@ -55,8 +55,7 @@ func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, diskC
 	// Initialize DB Client
 	ls.DBClient, err = NewDBClient(context.Background(), ls.PGConnStr)
 	if err != nil {
-		// FIXME(aditya): Remove connection string as it contains creds
-		return nil, fmt.Errorf("Error connecting to db: %v, connection string: %s", err, ls.PGConnStr)
+		return nil, fmt.Errorf("Error connecting to db: %v", err)
 	}
 
 	// Initialize tables in db
