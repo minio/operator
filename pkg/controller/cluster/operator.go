@@ -102,14 +102,10 @@ func (c *Controller) generateTLSCert() (string, string) {
 					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
 					time.Sleep(time.Second * 10)
 				} else {
-					if useCertificatesV1API {
-						if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, c.operatorCSRName(), metav1.DeleteOptions{}); err != nil {
-							klog.Infof(err.Error())
-						}
-					} else {
-						if err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, c.operatorCSRName(), metav1.DeleteOptions{}); err != nil {
-							klog.Infof(err.Error())
-						}
+					err = c.deleteMinIOCSR(ctx, c.operatorCSRName())
+					if err != nil {
+						klog.Infof(err.Error())
+
 					}
 				}
 			}

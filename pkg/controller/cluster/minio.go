@@ -22,11 +22,13 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/minio/operator/pkg/resources/services"
 	v1 "k8s.io/api/core/v1"
@@ -63,33 +65,144 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 	return nil
 }
 
+func (c *Controller) deleteMinIOCSR(ctx context.Context, csrName string) error {
+	if useCertificatesV1API {
+		if err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
+			return err
+		}
+	} else {
+		if err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// recreateMinIOCertsIfRequired - generate TLS certs if not present, or expired
+func (c *Controller) recreateMinIOCertsIfRequired(ctx context.Context) error {
+	namespace := miniov2.GetNSFromFile()
+	operatorTLSSecret, err := c.getTLSSecret(ctx, namespace, OperatorTLSSecretName)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			klog.V(2).Info("TLS certificate not found. Generating one.")
+			c.generateTLSCert()
+			return nil
+		}
+		return err
+	}
+
+	needsRenewal, err := c.certNeedsRenewal(ctx, operatorTLSSecret)
+	if err != nil {
+		return err
+	}
+
+	if !needsRenewal {
+		return nil
+	}
+
+	// Expired cert. Delete the secret + CSR and re-create the cert
+
+	klog.V(2).Info("Deleting the TLS secret of expired cert on operator")
+	err = c.kubeClientSet.CoreV1().Secrets(namespace).Delete(ctx, OperatorTLSSecretName, metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	err = c.deleteMinIOCSR(ctx, c.operatorCSRName())
+	if err != nil {
+		return err
+	}
+
+	klog.V(2).Info("Generating a fresh TLS certificate")
+	c.generateTLSCert()
+
+	return nil
+}
+
+func (c *Controller) recreateMinIOCertsOnTenant(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+	klog.V(2).Info("Deleting the TLS secret and CSR of expired cert on tenant %s", tenant.Name)
+
+	// First delete the TLS secret of expired cert on the tenant
+	err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, tenant.MinIOTLSSecretName(), metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	// Then delete the CSR
+	err = c.deleteMinIOCSR(ctx, tenant.MinIOCSRName())
+	if err != nil {
+		return err
+	}
+
+	// In case the certs on operator are also expired, re-create them
+	if err := c.recreateMinIOCertsIfRequired(ctx); err != nil {
+		return err
+	}
+
+	// Finally re-create the certs on the tenant
+	return c.checkAndCreateMinIOCSR(ctx, nsName, tenant)
+}
+
+func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName string) (*v1.Secret, error) {
+	return c.kubeClientSet.CoreV1().Secrets(nsName).Get(ctx, secretName, metav1.GetOptions{})
+}
+
 // checkMinIOCertificatesStatus checks for the current status of MinIO and it's service
 func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
 	if tenant.AutoCert() {
 		// check if there's already a TLS secret for MinIO
-		_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.MinIOTLSSecretName(), metav1.GetOptions{})
+		tlsSecret, err := c.getTLSSecret(ctx, tenant.Namespace, tenant.MinIOTLSSecretName())
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				if err := c.checkAndCreateMinIOCSR(ctx, nsName, tenant); err != nil {
 					return err
 				}
 				// TLS secret not found, delete CSR if exists and start certificate generation process again
-				if useCertificatesV1API {
-					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, tenant.MinIOCSRName(), metav1.DeleteOptions{}); err != nil {
-						return err
-					}
-				} else {
-					if err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, tenant.MinIOCSRName(), metav1.DeleteOptions{}); err != nil {
-						return err
-					}
+				if err := c.deleteMinIOCSR(ctx, tenant.MinIOCSRName()); err != nil {
+					return err
 				}
 			} else {
 				return err
 			}
 		}
+
+		needsRenewal, err := c.certNeedsRenewal(ctx, tlsSecret)
+		if err != nil {
+			return err
+		}
+
+		if needsRenewal {
+			return c.recreateMinIOCertsOnTenant(ctx, tenant, nsName)
+		}
 	}
 
 	return nil
+}
+
+// certNeedsRenewal - returns true if the TLS certificate from given secret has expired or is
+// about to expire within the next two days.
+func (c *Controller) certNeedsRenewal(ctx context.Context, tlsSecret *v1.Secret) (bool, error) {
+	if pubCert, ok := tlsSecret.Data["public.crt"]; ok {
+		if privKey, ok := tlsSecret.Data["private.key"]; ok {
+			tlsCert, err := tls.X509KeyPair(pubCert, privKey)
+			if err != nil {
+				return false, err
+			}
+
+			leaf := tlsCert.Leaf
+			if leaf == nil {
+				leaf, err = x509.ParseCertificate(tlsCert.Certificate[0])
+				if err != nil {
+					return false, err
+				}
+			}
+			if leaf.NotAfter.Before(time.Now().Add(time.Hour * 48)) {
+				klog.V(2).Infof("TLS Certificate expiry on %s", leaf.NotAfter.String())
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 // checkMinIOSvc validates the existence of the MinIO service and validate it's status against what the specification
