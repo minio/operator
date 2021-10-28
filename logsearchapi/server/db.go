@@ -169,7 +169,7 @@ func (c *DBClient) InitDBTables(ctx context.Context) error {
 
 // InsertEvent inserts audit event in the DB.
 func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) (err error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
 	if isEmptyEvent(eventBytes) {
