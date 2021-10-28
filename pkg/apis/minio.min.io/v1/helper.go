@@ -499,6 +499,7 @@ func (t *Tenant) MinIOHealthCheck() bool {
 			ExpectContinueTimeout: 5 * time.Second,
 			TLSClientConfig:       tlsConfig,
 			// Go net/http automatically unzip if content-type is
+			// Go net/http automatically unzip if content-type is
 			// gzip disable this feature, as we are always interested
 			// in raw stream.
 			DisableCompression: true,

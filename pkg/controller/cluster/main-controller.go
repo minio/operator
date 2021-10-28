@@ -104,6 +104,7 @@ const (
 	StatusProvisioningLogSearchAPIDeployment   = "Provisioning Log Search API server"
 	StatusProvisioningPrometheusStatefulSet    = "Provisioning Prometheus server"
 	StatusProvisioningPrometheusServiceMonitor = "Provisioning Prometheus service monitor"
+	StatusProvisioningInitialUsers             = "Provisioning initial users"
 	StatusWaitingForReadyState                 = "Waiting for Pods to be ready"
 	StatusWaitingForLogSearchReadyState        = "Waiting for Log Search Pods to be ready"
 	StatusWaitingMinIOCert                     = "Waiting for MinIO TLS Certificate"
@@ -1244,9 +1245,12 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
-		klog.V(2).Infof("Unable to create MinIO users: %v", err)
-		return err
+	// Ensure we are only provisioning users one time
+	if !tenant.Status.ProvisionedUsers {
+		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
+			klog.V(2).Infof("Unable to create MinIO users: %v", err)
+			return err
+		}
 	}
 
 	// Finally, we update the status block of the Tenant resource to reflect the

@@ -3972,6 +3972,8 @@ spec:
                   type: object
                 nullable: true
                 type: array
+              provisionedUsers:
+                type: boolean
               revision:
                 format: int32
                 type: integer
@@ -8173,6 +8175,8 @@ spec:
                   type: object
                 nullable: true
                 type: array
+              provisionedUsers:
+                type: boolean
               revision:
                 format: int32
                 type: integer

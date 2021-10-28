@@ -94,6 +94,7 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.AvailableReplicas = src.Status.AvailableReplicas
 	dst.Status.CurrentState = src.Status.CurrentState
 	dst.Status.Certificates = src.Status.Certificates
+	dst.Status.ProvisionedUsers = src.Status.ProvisionedUsers
 	dst.Status.SyncVersion = src.Status.SyncVersion
 
 	// +kubebuilder:docs-gen:collapse=rote conversion
@@ -164,6 +165,7 @@ func (dst *Tenant) ConvertFrom(srcRaw conversion.Hub) error { //nolint
 	dst.Status.AvailableReplicas = src.Status.AvailableReplicas
 	dst.Status.CurrentState = src.Status.CurrentState
 	dst.Status.Certificates = src.Status.Certificates
+	dst.Status.ProvisionedUsers = src.Status.ProvisionedUsers
 	dst.Status.SyncVersion = src.Status.SyncVersion
 
 	// +kubebuilder:docs-gen:collapse=rote conversion

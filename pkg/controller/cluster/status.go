@@ -164,6 +164,31 @@ func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *mi
 	return t, nil
 }
 
+func (c *Controller) updateProvisionedUsersStatus(ctx context.Context, tenant *miniov2.Tenant, provisionedUsers bool) (*miniov2.Tenant, error) {
+	return c.updateProvisionedUsersWithRetry(ctx, tenant, provisionedUsers, true)
+}
+
+func (c *Controller) updateProvisionedUsersWithRetry(ctx context.Context, tenant *miniov2.Tenant, provisionedUsers bool, retry bool) (*miniov2.Tenant, error) {
+	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Status = *tenant.Status.DeepCopy()
+	tenantCopy.Status.ProvisionedUsers = provisionedUsers
+	opts := metav1.UpdateOptions{}
+	t, err := c.minioClientSet.MinioV2().Tenants(tenant.Namespace).UpdateStatus(ctx, tenantCopy, opts)
+	t.EnsureDefaults()
+	if err != nil {
+		if k8serrors.IsConflict(err) && retry {
+			klog.Info("Hit conflict issue, getting latest version of tenant")
+			tenant, err = c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Get(ctx, tenant.Name, metav1.GetOptions{})
+			if err != nil {
+				return tenant, err
+			}
+			return c.updateProvisionedUsersWithRetry(ctx, tenant, provisionedUsers, false)
+		}
+		return t, err
+	}
+	return t, nil
+}
+
 func (c *Controller) updateTenantSyncVersion(ctx context.Context, tenant *miniov2.Tenant, syncVersion string) (*miniov2.Tenant, error) {
 	return c.updateTenantSyncVersionWithRetry(ctx, tenant, syncVersion, true)
 }

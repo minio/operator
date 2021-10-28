@@ -277,6 +277,10 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 		}
 	}
 
+	if _, err := c.updateTenantStatus(ctx, tenant, StatusProvisioningInitialUsers, 0); err != nil {
+		return err
+	}
+
 	// get mc admin info
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
 	if err != nil {
@@ -297,6 +301,10 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	if err := tenant.CreateUsers(adminClnt, userCredentials, skipCreateUsers); err != nil {
 		klog.V(2).Infof("Unable to create MinIO users: %v", err)
 		return err
+	}
+
+	if tenant, err = c.updateProvisionedUsersStatus(ctx, tenant, true); err != nil {
+		klog.V(2).Infof(err.Error())
 	}
 
 	return nil
