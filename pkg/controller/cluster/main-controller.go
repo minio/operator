@@ -1215,6 +1215,23 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		err := c.deleteLogHeadlessService(ctx, tenant)
+		if err != nil {
+			return err
+		}
+		err = c.deleteLogStatefulSet(ctx, tenant)
+		if err != nil {
+			return err
+		}
+		err = c.deleteLogSearchAPIDeployment(ctx, tenant)
+		if err != nil {
+			return err
+		}
+		err = c.deleteLogSearchAPIService(ctx, tenant)
+		if err != nil {
+			return err
+		}
 	}
 
 	if tenant.HasPrometheusEnabled() {
@@ -1232,6 +1249,15 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		err = c.deletePrometheusHeadless(ctx, tenant)
+		if err != nil {
+			return err
+		}
+		err = c.deletePrometheusStatefulSet(ctx, tenant)
+		if err != nil {
+			return err
+		}
 	}
 
 	if tenant.HasPrometheusSMEnabled() {
@@ -1240,6 +1266,11 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 		err = c.checkAndCreatePrometheusServiceMonitor(ctx, tenant)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = c.deletePrometheusServiceMonitor(ctx, tenant)
 		if err != nil {
 			return err
 		}
@@ -1319,6 +1350,46 @@ func MinIOControllerRateLimiter() queue.RateLimiter {
 		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
 		&queue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
 	)
+}
+
+func (c *Controller) deleteLogHeadlessService(ctx context.Context, tenant *miniov2.Tenant) error {
+	_, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogHLServiceName())
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	klog.V(2).Infof("Deleting Log Headless Service for %s", tenant.Namespace)
+	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.LogHLServiceName(), metav1.DeleteOptions{})
+	return err
+}
+
+func (c *Controller) deleteLogStatefulSet(ctx context.Context, tenant *miniov2.Tenant) error {
+	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LogStatefulsetName())
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	klog.V(2).Infof("Deleting Log StatefulSet for %s", tenant.Namespace)
+	err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Delete(ctx, tenant.LogStatefulsetName(), metav1.DeleteOptions{})
+	return err
+}
+
+func (c *Controller) deleteLogSearchAPIDeployment(ctx context.Context, tenant *miniov2.Tenant) error {
+	_, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.LogSearchAPIDeploymentName())
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	klog.V(2).Infof("Deleting Log Search API deployment for %s", tenant.Name)
+	err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Delete(ctx, tenant.LogSearchAPIDeploymentName(), metav1.DeleteOptions{})
+	return err
+}
+
+func (c *Controller) deleteLogSearchAPIService(ctx context.Context, tenant *miniov2.Tenant) error {
+	_, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogSearchAPIServiceName())
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	klog.V(2).Infof("Delete Log Search API Service for %s", tenant.Namespace)
+	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.LogSearchAPIServiceName(), metav1.DeleteOptions{})
+	return err
 }
 
 func (c *Controller) checkAndCreateLogHeadless(ctx context.Context, tenant *miniov2.Tenant) (*corev1.Service, error) {
@@ -1501,6 +1572,26 @@ func (c *Controller) checkAndCreatePrometheusConfigMap(ctx context.Context, tena
 	return c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Create(ctx, configmaps.PrometheusConfigMap(tenant, accessKey, secretKey), metav1.CreateOptions{})
 }
 
+func (c *Controller) deletePrometheusHeadless(ctx context.Context, tenant *miniov2.Tenant) error {
+	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.PrometheusHLServiceName())
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	klog.V(2).Infof("Deleting Prometheus Headless Service for %s", tenant.Namespace)
+	err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Delete(ctx, tenant.PrometheusHLServiceName(), metav1.DeleteOptions{})
+	return err
+}
+
+func (c *Controller) deletePrometheusStatefulSet(ctx context.Context, tenant *miniov2.Tenant) error {
+	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PrometheusStatefulsetName())
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	klog.V(2).Infof("Deleting Prometheus StatefulSet for %s", tenant.Namespace)
+	err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Delete(ctx, tenant.PrometheusStatefulsetName(), metav1.DeleteOptions{})
+	return err
+}
+
 func (c *Controller) checkAndCreatePrometheusHeadless(ctx context.Context, tenant *miniov2.Tenant) (*corev1.Service, error) {
 	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.PrometheusHLServiceName())
 	if err == nil || !k8serrors.IsNotFound(err) {
@@ -1542,6 +1633,16 @@ func (c *Controller) checkAndCreatePrometheusServiceMonitorSecret(ctx context.Co
 	klog.V(2).Infof("Creating a new Prometheus Service Monitor secret for %s", tenant.Namespace)
 	secret := secrets.PromServiceMonitorSecret(tenant, accessKey, secretKey)
 	_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
+	return err
+}
+
+func (c *Controller) deletePrometheusServiceMonitor(ctx context.Context, tenant *miniov2.Tenant) error {
+	_, err := c.serviceMonitorLister.ServiceMonitors(tenant.Namespace).Get(tenant.PrometheusServiceMonitorName())
+	if k8serrors.IsNotFound(err) {
+		return nil
+	}
+	klog.V(2).Infof("Deleting Prometheus Service Monitor for %s", tenant.Namespace)
+	err = c.promClient.MonitoringV1().ServiceMonitors(tenant.Namespace).Delete(ctx, tenant.PrometheusServiceMonitorName(), metav1.DeleteOptions{})
 	return err
 }
 
