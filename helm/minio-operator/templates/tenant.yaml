@@ -31,8 +31,8 @@ spec:
   credsSecret:
     name: {{ dig "secrets" "name" "" . }}
   {{ end }}
-  {{ range (dig "pools" (list) .) }}
   pools:
+  {{ range (dig "pools" (list) .) }}
     - servers: {{ dig "servers" 4 . }}
       volumesPerServer: {{ dig "volumesPerServer" 4 . }}
       volumeClaimTemplate:
