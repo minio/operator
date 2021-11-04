@@ -20,7 +20,7 @@ Creates MinIO Operator Deployment along with MinIO Tenant CRD, Service account, 
 
 Options:
 
-- `--image=minio/operator:v4.3.2`
+- `--image=minio/operator:v4.3.3`
 - `--namespace=minio-operator`
 - `--cluster-domain=cluster.local`
 - `--namespace-to-watch=default`
@@ -31,7 +31,8 @@ Options:
 
 Command: `kubectl minio delete [options]`
 
-Deletes MinIO Operator Deployment along with MinIO Tenant CRD, Service account, Cluster Role and Cluster Role Binding. It also removes all the Tenant instances.
+Deletes MinIO Operator Deployment along with MinIO Tenant CRD, Service account, Cluster Role and Cluster Role Binding.
+It also removes all the Tenant instances.
 
 Options:
 
@@ -43,7 +44,9 @@ Options:
 
 Command: `kubectl minio tenant create TENANT_NAME --servers SERVERS --volumes TOTAL_VOLUMES --capacity TOTAL_RAW_CAPACITY [options]`
 
-Creates a MinIO Tenant based on the passed values. Please note that plugin adds `anti-affinity` rules to the MinIO Tenant pods to ensure multiple pods don't end up on the same physical node. To disable this, use the `-enable-host-sharing` flag during tenant creation.
+Creates a MinIO Tenant based on the passed values. Please note that plugin adds `anti-affinity` rules to the MinIO
+Tenant pods to ensure multiple pods don't end up on the same physical node. To disable this, use
+the `-enable-host-sharing` flag during tenant creation.
 
 example: `kubectl minio tenant create tenant1 --servers 4 --volumes 16 --capacity 16Ti`
 
@@ -84,7 +87,7 @@ Command: `kubectl minio tenant upgrade TENANT_NAME --image IMAGE_TAG [options]`
 
 Upgrade MinIO Docker image for the given MinIO Tenant.
 
-example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2021-10-06T23-36-31Z`
+example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2021-11-03T03-36-36Z`
 
 Options:
 
