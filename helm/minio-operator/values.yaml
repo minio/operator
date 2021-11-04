@@ -15,20 +15,20 @@ operator:
   #     value: ""
   image:
     repository: minio/operator
-    tag: v4.3.2
+    tag: v4.3.3
     pullPolicy: IfNotPresent
-  imagePullSecrets: []
-  initcontainers: []
+  imagePullSecrets: [ ]
+  initcontainers: [ ]
   replicaCount: 1
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
     fsGroup: 1000
-  nodeSelector: {}
-  affinity: {}
-  tolerations: []
-  topologySpreadConstraints: []
+  nodeSelector: { }
+  affinity: { }
+  tolerations: [ ]
+  topologySpreadConstraints: [ ]
   resources:
     requests:
       cpu: 200m
@@ -38,24 +38,24 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.10.0
+    tag: v0.12.0
     pullPolicy: IfNotPresent
-  imagePullSecrets: []
-  initcontainers: []
+  imagePullSecrets: [ ]
+  initcontainers: [ ]
   replicaCount: 1
-  nodeSelector: {}
-  affinity: {}
-  tolerations: []
-  topologySpreadConstraints: []
-  resources: {}
+  nodeSelector: { }
+  affinity: { }
+  tolerations: [ ]
+  topologySpreadConstraints: [ ]
+  resources: { }
   securityContext:
     runAsUser: 1000
     runAsNonRoot: true
   ingress:
     enabled: false
-    labels: {}
-    annotations: {}
-    tls: []
+    labels: { }
+    annotations: { }
+    tls: [ ]
     host: console.local
     path: /
 
@@ -72,10 +72,10 @@ tenants:
     namespace: default
     ## Customize any private registry image pull secret.
     ## currently only one secret registry is supported
-    imagePullSecret: {}
+    imagePullSecret: { }
     ## If a scheduler is specified here, Tenant pods will be dispatched by specified scheduler.
     ## If not specified, the Tenant pods will be dispatched by default scheduler.
-    scheduler: {}
+    scheduler: { }
     ## Specification for MinIO Pool(s) in this Tenant.
     pools:
       ## Servers specifies the number of MinIO Tenant Pods / Servers in this pool.
@@ -89,21 +89,21 @@ tenants:
         ## storageClass specifies the storage class name to be used for this pool
         storageClassName: standard
         ## Used to specify a toleration for a pod
-        tolerations: {}
+        tolerations: { }
         ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
         ## eligible to run on a node, the node must have each of the
         ## indicated key-value pairs as labels.
         ## Read more here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-        nodeSelector: {}
+        nodeSelector: { }
         ## Affinity settings for MinIO pods. Read more about affinity
         ## here: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity.
-        affinity: {}
+        affinity: { }
         ## Configure resource requests and limits for MinIO containers
-        resources: {}
+        resources: { }
         ## Configure security context
-        securityContext: {}
+        securityContext: { }
         ## Configure topology constraints
-        topologySpreadConstraints: []
+        topologySpreadConstraints: [ ]
     ## Mount path where PV will be mounted inside container(s).
     mountPath: /export
     ## Sub path inside Mount path where MinIO stores data.
@@ -123,18 +123,18 @@ tenants:
       ## Use this field to provide one or more external CA certificates. This is used by MinIO
       ## to verify TLS connections with other applications:
       ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
-      externalCaCertSecret: {}
+      externalCaCertSecret: { }
       ## Use this field to provide a list of Secrets with external certificates. This can be used to to configure
       ## TLS for MinIO Tenant pods. Create secrets as explained here:
       ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
-      externalCertSecret: {}
+      externalCertSecret: { }
       ## Enable automatic Kubernetes based certificate generation and signing as explained in
       ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
       requestAutoCert: true
       ## This field is used only when "requestAutoCert" is set to true. Use this field to set CommonName
       ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is
       ## not provided. DNS name format is *.minio.default.svc.cluster.local
-      certConfig: {}
+      certConfig: { }
     ## Enable S3 specific features such as Bucket DNS which would allow `buckets` to be
     ## accessible as DNS entries of form `<bucketname>.minio.default.svc.cluster.local`
     s3:
@@ -146,9 +146,9 @@ tenants:
     podManagementPolicy: Parallel
     ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
     ## services created by the operator.
-    serviceMetadata: {}
+    serviceMetadata: { }
     ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
-    env: {}
+    env: { }
     ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
     ## This is applied to MinIO pods only.
     ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
