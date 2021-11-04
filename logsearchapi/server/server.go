@@ -71,7 +71,13 @@ func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, diskC
 	ls.HandleFunc("/api/query", authorize(ls.queryHandler, ls.QueryAuthToken))
 
 	// Start vacuum thread
-	go ls.DBClient.vacuumData(ls.DiskCapacityGBs)
+	if ls.DiskCapacityGBs <= 0 {
+		// Treat disk as unlimited!
+		log.Printf("Disk Capacity is set to 0 or negative - older data will not be automatically removed.")
+	} else {
+		go ls.DBClient.vacuumData(ls.DiskCapacityGBs)
+	}
+
 	go ls.DBClient.partitionTables()
 
 	return ls, nil
