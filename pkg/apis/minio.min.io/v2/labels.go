@@ -28,7 +28,7 @@ func (t *Tenant) MinIOPodLabels() map[string]string {
 // that allow selection by a ServiceMonitor
 func (t *Tenant) MinIOPodLabelsForSM() map[string]string {
 	m := make(map[string]string, 1)
-	m[TenantLabel] = t.Name + "prom-service-monitor"
+	m[TenantLabel] = t.Name
 	return m
 }
 
