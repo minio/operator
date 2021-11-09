@@ -1305,7 +1305,7 @@ func (c *Controller) enqueueTenant(obj interface{}) {
 		runtime.HandleError(err)
 		return
 	}
-	if len(c.namespacesToWatch) > 0 {
+	if !c.namespacesToWatch.IsEmpty() {
 		meta, err := meta.Accessor(obj)
 		if err != nil {
 			runtime.HandleError(err)
