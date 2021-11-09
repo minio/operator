@@ -29,6 +29,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/minio-go/v7/pkg/set"
+	"k8s.io/apimachinery/pkg/api/meta"
+
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
@@ -135,6 +138,8 @@ var ErrLogSearchNotReady = fmt.Errorf("Log Search is not ready")
 type Controller struct {
 	// podName is the identifier of this instance
 	podName string
+	// namespacesToWatch restricts the action of the opreator to a list of namespaces
+	namespacesToWatch set.StringSet
 	// kubeClientSet is a standard kubernetes clientset
 	kubeClientSet kubernetes.Interface
 	// minioClientSet is a clientset for our own API group
@@ -211,7 +216,7 @@ type Controller struct {
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, serviceMonitorInformer prominformers.ServiceMonitorInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, serviceMonitorInformer prominformers.ServiceMonitorInformer, hostsTemplate, operatorVersion string) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -225,6 +230,7 @@ func NewController(podName string, kubeClientSet kubernetes.Interface, minioClie
 
 	controller := &Controller{
 		podName:                    podName,
+		namespacesToWatch:          namespacesToWatch,
 		kubeClientSet:              kubeClientSet,
 		minioClientSet:             minioClientSet,
 		promClient:                 promClient,
@@ -1299,6 +1305,18 @@ func (c *Controller) enqueueTenant(obj interface{}) {
 		runtime.HandleError(err)
 		return
 	}
+	if !c.namespacesToWatch.IsEmpty() {
+		meta, err := meta.Accessor(obj)
+		if err != nil {
+			runtime.HandleError(err)
+			return
+		}
+		if !c.namespacesToWatch.Contains(meta.GetNamespace()) {
+			klog.Infof("Ignoring tenant `%s` in namespace that is not watched by this controller.", key)
+			return
+		}
+	}
+
 	c.workqueue.AddRateLimited(key)
 }
 

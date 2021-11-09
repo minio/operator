@@ -26,8 +26,11 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
+
+	"github.com/minio/minio-go/v7/pkg/set"
 
 	"k8s.io/client-go/tools/clientcmd"
 
@@ -114,7 +117,19 @@ func main() {
 		klog.Errorf("Error building Prometheus clientset: %v", err.Error())
 	}
 
-	namespace, isNamespaced := os.LookupEnv("WATCHED_NAMESPACE")
+	// Get a comma separated list of namespaces to watch
+	namespacesENv, isNamespaced := os.LookupEnv("WATCHED_NAMESPACE")
+	var namespaces set.StringSet
+	if isNamespaced {
+		namespaces = set.NewStringSet()
+		rawNamespaces := strings.Split(namespacesENv, ",")
+		for _, nsStr := range rawNamespaces {
+			if nsStr != "" {
+				namespaces.Add(strings.TrimSpace(nsStr))
+			}
+		}
+		klog.Infof("Watching only namespaces: %s", strings.Join(namespaces.ToSlice(), ","))
+	}
 
 	ctx := context.Background()
 	var caContent []byte
@@ -145,24 +160,21 @@ func main() {
 		klog.Info("WARNING: Could not read ca.crt from the pod")
 	}
 
-	var kubeInformerFactory kubeinformers.SharedInformerFactory
-	var minioInformerFactory informers.SharedInformerFactory
-	var promInformerFactory prominformers.SharedInformerFactory
-	if isNamespaced {
-		kubeInformerFactory = kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(namespace))
-		minioInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(namespace))
-		promInformerFactory = prominformers.NewSharedInformerFactoryWithOptions(promClient, time.Second*30, prominformers.WithNamespace(namespace))
-	} else {
-		kubeInformerFactory = kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
-		promInformerFactory = prominformers.NewSharedInformerFactory(promClient, time.Second*30)
-	}
+	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
+	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
+	promInformerFactory := prominformers.NewSharedInformerFactory(promClient, time.Second*30)
+
 	podName := os.Getenv("HOSTNAME")
 	if podName == "" {
 		podName = "operator-pod"
 	}
 
-	mainController := cluster.NewController(podName, kubeClient, controllerClient, promClient,
+	mainController := cluster.NewController(
+		podName,
+		namespaces,
+		kubeClient,
+		controllerClient,
+		promClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Core().V1().Pods(),
@@ -170,7 +182,9 @@ func main() {
 		minioInformerFactory.Minio().V2().Tenants(),
 		kubeInformerFactory.Core().V1().Services(),
 		promInformerFactory.Monitoring().V1().ServiceMonitors(),
-		hostsTemplate, version)
+		hostsTemplate,
+		version,
+	)
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
