@@ -82,7 +82,8 @@ func (d *reportCmd) validate(args []string) error {
 	if args[0] == "" {
 		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant report tenant1'")
 	}
-	return nil
+	// Tenant name should have DNS token restrictions
+	return helpers.CheckValidTenantName(args[0])
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
@@ -96,6 +97,18 @@ func (d *reportCmd) run(args []string) error {
 	client, err := helpers.GetKubeClient("")
 	if err != nil {
 		return err
+	}
+
+	if d.ns == "" || d.ns == helpers.DefaultNamespace {
+		tenants, err := oclient.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, tenant := range tenants.Items {
+			if tenant.Name == args[0] {
+				d.ns = tenant.ObjectMeta.Namespace
+			}
+		}
 	}
 
 	tenant, err := oclient.MinioV2().Tenants(d.ns).Get(context.Background(), args[0], metav1.GetOptions{})
