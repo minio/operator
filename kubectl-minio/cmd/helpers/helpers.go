@@ -25,6 +25,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 
 	"k8s.io/client-go/dynamic"
@@ -44,6 +45,31 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 )
+
+var (
+	validTenantName = regexp.MustCompile(`^[a-z0-9][a-z0-9\.\-]{1,61}[a-z0-9]$`)
+	ipAddress       = regexp.MustCompile(`^(\d+\.){3}\d+$`)
+)
+
+// CheckValidTenantName validates if input tenantname complies with expected restrictions.
+func CheckValidTenantName(tenantName string) error {
+	if strings.TrimSpace(tenantName) == "" {
+		return errors.New("Tenant name cannot be empty")
+	}
+	if len(tenantName) > 63 {
+		return errors.New("Tenant name cannot be longer than 63 characters")
+	}
+	if ipAddress.MatchString(tenantName) {
+		return errors.New("Tenant name cannot be an ip address")
+	}
+	if strings.Contains(tenantName, "..") || strings.Contains(tenantName, ".-") || strings.Contains(tenantName, "-.") {
+		return errors.New("Tenant name contains invalid characters")
+	}
+	if !validTenantName.MatchString(tenantName) {
+		return errors.New("Tenant name contains invalid characters")
+	}
+	return nil
+}
 
 // GetKubeClient provides k8s client for kubeconfig
 func GetKubeClient(path string) (*kubernetes.Clientset, error) {

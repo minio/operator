@@ -103,6 +103,10 @@ func (c *createCmd) validate(args []string) error {
 	if args[0] == "" {
 		return errors.New("create command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant create tenant1'")
 	}
+	// Tenant name should have DNS token restrictions
+	if err := helpers.CheckValidTenantName(args[0]); err != nil {
+		return err
+	}
 	c.tenantOpts.Name = args[0]
 	c.tenantOpts.SecretName = c.tenantOpts.Name + tenantSecretSuffix
 	return c.tenantOpts.Validate()

@@ -91,7 +91,8 @@ func (u *upgradeCmd) validate(args []string) error {
 	if u.tenantOpts.Image == "" {
 		return fmt.Errorf("provide the --image flag, e.g. 'kubectl minio tenant upgrade tenant1 --image %s'", helpers.DefaultTenantImage)
 	}
-	return nil
+	// Tenant name should have DNS token restrictions
+	return helpers.CheckValidTenantName(args[0])
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
@@ -110,6 +111,18 @@ func (u *upgradeCmd) run() error {
 	latest, err := miniov2.ReleaseTagToReleaseTime(imageSplits[1])
 	if err != nil {
 		return fmt.Errorf("Unsupported release tag, unable to apply requested update %w", err)
+	}
+
+	if u.tenantOpts.NS == "" || u.tenantOpts.NS == helpers.DefaultNamespace {
+		tenants, err := client.MinioV2().Tenants("").List(context.Background(), v1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, tenant := range tenants.Items {
+			if tenant.Name == u.tenantOpts.Name {
+				u.tenantOpts.NS = tenant.ObjectMeta.Namespace
+			}
+		}
 	}
 
 	t, err := client.MinioV2().Tenants(u.tenantOpts.NS).Get(context.Background(), u.tenantOpts.Name, v1.GetOptions{})

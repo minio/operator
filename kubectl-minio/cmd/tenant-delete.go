@@ -88,7 +88,8 @@ func (d *tenantDeleteCmd) validate(args []string) error {
 	if args[0] == "" {
 		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant delete tenant1'")
 	}
-	return nil
+	// Tenant name should have DNS token restrictions
+	return helpers.CheckValidTenantName(args[0])
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.

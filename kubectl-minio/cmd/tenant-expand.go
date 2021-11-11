@@ -96,6 +96,11 @@ func (v *expandCmd) validate(args []string) error {
 	if args[0] == "" {
 		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant expand tenant1'")
 	}
+	// Tenant name should have DNS token restrictions
+	if err := helpers.CheckValidTenantName(args[0]); err != nil {
+		return err
+	}
+
 	v.tenantOpts.Name = args[0]
 	return v.tenantOpts.Validate()
 }
@@ -106,6 +111,18 @@ func (v *expandCmd) run() error {
 	client, err := helpers.GetKubeOperatorClient()
 	if err != nil {
 		return err
+	}
+
+	if v.tenantOpts.NS == "" || v.tenantOpts.NS == helpers.DefaultNamespace {
+		tenants, err := client.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, tenant := range tenants.Items {
+			if tenant.Name == v.tenantOpts.Name {
+				v.tenantOpts.NS = tenant.ObjectMeta.Namespace
+			}
+		}
 	}
 
 	t, err := client.MinioV2().Tenants(v.tenantOpts.NS).Get(context.Background(), v.tenantOpts.Name, metav1.GetOptions{})
