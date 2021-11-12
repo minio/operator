@@ -92,6 +92,18 @@ func (d *infoCmd) run(args []string) error {
 		return err
 	}
 
+	if d.ns == "" || d.ns == helpers.DefaultNamespace {
+		tenants, err := oclient.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, tenant := range tenants.Items {
+			if tenant.Name == args[0] {
+				d.ns = tenant.ObjectMeta.Namespace
+			}
+		}
+	}
+
 	tenant, err := oclient.MinioV2().Tenants(d.ns).Get(context.Background(), args[0], metav1.GetOptions{})
 	if err != nil {
 		return err

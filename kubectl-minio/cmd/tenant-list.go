@@ -80,16 +80,16 @@ func (d *listCmd) run(args []string) error {
 		return err
 	}
 
-	tenant, err := oclient.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
+	tenants, err := oclient.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
-	printTenantList(*tenant)
+	printTenantList(tenants)
 
 	return nil
 }
 
-func printTenantList(tenants miniov2.TenantList) {
+func printTenantList(tenants *miniov2.TenantList) {
 	for _, tenant := range tenants.Items {
 		fmt.Printf(Bold(fmt.Sprintf("\nTenant '%s', Namespace '%s', Total capacity %s\n\n", tenant.Name, tenant.ObjectMeta.Namespace, helpers.TotalCapacity(tenant))))
 		fmt.Printf(Blue("  Current status: %s \n", tenant.Status.CurrentState))
