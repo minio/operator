@@ -55,6 +55,7 @@ console:
     enabled: false
     labels: { }
     annotations: { }
+    ingressClassName: ""
     tls: [ ]
     host: console.local
     path: /
