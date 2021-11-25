@@ -15,7 +15,7 @@ operator:
   #     value: ""
   image:
     repository: minio/operator
-    tag: v4.3.4
+    tag: v4.3.5
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]
@@ -38,7 +38,7 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.12.2
+    tag: v0.12.3
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]
