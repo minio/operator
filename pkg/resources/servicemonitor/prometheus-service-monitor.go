@@ -44,25 +44,9 @@ func NewForPrometheus(t *miniov2.Tenant) *promv1.ServiceMonitor {
 		},
 		Spec: promv1.ServiceMonitorSpec{
 			Selector: metav1.LabelSelector{
-				MatchLabels: t.MinIOPodLabelsForSM(),
+				MatchLabels: t.MinIOPodLabels(),
 			},
 			Endpoints: []promv1.Endpoint{
-				{
-					Port:          port,
-					Path:          v2.MinIOPrometheusPathNode,
-					Scheme:        scheme,
-					Interval:      v2.MinIOPrometheusScrapeInterval.String(),
-					ScrapeTimeout: v2.MinIOPrometheusScrapeTimeout.String(),
-					BearerTokenSecret: corev1.SecretKeySelector{
-						LocalObjectReference: corev1.LocalObjectReference{Name: t.PromServiceMonitorSecret()},
-						Key:                  miniov2.PrometheusServiceMonitorSecretKey,
-					},
-					TLSConfig: &promv1.TLSConfig{
-						SafeTLSConfig: promv1.SafeTLSConfig{
-							InsecureSkipVerify: true,
-						},
-					},
-				},
 				{
 					Port:          port,
 					Path:          v2.MinIOPrometheusPathCluster,

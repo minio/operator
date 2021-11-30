@@ -277,9 +277,6 @@ const StatefulSetLegacyPrefix = "zone"
 // MinIOPrometheusPathCluster is the path where MinIO tenant exposes cluster Prometheus metrics
 const MinIOPrometheusPathCluster = "/minio/v2/metrics/cluster"
 
-// MinIOPrometheusPathNode is the path where MinIO tenant exposes node Prometheus metrics
-const MinIOPrometheusPathNode = "/minio/v2/metrics/node"
-
 // MinIOPrometheusScrapeInterval defines how frequently to scrape targets.
 const MinIOPrometheusScrapeInterval = 30 * time.Second
 
