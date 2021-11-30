@@ -1,6 +1,6 @@
 /*
  * This file is part of MinIO Operator
- * Copyright (C) 2020, MinIO, Inc.
+ * Copyright (C) 2020-2021, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -103,7 +103,12 @@ func (d *tenantDeleteCmd) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	return deleteTenant(oclient, kclient, d, args[0])
+	for _, arg := range args {
+		if err = deleteTenant(oclient, kclient, d, arg); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d *tenantDeleteCmd, name string) error {
@@ -111,33 +116,29 @@ func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d
 	if err != nil {
 		return err
 	}
+
 	if err := client.MinioV2().Tenants(d.ns).Delete(context.Background(), name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
-	if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.CredsSecret.Name, metav1.DeleteOptions{}); err != nil {
-		return err
-	}
-	if len(tenant.Spec.Users) > 0 {
-		if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Users[0].Name, metav1.DeleteOptions{}); err != nil {
-			return err
-		}
-	}
 
-	fmt.Printf("Deleting MinIO Tenant %s\n", tenant.ObjectMeta.Name)
-	fmt.Printf("Deleting MinIO Tenant Credentials Secret %s\n", tenant.Spec.CredsSecret.Name)
+	fmt.Printf("Deleting MinIO Tenant: %s\n", name)
+
+	// Delete credentials secret, ignore any errors.
+	kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.CredsSecret.Name,
+		metav1.DeleteOptions{})
+
+	fmt.Printf("Deleting MinIO Tenant Credentials Secret: %s\n", tenant.Spec.CredsSecret.Name)
 
 	if tenant.HasConfigurationSecret() {
-		if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Configuration.Name, metav1.DeleteOptions{}); err != nil {
-			return err
-		}
-		fmt.Printf("Deleting MinIO Tenant Configuration Secret %s\n", tenant.Spec.Configuration.Name)
+		kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Configuration.Name,
+			metav1.DeleteOptions{})
+		fmt.Printf("Deleting MinIO Tenant Configuration Secret: %s\n", tenant.Spec.Configuration.Name)
 	}
 
-	if len(tenant.Spec.Users) > 0 {
-		fmt.Printf("Deleting MinIO Tenant Console Secret %s\n", tenant.Spec.Users[0].Name)
-		if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Users[0].Name, metav1.DeleteOptions{}); err != nil {
-			return err
-		}
+	// Delete all users, ignore any errors.
+	for _, user := range tenant.Spec.Users {
+		kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), user.Name, metav1.DeleteOptions{})
+		fmt.Printf("Deleting MinIO Tenant user: %s\n", user.Name)
 	}
 
 	return nil
