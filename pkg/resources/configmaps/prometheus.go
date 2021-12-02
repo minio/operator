@@ -43,7 +43,8 @@ type tlsConfig struct {
 	CAFile string `yaml:"ca_file"`
 }
 
-type scrapeConfig struct {
+// ScrapeConfig contains the scrape configuration for prometheus
+type ScrapeConfig struct {
 	JobName       string         `yaml:"job_name"`
 	BearerToken   string         `yaml:"bearer_token"`
 	MetricsPath   string         `yaml:"metrics_path"`
@@ -52,12 +53,14 @@ type scrapeConfig struct {
 	StaticConfigs []staticConfig `yaml:"static_configs"`
 }
 
-type prometheusConfig struct {
+// PrometheusConfig contains the prometheus configuration
+type PrometheusConfig struct {
 	Global        globalConfig   `yaml:"global"`
-	ScrapeConfigs []scrapeConfig `yaml:"scrape_configs"`
+	ScrapeConfigs []ScrapeConfig `yaml:"scrape_configs"`
 }
 
-func (p *prometheusConfig) ConfigFile() string {
+// ConfigFile returns the prometheus config yaml
+func (p *PrometheusConfig) ConfigFile() string {
 	d, err := yaml.Marshal(p)
 	if err != nil {
 		panic(fmt.Sprintf("error marshaling to yaml: %v", err))
@@ -70,8 +73,8 @@ func (p *prometheusConfig) ConfigFile() string {
 	return configFileContent
 }
 
-// PrometheusConfigMap returns configuration for Prometheus.
-func getPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *prometheusConfig {
+// GetPrometheusConfig returns configuration for Prometheus.
+func GetPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *PrometheusConfig {
 	bearerToken := t.GenBearerToken(accessKey, secretKey)
 	minioTargets := t.MinIOServerHostAddress()
 	minioScheme := "http"
@@ -80,14 +83,14 @@ func getPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *promet
 	}
 
 	// populate config
-	promConfig := &prometheusConfig{
+	promConfig := &PrometheusConfig{
 		Global: globalConfig{
 			ScrapeInterval:     v2.MinIOPrometheusScrapeInterval,
 			EvaluationInterval: 30 * time.Second,
 		},
-		ScrapeConfigs: []scrapeConfig{
+		ScrapeConfigs: []ScrapeConfig{
 			{
-				JobName:     "minio-job",
+				JobName:     t.PrometheusConfigJobName(),
 				BearerToken: bearerToken,
 				MetricsPath: v2.MinIOPrometheusPathCluster,
 				Scheme:      minioScheme,
@@ -109,9 +112,9 @@ const prometheusYml = "prometheus.yml"
 
 // fromPrometheusConfigMap parses prometheus config file from the given
 // configmap and returns *prometheusConfig on success. Otherwise returns error.
-func fromPrometheusConfigMap(configMap *corev1.ConfigMap) (*prometheusConfig, error) {
+func fromPrometheusConfigMap(configMap *corev1.ConfigMap) (*PrometheusConfig, error) {
 	configFile := configMap.Data[prometheusYml]
-	var config prometheusConfig
+	var config PrometheusConfig
 	err := yaml.Unmarshal([]byte(configFile), &config)
 	if err != nil {
 		return nil, err
@@ -120,7 +123,7 @@ func fromPrometheusConfigMap(configMap *corev1.ConfigMap) (*prometheusConfig, er
 }
 
 // getConfigMap returns k8s config map for the given tenant
-func (p *prometheusConfig) getConfigMap(tenant *miniov2.Tenant) *corev1.ConfigMap {
+func (p *PrometheusConfig) getConfigMap(tenant *miniov2.Tenant) *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            tenant.PrometheusConfigMapName(),
@@ -135,7 +138,7 @@ func (p *prometheusConfig) getConfigMap(tenant *miniov2.Tenant) *corev1.ConfigMa
 
 // bearerTokenNeedsUpdate returns true if the prometheusConfig's bearer token
 // can't be verified using the given secretKey
-func (p *prometheusConfig) bearerTokenNeedsUpdate(secretKey string) bool {
+func (p *PrometheusConfig) bearerTokenNeedsUpdate(secretKey string) bool {
 	tokenStr := p.ScrapeConfigs[0].BearerToken
 	_, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -149,14 +152,14 @@ func (p *prometheusConfig) bearerTokenNeedsUpdate(secretKey string) bool {
 
 // PrometheusConfigMap returns k8s configmap containing Prometheus configuration.
 func PrometheusConfigMap(tenant *miniov2.Tenant, accessKey, secretKey string) *corev1.ConfigMap {
-	config := getPrometheusConfig(tenant, accessKey, secretKey)
+	config := GetPrometheusConfig(tenant, accessKey, secretKey)
 	return config.getConfigMap(tenant)
 }
 
 // UpdatePrometheusConfigMap checks if the prometheus config map needs update
 // and if so returns the updated map. Otherwise it returns nil.
 func UpdatePrometheusConfigMap(t *miniov2.Tenant, accessKey, secretKey string, existing *corev1.ConfigMap) *corev1.ConfigMap {
-	config := getPrometheusConfig(t, accessKey, secretKey)
+	config := GetPrometheusConfig(t, accessKey, secretKey)
 	existingConfig, err := fromPrometheusConfigMap(existing)
 	if err != nil {
 		// needs update to recover possibly corrupt current config file

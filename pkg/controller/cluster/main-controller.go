@@ -33,6 +33,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/minio/minio-go/v7/pkg/set"
+	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/client-go/tools/leaderelection"
@@ -45,8 +46,6 @@ import (
 	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	prominformers "github.com/prometheus-operator/prometheus-operator/pkg/client/informers/externalversions/monitoring/v1"
-	promlisters "github.com/prometheus-operator/prometheus-operator/pkg/client/listers/monitoring/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -66,6 +65,7 @@ import (
 	batchlisters "k8s.io/client-go/listers/batch/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
+	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 
 	"k8s.io/client-go/tools/cache"
@@ -79,7 +79,6 @@ import (
 	"github.com/minio/operator/pkg/resources/configmaps"
 	"github.com/minio/operator/pkg/resources/deployments"
 	"github.com/minio/operator/pkg/resources/secrets"
-	"github.com/minio/operator/pkg/resources/servicemonitor"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
@@ -177,13 +176,6 @@ type Controller struct {
 	// has synced at least once.
 	serviceListerSynced cache.InformerSynced
 
-	// serviceMonitorLister is able to list/get Services from a shared informer's
-	// store.
-	serviceMonitorLister promlisters.ServiceMonitorLister
-	// serviceMonitorListerSynced returns true if the Service shared informer
-	// has synced at least once.
-	serviceMonitorListerSynced cache.InformerSynced
-
 	// queue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
 	// means we can ensure we only process a fixed amount of resources at a
@@ -215,7 +207,7 @@ type Controller struct {
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, serviceMonitorInformer prominformers.ServiceMonitorInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -228,28 +220,26 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		podName:                    podName,
-		namespacesToWatch:          namespacesToWatch,
-		kubeClientSet:              kubeClientSet,
-		minioClientSet:             minioClientSet,
-		promClient:                 promClient,
-		statefulSetLister:          statefulSetInformer.Lister(),
-		statefulSetListerSynced:    statefulSetInformer.Informer().HasSynced,
-		podInformer:                podInformer.Informer(),
-		deploymentLister:           deploymentInformer.Lister(),
-		deploymentListerSynced:     deploymentInformer.Informer().HasSynced,
-		jobLister:                  jobInformer.Lister(),
-		jobListerSynced:            jobInformer.Informer().HasSynced,
-		tenantsSynced:              tenantInformer.Informer().HasSynced,
-		serviceLister:              serviceInformer.Lister(),
-		serviceListerSynced:        serviceInformer.Informer().HasSynced,
-		serviceMonitorLister:       serviceMonitorInformer.Lister(),
-		serviceMonitorListerSynced: serviceMonitorInformer.Informer().HasSynced,
-		workqueue:                  queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
-		healthCheckQueue:           queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "TenantsHealth"),
-		recorder:                   recorder,
-		hostsTemplate:              hostsTemplate,
-		operatorVersion:            operatorVersion,
+		podName:                 podName,
+		namespacesToWatch:       namespacesToWatch,
+		kubeClientSet:           kubeClientSet,
+		minioClientSet:          minioClientSet,
+		promClient:              promClient,
+		statefulSetLister:       statefulSetInformer.Lister(),
+		statefulSetListerSynced: statefulSetInformer.Informer().HasSynced,
+		podInformer:             podInformer.Informer(),
+		deploymentLister:        deploymentInformer.Lister(),
+		deploymentListerSynced:  deploymentInformer.Informer().HasSynced,
+		jobLister:               jobInformer.Lister(),
+		jobListerSynced:         jobInformer.Informer().HasSynced,
+		tenantsSynced:           tenantInformer.Informer().HasSynced,
+		serviceLister:           serviceInformer.Lister(),
+		serviceListerSynced:     serviceInformer.Informer().HasSynced,
+		workqueue:               queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
+		healthCheckQueue:        queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "TenantsHealth"),
+		recorder:                recorder,
+		hostsTemplate:           hostsTemplate,
+		operatorVersion:         operatorVersion,
 	}
 
 	// Initialize operator webhook handlers
@@ -1266,16 +1256,14 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if tenant.HasPrometheusSMEnabled() {
-		err = c.checkAndCreatePrometheusServiceMonitorSecret(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
-		if err != nil {
-			return err
-		}
-		err = c.checkAndCreatePrometheusServiceMonitor(ctx, tenant)
+		klog.Infof("Adding Prometheus addl config")
+		err := c.checkAndCreatePrometheusAddlConfig(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
 			return err
 		}
 	} else {
-		err = c.deletePrometheusServiceMonitor(ctx, tenant)
+		klog.Infof("Deleting Prometheus addl config")
+		err := c.deletePrometheusAddlConfig(ctx, tenant)
 		if err != nil {
 			return err
 		}
@@ -1637,46 +1625,158 @@ func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, te
 	return err
 }
 
-func (c *Controller) checkAndCreatePrometheusServiceMonitorSecret(ctx context.Context, tenant *miniov2.Tenant, accessKey, secretKey string) error {
-	_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.PromServiceMonitorSecret(), metav1.GetOptions{})
-	if err == nil || !k8serrors.IsNotFound(err) {
-		return err
+func (c *Controller) getPrometheus(ctx context.Context) (*promv1.Prometheus, error) {
+	ns := miniov2.GetPrometheusNamespace()
+	promName := miniov2.GetPrometheusName()
+	var p *promv1.Prometheus
+	var err error
+	if promName != "" {
+		p, err = c.promClient.MonitoringV1().Prometheuses(ns).Get(ctx, promName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		pList, err := c.promClient.MonitoringV1().Prometheuses(ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		if len(pList.Items) == 0 {
+			return nil, errors.New("No prometheus found on namespace " + ns)
+		}
+		if len(pList.Items) > 1 {
+			return nil, errors.New("More than 1 prometheus found on namespace " + ns + ". PROMETHEUS_NAME not specified.")
+		}
+		p = pList.Items[0]
 	}
-
-	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningPrometheusServiceMonitor, 0); err != nil {
-		return err
-	}
-
-	klog.V(2).Infof("Creating a new Prometheus Service Monitor secret for %s", tenant.Namespace)
-	secret := secrets.PromServiceMonitorSecret(tenant, accessKey, secretKey)
-	_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
-	return err
+	return p, nil
 }
 
-func (c *Controller) deletePrometheusServiceMonitor(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.serviceMonitorLister.ServiceMonitors(tenant.Namespace).Get(tenant.PrometheusServiceMonitorName())
+func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, tenant *miniov2.Tenant, accessKey, secretKey string) error {
+	ns := miniov2.GetPrometheusNamespace()
+
+	p, err := c.getPrometheus(ctx)
+	if err != nil {
+		return err
+	}
+
+	// If the additional scrape config is set to something else, we will error out
+	if p.Spec.AdditionalScrapeConfigs != nil && p.Spec.AdditionalScrapeConfigs.Name != miniov2.PrometheusAddlScrapeConfigSecret {
+		return errors.New(p.Spec.AdditionalScrapeConfigs.Name + " is alreay set as additional scrape config in prometheus")
+	}
+
+	secret, err := c.kubeClientSet.CoreV1().Secrets(ns).Get(ctx, miniov2.PrometheusAddlScrapeConfigSecret, metav1.GetOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+
+	promCfg := configmaps.GetPrometheusConfig(tenant, accessKey, secretKey)
+
+	// If the secret is not found, create the secret
+	if k8serrors.IsNotFound(err) {
+		scrapeCfgYaml, err := yaml.Marshal(&promCfg.ScrapeConfigs)
+		if err != nil {
+			return err
+		}
+		secret = &corev1.Secret{
+			Type: "Opaque",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      miniov2.PrometheusAddlScrapeConfigSecret,
+				Namespace: ns,
+			},
+			Data: map[string][]byte{
+				miniov2.PrometheusAddlScrapeConfigKey: scrapeCfgYaml,
+			},
+		}
+		_, err = c.kubeClientSet.CoreV1().Secrets(ns).Create(ctx, secret, metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
+	} else {
+		var scrapeConfigs []configmaps.ScrapeConfig
+		err := yaml.Unmarshal(secret.Data[miniov2.PrometheusAddlScrapeConfigKey], &scrapeConfigs)
+		if err != nil {
+			return err
+		}
+		// Check if the scrape config is already present
+		hasScrapeConfig := false
+		for _, sc := range scrapeConfigs {
+			if sc.JobName == tenant.PrometheusConfigJobName() {
+				hasScrapeConfig = true
+				break
+			}
+		}
+		if !hasScrapeConfig {
+			scrapeConfigs = append(scrapeConfigs, promCfg.ScrapeConfigs...)
+			scrapeCfgYaml, err := yaml.Marshal(scrapeConfigs)
+			if err != nil {
+				return err
+			}
+			secret.Data[miniov2.PrometheusAddlScrapeConfigKey] = scrapeCfgYaml
+			_, err = c.kubeClientSet.CoreV1().Secrets(ns).Update(ctx, secret, metav1.UpdateOptions{})
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Update prometheus if its not done alreay
+	if p.Spec.AdditionalScrapeConfigs == nil {
+		p.Spec.AdditionalScrapeConfigs = &v1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{Name: miniov2.PrometheusAddlScrapeConfigSecret},
+			Key:                  miniov2.PrometheusAddlScrapeConfigKey,
+		}
+
+		_, err = c.promClient.MonitoringV1().Prometheuses(ns).Update(ctx, p, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c *Controller) deletePrometheusAddlConfig(ctx context.Context, tenant *miniov2.Tenant) error {
+	ns := miniov2.GetPrometheusNamespace()
+
+	secret, err := c.kubeClientSet.CoreV1().Secrets(ns).Get(ctx, miniov2.PrometheusAddlScrapeConfigSecret, metav1.GetOptions{})
+	// If the secret is not found, return from here
 	if k8serrors.IsNotFound(err) {
 		return nil
 	}
-	klog.V(2).Infof("Deleting Prometheus Service Monitor for %s", tenant.Namespace)
-	err = c.promClient.MonitoringV1().ServiceMonitors(tenant.Namespace).Delete(ctx, tenant.PrometheusServiceMonitorName(), metav1.DeleteOptions{})
-	return err
-}
-
-func (c *Controller) checkAndCreatePrometheusServiceMonitor(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.serviceMonitorLister.ServiceMonitors(tenant.Namespace).Get(tenant.PrometheusServiceMonitorName())
-	if err == nil || !k8serrors.IsNotFound(err) {
+	if err != nil {
 		return err
 	}
 
-	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningPrometheusServiceMonitor, 0); err != nil {
+	var scrapeConfigs []configmaps.ScrapeConfig
+	err = yaml.Unmarshal(secret.Data[miniov2.PrometheusAddlScrapeConfigKey], &scrapeConfigs)
+	if err != nil {
 		return err
 	}
-
-	klog.V(2).Infof("Creating a new Prometheus Service Monitor for %s", tenant.Namespace)
-	prometheusSM := servicemonitor.NewForPrometheus(tenant)
-	_, err = c.promClient.MonitoringV1().ServiceMonitors(tenant.Namespace).Create(ctx, prometheusSM, metav1.CreateOptions{})
-	return err
+	// Check if the scrape config is present
+	hasScrapeConfig := false
+	scIndex := -1
+	for i, sc := range scrapeConfigs {
+		if sc.JobName == tenant.PrometheusConfigJobName() {
+			hasScrapeConfig = true
+			scIndex = i
+			break
+		}
+	}
+	if hasScrapeConfig {
+		// Delete the config
+		newScrapeConfigs := append(scrapeConfigs[:scIndex], scrapeConfigs[scIndex+1:]...)
+		// Update the secret
+		scrapeCfgYaml, err := yaml.Marshal(newScrapeConfigs)
+		if err != nil {
+			return err
+		}
+		secret.Data[miniov2.PrometheusAddlScrapeConfigKey] = scrapeCfgYaml
+		_, err = c.kubeClientSet.CoreV1().Secrets(ns).Update(ctx, secret, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type patchAnnotation struct {

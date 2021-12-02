@@ -278,3 +278,8 @@ func (t *Tenant) PrometheusServiceName() string {
 func (t *Tenant) PrometheusHLServiceName() string {
 	return t.Name + PrometheusHLSvcNameSuffix
 }
+
+// PrometheusConfigJobName returns the name of the prometheus job
+func (t *Tenant) PrometheusConfigJobName() string {
+	return fmt.Sprintf("%s-minio-job", t.Name)
+}
