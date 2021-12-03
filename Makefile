@@ -11,7 +11,7 @@ GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
-HELM_HOME=helm/minio-operator
+HELM_HOME=helm/operator
 HELM_CRDS=$(HELM_HOME)/crds
 
 KUSTOMIZE_HOME=resources
