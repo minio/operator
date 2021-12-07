@@ -21,7 +21,6 @@ package cmd
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -66,10 +65,8 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Short:   "Initialize MinIO Operator",
 		Long:    operatorInitDesc,
 		Example: operatorInitExample,
+		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 0 {
-				return errors.New("this command does not accept arguments")
-			}
 			klog.Info("init command started")
 			err := o.run(out)
 			if err != nil {
