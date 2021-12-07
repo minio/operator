@@ -147,9 +147,6 @@ const PrometheusPortName = "http-prometheus"
 // a headless service for Prometheus.
 const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
 
-// PrometheusServiceMonitorSecretKey is the entry in the secret
-const PrometheusServiceMonitorSecretKey = "token"
-
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image

@@ -621,30 +621,6 @@ PrometheusConfig (`prometheus`) defines the configuration of a Prometheus instan
 |===
 
 
-[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-prometheusoperatorconfig"]
-==== PrometheusOperatorConfig 
-
-PrometheusOperatorConfig (`prometheus`) defines the configuration of a Prometheus service monitor object as part of the MinIO tenant. The Operator automatically configures the Prometheus service monitor to scrape and store metrics from the MinIO tenant. + 
- Specify if the https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md#include-servicemonitors[Service Monitor] to be created for this tenant.
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantspec[$$TenantSpec$$]
-****
-
-[cols="25a,75a", options="header"]
-|===
-| Field | Description
-
-|*`labels`* __object (keys:string, values:string)__ 
-|*Optional* + 
- If provided, use these labels for Prometheus Object Meta labels
-
-|*`annotations`* __object (keys:string, values:string)__ 
-|*Optional* + 
- If provided, use these annotations for Prometheus Object Meta annotations
-
-|===
 
 
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-s3features"]
@@ -898,10 +874,10 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  Directs the MinIO Operator to deploy and configure Prometheus for collecting tenant metrics. + 
  For example, `minio.<namespace>.svc.<cluster-domain>.<example>/minio/v2/metrics/cluster`. The specific DNS name for the service depends on your Kubernetes cluster configuration. See the Kubernetes documentation on https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/[DNS for Services and Pods] for more information.
 
-|*`prometheusOperator`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-prometheusoperatorconfig[$$PrometheusOperatorConfig$$]__ 
+|*`prometheusOperator`* __boolean__ 
 |*Optional* + 
- Directs the MinIO Operator to deploy a ServiceMonitor object. + 
- ServiceMonitor object allows native integration with Prometheus Operator.
+ Directs the MinIO Operator to use prometheus operator. + 
+ Tenant scrape configuration will be added to prometheus managed by the prometheus-operator.
 
 |*`serviceAccountName`* __string__ 
 |*Optional* + 

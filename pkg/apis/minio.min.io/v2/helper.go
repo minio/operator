@@ -540,7 +540,7 @@ func (t *Tenant) HasPrometheusEnabled() bool {
 
 // HasPrometheusSMEnabled checks if Prometheus service monitor has been enabled
 func (t *Tenant) HasPrometheusSMEnabled() bool {
-	return t.Spec.PrometheusOperator != nil
+	return t.Spec.PrometheusOperator
 }
 
 // GetEnvVars returns the environment variables for tenant deployment.

@@ -95,32 +95,31 @@ const (
 
 // Standard Status messages for Tenant
 const (
-	StatusInitialized                          = "Initialized"
-	StatusProvisioningCIService                = "Provisioning MinIO Cluster IP Service"
-	StatusProvisioningHLService                = "Provisioning MinIO Headless Service"
-	StatusProvisioningStatefulSet              = "Provisioning MinIO Statefulset"
-	StatusProvisioningConsoleService           = "Provisioning Console Service"
-	StatusProvisioningKESStatefulSet           = "Provisioning KES StatefulSet"
-	StatusProvisioningLogPGStatefulSet         = "Provisioning Postgres server"
-	StatusProvisioningLogSearchAPIDeployment   = "Provisioning Log Search API server"
-	StatusProvisioningPrometheusStatefulSet    = "Provisioning Prometheus server"
-	StatusProvisioningPrometheusServiceMonitor = "Provisioning Prometheus service monitor"
-	StatusProvisioningInitialUsers             = "Provisioning initial users"
-	StatusWaitingForReadyState                 = "Waiting for Pods to be ready"
-	StatusWaitingForLogSearchReadyState        = "Waiting for Log Search Pods to be ready"
-	StatusWaitingMinIOCert                     = "Waiting for MinIO TLS Certificate"
-	StatusWaitingMinIOClientCert               = "Waiting for MinIO TLS Client Certificate"
-	StatusWaitingKESCert                       = "Waiting for KES TLS Certificate"
-	StatusUpdatingMinIOVersion                 = "Updating MinIO Version"
-	StatusUpdatingKES                          = "Updating KES"
-	StatusUpdatingLogPGStatefulSet             = "Updating Postgres server"
-	StatusUpdatingLogSearchAPIServer           = "Updating Log Search API server"
-	StatusUpdatingResourceRequirements         = "Updating Resource Requirements"
-	StatusUpdatingAffinity                     = "Updating Pod Affinity"
-	StatusNotOwned                             = "Statefulset not controlled by operator"
-	StatusFailedAlreadyExists                  = "Another MinIO Tenant already exists in the namespace"
-	StatusInconsistentMinIOVersions            = "Different versions across MinIO Pools"
-	StatusRestartingMinIO                      = "Restarting MinIO"
+	StatusInitialized                        = "Initialized"
+	StatusProvisioningCIService              = "Provisioning MinIO Cluster IP Service"
+	StatusProvisioningHLService              = "Provisioning MinIO Headless Service"
+	StatusProvisioningStatefulSet            = "Provisioning MinIO Statefulset"
+	StatusProvisioningConsoleService         = "Provisioning Console Service"
+	StatusProvisioningKESStatefulSet         = "Provisioning KES StatefulSet"
+	StatusProvisioningLogPGStatefulSet       = "Provisioning Postgres server"
+	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server"
+	StatusProvisioningPrometheusStatefulSet  = "Provisioning Prometheus server"
+	StatusProvisioningInitialUsers           = "Provisioning initial users"
+	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
+	StatusWaitingForLogSearchReadyState      = "Waiting for Log Search Pods to be ready"
+	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"
+	StatusWaitingMinIOClientCert             = "Waiting for MinIO TLS Client Certificate"
+	StatusWaitingKESCert                     = "Waiting for KES TLS Certificate"
+	StatusUpdatingMinIOVersion               = "Updating MinIO Version"
+	StatusUpdatingKES                        = "Updating KES"
+	StatusUpdatingLogPGStatefulSet           = "Updating Postgres server"
+	StatusUpdatingLogSearchAPIServer         = "Updating Log Search API server"
+	StatusUpdatingResourceRequirements       = "Updating Resource Requirements"
+	StatusUpdatingAffinity                   = "Updating Pod Affinity"
+	StatusNotOwned                           = "Statefulset not controlled by operator"
+	StatusFailedAlreadyExists                = "Another MinIO Tenant already exists in the namespace"
+	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
+	StatusRestartingMinIO                    = "Restarting MinIO"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -1256,13 +1255,11 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	if tenant.HasPrometheusSMEnabled() {
-		klog.Infof("Adding Prometheus addl config")
 		err := c.checkAndCreatePrometheusAddlConfig(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
 			return err
 		}
 	} else {
-		klog.Infof("Deleting Prometheus addl config")
 		err := c.deletePrometheusAddlConfig(ctx, tenant)
 		if err != nil {
 			return err
@@ -1673,6 +1670,7 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 
 	// If the secret is not found, create the secret
 	if k8serrors.IsNotFound(err) {
+		klog.Infof("Adding MinIO tenant Prometheus scrape config")
 		scrapeCfgYaml, err := yaml.Marshal(&promCfg.ScrapeConfigs)
 		if err != nil {
 			return err
@@ -1706,6 +1704,7 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 			}
 		}
 		if !hasScrapeConfig {
+			klog.Infof("Adding MinIO tenant Prometheus scrape config")
 			scrapeConfigs = append(scrapeConfigs, promCfg.ScrapeConfigs...)
 			scrapeCfgYaml, err := yaml.Marshal(scrapeConfigs)
 			if err != nil {
@@ -1763,6 +1762,7 @@ func (c *Controller) deletePrometheusAddlConfig(ctx context.Context, tenant *min
 		}
 	}
 	if hasScrapeConfig {
+		klog.Infof("Deleting MinIO tenant Prometheus scrape config")
 		// Delete the config
 		newScrapeConfigs := append(scrapeConfigs[:scIndex], scrapeConfigs[scIndex+1:]...)
 		// Update the secret
