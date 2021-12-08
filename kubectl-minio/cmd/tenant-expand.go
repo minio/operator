@@ -62,7 +62,6 @@ func newTenantExpandCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			return v.validate(args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			klog.Info("expand tenant command started")
 			err := v.run()
 			if err != nil {
 				klog.Warning(err)

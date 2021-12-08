@@ -58,7 +58,6 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 					return fmt.Errorf(Bold("Aborting Tenant deletion"))
 				}
 			}
-			klog.Info("delete tenant command started")
 			err := c.run(args)
 			if err != nil {
 				klog.Warning(err)

@@ -60,7 +60,6 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c.tenantOpts.Name = args[0]
-			klog.Info("upgrade tenant command started")
 			err := c.run()
 			if err != nil {
 				klog.Warning(err)

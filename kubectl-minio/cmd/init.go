@@ -67,7 +67,6 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Example: operatorInitExample,
 		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			klog.Info("init command started")
 			err := o.run(out)
 			if err != nil {
 				klog.Warning(err)
