@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	minioDesc  = `Deploy and manage the multi tenant, S3 API compatible object storage on Kubernetes`
+	minioDesc  = `Manage and deploy MinIO object storage tenants on k8s`
 	kubeconfig = "kubeconfig"
 )
 
@@ -50,14 +50,14 @@ func init() {
 
 }
 
-// NewCmdMinIO creates a new root command for kubectl-minio
-func NewCmdMinIO(streams genericclioptions.IOStreams) *cobra.Command {
+// New creates a new root command for kubectl-minio
+func New(streams genericclioptions.IOStreams) *cobra.Command {
 	rootCmd = helpers.DisableHelp(rootCmd)
 	cobra.EnableCommandSorting = false
 	rootCmd.AddCommand(newInitCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
+	rootCmd.AddCommand(newProxyCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	rootCmd.AddCommand(newTenantCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	rootCmd.AddCommand(newDeleteCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
-	rootCmd.AddCommand(newProxyCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	rootCmd.AddCommand(newVersionCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
 	return rootCmd
 }

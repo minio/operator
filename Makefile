@@ -56,7 +56,7 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@GO111MODULE=on go install github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
+	@go install -v github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
 	@echo "WARNING: installing our fork github.com/minio/controller-tools/cmd/controller-gen@v0.4.7"
 	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
 	@controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)

@@ -24,17 +24,32 @@ import (
 	"io"
 
 	"github.com/minio/kubectl-minio/cmd/resources"
+	operatorv1 "github.com/minio/operator/pkg/client/clientset/versioned"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/spf13/cobra"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	tenantDesc = `
-'tenant' is the top level command for managing MinIO tenants created via operator.`
+'tenant' is the top level command for managing MinIO tenants created via MinIO operator.`
 )
+
+func getTenantNamespace(client *operatorv1.Clientset, tenantName string) (string, error) {
+	tenants, err := client.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+	for _, tenant := range tenants.Items {
+		if tenant.Name == tenantName {
+			return tenant.ObjectMeta.Namespace, nil
+		}
+	}
+	return "", fmt.Errorf("tenant: %s not found on any namespace", tenantName)
+}
 
 func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
