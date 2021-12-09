@@ -1,64 +1,3 @@
-# Default values for minio-operator.
-
-operator:
-  ## DEPRECATED: Please use the "CLUSTER_DOMAIN" or "WATCHED_NAMESPACE" env variable
-  ## instead of clusterDomain and nsToWatch.
-  # clusterDomain: "cluster.local"
-  # nsToWatch: ""
-  ## Setup environment variables for the Operator
-  # env:
-  #   - name: MINIO_OPERATOR_TLS_ENABLE
-  #     value: "off"
-  #   - name: CLUSTER_DOMAIN
-  #     value: "cluster.domain"
-  #   - name: WATCHED_NAMESPACE
-  #     value: ""
-  image:
-    repository: minio/operator
-    tag: v4.3.7
-    pullPolicy: IfNotPresent
-  imagePullSecrets: [ ]
-  initcontainers: [ ]
-  replicaCount: 1
-  securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
-    runAsNonRoot: true
-    fsGroup: 1000
-  nodeSelector: { }
-  affinity: { }
-  tolerations: [ ]
-  topologySpreadConstraints: [ ]
-  resources:
-    requests:
-      cpu: 200m
-      memory: 256Mi
-      ephemeral-storage: 500Mi
-
-console:
-  image:
-    repository: minio/console
-    tag: v0.12.3
-    pullPolicy: IfNotPresent
-  imagePullSecrets: [ ]
-  initcontainers: [ ]
-  replicaCount: 1
-  nodeSelector: { }
-  affinity: { }
-  tolerations: [ ]
-  topologySpreadConstraints: [ ]
-  resources: { }
-  securityContext:
-    runAsUser: 1000
-    runAsNonRoot: true
-  ingress:
-    enabled: false
-    labels: { }
-    annotations: { }
-    tls: [ ]
-    host: console.local
-    path: /
-
 ## MinIO Tenant Definition
 tenants:
   # Tenant name
@@ -66,7 +5,7 @@ tenants:
     ## Registry location and Tag to download MinIO Server image
     image:
       repository: minio/minio
-      tag: RELEASE.2021-10-06T23-36-31Z
+      tag: RELEASE.2021-11-09T03-21-45Z
       pullPolicy: IfNotPresent
     ## Customize namespace for tenant deployment
     namespace: default

@@ -1,0 +1,17 @@
+apiVersion: v2
+description: A Helm chart for MinIO Operator
+name: tenant
+version: 4.3.7
+appVersion: v4.3.7
+keywords:
+  - storage
+  - object-storage
+  - S3
+home: https://min.io
+icon: https://min.io/resources/img/logo/MINIO_wordmark.png
+sources:
+  - https://github.com/minio/operator
+maintainers:
+  - name: MinIO, Inc
+    email: dev@minio.io
+type: application

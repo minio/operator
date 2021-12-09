@@ -58,7 +58,7 @@ metadata:
             },
             "podManagementPolicy": "Parallel",
             "console": {
-              "image": "minio/console:v0.12.3",
+              "image": "minio/console:v0.12.6",
               "replicas": 1,
               "consoleSecret": {
                 "name": "console-secret"
