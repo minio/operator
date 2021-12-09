@@ -66,7 +66,6 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			return c.validate(args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			klog.Info("create tenant command started")
 			err := c.run(args)
 			if err != nil {
 				klog.Warning(err)

@@ -63,7 +63,6 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if !helpers.Ask("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator, this is not a reversible operation") {
 				return fmt.Errorf(Bold("Aborting Operator deletion"))
 			}
-			klog.Info("delete command started")
 			err := o.run(out)
 			if err != nil {
 				klog.Warning(err)

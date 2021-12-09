@@ -59,7 +59,6 @@ func newProxyCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Example: operatorProxyExample,
 		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			klog.Info("proxy command started")
 			err := o.run()
 			if err != nil {
 				klog.Warning(err)
