@@ -4,8 +4,8 @@ tenants:
   - name: minio1
     ## Registry location and Tag to download MinIO Server image
     image:
-      repository: minio/minio
-      tag: RELEASE.2021-11-09T03-21-45Z
+      repository: quay.io/minio/minio
+      tag: RELEASE.2021-12-20T22-07-16Z
       pullPolicy: IfNotPresent
     ## Customize namespace for tenant deployment
     namespace: default
