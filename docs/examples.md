@@ -70,7 +70,7 @@ This example will deploy a MinIO tenant with TLS using certificates provided by 
 ### Prerequisites
 
 - You can generate certificates using `Vault CA`, `Openssl` or `Mkcert`, for this example we will use https://github.com/FiloSottile/mkcert
-- Assuming your Tenant name will be `minio` you should generate the following certificate keypairs:
+- Assuming your Tenant name is `storage` and your namespace is `minio-tenant` you should generate the following certificate keypairs:
 
   ```sh
     mkcert "*.minio-tenant.svc.cluster.local"
@@ -106,6 +106,7 @@ You can deploy a preconfigured example by running the following command:
 ```$xslt
 kustomize build examples/kustomization/base | kubectl apply -f -
 ```
+You can include all the certificates that you want in your Tenant and `MinIO` will serve them to its client via [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) 
 
 ## MinIO Tenant with TLS via customer provided certificates and Encryption enabled via Vault KMS
 
