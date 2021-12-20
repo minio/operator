@@ -4,11 +4,6 @@ metadata:
   name: storage
   namespace: minio-tenant
 spec:
-  buckets:
-    bucket :
-      - name: "bucket-1"
-        region: "us-east-1"
-        objectlock: true 
   ## Specification for MinIO Pool(s) in this Tenant.
   pools:
     ## Servers specifies the number of MinIO Tenant Pods / Servers in this pool.

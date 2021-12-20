@@ -31,6 +31,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/version"
 
+	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/pkg/env"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -268,7 +269,7 @@ func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator met
 	return nil
 }
 
-func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) error {
+func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.Tenant) []*v1.Secret {
 	var userCredentials []*v1.Secret
 	for _, credential := range tenant.Spec.Users {
 		credentialSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, metav1.GetOptions{})
@@ -276,6 +277,11 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 			userCredentials = append(userCredentials, credentialSecret)
 		}
 	}
+	return userCredentials
+}
+
+func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) error {
+	userCredentials := c.fetchUserCredentials(ctx, tenant)
 
 	if _, err := c.updateTenantStatus(ctx, tenant, StatusProvisioningInitialUsers, 0); err != nil {
 		return err
@@ -313,19 +319,45 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) error {
 	var buckets []miniov2.Bucket
 	buckets = append(buckets, tenant.Spec.Buckets...)
-	// get minio client
-	minioClnt, err := tenant.NewMinIOClient(tenantConfiguration)
-	if err != nil {
-		// show the error and continue
-		klog.Errorf("Error instantiating minio Client: %v", err.Error())
+	// configuration that means MinIO is running with LDAP enabled
+	// and we need to skip the default bucket creation
+	var ldapEnabled bool
+	var minioClnt *minio.Client
+	for _, env := range tenant.GetEnvVars() {
+		if env.Name == "MINIO_IDENTITY_LDAP_SERVER_ADDR" && env.Value != "" {
+			ldapEnabled = true
+			break
+		}
 	}
 
-	if err := tenant.CreateBuckets(minioClnt, buckets); err != nil {
-		klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
-		return err
+	// Skip default bucket creation for ldap setup
+	if !ldapEnabled {
+		userCredentials := c.fetchUserCredentials(ctx, tenant)
+		var caContent []byte
+		operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
+		// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
+		if err != nil {
+			caContent = miniov2.GetPodCAFromFile()
+		} else {
+			if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+				caContent = val
+			}
+		}
+
+		// Create bucket using the console user
+		minioClnt, err = tenant.NewMinIOUser(userCredentials, caContent)
+		if err != nil {
+			// show the error and continue
+			klog.Errorf("Error instantiating minio Client: %v", err.Error())
+		}
+
+		if err := tenant.CreateBuckets(minioClnt, buckets); err != nil {
+			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
+			return err
+		}
 	}
 
-	if _, err = c.updateProvisionedBucketStatus(ctx, tenant, true); err != nil {
+	if _, err := c.updateProvisionedBucketStatus(ctx, tenant, true); err != nil {
 		klog.V(2).Infof(err.Error())
 	}
 

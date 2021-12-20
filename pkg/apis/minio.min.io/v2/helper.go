@@ -24,6 +24,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -698,26 +699,43 @@ func (t *Tenant) getDetaislForClient(address string, minioSecret map[string][]by
 	return host, accessKey, secretKey, nil
 }
 
-// NewMinIOClient initializes a new minio.Client for operator interaction
-func (t *Tenant) NewMinIOClient(minioSecret map[string][]byte) (*minio.Client, error) {
-	return t.NewMinIOClientForAddress("", minioSecret)
+// NewMinIOUser initializes a new console user
+func (t *Tenant) NewMinIOUser(userCredentialSecrets []*corev1.Secret, caContent []byte) (*minio.Client, error) {
+	return t.NewMinIOUserForAddress("", userCredentialSecrets, caContent)
 }
 
-// NewMinIOClientForAddress initializes a new minio.Client for operator interaction
-func (t *Tenant) NewMinIOClientForAddress(address string, minioSecret map[string][]byte) (*minio.Client, error) {
-
-	host, accessKey, secretKey, err := t.getDetaislForClient(address, minioSecret)
-	if err != nil {
-		return nil, err
+// NewMinIOUserForAddress initializes a new console user
+func (t *Tenant) NewMinIOUserForAddress(address string, userCredentialSecrets []*corev1.Secret, caContent []byte) (*minio.Client, error) {
+	host := address
+	if host == "" {
+		host = t.MinIOServerHostAddress()
+		if host == "" {
+			return nil, errors.New("MinIO server host is empty")
+		}
 	}
+	consoleAccessKey, ok := userCredentialSecrets[0].Data["CONSOLE_ACCESS_KEY"]
+	if !ok {
+		return nil, errors.New("CONSOLE_ACCESS_KEY not provided")
+	}
+	// remove spaces and line breaks from access key
+	userAccessKey := strings.TrimSpace(string(consoleAccessKey))
+	consoleSecretKey, ok := userCredentialSecrets[0].Data["CONSOLE_SECRET_KEY"]
+	// remove spaces and line breaks from secret key
+	userSecretKey := strings.TrimSpace(string(consoleSecretKey))
+	if !ok {
+		return nil, errors.New("CONSOLE_SECRET_KEY not provided")
+	}
+
+	rootCAs := mustGetSystemCertPool()
+	rootCAs.AppendCertsFromPEM(caContent)
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{},
 	}
-
+	tr.TLSClientConfig.RootCAs = rootCAs
 	opts := &minio.Options{
 		Transport: tr,
 		Secure:    t.TLS(),
-		Creds:     credentials.NewStaticV4(string(accessKey), string(secretKey), ""),
+		Creds:     credentials.NewStaticV4(userAccessKey, userSecretKey, ""),
 	}
 
 	minioClnt, err := minio.New(host, opts)
@@ -725,6 +743,15 @@ func (t *Tenant) NewMinIOClientForAddress(address string, minioSecret map[string
 		return nil, err
 	}
 	return minioClnt, nil
+}
+
+// mustGetSystemCertPool - return system CAs or empty pool in case of error (or windows)
+func mustGetSystemCertPool() *x509.CertPool {
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		return x509.NewCertPool()
+	}
+	return pool
 }
 
 // CreateUsers creates a list of admin users on MinIO, optionally creating users is disabled.
@@ -761,8 +788,6 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 
 // CreateBuckets creates buckets and skips if bucket already present
 func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets []Bucket) error {
-	klog.Info("Ashish Kumar Sinha six ", buckets[0].Name, buckets[0].Region, buckets[0].ObjectLocking)
-	klog.Info("Ashish Kumar Sinha six ", buckets[1].Name, buckets[1].Region, buckets[1].ObjectLocking)
 	// create buckets with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
@@ -770,7 +795,6 @@ func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets []Bucket) erro
 
 		err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{Region: bucket.Region, ObjectLocking: bucket.ObjectLocking})
 		if err != nil {
-			//klog.Info("Ashish Kumar Sinha six ", buckets)
 			klog.Info("Bucket  creation failed %s error %s", bucket.Name, err.Error())
 		} else {
 			klog.Info("Successfully created  bucket %s", bucket.Name)
