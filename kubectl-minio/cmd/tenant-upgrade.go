@@ -32,7 +32,6 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 )
 
@@ -54,7 +53,7 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Use:     "upgrade <TENANTNAME> --image <MINIO-IMAGE>",
 		Short:   "Upgrade MinIO image for existing tenant",
 		Long:    upgradeDesc,
-		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2021-11-09T03-21-45Z`,
+		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2021-12-20T22-07-16Z`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			return c.validate(args)
 		},
@@ -62,7 +61,6 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			c.tenantOpts.Name = args[0]
 			err := c.run()
 			if err != nil {
-				klog.Warning(err)
 				return err
 			}
 			return nil

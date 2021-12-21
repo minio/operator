@@ -29,6 +29,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/madmin-go"
+	"k8s.io/klog/v2"
+
 	"github.com/minio/minio-go/v7/pkg/set"
 	"k8s.io/apimachinery/pkg/api/meta"
 
@@ -37,11 +40,7 @@ import (
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 
-	"github.com/minio/madmin-go"
-
 	"golang.org/x/time/rate"
-
-	"k8s.io/klog/v2"
 
 	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
