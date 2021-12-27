@@ -31,7 +31,7 @@ func TestRoundTripPrometheusConfig(t *testing.T) {
 
 	// Builds prometheus config from the given tenant object and minio credentials
 	ak, sk := "minio", "minio123"
-	pCfg := getPrometheusConfig(tenant, ak, sk)
+	pCfg := GetPrometheusConfig(tenant, ak, sk)
 	cfgMap := pCfg.getConfigMap(tenant)
 
 	// Unpacks the prometheus config from the config map created above.

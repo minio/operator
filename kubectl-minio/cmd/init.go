@@ -46,7 +46,7 @@ import (
 
 const (
 	operatorInitDesc = `
-'init' command creates MinIO Operator deployment along with all the dependencies.`
+ 'init' command creates MinIO Operator deployment along with all the dependencies.`
 	operatorInitExample = `  kubectl minio init`
 )
 
@@ -86,6 +86,8 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&o.operatorOpts.TenantMinIOImage, "default-minio-image", "", "default tenant MinIO image")
 	f.StringVar(&o.operatorOpts.TenantConsoleImage, "default-console-image", "", "default tenant Console image")
 	f.StringVar(&o.operatorOpts.TenantKesImage, "default-kes-image", "", "default tenant KES image")
+	f.StringVar(&o.operatorOpts.PrometheusNamespace, "prometheus-namespace", "", "namespace of the prometheus managed by prometheus-operator")
+	f.StringVar(&o.operatorOpts.PrometheusNamespace, "prometheus-name", "", "name of the prometheus managed by prometheus-operator")
 	f.BoolVarP(&o.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	return cmd
@@ -194,6 +196,26 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			Op:    "add",
 			Path:  "/spec/template/spec/imagePullSecrets",
 			Value: []corev1.LocalObjectReference{{Name: o.operatorOpts.ImagePullSecret}},
+		})
+	}
+	if o.operatorOpts.PrometheusNamespace != "" {
+		operatorDepPatches = append(operatorDepPatches, opInterface{
+			Op:   "add",
+			Path: "/spec/template/spec/containers/0/env/0",
+			Value: corev1.EnvVar{
+				Name:  "PROMETHEUS_NAMESPACE",
+				Value: o.operatorOpts.PrometheusNamespace,
+			},
+		})
+	}
+	if o.operatorOpts.PrometheusName != "" {
+		operatorDepPatches = append(operatorDepPatches, opInterface{
+			Op:   "add",
+			Path: "/spec/template/spec/containers/0/env/0",
+			Value: corev1.EnvVar{
+				Name:  "PROMETHEUS_NAME",
+				Value: o.operatorOpts.PrometheusName,
+			},
 		})
 	}
 	// attach the patches to the kustomization file

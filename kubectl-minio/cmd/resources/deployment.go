@@ -20,14 +20,16 @@ package resources
 
 // OperatorOptions encapsulates the CLI options for a MinIO Operator
 type OperatorOptions struct {
-	Name               string
-	Image              string
-	Namespace          string
-	NSToWatch          string
-	ClusterDomain      string
-	ImagePullSecret    string
-	ConsoleImage       string
-	TenantMinIOImage   string
-	TenantConsoleImage string
-	TenantKesImage     string
+	Name                string
+	Image               string
+	Namespace           string
+	NSToWatch           string
+	ClusterDomain       string
+	ImagePullSecret     string
+	ConsoleImage        string
+	TenantMinIOImage    string
+	TenantConsoleImage  string
+	TenantKesImage      string
+	PrometheusNamespace string
+	PrometheusName      string
 }

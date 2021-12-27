@@ -117,7 +117,7 @@ rules:
   - apiGroups:
       - monitoring.coreos.com
     resources:
-      - servicemonitors
+      - prometheuses
     verbs:
       - '*'
   - apiGroups:
