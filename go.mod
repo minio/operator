@@ -8,9 +8,9 @@ require (
 	github.com/google/go-containerregistry v0.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.3.0
-	github.com/minio/madmin-go v1.0.12
-	github.com/minio/minio-go/v7 v7.0.11-0.20210302210017-6ae69c73ce78
-	github.com/minio/pkg v1.0.11
+	github.com/minio/madmin-go v1.1.23
+	github.com/minio/minio-go/v7 v7.0.20
+	github.com/minio/pkg v1.1.11
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.46.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.46.0
 	github.com/stretchr/testify v1.7.0
@@ -77,11 +77,13 @@ require (
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/rs/xid v1.2.1 // indirect
 	github.com/secure-io/sio-go v0.3.1 // indirect
-	github.com/shirou/gopsutil/v3 v3.21.5 // indirect
+	github.com/shirou/gopsutil/v3 v3.21.6 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tinylib/msgp v1.1.3 // indirect
-	github.com/tklauser/go-sysconf v0.3.5 // indirect
+	github.com/tklauser/go-sysconf v0.3.6 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
 	golang.org/x/mod v0.4.1 // indirect

@@ -67,8 +67,8 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/minio/argon2 v1.0.0 // indirect
-	github.com/minio/madmin-go v1.0.12 // indirect
-	github.com/minio/minio-go/v7 v7.0.11-0.20210302210017-6ae69c73ce78 // indirect
+	github.com/minio/madmin-go v1.1.23 // indirect
+	github.com/minio/minio-go/v7 v7.0.20 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -78,12 +78,14 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/rs/xid v1.2.1 // indirect
 	github.com/secure-io/sio-go v0.3.1 // indirect
-	github.com/shirou/gopsutil/v3 v3.21.5 // indirect
+	github.com/shirou/gopsutil/v3 v3.21.6 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tinylib/msgp v1.1.3 // indirect
-	github.com/tklauser/go-sysconf v0.3.5 // indirect
+	github.com/tklauser/go-sysconf v0.3.6 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
