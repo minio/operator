@@ -332,6 +332,9 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 
 	// Skip default bucket creation for ldap setup
 	if !ldapEnabled {
+		if _, err := c.updateTenantStatus(ctx, tenant, StatusProvisioningDefaultBuckets, 0); err != nil {
+			return err
+		}
 		userCredentials := c.fetchUserCredentials(ctx, tenant)
 		var caContent []byte
 		operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})

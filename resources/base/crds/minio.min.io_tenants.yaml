@@ -4048,7 +4048,7 @@ spec:
                   properties:
                     name:
                       type: string
-                    objectlock:
+                    objectLock:
                       type: boolean
                     region:
                       type: string

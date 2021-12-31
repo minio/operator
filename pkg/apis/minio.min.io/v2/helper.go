@@ -655,7 +655,7 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 
 // NewMinIOAdminForAddress initializes a new madmin.Client for operator interaction
 func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string][]byte) (*madmin.AdminClient, error) {
-	host, accessKey, secretKey, err := t.getDetaislForClient(address, minioSecret)
+	host, accessKey, secretKey, err := t.getMinIOTenantDetails(address, minioSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -678,7 +678,7 @@ func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string]
 	return madmClnt, nil
 }
 
-func (t *Tenant) getDetaislForClient(address string, minioSecret map[string][]byte) (string, []byte, []byte, error) {
+func (t *Tenant) getMinIOTenantDetails(address string, minioSecret map[string][]byte) (string, []byte, []byte, error) {
 	host := address
 	if host == "" {
 		host = t.MinIOServerHostAddress()
@@ -792,13 +792,11 @@ func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets []Bucket) erro
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	for _, bucket := range buckets {
-
 		err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{Region: bucket.Region, ObjectLocking: bucket.ObjectLocking})
 		if err != nil {
-			klog.Info("Bucket  creation failed %s error %s", bucket.Name, err.Error())
-		} else {
-			klog.Info("Successfully created  bucket %s", bucket.Name)
+			return fmt.Errorf("Bucket creation failed %s error %s", bucket.Name, err.Error())
 		}
+		klog.Infof("Successfully created bucket %s", bucket.Name)
 	}
 	return nil
 }

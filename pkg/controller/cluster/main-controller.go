@@ -105,6 +105,7 @@ const (
 	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server"
 	StatusProvisioningPrometheusStatefulSet  = "Provisioning Prometheus server"
 	StatusProvisioningInitialUsers           = "Provisioning initial users"
+	StatusProvisioningDefaultBuckets         = "Provisioning default buckets"
 	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
 	StatusWaitingForLogSearchReadyState      = "Waiting for Log Search Pods to be ready"
 	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"

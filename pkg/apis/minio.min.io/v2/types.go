@@ -60,7 +60,7 @@ type TenantScheduler struct {
 type Bucket struct {
 	Name          string `json:"name,omitempty"`
 	Region        string `json:"region,omitempty"`
-	ObjectLocking bool   `json:"objectlock,omitempty"`
+	ObjectLocking bool   `json:"objectLock,omitempty"`
 }
 
 // S3Features (`s3`) - Object describing which S3 features to enable/disable in the MinIO Tenant. +
