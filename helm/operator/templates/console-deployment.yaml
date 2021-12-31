@@ -55,7 +55,7 @@ spec:
             - name: CONSOLE_OPERATOR_MODE
               value: "on"
                 {{- with .Values.console.env }}
-                {{ toYaml . | nindent 10 }}
+                {{ toYaml . | nindent 12 }}
                 {{- end }}
           resources:
       {{- toYaml .Values.console.resources | nindent 12 }}
