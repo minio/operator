@@ -88,6 +88,26 @@ spec:
     {{ toYaml . | nindent 4 }}
   {{- end }}
   podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" . }}
+  {{- with (dig "readiness" (dict) .) }}
+  readiness:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with (dig "liveness" (dict) .) }}
+  liveness:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with (dig "exposeServices" (dict) .) }}
+  exposeServices:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{ if dig "serviceAccountName" "" . }}
+  serviceAccountName: {{ dig "serviceAccountName" "" . }}
+  {{ end }}
+  prometheusOperator: {{ dig "prometheusOperator" "false" . }}
+  {{- with (dig "logging" (dict) .) }}
+  logging:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
   {{- with (dig "serviceMetadata" (dict) .) }}
   serviceMetadata:
     {{ toYaml . | nindent 4 }}
