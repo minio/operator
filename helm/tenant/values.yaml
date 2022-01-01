@@ -99,7 +99,7 @@ tenants:
     prometheusOperator: false
     # Enable JSON, Anonymous logging for MinIO tenants.
     # Refer https://github.com/minio/operator/blob/master/pkg/apis/minio.min.io/v2/types.go#L303
-    logging:
+    logging: { }
     ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
     ## services created by the operator.
     serviceMetadata: { }
