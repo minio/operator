@@ -83,6 +83,23 @@ tenants:
     ## Refer https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy
     ## for details.
     podManagementPolicy: Parallel
+    # Liveness Probe for container liveness. Container will be restarted if the probe fails.
+    # Refer https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes.
+    liveness: { }
+    # Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
+    # Refer https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    readiness: { }
+    ## exposeServices defines the exposure of the MinIO object storage and Console services.
+    ## service is exposed as a loadbalancer in k8s service.
+    exposeServices: { }
+    # kubernetes service account associated with a specific tenant
+    # https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+    serviceAccountName: ""
+    # Tenant scrape configuration will be added to prometheus managed by the prometheus-operator.
+    prometheusOperator: false
+    # Enable JSON, Anonymous logging for MinIO tenants.
+    # Refer https://github.com/minio/operator/blob/master/pkg/apis/minio.min.io/v2/types.go#L303
+    logging: { }
     ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
     ## services created by the operator.
     serviceMetadata: { }
