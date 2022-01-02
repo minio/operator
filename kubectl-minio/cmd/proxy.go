@@ -57,11 +57,8 @@ func newProxyCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Short:   "Open a port-forward to Console UI",
 		Long:    operatorProxyDesc,
 		Example: operatorProxyExample,
+		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 0 {
-				return errors.New("this command does not accept arguments")
-			}
-			klog.Info("proxy command started")
 			err := o.run()
 			if err != nil {
 				klog.Warning(err)

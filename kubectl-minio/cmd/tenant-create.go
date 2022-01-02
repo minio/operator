@@ -58,15 +58,14 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &createCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "create <string> --servers <int> --volumes <int> --capacity <str> --namespace <str>",
+		Use:     "create <TENANTNAME> --servers <NSERVERS> --volumes <NVOLUMES> --capacity <SIZE> --namespace <TENANTNS>",
 		Short:   "Create a MinIO tenant",
 		Long:    createDesc,
 		Example: createExample,
+		Args: func(cmd *cobra.Command, args []string) error {
+			return c.validate(args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.validate(args); err != nil {
-				return err
-			}
-			klog.Info("create tenant command started")
 			err := c.run(args)
 			if err != nil {
 				klog.Warning(err)
@@ -80,16 +79,18 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.Int32Var(&c.tenantOpts.Servers, "servers", 0, "total number of pods in MinIO tenant")
 	f.Int32Var(&c.tenantOpts.Volumes, "volumes", 0, "total number of volumes in the MinIO tenant")
 	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this pool, e.g. 16Ti")
-	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", "", "k8s namespace for this MinIO tenant")
 	f.StringVarP(&c.tenantOpts.StorageClass, "storage-class", "s", helpers.DefaultStorageclass, "storage class for this MinIO tenant")
-	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "MinIO image for this tenant")
-	f.BoolVar(&c.tenantOpts.DisableAntiAffinity, "enable-host-sharing", false, "disable anti-affinity to allow pods to be co-located on a single node. Not recommended for production.")
-	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret with details for enabling encryption, refer example https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
-	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
+	f.StringVarP(&c.tenantOpts.Image, "image", "i", helpers.DefaultTenantImage, "custom MinIO image for this tenant")
+	f.StringVarP(&c.tenantOpts.ImagePullSecret, "image-pull-secret", "", "", "image pull secret to be used for pulling MinIO")
+	f.BoolVar(&c.tenantOpts.DisableAntiAffinity, "enable-host-sharing", false, "[TESTING-ONLY] disable anti-affinity to allow pods to be co-located on a single node (unsupported in production environment)")
+	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret for KES KMS setup, refer https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
+	f.BoolVarP(&c.output, "output", "o", false, "generate tenant yaml for 'kubectl apply -f tenant.yaml'")
 
 	cmd.MarkFlagRequired("servers")
 	cmd.MarkFlagRequired("volumes")
 	cmd.MarkFlagRequired("capacity")
+	cmd.MarkFlagRequired("namespace")
 	return cmd
 }
 

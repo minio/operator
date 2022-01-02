@@ -88,7 +88,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-11-09T03-21-45Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2021-12-27T07-23-18Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -147,13 +147,10 @@ const PrometheusPortName = "http-prometheus"
 // a headless service for Prometheus.
 const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
 
-// PrometheusServiceMonitorSecretKey is the entry in the secret
-const PrometheusServiceMonitorSecretKey = "token"
-
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.3.5"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.3.8"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres:13"
@@ -277,9 +274,6 @@ const StatefulSetLegacyPrefix = "zone"
 // MinIOPrometheusPathCluster is the path where MinIO tenant exposes cluster Prometheus metrics
 const MinIOPrometheusPathCluster = "/minio/v2/metrics/cluster"
 
-// MinIOPrometheusPathNode is the path where MinIO tenant exposes node Prometheus metrics
-const MinIOPrometheusPathNode = "/minio/v2/metrics/node"
-
 // MinIOPrometheusScrapeInterval defines how frequently to scrape targets.
 const MinIOPrometheusScrapeInterval = 30 * time.Second
 
@@ -294,3 +288,18 @@ const monitoringIntervalEnv = "MONITORING_INTERVAL"
 
 // DefaultMonitoringInterval is how often we run monitoring on tenants
 const DefaultMonitoringInterval = 3
+
+// PrometheusNamespace is the namespace of the prometheus
+const PrometheusNamespace = "PROMETHEUS_NAMESPACE"
+
+// PrometheusName is the name of the prometheus
+const PrometheusName = "PROMETHEUS_NAME"
+
+// DefaultPrometheusNamespace is the default namespace for prometheus
+const DefaultPrometheusNamespace = "default"
+
+// PrometheusAddlScrapeConfigSecret is the name of the secrets which contains the scrape config
+const PrometheusAddlScrapeConfigSecret = "minio-prom-additional-scrape-config"
+
+// PrometheusAddlScrapeConfigKey is the key in secret data
+const PrometheusAddlScrapeConfigKey = "prometheus-additional.yaml"

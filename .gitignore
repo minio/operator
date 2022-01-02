@@ -1,6 +1,8 @@
 operator
 minio-operator
 !minio-operator/
+!operator/
+!tenant/
 .idea/
 dist/
 kubectl-minio/kubectl-minio

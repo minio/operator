@@ -21,7 +21,6 @@ package helpers
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -226,26 +225,11 @@ func DisableHelp(cmd *cobra.Command) *cobra.Command {
 
 // Ask user for Y/N input. Return true if response is "y"
 func Ask(label string) bool {
-	validate := func(input string) error {
-		s := strings.Trim(input, "\n\r")
-		s = strings.ToLower(s)
-		if strings.Compare(s, "n") != 0 && strings.Compare(s, "y") != 0 {
-			return errors.New("Please enter y/n")
-		}
-		return nil
-	}
-
 	prompt := promptui.Prompt{
-		Label:    label,
-		Validate: validate,
+		Label:     label,
+		IsConfirm: true,
+		Default:   "n",
 	}
-	fmt.Println()
-	result, err := prompt.Run()
-	if err != nil {
-		return false
-	}
-	if strings.Compare(result, "n") == 0 {
-		return false
-	}
-	return true
+	_, err := prompt.Run()
+	return err == nil
 }

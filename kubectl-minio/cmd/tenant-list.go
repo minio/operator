@@ -52,7 +52,6 @@ func newTenantListCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			if err := c.validate(args); err != nil {
 				return err
 			}
-			klog.Info("list tenant command started")
 			err := c.run(args)
 			if err != nil {
 				klog.Warning(err)

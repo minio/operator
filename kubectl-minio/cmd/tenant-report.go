@@ -50,14 +50,14 @@ func newTenantReportCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &reportCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:   "report",
-		Short: "Collect pod logs, events, and status for a tenant",
-		Long:  reportDesc,
+		Use:     "report <TENANTNAME>",
+		Short:   "Collect pod logs, events, and status for a tenant",
+		Long:    reportDesc,
+		Example: `  kubectl minio report tenant1`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			return c.validate(args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.validate(args); err != nil {
-				return err
-			}
-			klog.Info("report tenant command started")
 			err := c.run(args)
 			if err != nil {
 				klog.Warning(err)
@@ -68,7 +68,7 @@ func newTenantReportCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
-	f.StringVarP(&c.ns, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&c.ns, "namespace", "n", "", "namespace scope for this request")
 	return cmd
 }
 
@@ -100,14 +100,9 @@ func (d *reportCmd) run(args []string) error {
 	}
 
 	if d.ns == "" || d.ns == helpers.DefaultNamespace {
-		tenants, err := oclient.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
+		d.ns, err = getTenantNamespace(oclient, args[0])
 		if err != nil {
 			return err
-		}
-		for _, tenant := range tenants.Items {
-			if tenant.Name == args[0] {
-				d.ns = tenant.ObjectMeta.Namespace
-			}
 		}
 	}
 

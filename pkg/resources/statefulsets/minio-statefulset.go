@@ -362,7 +362,11 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 	} else if status.LegacySecurityContext {
 		return nil
 	}
-
+	// Prevents high CPU usage of kubelet by preventing chown on the entire CSI
+	if securityContext.FSGroupChangePolicy == nil {
+		fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
+		securityContext.FSGroupChangePolicy = &fsGroupChangePolicy
+	}
 	return &securityContext
 }
 

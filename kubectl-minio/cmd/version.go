@@ -19,7 +19,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -51,10 +50,8 @@ func newVersionCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Short:   "Display plugin version",
 		Long:    operatorVersionDesc,
 		Example: operatorVersionExample,
+		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 0 {
-				return errors.New("this command does not accept arguments")
-			}
 			err := o.run()
 			if err != nil {
 				klog.Warning(err)

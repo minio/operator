@@ -40,7 +40,7 @@ import (
 const (
 	expandDesc = `
 'expand' command adds storage capacity to a MinIO tenant`
-	expandExample = `  kubectl minio tenant expand tenant1 --servers 4 --volumes 32 --capacity 32Ti --namespace tenant1-ns`
+	expandExample = `  kubectl minio tenant expand tenant1 --servers 4 --volumes 32 --capacity 32Ti`
 )
 
 type expandCmd struct {
@@ -54,15 +54,14 @@ func newTenantExpandCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	v := &expandCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "expand <string> --servers <int> --volumes <int> --capacity <str> --namespace <str>",
+		Use:     "expand <TENANTNAME> --servers <NSERVERS> --volumes <NVOLUMES> --capacity <SIZE>",
 		Short:   "Add capacity to existing tenant",
 		Long:    expandDesc,
 		Example: expandExample,
+		Args: func(cmd *cobra.Command, args []string) error {
+			return v.validate(args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := v.validate(args); err != nil {
-				return err
-			}
-			klog.Info("expand tenant command started")
 			err := v.run()
 			if err != nil {
 				klog.Warning(err)
@@ -76,9 +75,8 @@ func newTenantExpandCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.Int32Var(&v.tenantOpts.Servers, "servers", 0, "total number of pods to add to tenant")
 	f.Int32Var(&v.tenantOpts.Volumes, "volumes", 0, "total number of volumes to add to tenant")
 	f.StringVar(&v.tenantOpts.Capacity, "capacity", "", "total raw capacity to add to tenant, e.g. 16Ti")
-	f.StringVarP(&v.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
-	f.StringVarP(&v.tenantOpts.StorageClass, "storage-class", "s", helpers.DefaultStorageclass, "storage class for this MinIO tenant")
-	f.BoolVarP(&v.output, "output", "o", false, "dry run this command and generate requisite yaml")
+	f.StringVarP(&v.tenantOpts.StorageClass, "storage-class", "s", helpers.DefaultStorageclass, "storage class for the expanded MinIO tenant pool (can be different than original pool)")
+	f.BoolVarP(&v.output, "output", "o", false, "generate MinIO tenant yaml with expansion details")
 
 	cmd.MarkFlagRequired("servers")
 	cmd.MarkFlagRequired("volumes")
@@ -114,14 +112,9 @@ func (v *expandCmd) run() error {
 	}
 
 	if v.tenantOpts.NS == "" || v.tenantOpts.NS == helpers.DefaultNamespace {
-		tenants, err := client.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
+		v.tenantOpts.NS, err = getTenantNamespace(client, v.tenantOpts.Name)
 		if err != nil {
 			return err
-		}
-		for _, tenant := range tenants.Items {
-			if tenant.Name == v.tenantOpts.Name {
-				v.tenantOpts.NS = tenant.ObjectMeta.Namespace
-			}
 		}
 	}
 
