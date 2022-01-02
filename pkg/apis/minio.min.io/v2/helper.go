@@ -94,14 +94,18 @@ type hostsTemplateValues struct {
 }
 
 var (
-	once                   sync.Once
-	tenantMinIOImageOnce   sync.Once
-	tenantKesImageOnce     sync.Once
-	monitoringIntervalOnce sync.Once
-	k8sClusterDomain       string
-	tenantMinIOImage       string
-	tenantKesImage         string
-	monitoringInterval     int
+	once                    sync.Once
+	tenantMinIOImageOnce    sync.Once
+	tenantKesImageOnce      sync.Once
+	monitoringIntervalOnce  sync.Once
+	k8sClusterDomain        string
+	tenantMinIOImage        string
+	tenantKesImage          string
+	monitoringInterval      int
+	prometheusNamespace     string
+	prometheusName          string
+	prometheusNamespaceOnce sync.Once
+	prometheusNameOnce      sync.Once
 )
 
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
@@ -536,7 +540,7 @@ func (t *Tenant) HasPrometheusEnabled() bool {
 
 // HasPrometheusSMEnabled checks if Prometheus service monitor has been enabled
 func (t *Tenant) HasPrometheusSMEnabled() bool {
-	return t.Spec.PrometheusOperator != nil
+	return t.Spec.PrometheusOperator
 }
 
 // GetEnvVars returns the environment variables for tenant deployment.
@@ -935,4 +939,20 @@ func ParseRawConfiguration(configuration []byte) (config map[string][]byte) {
 		}
 	}
 	return config
+}
+
+// GetPrometheusNamespace returns namespace of the prometheus managed by prometheus operator
+func GetPrometheusNamespace() string {
+	prometheusNamespaceOnce.Do(func() {
+		prometheusNamespace = envGet(PrometheusNamespace, DefaultPrometheusNamespace)
+	})
+	return prometheusNamespace
+}
+
+// GetPrometheusName returns namespace of the prometheus managed by prometheus operator
+func GetPrometheusName() string {
+	prometheusNameOnce.Do(func() {
+		prometheusName = envGet(prometheusName, "")
+	})
+	return prometheusName
 }

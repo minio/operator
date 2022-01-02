@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "console"
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "minio-operator.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.console.replicaCount }}
+  selector:
+    matchLabels:
+  {{- include "minio-operator.console-selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+    {{- include "minio-operator.console-selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.operator.imagePullSecrets }}
+      imagePullSecrets:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: console-sa
+      {{- with .Values.console.securityContext }}
+      securityContext:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.console.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.console.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.console.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.console.topologySpreadConstraints }}
+      topologySpreadConstraints:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.console.image.repository }}:{{ .Values.console.image.tag }}"
+          imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          ports:
+            - containerPort: 9090
+              name: http
+            - containerPort: 9443
+              name: https
+          args:
+            - server
+          env:
+            - name: CONSOLE_OPERATOR_MODE
+              value: "on"
+                {{- with .Values.console.env }}
+                {{ toYaml . | nindent 12 }}
+                {{- end }}
+          resources:
+      {{- toYaml .Values.console.resources | nindent 12 }}
+      {{- with .Values.console.initContainers }}
+      initContainers:
+      {{- toYaml . | nindent 8 }}
+  {{- end}}

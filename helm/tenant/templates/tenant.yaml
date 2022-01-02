@@ -20,7 +20,7 @@ metadata:
     name: {{ dig "scheduler" "name" "" . }}
   {{ end }}
 spec:
-  image: {{ dig "image" "repository" "minio/minio" . }}:{{ dig "image" "tag" "RELEASE.2021-10-06T23-36-31Z" . }}
+  image: {{ dig "image" "repository" "minio/minio" . }}:{{ dig "image" "tag" "RELEASE.2021-12-27T07-23-18Z" . }}
   imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" . }}
   {{ if dig "imagePullSecret" "name" "" . }}
   imagePullSecret:
@@ -88,6 +88,26 @@ spec:
     {{ toYaml . | nindent 4 }}
   {{- end }}
   podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" . }}
+  {{- with (dig "readiness" (dict) .) }}
+  readiness:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with (dig "liveness" (dict) .) }}
+  liveness:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with (dig "exposeServices" (dict) .) }}
+  exposeServices:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+  {{ if dig "serviceAccountName" "" . }}
+  serviceAccountName: {{ dig "serviceAccountName" "" . }}
+  {{ end }}
+  prometheusOperator: {{ dig "prometheusOperator" "false" . }}
+  {{- with (dig "logging" (dict) .) }}
+  logging:
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
   {{- with (dig "serviceMetadata" (dict) .) }}
   serviceMetadata:
     {{ toYaml . | nindent 4 }}

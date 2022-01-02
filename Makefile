@@ -11,7 +11,7 @@ GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
-HELM_HOME=helm/minio-operator
+HELM_HOME=helm/operator
 HELM_CRDS=$(HELM_HOME)/crds
 
 KUSTOMIZE_HOME=resources
@@ -39,8 +39,8 @@ install: all
 
 lint:
 	@echo "Running $@ check"
-	@GO111MODULE=on golangci-lint cache clean
-	@GO111MODULE=on golangci-lint run --timeout=5m --config ./.golangci.yml
+	@GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean
+	@GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ./.golangci.yml
 
 govet:
 	@go vet ./...
@@ -56,17 +56,17 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@GO111MODULE=on go install github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
+	@go install -v github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
 	@echo "WARNING: installing our fork github.com/minio/controller-tools/cmd/controller-gen@v0.4.7"
 	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
-	@controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
+	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@kustomize build resources/patch-crd > $(TMPFILE)
 	@mv -f $(TMPFILE) resources/base/crds/minio.min.io_tenants.yaml
 	@cp -f resources/base/crds/minio.min.io_tenants.yaml $(HELM_CRDS)/minio.min.io_tenants.yaml
 
 regen-crd-docs:
-	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go install github.com/elastic/crd-ref-docs)
-	@crd-ref-docs --source-path=./pkg/apis/minio.min.io/v2 --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/crd.adoc --templates-dir=docs/templates/asciidoctor/
+	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go install -v github.com/elastic/crd-ref-docs@latest)
+	@${GOPATH}/bin/crd-ref-docs --source-path=./pkg/apis/minio.min.io/v2 --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/crd.adoc --templates-dir=docs/templates/asciidoctor/
 
 plugin: regen-crd
 	@echo "Building 'kubectl-minio' binary"

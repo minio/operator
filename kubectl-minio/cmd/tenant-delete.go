@@ -1,6 +1,6 @@
 /*
  * This file is part of MinIO Operator
- * Copyright (C) 2020, MinIO, Inc.
+ * Copyright (C) 2020-2021, MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -45,23 +45,19 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &tenantDeleteCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "delete",
+		Use:     "delete <TENANTNAME> --namespace <TENANTNS>",
 		Short:   "Delete a MinIO tenant",
 		Long:    deleteDesc,
 		Example: deleteExample,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.validate(args); err != nil {
-				return err
-			}
-			if !c.force {
-				if !helpers.Ask(fmt.Sprintf("This will delete the Tenant %s and ALL its data. Do you want to proceed?", args[0])) {
-					return fmt.Errorf(Bold("Aborting Tenant deletion\n"))
-				}
-			}
-			return nil
+		Args: func(cmd *cobra.Command, args []string) error {
+			return c.validate(args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			klog.Info("delete tenant command started")
+			if !c.force {
+				if !helpers.Ask(fmt.Sprintf("This will delete the Tenant %s and ALL its data. Do you want to proceed", args[0])) {
+					return fmt.Errorf(Bold("Aborting Tenant deletion"))
+				}
+			}
 			err := c.run(args)
 			if err != nil {
 				klog.Warning(err)
@@ -72,8 +68,9 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
-	f.StringVarP(&c.ns, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&c.ns, "namespace", "n", "", "namespace scope for this request")
 	f.BoolVarP(&c.force, "force", "f", false, "force delete the tenant")
+	cmd.MarkFlagRequired("namespace")
 
 	return cmd
 }
@@ -83,10 +80,10 @@ func (d *tenantDeleteCmd) validate(args []string) error {
 		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant delete tenant1'")
 	}
 	if len(args) != 1 {
-		return errors.New("delete command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant delete tenant1'")
+		return errors.New("delete command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant delete tenant1 --namespace tenant1-ns'")
 	}
 	if args[0] == "" {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant delete tenant1'")
+		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant delete tenant1 --namespace tenant1-ns'")
 	}
 	// Tenant name should have DNS token restrictions
 	return helpers.CheckValidTenantName(args[0])
@@ -103,7 +100,12 @@ func (d *tenantDeleteCmd) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	return deleteTenant(oclient, kclient, d, args[0])
+	for _, arg := range args {
+		if err = deleteTenant(oclient, kclient, d, arg); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d *tenantDeleteCmd, name string) error {
@@ -111,33 +113,29 @@ func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d
 	if err != nil {
 		return err
 	}
+
 	if err := client.MinioV2().Tenants(d.ns).Delete(context.Background(), name, v1.DeleteOptions{}); err != nil {
 		return err
 	}
-	if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.CredsSecret.Name, metav1.DeleteOptions{}); err != nil {
-		return err
-	}
-	if len(tenant.Spec.Users) > 0 {
-		if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Users[0].Name, metav1.DeleteOptions{}); err != nil {
-			return err
-		}
-	}
 
-	fmt.Printf("Deleting MinIO Tenant %s\n", tenant.ObjectMeta.Name)
-	fmt.Printf("Deleting MinIO Tenant Credentials Secret %s\n", tenant.Spec.CredsSecret.Name)
+	fmt.Println("Deleting MinIO Tenant: ", name)
+
+	// Delete credentials secret, ignore any errors.
+	kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.CredsSecret.Name,
+		metav1.DeleteOptions{})
+
+	fmt.Println("Deleting MinIO Tenant Credentials Secret: ", tenant.Spec.CredsSecret.Name)
 
 	if tenant.HasConfigurationSecret() {
-		if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Configuration.Name, metav1.DeleteOptions{}); err != nil {
-			return err
-		}
-		fmt.Printf("Deleting MinIO Tenant Configuration Secret %s\n", tenant.Spec.Configuration.Name)
+		kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Configuration.Name,
+			metav1.DeleteOptions{})
+		fmt.Println("Deleting MinIO Tenant Configuration Secret: ", tenant.Spec.Configuration.Name)
 	}
 
-	if len(tenant.Spec.Users) > 0 {
-		fmt.Printf("Deleting MinIO Tenant Console Secret %s\n", tenant.Spec.Users[0].Name)
-		if err := kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), tenant.Spec.Users[0].Name, metav1.DeleteOptions{}); err != nil {
-			return err
-		}
+	// Delete all users, ignore any errors.
+	for _, user := range tenant.Spec.Users {
+		kclient.CoreV1().Secrets(d.ns).Delete(context.Background(), user.Name, metav1.DeleteOptions{})
+		fmt.Println("Deleting MinIO Tenant user: ", user.Name)
 	}
 
 	return nil

@@ -1,8 +1,5 @@
-//go:build go1.13
-// +build go1.13
-
 /*
- * Copyright (C) 2020, MinIO, Inc.
+ * Copyright (C) 2020-2021 MinIO, Inc.
  *
  * This code is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
@@ -45,7 +42,6 @@ import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
 	"github.com/minio/operator/pkg/controller/cluster"
-	prominformers "github.com/prometheus-operator/prometheus-operator/pkg/client/informers/externalversions"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeinformers "k8s.io/client-go/informers"
@@ -162,8 +158,6 @@ func main() {
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
-	promInformerFactory := prominformers.NewSharedInformerFactory(promClient, time.Second*30)
-
 	podName := os.Getenv("HOSTNAME")
 	if podName == "" {
 		podName = "operator-pod"
@@ -181,7 +175,6 @@ func main() {
 		kubeInformerFactory.Batch().V1().Jobs(),
 		minioInformerFactory.Minio().V2().Tenants(),
 		kubeInformerFactory.Core().V1().Services(),
-		promInformerFactory.Monitoring().V1().ServiceMonitors(),
 		hostsTemplate,
 		version,
 	)

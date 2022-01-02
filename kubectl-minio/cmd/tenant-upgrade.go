@@ -32,7 +32,6 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2"
 	"sigs.k8s.io/yaml"
 )
 
@@ -51,18 +50,17 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &upgradeCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:   "upgrade <string> --image <str>",
-		Short: "Upgrade MinIO image for existing tenant",
-		Long:  upgradeDesc,
+		Use:     "upgrade <TENANTNAME> --image <MINIO-IMAGE>",
+		Short:   "Upgrade MinIO image for existing tenant",
+		Long:    upgradeDesc,
+		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2021-12-27T07-23-18Z`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			return c.validate(args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := c.validate(args); err != nil {
-				return err
-			}
 			c.tenantOpts.Name = args[0]
-			klog.Info("upgrade tenant command started")
 			err := c.run()
 			if err != nil {
-				klog.Warning(err)
 				return err
 			}
 			return nil
@@ -71,7 +69,7 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
 	f.StringVarP(&c.tenantOpts.Image, "image", "i", "", "image to which tenant is to be upgraded")
-	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", "", "namespace scope for this request")
 	f.BoolVarP(&c.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	cmd.MarkFlagRequired("image")
@@ -103,6 +101,13 @@ func (u *upgradeCmd) run() error {
 		return err
 	}
 
+	if u.tenantOpts.NS == "" || u.tenantOpts.NS == helpers.DefaultNamespace {
+		u.tenantOpts.NS, err = getTenantNamespace(client, u.tenantOpts.Name)
+		if err != nil {
+			return err
+		}
+	}
+
 	imageSplits := strings.Split(u.tenantOpts.Image, ":")
 	if len(imageSplits) == 1 {
 		return fmt.Errorf("MinIO operator does not allow images without RELEASE tags")
@@ -111,18 +116,6 @@ func (u *upgradeCmd) run() error {
 	latest, err := miniov2.ReleaseTagToReleaseTime(imageSplits[1])
 	if err != nil {
 		return fmt.Errorf("Unsupported release tag, unable to apply requested update %w", err)
-	}
-
-	if u.tenantOpts.NS == "" || u.tenantOpts.NS == helpers.DefaultNamespace {
-		tenants, err := client.MinioV2().Tenants("").List(context.Background(), v1.ListOptions{})
-		if err != nil {
-			return err
-		}
-		for _, tenant := range tenants.Items {
-			if tenant.Name == u.tenantOpts.Name {
-				u.tenantOpts.NS = tenant.ObjectMeta.Namespace
-			}
-		}
 	}
 
 	t, err := client.MinioV2().Tenants(u.tenantOpts.NS).Get(context.Background(), u.tenantOpts.Name, v1.GetOptions{})
@@ -161,7 +154,7 @@ func (u *upgradeCmd) run() error {
 }
 
 func (u *upgradeCmd) upgradeTenant(client *operatorv1.Clientset, t *miniov2.Tenant, c, p string) error {
-	if helpers.Ask(fmt.Sprintf("Upgrade is a one way process. Are you sure to upgrade Tenant '%s/%s' from version %s to %s?", t.ObjectMeta.Name, t.ObjectMeta.Namespace, c, p)) {
+	if helpers.Ask(fmt.Sprintf("Upgrade is a one way process. Are you sure to upgrade Tenant '%s/%s' from version %s to %s", t.ObjectMeta.Name, t.ObjectMeta.Namespace, c, p)) {
 		fmt.Printf(Bold(fmt.Sprintf("\nUpgrading Tenant '%s/%s'\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace)))
 		// update the image
 		t.Spec.Image = u.tenantOpts.Image

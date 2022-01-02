@@ -20,7 +20,6 @@ package cmd
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -56,20 +55,14 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "delete",
-		Short:   "Delete MinIO Operator",
+		Short:   "Delete MinIO Operator and all MinIO tenants",
 		Long:    deleteDesc,
 		Example: deleteExample,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if !helpers.Ask("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator?") {
-				return fmt.Errorf(Bold("Aborting Operator deletion\n"))
-			}
-			return nil
-		},
+		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) != 0 {
-				return errors.New("delete command does not accept arguments")
+			if !helpers.Ask("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator, this is not a reversible operation") {
+				return fmt.Errorf(Bold("Aborting Operator deletion"))
 			}
-			klog.Info("delete command started")
 			err := o.run(out)
 			if err != nil {
 				klog.Warning(err)
