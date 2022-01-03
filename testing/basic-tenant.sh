@@ -68,7 +68,7 @@ while true; do
   sleep 5
   totalwait=$((totalwait + 5))
   if [ "$totalwait" -gt 305 ]; then
-    echo "Tenant never created statefulset after 5 minutes"
+    echo "Unable to create tenant after 5 minutes, exiting."
     try false
   fi
 done
