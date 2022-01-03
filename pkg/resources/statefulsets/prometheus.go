@@ -216,6 +216,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 					"-R",
 					fmt.Sprintf("%s:%s", strconv.FormatInt(*securityContext.RunAsUser, 10), strconv.FormatInt(*securityContext.RunAsGroup, 10)),
 					"/prometheus",
+					"||", "true", // make sure we do not fail if init container fails.
 				},
 				SecurityContext: &initContainerSecurityContext,
 				VolumeMounts:    prometheusVolumeMounts(t),

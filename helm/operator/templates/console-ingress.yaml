@@ -17,6 +17,9 @@ metadata:
   annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
 spec:
+  {{- if .Values.console.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.console.ingress.ingressClassName }}
+  {{- end }}
   {{- if .Values.console.ingress.tls }}
   tls:
     {{- range .Values.console.ingress.tls }}
