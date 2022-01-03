@@ -33,7 +33,7 @@ try kubectl apply -k ../examples/kustomization/tenant-lite
 echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"
 waitdone=0
 totalwait=0
-while :; do
+while true; do
   waitdone=$(kubectl -n tenant-lite get pods -o json | jq '.items | length')
   if [ "$waitdone" -ne 0 ]; then
     echo "Found $waitdone pods"
