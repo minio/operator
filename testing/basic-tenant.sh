@@ -59,7 +59,7 @@ echo "Build passes basic tenant creation"
 
 waitdone=0
 totalwait=0
-while :; do
+while true; do
   waitdone=$(kubectl -n tenant-lite get pods -o json | jq '.items | length')
   if [ "$waitdone" -ne 0 ]; then
     echo "Found $waitdone pods"
