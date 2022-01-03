@@ -219,6 +219,7 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 								"-R",
 								fmt.Sprintf("%s:%s", strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsUser, 10), strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsGroup, 10)),
 								"/var/lib/postgresql/data",
+								"||", "true",
 							},
 							SecurityContext: &initContainerSecurityContext,
 							VolumeMounts:    logVolumeMounts(t),
