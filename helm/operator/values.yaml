@@ -49,6 +49,7 @@ console:
     runAsNonRoot: true
   ingress:
     enabled: false
+    ingressClassName: ""
     labels: { }
     annotations: { }
     tls: [ ]
