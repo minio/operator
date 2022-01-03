@@ -10,6 +10,7 @@ die() {
   yell "$*"
   (kind delete cluster || true ) && exit 111
 }
+
 try() { "$@" || die "cannot $*"; }
 
 try kind create cluster --config kind-config.yaml
