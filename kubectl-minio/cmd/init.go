@@ -87,7 +87,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&o.operatorOpts.TenantConsoleImage, "default-console-image", "", "default tenant Console image")
 	f.StringVar(&o.operatorOpts.TenantKesImage, "default-kes-image", "", "default tenant KES image")
 	f.StringVar(&o.operatorOpts.PrometheusNamespace, "prometheus-namespace", "", "namespace of the prometheus managed by prometheus-operator")
-	f.StringVar(&o.operatorOpts.PrometheusNamespace, "prometheus-name", "", "name of the prometheus managed by prometheus-operator")
+	f.StringVar(&o.operatorOpts.PrometheusName, "prometheus-name", "", "name of the prometheus managed by prometheus-operator")
 	f.BoolVarP(&o.output, "output", "o", false, "dry run this command and generate requisite yaml")
 
 	return cmd
