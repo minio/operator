@@ -5,6 +5,7 @@
 #set -e
 
 yell() { echo "$0: $*" >&2; }
+
 die() {
   yell "$*"
   (kind delete cluster || true ) && exit 111
