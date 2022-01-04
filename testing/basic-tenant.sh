@@ -1,8 +1,20 @@
 #!/bin/bash
 
-# This script requires: kubectl, kind, jq
+# Copyright (C) 2022, MinIO, Inc.
+#
+# This code is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License, version 3,
+# as published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License, version 3,
+# along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-#set -e
+# This script requires: kubectl, kind
 
 yell() { echo "$0: $*" >&2; }
 
@@ -36,7 +48,7 @@ echo "Waiting for the tenant statefulset, this indicates the tenant is being ful
 waitdone=0
 totalwait=0
 while true; do
-  waitdone=$(kubectl -n tenant-lite get pods -o json | jq '.items | length')
+  waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=storage-lite --no-headers | wc -l)
   if [ "$waitdone" -ne 0 ]; then
     echo "Found $waitdone pods"
     break
