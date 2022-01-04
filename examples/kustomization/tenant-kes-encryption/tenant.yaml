@@ -7,7 +7,7 @@ spec:
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   kes:
-    image: "" # minio/kes:v0.16.1
+    image: "" # minio/kes:v0.17.5
     replicas: 2
     kesSecret:
       name: kes-configuration
@@ -40,15 +40,15 @@ spec:
     clientCertSecret: null
     ## Key name to be created on the KMS, default is "my-minio-key"
     keyName: ""
-    resources: {}
-    nodeSelector: {}
+    resources: { }
+    nodeSelector: { }
     affinity:
-      nodeAffinity: {}
-      podAffinity: {}
-      podAntiAffinity: {}
-    tolerations: []
-    annotations: {}
-    labels: {}
+      nodeAffinity: { }
+      podAffinity: { }
+      podAntiAffinity: { }
+    tolerations: [ ]
+    annotations: { }
+    labels: { }
     serviceAccountName: ""
     securityContext:
       runAsUser: 1000
