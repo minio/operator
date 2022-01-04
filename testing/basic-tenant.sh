@@ -52,7 +52,7 @@ done
 echo "Waiting for tenant pods to come online (5m timeout)"
 try kubectl wait --namespace tenant-lite \
   --for=condition=ready pod \
-  --selector="v1.min.io/tenant=tenant-lite" \
+  --selector="v1.min.io/tenant=storage-lite" \
   --timeout=300s
 
 echo "Build passes basic tenant creation"
@@ -62,7 +62,7 @@ echo "Build passes basic tenant creation"
 waitdone=0
 totalwait=0
 while true; do
-  waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=tenant-lite --no-headers | wc -l)
+  waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=storage-lite --no-headers | wc -l)
   if [ "$waitdone" -ne 0 ]; then
     echo "Found $waitdone pods"
     break
