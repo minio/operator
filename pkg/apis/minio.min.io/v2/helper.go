@@ -51,6 +51,7 @@ import (
 	"github.com/minio/madmin-go"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/s3utils"
 )
 
 // Webhook API constants
@@ -792,11 +793,21 @@ func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets []Bucket) erro
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	for _, bucket := range buckets {
-		err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{Region: bucket.Region, ObjectLocking: bucket.ObjectLocking})
-		if err != nil {
-			return fmt.Errorf("Bucket creation failed %s error %s", bucket.Name, err.Error())
+		if s3utils.CheckValidBucketName(bucket.Name) != nil {
+			return fmt.Errorf("The specified bucket %s is not valid.", bucket.Name)
 		}
-		klog.Infof("Successfully created bucket %s", bucket.Name)
+		if err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{Region: bucket.Region, ObjectLocking: bucket.ObjectLocking}); err != nil {
+			// Check to see if we already own this bucket (which happens if you run this twice)
+			exists, errBucketExists := minioClient.BucketExists(ctx, bucket.Name)
+			if errBucketExists == nil && exists {
+				klog.Infof("Bucket %s already exist", bucket.Name)
+				continue
+			} else {
+				return fmt.Errorf("Bucket creation failed %s error %s", bucket.Name, err.Error())
+			}
+		} else {
+			klog.Infof("Successfully created bucket %s", bucket.Name)
+		}
 	}
 	return nil
 }

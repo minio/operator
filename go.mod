@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.3.0
 	github.com/minio/madmin-go v1.1.23
+	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/minio/minio-go/v7 v7.0.20
 	github.com/minio/pkg v1.1.11
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.46.0
