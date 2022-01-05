@@ -67,6 +67,13 @@ function check_tenant_status() {
 	fi
     done
 
+    echo "Waiting for pods to be ready."
+
+    try kubectl wait --namespace $1 \
+        --for=condition=ready pod \
+        --selector=v1.min.io/tenant=$2 \
+        --timeout=120s
+
     echo "Tenant is created successfully, proceeding to validate 'mc admin info minio/'"
 
     kubectl run admin-mc -i --tty --image minio/mc --command -- bash -c "until (mc alias set minio/ https://minio.$1.svc.cluster.local $3 $4); do echo \"...waiting... for 5secs\" && sleep 5; done; mc admin info minio/;"
