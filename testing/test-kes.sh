@@ -116,7 +116,8 @@ function test_kes_tenant() {
   MINIO_ACCESS_KEY=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g')
   MINIO_ROOT_PASSWORD=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g')
 
-  try mc config host add kestest https://localhost:9000 $MINIO_ACCESS_KEY $MINIO_ROOT_PASSWORD --insecure
+
+  until (mc config host add kestest https://localhost:9000 $MINIO_ACCESS_KEY $MINIO_ROOT_PASSWORD --insecure); do echo \"...waiting... for 5secs\" && sleep 5; done;
   try mc admin kms key status kestest --insecure
 }
 
