@@ -40,15 +40,15 @@ spec:
     clientCertSecret: null
     ## Key name to be created on the KMS, default is "my-minio-key"
     keyName: ""
-    resources: {}
-    nodeSelector: {}
+    resources: { }
+    nodeSelector: { }
     affinity:
-      nodeAffinity: {}
-      podAffinity: {}
-      podAntiAffinity: {}
-    tolerations: []
-    annotations: {}
-    labels: {}
+      nodeAffinity: { }
+      podAffinity: { }
+      podAntiAffinity: { }
+    tolerations: [ ]
+    annotations: { }
+    labels: { }
     serviceAccountName: ""
     securityContext:
       runAsUser: 1000

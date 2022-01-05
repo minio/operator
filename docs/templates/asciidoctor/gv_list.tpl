@@ -7,8 +7,8 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2021-12-27T07-23-18Z]
-:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:v0.16.1]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2022-01-04T07-41-07Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:v0.17.5]
 :prometheus-image: https://quay.io/prometheus/prometheus:latest[prometheus/prometheus:latest]
 :logsearch-image: https://hub.docker.com/r/minio/logsearchapi/tags[minio/logsearchapi:v4.3.8]
 :postgres-image: https://github.com/docker-library/postgres[library/postgres]
