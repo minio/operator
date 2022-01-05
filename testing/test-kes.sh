@@ -108,7 +108,7 @@ function test_kes_tenant() {
 
   echo $CREDENTIALS
 
-  check_tenant_status default kes-tenant console console123
+  check_tenant_status default kes-tenant
 
   echo "Port Forwarding tenant"
   try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=fifth | grep -v NAME | awk '{print $1}' | head -1) 9000 &

@@ -63,7 +63,7 @@ function main() {
 
     install_tenant
 
-    check_tenant_status tenant-lite storage-lite minio minio123
+    check_tenant_status tenant-lite storage-lite
 
     destroy_kind
 }
