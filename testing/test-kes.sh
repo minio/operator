@@ -114,10 +114,21 @@ function test_kes_tenant() {
   try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=kes-tenant | grep -v NAME | awk '{print $1}' | head -1) 9000 &
 
   MINIO_ACCESS_KEY=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g')
-  MINIO_ROOT_PASSWORD=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g')
+  MINIO_SECRET_KEY=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g')
 
+  echo "We got $MINIO_ACCESS_KEY and $MINIO_ROOT_PASSWORD"
 
-  until (mc config host add kestest https://localhost:9000 $MINIO_ACCESS_KEY $MINIO_ROOT_PASSWORD --insecure); do echo \"...waiting... for 5secs\" && sleep 5; done;
+  totalwait=0
+  until (mc config host add kestest https://localhost:9000 $MINIO_ACCESS_KEY $MINIO_SECRET_KEY --insecure); do
+    echo "...waiting... for 5secs" && sleep 5
+
+    totalwait=$((totalwait + 5))
+    	if [ "$totalwait" -gt 305 ]; then
+    	    echo "Unable to register mc tenant after 5 minutes, exiting."
+    	    try false
+    	fi
+
+  done;
   try mc admin kms key status kestest --insecure
 }
 
