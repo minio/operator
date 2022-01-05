@@ -111,9 +111,12 @@ function test_kes_tenant() {
   check_tenant_status default kes-tenant
 
   echo "Port Forwarding tenant"
-  try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=fifth | grep -v NAME | awk '{print $1}' | head -1) 9000 &
+  try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=kes-tenant | grep -v NAME | awk '{print $1}' | head -1) 9000 &
 
-  try mc config host add kestest https://localhost:9000 console console123 --insecure
+  MINIO_ACCESS_KEY=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g')
+  MINIO_ROOT_PASSWORD=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g')
+
+  try mc config host add kestest https://localhost:9000 $MINIO_ACCESS_KEY $MINIO_ROOT_PASSWORD --insecure
   try mc admin kms key status kestest --insecure
 }
 
