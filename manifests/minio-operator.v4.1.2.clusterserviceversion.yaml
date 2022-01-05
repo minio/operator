@@ -76,12 +76,12 @@ metadata:
     capabilities: "Full Lifecycle"
     categories: "Storage, Big Data, AI/Machine Learning"
     certified: "false"
-    containerImage: "minio/operator:v4.3.8"
+    containerImage: "minio/operator:v4.4.0"
     createdAt: 2021-03-17 00:00:00 +00:00
     description: " MinIO Operator allows creating distributed MinIO Clusters and manage their lifecycle"
     repository: "https://github.com/minio/operator"
     support: "MinIO, Inc."
-  name: minio-operator.v4.3.8
+  name: minio-operator.v4.4.0
   namespace: placeholder
 spec:
   customresourcedefinitions:
@@ -182,7 +182,7 @@ spec:
                   app: minio-operator
               spec:
                 containers:
-                  - image: "docker.io/minio/operator:v4.3.8"
+                  - image: "docker.io/minio/operator:v4.4.0"
                     name: minio-operator
                 serviceAccountName: minio-operator
       permissions:

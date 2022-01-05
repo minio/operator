@@ -150,7 +150,7 @@ const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.3.8"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.4.0"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres:13"
