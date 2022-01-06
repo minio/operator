@@ -105,6 +105,7 @@ const (
 	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server"
 	StatusProvisioningPrometheusStatefulSet  = "Provisioning Prometheus server"
 	StatusProvisioningInitialUsers           = "Provisioning initial users"
+	StatusProvisioningDefaultBuckets         = "Provisioning default buckets"
 	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
 	StatusWaitingForLogSearchReadyState      = "Waiting for Log Search Pods to be ready"
 	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"
@@ -1270,6 +1271,14 @@ func (c *Controller) syncHandler(key string) error {
 	if !tenant.Status.ProvisionedUsers {
 		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO users: %v", err)
+			return err
+		}
+	}
+
+	// Ensure we are only creating the bucket once using the console user
+	if !tenant.Status.ProvisionedBuckets && tenant.Status.ProvisionedUsers {
+		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
+			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
 			return err
 		}
 	}

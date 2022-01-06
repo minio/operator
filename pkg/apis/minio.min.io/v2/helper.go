@@ -24,6 +24,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -48,7 +49,9 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/minio/madmin-go"
+	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/s3utils"
 )
 
 // Webhook API constants
@@ -653,22 +656,9 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 
 // NewMinIOAdminForAddress initializes a new madmin.Client for operator interaction
 func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string][]byte) (*madmin.AdminClient, error) {
-	host := address
-	if host == "" {
-		host = t.MinIOServerHostAddress()
-		if host == "" {
-			return nil, errors.New("MinIO server host is empty")
-		}
-	}
-
-	accessKey, ok := minioSecret["accesskey"]
-	if !ok {
-		return nil, errors.New("MinIO server accesskey not set")
-	}
-
-	secretKey, ok := minioSecret["secretkey"]
-	if !ok {
-		return nil, errors.New("MinIO server secretkey not set")
+	host, accessKey, secretKey, err := t.getMinIOTenantDetails(address, minioSecret)
+	if err != nil {
+		return nil, err
 	}
 
 	opts := &madmin.Options{
@@ -687,6 +677,82 @@ func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string]
 	}
 
 	return madmClnt, nil
+}
+
+func (t *Tenant) getMinIOTenantDetails(address string, minioSecret map[string][]byte) (string, []byte, []byte, error) {
+	host := address
+	if host == "" {
+		host = t.MinIOServerHostAddress()
+		if host == "" {
+			return "", nil, nil, errors.New("MinIO server host is empty")
+		}
+	}
+
+	accessKey, ok := minioSecret["accesskey"]
+	if !ok {
+		return "", nil, nil, errors.New("MinIO server accesskey not set")
+	}
+
+	secretKey, ok := minioSecret["secretkey"]
+	if !ok {
+		return "", nil, nil, errors.New("MinIO server secretkey not set")
+	}
+	return host, accessKey, secretKey, nil
+}
+
+// NewMinIOUser initializes a new console user
+func (t *Tenant) NewMinIOUser(userCredentialSecrets []*corev1.Secret, caContent []byte) (*minio.Client, error) {
+	return t.NewMinIOUserForAddress("", userCredentialSecrets, caContent)
+}
+
+// NewMinIOUserForAddress initializes a new console user
+func (t *Tenant) NewMinIOUserForAddress(address string, userCredentialSecrets []*corev1.Secret, caContent []byte) (*minio.Client, error) {
+	host := address
+	if host == "" {
+		host = t.MinIOServerHostAddress()
+		if host == "" {
+			return nil, errors.New("MinIO server host is empty")
+		}
+	}
+	consoleAccessKey, ok := userCredentialSecrets[0].Data["CONSOLE_ACCESS_KEY"]
+	if !ok {
+		return nil, errors.New("CONSOLE_ACCESS_KEY not provided")
+	}
+	// remove spaces and line breaks from access key
+	userAccessKey := strings.TrimSpace(string(consoleAccessKey))
+	consoleSecretKey, ok := userCredentialSecrets[0].Data["CONSOLE_SECRET_KEY"]
+	// remove spaces and line breaks from secret key
+	userSecretKey := strings.TrimSpace(string(consoleSecretKey))
+	if !ok {
+		return nil, errors.New("CONSOLE_SECRET_KEY not provided")
+	}
+
+	rootCAs := mustGetSystemCertPool()
+	rootCAs.AppendCertsFromPEM(caContent)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{},
+	}
+	tr.TLSClientConfig.RootCAs = rootCAs
+	opts := &minio.Options{
+		Transport: tr,
+		Secure:    t.TLS(),
+		Creds:     credentials.NewStaticV4(userAccessKey, userSecretKey, ""),
+	}
+
+	minioClnt, err := minio.New(host, opts)
+	if err != nil {
+		return nil, err
+	}
+	return minioClnt, nil
+}
+
+// mustGetSystemCertPool - return system CAs or empty pool in case of error (or windows)
+func mustGetSystemCertPool() *x509.CertPool {
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		return x509.NewCertPool()
+	}
+	return pool
 }
 
 // CreateUsers creates a list of admin users on MinIO, optionally creating users is disabled.
@@ -716,6 +782,31 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 		}
 		if err := madmClnt.SetPolicy(ctx, ConsoleAdminPolicyName, userAccessKey, false); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// CreateBuckets creates buckets and skips if bucket already present
+func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets []Bucket) error {
+	// create buckets with a 20 seconds timeout
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
+	for _, bucket := range buckets {
+		if s3utils.CheckValidBucketName(bucket.Name) != nil {
+			return fmt.Errorf("The specified bucket %s is not valid.", bucket.Name)
+		}
+		if err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{Region: bucket.Region, ObjectLocking: bucket.ObjectLocking}); err != nil {
+			// Check to see if we already own this bucket (which happens if you run this twice)
+			exists, errBucketExists := minioClient.BucketExists(ctx, bucket.Name)
+			if errBucketExists == nil && exists {
+				klog.Infof("Bucket %s already exist", bucket.Name)
+				continue
+			} else {
+				return fmt.Errorf("Bucket creation failed %s error %s", bucket.Name, err.Error())
+			}
+		} else {
+			klog.Infof("Successfully created bucket %s", bucket.Name)
 		}
 	}
 	return nil

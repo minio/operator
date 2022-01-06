@@ -27,6 +27,14 @@ spec:
   ## Secret should follow the format used in `minio-creds-secret`.
   users:
     - name: storage-user
+  ## Create buckets using the console user
+  # buckets:
+  #   - name: "test-bucket1"
+  #     region: "us-east-1"
+  #     objectLock: true
+  #   - name: "test-bucket2"
+  #     region: "us-east-1"
+  #     objectLock: true
   ## This field is used only when "requestAutoCert" is set to true. Use this field to set CommonName
   ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is
   ## not provided. DNS name format is *.minio.default.svc.cluster.local
