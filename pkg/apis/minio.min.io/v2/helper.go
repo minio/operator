@@ -541,8 +541,8 @@ func (t *Tenant) HasPrometheusEnabled() bool {
 	return t.Spec.Prometheus != nil
 }
 
-// HasPrometheusSMEnabled checks if Prometheus service monitor has been enabled
-func (t *Tenant) HasPrometheusSMEnabled() bool {
+// HasPrometheusOperatorEnabled checks if Prometheus service monitor has been enabled
+func (t *Tenant) HasPrometheusOperatorEnabled() bool {
 	return t.Spec.PrometheusOperator
 }
 
