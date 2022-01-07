@@ -1254,7 +1254,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if tenant.HasPrometheusSMEnabled() {
+	if tenant.HasPrometheusOperatorEnabled() {
 		err := c.checkAndCreatePrometheusAddlConfig(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
 			return err

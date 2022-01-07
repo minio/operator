@@ -1888,8 +1888,6 @@ spec:
                     type: string
                   initimage:
                     type: string
-                  jobName:
-                    type: string
                   labels:
                     additionalProperties:
                       type: string
@@ -6509,8 +6507,6 @@ spec:
                   image:
                     type: string
                   initimage:
-                    type: string
-                  jobName:
                     type: string
                   labels:
                     additionalProperties:
