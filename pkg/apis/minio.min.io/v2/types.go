@@ -760,6 +760,10 @@ type PrometheusConfig struct {
 	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+
+	// Specify the Prometheus Job Name
+	// +optional
+	JobName string `json:"jobName,omitempty"`
 }
 
 // LogDbConfig (`db`) defines the configuration of the PostgreSQL StatefulSet deployed to support the MinIO LogSearch API. +

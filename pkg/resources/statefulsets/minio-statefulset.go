@@ -102,6 +102,9 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 		}, corev1.EnvVar{
 			Name:  "MINIO_OPERATOR_VERSION",
 			Value: opVersion,
+		}, corev1.EnvVar{
+			Name:  "MINIO_PROMETHEUS_JOB_ID",
+			Value: t.PrometheusConfigJobName(),
 		})
 
 	// Enable Bucket DNS only if asked for by default turned off
