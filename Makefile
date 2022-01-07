@@ -73,8 +73,8 @@ plugin: regen-crd
 	@(cd $(PLUGIN_HOME); \
 		go vet ./... && \
 		go test -race ./... && \
-		GO111MODULE=on golangci-lint cache clean && \
-		GO111MODULE=on golangci-lint run --timeout=5m --config ../.golangci.yml)
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml)
 
 .PHONY: logsearchapi
 logsearchapi:
@@ -82,8 +82,8 @@ logsearchapi:
 	@(cd $(LOGSEARCHAPI); \
 		go vet ./... && \
 		go test -race ./... && \
-		GO111MODULE=on golangci-lint cache clean && \
-		GO111MODULE=on golangci-lint run --timeout=5m --config ../.golangci.yml && \
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
+		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
 		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o $(LOGSEARCHAPI)_amd64 && \
 		docker buildx build --output=type=docker --platform linux/amd64 -t $(LOGSEARCHAPI_TAG) .)
 
