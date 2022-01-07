@@ -31,7 +31,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/version"
 
-	minio "github.com/minio/minio-go/v7"
 	"github.com/minio/pkg/env"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -294,17 +293,9 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 		klog.Errorf("Error instantiating madmin: %v", err.Error())
 	}
 
-	skipCreateUsers := false
 	// configuration that means MinIO is running with LDAP enabled
 	// and we need to skip the console user creation
-	for _, env := range tenant.GetEnvVars() {
-		if env.Name == "MINIO_IDENTITY_LDAP_SERVER_ADDR" && env.Value != "" {
-			skipCreateUsers = true
-			break
-		}
-	}
-
-	if err := tenant.CreateUsers(adminClnt, userCredentials, skipCreateUsers); err != nil {
+	if err := tenant.CreateUsers(adminClnt, userCredentials); err != nil {
 		klog.V(2).Infof("Unable to create MinIO users: %v", err)
 		return err
 	}
@@ -317,21 +308,8 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 }
 
 func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) error {
-	var buckets []miniov2.Bucket
-	buckets = append(buckets, tenant.Spec.Buckets...)
-	// configuration that means MinIO is running with LDAP enabled
-	// and we need to skip the default bucket creation
-	var ldapEnabled bool
-	var minioClnt *minio.Client
-	for _, env := range tenant.GetEnvVars() {
-		if env.Name == "MINIO_IDENTITY_LDAP_SERVER_ADDR" && env.Value != "" {
-			ldapEnabled = true
-			break
-		}
-	}
-
 	// Skip default bucket creation for ldap setup
-	if !ldapEnabled {
+	if !tenant.IsLDAPEnabled() && len(tenant.Spec.Buckets) > 0 {
 		if _, err := c.updateTenantStatus(ctx, tenant, StatusProvisioningDefaultBuckets, 0); err != nil {
 			return err
 		}
@@ -348,13 +326,13 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 		}
 
 		// Create bucket using the console user
-		minioClnt, err = tenant.NewMinIOUser(userCredentials, caContent)
+		minioClnt, err := tenant.NewMinIOUser(userCredentials, caContent)
 		if err != nil {
 			// show the error and continue
 			klog.Errorf("Error instantiating minio Client: %v", err.Error())
 		}
 
-		if err := tenant.CreateBuckets(minioClnt, buckets); err != nil {
+		if err := tenant.CreateBuckets(minioClnt, tenant.Spec.Buckets...); err != nil {
 			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
 			return err
 		}

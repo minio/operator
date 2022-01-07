@@ -755,8 +755,20 @@ func mustGetSystemCertPool() *x509.CertPool {
 	return pool
 }
 
+// IsLDAPEnabled ldap enabled
+func (t *Tenant) IsLDAPEnabled() bool {
+	for _, env := range t.GetEnvVars() {
+		if env.Name == "MINIO_IDENTITY_LDAP_SERVER_ADDR" && env.Value != "" {
+			return true
+		}
+	}
+	return false
+}
+
 // CreateUsers creates a list of admin users on MinIO, optionally creating users is disabled.
-func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
+func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret) error {
+	skipCreateUser := t.IsLDAPEnabled() // Skip creating users if LDAP is enabled.
+
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
@@ -788,26 +800,25 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 }
 
 // CreateBuckets creates buckets and skips if bucket already present
-func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets []Bucket) error {
-	// create buckets with a 20 seconds timeout
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
-	defer cancel()
+func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) error {
 	for _, bucket := range buckets {
-		if s3utils.CheckValidBucketName(bucket.Name) != nil {
-			return fmt.Errorf("The specified bucket %s is not valid.", bucket.Name)
+		if err := s3utils.CheckValidBucketName(bucket.Name); err != nil {
+			return err
 		}
-		if err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{Region: bucket.Region, ObjectLocking: bucket.ObjectLocking}); err != nil {
-			// Check to see if we already own this bucket (which happens if you run this twice)
-			exists, errBucketExists := minioClient.BucketExists(ctx, bucket.Name)
-			if errBucketExists == nil && exists {
-				klog.Infof("Bucket %s already exist", bucket.Name)
+		// create each bucket with a 20 seconds timeout
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+		defer cancel()
+		if err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{
+			Region:        bucket.Region,
+			ObjectLocking: bucket.ObjectLocking,
+		}); err != nil {
+			switch minio.ToErrorResponse(err).Code {
+			case "BucketAlreadyOwnedByYou", "BucketAlreadyExists":
+				klog.Infof(err.Error())
 				continue
-			} else {
-				return fmt.Errorf("Bucket creation failed %s error %s", bucket.Name, err.Error())
 			}
-		} else {
-			klog.Infof("Successfully created bucket %s", bucket.Name)
 		}
+		klog.Infof("Successfully created bucket %s", bucket.Name)
 	}
 	return nil
 }

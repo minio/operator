@@ -212,15 +212,12 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 				if t.Spec.Log.Db.InitImage != "" {
 					initContainers = []corev1.Container{
 						{
-							Name:  "postgres-init-chown-data",
-							Image: t.Spec.Log.Db.InitImage,
-							Command: []string{
-								"sh",
+							Name:    "postgres-init-chown-data",
+							Image:   t.Spec.Log.Db.InitImage,
+							Command: []string{"sh"},
+							Args: []string{
 								"-c",
-								fmt.Sprintf("chown -R %s:%s /var/lib/postgresql/data || true",
-									strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsUser, 10),
-									strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsGroup, 10),
-								),
+								fmt.Sprintf(`echo -e '#!/bin/sh\n\nchown -vR %s:%s /var/lib/postgresql/data || true\n' > /tmp/chown.sh && echo "ok" && chmod +x /tmp/chown.sh && /tmp/chown.sh`, strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsUser, 10), strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsGroup, 10)),
 							},
 							SecurityContext: &initContainerSecurityContext,
 							VolumeMounts:    logVolumeMounts(t),

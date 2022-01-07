@@ -209,12 +209,12 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 		}
 		initContainers = []corev1.Container{
 			{
-				Name:  "prometheus-init-chown-data",
-				Image: t.Spec.Prometheus.InitImage,
-				Command: []string{
-					"sh",
+				Name:    "prometheus-init-chown-data",
+				Image:   t.Spec.Prometheus.InitImage,
+				Command: []string{"sh"},
+				Args: []string{
 					"-c",
-					fmt.Sprintf("chown -R %s:%s /prometheus || true", strconv.FormatInt(*securityContext.RunAsUser, 10), strconv.FormatInt(*securityContext.RunAsGroup, 10)),
+					fmt.Sprintf(`echo -e '#!/bin/sh\n\nchown -vR %s:%s /prometheus || true\n' > /tmp/chown.sh && echo "ok" && chmod +x /tmp/chown.sh && /tmp/chown.sh`, strconv.FormatInt(*securityContext.RunAsUser, 10), strconv.FormatInt(*securityContext.RunAsGroup, 10)),
 				},
 				SecurityContext: &initContainerSecurityContext,
 				VolumeMounts:    prometheusVolumeMounts(t),
