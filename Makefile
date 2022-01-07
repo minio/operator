@@ -31,15 +31,16 @@ getdeps:
 
 verify: getdeps govet gotest lint
 
-build: regen-crd verify plugin
+operator:
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator
 	@docker build -t $(TAG) .
+
+build: regen-crd verify plugin operator
 
 install: all
 
 lint:
 	@echo "Running $@ check"
-	@GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean
 	@GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ./.golangci.yml
 
 govet:
