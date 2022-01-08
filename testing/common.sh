@@ -34,8 +34,10 @@ function install_operator() {
     echo "Compiling Current Branch Operator"
     (cd "${SCRIPT_DIR}/.." && make) # will not change your shell's current directory
 
-    echo "Installing Current Operator"
+    echo "print kustomize version"
+    kustomize version
 
+    echo "Installing Current Operator"
     # TODO: Compile the current branch and create an overlay to use that image version
     try kubectl apply -k "${SCRIPT_DIR}/../resources"
 
