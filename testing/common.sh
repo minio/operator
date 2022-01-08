@@ -39,7 +39,8 @@ function install_operator() {
 
     echo "Installing Current Operator"
     # TODO: Compile the current branch and create an overlay to use that image version
-    try kubectl apply -k "${SCRIPT_DIR}/../resources"
+    # dev contains the patch for dev image
+    try kubectl apply -k "${SCRIPT_DIR}/../resources/dev"
 
     # I will remove this line, just want to print the image version we are using for debugging
     echo "pods images"
