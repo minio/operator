@@ -39,6 +39,10 @@ function install_operator() {
     # TODO: Compile the current branch and create an overlay to use that image version
     try kubectl apply -k "${SCRIPT_DIR}/../resources"
 
+    # I will remove this line, just want to print the image version we are using for debugging
+    echo "pods images"
+    kubectl describe pods -n minio-operator | grep Image
+
     echo "Waiting for k8s api"
     sleep 10
     echo "Waiting for Operator Pods to come online (2m timeout)"
