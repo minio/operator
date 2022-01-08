@@ -4,4 +4,4 @@ kind: Kustomization
 
 resources:
   - crds/minio.min.io_tenants.yaml
-
+  - deployment.yaml
