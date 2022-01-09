@@ -11,7 +11,6 @@ resources:
   - service-account.yaml
   - cluster-role.yaml
   - cluster-role-binding.yaml
-  - crds/
   - service.yaml
   - deployment.yaml
   - console-ui.yaml
