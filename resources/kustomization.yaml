@@ -13,5 +13,4 @@ resources:
   - base/cluster-role-binding.yaml
   - base/crds/minio.min.io_tenants.yaml
   - base/service.yaml
-  - base/deployment.yaml
   - base/console-ui.yaml
