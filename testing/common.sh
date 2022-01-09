@@ -37,6 +37,10 @@ function install_operator() {
     echo "print kustomize version"
     kustomize version
 
+    echo 'start - load compiled image'
+    kind load docker-image docker.io/minio/operator:dev
+    echo 'end - load compiled image'
+
     echo "Installing Current Operator"
     # TODO: Compile the current branch and create an overlay to use that image version
     # dev contains the patch for dev image
