@@ -34,34 +34,27 @@ function install_operator() {
     echo "Compiling Current Branch Operator"
     (cd "${SCRIPT_DIR}/.." && make) # will not change your shell's current directory
 
-    echo "print kustomize version"
-    kustomize version
-
-    echo 'start - load compiled image'
+    echo 'start - load compiled image so we can pull it later on'
     kind load docker-image docker.io/minio/operator:dev
-    echo 'end - load compiled image'
+    echo 'end - load compiled image so we can pull it later on'
 
     echo "Installing Current Operator"
-    # TODO: Compile the current branch and create an overlay to use that image version
-    # dev contains the patch for dev image
+    # Created an overlay to use that image version from dev folder
     try kubectl apply -k "${SCRIPT_DIR}/../resources/dev"
 
-    # I will remove this line, just want to print the image version we are using for debugging
-    echo "pods images"
-    kubectl describe pods -n minio-operator | grep Image
-
     echo "Waiting for k8s api"
-    
-    # This is just for testing, I want to see the Failed to pull image message
-    sleep 130
-    kubectl get pods --namespace minio-operator
+    sleep 10
 
     echo "Waiting for Operator Pods to come online (2m timeout)"
-
     try kubectl wait --namespace minio-operator \
-	--for=condition=ready pod \
-	--selector=name=minio-operator \
-	--timeout=120s
+    --for=condition=ready pod \
+    --selector=name=minio-operator \
+    --timeout=120s
+
+    echo "start - get data to verify proper image is being used"
+    kubectl get pods --namespace minio-operator
+    kubectl describe pods -n minio-operator | grep Image
+    echo "end - get data to verify proper image is being used"
 }
 
 function destroy_kind() {
@@ -74,17 +67,17 @@ function check_tenant_status() {
     waitdone=0
     totalwait=0
     while true; do
-	waitdone=$(kubectl -n $1 get pods -l v1.min.io/tenant=$2 --no-headers | wc -l)
-	if [ "$waitdone" -ne 0 ]; then
-	    echo "Found $waitdone pods"
-	    break
-	fi
-	sleep 5
-	totalwait=$((totalwait + 5))
-	if [ "$totalwait" -gt 305 ]; then
-	    echo "Unable to create tenant after 5 minutes, exiting."
-	    try false
-	fi
+    waitdone=$(kubectl -n $1 get pods -l v1.min.io/tenant=$2 --no-headers | wc -l)
+    if [ "$waitdone" -ne 0 ]; then
+        echo "Found $waitdone pods"
+        break
+    fi
+    sleep 5
+    totalwait=$((totalwait + 5))
+    if [ "$totalwait" -gt 305 ]; then
+        echo "Unable to create tenant after 5 minutes, exiting."
+        try false
+    fi
     done
 
     echo "Waiting for pods to be ready. (5m timeout)"
