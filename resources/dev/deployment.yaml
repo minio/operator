@@ -18,11 +18,6 @@ spec:
         - name: minio-operator
           image: minio/operator:dev
           imagePullPolicy: IfNotPresent
-          resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
-              ephemeral-storage: 500Mi
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
