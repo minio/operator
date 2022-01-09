@@ -45,6 +45,7 @@ function install_operator() {
     # I will remove this line, just want to print the image version we are using for debugging
     echo "pods images"
     kubectl describe pods -n minio-operator | grep Image
+    kubectl get pods --namespace minio-operator
 
     echo "Waiting for k8s api"
     sleep 10
