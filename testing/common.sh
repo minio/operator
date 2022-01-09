@@ -45,10 +45,13 @@ function install_operator() {
     # I will remove this line, just want to print the image version we are using for debugging
     echo "pods images"
     kubectl describe pods -n minio-operator | grep Image
-    kubectl get pods --namespace minio-operator
 
     echo "Waiting for k8s api"
-    sleep 10
+    
+    # This is just for testing, I want to see the Failed to pull image message
+    sleep 130
+    kubectl get pods --namespace minio-operator
+
     echo "Waiting for Operator Pods to come online (2m timeout)"
 
     try kubectl wait --namespace minio-operator \
