@@ -40,7 +40,7 @@ function install_operator() {
 
     echo "Installing Current Operator"
     # Created an overlay to use that image version from dev folder
-    try kubectl apply -k "${SCRIPT_DIR}/../resources/dev"
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/dev"
 
     echo "Waiting for k8s api"
     sleep 10
