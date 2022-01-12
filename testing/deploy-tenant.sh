@@ -20,40 +20,6 @@ export SCRIPT_DIR
 
 source "${SCRIPT_DIR}/common.sh"
 
-
-
-function install_tenant() {
-    echo "Installing lite tenant"
-
-    try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-lite"
-
-    echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"
-    waitdone=0
-    totalwait=0
-    while true; do
-	waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=storage-lite --no-headers | wc -l)
-	if [ "$waitdone" -ne 0 ]; then
-	    echo "Found $waitdone pods"
-	    break
-	fi
-	sleep 5
-	totalwait=$((totalwait + 5))
-	if [ "$totalwait" -gt 300 ]; then
-	    echo "Tenant never created statefulset after 5 minutes"
-	    try false
-	fi
-    done
-
-    echo "Waiting for tenant pods to come online (5m timeout)"
-    try kubectl wait --namespace tenant-lite \
-	--for=condition=ready pod \
-	--selector="v1.min.io/tenant=storage-lite" \
-	--timeout=300s
-
-    echo "Build passes basic tenant creation"
-}
-
-
 function main() {
     destroy_kind
 
