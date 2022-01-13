@@ -31,6 +31,7 @@ type Entry struct {
 	Trigger      string `json:"trigger"`
 	API          struct {
 		Name            string `json:"name,omitempty"`
+		AccessKey       string `json:"accessKey,omitempty"`
 		Bucket          string `json:"bucket,omitempty"`
 		Object          string `json:"object,omitempty"`
 		Status          string `json:"status,omitempty"`
@@ -51,6 +52,7 @@ type Entry struct {
 // API is struct with same info an Entry.API, but with more strong types.
 type API struct {
 	Name            string         `json:"name,omitempty"`
+	AccessKey       string         `json:"accessKey,omitempty"`
 	Bucket          string         `json:"bucket,omitempty"`
 	Object          string         `json:"object,omitempty"`
 	Status          string         `json:"status,omitempty"`
@@ -130,7 +132,32 @@ func EventFromEntry(e *Entry) (*Event, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Parse access key
+	if authHdr, ok := e.ReqHeader["Authorization"]; ok {
+		ret.API.AccessKey = parseAccessKey(authHdr)
+	}
 	return &ret, nil
+}
+
+func parseAccessKey(authHdr string) string {
+	v4Prefix := "AWS4-HMAC-SHA256 Credential="
+	v2Prefix := "AWS "
+	var splits []string
+	switch {
+	case strings.HasPrefix(authHdr, v4Prefix):
+		authHdr = strings.TrimPrefix(authHdr, v4Prefix)
+		splits = strings.Split(authHdr, "/")
+
+	case strings.HasPrefix(authHdr, v2Prefix):
+		authHdr = strings.TrimPrefix(authHdr, v2Prefix)
+		splits = strings.Split(authHdr, ":")
+	}
+	if len(splits) > 0 {
+		return splits[0]
+	}
+
+	return ""
 }
 
 func parseJSONEvent(b []byte) (*Event, error) {
