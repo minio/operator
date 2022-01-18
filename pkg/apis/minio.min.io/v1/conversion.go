@@ -75,7 +75,11 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.Mountpath = src.Spec.Mountpath
 	dst.Spec.Subpath = src.Spec.Subpath
 	dst.Spec.RequestAutoCert = src.Spec.RequestAutoCert
-	dst.Spec.S3 = src.Spec.S3
+	if src.Spec.S3 != nil {
+		dst.Spec.Features = &v2.Features{
+			BucketDNS: src.Spec.S3.BucketDNS,
+		}
+	}
 	dst.Spec.CertConfig = src.Spec.CertConfig
 	dst.Spec.KES = src.Spec.KES
 	dst.Spec.Log = src.Spec.Log
@@ -145,7 +149,11 @@ func (dst *Tenant) ConvertFrom(srcRaw conversion.Hub) error { //nolint
 	dst.Spec.Mountpath = src.Spec.Mountpath
 	dst.Spec.Subpath = src.Spec.Subpath
 	dst.Spec.RequestAutoCert = src.Spec.RequestAutoCert
-	dst.Spec.S3 = src.Spec.S3
+	if src.Spec.Features != nil {
+		dst.Spec.S3 = &v2.S3Features{
+			BucketDNS: src.Spec.Features.BucketDNS,
+		}
+	}
 	dst.Spec.CertConfig = src.Spec.CertConfig
 	dst.Spec.KES = src.Spec.KES
 	dst.Spec.Log = src.Spec.Log

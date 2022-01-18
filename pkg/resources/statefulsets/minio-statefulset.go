@@ -107,12 +107,11 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			Value: t.PrometheusConfigJobName(),
 		})
 
+	var domains []string
 	// Enable Bucket DNS only if asked for by default turned off
-	if t.S3BucketDNS() {
+	if t.BucketDNS() {
+		domains = append(domains, t.MinIOBucketBaseDomain())
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  "MINIO_DOMAIN",
-			Value: t.MinIOBucketBaseDomain(),
-		}, corev1.EnvVar{
 			Name: miniov2.WebhookMinIOBucket,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -122,6 +121,17 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 					Key: miniov2.WebhookMinIOArgs,
 				},
 			},
+		})
+	}
+	// Check if any domains are configured
+	if t.HasMinIODomains() {
+		domains = append(domains, t.Spec.Features.Domains.Minio...)
+	}
+	// tell MinIO about all the domains meant to hit it
+	if len(domains) > 0 {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "MINIO_DOMAIN",
+			Value: strings.Join(domains, ","),
 		})
 	}
 

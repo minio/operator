@@ -2029,8 +2029,6 @@ spec:
                 properties:
                   bucketDNS:
                     type: boolean
-                required:
-                - bucketDNS
                 type: object
               securityContext:
                 properties:
@@ -4174,6 +4172,18 @@ spec:
                     type: string
                 required:
                 - name
+                type: object
+              features:
+                properties:
+                  bucketDNS:
+                    type: boolean
+                  domains:
+                    properties:
+                      minio:
+                        items:
+                          type: string
+                        type: array
+                    type: object
                 type: object
               image:
                 type: string
@@ -6729,8 +6739,6 @@ spec:
                 properties:
                   bucketDNS:
                     type: boolean
-                required:
-                - bucketDNS
                 type: object
               serviceAccountName:
                 type: string

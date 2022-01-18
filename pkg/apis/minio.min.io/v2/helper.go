@@ -521,9 +521,10 @@ func (t *Tenant) KESServiceHost() string {
 	return fmt.Sprintf("%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, GetClusterDomain())
 }
 
-// S3BucketDNS indicates if Bucket DNS feature is enabled.
-func (t *Tenant) S3BucketDNS() bool {
-	return t.Spec.S3 != nil && t.Spec.S3.BucketDNS
+// BucketDNS indicates if Bucket DNS feature is enabled.
+func (t *Tenant) BucketDNS() bool {
+	// we've deprecated .spec.s3 and will top working in future releases of operator
+	return (t.Spec.Features != nil && t.Spec.Features.BucketDNS) || (t.Spec.S3 != nil && t.Spec.S3.BucketDNS)
 }
 
 // HasKESEnabled checks if kes configuration is provided by user
@@ -1057,4 +1058,9 @@ func GetPrometheusName() string {
 		prometheusName = envGet(prometheusName, "")
 	})
 	return prometheusName
+}
+
+// HasMinIODomains indicates whether domains are being specified for MinIO
+func (t *Tenant) HasMinIODomains() bool {
+	return t.Spec.Features != nil && t.Spec.Features.Domains != nil && len(t.Spec.Features.Domains.Minio) > 0
 }
