@@ -75,26 +75,24 @@ func (c *DBClient) runQueries(ctx context.Context, queries []string, ignoreErr f
 
 func updateAccessKeyCol(ctx context.Context, c *DBClient) {
 	updQ := `WITH req AS (
-                   SELECT log->>'requestID' AS request_id,
-                          COALESCE(
-                            substring(
-                              log->'requestHeader'->>'Authorization',
-                              e'^AWS4-HMAC-SHA256\\s+Credential\\s*=\\s*([^/]+)'
-                            ),
-                            substring(
-                              log->'requestHeader'->>'Authorization',
-                              e'^AWS\\s+([^:]+)'
-                            )
-                          ) AS access_key
-                     FROM audit_log_events
-                    ORDER BY event_time
-                    LIMIT $1
-                          OFFSET $2
-                 )
-                     UPDATE request_info
-                     SET access_key = req.access_key
-                     FROM req
-                     WHERE request_info.request_id = req.request_id;`
+                             SELECT log->>'requestID' AS request_id,
+                                    COALESCE(
+                                       substring(
+                                           log->'requestHeader'->>'Authorization',
+                                           e'^AWS4-HMAC-SHA256\\s+Credential\\s*=\\s*([^/]+)'
+                                       ),
+                                       substring(log->'requestHeader'->>'Authorization', e'^AWS\\s+([^:]+)')
+                                    ) AS access_key
+                               FROM audit_log_events AS a JOIN request_info AS b ON (a.event_time = b.time)
+                              WHERE b.access_key IS NULL
+                           ORDER BY event_time
+                              LIMIT $1
+                             OFFSET $2
+                          )
+               UPDATE request_info
+                  SET access_key = req.access_key
+                 FROM req
+                WHERE request_info.request_id = req.request_id`
 
 	for off, lim := 0, 1000; ; off += lim {
 		res, err := c.ExecContext(ctx, updQ, lim, off)
@@ -102,10 +100,12 @@ func updateAccessKeyCol(ctx context.Context, c *DBClient) {
 			log.Printf("Failed to update access_key column in request_info: %v", err)
 			return
 		}
-		if rows, err := res.RowsAffected(); err == nil {
-			if rows == 0 {
-				break
-			}
+
+		if rows, err := res.RowsAffected(); err != nil {
+			log.Printf("Failed to get rows affected: %v", err)
+			return
+		} else if rows < 1000 {
+			break
 		}
 	}
 }
