@@ -28,12 +28,12 @@ import (
 	"os"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
-
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -124,6 +124,13 @@ func (d *reportCmd) run(args []string) error {
 		return err
 	}
 	zipw := zip.NewWriter(w)
+	tenantAsYaml, err := yaml.Marshal(tenant)
+	if err == nil {
+		f, err := zipw.Create(tenant.Name + ".yaml")
+		if err == nil {
+			f.Write(tenantAsYaml)
+		}
+	}
 	for i := 0; i < len(pods.Items); i++ {
 		toWrite, err := podsSet.GetLogs(pods.Items[i].Name, &v1.PodLogOptions{}).DoRaw(ctx)
 		if err == nil {
