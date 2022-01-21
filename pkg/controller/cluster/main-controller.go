@@ -1707,7 +1707,7 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 		// Check if the scrape config is already present
 		hasScrapeConfig := false
 		for _, sc := range scrapeConfigs {
-			if sc.JobName == tenant.PrometheusConfigJobName() {
+			if sc.JobName == tenant.PrometheusOperatorAddlConfigJobName() {
 				hasScrapeConfig = true
 				break
 			}
@@ -1764,7 +1764,7 @@ func (c *Controller) deletePrometheusAddlConfig(ctx context.Context, tenant *min
 	hasScrapeConfig := false
 	scIndex := -1
 	for i, sc := range scrapeConfigs {
-		if sc.JobName == tenant.PrometheusConfigJobName() {
+		if sc.JobName == tenant.PrometheusOperatorAddlConfigJobName() {
 			hasScrapeConfig = true
 			scIndex = i
 			break
