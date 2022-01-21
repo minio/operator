@@ -116,11 +116,9 @@ rules:
   - apiGroups:
       - monitoring.coreos.com
     resources:
-      - servicemonitors
+      - prometheuses
     verbs:
-      - get
-      - create
-      - list
+      - '*'
   - apiGroups:
       - "coordination.k8s.io"
     resources:
