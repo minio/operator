@@ -300,7 +300,7 @@ spec:
             - apiGroups:
                 - monitoring.coreos.com
               resources:
-                - servicemonitors
+                - prometheuses
               verbs:
                 - '*'
           serviceAccountName: minio-operator
