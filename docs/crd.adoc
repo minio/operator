@@ -645,6 +645,36 @@ S3Features (`s3`) - Object describing which S3 features to enable/disable in the
 |===
 
 
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-bucket"]
+==== Bucket
+Bucket (`buckets`) defines a bucket that should be created upon creation of tenant
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`name`* __string__
+|*Required* +
+Specify bucket name
+
+|*`region`* __string__
+|*Optional* +
+Specify bucket region
+
+|*`objectLock`* __boolean__
+|*Optional* +
+Specify objectLock for a bucket
+
+|===
+
+
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-servicemetadata"]
 ==== ServiceMetadata 
 
@@ -855,6 +885,10 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*`s3`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-s3features[$$S3Features$$]__ 
 |*Optional* + 
  S3 related features can be disabled or enabled such as `bucketDNS` etc.
+
+|*`buckets`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-bucket[$$Bucket$$] array__
+|*Optional* +
+An array of objects describing buckets should be created upon creation of tenant.
 
 |*`certConfig`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-certificateconfig[$$CertificateConfig$$]__ 
 |*Optional* + 
