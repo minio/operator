@@ -83,6 +83,10 @@ spec:
   requestAutoCert: {{ dig "certificate" "requestAutoCert" false . }}
   s3:
     bucketDNS: {{ dig "s3" "bucketDNS" false . }}
+  {{- with (dig "users" (list) .) }}
+  users:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- with (dig "certificate" "certConfig" (dict) .) }}
   certConfig:
     {{ toYaml . | nindent 4 }}
