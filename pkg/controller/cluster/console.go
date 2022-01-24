@@ -22,7 +22,6 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -52,17 +51,18 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 		}
 	}
 
-	// check the expose status of the Console service
-	svcMatchesSpec := true
 	// compare any other change from what is specified on the tenant
 	expectedSvc := services.NewClusterIPForConsole(tenant)
-	if !equality.Semantic.DeepDerivative(expectedSvc.Spec, svc.Spec) {
-		// some field set by the operator has changed
-		svcMatchesSpec = false
-	}
+
+	// check the expose status of the Console service
+	svcMatchesSpec, err := minioSvcMatchesSpecification(svc, expectedSvc)
 
 	// check the specification of the MinIO ClusterIP service
 	if !svcMatchesSpec {
+		if err != nil {
+			klog.Infof("Console Service don't match: %s", err)
+		}
+
 		svc.ObjectMeta.Annotations = expectedSvc.ObjectMeta.Annotations
 		svc.ObjectMeta.Labels = expectedSvc.ObjectMeta.Labels
 		svc.Spec.Ports = expectedSvc.Spec.Ports
