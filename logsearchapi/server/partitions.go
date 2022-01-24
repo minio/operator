@@ -1,19 +1,19 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+//
+// This file is part of MinIO Operator
+// Copyright (C) 2020-2022, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
+//
 
 package server
 
@@ -49,8 +49,8 @@ type partitionTimeRange struct {
 // newPartitionTimeRange computes the partitionTimeRange including the
 // givenTime.
 func newPartitionTimeRange(givenTime time.Time) partitionTimeRange {
-	// Zero out the time and use UTC
-	t := givenTime
+	// Convert to UTC and zero out the time.
+	t := givenTime.In(time.UTC)
 	t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	lastDateOfMonth := t.AddDate(0, 1, -t.Day())
 	daysInMonth := lastDateOfMonth.Day()
@@ -246,8 +246,8 @@ func (c *DBClient) partitionTables() {
 	bgCtx := context.Background()
 	tables := []Table{auditLogEventsTable, requestInfoTable}
 	for {
-		// Check if the partition table to store audit logs 24hrs from now exists
-		aDayLater := time.Now().Add(24 * time.Hour)
+		// Check if the partition table to store audit logs 48hrs from now exists
+		aDayLater := time.Now().Add(48 * time.Hour)
 		for _, table := range tables {
 			partitionExists, err := c.checkPartitionTableExists(bgCtx, table.Name, aDayLater)
 			if err != nil {
