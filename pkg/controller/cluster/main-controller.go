@@ -1021,7 +1021,12 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 			return err
 		}
-		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("https://operator.%s.svc.%s:%s%s",
+		protocol := "https"
+		if !isOperatorTLS() {
+			protocol = "http"
+		}
+		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("%s://operator.%s.svc.%s:%s%s",
+			protocol,
 			miniov2.GetNSFromFile(), miniov2.GetClusterDomain(),
 			miniov2.WebhookDefaultPort, miniov2.WebhookAPIUpdate,
 		))
