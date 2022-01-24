@@ -271,7 +271,13 @@ func (t *Tenant) PrometheusHLServiceName() string {
 // PrometheusConfigJobName returns the name of the prometheus job
 func (t *Tenant) PrometheusConfigJobName() string {
 	if t.Spec.PrometheusOperator {
-		return fmt.Sprintf("%s-minio-job", t.Name)
+		return t.PrometheusOperatorAddlConfigJobName()
 	}
 	return "minio-job"
+}
+
+// PrometheusOperatorAddlConfigJobName returns the name of the prometheus job
+// when prometheus operator is enabled
+func (t *Tenant) PrometheusOperatorAddlConfigJobName() string {
+	return fmt.Sprintf("%s-minio-job", t.Name)
 }
