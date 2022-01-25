@@ -21,6 +21,7 @@ import (
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,6 +47,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 			if err != nil {
 				return err
 			}
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Console Service Created")
 		} else {
 			return err
 		}
@@ -77,6 +79,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 		if err != nil {
 			return err
 		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Updated", "Console Service Updated")
 	}
 	return err
 }

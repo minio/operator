@@ -931,6 +931,16 @@ func (t *Tenant) OwnerRef() []metav1.OwnerReference {
 	}
 }
 
+// ObjectRef returns the ObjectReference to be added to all resources created by Tenant
+func (t *Tenant) ObjectRef() corev1.ObjectReference {
+	return corev1.ObjectReference{
+		Kind:      MinIOCRDResourceKind,
+		Namespace: t.Namespace,
+		Name:      t.Name,
+		UID:       t.UID,
+	}
+}
+
 // TLS indicates whether TLS is enabled for this tenant
 func (t *Tenant) TLS() bool {
 	return t.AutoCert() || t.ExternalCert()

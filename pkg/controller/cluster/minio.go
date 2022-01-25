@@ -30,7 +30,7 @@ import (
 	"fmt"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -141,7 +141,7 @@ func (c *Controller) recreateMinIOCertsOnTenant(ctx context.Context, tenant *min
 	return c.checkAndCreateMinIOCSR(ctx, nsName, tenant)
 }
 
-func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName string) (*v1.Secret, error) {
+func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName string) (*corev1.Secret, error) {
 	return c.kubeClientSet.CoreV1().Secrets(nsName).Get(ctx, secretName, metav1.GetOptions{})
 }
 
@@ -179,7 +179,7 @@ func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *m
 
 // certNeedsRenewal - returns true if the TLS certificate from given secret has expired or is
 // about to expire within the next two days.
-func (c *Controller) certNeedsRenewal(ctx context.Context, tlsSecret *v1.Secret) (bool, error) {
+func (c *Controller) certNeedsRenewal(ctx context.Context, tlsSecret *corev1.Secret) (bool, error) {
 	if pubCert, ok := tlsSecret.Data["public.crt"]; ok {
 		if privKey, ok := tlsSecret.Data["private.key"]; ok {
 			tlsCert, err := tls.X509KeyPair(pubCert, privKey)
@@ -275,11 +275,13 @@ func (c *Controller) createMinIOCSR(ctx context.Context, tenant *miniov2.Tenant)
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
 		return err
 	}
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "CSRCreated", "MinIO CSR Created")
 
 	// fetch certificate from CSR
 	certbytes, err := c.fetchCertificate(ctx, tenant.MinIOCSRName())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("MinIO CSR Failed to create: %s", err))
 		return err
 	}
 
@@ -310,11 +312,13 @@ func (c *Controller) createMinIOClientCSR(ctx context.Context, tenant *miniov2.T
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
 		return err
 	}
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "CSRCreated", "MinIO Client CSR Created")
 
 	// fetch certificate from CSR
 	certbytes, err := c.fetchCertificate(ctx, tenant.MinIOClientCSRName())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("MinIO Client CSR Failed to create: %s", err))
 		return err
 	}
 

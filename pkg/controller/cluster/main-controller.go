@@ -29,11 +29,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/resources/configmaps"
+	"github.com/minio/operator/pkg/resources/deployments"
+	"github.com/minio/operator/pkg/resources/secrets"
+	"sigs.k8s.io/yaml"
+
 	"github.com/minio/madmin-go"
 	"k8s.io/klog/v2"
 
 	"github.com/minio/minio-go/v7/pkg/set"
-	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/client-go/tools/leaderelection"
@@ -76,9 +80,6 @@ import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
-	"github.com/minio/operator/pkg/resources/configmaps"
-	"github.com/minio/operator/pkg/resources/deployments"
-	"github.com/minio/operator/pkg/resources/secrets"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
@@ -695,6 +696,7 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Headless Service created")
 		} else {
 			return err
 		}
@@ -851,7 +853,7 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
-
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
 			// Report the pool is properly created
 			tenant.Status.Pools[i].State = miniov2.PoolCreated
 			// push updates to status
@@ -1098,6 +1100,7 @@ func (c *Controller) syncHandler(key string) error {
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolUpdated", fmt.Sprintf("Tenant pool %s updated", pool.Name))
 		}
 
 	}
@@ -1276,16 +1279,20 @@ func (c *Controller) syncHandler(key string) error {
 	if !tenant.Status.ProvisionedUsers {
 		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO users: %v", err)
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "UsersCreatedFailed", fmt.Sprintf("Users creation failed: %s", err))
 			return err
 		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "UsersCreated", "Users created")
 	}
 
 	// Ensure we are only creating the bucket once using the console user
 	if !tenant.Status.ProvisionedBuckets && tenant.Status.ProvisionedUsers {
 		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
 			return err
 		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
 	}
 
 	// Finally, we update the status block of the Tenant resource to reflect the
@@ -1375,6 +1382,7 @@ func (c *Controller) deleteLogHeadlessService(ctx context.Context, tenant *minio
 	}
 	klog.V(2).Infof("Deleting Log Headless Service for %s", tenant.Namespace)
 	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.LogHLServiceName(), metav1.DeleteOptions{})
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Deleted", "Log search headless service deleted")
 	return err
 }
 
@@ -1385,6 +1393,7 @@ func (c *Controller) deleteLogStatefulSet(ctx context.Context, tenant *miniov2.T
 	}
 	klog.V(2).Infof("Deleting Log StatefulSet for %s", tenant.Namespace)
 	err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Delete(ctx, tenant.LogStatefulsetName(), metav1.DeleteOptions{})
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Deleted", "Log search statefulset deleted")
 	return err
 }
 
@@ -1395,6 +1404,7 @@ func (c *Controller) deleteLogSearchAPIDeployment(ctx context.Context, tenant *m
 	}
 	klog.V(2).Infof("Deleting Log Search API deployment for %s", tenant.Name)
 	err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Delete(ctx, tenant.LogSearchAPIDeploymentName(), metav1.DeleteOptions{})
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Deleted", "Log search deployment deleted")
 	return err
 }
 
@@ -1405,6 +1415,7 @@ func (c *Controller) deleteLogSearchAPIService(ctx context.Context, tenant *mini
 	}
 	klog.V(2).Infof("Delete Log Search API Service for %s", tenant.Namespace)
 	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.LogSearchAPIServiceName(), metav1.DeleteOptions{})
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Deleted", "Log search service deleted")
 	return err
 }
 
@@ -1417,6 +1428,7 @@ func (c *Controller) checkAndCreateLogHeadless(ctx context.Context, tenant *mini
 	klog.V(2).Infof("Creating a new Log Headless Service for %s", tenant.Namespace)
 	svc = services.NewHeadlessForLog(tenant)
 	_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, metav1.CreateOptions{})
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Log headless service created")
 	return svc, err
 }
 
@@ -1433,6 +1445,7 @@ func (c *Controller) checkAndCreateLogStatefulSet(ctx context.Context, tenant *m
 		klog.V(2).Infof("Creating a new Log StatefulSet for %s", tenant.Namespace)
 		searchSS := statefulsets.NewForLogDb(tenant, svcName)
 		_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, searchSS, metav1.CreateOptions{})
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Created", "Log statefulset created")
 		return err
 
 	}
@@ -1451,6 +1464,7 @@ func (c *Controller) checkAndCreateLogStatefulSet(ctx context.Context, tenant *m
 		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, logPgSS, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Updated", "Log statefulset updated")
 	}
 
 	return nil
@@ -1465,6 +1479,7 @@ func (c *Controller) checkAndCreateLogSearchAPIService(ctx context.Context, tena
 	klog.V(2).Infof("Creating a new Log Search API Service for %s", tenant.Namespace)
 	svc := services.NewClusterIPForLogSearchAPI(tenant)
 	_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, metav1.CreateOptions{})
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Log search service created")
 	return err
 }
 
@@ -1480,6 +1495,7 @@ func (c *Controller) checkAndCreateLogSearchAPIDeployment(ctx context.Context, t
 
 		klog.V(2).Infof("Creating a new Log Search API deployment for %s", tenant.Name)
 		_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, deployments.NewForLogSearchAPI(tenant), metav1.CreateOptions{})
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Created", "Log search service deployment")
 		return err
 	}
 
@@ -1497,6 +1513,7 @@ func (c *Controller) checkAndCreateLogSearchAPIDeployment(ctx context.Context, t
 		if _, err := c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Update(ctx, logSearchDeployment, metav1.UpdateOptions{}); err != nil {
 			return err
 		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Updated", "Log search deployment updated")
 	}
 	return nil
 }
@@ -1734,7 +1751,7 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 
 	// Update prometheus if its not done alreay
 	if p.Spec.AdditionalScrapeConfigs == nil {
-		p.Spec.AdditionalScrapeConfigs = &v1.SecretKeySelector{
+		p.Spec.AdditionalScrapeConfigs = &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{Name: miniov2.PrometheusAddlScrapeConfigSecret},
 			Key:                  miniov2.PrometheusAddlScrapeConfigKey,
 		}

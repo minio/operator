@@ -21,6 +21,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"os/signal"
 	"strings"
@@ -28,8 +29,6 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7/pkg/set"
-
-	"k8s.io/client-go/tools/clientcmd"
 
 	"k8s.io/client-go/rest"
 
