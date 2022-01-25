@@ -21,12 +21,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"k8s.io/client-go/tools/clientcmd"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
+
+	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/minio/minio-go/v7/pkg/set"
 

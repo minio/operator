@@ -20,6 +20,7 @@ package cluster
 import (
 	"errors"
 	"fmt"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/deployments"
 	"github.com/minio/operator/pkg/resources/services"
