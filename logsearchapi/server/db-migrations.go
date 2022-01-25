@@ -112,7 +112,7 @@ func updateAccessKeyCol(ctx context.Context, c *DBClient) {
 func addAccessKeyColAndIndex(ctx context.Context, c *DBClient) error {
 	queries := []string{
 		`ALTER table request_info ADD access_key text`,
-		`CREATE INDEX CONCURRENTLY request_info_access_key_index ON request_info (access_key)`,
+		`CREATE INDEX request_info_access_key_index ON request_info (access_key)`,
 	}
 
 	return c.runQueries(ctx, queries, func(err error) bool {
@@ -129,8 +129,8 @@ func addAccessKeyColAndIndex(ctx context.Context, c *DBClient) error {
 
 func addAuditLogIndices(ctx context.Context, c *DBClient) error {
 	queries := []string{
-		`CREATE INDEX CONCURRENTLY audit_log_events_log_index ON audit_log_events USING btree ((log->>'requestID'))`,
-		`CREATE INDEX CONCURRENTLY audit_log_events_event_time_index ON audit_log_events (event_time desc)`,
+		`CREATE INDEX audit_log_events_log_index ON audit_log_events USING btree ((log->>'requestID'))`,
+		`CREATE INDEX audit_log_events_event_time_index ON audit_log_events (event_time desc)`,
 	}
 
 	return c.runQueries(ctx, queries, duplicateTblErr)
@@ -138,12 +138,12 @@ func addAuditLogIndices(ctx context.Context, c *DBClient) error {
 
 func addReqInfoIndices(ctx context.Context, c *DBClient) error {
 	queries := []string{
-		`CREATE INDEX CONCURRENTLY request_info_api_name_index ON request_info (api_name)`,
-		`CREATE INDEX CONCURRENTLY request_info_bucket_index ON request_info (bucket)`,
-		`CREATE INDEX CONCURRENTLY request_info_object_index ON request_info (object)`,
-		`CREATE INDEX CONCURRENTLY request_info_request_id_index ON request_info (request_id)`,
-		`CREATE INDEX CONCURRENTLY request_info_response_status_index ON request_info (response_status)`,
-		`CREATE INDEX CONCURRENTLY request_info_time_index ON request_info (time)`,
+		`CREATE INDEX request_info_api_name_index ON request_info (api_name)`,
+		`CREATE INDEX request_info_bucket_index ON request_info (bucket)`,
+		`CREATE INDEX request_info_object_index ON request_info (object)`,
+		`CREATE INDEX request_info_request_id_index ON request_info (request_id)`,
+		`CREATE INDEX request_info_response_status_index ON request_info (response_status)`,
+		`CREATE INDEX request_info_time_index ON request_info (time)`,
 	}
 
 	return c.runQueries(ctx, queries, duplicateTblErr)
