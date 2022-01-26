@@ -29,6 +29,8 @@ import (
 	"errors"
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/services"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -100,11 +102,13 @@ func (c *Controller) createKESCSR(ctx context.Context, tenant *miniov2.Tenant) e
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
 		return err
 	}
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "CSRCreated", "KES CSR Created")
 
 	// fetch certificate from CSR
 	certbytes, err := c.fetchCertificate(ctx, tenant.KESCSRName())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("KES CSR Failed to create: %s", err))
 		return err
 	}
 

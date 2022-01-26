@@ -27,9 +27,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/minio/minio-go/v7/pkg/set"
-
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/minio/minio-go/v7/pkg/set"
 
 	"k8s.io/client-go/rest"
 
