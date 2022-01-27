@@ -86,15 +86,20 @@ func updateAccessKeyCol(ctx context.Context, c *DBClient) {
                               WHERE b.access_key IS NULL
                            ORDER BY event_time
                               LIMIT $1
-                             OFFSET $2
                           )
                UPDATE request_info
                   SET access_key = req.access_key
                  FROM req
                 WHERE request_info.request_id = req.request_id`
 
-	for off, lim := 0, 1000; ; off += lim {
-		res, err := c.ExecContext(ctx, updQ, lim, off)
+	for lim := 1000; ; {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		res, err := c.ExecContext(ctx, updQ, lim)
 		if err != nil {
 			log.Printf("Failed to update access_key column in request_info: %v", err)
 			return
@@ -114,10 +119,8 @@ func addAccessKeyColAndIndex(ctx context.Context, c *DBClient) error {
 		`ALTER table request_info ADD access_key text`,
 		`CREATE INDEX request_info_access_key_index ON request_info (access_key)`,
 	}
-
-	return c.runQueries(ctx, queries, func(err error) bool {
+	err := c.runQueries(ctx, queries, func(err error) bool {
 		if duplicateColErr(err) {
-			go updateAccessKeyCol(ctx, c)
 			return true
 		}
 		if duplicateTblErr(err) {
@@ -125,6 +128,8 @@ func addAccessKeyColAndIndex(ctx context.Context, c *DBClient) error {
 		}
 		return false
 	})
+	go updateAccessKeyCol(ctx, c)
+	return err
 }
 
 func addAuditLogIndices(ctx context.Context, c *DBClient) error {
