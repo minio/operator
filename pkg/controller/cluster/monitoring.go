@@ -15,7 +15,6 @@
 package cluster
 
 import (
-	"bufio"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -24,7 +23,6 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/minio/madmin-go"
@@ -446,80 +444,4 @@ func (c *Controller) syncHealthCheckHandler(key string) error {
 	}
 
 	return nil
-}
-
-// MinIOPrometheusMetrics holds metrics pulled from prometheus
-type MinIOPrometheusMetrics struct {
-	UsableCapacity int64
-	Usage          int64
-}
-
-func getPrometheusMetricsForTenant(tenant *miniov2.Tenant, bearer string) (*MinIOPrometheusMetrics, error) {
-	return getPrometheusMetricsForTenantWithRetry(tenant, bearer, 5)
-}
-func getPrometheusMetricsForTenantWithRetry(tenant *miniov2.Tenant, bearer string, tryCount int) (*MinIOPrometheusMetrics, error) {
-	// build the endpoint to contact the Tenant
-	svcURL := tenant.GetTenantServiceURL()
-
-	endpoint := fmt.Sprintf("%s%s", svcURL, "/minio/v2/metrics/cluster")
-
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
-	if err != nil {
-		klog.Infof("error request pinging: %v", err)
-		return nil, err
-	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bearer))
-
-	httpClient := &http.Client{
-		Transport: getHealthCheckTransport(),
-	}
-	defer httpClient.CloseIdleConnections()
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		// if we fail due to timeout, retry
-		if err, ok := err.(net.Error); ok && err.Timeout() && tryCount > 0 {
-			klog.Infof("health check failed, retrying %d, err: %s", tryCount, err)
-			time.Sleep(10 * time.Second)
-			return getPrometheusMetricsForTenantWithRetry(tenant, bearer, tryCount-1)
-		}
-		klog.Infof("error pinging: %v", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	promMetrics := MinIOPrometheusMetrics{}
-
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		// Usage
-		if strings.HasPrefix(line, "minio_bucket_usage_total_bytes") {
-			parts := strings.Split(line, " ")
-			if len(parts) > 1 {
-				usage, err := strconv.ParseFloat(parts[1], 64)
-				if err != nil {
-					klog.Infof("%s/%s Could not parse usage for tenant: %s", tenant.Namespace, tenant.Name, line)
-				}
-				promMetrics.Usage = int64(usage)
-			}
-		}
-		// Usable capacity
-		if strings.HasPrefix(line, "minio_cluster_capacity_usable_total_bytes") {
-			parts := strings.Split(line, " ")
-			if len(parts) > 1 {
-				usable, err := strconv.ParseFloat(parts[1], 64)
-				if err != nil {
-					klog.Infof("%s/%s Could not parse usable capacity for tenant: %s", tenant.Namespace, tenant.Name, line)
-				}
-				promMetrics.UsableCapacity = int64(usable)
-			}
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		klog.Error(err)
-	}
-	return &promMetrics, nil
 }
