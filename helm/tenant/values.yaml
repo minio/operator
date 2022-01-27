@@ -79,6 +79,8 @@ tenants:
     s3:
       ## This feature is turned off by default
       bucketDNS: false
+    ## List of bucket names to create during tenant provisioning
+    buckets: [ ]
     ## List of secret names to use for generating MinIO users during tenant provisioning
     users: [ ]
     ## PodManagement policy for MinIO Tenant Pods. Can be "OrderedReady" or "Parallel"
