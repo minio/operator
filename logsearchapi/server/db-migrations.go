@@ -18,6 +18,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/lib/pq"
@@ -28,9 +29,7 @@ import (
 type dbMigration func(ctx context.Context, c *DBClient) error
 
 var allMigrations = []dbMigration{
-	addAccessKeyColAndIndex,
-	addAuditLogIndices,
-	addReqInfoIndices,
+	addAccessKeyCol,
 
 	// Add new migrations here below
 }
@@ -72,6 +71,8 @@ func (c *DBClient) runQueries(ctx context.Context, queries []string, ignoreErr f
 	return nil
 }
 
+// updateAccessKeyCol updates request_info records which where created before
+// the introduction of access_key column.
 func updateAccessKeyCol(ctx context.Context, c *DBClient) {
 	updQ := `WITH req AS (
                              SELECT log->>'requestID' AS request_id,
@@ -114,10 +115,11 @@ func updateAccessKeyCol(ctx context.Context, c *DBClient) {
 	}
 }
 
-func addAccessKeyColAndIndex(ctx context.Context, c *DBClient) error {
+// addAccessKeyCol adds a new column access_key, to request_info table to store
+// API requests access key/user information wherever applicable.
+func addAccessKeyCol(ctx context.Context, c *DBClient) error {
 	queries := []string{
 		`ALTER table request_info ADD access_key text`,
-		`CREATE INDEX request_info_access_key_index ON request_info (access_key)`,
 	}
 	err := c.runQueries(ctx, queries, func(err error) bool {
 		if duplicateColErr(err) {
@@ -132,24 +134,181 @@ func addAccessKeyColAndIndex(ctx context.Context, c *DBClient) error {
 	return err
 }
 
-func addAuditLogIndices(ctx context.Context, c *DBClient) error {
-	queries := []string{
-		`CREATE INDEX audit_log_events_log_index ON audit_log_events USING btree ((log->>'requestID'))`,
-		`CREATE INDEX audit_log_events_event_time_index ON audit_log_events (event_time desc)`,
+// CreateIndices creates table indexes for audit_log_events and request_info tables.
+// See auditLogIndices, reqInfoIndices functions for actual indices details.
+func (c *DBClient) CreateIndices(ctx context.Context) error {
+	tables := []struct {
+		t       Table
+		indices []indexOpts
+	}{
+		{
+			t:       auditLogEventsTable,
+			indices: auditLogIndices(),
+		},
+		{
+			t:       requestInfoTable,
+			indices: reqInfoIndices(),
+		},
 	}
 
-	return c.runQueries(ctx, queries, duplicateTblErr)
+	for _, table := range tables {
+		// The following procedure creates indices on all partitions of
+		// this table. If an index was created on any of its partitions,
+		// it checks if newer partitions were created meanwhile, so as
+		// to create indices on those partitions too.
+		for {
+			partitions, err := c.getExistingPartitions(ctx, table.t)
+			if err != nil {
+				return err
+			}
+
+			var indexCreated bool
+			for _, partition := range partitions {
+				indexed, err := c.CreatePartitionIndices(ctx, table.indices, partition)
+				if err != nil {
+					return err
+				}
+				indexCreated = indexCreated || indexed
+			}
+			if !indexCreated {
+				break
+			}
+		}
+
+		// No more new non-indexed table partitions, creating
+		// parent table indices.
+		err := c.CreateParentIndices(ctx, table.indices)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func addReqInfoIndices(ctx context.Context, c *DBClient) error {
-	queries := []string{
-		`CREATE INDEX request_info_api_name_index ON request_info (api_name)`,
-		`CREATE INDEX request_info_bucket_index ON request_info (bucket)`,
-		`CREATE INDEX request_info_object_index ON request_info (object)`,
-		`CREATE INDEX request_info_request_id_index ON request_info (request_id)`,
-		`CREATE INDEX request_info_response_status_index ON request_info (response_status)`,
-		`CREATE INDEX request_info_time_index ON request_info (time)`,
+// CreatePartitionIndices creates all indices described by optses on partition.
+// It returns true if a new index was created on this partition. Note: this
+// function ignores the index already exists error.
+func (c *DBClient) CreatePartitionIndices(ctx context.Context, optses []indexOpts, partition string) (indexed bool, err error) {
+	for _, opts := range optses {
+		q := opts.createPartitionQuery(partition)
+		_, err := c.ExecContext(ctx, q)
+		if err == nil {
+			indexed = true
+		}
+		if err != nil && !duplicateTblErr(err) {
+			return indexed, err
+		}
+	}
+	return indexed, nil
+}
+
+// CreateParentIndices creates all indices specified by optses on the parent table.
+func (c *DBClient) CreateParentIndices(ctx context.Context, optses []indexOpts) error {
+	for _, opts := range optses {
+		q := opts.createParentQuery()
+		_, err := c.ExecContext(ctx, q)
+		if err != nil && !duplicateTblErr(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+// auditLogIndices is a slice of audit_log_events' table indices specified as
+// indexOpt values.
+func auditLogIndices() []indexOpts {
+	return []indexOpts{
+		{
+			tableName:   "audit_log_events",
+			indexSuffix: "log",
+			col:         idxCol{name: `(log->>'requestID')`},
+			idxType:     "btree",
+		},
+		{
+			tableName: "audit_log_events",
+			col: idxCol{
+				name:  "event_time",
+				order: colDesc,
+			},
+		},
+	}
+}
+
+// reqInfoIndices is a slice of request_info's table indices specified as indexOpt values.
+func reqInfoIndices() []indexOpts {
+	var idxOpts []indexOpts
+	cols := []string{"access_key", "api_name", "bucket", "object", "request_id", "response_status", "time"}
+	for _, col := range cols {
+		idxOpts = append(idxOpts, indexOpts{
+			tableName: "request_info",
+			col:       idxCol{name: col},
+		})
+	}
+	return idxOpts
+}
+
+type colOrder bool
+
+const (
+	colAsc  colOrder = false
+	colDesc colOrder = true
+)
+
+type idxCol struct {
+	name  string
+	order colOrder
+}
+
+func (col idxCol) colWithOrder() string {
+	if col.order == colDesc {
+		return fmt.Sprintf("(%s DESC)", col.name)
+	}
+	return fmt.Sprintf("(%s)", col.name)
+}
+
+// indexOpts type is used to specify a table index
+type indexOpts struct {
+	tableName   string
+	indexSuffix string
+	col         idxCol
+	order       colOrder
+	idxType     string
+}
+
+func (opts indexOpts) colWithOrder() string {
+	return opts.col.colWithOrder()
+}
+
+func (opts indexOpts) createParentQuery() string {
+	var idxName string
+	if opts.indexSuffix != "" {
+		idxName = fmt.Sprintf("%s_%s_index", opts.tableName, opts.indexSuffix)
+	} else {
+		idxName = fmt.Sprintf("%s_%s_index", opts.tableName, opts.col.name)
 	}
 
-	return c.runQueries(ctx, queries, duplicateTblErr)
+	var q string
+	if opts.idxType != "" {
+		q = fmt.Sprintf("CREATE INDEX %s ON %s USING %s %s", idxName, opts.tableName, opts.idxType, opts.colWithOrder())
+	} else {
+		q = fmt.Sprintf("CREATE INDEX %s ON %s %s", idxName, opts.tableName, opts.colWithOrder())
+	}
+	return q
+}
+
+func (opts indexOpts) createPartitionQuery(partition string) string {
+	var idxName string
+	if opts.indexSuffix != "" {
+		idxName = fmt.Sprintf("%s_%s_index", partition, opts.indexSuffix)
+	} else {
+		idxName = fmt.Sprintf("%s_%s_index", partition, opts.col.name)
+	}
+
+	var q string
+	if opts.idxType != "" {
+		q = fmt.Sprintf("CREATE INDEX CONCURRENTLY %s ON %s USING %s %s", idxName, partition, opts.idxType, opts.colWithOrder())
+	} else {
+		q = fmt.Sprintf("CREATE INDEX CONCURRENTLY %s ON %s %s", idxName, partition, opts.colWithOrder())
+	}
+	return q
 }
