@@ -49,7 +49,7 @@ function main() {
       --timeout=120s
 
     echo 'port forward without the hop, directly from the tenant/pod'
-    kubectl port-forward storage-lite-ss-0-0 9443 --namespace tenant-lite &
+    sudo kubectl port-forward storage-lite-ss-0-0 9443 --namespace tenant-lite &
 
     echo 'start - wait for port-forward to be completed'
     sleep 15

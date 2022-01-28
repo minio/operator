@@ -90,7 +90,7 @@ function test_kes_tenant() {
   SECRET_ID=$(kubectl exec $(kubectl get pods -l app=vault  | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.0.1:8200" vault write -f auth/approle/role/kes-role/secret-id' | grep "secret_id             " | sed -e "s/secret_id             //g")
 
   echo "Port Forwarding console"
-  kubectl -n minio-operator port-forward svc/console 9090 &
+  sudo kubectl -n minio-operator port-forward svc/console 9090 &
 
   SA_TOKEN=$(kubectl -n minio-operator  get secret $(kubectl -n minio-operator get serviceaccount console-sa -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode)
 
@@ -111,7 +111,7 @@ function test_kes_tenant() {
   check_tenant_status default kes-tenant
 
   echo "Port Forwarding tenant"
-  try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=kes-tenant | grep -v NAME | awk '{print $1}' | head -1) 9000 &
+  try sudo kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=kes-tenant | grep -v NAME | awk '{print $1}' | head -1) 9000 &
 
   USER=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
   PASSWORD=$(kubectl -n default get secrets kes-tenant-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
