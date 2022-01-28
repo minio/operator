@@ -29,7 +29,7 @@ import (
 	"github.com/minio/operator/pkg/resources/configmaps"
 	"github.com/minio/operator/pkg/resources/deployments"
 	"github.com/minio/operator/pkg/resources/secrets"
-	"sigs.k8s.io/yaml"
+	"gopkg.in/yaml.v2"
 
 	"github.com/minio/madmin-go"
 	"k8s.io/klog/v2"
