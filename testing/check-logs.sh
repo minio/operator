@@ -76,6 +76,7 @@ function main() {
     echo $COOKIE
 
     echo 'start - wait for prometheus to be ready'
+    kubectl get pods --namespace tenant-lite
     try kubectl wait --namespace tenant-lite \
       --for=condition=ready pod \
       --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 \
