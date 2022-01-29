@@ -28,7 +28,6 @@ function main() {
 
     install_tenant
 
-    check_tenant_status tenant-lite storage-lite
 
     echo 'start - wait for prometheus to appears'
     i=0
