@@ -64,6 +64,9 @@ function main() {
     sudo ufw allow 9443/tcp
     echo 'end - open and allow port connection'
 
+    sleep 1800
+    kubectl get pods -n tenant-lite
+
     echo 'Get token from MinIO Console'
     COOKIE=$(
       curl 'https://localhost:9443/api/v1/login' -vs \
@@ -74,7 +77,6 @@ function main() {
     )
     echo $COOKIE
 
-    sleep 1800
     echo 'start - print the entire output for debug'
     curl 'https://localhost:9443/api/v1/admin/info/widgets/66/?step=0&' \
       -H 'cookie: token='$COOKIE'' \
