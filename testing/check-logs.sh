@@ -30,17 +30,9 @@ function main() {
 
     check_tenant_status tenant-lite storage-lite
 
-    echo 'start - wait for prometheus to appears'
-    i=0
-    while [[ $(kubectl get pods -n tenant-lite --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]];
-    do
-      ((i++))
-      echo "waiting for storage-lite-prometheus-0" && sleep 1;
-      if [[ $i -eq 300 ]]; then
-        break
-      fi
-    done
-    echo 'end - wait for prometheus to appears'
+    # We don't need to wait for Prometheus in this test. This test is intended
+    # to check for the logs only. There is another test for Prometheus, so let's
+    # check Prometheus in right test only.
 
     echo 'Wait for pod to be ready for port forward'
     try kubectl wait --namespace tenant-lite \
