@@ -66,13 +66,12 @@ function main() {
       awk -F ';' '{print $1}'
     )
     echo $COOKIE
-
-    echo 'start - wait for prometheus to be ready'
-    try kubectl wait --namespace tenant-lite \
-      --for=condition=ready pod \
-      --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 \
-      --timeout=300s
-    echo 'end - wait for prometheus to be ready'
+    # If there is no cookie, there is no sense to proceed, so fail if no cookie
+    if [ -z "$COOKIE" ]
+    then
+      echo "\$COOKIE is empty"
+      exit 111
+    fi
 
     echo 'start - print the entire output for debug'
     curl 'https://localhost:9443/api/v1/admin/info/widgets/66/?step=0&' \
