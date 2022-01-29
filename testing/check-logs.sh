@@ -74,14 +74,7 @@ function main() {
     )
     echo $COOKIE
 
-    echo 'start - wait for prometheus to be ready'
-    kubectl get pods --namespace tenant-lite
-    try kubectl wait --namespace tenant-lite \
-      --for=condition=ready pod \
-      --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 \
-      --timeout=300s
-    echo 'end - wait for prometheus to be ready'
-
+    sleep 1800
     echo 'start - print the entire output for debug'
     curl 'https://localhost:9443/api/v1/admin/info/widgets/66/?step=0&' \
       -H 'cookie: token='$COOKIE'' \
