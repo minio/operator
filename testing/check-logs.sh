@@ -23,6 +23,18 @@ FINAL_RESULT=1
 function perform_attempts_to_get_log_api_response() {
     # This function will perform some attempts to get the API response.
     while true; do
+        echo ""
+        echo ""
+        echo ""
+        echo ""
+        echo ""
+        echo ""
+        echo ""
+        echo ""
+        echo ""
+        echo ""
+        echo "kubectl get pods -n tenant-lite"
+        kubectl get pods -n tenant-lite
         kubectl port-forward storage-lite-ss-0-0 9443 --namespace tenant-lite &
         process_id=$!
         echo "process_id: ${process_id}"
@@ -63,6 +75,7 @@ function perform_attempts_to_get_log_api_response() {
 }
 
 function main() {
+
     destroy_kind
 
     setup_kind
@@ -70,14 +83,6 @@ function main() {
     install_operator
 
     install_tenant
-
-
-    echo 'start - wait for prometheus to appears'
-    while [[ $(kubectl get pods -n tenant-lite --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]];
-    do
-      echo "waiting for storage-lite-prometheus-0" && sleep 1;
-    done
-    echo 'end - wait for prometheus to appears'
 
     perform_attempts_to_get_log_api_response
     if [ $FINAL_RESULT = 1 ]; then
