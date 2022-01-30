@@ -185,7 +185,7 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 		tr = tar.NewReader(gz)
 	}
 
-	var success = len(filesToExtract)
+	success := len(filesToExtract)
 	for {
 		header, err := tr.Next()
 		if errors.Is(err, io.EOF) {
@@ -200,7 +200,7 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 		}
 		if header.Typeflag == tar.TypeReg {
 			if name := find(filesToExtract, header.Name); name != "" {
-				outFile, err := os.OpenFile(basePath+path.Base(name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+				outFile, err := os.OpenFile(basePath+path.Base(name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o777)
 				if err != nil {
 					return fmt.Errorf("Tar file extraction failed while opening file: %s, at index: %d, with: %w", name, success, err)
 				}

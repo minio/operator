@@ -122,11 +122,11 @@ func logSearchAPISelector(t *miniov2.Tenant) *metav1.LabelSelector {
 
 // logSearchAPISecurityContext builds the security context for log search api pods
 func logSearchAPISecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,

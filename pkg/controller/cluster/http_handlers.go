@@ -52,7 +52,6 @@ const (
 
 // BucketSrvHandler - POST /webhook/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
 func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
-
 	vars := mux.Vars(r)
 	v := r.URL.Query()
 
@@ -207,7 +206,6 @@ func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
 
 // CRDConversionHandler - POST /webhook/v1/crd-conversion
 func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request) {
-
 	dec := json.NewDecoder(r.Body)
 
 	var req v1.ConversionReview
@@ -236,7 +234,7 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 		case "v1":
 
 			// cast to v1
-			//tenantV1 := obj.Object.(*miniov1.Tenant)
+			// tenantV1 := obj.Object.(*miniov1.Tenant)
 			tenantV1 := miniov1.Tenant{}
 
 			// convert the runtime.Object to unstructured.Unstructured
@@ -257,7 +255,7 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 				req.Response.ConvertedObjects = append(req.Response.ConvertedObjects, runtime.RawExtension{Object: &tenantV1})
 			case "minio.min.io/v2":
 				tenantV2 := miniov2.Tenant{}
-				//convert to v2
+				// convert to v2
 				if err := tenantV1.ConvertTo(&tenantV2); err != nil {
 					log.Println(err)
 					w.WriteHeader(500)
@@ -289,7 +287,7 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 
 			switch req.Request.DesiredAPIVersion {
 			case "minio.min.io/v1":
-				//convert to v1
+				// convert to v1
 				var tenantV1 miniov1.Tenant
 				if err := tenantV1.ConvertFrom(&tenantV2); err != nil {
 					log.Println(err)
@@ -316,5 +314,4 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 	if _, err := w.Write(rawResp); err != nil {
 		log.Println(err)
 	}
-
 }

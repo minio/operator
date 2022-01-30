@@ -32,7 +32,6 @@ import (
 // checkConsoleSvc validates the existence of the MinIO service and validate it's status against what the specification
 // states
 func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
-
 	// Handle the Internal ClusterIP Service for Tenant
 	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.ConsoleCIServiceName())
 	if err != nil {

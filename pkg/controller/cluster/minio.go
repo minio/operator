@@ -348,7 +348,6 @@ func (c *Controller) createMinIOClientCSR(ctx context.Context, tenant *miniov2.T
 }
 
 func (c *Controller) deleteOldConsoleDeployment(ctx context.Context, tenant *miniov2.Tenant, consoleDeployment string) error {
-
 	err := c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Delete(ctx, consoleDeployment, metav1.DeleteOptions{})
 	if err != nil {
 		klog.V(2).Infof(err.Error())

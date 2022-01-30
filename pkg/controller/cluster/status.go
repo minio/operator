@@ -101,7 +101,6 @@ func (c *Controller) updatePoolStatus(ctx context.Context, tenant *miniov2.Tenan
 }
 
 func (c *Controller) updatePoolStatusWithRetry(ctx context.Context, tenant *miniov2.Tenant, retry bool) (*miniov2.Tenant, error) {
-
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -135,7 +134,6 @@ func (c *Controller) updateCertificatesStatus(ctx context.Context, tenant *minio
 }
 
 func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *miniov2.Tenant, autoCertEnabled bool, retry bool) (*miniov2.Tenant, error) {
-
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance

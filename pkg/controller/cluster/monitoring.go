@@ -74,7 +74,6 @@ func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
 			return
 		}
 	}
-
 }
 
 func (c *Controller) tenantsHealthMonitor() error {
@@ -175,7 +174,6 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	srvInfoCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	storageInfo, err := adminClnt.StorageInfo(srvInfoCtx)
-
 	if err != nil {
 		// show the error and continue
 		klog.Infof("'%s/%s' Failed to get storage info: %v", tenant.Namespace, tenant.Name, err)
@@ -416,7 +414,6 @@ func (c *Controller) processNextHealthCheckItem() bool {
 
 // syncHealthCheckHandler acts on work items from the healthCheckQueue
 func (c *Controller) syncHealthCheckHandler(key string) error {
-
 	// Convert the namespace/name string into a distinct namespace and name
 	if key == "" {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))

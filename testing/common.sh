@@ -13,11 +13,22 @@
 # You should have received a copy of the GNU Affero General Public License, version 3,
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+## this enables :dev tag for minio/operator container image.
+CI="true"
+export CI
+
+## Make sure to install things if not present already
+sudo curl -#L "https://dl.k8s.io/release/v1.23.1/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
+sudo chmod +x /usr/local/bin/kubectl
+
+sudo curl -#L "https://dl.min.io/client/mc/release/linux-amd64/mc" -o /usr/local/bin/mc
+sudo chmod +x /usr/local/bin/mc
+
 yell() { echo "$0: $*" >&2; }
 
 die() {
-  yell "$*"
-  (kind delete cluster || true ) && exit 111
+    yell "$*"
+    (kind delete cluster || true ) && exit 111
 }
 
 try() { "$@" || die "cannot $*"; }
@@ -33,9 +44,9 @@ function install_operator() {
     echo "check if helm will install the operator"
     if [ "$1" = "helm" ]; then
         helm install \
-          --namespace minio-operator \
-          --create-namespace \
-          minio-operator minio/operator
+             --namespace minio-operator \
+             --create-namespace \
+             minio-operator minio/operator
 
         echo "key, value for pod selector in helm test"
         key=app.kubernetes.io/name
@@ -64,9 +75,9 @@ function install_operator() {
 
     echo "Waiting for Operator Pods to come online (2m timeout)"
     try kubectl wait --namespace minio-operator \
-    --for=condition=ready pod \
-    --selector $key=$value \
-    --timeout=120s
+	--for=condition=ready pod \
+	--selector $key=$value \
+	--timeout=120s
 
     echo "start - get data to verify proper image is being used"
     kubectl get pods --namespace minio-operator
@@ -86,17 +97,17 @@ function wait_for_resource() {
     echo $command_to_wait
 
     while true; do
-    waitdone=$($command_to_wait | wc -l)
-    if [ "$waitdone" -ne 0 ]; then
-        echo "Found $waitdone pods"
-        break
-    fi
-    sleep 5
-    totalwait=$((totalwait + 5))
-    if [ "$totalwait" -gt 305 ]; then
-        echo "Unable to get resource after 5 minutes, exiting."
-        try false
-    fi
+	waitdone=$($command_to_wait | wc -l)
+	if [ "$waitdone" -ne 0 ]; then
+	    echo "Found $waitdone pods"
+            break
+	fi
+	sleep 5
+	totalwait=$((totalwait + 5))
+	if [ "$totalwait" -gt 305 ]; then
+            echo "Unable to get resource after 5 minutes, exiting."
+            try false
+	fi
     done
 }
 
@@ -131,7 +142,7 @@ function check_tenant_status() {
 
     echo "Tenant is created successfully, proceeding to validate 'mc admin info minio/'"
 
-    if [ $4 = "helm" ]; then
+    if [ "$4" = "helm" ]; then
         # File: operator/helm/tenant/values.yaml
         # Content: s3.bucketDNS: false
         echo "In helm values by default bucketDNS.s3 is disabled, skipping mc validation on helm test"
@@ -151,7 +162,7 @@ function install_tenant() {
         key=app
         value=minio
         helm install --namespace tenant-ns \
-          --create-namespace tenant minio/tenant
+             --create-namespace tenant minio/tenant
     else
         namespace=tenant-lite
         key=v1.min.io/tenant
@@ -169,9 +180,9 @@ function install_tenant() {
 
     echo "Waiting for tenant pods to come online (5m timeout)"
     try kubectl wait --namespace $namespace \
-    --for=condition=ready pod \
-    --selector $key=$value \
-    --timeout=300s
+	--for=condition=ready pod \
+	--selector $key=$value \
+	--timeout=300s
 
     echo "Build passes basic tenant creation"
 

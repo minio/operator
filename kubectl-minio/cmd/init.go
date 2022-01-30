@@ -231,7 +231,6 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	}
 
 	if o.operatorOpts.ConsoleImage != "" {
-
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
 			Patch: o.serializeJSONPachOps([]interface{}{
 				opStr{

@@ -18,11 +18,11 @@ linters:
     - deadcode
     - structcheck
     - gomodguard
-    - gofmt
     - unused
     - structcheck
     - unconvert
     - varcheck
+    - gofumpt
 
 issues:
   exclude-use-default: false
@@ -37,4 +37,4 @@ issues:
         - deadcode
 
 service:
-  golangci-lint-version: 1.42.0 # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.43.0 # use the fixed version to not introduce new linters unexpectedly

@@ -46,6 +46,7 @@ type MinIOPrometheusMetrics struct {
 func getPrometheusMetricsForTenant(tenant *miniov2.Tenant, bearer string) (*MinIOPrometheusMetrics, error) {
 	return getPrometheusMetricsForTenantWithRetry(tenant, bearer, 5)
 }
+
 func getPrometheusMetricsForTenantWithRetry(tenant *miniov2.Tenant, bearer string, tryCount int) (*MinIOPrometheusMetrics, error) {
 	// build the endpoint to contact the Tenant
 	svcURL := tenant.GetTenantServiceURL()
