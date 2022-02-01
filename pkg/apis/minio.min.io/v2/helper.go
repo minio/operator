@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package v2
 
@@ -24,6 +21,7 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
@@ -48,7 +46,9 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/minio/madmin-go"
+	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/s3utils"
 )
 
 // Webhook API constants
@@ -249,7 +249,7 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 		tr = tar.NewReader(gz)
 	}
 
-	var success = len(filesToExtract)
+	success := len(filesToExtract)
 	for {
 		header, err := tr.Next()
 		if errors.Is(err, io.EOF) {
@@ -264,7 +264,7 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 		}
 		if header.Typeflag == tar.TypeReg {
 			if name := find(filesToExtract, header.Name); name != "" {
-				outFile, err := os.OpenFile(basePath+path.Base(name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+				outFile, err := os.OpenFile(basePath+path.Base(name), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o777)
 				if err != nil {
 					return fmt.Errorf("Tar file extraction failed while opening file: %s, at index: %d, with: %w", name, success, err)
 				}
@@ -518,9 +518,10 @@ func (t *Tenant) KESServiceHost() string {
 	return fmt.Sprintf("%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, GetClusterDomain())
 }
 
-// S3BucketDNS indicates if Bucket DNS feature is enabled.
-func (t *Tenant) S3BucketDNS() bool {
-	return t.Spec.S3 != nil && t.Spec.S3.BucketDNS
+// BucketDNS indicates if Bucket DNS feature is enabled.
+func (t *Tenant) BucketDNS() bool {
+	// we've deprecated .spec.s3 and will top working in future releases of operator
+	return (t.Spec.Features != nil && t.Spec.Features.BucketDNS) || (t.Spec.S3 != nil && t.Spec.S3.BucketDNS)
 }
 
 // HasKESEnabled checks if kes configuration is provided by user
@@ -538,8 +539,8 @@ func (t *Tenant) HasPrometheusEnabled() bool {
 	return t.Spec.Prometheus != nil
 }
 
-// HasPrometheusSMEnabled checks if Prometheus service monitor has been enabled
-func (t *Tenant) HasPrometheusSMEnabled() bool {
+// HasPrometheusOperatorEnabled checks if Prometheus service monitor has been enabled
+func (t *Tenant) HasPrometheusOperatorEnabled() bool {
 	return t.Spec.PrometheusOperator
 }
 
@@ -653,22 +654,9 @@ func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClie
 
 // NewMinIOAdminForAddress initializes a new madmin.Client for operator interaction
 func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string][]byte) (*madmin.AdminClient, error) {
-	host := address
-	if host == "" {
-		host = t.MinIOServerHostAddress()
-		if host == "" {
-			return nil, errors.New("MinIO server host is empty")
-		}
-	}
-
-	accessKey, ok := minioSecret["accesskey"]
-	if !ok {
-		return nil, errors.New("MinIO server accesskey not set")
-	}
-
-	secretKey, ok := minioSecret["secretkey"]
-	if !ok {
-		return nil, errors.New("MinIO server secretkey not set")
+	host, accessKey, secretKey, err := t.getMinIOTenantDetails(address, minioSecret)
+	if err != nil {
+		return nil, err
 	}
 
 	opts := &madmin.Options{
@@ -689,8 +677,96 @@ func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string]
 	return madmClnt, nil
 }
 
+func (t *Tenant) getMinIOTenantDetails(address string, minioSecret map[string][]byte) (string, []byte, []byte, error) {
+	host := address
+	if host == "" {
+		host = t.MinIOServerHostAddress()
+		if host == "" {
+			return "", nil, nil, errors.New("MinIO server host is empty")
+		}
+	}
+
+	accessKey, ok := minioSecret["accesskey"]
+	if !ok {
+		return "", nil, nil, errors.New("MinIO server accesskey not set")
+	}
+
+	secretKey, ok := minioSecret["secretkey"]
+	if !ok {
+		return "", nil, nil, errors.New("MinIO server secretkey not set")
+	}
+	return host, accessKey, secretKey, nil
+}
+
+// NewMinIOUser initializes a new console user
+func (t *Tenant) NewMinIOUser(userCredentialSecrets []*corev1.Secret, caContent []byte) (*minio.Client, error) {
+	return t.NewMinIOUserForAddress("", userCredentialSecrets, caContent)
+}
+
+// NewMinIOUserForAddress initializes a new console user
+func (t *Tenant) NewMinIOUserForAddress(address string, userCredentialSecrets []*corev1.Secret, caContent []byte) (*minio.Client, error) {
+	host := address
+	if host == "" {
+		host = t.MinIOServerHostAddress()
+		if host == "" {
+			return nil, errors.New("MinIO server host is empty")
+		}
+	}
+	consoleAccessKey, ok := userCredentialSecrets[0].Data["CONSOLE_ACCESS_KEY"]
+	if !ok {
+		return nil, errors.New("CONSOLE_ACCESS_KEY not provided")
+	}
+	// remove spaces and line breaks from access key
+	userAccessKey := strings.TrimSpace(string(consoleAccessKey))
+	consoleSecretKey, ok := userCredentialSecrets[0].Data["CONSOLE_SECRET_KEY"]
+	// remove spaces and line breaks from secret key
+	userSecretKey := strings.TrimSpace(string(consoleSecretKey))
+	if !ok {
+		return nil, errors.New("CONSOLE_SECRET_KEY not provided")
+	}
+
+	rootCAs := mustGetSystemCertPool()
+	rootCAs.AppendCertsFromPEM(caContent)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{},
+	}
+	tr.TLSClientConfig.RootCAs = rootCAs
+	opts := &minio.Options{
+		Transport: tr,
+		Secure:    t.TLS(),
+		Creds:     credentials.NewStaticV4(userAccessKey, userSecretKey, ""),
+	}
+
+	minioClnt, err := minio.New(host, opts)
+	if err != nil {
+		return nil, err
+	}
+	return minioClnt, nil
+}
+
+// mustGetSystemCertPool - return system CAs or empty pool in case of error (or windows)
+func mustGetSystemCertPool() *x509.CertPool {
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		return x509.NewCertPool()
+	}
+	return pool
+}
+
+// IsLDAPEnabled ldap enabled
+func (t *Tenant) IsLDAPEnabled() bool {
+	for _, env := range t.GetEnvVars() {
+		if env.Name == "MINIO_IDENTITY_LDAP_SERVER_ADDR" && env.Value != "" {
+			return true
+		}
+	}
+	return false
+}
+
 // CreateUsers creates a list of admin users on MinIO, optionally creating users is disabled.
-func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, skipCreateUser bool) error {
+func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret) error {
+	skipCreateUser := t.IsLDAPEnabled() // Skip creating users if LDAP is enabled.
+
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
@@ -717,6 +793,30 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 		if err := madmClnt.SetPolicy(ctx, ConsoleAdminPolicyName, userAccessKey, false); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// CreateBuckets creates buckets and skips if bucket already present
+func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) error {
+	for _, bucket := range buckets {
+		if err := s3utils.CheckValidBucketName(bucket.Name); err != nil {
+			return err
+		}
+		// create each bucket with a 20 seconds timeout
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+		defer cancel()
+		if err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{
+			Region:        bucket.Region,
+			ObjectLocking: bucket.ObjectLocking,
+		}); err != nil {
+			switch minio.ToErrorResponse(err).Code {
+			case "BucketAlreadyOwnedByYou", "BucketAlreadyExists":
+				klog.Infof(err.Error())
+				continue
+			}
+		}
+		klog.Infof("Successfully created bucket %s", bucket.Name)
 	}
 	return nil
 }
@@ -825,6 +925,16 @@ func (t *Tenant) OwnerRef() []metav1.OwnerReference {
 			Version: SchemeGroupVersion.Version,
 			Kind:    MinIOCRDResourceKind,
 		}),
+	}
+}
+
+// ObjectRef returns the ObjectReference to be added to all resources created by Tenant
+func (t *Tenant) ObjectRef() corev1.ObjectReference {
+	return corev1.ObjectReference{
+		Kind:      MinIOCRDResourceKind,
+		Namespace: t.Namespace,
+		Name:      t.Name,
+		UID:       t.UID,
 	}
 }
 
@@ -955,4 +1065,9 @@ func GetPrometheusName() string {
 		prometheusName = envGet(prometheusName, "")
 	})
 	return prometheusName
+}
+
+// HasMinIODomains indicates whether domains are being specified for MinIO
+func (t *Tenant) HasMinIODomains() bool {
+	return t.Spec.Features != nil && t.Spec.Features.Domains != nil && len(t.Spec.Features.Domains.Minio) > 0
 }

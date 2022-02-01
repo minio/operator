@@ -12,3 +12,4 @@ kubectl-minio/crds
 logsearchapi/logsearchapi
 *.log
 .vscode
+minio.yaml

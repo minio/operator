@@ -21,8 +21,8 @@ import (
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,7 +32,6 @@ import (
 // checkConsoleSvc validates the existence of the MinIO service and validate it's status against what the specification
 // states
 func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
-
 	// Handle the Internal ClusterIP Service for Tenant
 	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.ConsoleCIServiceName())
 	if err != nil {
@@ -47,22 +46,24 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 			if err != nil {
 				return err
 			}
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Console Service Created")
 		} else {
 			return err
 		}
 	}
 
-	// check the expose status of the Console service
-	svcMatchesSpec := true
 	// compare any other change from what is specified on the tenant
 	expectedSvc := services.NewClusterIPForConsole(tenant)
-	if !equality.Semantic.DeepDerivative(expectedSvc.Spec, svc.Spec) {
-		// some field set by the operator has changed
-		svcMatchesSpec = false
-	}
+
+	// check the expose status of the Console service
+	svcMatchesSpec, err := minioSvcMatchesSpecification(svc, expectedSvc)
 
 	// check the specification of the MinIO ClusterIP service
 	if !svcMatchesSpec {
+		if err != nil {
+			klog.Infof("Console Service don't match: %s", err)
+		}
+
 		svc.ObjectMeta.Annotations = expectedSvc.ObjectMeta.Annotations
 		svc.ObjectMeta.Labels = expectedSvc.ObjectMeta.Labels
 		svc.Spec.Ports = expectedSvc.Spec.Ports
@@ -77,6 +78,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 		if err != nil {
 			return err
 		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Updated", "Console Service Updated")
 	}
 	return err
 }

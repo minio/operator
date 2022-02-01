@@ -2029,8 +2029,6 @@ spec:
                 properties:
                   bucketDNS:
                     type: boolean
-                required:
-                - bucketDNS
                 type: object
               securityContext:
                 properties:
@@ -3972,6 +3970,8 @@ spec:
                   type: object
                 nullable: true
                 type: array
+              provisionedBuckets:
+                type: boolean
               provisionedUsers:
                 type: boolean
               revision:
@@ -4041,6 +4041,17 @@ spec:
             type: object
           spec:
             properties:
+              buckets:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    objectLock:
+                      type: boolean
+                    region:
+                      type: string
+                  type: object
+                type: array
               certConfig:
                 properties:
                   commonName:
@@ -4161,6 +4172,18 @@ spec:
                     type: string
                 required:
                 - name
+                type: object
+              features:
+                properties:
+                  bucketDNS:
+                    type: boolean
+                  domains:
+                    properties:
+                      minio:
+                        items:
+                          type: string
+                        type: array
+                    type: object
                 type: object
               image:
                 type: string
@@ -6716,8 +6739,6 @@ spec:
                 properties:
                   bucketDNS:
                     type: boolean
-                required:
-                - bucketDNS
                 type: object
               serviceAccountName:
                 type: string
@@ -8166,6 +8187,8 @@ spec:
                   type: object
                 nullable: true
                 type: array
+              provisionedBuckets:
+                type: boolean
               provisionedUsers:
                 type: boolean
               revision:

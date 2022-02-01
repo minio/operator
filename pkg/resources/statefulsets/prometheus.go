@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package statefulsets
 
@@ -118,18 +115,17 @@ func prometheusSidecarContainer(t *miniov2.Tenant) corev1.Container {
 			`echo -e '#!/bin/sh\n\nset -e\nset -x\necho "POST /-/reload HTTP/1.1\r\nHost:localhost:9090\r\nConnection: close\r\n\r\n" | nc localhost 9090\n' > /tmp/run.sh && echo "ok" && chmod +x /tmp/run.sh && inotifyd /tmp/run.sh /etc/prometheus/prometheus.yml:w`,
 		},
 	}
-
 }
 
 const prometheusDefaultVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
 // prometheusSecurityContext builds the security context for prometheus pods
 func prometheusSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
@@ -200,8 +196,8 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 	// and user will have to provide a serviceAccount that allows this
 	if securityContext != nil && securityContext.RunAsUser != nil && securityContext.RunAsGroup != nil {
 		var runAsUser int64
-		var runAsNonRoot = false
-		var allowPrivilegeEscalation = true
+		runAsNonRoot := false
+		allowPrivilegeEscalation := true
 		initContainerSecurityContext = corev1.SecurityContext{
 			RunAsUser:                &runAsUser,
 			RunAsNonRoot:             &runAsNonRoot,
@@ -209,14 +205,12 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 		}
 		initContainers = []corev1.Container{
 			{
-				Name:  "prometheus-init-chown-data",
-				Image: t.Spec.Prometheus.InitImage,
-				Command: []string{
-					"chown",
-					"-R",
-					fmt.Sprintf("%s:%s", strconv.FormatInt(*securityContext.RunAsUser, 10), strconv.FormatInt(*securityContext.RunAsGroup, 10)),
-					"/prometheus",
-					"||", "true", // make sure we do not fail if init container fails.
+				Name:    "prometheus-init-chown-data",
+				Image:   t.Spec.Prometheus.InitImage,
+				Command: []string{"sh"},
+				Args: []string{
+					"-c",
+					fmt.Sprintf(`echo -e '#!/bin/sh\n\nchown -vR %s:%s /prometheus || true\n' > /tmp/chown.sh && echo "ok" && chmod +x /tmp/chown.sh && /tmp/chown.sh`, strconv.FormatInt(*securityContext.RunAsUser, 10), strconv.FormatInt(*securityContext.RunAsGroup, 10)),
 				},
 				SecurityContext: &initContainerSecurityContext,
 				VolumeMounts:    prometheusVolumeMounts(t),

@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package cluster
 
@@ -33,7 +30,6 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/minio/minio-go/v7/pkg/set"
-	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/meta"
 
 	"k8s.io/client-go/tools/leaderelection"
@@ -65,7 +61,6 @@ import (
 	batchlisters "k8s.io/client-go/listers/batch/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
-	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 
 	"k8s.io/client-go/tools/cache"
@@ -76,9 +71,6 @@ import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
-	"github.com/minio/operator/pkg/resources/configmaps"
-	"github.com/minio/operator/pkg/resources/deployments"
-	"github.com/minio/operator/pkg/resources/secrets"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
@@ -105,6 +97,7 @@ const (
 	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server"
 	StatusProvisioningPrometheusStatefulSet  = "Provisioning Prometheus server"
 	StatusProvisioningInitialUsers           = "Provisioning initial users"
+	StatusProvisioningDefaultBuckets         = "Provisioning default buckets"
 	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
 	StatusWaitingForLogSearchReadyState      = "Waiting for Log Search Pods to be ready"
 	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"
@@ -207,7 +200,6 @@ type Controller struct {
 
 // NewController returns a new sample controller
 func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
-
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -347,7 +339,6 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		apiWillStart := make(chan interface{})
 
 		go func() {
-
 			// Request kubernetes version from Kube ApiServer
 			c.getKubeAPIServerVersion()
 
@@ -694,6 +685,7 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Headless Service created")
 		} else {
 			return err
 		}
@@ -798,7 +790,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Check if this is fresh setup not an expansion.
-	//addingNewPool := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
+	// addingNewPool := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
 	addingNewPool := false
 	// count the number of initialized pools, if at least 1 is not Initialized, we are still adding a new pool
 	for _, poolStatus := range tenant.Status.Pools {
@@ -850,7 +842,7 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
-
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
 			// Report the pool is properly created
 			tenant.Status.Pools[i].State = miniov2.PoolCreated
 			// push updates to status
@@ -1020,7 +1012,12 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 			return err
 		}
-		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("https://operator.%s.svc.%s:%s%s",
+		protocol := "https"
+		if !isOperatorTLS() {
+			protocol = "http"
+		}
+		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("%s://operator.%s.svc.%s:%s%s",
+			protocol,
 			miniov2.GetNSFromFile(), miniov2.GetClusterDomain(),
 			miniov2.WebhookDefaultPort, miniov2.WebhookAPIUpdate,
 		))
@@ -1092,6 +1089,7 @@ func (c *Controller) syncHandler(key string) error {
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolUpdated", fmt.Sprintf("Tenant pool %s updated", pool.Name))
 		}
 
 	}
@@ -1121,7 +1119,6 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 		if pool.Servers != *ss.Spec.Replicas {
-
 			// warn the user that replica count of an existing pool can't be changed
 			if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for pool %s", pool.Name), 0); err != nil {
 				return err
@@ -1254,7 +1251,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if tenant.HasPrometheusSMEnabled() {
+	if tenant.HasPrometheusOperatorEnabled() {
 		err := c.checkAndCreatePrometheusAddlConfig(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
 			return err
@@ -1270,8 +1267,20 @@ func (c *Controller) syncHandler(key string) error {
 	if !tenant.Status.ProvisionedUsers {
 		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO users: %v", err)
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "UsersCreatedFailed", fmt.Sprintf("Users creation failed: %s", err))
 			return err
 		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "UsersCreated", "Users created")
+	}
+
+	// Ensure we are only creating the bucket once using the console user
+	if !tenant.Status.ProvisionedBuckets && tenant.Status.ProvisionedUsers {
+		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
+			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
+			return err
+		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
 	}
 
 	// Finally, we update the status block of the Tenant resource to reflect the
@@ -1352,431 +1361,6 @@ func MinIOControllerRateLimiter() queue.RateLimiter {
 		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
 		&queue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(10), 100)},
 	)
-}
-
-func (c *Controller) deleteLogHeadlessService(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogHLServiceName())
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-	klog.V(2).Infof("Deleting Log Headless Service for %s", tenant.Namespace)
-	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.LogHLServiceName(), metav1.DeleteOptions{})
-	return err
-}
-
-func (c *Controller) deleteLogStatefulSet(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LogStatefulsetName())
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-	klog.V(2).Infof("Deleting Log StatefulSet for %s", tenant.Namespace)
-	err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Delete(ctx, tenant.LogStatefulsetName(), metav1.DeleteOptions{})
-	return err
-}
-
-func (c *Controller) deleteLogSearchAPIDeployment(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.LogSearchAPIDeploymentName())
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-	klog.V(2).Infof("Deleting Log Search API deployment for %s", tenant.Name)
-	err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Delete(ctx, tenant.LogSearchAPIDeploymentName(), metav1.DeleteOptions{})
-	return err
-}
-
-func (c *Controller) deleteLogSearchAPIService(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogSearchAPIServiceName())
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-	klog.V(2).Infof("Delete Log Search API Service for %s", tenant.Namespace)
-	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.LogSearchAPIServiceName(), metav1.DeleteOptions{})
-	return err
-}
-
-func (c *Controller) checkAndCreateLogHeadless(ctx context.Context, tenant *miniov2.Tenant) (*corev1.Service, error) {
-	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogHLServiceName())
-	if err == nil || !k8serrors.IsNotFound(err) {
-		return svc, err
-	}
-
-	klog.V(2).Infof("Creating a new Log Headless Service for %s", tenant.Namespace)
-	svc = services.NewHeadlessForLog(tenant)
-	_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, metav1.CreateOptions{})
-	return svc, err
-}
-
-func (c *Controller) checkAndCreateLogStatefulSet(ctx context.Context, tenant *miniov2.Tenant, svcName string) error {
-	logPgSS, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.LogStatefulsetName())
-	if err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return err
-		}
-		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningLogPGStatefulSet, 0); err != nil {
-			return err
-		}
-
-		klog.V(2).Infof("Creating a new Log StatefulSet for %s", tenant.Namespace)
-		searchSS := statefulsets.NewForLogDb(tenant, svcName)
-		_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, searchSS, metav1.CreateOptions{})
-		return err
-
-	}
-
-	// check if expected and actual values of Log DB spec match
-	dbSpecMatches, err := logDBStatefulsetMatchesSpec(tenant, logPgSS)
-	if err != nil {
-		return err
-	}
-	if !dbSpecMatches {
-		// Note: using current spec replica count works as long as we don't expose replicas via tenant spec.
-		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingLogPGStatefulSet, *logPgSS.Spec.Replicas); err != nil {
-			return err
-		}
-		logPgSS = statefulsets.NewForLogDb(tenant, svcName)
-		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, logPgSS, metav1.UpdateOptions{}); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *Controller) checkAndCreateLogSearchAPIService(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogSearchAPIServiceName())
-	if err == nil || !k8serrors.IsNotFound(err) {
-		return err
-	}
-
-	klog.V(2).Infof("Creating a new Log Search API Service for %s", tenant.Namespace)
-	svc := services.NewClusterIPForLogSearchAPI(tenant)
-	_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, metav1.CreateOptions{})
-	return err
-}
-
-func (c *Controller) checkAndCreateLogSearchAPIDeployment(ctx context.Context, tenant *miniov2.Tenant) error {
-	logSearchDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.LogSearchAPIDeploymentName())
-	if err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return err
-		}
-		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningLogSearchAPIDeployment, 0); err != nil {
-			return err
-		}
-
-		klog.V(2).Infof("Creating a new Log Search API deployment for %s", tenant.Name)
-		_, err = c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Create(ctx, deployments.NewForLogSearchAPI(tenant), metav1.CreateOptions{})
-		return err
-	}
-
-	// check if expected and actual values of Log search API deployment match
-	apiDeploymentMatches, err := logSearchAPIDeploymentMatchesSpec(tenant, logSearchDeployment)
-	if err != nil {
-		return err
-	}
-	if !apiDeploymentMatches {
-		// Note: using current spec replica count works as long as we don't expose replicas via tenant spec.
-		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingLogSearchAPIServer, 0); err != nil {
-			return err
-		}
-		logSearchDeployment = deployments.NewForLogSearchAPI(tenant)
-		if _, err := c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Update(ctx, logSearchDeployment, metav1.UpdateOptions{}); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Controller) checkAndCreateLogSecret(ctx context.Context, tenant *miniov2.Tenant) (*corev1.Secret, error) {
-	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.LogSecretName(), metav1.GetOptions{})
-	if err == nil || !k8serrors.IsNotFound(err) {
-		return secret, err
-	}
-
-	klog.V(2).Infof("Creating a new Log secret for %s", tenant.Name)
-	secret, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secrets.LogSecret(tenant), metav1.CreateOptions{})
-	return secret, err
-}
-
-func (c *Controller) checkAndConfigureLogSearchAPI(ctx context.Context, tenant *miniov2.Tenant, secret *corev1.Secret, adminClnt *madmin.AdminClient) error {
-	// Check if audit webhook is configured for tenant's MinIO
-	auditCfg := newAuditWebhookConfig(tenant, secret)
-	_, err := adminClnt.GetConfigKV(ctx, auditCfg.target)
-	if err != nil {
-		// check if log search is ready
-		if err = c.checkLogSearchAPIReady(tenant); err != nil {
-			klog.V(2).Info(err)
-			if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForLogSearchReadyState, 0); err != nil {
-				return err
-			}
-			return ErrLogSearchNotReady
-		}
-		restart, err := adminClnt.SetConfigKV(ctx, auditCfg.args)
-		if err != nil {
-			return err
-		}
-		if restart {
-			// Restart MinIO for config update to take effect
-			if err = adminClnt.ServiceRestart(ctx); err != nil {
-				klog.V(2).Info("error restarting minio")
-				klog.V(2).Info(err)
-			}
-			klog.V(2).Info("done restarting minio")
-		}
-		return nil
-	}
-	return err
-}
-
-func (c *Controller) checkLogSearchAPIReady(tenant *miniov2.Tenant) error {
-	endpoint := fmt.Sprintf("http://%s.%s.svc.%s:8080", tenant.LogSearchAPIServiceName(), tenant.Namespace, miniov2.GetClusterDomain())
-	client := http.Client{Timeout: 100 * time.Millisecond}
-	resp, err := client.Get(endpoint)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			klog.V(2).Info(err)
-		}
-	}()
-
-	if resp.StatusCode == 404 {
-		return nil
-	}
-
-	return errors.New("Log Search API Not Ready")
-}
-
-func (c *Controller) checkAndCreatePrometheusConfigMap(ctx context.Context, tenant *miniov2.Tenant, accessKey, secretKey string) (*corev1.ConfigMap, error) {
-	configMap, err := c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Get(ctx, tenant.PrometheusConfigMapName(), metav1.GetOptions{})
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return configMap, err
-	} else if err == nil {
-		// check if configmap needs update.
-		updatedConfigMap := configmaps.UpdatePrometheusConfigMap(tenant, accessKey, secretKey, configMap)
-		if updatedConfigMap == nil {
-			return configMap, nil
-		}
-
-		klog.V(2).Infof("Updating Prometheus config-map for %s", tenant.Name)
-		configMap, err = c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Update(ctx, updatedConfigMap, metav1.UpdateOptions{})
-		if err != nil {
-			return configMap, err
-		}
-
-		return configMap, err
-	}
-
-	// otherwise create the config
-	klog.V(2).Infof("Creating a new Prometheus config-map for %s", tenant.Name)
-	return c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Create(ctx, configmaps.PrometheusConfigMap(tenant, accessKey, secretKey), metav1.CreateOptions{})
-}
-
-func (c *Controller) deletePrometheusHeadless(ctx context.Context, tenant *miniov2.Tenant) error {
-	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.PrometheusHLServiceName())
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-	klog.V(2).Infof("Deleting Prometheus Headless Service for %s", tenant.Namespace)
-	err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Delete(ctx, tenant.PrometheusHLServiceName(), metav1.DeleteOptions{})
-	return err
-}
-
-func (c *Controller) deletePrometheusStatefulSet(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PrometheusStatefulsetName())
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-	klog.V(2).Infof("Deleting Prometheus StatefulSet for %s", tenant.Namespace)
-	err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Delete(ctx, tenant.PrometheusStatefulsetName(), metav1.DeleteOptions{})
-	return err
-}
-
-func (c *Controller) checkAndCreatePrometheusHeadless(ctx context.Context, tenant *miniov2.Tenant) (*corev1.Service, error) {
-	svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.PrometheusHLServiceName())
-	if err == nil || !k8serrors.IsNotFound(err) {
-		return svc, err
-	}
-
-	klog.V(2).Infof("Creating a new Prometheus Headless Service for %s", tenant.Namespace)
-	svc = services.NewHeadlessForPrometheus(tenant)
-	_, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, metav1.CreateOptions{})
-	return svc, err
-}
-
-func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PrometheusStatefulsetName())
-	if err == nil || !k8serrors.IsNotFound(err) {
-		return err
-	}
-
-	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningPrometheusStatefulSet, 0); err != nil {
-		return err
-	}
-
-	klog.V(2).Infof("Creating a new Prometheus StatefulSet for %s", tenant.Namespace)
-	prometheusSS := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName())
-	_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, prometheusSS, metav1.CreateOptions{})
-	return err
-}
-
-func (c *Controller) getPrometheus(ctx context.Context) (*promv1.Prometheus, error) {
-	ns := miniov2.GetPrometheusNamespace()
-	promName := miniov2.GetPrometheusName()
-	var p *promv1.Prometheus
-	var err error
-	if promName != "" {
-		p, err = c.promClient.MonitoringV1().Prometheuses(ns).Get(ctx, promName, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		pList, err := c.promClient.MonitoringV1().Prometheuses(ns).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			return nil, err
-		}
-		if len(pList.Items) == 0 {
-			return nil, errors.New("No prometheus found on namespace " + ns)
-		}
-		if len(pList.Items) > 1 {
-			return nil, errors.New("More than 1 prometheus found on namespace " + ns + ". PROMETHEUS_NAME not specified.")
-		}
-		p = pList.Items[0]
-	}
-	return p, nil
-}
-
-func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, tenant *miniov2.Tenant, accessKey, secretKey string) error {
-	ns := miniov2.GetPrometheusNamespace()
-
-	p, err := c.getPrometheus(ctx)
-	if err != nil {
-		return err
-	}
-
-	// If the additional scrape config is set to something else, we will error out
-	if p.Spec.AdditionalScrapeConfigs != nil && p.Spec.AdditionalScrapeConfigs.Name != miniov2.PrometheusAddlScrapeConfigSecret {
-		return errors.New(p.Spec.AdditionalScrapeConfigs.Name + " is alreay set as additional scrape config in prometheus")
-	}
-
-	secret, err := c.kubeClientSet.CoreV1().Secrets(ns).Get(ctx, miniov2.PrometheusAddlScrapeConfigSecret, metav1.GetOptions{})
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return err
-	}
-
-	promCfg := configmaps.GetPrometheusConfig(tenant, accessKey, secretKey)
-
-	// If the secret is not found, create the secret
-	if k8serrors.IsNotFound(err) {
-		klog.Infof("Adding MinIO tenant Prometheus scrape config")
-		scrapeCfgYaml, err := yaml.Marshal(&promCfg.ScrapeConfigs)
-		if err != nil {
-			return err
-		}
-		secret = &corev1.Secret{
-			Type: "Opaque",
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      miniov2.PrometheusAddlScrapeConfigSecret,
-				Namespace: ns,
-			},
-			Data: map[string][]byte{
-				miniov2.PrometheusAddlScrapeConfigKey: scrapeCfgYaml,
-			},
-		}
-		_, err = c.kubeClientSet.CoreV1().Secrets(ns).Create(ctx, secret, metav1.CreateOptions{})
-		if err != nil {
-			return err
-		}
-	} else {
-		var scrapeConfigs []configmaps.ScrapeConfig
-		err := yaml.Unmarshal(secret.Data[miniov2.PrometheusAddlScrapeConfigKey], &scrapeConfigs)
-		if err != nil {
-			return err
-		}
-		// Check if the scrape config is already present
-		hasScrapeConfig := false
-		for _, sc := range scrapeConfigs {
-			if sc.JobName == tenant.PrometheusConfigJobName() {
-				hasScrapeConfig = true
-				break
-			}
-		}
-		if !hasScrapeConfig {
-			klog.Infof("Adding MinIO tenant Prometheus scrape config")
-			scrapeConfigs = append(scrapeConfigs, promCfg.ScrapeConfigs...)
-			scrapeCfgYaml, err := yaml.Marshal(scrapeConfigs)
-			if err != nil {
-				return err
-			}
-			secret.Data[miniov2.PrometheusAddlScrapeConfigKey] = scrapeCfgYaml
-			_, err = c.kubeClientSet.CoreV1().Secrets(ns).Update(ctx, secret, metav1.UpdateOptions{})
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	// Update prometheus if its not done alreay
-	if p.Spec.AdditionalScrapeConfigs == nil {
-		p.Spec.AdditionalScrapeConfigs = &v1.SecretKeySelector{
-			LocalObjectReference: corev1.LocalObjectReference{Name: miniov2.PrometheusAddlScrapeConfigSecret},
-			Key:                  miniov2.PrometheusAddlScrapeConfigKey,
-		}
-
-		_, err = c.promClient.MonitoringV1().Prometheuses(ns).Update(ctx, p, metav1.UpdateOptions{})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *Controller) deletePrometheusAddlConfig(ctx context.Context, tenant *miniov2.Tenant) error {
-	ns := miniov2.GetPrometheusNamespace()
-
-	secret, err := c.kubeClientSet.CoreV1().Secrets(ns).Get(ctx, miniov2.PrometheusAddlScrapeConfigSecret, metav1.GetOptions{})
-	// If the secret is not found, return from here
-	if k8serrors.IsNotFound(err) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	var scrapeConfigs []configmaps.ScrapeConfig
-	err = yaml.Unmarshal(secret.Data[miniov2.PrometheusAddlScrapeConfigKey], &scrapeConfigs)
-	if err != nil {
-		return err
-	}
-	// Check if the scrape config is present
-	hasScrapeConfig := false
-	scIndex := -1
-	for i, sc := range scrapeConfigs {
-		if sc.JobName == tenant.PrometheusConfigJobName() {
-			hasScrapeConfig = true
-			scIndex = i
-			break
-		}
-	}
-	if hasScrapeConfig {
-		klog.Infof("Deleting MinIO tenant Prometheus scrape config")
-		// Delete the config
-		newScrapeConfigs := append(scrapeConfigs[:scIndex], scrapeConfigs[scIndex+1:]...)
-		// Update the secret
-		scrapeCfgYaml, err := yaml.Marshal(newScrapeConfigs)
-		if err != nil {
-			return err
-		}
-		secret.Data[miniov2.PrometheusAddlScrapeConfigKey] = scrapeCfgYaml
-		_, err = c.kubeClientSet.CoreV1().Secrets(ns).Update(ctx, secret, metav1.UpdateOptions{})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 type patchAnnotation struct {

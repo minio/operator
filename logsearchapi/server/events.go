@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package server
 
@@ -34,6 +31,7 @@ type Entry struct {
 	Trigger      string `json:"trigger"`
 	API          struct {
 		Name            string `json:"name,omitempty"`
+		AccessKey       string `json:"accessKey,omitempty"`
 		Bucket          string `json:"bucket,omitempty"`
 		Object          string `json:"object,omitempty"`
 		Status          string `json:"status,omitempty"`
@@ -54,6 +52,7 @@ type Entry struct {
 // API is struct with same info an Entry.API, but with more strong types.
 type API struct {
 	Name            string         `json:"name,omitempty"`
+	AccessKey       string         `json:"accessKey,omitempty"`
 	Bucket          string         `json:"bucket,omitempty"`
 	Object          string         `json:"object,omitempty"`
 	Status          string         `json:"status,omitempty"`
@@ -133,7 +132,32 @@ func EventFromEntry(e *Entry) (*Event, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Parse access key
+	if authHdr, ok := e.ReqHeader["Authorization"]; ok {
+		ret.API.AccessKey = parseAccessKey(authHdr)
+	}
 	return &ret, nil
+}
+
+func parseAccessKey(authHdr string) string {
+	v4Prefix := "AWS4-HMAC-SHA256 Credential="
+	v2Prefix := "AWS "
+	var splits []string
+	switch {
+	case strings.HasPrefix(authHdr, v4Prefix):
+		authHdr = strings.TrimPrefix(authHdr, v4Prefix)
+		splits = strings.Split(authHdr, "/")
+
+	case strings.HasPrefix(authHdr, v2Prefix):
+		authHdr = strings.TrimPrefix(authHdr, v2Prefix)
+		splits = strings.Split(authHdr, ":")
+	}
+	if len(splits) > 0 {
+		return splits[0]
+	}
+
+	return ""
 }
 
 func parseJSONEvent(b []byte) (*Event, error) {

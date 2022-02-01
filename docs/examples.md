@@ -41,15 +41,13 @@ This example will deploy a MinIO tenant with Server Side Encryption using KES an
 
 ### Getting Started
 
-- Open `example/kustomization/tenant-kes-encryption/kes-configuration-secret.yaml`
-- In the  `Vault` configuration replace `<PUT YOUR VAULT ENDPOINT HERE>`
- for `http://vault.default.svc.cluster.local:8200`, `<PUT YOUR APPROLE ID HERE>` for your `app-role-id`, `<PUT YOUR APPROLE SECRET ID HERE>` for your `app-role-secret-id` and
- `<PUT YOUR KEY PREFIX HERE>` for `my-minio`.
+- Open `examples/kustomization/tenant-kes-encryption/kes-configuration-secret.yaml`
+- In the  `Vault` configuration replace `<YOUR APPROLE ID HERE>` for your `app-role-id`, `<YOUR APPROLE SECRET ID HERE>` for your `app-role-secret-id`.
 
 You can deploy a preconfigured example by running the following command:
 
 ```$xslt
-kustomize build example/kustomization/tenant-kes-encryption | kubectl apply -f -
+kustomize build examples/kustomization/tenant-kes-encryption | kubectl apply -f -
 ```
 
 Verify data is encrypted by connecting directly to MinIO via `ingress controller` or using port-forward:

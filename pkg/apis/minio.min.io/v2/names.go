@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package v2
 
@@ -270,5 +267,14 @@ func (t *Tenant) PrometheusHLServiceName() string {
 
 // PrometheusConfigJobName returns the name of the prometheus job
 func (t *Tenant) PrometheusConfigJobName() string {
+	if t.Spec.PrometheusOperator {
+		return t.PrometheusOperatorAddlConfigJobName()
+	}
+	return "minio-job"
+}
+
+// PrometheusOperatorAddlConfigJobName returns the name of the prometheus job
+// when prometheus operator is enabled
+func (t *Tenant) PrometheusOperatorAddlConfigJobName() string {
 	return fmt.Sprintf("%s-minio-job", t.Name)
 }

@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020-2021 MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020 MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package main
 
@@ -27,9 +24,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/minio/minio-go/v7/pkg/set"
-
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/minio/minio-go/v7/pkg/set"
 
 	"k8s.io/client-go/rest"
 
@@ -160,6 +157,7 @@ func main() {
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	podName := os.Getenv("HOSTNAME")
 	if podName == "" {
+		klog.Info("Could not determine $HOSTNAME, defaulting to pod name: operator-pod")
 		podName = "operator-pod"
 	}
 

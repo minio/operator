@@ -101,7 +101,6 @@ func (c *Controller) updatePoolStatus(ctx context.Context, tenant *miniov2.Tenan
 }
 
 func (c *Controller) updatePoolStatusWithRetry(ctx context.Context, tenant *miniov2.Tenant, retry bool) (*miniov2.Tenant, error) {
-
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -135,7 +134,6 @@ func (c *Controller) updateCertificatesStatus(ctx context.Context, tenant *minio
 }
 
 func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *miniov2.Tenant, autoCertEnabled bool, retry bool) (*miniov2.Tenant, error) {
-
 	// NEVER modify objects from the store. It's a read-only, local cache.
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
@@ -183,6 +181,31 @@ func (c *Controller) updateProvisionedUsersWithRetry(ctx context.Context, tenant
 				return tenant, err
 			}
 			return c.updateProvisionedUsersWithRetry(ctx, tenant, provisionedUsers, false)
+		}
+		return t, err
+	}
+	return t, nil
+}
+
+func (c *Controller) updateProvisionedBucketStatus(ctx context.Context, tenant *miniov2.Tenant, provisionedBuckets bool) (*miniov2.Tenant, error) {
+	return c.updateProvisionedBucketsWithRetry(ctx, tenant, provisionedBuckets, true)
+}
+
+func (c *Controller) updateProvisionedBucketsWithRetry(ctx context.Context, tenant *miniov2.Tenant, provisionedBuckets bool, retry bool) (*miniov2.Tenant, error) {
+	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Status = *tenant.Status.DeepCopy()
+	tenantCopy.Status.ProvisionedBuckets = provisionedBuckets
+	opts := metav1.UpdateOptions{}
+	t, err := c.minioClientSet.MinioV2().Tenants(tenant.Namespace).UpdateStatus(ctx, tenantCopy, opts)
+	t.EnsureDefaults()
+	if err != nil {
+		if k8serrors.IsConflict(err) && retry {
+			klog.Info("Hit conflict issue, getting latest version of tenant")
+			tenant, err = c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Get(ctx, tenant.Name, metav1.GetOptions{})
+			if err != nil {
+				return tenant, err
+			}
+			return c.updateProvisionedBucketsWithRetry(ctx, tenant, provisionedBuckets, false)
 		}
 		return t, err
 	}

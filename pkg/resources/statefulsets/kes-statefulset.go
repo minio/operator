@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package statefulsets
 
@@ -71,7 +68,6 @@ func KESEnvironmentVars(t *miniov2.Tenant) []corev1.EnvVar {
 
 // KESServerContainer returns the KES container for a KES StatefulSet.
 func KESServerContainer(t *miniov2.Tenant) corev1.Container {
-
 	// Args to start KES with config mounted at miniov2.KESConfigMountPath and require but don't verify mTLS authentication
 	args := []string{"server", "--config=" + miniov2.KESConfigMountPath + "/server-config.yaml", "--auth=off"}
 
@@ -93,11 +89,11 @@ func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 
 // kesSecurityContext builds the security context for KES statefulset pods
 func kesSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
@@ -111,10 +107,10 @@ func kesSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 
 // NewForKES creates a new KES StatefulSet for the given Cluster.
 func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
-	var replicas = t.KESReplicas()
+	replicas := t.KESReplicas()
 	// certificate files used by the KES server
-	var certPath = "server.crt"
-	var keyPath = "server.key"
+	certPath := "server.crt"
+	keyPath := "server.key"
 
 	var volumeProjections []corev1.VolumeProjection
 
@@ -123,12 +119,12 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	// in mTLS with a KMS (eg: authentication with Vault)
 	var clientCertSecret string
 
-	var serverCertPaths = []corev1.KeyToPath{
+	serverCertPaths := []corev1.KeyToPath{
 		{Key: "public.crt", Path: certPath},
 		{Key: "private.key", Path: keyPath},
 	}
 
-	var configPath = []corev1.KeyToPath{
+	configPath := []corev1.KeyToPath{
 		{Key: "server-config.yaml", Path: "server-config.yaml"},
 	}
 

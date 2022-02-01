@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package statefulsets
 
@@ -130,11 +127,11 @@ const defaultLogVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
 // postgresSecurityContext builds the security context for postgres pods
 func postgresSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 999
 	var runAsGroup int64 = 999
 	var fsGroup int64 = 999
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
@@ -200,8 +197,8 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 			dbPod.Spec.SecurityContext.RunAsGroup != nil {
 
 			var runAsUser int64
-			var runAsNonRoot = false
-			var allowPrivilegeEscalation = true
+			runAsNonRoot := false
+			allowPrivilegeEscalation := true
 			initContainerSecurityContext = corev1.SecurityContext{
 				RunAsUser:                &runAsUser,
 				RunAsNonRoot:             &runAsNonRoot,
@@ -212,14 +209,12 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 				if t.Spec.Log.Db.InitImage != "" {
 					initContainers = []corev1.Container{
 						{
-							Name:  "postgres-init-chown-data",
-							Image: t.Spec.Log.Db.InitImage,
-							Command: []string{
-								"chown",
-								"-R",
-								fmt.Sprintf("%s:%s", strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsUser, 10), strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsGroup, 10)),
-								"/var/lib/postgresql/data",
-								"||", "true",
+							Name:    "postgres-init-chown-data",
+							Image:   t.Spec.Log.Db.InitImage,
+							Command: []string{"sh"},
+							Args: []string{
+								"-c",
+								fmt.Sprintf(`echo -e '#!/bin/sh\n\nchown -vR %s:%s /var/lib/postgresql/data || true\n' > /tmp/chown.sh && echo "ok" && chmod +x /tmp/chown.sh && /tmp/chown.sh`, strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsUser, 10), strconv.FormatInt(*dbPod.Spec.SecurityContext.RunAsGroup, 10)),
 							},
 							SecurityContext: &initContainerSecurityContext,
 							VolumeMounts:    logVolumeMounts(t),

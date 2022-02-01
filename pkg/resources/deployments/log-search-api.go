@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package deployments
 
@@ -125,11 +122,11 @@ func logSearchAPISelector(t *miniov2.Tenant) *metav1.LabelSelector {
 
 // logSearchAPISecurityContext builds the security context for log search api pods
 func logSearchAPISecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,

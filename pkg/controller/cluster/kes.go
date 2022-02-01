@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2019, 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2019 MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package cluster
 
@@ -28,6 +25,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/services"
@@ -100,11 +99,13 @@ func (c *Controller) createKESCSR(ctx context.Context, tenant *miniov2.Tenant) e
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
 		return err
 	}
+	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "CSRCreated", "KES CSR Created")
 
 	// fetch certificate from CSR
 	certbytes, err := c.fetchCertificate(ctx, tenant.KESCSRName())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("KES CSR Failed to create: %s", err))
 		return err
 	}
 

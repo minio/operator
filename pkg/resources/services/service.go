@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package services
 
@@ -80,9 +77,17 @@ func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
 	var internalLabels, labels, annotations map[string]string
 	internalLabels = t.ConsolePodLabels()
 
-	consolePort := corev1.ServicePort{Port: miniov2.ConsolePort, Name: miniov2.ConsoleServicePortName}
+	consolePort := corev1.ServicePort{
+		Port:       miniov2.ConsolePort,
+		TargetPort: intstr.FromInt(miniov2.ConsolePort),
+		Name:       miniov2.ConsoleServicePortName,
+	}
 	if t.TLS() {
-		consolePort = corev1.ServicePort{Port: miniov2.ConsoleTLSPort, Name: miniov2.ConsoleServiceTLSPortName}
+		consolePort = corev1.ServicePort{
+			Port:       miniov2.ConsoleTLSPort,
+			TargetPort: intstr.FromInt(miniov2.ConsoleTLSPort),
+			Name:       miniov2.ConsoleServiceTLSPortName,
+		}
 	}
 	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceLabels != nil {
 		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.ConsoleServiceLabels)

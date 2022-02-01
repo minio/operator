@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package v2
 
@@ -88,7 +85,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2021-12-27T07-23-18Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2022-01-27T03-53-02Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -150,7 +147,7 @@ const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.3.8"
+const DefaultLogSearchAPIImage = "minio/logsearchapi:v4.4.4"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres:13"
@@ -215,7 +212,7 @@ const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.16.1"
+const DefaultKESImage = "minio/kes:v0.17.6"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"

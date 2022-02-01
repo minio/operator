@@ -1,20 +1,17 @@
-/*
- * This file is part of MinIO Operator
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// This file is part of MinIO Operator
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package cmd
 
@@ -53,7 +50,7 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Use:     "upgrade <TENANTNAME> --image <MINIO-IMAGE>",
 		Short:   "Upgrade MinIO image for existing tenant",
 		Long:    upgradeDesc,
-		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2021-12-27T07-23-18Z`,
+		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2022-01-27T03-53-02Z`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			return c.validate(args)
 		},

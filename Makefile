@@ -27,19 +27,20 @@ all: build logsearchapi
 getdeps:
 	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
-	@which golangci-lint 1>/dev/null || (echo "Installing golangci-lint" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.42.0)
+	@which golangci-lint 1>/dev/null || (echo "Installing golangci-lint" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.43.0)
 
 verify: getdeps govet gotest lint
 
-build: regen-crd verify plugin
+operator:
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator
 	@docker build -t $(TAG) .
+
+build: regen-crd verify plugin operator
 
 install: all
 
 lint:
 	@echo "Running $@ check"
-	@GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean
 	@GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ./.golangci.yml
 
 govet:

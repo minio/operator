@@ -164,7 +164,7 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest time.Time, e
 		}
 	}
 
-	f, err := os.OpenFile(basePath+"image.tar", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0777)
+	f, err := os.OpenFile(basePath+"image.tar", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o777)
 	if err != nil {
 		return latest, err
 	}

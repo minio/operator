@@ -27,6 +27,14 @@ spec:
   ## Secret should follow the format used in `minio-creds-secret`.
   users:
     - name: storage-user
+  ## Create buckets using the console user
+  # buckets:
+  #   - name: "test-bucket1"
+  #     region: "us-east-1"
+  #     objectLock: true
+  #   - name: "test-bucket2"
+  #     region: "us-east-1"
+  #     objectLock: true
   ## This field is used only when "requestAutoCert" is set to true. Use this field to set CommonName
   ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is
   ## not provided. DNS name format is *.minio.default.svc.cluster.local
@@ -103,7 +111,7 @@ spec:
   ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
   # externalClientCertSecret: {}
   ## Registry location and Tag to download MinIO Server image
-  image: quay.io/minio/minio:RELEASE.2021-12-27T07-23-18Z
+  image: quay.io/minio/minio:RELEASE.2022-01-27T03-53-02Z
   imagePullSecret: { }
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
@@ -162,7 +170,7 @@ spec:
     image: "" # defaults to quay.io/prometheus/prometheus:latest
     sidecarimage: "" # defaults to alpine
     initimage: "" # defaults to busybox:1.33.1
-    diskCapacityGB: 10
+    diskCapacityGB: 1
     storageClassName: standard
     annotations: { }
     labels: { }
@@ -184,7 +192,7 @@ spec:
   #     app: minio-sm
   ## LogSearch API setup for MinIO Tenant.
   log:
-    image: "" # defaults to minio/logsearchapi:v4.3.8
+    image: "" # defaults to minio/logsearchapi:v4.4.4
     resources: { }
     nodeSelector: { }
     affinity:
@@ -195,7 +203,7 @@ spec:
     annotations: { }
     labels: { }
     audit:
-      diskCapacityGB: 10
+      diskCapacityGB: 1
     ## Postgres setup for LogSearch API
     db:
       image: "" # defaults to library/postgres
@@ -208,7 +216,7 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 10Gi
+              storage: 1Gi
       resources: { }
       nodeSelector: { }
       affinity:

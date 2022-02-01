@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2020, MinIO, Inc.
- *
- * This code is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License, version 3,
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+// Copyright (C) 2020, MinIO, Inc.
+//
+// This code is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License, version 3,
+// as published by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License, version 3,
+// along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 package statefulsets
 
@@ -102,14 +99,16 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 		}, corev1.EnvVar{
 			Name:  "MINIO_OPERATOR_VERSION",
 			Value: opVersion,
+		}, corev1.EnvVar{
+			Name:  "MINIO_PROMETHEUS_JOB_ID",
+			Value: t.PrometheusConfigJobName(),
 		})
 
+	var domains []string
 	// Enable Bucket DNS only if asked for by default turned off
-	if t.S3BucketDNS() {
+	if t.BucketDNS() {
+		domains = append(domains, t.MinIOBucketBaseDomain())
 		envVars = append(envVars, corev1.EnvVar{
-			Name:  "MINIO_DOMAIN",
-			Value: t.MinIOBucketBaseDomain(),
-		}, corev1.EnvVar{
 			Name: miniov2.WebhookMinIOBucket,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -119,6 +118,17 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 					Key: miniov2.WebhookMinIOArgs,
 				},
 			},
+		})
+	}
+	// Check if any domains are configured
+	if t.HasMinIODomains() {
+		domains = append(domains, t.Spec.Features.Domains.Minio...)
+	}
+	// tell MinIO about all the domains meant to hit it
+	if len(domains) > 0 {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "MINIO_DOMAIN",
+			Value: strings.Join(domains, ","),
 		})
 	}
 
@@ -345,11 +355,11 @@ func poolTopologySpreadConstraints(z *miniov2.Pool) []corev1.TopologySpreadConst
 
 // Builds the security context for a Pool
 func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
@@ -373,16 +383,16 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 // NewPool creates a new StatefulSet for the given Cluster.
 func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
-	var replicas = pool.Servers
+	replicas := pool.Servers
 	var certVolumeSources []corev1.VolumeProjection
 
 	var clientCertSecret string
-	var clientCertPaths = []corev1.KeyToPath{
+	clientCertPaths := []corev1.KeyToPath{
 		{Key: "public.crt", Path: "client.crt"},
 		{Key: "private.key", Path: "client.key"},
 	}
 	var kesCertSecret string
-	var KESCertPath = []corev1.KeyToPath{
+	KESCertPath := []corev1.KeyToPath{
 		{Key: "public.crt", Path: "CAs/kes.crt"},
 	}
 
