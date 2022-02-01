@@ -22,7 +22,7 @@ PLUGIN_HOME=kubectl-minio
 LOGSEARCHAPI=logsearchapi
 LOGSEARCHAPI_TAG ?= "minio/logsearchapi:$(VERSION)"
 
-all: build logsearchapi
+all: build
 
 getdeps:
 	@echo "Checking dependencies"
@@ -35,7 +35,7 @@ operator:
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator
 	@docker build -t $(TAG) .
 
-build: regen-crd verify plugin operator
+build: regen-crd verify plugin logsearchapi operator
 
 install: all
 
@@ -85,8 +85,7 @@ logsearchapi:
 		go test -race ./... && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
-		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o $(LOGSEARCHAPI)_amd64 && \
-		docker buildx build --output=type=docker --platform linux/amd64 -t $(LOGSEARCHAPI_TAG) .)
+		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o logsearchapi )
 
 getconsoleuiyaml:
 	@echo "Getting the latest Console UI"

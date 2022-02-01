@@ -78,6 +78,9 @@ func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
 	container := corev1.Container{
 		Name:  miniov2.LogSearchAPIContainerName,
 		Image: logSearchAPIImage,
+		Command: []string{
+			"/logsearchapi",
+		},
 		Ports: []corev1.ContainerPort{
 			{
 				ContainerPort: miniov2.LogSearchAPIPort,
