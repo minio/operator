@@ -186,6 +186,7 @@ func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) (err erro
 		insertAuditLogEvent QTemplate = `INSERT INTO %s (event_time, log) VALUES ($1, $2);`
 		insertRequestInfo   QTemplate = `INSERT INTO %s (time,
                                                                  api_name,
+                                                                 access_key,
                                                                  bucket,
                                                                  object,
                                                                  time_to_response_ns,
@@ -196,7 +197,7 @@ func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) (err erro
                                                                  response_status_code,
                                                                  request_content_length,
                                                                  response_content_length)
-                                                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);`
+                                                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`
 	)
 
 	// Start a database transaction
@@ -232,6 +233,7 @@ func (c *DBClient) InsertEvent(ctx context.Context, eventBytes []byte) (err erro
 	_, err = tx.ExecContext(ctx, insertRequestInfo.build(requestInfoTable.Name),
 		event.Time,
 		event.API.Name,
+		event.API.AccessKey,
 		event.API.Bucket,
 		event.API.Object,
 		event.API.TimeToResponse,

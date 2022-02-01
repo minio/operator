@@ -58,6 +58,20 @@ func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, diskC
 		return nil, fmt.Errorf("Error initializing tables: %v", err)
 	}
 
+	// Run migrations on db
+	err = ls.DBClient.runMigrations(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("error running migrations: %v", err)
+	}
+
+	// Create indices on db
+	go func() {
+		err := ls.DBClient.CreateIndices(context.Background())
+		if err != nil {
+			log.Printf("Failed to create some indices: %v", err)
+		}
+	}()
+
 	// Initialize muxer
 	ls.ServeMux = http.NewServeMux()
 	ls.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {})
