@@ -58,7 +58,15 @@ spec:
                 {{ toYaml . | nindent 12 }}
                 {{- end }}
           resources:
-      {{- toYaml .Values.console.resources | nindent 12 }}
+          {{- toYaml .Values.console.resources | nindent 12 }}
+          volumeMounts:
+          {{- with .Values.console.volumeMounts }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+      {{- with .Values.console.volumes }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with .Values.console.initContainers }}
       initContainers:
       {{- toYaml . | nindent 8 }}
