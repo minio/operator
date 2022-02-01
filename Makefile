@@ -22,7 +22,7 @@ PLUGIN_HOME=kubectl-minio
 LOGSEARCHAPI=logsearchapi
 LOGSEARCHAPI_TAG ?= "minio/logsearchapi:$(VERSION)"
 
-all: build logsearchapi
+all: build
 
 getdeps:
 	@echo "Checking dependencies"
@@ -85,7 +85,7 @@ logsearchapi:
 		go test -race ./... && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
-		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o logsearchapi && mv logsearchapi ../)
+		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o logsearchapi )
 
 getconsoleuiyaml:
 	@echo "Getting the latest Console UI"
