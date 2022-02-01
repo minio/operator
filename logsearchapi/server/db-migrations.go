@@ -250,7 +250,6 @@ func reqInfoIndices() []indexOpts {
 type colOrder bool
 
 const (
-	colAsc  colOrder = false
 	colDesc colOrder = true
 )
 
@@ -271,7 +270,6 @@ type indexOpts struct {
 	tableName   string
 	indexSuffix string
 	col         idxCol
-	order       colOrder
 	idxType     string
 }
 
