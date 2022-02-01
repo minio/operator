@@ -33,18 +33,19 @@ const (
 	kubeconfig = "kubeconfig"
 )
 
-var confPath string
-var rootCmd = &cobra.Command{
-	Use:          "minio",
-	Long:         minioDesc,
-	SilenceUsage: true,
-}
+var (
+	confPath string
+	rootCmd  = &cobra.Command{
+		Use:          "minio",
+		Long:         minioDesc,
+		SilenceUsage: true,
+	}
+)
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&confPath, kubeconfig, "", "Custom kubeconfig path")
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-
 }
 
 // New creates a new root command for kubectl-minio

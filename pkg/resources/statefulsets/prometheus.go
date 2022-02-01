@@ -115,18 +115,17 @@ func prometheusSidecarContainer(t *miniov2.Tenant) corev1.Container {
 			`echo -e '#!/bin/sh\n\nset -e\nset -x\necho "POST /-/reload HTTP/1.1\r\nHost:localhost:9090\r\nConnection: close\r\n\r\n" | nc localhost 9090\n' > /tmp/run.sh && echo "ok" && chmod +x /tmp/run.sh && inotifyd /tmp/run.sh /etc/prometheus/prometheus.yml:w`,
 		},
 	}
-
 }
 
 const prometheusDefaultVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
 // prometheusSecurityContext builds the security context for prometheus pods
 func prometheusSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
@@ -197,8 +196,8 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 	// and user will have to provide a serviceAccount that allows this
 	if securityContext != nil && securityContext.RunAsUser != nil && securityContext.RunAsGroup != nil {
 		var runAsUser int64
-		var runAsNonRoot = false
-		var allowPrivilegeEscalation = true
+		runAsNonRoot := false
+		allowPrivilegeEscalation := true
 		initContainerSecurityContext = corev1.SecurityContext{
 			RunAsUser:                &runAsUser,
 			RunAsNonRoot:             &runAsNonRoot,

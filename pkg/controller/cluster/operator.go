@@ -54,9 +54,7 @@ const (
 	DefaultDeploymentName = "minio-operator"
 )
 
-var (
-	errOperatorWaitForTLS = errors.New("waiting for Operator cert")
-)
+var errOperatorWaitForTLS = errors.New("waiting for Operator cert")
 
 func getOperatorDeploymentName() string {
 	return env.Get("MINIO_OPERATOR_DEPLOYMENT_NAME", DefaultDeploymentName)
@@ -68,8 +66,10 @@ func isOperatorTLS() bool {
 	return (set && value == "on") || !set
 }
 
-var kubeAPIServerVersion *version.Info
-var useCertificatesV1API bool
+var (
+	kubeAPIServerVersion *version.Info
+	useCertificatesV1API bool
+)
 
 func (c *Controller) getKubeAPIServerVersion() {
 	var err error
@@ -105,13 +105,12 @@ func (c *Controller) generateTLSCert() (string, string) {
 					err = c.deleteMinIOCSR(ctx, c.operatorCSRName())
 					if err != nil {
 						klog.Infof(err.Error())
-
 					}
 				}
 			}
 		} else {
 			if val, ok := operatorTLSCert.Data["public.crt"]; ok {
-				err := ioutil.WriteFile(publicCertPath, val, 0644)
+				err := ioutil.WriteFile(publicCertPath, val, 0o644)
 				if err != nil {
 					panic(err)
 				}
@@ -120,7 +119,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 			}
 
 			if val, ok := operatorTLSCert.Data["private.key"]; ok {
-				err := ioutil.WriteFile(publicKeyPath, val, 0644)
+				err := ioutil.WriteFile(publicKeyPath, val, 0o644)
 				if err != nil {
 					panic(err)
 				}

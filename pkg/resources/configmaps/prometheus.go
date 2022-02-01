@@ -20,11 +20,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
 type globalConfig struct {

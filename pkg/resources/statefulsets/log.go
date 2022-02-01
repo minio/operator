@@ -127,11 +127,11 @@ const defaultLogVolumeSize = 5 * 1024 * 1024 * 1024 // 5GiB
 
 // postgresSecurityContext builds the security context for postgres pods
 func postgresSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 999
 	var runAsGroup int64 = 999
 	var fsGroup int64 = 999
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
@@ -197,8 +197,8 @@ func NewForLogDb(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 			dbPod.Spec.SecurityContext.RunAsGroup != nil {
 
 			var runAsUser int64
-			var runAsNonRoot = false
-			var allowPrivilegeEscalation = true
+			runAsNonRoot := false
+			allowPrivilegeEscalation := true
 			initContainerSecurityContext = corev1.SecurityContext{
 				RunAsUser:                &runAsUser,
 				RunAsNonRoot:             &runAsNonRoot,

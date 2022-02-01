@@ -106,7 +106,7 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 		timeEnd = &ts
 	}
 
-	var pageSize = 10
+	pageSize := 10
 	if psParam := values.Get("pageSize"); psParam != "" {
 		pageSize, err = strconv.Atoi(psParam)
 		if err != nil {

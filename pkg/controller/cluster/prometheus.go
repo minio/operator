@@ -25,16 +25,17 @@ import (
 	"strings"
 	"time"
 
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"github.com/minio/operator/pkg/resources/configmaps"
-	"github.com/minio/operator/pkg/resources/services"
-	"github.com/minio/operator/pkg/resources/statefulsets"
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/resources/configmaps"
+	"github.com/minio/operator/pkg/resources/services"
+	"github.com/minio/operator/pkg/resources/statefulsets"
 )
 
 // MinIOPrometheusMetrics holds metrics pulled from prometheus
@@ -46,6 +47,7 @@ type MinIOPrometheusMetrics struct {
 func getPrometheusMetricsForTenant(tenant *miniov2.Tenant, bearer string) (*MinIOPrometheusMetrics, error) {
 	return getPrometheusMetricsForTenantWithRetry(tenant, bearer, 5)
 }
+
 func getPrometheusMetricsForTenantWithRetry(tenant *miniov2.Tenant, bearer string, tryCount int) (*MinIOPrometheusMetrics, error) {
 	// build the endpoint to contact the Tenant
 	svcURL := tenant.GetTenantServiceURL()

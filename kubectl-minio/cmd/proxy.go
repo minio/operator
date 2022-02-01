@@ -73,7 +73,6 @@ func newProxyCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (o *operatorProxyCmd) run() error {
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -158,8 +157,8 @@ func servicePortForwardPort(ctx context.Context, namespace, service, port string
 			log.Printf("failed to capture stdout or stderr\n")
 			return
 		}
-		//outStr, errStr := string(stdout), string(stderr)
-		//fmt.Printf("\nout:\n%s\nerr:\n%s\n", outStr, errStr)
+		// outStr, errStr := string(stdout), string(stderr)
+		// fmt.Printf("\nout:\n%s\nerr:\n%s\n", outStr, errStr)
 	}()
 	return ch
 }
@@ -176,7 +175,6 @@ func copyAndCapture(r io.Reader, dcolor color.Attribute) error {
 			theColor := color.New(dcolor)
 			//_, err := w.Write(d)
 			_, err := theColor.Print(string(d))
-
 			if err != nil {
 				return err
 			}

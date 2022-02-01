@@ -23,11 +23,10 @@ import (
 
 // NewForKES creates a new Job to create KES Key
 func NewForKES(t *miniov2.Tenant) *batchv1.Job {
-
 	containers := []corev1.Container{kesJobContainer(t)}
 
 	var clientCertSecret string
-	var clientCertPaths = []corev1.KeyToPath{
+	clientCertPaths := []corev1.KeyToPath{
 		{Key: "public.crt", Path: "minio.crt"},
 		{Key: "private.key", Path: "minio.key"},
 	}

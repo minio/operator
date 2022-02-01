@@ -200,7 +200,6 @@ type Controller struct {
 
 // NewController returns a new sample controller
 func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
-
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -340,7 +339,6 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		apiWillStart := make(chan interface{})
 
 		go func() {
-
 			// Request kubernetes version from Kube ApiServer
 			c.getKubeAPIServerVersion()
 
@@ -792,7 +790,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Check if this is fresh setup not an expansion.
-	//addingNewPool := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
+	// addingNewPool := len(tenant.Spec.Pools) == len(tenant.Status.Pools)
 	addingNewPool := false
 	// count the number of initialized pools, if at least 1 is not Initialized, we are still adding a new pool
 	for _, poolStatus := range tenant.Status.Pools {
@@ -1121,7 +1119,6 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 		if pool.Servers != *ss.Spec.Replicas {
-
 			// warn the user that replica count of an existing pool can't be changed
 			if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for pool %s", pool.Name), 0); err != nil {
 				return err

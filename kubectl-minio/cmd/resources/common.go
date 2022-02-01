@@ -101,7 +101,6 @@ func Pool(opts *TenantOptions, volumes int32, q resource.Quantity) miniov2.Pool 
 
 // GetSchemeDecoder returns a decoder for the scheme's that we use
 func GetSchemeDecoder() func(data []byte, defaults *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error) {
-
 	sch := runtime.NewScheme()
 	scheme.AddToScheme(sch)
 	apiextensionv1.AddToScheme(sch)

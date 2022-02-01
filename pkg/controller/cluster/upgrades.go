@@ -42,7 +42,6 @@ type upgradeFunction func(ctx context.Context, tenant *miniov2.Tenant) (*miniov2
 
 // checkForUpgrades verifies if the tenant definition needs any upgrades
 func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
-
 	var upgradesToDo []string
 	upgrades := map[string]upgradeFunction{
 		version420: c.upgrade420,
@@ -204,7 +203,6 @@ func versionCompare(version1 string, version2 string) int {
 // Upgrades the sync version to v4.2.8
 // we needed to clean `operator-webhook-secrets` with non-alphanumerical characters
 func (c *Controller) upgrade428(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
-
 	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, miniov2.WebhookSecret, metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
@@ -213,7 +211,7 @@ func (c *Controller) upgrade428(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if err == nil {
 
 		unsupportedChars := false
-		var re = regexp.MustCompile(`(?m)^[a-zA-Z0-9]+$`)
+		re := regexp.MustCompile(`(?m)^[a-zA-Z0-9]+$`)
 
 		// if any of the keys contains non alphanumerical characters,
 		accessKey := string(secret.Data[miniov2.WebhookOperatorUsername])

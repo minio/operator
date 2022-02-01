@@ -355,11 +355,11 @@ func poolTopologySpreadConstraints(z *miniov2.Pool) []corev1.TopologySpreadConst
 
 // Builds the security context for a Pool
 func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.PodSecurityContext {
-	var runAsNonRoot = true
+	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
-	var securityContext = corev1.PodSecurityContext{
+	securityContext := corev1.PodSecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
@@ -383,16 +383,16 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 // NewPool creates a new StatefulSet for the given Cluster.
 func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
-	var replicas = pool.Servers
+	replicas := pool.Servers
 	var certVolumeSources []corev1.VolumeProjection
 
 	var clientCertSecret string
-	var clientCertPaths = []corev1.KeyToPath{
+	clientCertPaths := []corev1.KeyToPath{
 		{Key: "public.crt", Path: "client.crt"},
 		{Key: "private.key", Path: "client.key"},
 	}
 	var kesCertSecret string
-	var KESCertPath = []corev1.KeyToPath{
+	KESCertPath := []corev1.KeyToPath{
 		{Key: "public.crt", Path: "CAs/kes.crt"},
 	}
 

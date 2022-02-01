@@ -17,6 +17,7 @@
 
 SCRIPT_DIR=$(dirname "$0")
 export SCRIPT_DIR
+
 source "${SCRIPT_DIR}/common.sh"
 
 function main() {
@@ -30,23 +31,25 @@ function main() {
 
     check_tenant_status tenant-lite storage-lite
 
-    echo 'start - wait for prometheus to appears'
+    echo 'start - wait for prometheus to appear'
     i=0
     while [[ $(kubectl get pods -n tenant-lite --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]];
     do
-      ((i++))
-      echo "waiting for storage-lite-prometheus-0" && sleep 1;
-      if [[ $i -eq 300 ]]; then
-        break
-      fi
+	((i++))
+	echo "waiting for storage-lite-prometheus-0" && sleep 1;
+	if [[ $i -eq 300 ]]; then
+	    kubectl get pods -n tenant-lite -o wide
+	    kubectl describe pods -n tenant-lite
+            break
+	fi
     done
-    echo 'end - wait for prometheus to appears'
+    echo 'end - wait for prometheus to appear'
 
     echo 'Wait for pod to be ready for port forward'
     try kubectl wait --namespace tenant-lite \
-      --for=condition=ready pod \
-      --selector=statefulset.kubernetes.io/pod-name=storage-lite-ss-0-0 \
-      --timeout=120s
+	--for=condition=ready pod \
+	--selector=statefulset.kubernetes.io/pod-name=storage-lite-ss-0-0 \
+	--timeout=120s
 
     echo 'port forward without the hop, directly from the tenant/pod'
     kubectl port-forward storage-lite-ss-0-0 9443 --namespace tenant-lite &
@@ -67,35 +70,35 @@ function main() {
 
     echo 'Get token from MinIO Console'
     COOKIE=$(
-      curl 'https://localhost:9443/api/v1/login' -vs \
-      -H 'content-type: application/json' \
-      --data-raw '{"accessKey":"minio","secretKey":"minio123"}' --insecure 2>&1 | \
-      grep "set-cookie: token=" | sed -e "s/< set-cookie: token=//g" | \
-      awk -F ';' '{print $1}'
-    )
+	curl 'https://localhost:9443/api/v1/login' -vs \
+	     -H 'content-type: application/json' \
+	     --data-raw '{"accessKey":"minio","secretKey":"minio123"}' --insecure 2>&1 | \
+	    grep "set-cookie: token=" | sed -e "s/< set-cookie: token=//g" | \
+	    awk -F ';' '{print $1}'
+	  )
     echo $COOKIE
 
     echo 'start - wait for prometheus to be ready'
     try kubectl wait --namespace tenant-lite \
-      --for=condition=ready pod \
-      --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 \
-      --timeout=300s
+	--for=condition=ready pod \
+	--selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 \
+	--timeout=300s
     echo 'end - wait for prometheus to be ready'
 
     echo 'start - print the entire output for debug'
     curl 'https://localhost:9443/api/v1/admin/info/widgets/66/?step=0&' \
-      -H 'cookie: token='$COOKIE'' \
-      --compressed \
-      --insecure
+	 -H 'cookie: token='$COOKIE'' \
+	 --compressed \
+	 --insecure
     echo 'end - print the entire output for debug'
 
     echo 'Verify Prometheus via API'
     RESULT=$(
-      curl 'https://localhost:9443/api/v1/admin/info/widgets/66/?step=0&' \
-      -H 'cookie: token='$COOKIE'' \
-      --compressed \
-      --insecure | jq '.title'
-    )
+	curl 'https://localhost:9443/api/v1/admin/info/widgets/66/?step=0&' \
+	     -H 'cookie: token='$COOKIE'' \
+	     --compressed \
+	     --insecure | jq '.title'
+	  )
     echo $RESULT
     EXPECTED_RESULT='"Number of Buckets"'
     echo $EXPECTED_RESULT

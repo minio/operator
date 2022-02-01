@@ -9,7 +9,8 @@ ROOT_PKG=github.com/minio/operator
 
 # Grab code-generator version from go.sum
 CODEGEN_VERSION=$(grep 'k8s.io/code-generator' go.mod | awk '{print $2}' | sed 's/\/go.mod//g' | head -1)
-CODEGEN_PKG=$(echo `go env GOPATH`"/pkg/mod/k8s.io/code-generator@${CODEGEN_VERSION}")
+GOPATH=$(go env GOPATH)
+CODEGEN_PKG="${GOPATH}/pkg/mod/k8s.io/code-generator@${CODEGEN_VERSION}"
 
 if [[ ! -d ${CODEGEN_PKG} ]]; then
     echo "${CODEGEN_PKG} is missing. Running 'go mod download'."
@@ -33,7 +34,6 @@ echo ">> Temporary output directory ${TEMP_DIR}"
 
 # Ensure we can execute.
 chmod +x ${CODEGEN_PKG}/generate-groups.sh
-
 
 # generate the code with:
 # --output-base    because this script should also be able to run inside the vendor dir of
