@@ -170,7 +170,7 @@ spec:
     image: "" # defaults to quay.io/prometheus/prometheus:latest
     sidecarimage: "" # defaults to alpine
     initimage: "" # defaults to busybox:1.33.1
-    diskCapacityGB: 10
+    diskCapacityGB: 1
     storageClassName: standard
     annotations: { }
     labels: { }
@@ -203,7 +203,7 @@ spec:
     annotations: { }
     labels: { }
     audit:
-      diskCapacityGB: 10
+      diskCapacityGB: 1
     ## Postgres setup for LogSearch API
     db:
       image: "" # defaults to library/postgres
@@ -216,7 +216,7 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: 10Gi
+              storage: 1Gi
       resources: { }
       nodeSelector: { }
       affinity:
