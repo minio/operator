@@ -30,25 +30,42 @@ function setup_kind() {
 
 function install_operator() {
 
-    # To compile current branch
-    echo "Compiling Current Branch Operator"
-    (cd "${SCRIPT_DIR}/.." && make) # will not change your shell's current directory
+    echo "check if helm will install the operator"
+    if [ "$1" = "helm" ]; then
+        helm install \
+          --namespace minio-operator \
+          --create-namespace \
+          minio-operator minio/operator
 
-    echo 'start - load compiled image so we can pull it later on'
-    kind load docker-image docker.io/minio/operator:dev
-    echo 'end - load compiled image so we can pull it later on'
+        echo "key, value for pod selector in helm test"
+        key=app.kubernetes.io/name
+        value=operator
+    else
+        # To compile current branch
+        echo "Compiling Current Branch Operator"
+        (cd "${SCRIPT_DIR}/.." && make) # will not change your shell's current directory
 
-    echo "Installing Current Operator"
-    # Created an overlay to use that image version from dev folder
-    try kubectl apply -k "${SCRIPT_DIR}/../testing/dev"
+        echo 'start - load compiled image so we can pull it later on'
+        kind load docker-image docker.io/minio/operator:dev
+        echo 'end - load compiled image so we can pull it later on'
 
+        echo "Installing Current Operator"
+        # Created an overlay to use that image version from dev folder
+        try kubectl apply -k "${SCRIPT_DIR}/../testing/dev"
+
+        echo "key, value for pod selector in kustomize test"
+        key=name
+        value=minio-operator
+    fi
+
+    # Reusing the wait for both, Kustomize and Helm
     echo "Waiting for k8s api"
     sleep 10
 
     echo "Waiting for Operator Pods to come online (2m timeout)"
     try kubectl wait --namespace minio-operator \
     --for=condition=ready pod \
-    --selector=name=minio-operator \
+    --selector $key=$value \
     --timeout=120s
 
     echo "start - get data to verify proper image is being used"
@@ -61,13 +78,15 @@ function destroy_kind() {
     kind delete cluster
 }
 
-function check_tenant_status() {
-    # Check MinIO is accessible
-
+function wait_for_resource() {
     waitdone=0
     totalwait=0
+    echo "command to wait on:"
+    command_to_wait="kubectl -n $1 get pods -l $3=$2 --no-headers"
+    echo $command_to_wait
+
     while true; do
-    waitdone=$(kubectl -n $1 get pods -l v1.min.io/tenant=$2 --no-headers | wc -l)
+    waitdone=$($command_to_wait | wc -l)
     if [ "$waitdone" -ne 0 ]; then
         echo "Found $waitdone pods"
         break
@@ -75,56 +94,85 @@ function check_tenant_status() {
     sleep 5
     totalwait=$((totalwait + 5))
     if [ "$totalwait" -gt 305 ]; then
-        echo "Unable to create tenant after 5 minutes, exiting."
+        echo "Unable to get resource after 5 minutes, exiting."
         try false
     fi
     done
+}
+
+function check_tenant_status() {
+    # Check MinIO is accessible
+    key=v1.min.io/tenant
+    if [ $# -ge 3 ]; then
+        echo "Third argument provided, then set key value"
+        key=$3
+    else
+        echo "No third argument provided, using default key"
+    fi
+
+    wait_for_resource $1 $2 $key
 
     echo "Waiting for pods to be ready. (5m timeout)"
 
-    USER=$(kubectl -n $1 get secrets $2-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
-    PASSWORD=$(kubectl -n $1 get secrets $2-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
+    if [ $# -ge 4 ]; then
+        echo "Fourth argument provided, then get secrets from helm"
+        USER=$(kubectl get secret minio1-secret -o jsonpath="{.data.accesskey}" | base64 --decode)
+        PASSWORD=$(kubectl get secret minio1-secret -o jsonpath="{.data.secretkey}" | base64 --decode)
+    else
+        echo "No fourth argument provided, using default USER and PASSWORD"
+        USER=$(kubectl -n $1 get secrets $2-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
+        PASSWORD=$(kubectl -n $1 get secrets $2-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
+    fi
 
     try kubectl wait --namespace $1 \
         --for=condition=ready pod \
-        --selector=v1.min.io/tenant=$2 \
+        --selector=$key=$2 \
         --timeout=300s
 
     echo "Tenant is created successfully, proceeding to validate 'mc admin info minio/'"
 
-    kubectl run admin-mc -i --tty --image minio/mc --command -- bash -c "until (mc alias set minio/ https://minio.$1.svc.cluster.local $USER $PASSWORD); do echo \"...waiting... for 5secs\" && sleep 5; done; mc admin info minio/;"
+    if [ $4 = "helm" ]; then
+        # File: operator/helm/tenant/values.yaml
+        # Content: s3.bucketDNS: false
+        echo "In helm values by default bucketDNS.s3 is disabled, skipping mc validation on helm test"
+    else
+        kubectl run admin-mc -i --tty --image minio/mc --command -- bash -c "until (mc alias set minio/ https://minio.$1.svc.cluster.local $USER $PASSWORD); do echo \"...waiting... for 5secs\" && sleep 5; done; mc admin info minio/;"
+    fi
 
     echo "Done."
 }
 
 # Install tenant function is being used by deploy-tenant and check-prometheus
 function install_tenant() {
-    echo "Installing lite tenant"
 
-    try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-lite"
+    echo "Check if helm will install the Tenant"
+    if [ "$1" = "helm" ]; then
+        namespace=default
+        key=app
+        value=minio
+        helm install --namespace tenant-ns \
+          --create-namespace tenant minio/tenant
+    else
+        namespace=tenant-lite
+        key=v1.min.io/tenant
+        value=storage-lite
+        echo "Installing lite tenant"
+
+        try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-lite"
+    fi
 
     echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"
-    waitdone=0
-    totalwait=0
-    while true; do
-    waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=storage-lite --no-headers | wc -l)
-    if [ "$waitdone" -ne 0 ]; then
-        echo "Found $waitdone pods"
-        break
-    fi
-    sleep 5
-    totalwait=$((totalwait + 5))
-    if [ "$totalwait" -gt 300 ]; then
-        echo "Tenant never created statefulset after 5 minutes"
-        try false
-    fi
-    done
+    echo $namespace
+    echo $value
+    echo $key
+    wait_for_resource $namespace $value $key
 
     echo "Waiting for tenant pods to come online (5m timeout)"
-    try kubectl wait --namespace tenant-lite \
+    try kubectl wait --namespace $namespace \
     --for=condition=ready pod \
-    --selector="v1.min.io/tenant=storage-lite" \
+    --selector $key=$value \
     --timeout=300s
 
     echo "Build passes basic tenant creation"
+
 }
