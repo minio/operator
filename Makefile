@@ -20,7 +20,6 @@ KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/base/crds/
 PLUGIN_HOME=kubectl-minio
 
 LOGSEARCHAPI=logsearchapi
-LOGSEARCHAPI_TAG ?= "minio/logsearchapi:$(VERSION)"
 
 all: build
 
