@@ -115,7 +115,19 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	if err != nil {
 		return err
 	}
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
+
+	var caContent []byte
+	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), "operator-ca-tls", metav1.GetOptions{})
+	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
+	if err != nil {
+		caContent = miniov2.GetPodCAFromFile()
+	} else {
+		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+			caContent = val
+		}
+	}
+
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, caContent)
 	if err != nil {
 		// show the error and continue
 		klog.Infof("'%s/%s': %v", tenant.Namespace, tenant.Name, err)

@@ -710,14 +710,27 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
+	var caContent []byte
+	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
+	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
+	if err != nil {
+		caContent = miniov2.GetPodCAFromFile()
+	} else {
+		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+			caContent = val
+		}
+	}
+
 	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
 	if err != nil {
 		return err
 	}
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
+
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, caContent)
 	if err != nil {
 		return err
 	}
+
 	// For each pool check if there is a stateful set
 	var totalReplicas int32
 	var images []string
@@ -879,7 +892,7 @@ func (c *Controller) syncHandler(key string) error {
 					break
 				}
 				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
-				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration)
+				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration, caContent)
 				if err != nil {
 					return err
 				}
@@ -911,7 +924,7 @@ func (c *Controller) syncHandler(key string) error {
 							break
 						}
 						livePodAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(livePod.Name))
-						livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration)
+						livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, caContent)
 						if err != nil {
 							return err
 						}
@@ -1264,7 +1277,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Ensure we are only provisioning users one time
-	if !tenant.Status.ProvisionedUsers {
+	if !tenant.Status.ProvisionedUsers && len(tenant.Spec.Users) > 0 {
 		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO users: %v", err)
 			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "UsersCreatedFailed", fmt.Sprintf("Users creation failed: %s", err))
@@ -1274,7 +1287,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Ensure we are only creating the bucket once using the console user
-	if !tenant.Status.ProvisionedBuckets && tenant.Status.ProvisionedUsers {
+	if !tenant.Status.ProvisionedBuckets && len(tenant.Spec.Buckets) > 0 {
 		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
 			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))

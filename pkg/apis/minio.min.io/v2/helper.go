@@ -648,12 +648,12 @@ func (t *Tenant) MinIOHealthCheck() bool {
 }
 
 // NewMinIOAdmin initializes a new madmin.Client for operator interaction
-func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClient, error) {
-	return t.NewMinIOAdminForAddress("", minioSecret)
+func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte, caContent []byte) (*madmin.AdminClient, error) {
+	return t.NewMinIOAdminForAddress("", minioSecret, caContent)
 }
 
 // NewMinIOAdminForAddress initializes a new madmin.Client for operator interaction
-func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string][]byte) (*madmin.AdminClient, error) {
+func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string][]byte, caContent []byte) (*madmin.AdminClient, error) {
 	host, accessKey, secretKey, err := t.getMinIOTenantDetails(address, minioSecret)
 	if err != nil {
 		return nil, err
@@ -669,10 +669,32 @@ func (t *Tenant) NewMinIOAdminForAddress(address string, minioSecret map[string]
 		return nil, err
 	}
 
-	if opts.Secure {
-		// FIXME: add trusted CA
-		madmClnt = setUpInsecureTLS(madmClnt)
+	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   2 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).DialContext,
+		ResponseHeaderTimeout: 5 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 5 * time.Second,
+		// Go net/http automatically unzip if content-type is
+		// gzip disable this feature, as we are always interested
+		// in raw stream.
+		DisableCompression: true,
 	}
+	if opts.Secure {
+		rootCAs := mustGetSystemCertPool()
+		rootCAs.AppendCertsFromPEM(caContent)
+		tr.TLSClientConfig = &tls.Config{
+			// Can't use SSLv3 because of POODLE and BEAST
+			// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
+			// Can't use TLSv1.1 because of RC4 cipher usage
+			MinVersion: tls.VersionTLS12,
+			RootCAs:    rootCAs,
+		}
+	}
+	madmClnt.SetCustomTransport(tr)
 
 	return madmClnt, nil
 }
@@ -712,36 +734,62 @@ func (t *Tenant) NewMinIOUserForAddress(address string, userCredentialSecrets []
 			return nil, errors.New("MinIO server host is empty")
 		}
 	}
-	consoleAccessKey, ok := userCredentialSecrets[0].Data["CONSOLE_ACCESS_KEY"]
-	if !ok {
-		return nil, errors.New("CONSOLE_ACCESS_KEY not provided")
-	}
-	// remove spaces and line breaks from access key
-	userAccessKey := strings.TrimSpace(string(consoleAccessKey))
-	consoleSecretKey, ok := userCredentialSecrets[0].Data["CONSOLE_SECRET_KEY"]
-	// remove spaces and line breaks from secret key
-	userSecretKey := strings.TrimSpace(string(consoleSecretKey))
-	if !ok {
-		return nil, errors.New("CONSOLE_SECRET_KEY not provided")
+
+	tr := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   2 * time.Second,
+			KeepAlive: 10 * time.Second,
+		}).DialContext,
+		ResponseHeaderTimeout: 5 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 5 * time.Second,
+		// Go net/http automatically unzip if content-type is
+		// gzip disable this feature, as we are always interested
+		// in raw stream.
+		DisableCompression: true,
 	}
 
 	rootCAs := mustGetSystemCertPool()
 	rootCAs.AppendCertsFromPEM(caContent)
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{},
-	}
-	tr.TLSClientConfig.RootCAs = rootCAs
-	opts := &minio.Options{
-		Transport: tr,
-		Secure:    t.TLS(),
-		Creds:     credentials.NewStaticV4(userAccessKey, userSecretKey, ""),
+
+	for _, cred := range userCredentialSecrets {
+		consoleAccessKey, ok := cred.Data["CONSOLE_ACCESS_KEY"]
+		if !ok {
+			return nil, errors.New("CONSOLE_ACCESS_KEY not provided")
+		}
+		// remove spaces and line breaks from access key
+		userAccessKey := strings.TrimSpace(string(consoleAccessKey))
+		consoleSecretKey, ok := cred.Data["CONSOLE_SECRET_KEY"]
+		// remove spaces and line breaks from secret key
+		userSecretKey := strings.TrimSpace(string(consoleSecretKey))
+		if !ok {
+			return nil, errors.New("CONSOLE_SECRET_KEY not provided")
+		}
+
+		tr.TLSClientConfig = &tls.Config{
+			// Can't use SSLv3 because of POODLE and BEAST
+			// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
+			// Can't use TLSv1.1 because of RC4 cipher usage
+			MinVersion: tls.VersionTLS12,
+			RootCAs:    rootCAs,
+		}
+
+		opts := &minio.Options{
+			Transport: tr,
+			Secure:    t.TLS(),
+			Creds:     credentials.NewStaticV4(userAccessKey, userSecretKey, ""),
+		}
+
+		minioClnt, err := minio.New(host, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		return minioClnt, nil
 	}
 
-	minioClnt, err := minio.New(host, opts)
-	if err != nil {
-		return nil, err
-	}
-	return minioClnt, nil
+	return nil, errors.New("no user credentials specified to initialize")
 }
 
 // mustGetSystemCertPool - return system CAs or empty pool in case of error (or windows)
@@ -891,30 +939,6 @@ func (t *Tenant) Validate() error {
 	}
 
 	return nil
-}
-
-// Set up admin client to use self certificates
-func setUpInsecureTLS(api *madmin.AdminClient) *madmin.AdminClient {
-	// Keep TLS config.
-	tlsConfig := &tls.Config{
-		// Can't use SSLv3 because of POODLE and BEAST
-		// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
-		// Can't use TLSv1.1 because of RC4 cipher usage
-		MinVersion:         tls.VersionTLS12,
-		InsecureSkipVerify: true,
-	}
-
-	var transport http.RoundTripper = &http.Transport{
-		DialContext: (&net.Dialer{
-			Timeout:   10 * time.Second,
-			KeepAlive: 15 * time.Second,
-		}).DialContext,
-		TLSClientConfig: tlsConfig,
-	}
-
-	// Set custom transport.
-	api.SetCustomTransport(transport)
-	return api
 }
 
 // OwnerRef returns the OwnerReference to be added to all resources created by Tenant
