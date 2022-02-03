@@ -217,8 +217,10 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 				klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
 				svc = services.NewHeadlessForKES(tenant)
 				if _, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts); err != nil {
+					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "SvcFailed", fmt.Sprintf("KES Headless Service failed to create: %s", err))
 					return err
 				}
+				c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "SvcCreated", fmt.Sprintf("KES Headless Service failed to create: %s", err))
 			} else {
 				return err
 			}
@@ -235,8 +237,10 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 				klog.V(2).Infof("Creating a new StatefulSet for cluster %q", nsName)
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ks, cOpts); err != nil {
 					klog.V(2).Infof(err.Error())
+					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("KES Statefulset failed to create: %s", err))
 					return err
 				}
+				c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "StsCreated", "KES Statefulset Created")
 			} else {
 				return err
 			}
@@ -254,8 +258,10 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 				}
 				ks := statefulsets.NewForKES(tenant, svc.Name)
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ks, uOpts); err != nil {
+					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("KES Statefulset failed to update: %s", err))
 					return err
 				}
+				c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "StsUpdated", "KES Statefulset Updated")
 			}
 		}
 
@@ -267,6 +273,7 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 				klog.V(2).Infof("Creating a new Job for cluster %q", nsName)
 				if _, err = c.kubeClientSet.BatchV1().Jobs(tenant.Namespace).Create(ctx, j, cOpts); err != nil {
 					klog.V(2).Infof(err.Error())
+					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "JobFailed", fmt.Sprintf("KES job failed to create: %s", err))
 					return err
 				}
 			} else {
@@ -294,6 +301,7 @@ func (c *Controller) checkAndCreateMinIOClientCSR(ctx context.Context, nsName ty
 				return err
 			}
 			// we want to re-queue this tenant so we can re-check for the health at a later stage
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("KES MinIO Client CSR failed to create: %s", err))
 			return errors.New("waiting for minio client cert")
 		}
 		return err
