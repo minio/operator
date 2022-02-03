@@ -280,7 +280,7 @@ type ReqInfoRow struct {
 
 // Search executes a search query on the db.
 func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) error {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
 	const (
@@ -331,7 +331,10 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		whereClause := strings.Join(whereClauses, " AND ")
 
 		q := logEventSelect.build(auditLogEventsTable.Name, whereClause, timeOrder)
-		rows, _ := c.QueryContext(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
+		rows, err := c.QueryContext(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
+		if err != nil {
+			return fmt.Errorf("Error querying db: %v", err)
+		}
 		var logEventsRaw []logEventRawRow
 		if err := sqlscan.ScanAll(&logEventsRaw, rows); err != nil {
 			return fmt.Errorf("Error accessing db: %v", err)
@@ -384,10 +387,12 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			whereClause = fmt.Sprintf("WHERE %s", whereClause)
 		}
 		q := reqInfoSelect.build(requestInfoTable.Name, whereClause, timeOrder)
-		rows, _ := c.QueryContext(ctx, q, sqlArgs...)
-		var reqInfos []ReqInfoRow
-		err := sqlscan.ScanAll(&reqInfos, rows)
+		rows, err := c.QueryContext(ctx, q, sqlArgs...)
 		if err != nil {
+			return fmt.Errorf("Error querying db: %v", err)
+		}
+		var reqInfos []ReqInfoRow
+		if err := sqlscan.ScanAll(&reqInfos, rows); err != nil {
 			return fmt.Errorf("Error accessing db: %v", err)
 		}
 		if err := jw.Encode(reqInfos); err != nil {
