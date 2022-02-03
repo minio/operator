@@ -278,67 +278,92 @@ func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.T
 	return userCredentials
 }
 
-func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) error {
-	userCredentials := c.fetchUserCredentials(ctx, tenant)
+func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (err error) {
+	defer func() {
+		if err == nil {
+			if _, err = c.updateProvisionedUsersStatus(ctx, tenant, true); err != nil {
+				klog.V(2).Infof(err.Error())
+			}
+		}
+	}()
 
-	if _, err := c.updateTenantStatus(ctx, tenant, StatusProvisioningInitialUsers, 0); err != nil {
+	userCredentials := c.fetchUserCredentials(ctx, tenant)
+	if len(userCredentials) == 0 {
+		return nil
+	}
+
+	if _, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningInitialUsers, 0); err != nil {
 		return err
 	}
 
+	var caContent []byte
+	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
+	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
+	if err != nil {
+		caContent = miniov2.GetPodCAFromFile()
+	} else {
+		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+			caContent = val
+		}
+	}
+
 	// get a new admin client
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration)
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, caContent)
 	if err != nil {
 		// show the error and continue
-		klog.Errorf("Error instantiating madmin: %v", err.Error())
+		klog.Errorf("Error instantiating madmin: %v", err)
+		return err
 	}
 
 	// configuration that means MinIO is running with LDAP enabled
 	// and we need to skip the console user creation
-	if err := tenant.CreateUsers(adminClnt, userCredentials); err != nil {
+	if err = tenant.CreateUsers(adminClnt, userCredentials); err != nil {
 		klog.V(2).Infof("Unable to create MinIO users: %v", err)
+	}
+
+	return err
+}
+
+func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (err error) {
+	defer func() {
+		if err == nil {
+			if _, err = c.updateProvisionedBucketStatus(ctx, tenant, true); err != nil {
+				klog.V(2).Infof(err.Error())
+			}
+		}
+	}()
+
+	if tenant.IsLDAPEnabled() {
+		return nil
+	}
+
+	if _, err := c.updateTenantStatus(ctx, tenant, StatusProvisioningDefaultBuckets, 0); err != nil {
 		return err
 	}
 
-	if _, err = c.updateProvisionedUsersStatus(ctx, tenant, true); err != nil {
-		klog.V(2).Infof(err.Error())
-	}
-
-	return nil
-}
-
-func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) error {
-	// Skip default bucket creation for ldap setup
-	if !tenant.IsLDAPEnabled() && len(tenant.Spec.Buckets) > 0 {
-		if _, err := c.updateTenantStatus(ctx, tenant, StatusProvisioningDefaultBuckets, 0); err != nil {
-			return err
-		}
-		userCredentials := c.fetchUserCredentials(ctx, tenant)
-		var caContent []byte
-		operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
-		// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
-		if err != nil {
-			caContent = miniov2.GetPodCAFromFile()
-		} else {
-			if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-				caContent = val
-			}
-		}
-
-		// Create bucket using the console user
-		minioClnt, err := tenant.NewMinIOUser(userCredentials, caContent)
-		if err != nil {
-			// show the error and continue
-			klog.Errorf("Error instantiating minio Client: %v", err.Error())
-		}
-
-		if err := tenant.CreateBuckets(minioClnt, tenant.Spec.Buckets...); err != nil {
-			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
-			return err
+	userCredentials := c.fetchUserCredentials(ctx, tenant)
+	var caContent []byte
+	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
+	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
+	if err != nil {
+		caContent = miniov2.GetPodCAFromFile()
+	} else {
+		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+			caContent = val
 		}
 	}
 
-	if _, err := c.updateProvisionedBucketStatus(ctx, tenant, true); err != nil {
-		klog.V(2).Infof(err.Error())
+	// Create bucket using the console user
+	minioClnt, err := tenant.NewMinIOUser(userCredentials, caContent)
+	if err != nil {
+		// show the error and continue
+		klog.Errorf("Error instantiating minio Client: %v, no buckets will be provisioned please verify if you have 'spec.users' set", err)
+		return err
+	}
+
+	if err := tenant.CreateBuckets(minioClnt, tenant.Spec.Buckets...); err != nil {
+		klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
+		return err
 	}
 
 	return nil
