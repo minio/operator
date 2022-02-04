@@ -26,6 +26,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
+	"net/http"
 	"os"
 	"time"
 
@@ -50,6 +52,8 @@ const (
 	OperatorTLS = "MINIO_OPERATOR_TLS_ENABLE"
 	// OperatorTLSSecretName is the name of secret created with Operator TLS certs
 	OperatorTLSSecretName = "operator-tls"
+	// OperatorTLSCASecretName is the name of the secret for the operator CA
+	OperatorTLSCASecretName = "operator-ca-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
 )
@@ -278,6 +282,54 @@ func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.T
 	return userCredentials
 }
 
+func (c *Controller) getTransport() *http.Transport {
+	if c.transport != nil {
+		return c.transport
+	}
+
+	var caContent []byte
+	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorTLSCASecretName, metav1.GetOptions{})
+	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
+	if err != nil {
+		caContent = miniov2.GetPodCAFromFile()
+	} else {
+		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+			caContent = val
+		}
+	}
+
+	rootCAs := miniov2.MustGetSystemCertPool()
+	if len(caContent) > 0 {
+		rootCAs.AppendCertsFromPEM(caContent)
+	}
+
+	c.transport = &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   15 * time.Second,
+			KeepAlive: 15 * time.Second,
+		}).DialContext,
+		MaxIdleConnsPerHost:   100,
+		IdleConnTimeout:       15 * time.Second,
+		ResponseHeaderTimeout: 15 * time.Minute,
+		TLSHandshakeTimeout:   15 * time.Second,
+		ExpectContinueTimeout: 15 * time.Second,
+		// Go net/http automatically unzip if content-type is
+		// gzip disable this feature, as we are always interested
+		// in raw stream.
+		DisableCompression: true,
+		TLSClientConfig: &tls.Config{
+			// Can't use SSLv3 because of POODLE and BEAST
+			// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
+			// Can't use TLSv1.1 because of RC4 cipher usage
+			MinVersion: tls.VersionTLS12,
+			RootCAs:    rootCAs,
+		},
+	}
+
+	return c.transport
+}
+
 func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (err error) {
 	defer func() {
 		if err == nil {
@@ -296,19 +348,8 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 		return err
 	}
 
-	var caContent []byte
-	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
-	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
-	if err != nil {
-		caContent = miniov2.GetPodCAFromFile()
-	} else {
-		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			caContent = val
-		}
-	}
-
 	// get a new admin client
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, caContent)
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		// show the error and continue
 		klog.Errorf("Error instantiating madmin: %v", err)
@@ -342,19 +383,9 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 	}
 
 	userCredentials := c.fetchUserCredentials(ctx, tenant)
-	var caContent []byte
-	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
-	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
-	if err != nil {
-		caContent = miniov2.GetPodCAFromFile()
-	} else {
-		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			caContent = val
-		}
-	}
 
 	// Create bucket using the console user
-	minioClnt, err := tenant.NewMinIOUser(userCredentials, caContent)
+	minioClnt, err := tenant.NewMinIOUser(userCredentials, c.getTransport())
 	if err != nil {
 		// show the error and continue
 		klog.Errorf("Error instantiating minio Client: %v, no buckets will be provisioned please verify if you have 'spec.users' set", err)

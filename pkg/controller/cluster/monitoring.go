@@ -28,13 +28,9 @@ import (
 	"github.com/minio/madmin-go"
 
 	corev1 "k8s.io/api/core/v1"
-
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
-	"k8s.io/apimachinery/pkg/util/runtime"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/klog/v2"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -116,18 +112,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		return err
 	}
 
-	var caContent []byte
-	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), "operator-ca-tls", metav1.GetOptions{})
-	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
-	if err != nil {
-		caContent = miniov2.GetPodCAFromFile()
-	} else {
-		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			caContent = val
-		}
-	}
-
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, caContent)
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		// show the error and continue
 		klog.Infof("'%s/%s': %v", tenant.Namespace, tenant.Name, err)
@@ -284,7 +269,7 @@ const (
 	RegularMode = "RegularMode"
 )
 
-func getHealthCheckTransport() *http.Transport {
+func getHealthCheckTransport() func() *http.Transport {
 	// Keep TLS config.
 	tlsConfig := &tls.Config{
 		// Can't use SSLv3 because of POODLE and BEAST
@@ -293,7 +278,7 @@ func getHealthCheckTransport() *http.Transport {
 		MinVersion:         tls.VersionTLS12,
 		InsecureSkipVerify: true, // FIXME: use trusted CA
 	}
-	return &http.Transport{
+	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   2 * time.Second,
@@ -307,6 +292,9 @@ func getHealthCheckTransport() *http.Transport {
 		// gzip disable this feature, as we are always interested
 		// in raw stream.
 		DisableCompression: true,
+	}
+	return func() *http.Transport {
+		return tr
 	}
 }
 
@@ -336,9 +324,8 @@ func getMinIOHealthStatusWithRetry(tenant *miniov2.Tenant, mode HealthMode, tryC
 	}
 
 	httpClient := &http.Client{
-		Transport: getHealthCheckTransport(),
+		Transport: getHealthCheckTransport()(),
 	}
-	defer httpClient.CloseIdleConnections()
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
