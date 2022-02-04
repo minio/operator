@@ -1,0 +1,5 @@
+channels:
+- currentCSV: minio-operator.v4.4.6
+  name: alpha
+defaultChannel: alpha
+packageName: minio-operator
