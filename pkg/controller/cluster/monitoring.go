@@ -108,9 +108,8 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
-		// show the error and continue
-		klog.Infof("'%s/%s': %v", tenant.Namespace, tenant.Name, err)
-		return nil
+		klog.Errorf("Error instantiating adminClnt '%s/%s': %v", tenant.Namespace, tenant.Name, err)
+		return err
 	}
 
 	aClnt, err := madmin.NewAnonymousClient(tenant.MinIOServerHostAddress(), tenant.TLS())

@@ -182,10 +182,12 @@ function install_tenant() {
     echo "This test is intended for helm only not for KES, there is another kes test, so let's remove KES here"
     yq -i eval 'del(.tenant.kes)' "${SCRIPT_DIR}/../helm/tenant/values.yaml"
 
+    try helm lint "${SCRIPT_DIR}/../helm/tenant" --quiet
+
     namespace=default
     key=app
     value=minio
-    helm install --namespace $namespace \
+    try helm install --namespace $namespace \
       --create-namespace tenant ./helm/tenant
   else
     namespace=tenant-lite

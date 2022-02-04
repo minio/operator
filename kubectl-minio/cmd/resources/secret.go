@@ -22,24 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewTenantCredsSecret : deprecated
-func NewTenantCredsSecret(opts *TenantOptions) (*corev1.Secret, error) {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      opts.Name + "-creds-secret",
-			Namespace: opts.NS,
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: v1.SchemeGroupVersion.Version,
-		},
-		Data: map[string][]byte{
-			"accesskey": []byte(""),
-			"secretkey": []byte(""),
-		},
-	}, nil
-}
-
 // NewTenantConfigurationSecret will return a new secret a MinIO Tenant
 func NewTenantConfigurationSecret(opts *TenantOptions) (*corev1.Secret, error) {
 	accessKey, secretKey, err := miniov2.GenerateCredentials()

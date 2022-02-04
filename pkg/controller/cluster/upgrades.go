@@ -18,10 +18,12 @@ package cluster
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 
-	"github.com/blang/semver/v4"
+	corev1 "k8s.io/api/core/v1"
 
+	"github.com/blang/semver/v4"
 	"github.com/hashicorp/go-version"
 
 	"k8s.io/klog/v2"
@@ -38,6 +40,7 @@ const (
 	version428 = "v4.2.8"
 	version429 = "v4.2.9"
 	version430 = "v4.3.0"
+	version45  = "v4.5"
 )
 
 type upgradeFunction func(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error)
@@ -51,6 +54,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		version428: c.upgrade428,
 		version429: c.upgrade429,
 		version430: c.upgrade430,
+		version45:  c.upgrade45,
 	}
 
 	// if the version is empty, do all upgrades
@@ -60,6 +64,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		upgradesToDo = append(upgradesToDo, version428)
 		upgradesToDo = append(upgradesToDo, version429)
 		upgradesToDo = append(upgradesToDo, version430)
+		upgradesToDo = append(upgradesToDo, version45)
 	} else {
 		currentSyncVersion, err := version.NewVersion(tenant.Status.SyncVersion)
 		if err != nil {
@@ -72,6 +77,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 			version428,
 			version429,
 			version430,
+			version45,
 		}
 		for _, v := range versionsThatNeedUpgrades {
 			vp, _ := version.NewVersion(v)
@@ -295,4 +301,63 @@ func (c *Controller) upgrade430(ctx context.Context, tenant *miniov2.Tenant) (*m
 	}
 
 	return c.updateTenantSyncVersion(ctx, tenant, version430)
+}
+
+// Upgrades the sync version to v4.5
+// in this version we finally deprecated tenant.spec.credsSecret field.
+func (c *Controller) upgrade45(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
+	if tenant.HasConfigurationSecret() {
+		return c.updateTenantSyncVersion(ctx, tenant, version45)
+	}
+	if !tenant.HasCredsSecret() {
+		return nil, fmt.Errorf("'%s/%s' error migrating tenant credsSecret, credsSecret does not exist", tenant.Namespace, tenant.Name)
+	}
+	// Create new configuration secret based on the existing credsSecret
+	credsSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.Spec.CredsSecret.Name, metav1.GetOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return nil, err
+	}
+	var accessKey string
+	var secretKey string
+	if _, ok := credsSecret.Data["accesskey"]; ok {
+		accessKey = string(credsSecret.Data["accesskey"])
+	}
+	if _, ok := credsSecret.Data["secretkey"]; ok {
+		secretKey = string(credsSecret.Data["secretkey"])
+	}
+	if accessKey == "" || secretKey == "" {
+		return nil, fmt.Errorf("accessKey/secretKey are empty - '%s/%s' error in migrating tenant credsSecret to newer configuration", tenant.Namespace, tenant.Name)
+	}
+	tenantConfiguration := map[string]string{}
+	tenantConfiguration["MINIO_ROOT_USER"] = accessKey
+	tenantConfiguration["MINIO_ROOT_PASSWORD"] = secretKey
+	configurationSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tenant.ConfigurationSecretName(),
+			Namespace: tenant.Namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: corev1.SchemeGroupVersion.Version,
+		},
+		Data: map[string][]byte{
+			"config.env": []byte(miniov2.GenerateTenantConfigurationFile(tenantConfiguration)),
+		},
+	}
+	_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, configurationSecret, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+	// Update tenant fields
+	tenantCopy := tenant.DeepCopy()
+	tenantCopy.EnsureDefaults()
+	tenantCopy.Spec.Configuration = &corev1.LocalObjectReference{
+		Name: tenantCopy.ConfigurationSecretName(),
+	}
+	tenantCopy.Spec.CredsSecret = nil
+	_, err = c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Update(ctx, tenantCopy, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("error updating tenant '%s/%s', could not update tenant.spec.configuration field: %v", tenant.Namespace, tenant.Name, err)
+	}
+	return c.updateTenantSyncVersion(ctx, tenant, version45)
 }

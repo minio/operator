@@ -75,12 +75,6 @@ func genEllipsis(start, end int) string {
 	return "{" + strconv.Itoa(start) + "..." + strconv.Itoa(end) + "}"
 }
 
-// HasCredsSecret returns true if the user has provided a secret
-// for a Tenant else false
-func (t *Tenant) HasCredsSecret() bool {
-	return t.Spec.CredsSecret != nil
-}
-
 // HasConfigurationSecret returns true if the user has provided a configuration
 // for a Tenant else false
 func (t *Tenant) HasConfigurationSecret() bool {
@@ -555,8 +549,8 @@ func (t *Tenant) Validate() error {
 		return errors.New("zones must be configured")
 	}
 
-	if t.Spec.CredsSecret == nil {
-		return errors.New("please set credsSecret secret with credentials for Tenant")
+	if t.Spec.Configuration == nil {
+		return errors.New("please set configuration secret with credentials for Tenant")
 	}
 
 	// Every zone must contain a Volume Claim Template
