@@ -23,8 +23,9 @@ source "${SCRIPT_DIR}/common.sh"
 
 function perform_attempts_to_get_log_api_response() {
 	# This function will perform some attempts to get the API response.
-	for i in {1..1000}; do
-		for i in {1..10}; do echo ""; done
+	for attempts_contacting_api in {1..1000}; do
+		echo "attempt ${attempts_contacting_api}/1000"
+		repeat 10 echo ""
 		echo "kubectl get pods -n tenant-lite"
 		kubectl get pods -n tenant-lite
 		kubectl port-forward storage-lite-ss-0-0 9443 --namespace tenant-lite &
@@ -49,10 +50,10 @@ function perform_attempts_to_get_log_api_response() {
 			curl 'https://localhost:9443/api/v1/logs/search?q=reqinfo&pageSize=100&pageNo=0&order=timeDesc' \
 			-H 'cookie: token='$COOKIE'' \
 			--compressed \
-			--insecure | jq '.results[0].response_status'
+			--insecure | jq '.results[0].response_status' | tr -d '"'
 		)
 		echo $RESULT
-		EXPECTED_RESULT='"OK"'
+		EXPECTED_RESULT=OK
 		echo $EXPECTED_RESULT
 		if [ "$EXPECTED_RESULT" = "$RESULT" ]; then
 			echo "Logs are present, no issue found"
