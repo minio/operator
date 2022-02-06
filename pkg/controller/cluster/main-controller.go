@@ -1063,15 +1063,13 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		if us.CurrentVersion != us.UpdatedVersion {
-			klog.Infof("Updating '%s' MinIO from: %s, to: %s",
-				tenantName, us.CurrentVersion, us.UpdatedVersion)
 			// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
 			// MinIO server integrated with Console), we need to delete the old console deployment and service.
-			// We do this only when MinIO server is successfully updated and
+			// We do this only when MinIO server is successfully updated.
 			unifiedConsoleReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("RELEASE.2021-07-27T02-40-15Z")
 			newVer, err := miniov2.ReleaseTagToReleaseTime(us.UpdatedVersion)
 			if err != nil {
-				klog.Errorf("Unsupported release tag on new image, non-disruptive update not allowed %w", err)
+				klog.Errorf("Unsupported release tag on new image, server updated but might leave dangling console deployment %v", err)
 				return err
 			}
 			consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())

@@ -211,13 +211,21 @@ func (t *Tenant) KESReplicas() int32 {
 }
 
 const (
-	minioReleaseTagTimeLayout = "2006-01-02T15-04-05Z"
-	releasePrefix             = "RELEASE"
+	minioReleaseTagTimeLayout       = "2006-01-02T15-04-05Z"
+	minioReleaseTagTimeLayoutBackup = "2006-01-02T15:04:05Z"
+	releasePrefix                   = "RELEASE"
 )
 
 // ReleaseTagToReleaseTime - converts a 'RELEASE.2017-09-29T19-16-56Z.hotfix' into the build time
 func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err error) {
 	fields := strings.Split(releaseTag, ".")
+	if len(fields) == 1 {
+		releaseTime, err = time.Parse(minioReleaseTagTimeLayout, fields[0])
+		if err != nil {
+			return time.Parse(minioReleaseTagTimeLayoutBackup, fields[0])
+		}
+		return releaseTime, nil
+	}
 	if len(fields) < 2 || len(fields) > 3 {
 		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
 	}
