@@ -187,6 +187,9 @@ type Controller struct {
 	// Webhook server instance
 	ws *http.Server
 
+	// Client transport
+	transport *http.Transport
+
 	// monitor pods in the cluster to update the health information
 	podInformer cache.SharedIndexInformer
 
@@ -710,23 +713,12 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	var caContent []byte
-	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
-	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
-	if err != nil {
-		caContent = miniov2.GetPodCAFromFile()
-	} else {
-		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			caContent = val
-		}
-	}
-
 	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
 	if err != nil {
 		return err
 	}
 
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, caContent)
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		return err
 	}
@@ -841,7 +833,7 @@ func (c *Controller) syncHandler(key string) error {
 			klog.Infof("'%s/%s': Deploying pool %s", tenant.Namespace, tenant.Name, pool.Name)
 			// Check healthcheck for previous pool only if it's not a new setup,
 			// and check if they are online before adding this pool.
-			if addingNewPool && !tenant.MinIOHealthCheck() && len(tenant.Spec.Pools) > 1 {
+			if addingNewPool && !tenant.MinIOHealthCheck(c.getTransport()) && len(tenant.Spec.Pools) > 1 {
 				klog.Infof("'%s/%s': Deploying new pool failed %s: MinIO is not Ready", tenant.Namespace, tenant.Name, pool.Name)
 				return ErrMinIONotReady
 			}
@@ -892,7 +884,7 @@ func (c *Controller) syncHandler(key string) error {
 					break
 				}
 				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
-				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration, caContent)
+				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration, c.getTransport())
 				if err != nil {
 					return err
 				}
@@ -924,7 +916,7 @@ func (c *Controller) syncHandler(key string) error {
 							break
 						}
 						livePodAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(livePod.Name))
-						livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, caContent)
+						livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, c.getTransport())
 						if err != nil {
 							return err
 						}
@@ -979,7 +971,7 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		} else {
 			// check if MinIO is already online after the previous restart
-			if tenant.MinIOHealthCheck() {
+			if tenant.MinIOHealthCheck(c.getTransport()) {
 				tenant.Status.WaitingOnReady = nil
 				if _, err = c.updatePoolStatus(ctx, tenant); err != nil {
 					klog.Infof("'%s' Can't update tenant status: %v", key, err)
@@ -1005,7 +997,7 @@ func (c *Controller) syncHandler(key string) error {
 	// In loop above we compared all the versions in all pools.
 	// So comparing tenant.Spec.Image (version to update to) against one value from images slice is fine.
 	if tenant.Spec.Image != images[0] && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
-		if !tenant.MinIOHealthCheck() {
+		if !tenant.MinIOHealthCheck(c.getTransport()) {
 			klog.Infof("%s is not running can't update image online", key)
 			return ErrMinIONotReady
 		}
@@ -1206,7 +1198,7 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 		// Make sure that MinIO is up and running to enable Log Search.
-		if !tenant.MinIOHealthCheck() {
+		if !tenant.MinIOHealthCheck(c.getTransport()) {
 			if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
 				return err
 			}

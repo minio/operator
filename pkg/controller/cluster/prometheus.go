@@ -63,9 +63,8 @@ func getPrometheusMetricsForTenantWithRetry(tenant *miniov2.Tenant, bearer strin
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", bearer))
 
 	httpClient := &http.Client{
-		Transport: getHealthCheckTransport(),
+		Transport: getHealthCheckTransport()(),
 	}
-	defer httpClient.CloseIdleConnections()
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
