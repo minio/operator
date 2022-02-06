@@ -3,6 +3,7 @@ ifeq '${CI}' 'true'
 VERSION ?= dev
 else
 VERSION ?= $(shell git describe --tags)
+VERSIONV ?= $(shell git describe --tags | sed 's,v,,g')
 endif
 TAG ?= "minio/operator:$(VERSION)"
 LDFLAGS ?= "-s -w -X main.Version=$(VERSION)"
@@ -95,8 +96,7 @@ generate-code:
 	@./k8s/update-codegen.sh
 
 generate-openshift-manifests:
-	@operator-sdk generate packagemanifests --package minio-operator --version 4.4.6 --deploy-dir resources/base --crds-dir resources/base/crds --output-dir manifests --channel stable
-
+	@operator-sdk generate packagemanifests --package minio-operator --version $(VERSIONV) --deploy-dir resources/base --crds-dir resources/base/crds --output-dir manifests --channel stable
 
 release: generate-openshift-manifests
 	@./helm-reindex.sh
