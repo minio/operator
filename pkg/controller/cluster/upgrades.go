@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+	"regexp"
 	"github.com/blang/semver/v4"
 
 	"github.com/hashicorp/go-version"
