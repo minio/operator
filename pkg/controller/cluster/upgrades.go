@@ -18,8 +18,8 @@ package cluster
 
 import (
 	"context"
-	"regexp"
 	"github.com/blang/semver/v4"
+	"regexp"
 
 	"github.com/hashicorp/go-version"
 
@@ -170,7 +170,6 @@ func (c *Controller) upgrade424(ctx context.Context, tenant *miniov2.Tenant) (*m
 // Returns 1 if v2 is smaller, -1
 // if v1 is smaller, 0 if equal
 func versionCompare(version1 string, version2 string) int {
-	klog.Infof("Comparing %s and %s", version1, version2)
 	vs1, err := semver.ParseTolerant(version1)
 	if err != nil {
 		klog.Errorf("Error parsing version %s: %v", version1, err)
