@@ -19,6 +19,7 @@ package cluster
 import (
 	"context"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/go-version"
 
@@ -171,6 +172,8 @@ func (c *Controller) upgrade424(ctx context.Context, tenant *miniov2.Tenant) (*m
 func versionCompare(version1 string, version2 string) int {
 	version1 = version1[1:]
 	version2 = version2[1:]
+	version1 = strings.Split(version1, "-")[0]
+	version2 = strings.Split(version2, "-")[0]
 	i := 0
 	j := 0
 	n := len(version1)
