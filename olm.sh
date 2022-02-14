@@ -13,8 +13,8 @@ operator-sdk generate bundle \
   --output-dir bundles/$RELEASE \
   --channels stable
 
-myenv=$EXAMPLE yq -i e '.metadata.annotations.alm-examples |= ("${myenv}" | envsubst)' bundles/$RELEASE/manifests/minio-operator.clusterserviceversion.yaml
+myenv=$EXAMPLE yq -i e ".metadata.annotations.alm-examples |= (\"\${myenv}\" | envsubst)" bundles/$RELEASE/manifests/minio-operator.clusterserviceversion.yaml
 
 miniocontainer="quay.io/minio/operator:v$RELEASE" yq -i e '.metadata.annotations.containerImage |= env(miniocontainer)' bundles/$RELEASE/manifests/minio-operator.clusterserviceversion.yaml
 
-yq eval-all -i '. as $item ireduce ({}; . * $item )' bundles/$RELEASE/manifests/minio-operator.clusterserviceversion.yaml resources/templates/olm-template.yaml
+yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$RELEASE/manifests/minio-operator.clusterserviceversion.yaml resources/templates/olm-template.yaml
