@@ -266,12 +266,15 @@ func (c *Controller) upgrade429(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if atLeastOnePoolInitialized {
 		for i, pool := range tenant.Spec.Pools {
 			// if they have a security context, and is having them run as root
-			if pool.SecurityContext != nil && !*pool.SecurityContext.RunAsNonRoot && *pool.SecurityContext.RunAsUser == 0 {
-				// Report the pool is now Legacy Security Context
-				tenant.Status.Pools[i].LegacySecurityContext = true
-				// push updates to status
-				if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
-					klog.Errorf("'%s/%s' Error upgrading implicit tenant security context, MinIO may not start: %v", tenant.Namespace, tenant.Name, err)
+			scontext := pool.SecurityContext
+			if scontext != nil && scontext.RunAsNonRoot != nil && scontext.RunAsUser != nil {
+				if !*scontext.RunAsNonRoot && *scontext.RunAsUser == 0 {
+					// Report the pool is now Legacy Security Context
+					tenant.Status.Pools[i].LegacySecurityContext = true
+					// push updates to status
+					if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+						klog.Errorf("'%s/%s' Error upgrading implicit tenant security context, MinIO may not start: %v", tenant.Namespace, tenant.Name, err)
+					}
 				}
 			}
 		}
