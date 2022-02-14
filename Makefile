@@ -96,7 +96,7 @@ generate-code:
 	@./k8s/update-codegen.sh
 
 generate-openshift-manifests:
-	@operator-sdk generate packagemanifests --package minio-operator --version $(VERSIONV) --deploy-dir resources/base --crds-dir resources/base/crds --output-dir manifests --channel stable
+	@./olm.sh
 
 release: generate-openshift-manifests
 	@./helm-reindex.sh
