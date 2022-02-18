@@ -2,7 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"v1","kind":"Namespace","metadata":{"name":"tenant-lite"}},{"apiVersion":"v1","data":{"config.env":"ZXhwb3J0IE1JTklPX1JPT1RfVVNFUj0ibWluaW8iCmV4cG9ydCBNSU5JT19ST09UX1BBU1NXT1JEPSJtaW5pbzEyMyIKZXhwb3J0IE1JTklPX1NUT1JBR0VfQ0xBU1NfU1RBTkRBUkQ9IkVDOjIiCmV4cG9ydCBNSU5JT19CUk9XU0VSPSJvbiI="},"kind":"Secret","metadata":{"name":"storage-configuration","namespace":"tenant-lite"},"type":"Opaque"},{"apiVersion":"v1","data":{"accessKey":"","secretKey":""},"kind":"Secret","metadata":{"name":"storage-creds-secret","namespace":"tenant-lite"},"type":"Opaque"},{"apiVersion":"v1","data":{"CONSOLE_ACCESS_KEY":"Y29uc29sZQ==","CONSOLE_SECRET_KEY":"Y29uc29sZTEyMw=="},"kind":"Secret","metadata":{"name":"storage-user","namespace":"tenant-lite"},"type":"Opaque"},{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"storage-lite","namespace":"tenant-lite"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"credsSecret":{"name":"storage-creds-secret"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"image":"quay.io/minio/minio:RELEASE.2022-02-17T23-22-26Z","imagePullSecret":{},"log":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"audit":{"diskCapacityGB":1},"db":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":999,"runAsGroup":999,"runAsNonRoot":true,"runAsUser":999},"serviceAccountName":"","tolerations":[],"volumeClaimTemplate":{"metadata":{},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"standard"}}},"image":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","tolerations":[]},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","prometheus":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"diskCapacityGB":1,"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","sidecarimage":"","storageClassName":"standard"},"requestAutoCert":true,"s3":{"bucketDNS":false},"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
+    alm-examples: '[{"apiVersion":"v1","kind":"Namespace","metadata":{"name":"tenant-lite"}},{"apiVersion":"v1","data":{"config.env":"ZXhwb3J0IE1JTklPX1JPT1RfVVNFUj0ibWluaW8iCmV4cG9ydCBNSU5JT19ST09UX1BBU1NXT1JEPSJtaW5pbzEyMyIKZXhwb3J0IE1JTklPX1NUT1JBR0VfQ0xBU1NfU1RBTkRBUkQ9IkVDOjIiCmV4cG9ydCBNSU5JT19CUk9XU0VSPSJvbiI="},"kind":"Secret","metadata":{"name":"storage-configuration","namespace":"tenant-lite"},"type":"Opaque"},{"apiVersion":"v1","data":{"accessKey":"","secretKey":""},"kind":"Secret","metadata":{"name":"storage-creds-secret","namespace":"tenant-lite"},"type":"Opaque"},{"apiVersion":"v1","data":{"CONSOLE_ACCESS_KEY":"Y29uc29sZQ==","CONSOLE_SECRET_KEY":"Y29uc29sZTEyMw=="},"kind":"Secret","metadata":{"name":"storage-user","namespace":"tenant-lite"},"type":"Opaque"},{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"storage-lite","namespace":"tenant-lite"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"credsSecret":{"name":"storage-creds-secret"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"image":"quay.io/minio/minio:RELEASE.2022-02-18T01-50-10Z","imagePullSecret":{},"log":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"audit":{"diskCapacityGB":1},"db":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":999,"runAsGroup":999,"runAsNonRoot":true,"runAsUser":999},"serviceAccountName":"","tolerations":[],"volumeClaimTemplate":{"metadata":{},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"standard"}}},"image":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","tolerations":[]},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","prometheus":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"diskCapacityGB":1,"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","sidecarimage":"","storageClassName":"standard"},"requestAutoCert":true,"s3":{"bucketDNS":false},"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
     capabilities: "Full Lifecycle"
     operators.operatorframework.io/builder: operator-sdk-v1.17.0
     operators.operatorframework.io/project_layout: unknown
@@ -17,7 +17,7 @@ metadata:
   name: minio-operator.v4.4.8
   namespace: minio-operator
 spec:
-  apiservicedefinitions: {}
+  apiservicedefinitions: { }
   customresourcedefinitions:
     owned:
       - kind: Tenant
@@ -437,7 +437,7 @@ spec:
             selector:
               matchLabels:
                 app: console
-            strategy: {}
+            strategy: { }
             template:
               metadata:
                 labels:
@@ -457,7 +457,7 @@ spec:
                         name: http
                       - containerPort: 9433
                         name: https
-                    resources: {}
+                    resources: { }
                     securityContext:
                       runAsGroup: 1000
                       runAsNonRoot: true
@@ -469,7 +469,7 @@ spec:
             selector:
               matchLabels:
                 name: minio-operator
-            strategy: {}
+            strategy: { }
             template:
               metadata:
                 labels:
