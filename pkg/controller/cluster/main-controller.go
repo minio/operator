@@ -648,7 +648,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	secret, err := c.applyOperatorWebhookSecret(ctx, tenant)
+	operatorWebhookSecret, err := c.applyOperatorWebhookSecret(ctx, tenant)
 	if err != nil {
 		return err
 	}
@@ -842,7 +842,7 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 
-			ss = statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss = statefulsets.NewPool(tenant, operatorWebhookSecret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -985,11 +985,13 @@ func (c *Controller) syncHandler(key string) error {
 	for _, image := range images {
 		for i := 0; i < len(images); i++ {
 			if image != images[i] {
+				errMsg := fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
+					i+1)
+				c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "InconsistentVersions", errMsg.Error())
 				if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
 					return err
 				}
-				return fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
-					i+1)
+				return errMsg
 			}
 		}
 	}
@@ -997,104 +999,9 @@ func (c *Controller) syncHandler(key string) error {
 	// In loop above we compared all the versions in all pools.
 	// So comparing tenant.Spec.Image (version to update to) against one value from images slice is fine.
 	if tenant.Spec.Image != images[0] && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
-		if !tenant.MinIOHealthCheck(c.getTransport()) {
-			klog.Infof("%s is not running can't update image online", key)
-			return ErrMinIONotReady
-		}
-
-		// Images different with the newer state change, continue to verify
-		// if upgrade is possible
-		tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingMinIOVersion, totalReplicas)
-		if err != nil {
+		if err := c.updatePoolsFrom(ctx, tenant, adminClnt, operatorWebhookSecret, images[0], totalReplicas); err != nil {
 			return err
 		}
-
-		klog.V(4).Infof("Collecting artifacts for Tenant '%s' to update MinIO from: %s, to: %s",
-			tenantName, images[0], tenant.Spec.Image)
-
-		latest, err := c.fetchArtifacts(tenant)
-		if err != nil {
-			_ = c.removeArtifacts()
-			return err
-		}
-		protocol := "https"
-		if !isOperatorTLS() {
-			protocol = "http"
-		}
-		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("%s://operator.%s.svc.%s:%s%s",
-			protocol,
-			miniov2.GetNSFromFile(), miniov2.GetClusterDomain(),
-			miniov2.WebhookDefaultPort, miniov2.WebhookAPIUpdate,
-		))
-		if err != nil {
-			_ = c.removeArtifacts()
-
-			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", tenantName, err)
-			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalReplicas); terr != nil {
-				return terr
-			}
-
-			// Correct URL could not be obtained, not proceeding to update.
-			return err
-		}
-
-		klog.V(4).Infof("Updating Tenant %s MinIO version from: %s, to: %s -> URL: %s",
-			tenantName, tenant.Spec.Image, images[0], updateURL)
-
-		us, err := adminClnt.ServerUpdate(ctx, updateURL)
-		if err != nil {
-			_ = c.removeArtifacts()
-
-			err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", tenantName, err)
-			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalReplicas); terr != nil {
-				return terr
-			}
-
-			// Update failed, nothing needs to be changed in the container
-			return err
-		}
-
-		if us.CurrentVersion != us.UpdatedVersion {
-			// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
-			// MinIO server integrated with Console), we need to delete the old console deployment and service.
-			// We do this only when MinIO server is successfully updated.
-			unifiedConsoleReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("RELEASE.2021-07-27T02-40-15Z")
-			newVer, err := miniov2.ReleaseTagToReleaseTime(us.UpdatedVersion)
-			if err != nil {
-				klog.Errorf("Unsupported release tag on new image, server updated but might leave dangling console deployment %v", err)
-				return err
-			}
-			consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())
-			if unifiedConsoleReleaseTime.Before(newVer) && consoleDeployment != nil && err == nil {
-				if err := c.deleteOldConsoleDeployment(ctx, tenant, consoleDeployment.Name); err != nil {
-					return err
-				}
-			}
-			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
-				tenantName, us.CurrentVersion, us.UpdatedVersion)
-		} else {
-			msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
-				tenantName,
-				us.CurrentVersion)
-			klog.Info(msg)
-			if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalReplicas); terr != nil {
-				return err
-			}
-			return nil
-		}
-
-		// clean the local directory
-		_ = c.removeArtifacts()
-
-		for i, pool := range tenant.Spec.Pools {
-			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
-			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
-				return err
-			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolUpdated", fmt.Sprintf("Tenant pool %s updated", pool.Name))
-		}
-
 	}
 
 	// This loop will take care of updating the statefulset for each pool
@@ -1140,7 +1047,7 @@ func (c *Controller) syncHandler(key string) error {
 				carryOverLabels[miniov1.ZoneLabel] = val
 			}
 
-			nss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			nss := statefulsets.NewPool(tenant, operatorWebhookSecret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			ssCopy := ss.DeepCopy()
 
 			ssCopy.Spec.Template = nss.Spec.Template
