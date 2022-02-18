@@ -20,6 +20,8 @@ import (
 	"context"
 	"regexp"
 
+	"github.com/blang/semver/v4"
+
 	"github.com/hashicorp/go-version"
 
 	"k8s.io/klog/v2"
@@ -169,35 +171,17 @@ func (c *Controller) upgrade424(ctx context.Context, tenant *miniov2.Tenant) (*m
 // Returns 1 if v2 is smaller, -1
 // if v1 is smaller, 0 if equal
 func versionCompare(version1 string, version2 string) int {
-	version1 = version1[1:]
-	version2 = version2[1:]
-	i := 0
-	j := 0
-	n := len(version1)
-	m := len(version2)
-	for i < n || j < m {
-		v1 := 0
-		for i < n && version1[i] != '.' {
-			versionVal := int(version1[i] - '0')
-			v1 = v1*10 + versionVal
-			i++
-		}
-		v2 := 0
-		for j < m && version2[j] != '.' {
-			versionVal := int(version2[j] - '0')
-			v2 = v2*10 + versionVal
-			j++
-		}
-		if v1 < v2 {
-			return -1
-		}
-		if v1 > v2 {
-			return 1
-		}
-		i++
-		j++
+	vs1, err := semver.ParseTolerant(version1)
+	if err != nil {
+		klog.Errorf("Error parsing version %s: %v", version1, err)
+		return -1
 	}
-	return 0
+	vs2, err := semver.ParseTolerant(version2)
+	if err != nil {
+		klog.Errorf("Error parsing version %s: %v", version2, err)
+		return -1
+	}
+	return vs1.Compare(vs2)
 }
 
 // Upgrades the sync version to v4.2.8
