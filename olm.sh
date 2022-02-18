@@ -1,11 +1,11 @@
 #!/bin/bash
 
-RELEASE=4.4.7
+RELEASE=4.4.8
 EXAMPLE=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '. | [.]' | yq -o json | jq -c )
 
 operator-sdk generate bundle \
   --package minio-operator \
-  --version 4.4.7 \
+  --version $RELEASE \
   --deploy-dir resources/base \
   --crds-dir resources/base/crds \
   --manifests \

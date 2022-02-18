@@ -10,5 +10,5 @@ LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.17.0
 
 
 # Copy files to locations specified by labels.
-COPY bundles/4.4.7/manifests /manifests/
-COPY bundles/4.4.7/metadata /metadata/
+COPY bundles/4.4.8/manifests /manifests/
+COPY bundles/4.4.8/metadata /metadata/
