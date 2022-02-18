@@ -29,8 +29,7 @@ then
 fi
 
 for file in "${files[@]}"; do
-#  echo $file
-  sed -e "s/${LATEST_RELEASE}/${RELEASE}/g" $file > $file.tmp && mv $file.tmp $file
-  sed -e "s/RELEASE\.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]Z/${MINIO_RELEASE}/g" $file > $file.tmp && mv $file.tmp $file
-  sed -e "s/${CONSOLE_FROM}/${CONSOLE_RELEASE}/g" $file > $file.tmp && mv $file.tmp $file
+  sed -e "s/${LATEST_RELEASE}/${RELEASE}/g" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+  sed -e "s/RELEASE\.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]Z/${MINIO_RELEASE}/g" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
+  sed -e "s/${CONSOLE_FROM}/${CONSOLE_RELEASE}/g" "$file" > "$file.tmp" && mv "$file.tmp" "$file"
 done
