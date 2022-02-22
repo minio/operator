@@ -30,3 +30,13 @@ cp -R bundles/$RELEASE/metadata metadata
 sed -i -e '/metrics/d' bundle.Dockerfile
 sed -i -e '/scorecard/d' bundle.Dockerfile
 sed -i -e '/testing/d' bundle.Dockerfile
+
+# clean released annotations
+sed -i -e '/metrics/d' bundles/$RELEASE/metadata/annotations.yaml
+sed -i -e '/scorecard/d' bundles/$RELEASE/metadata/annotations.yaml
+sed -i -e '/testing/d' bundles/$RELEASE/metadata/annotations.yaml
+
+# clean root level annotations.yaml
+sed -i -e '/metrics/d' metadata/annotations.yaml
+sed -i -e '/scorecard/d' metadata/annotations.yaml
+sed -i -e '/testing/d' metadata/annotations.yaml
