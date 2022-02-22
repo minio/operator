@@ -18,3 +18,15 @@ myenv=$EXAMPLE yq -i e ".metadata.annotations.alm-examples |= (\"\${myenv}\" | e
 miniocontainer="quay.io/minio/operator:v$RELEASE" yq -i e '.metadata.annotations.containerImage |= env(miniocontainer)' bundles/$RELEASE/manifests/minio-operator.clusterserviceversion.yaml
 
 yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$RELEASE/manifests/minio-operator.clusterserviceversion.yaml resources/templates/olm-template.yaml
+
+# Now promote the latest release to the root of the repository
+
+rm -Rf manifests
+rm -Rf metadata
+
+cp -R bundles/$RELEASE/manifests manifests
+cp -R bundles/$RELEASE/metadata metadata
+
+sed -i -e '/metrics/d' bundle.Dockerfile
+sed -i -e '/scorecard/d' bundle.Dockerfile
+sed -i -e '/testing/d' bundle.Dockerfile
