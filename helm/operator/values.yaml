@@ -33,7 +33,7 @@ operator:
 
 console:
   image:
-    repository: minio/console
+    repository: quay.io/minio/console
     tag: v0.14.7
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
