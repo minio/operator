@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RELEASE=4.4.8
+RELEASE=4.4.9
 EXAMPLE=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '. | [.]' | yq -o json | jq -c )
 
 operator-sdk generate bundle \
