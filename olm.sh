@@ -1,7 +1,6 @@
 #!/bin/bash
 
-RELEASE=4.4.9
-EXAMPLE=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '. | [.]' | yq -o json | jq -c )
+EXAMPLE=$(kustomize build examples/kustomization/tenant-lite| yq eval-all '. | [.]' | yq  'del( .[] | select(.kind == "Namespace") )'| yq  'del( .[] | select(.kind == "Secret") )' | yq -o json | jq -c )
 
 operator-sdk generate bundle \
   --package minio-operator \
