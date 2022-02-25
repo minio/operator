@@ -99,4 +99,5 @@ generate-openshift-manifests:
 	@./olm.sh
 
 release: generate-openshift-manifests
+	@./release.sh
 	@./helm-reindex.sh
