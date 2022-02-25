@@ -54,7 +54,7 @@ function install_operator() {
     else
         # To compile current branch
         echo "Compiling Current Branch Operator"
-        (cd "${SCRIPT_DIR}/.." && make) # will not change your shell's current directory
+        (cd "${SCRIPT_DIR}/.." && make docker) # will not change your shell's current directory
 
         echo 'start - load compiled image so we can pull it later on'
         kind load docker-image docker.io/minio/operator:dev
@@ -72,6 +72,11 @@ function install_operator() {
     # Reusing the wait for both, Kustomize and Helm
     echo "Waiting for k8s api"
     sleep 10
+
+    kubectl get ns
+
+    kubect -n minio-operator get deployments
+    kubect -n minio-operator get pods
 
     echo "Waiting for Operator Pods to come online (2m timeout)"
     try kubectl wait --namespace minio-operator \
