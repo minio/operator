@@ -21,6 +21,7 @@ export SCRIPT_DIR
 source "${SCRIPT_DIR}/common.sh"
 
 function wait_on_prometheus_pods() {
+  echo "waiting for storage-lite-prometheus-0"
   i=0
   while [[ $(kubectl get pods -n tenant-lite --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do
     ((i++))
@@ -88,7 +89,7 @@ function main() {
 
   echo 'start - wait for prometheus to be ready'
 
-  # wait_on_prometheus_pods
+   wait_on_prometheus_pods
 
   try kubectl wait --namespace tenant-lite \
     --for=condition=ready pod \
