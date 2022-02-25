@@ -73,6 +73,11 @@ function install_operator() {
     echo "Waiting for k8s api"
     sleep 10
 
+    kubectl get ns
+
+    kubect -n minio-operator get deployments
+    kubect -n minio-operator get pods
+
     echo "Waiting for Operator Pods to come online (2m timeout)"
     try kubectl wait --namespace minio-operator \
 	--for=condition=ready pod \
