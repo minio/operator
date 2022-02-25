@@ -169,7 +169,7 @@ function install_tenant() {
         value=storage-lite
         echo "Installing lite tenant"
 
-        try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-lite"
+        try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant"
     fi
 
     echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"
