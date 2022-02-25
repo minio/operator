@@ -85,7 +85,7 @@ logsearchapi:
 		go test -race ./... && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
-		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o logsearchapi )
+		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o ../logsearchapi-bin )
 
 getconsoleuiyaml:
 	@echo "Getting the latest Console UI"
