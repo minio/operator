@@ -54,7 +54,7 @@ function install_operator() {
     else
         # To compile current branch
         echo "Compiling Current Branch Operator"
-        (cd "${SCRIPT_DIR}/.." && make) # will not change your shell's current directory
+        (cd "${SCRIPT_DIR}/.." && make docker) # will not change your shell's current directory
 
         echo 'start - load compiled image so we can pull it later on'
         kind load docker-image docker.io/minio/operator:dev
