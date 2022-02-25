@@ -61,7 +61,7 @@ builds:
 
   - id: logsearchapi
     dir: logsearchapi
-    binary: logsearchapi
+    binary: logsearchapi-bin
     goos:
       - linux
     goarch:
