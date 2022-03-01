@@ -58,6 +58,7 @@ var (
 		CreateStatement: `CREATE TABLE %s (
                                     time TIMESTAMPTZ NOT NULL,
                                     api_name TEXT NOT NULL,
+                                    access_key TEXT,
                                     bucket TEXT,
                                     object TEXT,
                                     time_to_response_ns INT8,
@@ -266,6 +267,7 @@ type LogEventRow struct {
 type ReqInfoRow struct {
 	Time                  time.Time `json:"time"`
 	APIName               string    `json:"api_name"`
+	AccessKey             string    `json:"access_key"`
 	Bucket                string    `json:"bucket"`
 	Object                string    `json:"object"`
 	TimeToResponseNs      uint64    `json:"time_to_response_ns"`
@@ -292,6 +294,7 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
                                             OFFSET $1 LIMIT $2;`
 		reqInfoSelect QTemplate = `SELECT time,
                                                   api_name,
+                                                  access_key,
                                                   bucket,
                                                   object,
                                                   time_to_response_ns,
