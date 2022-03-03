@@ -36,7 +36,7 @@ type fParam string
 func stringToFParam(s string) (f fParam, err error) {
 	f = fParam(s)
 	switch f {
-	case "bucket", "object", "api_name", "request_id", "user_agent", "response_status":
+	case "bucket", "object", "api_name", "access_key", "request_id", "user_agent", "response_status":
 	default:
 		return "", fmt.Errorf("Unknown filter param: %s", s)
 	}
