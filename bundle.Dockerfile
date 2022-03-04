@@ -6,9 +6,8 @@ LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
 LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=minio-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=stable
-LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.17.0
 
 
 # Copy files to locations specified by labels.
-COPY bundles/4.4.8/manifests /manifests/
-COPY bundles/4.4.8/metadata /metadata/
+COPY bundles/4.4.10/manifests /manifests/
+COPY bundles/4.4.10/metadata /metadata/

@@ -54,7 +54,7 @@ function install_operator() {
     else
         # To compile current branch
         echo "Compiling Current Branch Operator"
-        (cd "${SCRIPT_DIR}/.." && make) # will not change your shell's current directory
+        (cd "${SCRIPT_DIR}/.." && make docker) # will not change your shell's current directory
 
         echo 'start - load compiled image so we can pull it later on'
         kind load docker-image docker.io/minio/operator:dev
@@ -72,6 +72,11 @@ function install_operator() {
     # Reusing the wait for both, Kustomize and Helm
     echo "Waiting for k8s api"
     sleep 10
+
+    kubectl get ns
+
+    kubect -n minio-operator get deployments
+    kubect -n minio-operator get pods
 
     echo "Waiting for Operator Pods to come online (2m timeout)"
     try kubectl wait --namespace minio-operator \
@@ -131,8 +136,9 @@ function check_tenant_status() {
         PASSWORD=$(kubectl get secret minio1-secret -o jsonpath="{.data.secretkey}" | base64 --decode)
     else
         echo "No fourth argument provided, using default USER and PASSWORD"
-        USER=$(kubectl -n $1 get secrets $2-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
-        PASSWORD=$(kubectl -n $1 get secrets $2-env-configuration -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
+        TENANT_CONFIG_SECRET=$(kubectl -n tenant-lite get tenants.minio.min.io storage-lite -o jsonpath="{.spec.configuration.name}")
+        USER=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
+        PASSWORD=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
     fi
 
     try kubectl wait --namespace $1 \
@@ -169,7 +175,7 @@ function install_tenant() {
         value=storage-lite
         echo "Installing lite tenant"
 
-        try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-lite"
+        try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant"
     fi
 
     echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"

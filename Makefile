@@ -28,14 +28,18 @@ getdeps:
 	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
 	@which golangci-lint 1>/dev/null || (echo "Installing golangci-lint" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.43.0)
+	@echo "Go Mod Download"
+	@go mod download
 
 verify: getdeps govet gotest lint
 
 operator:
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator
+
+docker:
 	@docker build -t $(TAG) .
 
-build: regen-crd verify plugin logsearchapi operator
+build: regen-crd verify plugin logsearchapi operator docker
 
 install: all
 
@@ -85,7 +89,7 @@ logsearchapi:
 		go test -race ./... && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
-		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o logsearchapi )
+		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o ../logsearchapi-bin )
 
 getconsoleuiyaml:
 	@echo "Getting the latest Console UI"
@@ -99,4 +103,5 @@ generate-openshift-manifests:
 	@./olm.sh
 
 release: generate-openshift-manifests
+	@./release.sh
 	@./helm-reindex.sh

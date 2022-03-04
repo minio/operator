@@ -1,0 +1,8 @@
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: storage
+  namespace: minio-tenant
+spec:
+  log:
+    image: minio/operator:dev

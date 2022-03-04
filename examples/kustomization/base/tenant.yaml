@@ -111,7 +111,7 @@ spec:
   ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
   # externalClientCertSecret: {}
   ## Registry location and Tag to download MinIO Server image
-  image: quay.io/minio/minio:RELEASE.2022-02-18T01-50-10Z
+  image: quay.io/minio/minio:RELEASE.2022-02-24T22-12-01Z
   imagePullSecret: { }
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
@@ -192,7 +192,7 @@ spec:
   #     app: minio-sm
   ## LogSearch API setup for MinIO Tenant.
   log:
-    image: "" # defaults to minio/operator:v4.4.8
+    image: "" # defaults to minio/operator:v4.4.10
     resources: { }
     nodeSelector: { }
     affinity:
