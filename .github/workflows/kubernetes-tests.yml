@@ -202,6 +202,8 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Docker Container
         run: |
           TAG=ghcr.io/minio/operator:pr_${{github.event.issue.number}} make docker
