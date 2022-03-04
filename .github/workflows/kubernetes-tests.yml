@@ -204,7 +204,8 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Docker Container
         run: |
-          make docker
+          TAG=ghcr.io/minio/operator:${{github.event.issue.number}} make docker
+          docker push ghcr.io/minio/operator:${{github.event.issue.number}}
 
 
   test-tenant:
