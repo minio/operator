@@ -28,7 +28,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/services"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -262,22 +261,6 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 					return err
 				}
 				c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "StsUpdated", "KES Statefulset Updated")
-			}
-		}
-
-		// After KES and MinIO are deployed successfully, create the MinIO Key on KES KMS Backend
-		_, err = c.jobLister.Jobs(tenant.Namespace).Get(tenant.KESJobName())
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				j := jobs.NewForKES(tenant)
-				klog.V(2).Infof("Creating a new Job for cluster %q", nsName)
-				if _, err = c.kubeClientSet.BatchV1().Jobs(tenant.Namespace).Create(ctx, j, cOpts); err != nil {
-					klog.V(2).Infof(err.Error())
-					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "JobFailed", fmt.Sprintf("KES job failed to create: %s", err))
-					return err
-				}
-			} else {
-				return err
 			}
 		}
 	}
