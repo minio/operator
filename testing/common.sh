@@ -75,8 +75,8 @@ function install_operator() {
 
     kubectl get ns
 
-    kubect -n minio-operator get deployments
-    kubect -n minio-operator get pods
+    kubectl -n minio-operator get deployments
+    kubectl -n minio-operator get pods
 
     echo "Waiting for Operator Pods to come online (2m timeout)"
     try kubectl wait --namespace minio-operator \
@@ -136,7 +136,7 @@ function check_tenant_status() {
         PASSWORD=$(kubectl get secret minio1-secret -o jsonpath="{.data.secretkey}" | base64 --decode)
     else
         echo "No fourth argument provided, using default USER and PASSWORD"
-        TENANT_CONFIG_SECRET=$(kubectl -n tenant-lite get tenants.minio.min.io storage-lite -o jsonpath="{.spec.configuration.name}")
+        TENANT_CONFIG_SECRET=$(kubectl -n $1 get tenants.minio.min.io $2 -o jsonpath="{.spec.configuration.name}")
         USER=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
         PASSWORD=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
     fi
