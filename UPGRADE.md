@@ -11,6 +11,12 @@ tenant has a specific MinIO Image specified in `.spec.log.image` you need to upd
 minio/operator image or your private registry image.
 
 
+v4.3.9 - v4.4.0
+---
+Support for Prometheus ServiceMonitor is removed. Using ServiceMonitor to configure prometheus endpoints will lead to duplicate metrics. The alternate approach is to use Prometheus [AdditionalScrapeConfigs] https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/additional-scrape-config.md. This can be enabled by setting `prometheusOperator: true` on the tenant.
+Once this is configured, MinIO Operator will create the additional configuration for the tenant.
+If the prometheus is running on a particular namespace, `PROMETHEUS_NAMESPACE` can be set accordingly.
+
 v4.2.3 - v4.2.4
 ---
 In this version we started running the MinIO pods as `non-root` to increase security in the MinIO deployment, however
@@ -39,4 +45,5 @@ securityContext:
 This scenario is automatically handled by the operator, however if the tenant is updated from a pre-stored source (i.e:
 a yaml file) which is missing the added `securityContext` this problem may arise again, so update your stored yamls
 respectively. 
+
 
