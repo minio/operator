@@ -332,7 +332,7 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			whereClauses = append(whereClauses, timeRangeClause)
 		}
 		whereClause := strings.Join(whereClauses, " AND ")
-		if len(whereClauses) >= 0 {
+		if len(whereClauses) > 0 {
 			whereClause = fmt.Sprintf("WHERE %s", whereClause)
 		}
 
