@@ -289,7 +289,7 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		logEventSelect QTemplate = `SELECT event_time,
                                                    log
                                               FROM %s
-                                             WHERE %s
+                                             %s
                                           ORDER BY event_time %s
                                             OFFSET $1 LIMIT $2;`
 		reqInfoSelect QTemplate = `SELECT time,
@@ -332,6 +332,9 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			whereClauses = append(whereClauses, timeRangeClause)
 		}
 		whereClause := strings.Join(whereClauses, " AND ")
+		if len(whereClauses) >= 0 {
+			whereClause = fmt.Sprintf("WHERE %s", whereClause)
+		}
 
 		q := logEventSelect.build(auditLogEventsTable.Name, whereClause, timeOrder)
 		rows, err := c.QueryContext(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
