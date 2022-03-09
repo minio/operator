@@ -48,9 +48,11 @@ type SearchQuery struct {
 	Query         qType
 	TimeStart     *time.Time
 	TimeEnd       *time.Time
+	LastDuration  *time.Duration
 	TimeAscending bool
 	PageNumber    int
 	PageSize      int
+	ExportFormat  string
 	FParams       map[fParam]string
 }
 
@@ -106,8 +108,32 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 		timeEnd = &ts
 	}
 
+	var last *time.Duration
+	if lastDuration := values.Get("last"); lastDuration != "" {
+		d, err := time.ParseDuration(lastDuration)
+		if err != nil {
+			return nil, fmt.Errorf("Invalid `last` parameter: %s (Use for example `24h` or `90m`)", lastDuration)
+		}
+		if timeEnd != nil || timeStart != nil {
+			return nil, fmt.Errorf("`last` parameter cannot be specified with `timeStart` or `timeEnd`")
+		}
+		last = &d
+	}
+
+	export := ""
+	if exportParam := values.Get("export"); exportParam != "" {
+		if exportParam != "csv" && exportParam != "ndjson" {
+			return nil, fmt.Errorf("Only `csv` and `ndjson` export formats are supported")
+		}
+		export = exportParam
+	}
+
 	pageSize := 10
 	if psParam := values.Get("pageSize"); psParam != "" {
+		if export != "" {
+			return nil, fmt.Errorf("`pageSize` may not be specified with `export`")
+		}
+
 		pageSize, err = strconv.Atoi(psParam)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid pageSize parameter: %s", psParam)
@@ -119,6 +145,10 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 
 	var pageNumber int
 	if pnParam := values.Get("pageStart"); pnParam != "" {
+		if export != "" {
+			return nil, fmt.Errorf("`pageStart` may not be specified with `export`")
+		}
+
 		pageNumber, err = strconv.Atoi(pnParam)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid pageStart parameter: %s", pnParam)
@@ -157,9 +187,11 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 		Query:         q,
 		TimeStart:     timeStart,
 		TimeEnd:       timeEnd,
+		LastDuration:  last,
 		TimeAscending: timeAscending,
 		PageSize:      pageSize,
 		PageNumber:    pageNumber,
+		ExportFormat:  export,
 		FParams:       fParams,
 	}, nil
 }
@@ -180,7 +212,7 @@ func parseSQTimeString(s string) (r time.Time, err error) {
 	return
 }
 
-func generateFilterClauses(m map[fParam]string, dollarStart int) (clauses []string, args []interface{}) {
+func generateFilterClauses(m map[fParam]string, dollarStart int) (clauses []string, args []interface{}, dollarEnd int) {
 	for k, v := range m {
 		arg, op := v, "="
 		if strings.Contains(v, ".") || strings.Contains(v, "*") {
@@ -194,5 +226,6 @@ func generateFilterClauses(m map[fParam]string, dollarStart int) (clauses []stri
 		args = append(args, arg)
 		dollarStart++
 	}
+	dollarEnd = dollarStart
 	return
 }
