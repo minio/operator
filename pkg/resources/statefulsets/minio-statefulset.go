@@ -131,6 +131,17 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 			Value: strings.Join(domains, ","),
 		})
 	}
+	// Set the redirect url for console
+	if t.HasConsoleDomains() {
+		schema := "http"
+		if t.TLS() {
+			schema = "https"
+		}
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "MINIO_BROWSER_REDIRECT_URL",
+			Value: fmt.Sprintf("%s://%s", schema, t.Spec.Features.Domains.Console),
+		})
+	}
 
 	// Add env variables from credentials secret, if no secret provided, dont use
 	// env vars. MinIO server automatically creates default credentials

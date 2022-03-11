@@ -4179,6 +4179,8 @@ spec:
                     type: boolean
                   domains:
                     properties:
+                      console:
+                        type: string
                       minio:
                         items:
                           type: string

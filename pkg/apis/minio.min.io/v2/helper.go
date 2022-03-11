@@ -1027,3 +1027,8 @@ func GetPrometheusName() string {
 func (t *Tenant) HasMinIODomains() bool {
 	return t.Spec.Features != nil && t.Spec.Features.Domains != nil && len(t.Spec.Features.Domains.Minio) > 0
 }
+
+// HasConsoleDomains indicates whether a domain is being specified for Console
+func (t *Tenant) HasConsoleDomains() bool {
+	return t.Spec.Features != nil && t.Spec.Features.Domains != nil && t.Spec.Features.Domains.Console != ""
+}
