@@ -60,15 +60,26 @@ The `token` parameter is used to authenticate the request and should be equal to
 
 Additional query parameters specify the logs to be retrieved.
 
-| Query parameter      | Value Description                                                                                                 | Required | Default    |
-|----------------------|-------------------------------------------------------------------------------------------------------------------|----------|------------|
-| `q`                  | `reqinfo` or `raw`.                                                                                               | Yes      | -          |
-| `timeStart`          | RFC3339 time or date. Examples: `2006-01-02T15:04:05.999999999Z07:00` or `2006-01-02`.                            | No       | -          |
-| `timeEnd`            | RFC3339 time or date. Examples: `2006-01-02T15:04:05.999999999Z07:00` or `2006-01-02`.                            | No       | -          |
-| `timeAsc`/`timeDesc` | Flag parameter (no value); either one may be specified. Specifies result ordering.                                | No       | `timeDesc` |
-| `pageSize`           | Number of results to return per API call. Allows values between 10 and 10000.                                      | No       | `10`       |
-| `pageNo`             | 0-based page number of results.                                                                                   | No       | `0`        |
-| `fp`                 | Repeatable parameter specifying key-value match filters. See the [filter parameters](#filter-parameters) section. | No       | -          |
+| Query parameter      | Value Description                                                                                                                                                                        | Required | Default    |
+|----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|------------|
+| `q`                  | `reqinfo` or `raw`.                                                                                                                                                                      | Yes      | -          |
+| `timeStart`          | RFC3339 time or date. Examples: `2006-01-02T15:04:05.999999999Z07:00` or `2006-01-02`.                                                                                                   | No       | -          |
+| `timeEnd`            | RFC3339 time or date. Examples: `2006-01-02T15:04:05.999999999Z07:00` or `2006-01-02`.                                                                                                   | No       | -          |
+| `last`               | Represents a integer duration with unit (`24h` or `60m`). Use this to get logs for the most recent time window of the given length. Valid time units are "m" for minutes, "h" for hours. | No       | -          |
+| `timeAsc`/`timeDesc` | Flag parameter (no value); either one may be specified. Specifies result ordering.                                                                                                       | No       | `timeDesc` |
+| `fp`                 | Repeatable parameter specifying key-value match filters. See the [filter parameters](#filter-parameters) section.                                                                        | No       | -          |
+| `pageSize`           | Number of results to return per API call. Allows values between 10 and 10000.                                                                                                            | No       | `10`       |
+| `pageNo`             | 0-based page number of results.                                                                                                                                                          | No       | `0`        |
+| `export`             | Specify an export format. This skips pagination. `csv` and `ndjson` are supported.                                                                                                       | No       | -          |
+
+For example, to get the last 24 hours of request-info logs dumped in line-delimited JSON format:
+
+```
+# If your token contains URL-unsafe characters, it must be URL-encoded appropriately as shown with curl below:
+curl -XGET -s 'http://logsearch:8080/api/query?q=reqinfo&timeAsc&export=ndjson&last=24h' --data-urlencode 'token=xxx' > /tmp/output.ndjson
+```
+
+
 
 #### Filter Parameters
 
