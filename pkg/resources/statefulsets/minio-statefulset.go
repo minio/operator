@@ -27,14 +27,26 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+func envVarsContains(vars []corev1.EnvVar, envName string) bool {
+	for _, v := range vars {
+		if v.Name == envName {
+			return true
+		}
+	}
+	return false
+}
+
 // Adds required Console environment variables
 func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
-	envVars := []corev1.EnvVar{
-		{
+	var envVars []corev1.EnvVar
+
+	if !envVarsContains(t.Spec.Env, "MINIO_SERVER_URL") {
+		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_SERVER_URL",
 			Value: t.MinIOServerEndpoint(),
-		},
+		})
 	}
+
 	if t.HasLogEnabled() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name: miniov2.LogQueryTokenKey,
