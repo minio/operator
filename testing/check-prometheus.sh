@@ -34,6 +34,7 @@ function wait_on_prometheus_pods() {
     if [[ $i -eq 300 ]]; then
       kubectl get pods -n tenant-lite -o wide
       kubectl describe pods -n tenant-lite
+      kubectl logs -n minio-operator -l name=minio-operator
       break
     fi
   done
@@ -49,6 +50,8 @@ function main() {
   install_tenant
 
   check_tenant_status tenant-lite storage-lite
+
+  try kubectl get pods --namespace tenant-lite
 
   echo 'start - wait for prometheus to appear'
   wait_on_prometheus_pods
@@ -89,7 +92,7 @@ function main() {
 
   echo 'start - wait for prometheus to be ready'
 
-   wait_on_prometheus_pods
+  wait_on_prometheus_pods
 
   try kubectl wait --namespace tenant-lite \
     --for=condition=ready pod \
