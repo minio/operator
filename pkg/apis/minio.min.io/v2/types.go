@@ -66,6 +66,8 @@ type TenantDomains struct {
 	// List of Domains used by MinIO. This will enable DNS style access to the object store where the bucket name is
 	// inferred from a subdomain in the domain.
 	Minio []string `json:"minio,omitempty"`
+	// Domain used to expose the MinIO Console, this will configure the redirect on MinIO when visiting from the browser
+	Console string `json:"console,omitempty"`
 }
 
 // S3Features (`s3`) - Object describing which MinIO features to enable/disable in the MinIO Tenant. +
