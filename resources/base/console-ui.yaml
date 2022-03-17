@@ -295,7 +295,7 @@ spec:
           env:
             - name: CONSOLE_OPERATOR_MODE
               value: "on"
-          image: minio/console:v0.15.0
+          image: minio/console:v0.15.3
           imagePullPolicy: IfNotPresent
           name: console
           securityContext:
