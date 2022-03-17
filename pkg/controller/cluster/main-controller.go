@@ -187,6 +187,9 @@ type Controller struct {
 	// Webhook server instance
 	ws *http.Server
 
+	// HTTP Upgrade server instance
+	us *http.Server
+
 	// Client transport
 	transport *http.Transport
 
@@ -238,6 +241,9 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 
 	// Initialize operator webhook handlers
 	controller.ws = configureWebhookServer(controller)
+
+	// Initialize operator HTTP upgrade server handlers
+	controller.us = configureHTTPUpgradeServer(controller)
 
 	klog.Info("Setting up event handlers")
 	// Set up an event handler for when Tenant resources change
@@ -339,7 +345,9 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	// Start the API and the Controller, but only if this pod is the leader
 	run := func(ctx context.Context) {
 		// we need to make sure the API is ready before starting operator
-		apiWillStart := make(chan interface{})
+		apiServerWillStart := make(chan interface{})
+		// we need to make sure the HTTP Upgrade server is ready before starting operator
+		upgradeServerWillStart := make(chan interface{})
 
 		go func() {
 			// Request kubernetes version from Kube ApiServer
@@ -348,7 +356,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			if isOperatorTLS() {
 				publicCertPath, publicKeyPath := c.generateTLSCert()
 				klog.Infof("Starting HTTPS API server")
-				close(apiWillStart)
+				close(apiServerWillStart)
 				// use those certificates to configure the web server
 				if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
 					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
@@ -356,7 +364,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				}
 			} else {
 				klog.Infof("Starting HTTP API server")
-				close(apiWillStart)
+				close(apiServerWillStart)
 				// start server without TLS
 				if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
 					klog.Infof("HTTP server ListenAndServe failed: %v", err)
@@ -365,8 +373,20 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			}
 		}()
 
+		go func() {
+			klog.Infof("Starting HTTP Upgrade Tenant Image server")
+			close(upgradeServerWillStart)
+			if err := c.us.ListenAndServe(); err != http.ErrServerClosed {
+				klog.Infof("HTTP Upgrade Tenant Image server ListenAndServe failed: %v", err)
+				panic(err)
+			}
+		}()
+
 		klog.Info("Waiting for API to start")
-		<-apiWillStart
+		<-apiServerWillStart
+
+		klog.Info("Waiting for Upgrade Server to start")
+		<-upgradeServerWillStart
 
 		// Start the informer factories to begin populating the informer caches
 		klog.Info("Starting Tenant controller")
@@ -818,6 +838,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Check if we need to create any of the pools. It's important not to update the statefulsets
 	// in this loop because we need all the pools "as they are" for the hot-update below
+	operatorCAsIsMounted := false
 	for i, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 
@@ -860,6 +881,17 @@ func (c *Controller) syncHandler(key string) error {
 		// keep track of all replicas
 		totalReplicas += ss.Status.Replicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
+
+		// check if operator-tls public.crt is mounted on MinIO pods
+		if !operatorCAsIsMounted {
+			for _, volume := range ss.Spec.Template.Spec.Volumes {
+				for _, vp := range volume.Projected.Sources {
+					if vp.Secret.Name == "operator-tls" {
+						operatorCAsIsMounted = true
+					}
+				}
+			}
+		}
 	}
 
 	var initializedPool miniov2.Pool
@@ -967,9 +999,10 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 			return err
 		}
-		protocol := "https"
-		if !isOperatorTLS() {
-			protocol = "http"
+		protocol := "http"
+		// check operator is deployed with TLS enabled and also the MinIO pods has the certificate mounted in ~/.minio/certs/CAs/operator.crt
+		if isOperatorTLS() && operatorCAsIsMounted {
+			protocol = "https"
 		}
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("%s://operator.%s.svc.%s:%s%s",
 			protocol,

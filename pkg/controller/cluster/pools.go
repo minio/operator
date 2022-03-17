@@ -137,7 +137,15 @@ func (c *Controller) restartInitializedPool(ctx context.Context, tenant *miniov2
 	})
 	if err != nil {
 		klog.Warning("Could not validate state of statefulset for pool", err)
-		return err
+	}
+	if len(livePods.Items) == 0 {
+		livePods, err = c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s", miniov2.ZoneLabel, pool.Name),
+		})
+		if err != nil {
+			klog.Warning("Could not validate state of statefulset for zone", err)
+			return err
+		}
 	}
 	var livePod *corev1.Pod
 	for _, p := range livePods.Items {

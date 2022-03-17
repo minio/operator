@@ -156,6 +156,43 @@ type Zone struct {
 	// Tolerations allows users to set entries like effect, key, operator, value.
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// *Optional* +
+	//
+	// Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
+	// +optional
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
+	// *Optional* +
+	//
+	// Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of pods in the pool. The Operator supports only the following pod security fields: +
+	//
+	// * `fsGroup` +
+	//
+	// * `fsGroupChangePolicy` +
+	//
+	// * `runAsGroup` +
+	//
+	// * `runAsNonRoot` +
+	//
+	// * `runAsUser` +
+	//
+	// * `seLinuxOptions` +
+	//
+	// +optional
+	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// *Optional* +
+	//
+	// Specify custom labels and annotations to append to the Pool.
+	// +optional
+	// *Optional* +
+	//
+	// If provided, use these annotations for the Pool Objects Meta annotations (Statefulset and Pod template)
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// *Optional* +
+	//
+	// If provided, use these labels for the Pool Objects Meta annotations (Statefulset and Pod template)
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

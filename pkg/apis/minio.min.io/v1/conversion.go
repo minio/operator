@@ -39,14 +39,18 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 
 	for _, zone := range src.Spec.Zones {
 		pools = append(pools, v2.Pool{
-			Name:                zone.Name,
-			Servers:             zone.Servers,
-			VolumesPerServer:    zone.VolumesPerServer,
-			VolumeClaimTemplate: zone.VolumeClaimTemplate,
-			Resources:           zone.Resources,
-			NodeSelector:        zone.NodeSelector,
-			Affinity:            zone.Affinity,
-			Tolerations:         zone.Tolerations,
+			Name:                      zone.Name,
+			Servers:                   zone.Servers,
+			VolumesPerServer:          zone.VolumesPerServer,
+			VolumeClaimTemplate:       zone.VolumeClaimTemplate,
+			Resources:                 zone.Resources,
+			NodeSelector:              zone.NodeSelector,
+			Affinity:                  zone.Affinity,
+			Tolerations:               zone.Tolerations,
+			TopologySpreadConstraints: zone.TopologySpreadConstraints,
+			SecurityContext:           zone.SecurityContext,
+			Annotations:               zone.Annotations,
+			Labels:                    zone.Labels,
 		})
 	}
 
