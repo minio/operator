@@ -3,6 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.7
+  creationTimestamp: null
   name: tenants.minio.min.io
 spec:
   conversion:
@@ -25,7 +26,6 @@ spec:
     shortNames:
     - tenant
     singular: tenant
-  preserveUnknownFields: false
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
@@ -4179,8 +4179,6 @@ spec:
                     type: boolean
                   domains:
                     properties:
-                      console:
-                        type: string
                       minio:
                         items:
                           type: string
