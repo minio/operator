@@ -34,7 +34,7 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.15.3
+    tag: v0.15.5
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]
