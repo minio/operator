@@ -26,7 +26,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/minio/madmin-go"
 	"k8s.io/klog/v2"
 
 	"github.com/minio/minio-go/v7/pkg/set"
@@ -113,6 +112,7 @@ const (
 	StatusFailedAlreadyExists                = "Another MinIO Tenant already exists in the namespace"
 	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
 	StatusRestartingMinIO                    = "Restarting MinIO"
+	StatusDecommissioningNotAllowed          = "Pool Decommissioning Not Allowed"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -602,6 +602,17 @@ func (c *Controller) syncHandler(key string) error {
 	// Set any required default values and init Global variables
 	nsName := types.NamespacedName{Namespace: namespace, Name: tenantName}
 
+	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
+	if err != nil {
+		return err
+	}
+
+	// Check if we are decommissioning a pool before we ensure defaults, as that would populate a defaulted pool name
+	tenant, err = c.checkForPoolDecommission(ctx, key, tenant, tenantConfiguration)
+	if err != nil {
+		return err
+	}
+
 	tenant.EnsureDefaults()
 
 	// Validate the MinIO Tenant
@@ -713,11 +724,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
-	if err != nil {
-		return err
-	}
-
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		return err
@@ -776,14 +782,14 @@ func (c *Controller) syncHandler(key string) error {
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
 	// this status value is zero only for new tenants or legacy tenants
 	if len(tenant.Status.Pools) == 0 {
-		poolDir, err := c.getAllSSForTenant(tenant)
+		pools, err := c.getAllSSForTenant(tenant)
 		if err != nil {
 			return err
 		}
-		for pi := range poolDir {
-			if poolDir[pi] != nil {
+		for _, pool := range pools {
+			if pool != nil {
 				tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
-					SSName: poolDir[pi].Name,
+					SSName: pool.Name,
 					State:  miniov2.PoolCreated,
 				})
 			}
@@ -792,6 +798,8 @@ func (c *Controller) syncHandler(key string) error {
 		if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
 			return err
 		}
+
+		klog.Info("Detected we are updating a legacy tenant deployment")
 	}
 
 	// Check if this is fresh setup not an expansion.
@@ -831,13 +839,6 @@ func (c *Controller) syncHandler(key string) error {
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
 		if k8serrors.IsNotFound(err) {
 			klog.Infof("'%s/%s': Deploying pool %s", tenant.Namespace, tenant.Name, pool.Name)
-			// Check healthcheck for previous pool only if it's not a new setup,
-			// and check if they are online before adding this pool.
-			if addingNewPool && !tenant.MinIOHealthCheck(c.getTransport()) && len(tenant.Spec.Pools) > 1 {
-				klog.Infof("'%s/%s': Deploying new pool failed %s: MinIO is not Ready", tenant.Namespace, tenant.Name, pool.Name)
-				return ErrMinIONotReady
-			}
-
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
 				return err
 			}
@@ -861,97 +862,46 @@ func (c *Controller) syncHandler(key string) error {
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 	}
 
+	var initializedPool miniov2.Pool
 	// validate each pool if it's initialized, and mark it if it is.
 	for pi, pool := range tenant.Spec.Pools {
 		// get a pod for the established statefulset
-		if tenant.Status.Pools[pi].State == miniov2.PoolCreated {
-			// get the first pod for the ss and try to reach the pool via that single pod.
-			pods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
-				LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, pool.Name),
-			})
-			if err != nil {
-				klog.Warning("Could not validate state of statefulset for pool", err)
+		if tenant.Status.Pools[pi].State == miniov2.PoolInitialized {
+			initializedPool = pool
+			continue
+		}
+
+		var restarted bool
+		// Only restart if there is an existing initialized pool, if there are no initialized
+		// pools no need to restart.
+		if initializedPool.Name != "" && addingNewPool {
+			// Restart services to get new args since we are expanding the deployment here.
+			if err := c.restartInitializedPool(ctx, tenant, initializedPool, tenantConfiguration); err != nil {
+				return err
 			}
-			if len(pods.Items) > 0 {
-				var ssPod *corev1.Pod
-				for _, p := range pods.Items {
-					if strings.HasSuffix(p.Name, "-0") {
-						ssPod = &p
-						break
-					}
-				}
-				if ssPod == nil {
-					break
-				}
-				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
-				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration, c.getTransport())
-				if err != nil {
-					return err
-				}
-
-				_, err = podAdminClnt.ServerInfo(ctx)
-				// any error means we are not ready, if the call succeeds or we get `server not initialized`, the ss is ready
-				if err == nil || madmin.ToErrorResponse(err).Code == "XMinioServerNotInitialized" {
-
-					// Restart the services to fetch the new args, ignore any error.
-					// only perform `restart()` of server deployment when we are truly
-					// expanding an existing deployment. (a pool became initialized)
-					minioRestarted := false
-					if len(tenant.Spec.Pools) > 1 && addingNewPool {
-						// get a new admin client that points to a pod of an already initialized pool (ie: pool-0)
-						livePods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
-							LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, tenant.Spec.Pools[0].Name),
-						})
-						if err != nil {
-							klog.Warning("Could not validate state of statefulset for pool", err)
-						}
-						var livePod *corev1.Pod
-						for _, p := range livePods.Items {
-							if p.Status.Phase == v1.PodRunning {
-								livePod = &p
-								break
-							}
-						}
-						if livePod == nil {
-							break
-						}
-						livePodAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(livePod.Name))
-						livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, c.getTransport())
-						if err != nil {
-							return err
-						}
-						// Now tell MinIO to restart
-						if err = livePodAdminClnt.ServiceRestart(ctx); err != nil {
-							klog.Infof("We failed to restart MinIO to adopt the new pool: %v", err)
-						}
-						minioRestarted = true
-						metaNowTime := metav1.Now()
-						tenant.Status.WaitingOnReady = &metaNowTime
-						tenant.Status.CurrentState = StatusRestartingMinIO
-						if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
-							klog.Infof("'%s' Can't update tenant status: %v", key, err)
-						}
-						klog.Infof("'%s' Was restarted", key)
-					}
-
-					// Report the pool is properly created
-					tenant.Status.Pools[pi].State = miniov2.PoolInitialized
-					// push updates to status
-					if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
-						return err
-					}
-
-					if minioRestarted {
-						return ErrMinIORestarting
-					}
-
-				} else {
-					klog.Infof("'%s/%s' Error waiting for pool to be ready: %v", tenant.Namespace, tenant.Name,
-						err)
-				}
+			metaNowTime := metav1.Now()
+			tenant.Status.WaitingOnReady = &metaNowTime
+			tenant.Status.CurrentState = StatusRestartingMinIO
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				klog.Infof("'%s' Can't update tenant status: %v", key, err)
+				return err
 			}
+			klog.Infof("'%s' was restarted", key)
+			restarted = true
+		}
+
+		// Report the pool is initialized.
+		tenant.Status.Pools[pi].State = miniov2.PoolInitialized
+		// push updates to status
+		if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+			return err
+		}
+
+		if restarted {
+			return ErrMinIORestarting
 		}
 	}
+
 	// wait here until all pools are initialized, so we can continue with updating versions and the ss resources.
 	for _, poolStatus := range tenant.Status.Pools {
 		if poolStatus.State != miniov2.PoolInitialized {

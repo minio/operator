@@ -40,33 +40,32 @@ function setup_kind() {
 }
 
 function install_operator() {
-
     echo "check if helm will install the operator"
     if [ "$1" = "helm" ]; then
-        helm install \
-             --namespace minio-operator \
-             --create-namespace \
-             minio-operator minio/operator
+	helm install \
+	     --namespace minio-operator \
+	     --create-namespace \
+	     minio-operator minio/operator
 
-        echo "key, value for pod selector in helm test"
-        key=app.kubernetes.io/name
-        value=operator
+	echo "key, value for pod selector in helm test"
+	key=app.kubernetes.io/name
+	value=operator
     else
-        # To compile current branch
-        echo "Compiling Current Branch Operator"
-        (cd "${SCRIPT_DIR}/.." && make docker) # will not change your shell's current directory
+	# To compile current branch
+	echo "Compiling Current Branch Operator"
+	(cd "${SCRIPT_DIR}/.." && make docker) # will not change your shell's current directory
 
-        echo 'start - load compiled image so we can pull it later on'
-        kind load docker-image docker.io/minio/operator:dev
-        echo 'end - load compiled image so we can pull it later on'
+	echo 'start - load compiled image so we can pull it later on'
+	kind load docker-image docker.io/minio/operator:dev
+	echo 'end - load compiled image so we can pull it later on'
 
-        echo "Installing Current Operator"
-        # Created an overlay to use that image version from dev folder
-        try kubectl apply -k "${SCRIPT_DIR}/../testing/dev"
+	echo "Installing Current Operator"
+	# Created an overlay to use that image version from dev folder
+	try kubectl apply -k "${SCRIPT_DIR}/../testing/dev"
 
-        echo "key, value for pod selector in kustomize test"
-        key=name
-        value=minio-operator
+	echo "key, value for pod selector in kustomize test"
+	key=name
+	value=minio-operator
     fi
 
     # Reusing the wait for both, Kustomize and Helm
@@ -105,13 +104,13 @@ function wait_for_resource() {
 	waitdone=$($command_to_wait | wc -l)
 	if [ "$waitdone" -ne 0 ]; then
 	    echo "Found $waitdone pods"
-            break
+	    break
 	fi
 	sleep 5
 	totalwait=$((totalwait + 5))
 	if [ "$totalwait" -gt 305 ]; then
-            echo "Unable to get resource after 5 minutes, exiting."
-            try false
+	    echo "Unable to get resource after 5 minutes, exiting."
+	    try false
 	fi
     done
 }
@@ -120,10 +119,10 @@ function check_tenant_status() {
     # Check MinIO is accessible
     key=v1.min.io/tenant
     if [ $# -ge 3 ]; then
-        echo "Third argument provided, then set key value"
-        key=$3
+	echo "Third argument provided, then set key value"
+	key=$3
     else
-        echo "No third argument provided, using default key"
+	echo "No third argument provided, using default key"
     fi
 
     wait_for_resource $1 $2 $key
@@ -131,29 +130,33 @@ function check_tenant_status() {
     echo "Waiting for pods to be ready. (5m timeout)"
 
     if [ $# -ge 4 ]; then
-        echo "Fourth argument provided, then get secrets from helm"
-        USER=$(kubectl get secret minio1-secret -o jsonpath="{.data.accesskey}" | base64 --decode)
-        PASSWORD=$(kubectl get secret minio1-secret -o jsonpath="{.data.secretkey}" | base64 --decode)
+	echo "Fourth argument provided, then get secrets from helm"
+	USER=$(kubectl get secret minio1-secret -o jsonpath="{.data.accesskey}" | base64 --decode)
+	PASSWORD=$(kubectl get secret minio1-secret -o jsonpath="{.data.secretkey}" | base64 --decode)
     else
-        echo "No fourth argument provided, using default USER and PASSWORD"
-        TENANT_CONFIG_SECRET=$(kubectl -n $1 get tenants.minio.min.io $2 -o jsonpath="{.spec.configuration.name}")
-        USER=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
-        PASSWORD=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
+	echo "No fourth argument provided, using default USER and PASSWORD"
+	TENANT_CONFIG_SECRET=$(kubectl -n $1 get tenants.minio.min.io $2 -o jsonpath="{.spec.configuration.name}")
+	USER=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
+	PASSWORD=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
     fi
 
     try kubectl wait --namespace $1 \
-        --for=condition=ready pod \
-        --selector=$key=$2 \
-        --timeout=300s
+	--for=condition=ready pod \
+	--selector=$key=$2 \
+	--timeout=300s
 
     echo "Tenant is created successfully, proceeding to validate 'mc admin info minio/'"
 
+    try kubectl get pods --namespace $1
+
     if [ "$4" = "helm" ]; then
-        # File: operator/helm/tenant/values.yaml
-        # Content: s3.bucketDNS: false
-        echo "In helm values by default bucketDNS.s3 is disabled, skipping mc validation on helm test"
+	# File: operator/helm/tenant/values.yaml
+	# Content: s3.bucketDNS: false
+	echo "In helm values by default bucketDNS.s3 is disabled, skipping mc validation on helm test"
     else
-        kubectl run admin-mc -i --tty --image minio/mc --command -- bash -c "until (mc alias set minio/ https://minio.$1.svc.cluster.local $USER $PASSWORD); do echo \"...waiting... for 5secs\" && sleep 5; done; mc admin info minio/;"
+	kubectl run admin-mc -i --tty --image quay.io/minio/mc \
+		--env="MC_HOST_minio=https://${USER}:${PASSWORD}@minio.${1}.svc.cluster.local" \
+		--command -- bash -c "until (mc admin info minio/); do echo 'waiting... for 5secs' && sleep 5; done"
     fi
 
     echo "Done."
@@ -164,18 +167,18 @@ function install_tenant() {
 
     echo "Check if helm will install the Tenant"
     if [ "$1" = "helm" ]; then
-        namespace=default
-        key=app
-        value=minio
-        helm install --namespace tenant-ns \
-             --create-namespace tenant minio/tenant
+	namespace=default
+	key=app
+	value=minio
+	helm install --namespace tenant-ns \
+	     --create-namespace tenant minio/tenant
     else
-        namespace=tenant-lite
-        key=v1.min.io/tenant
-        value=storage-lite
-        echo "Installing lite tenant"
+	namespace=tenant-lite
+	key=v1.min.io/tenant
+	value=storage-lite
+	echo "Installing lite tenant"
 
-        try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant"
+	try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant"
     fi
 
     echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"

@@ -10,6 +10,8 @@ spec:
     ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
     ## Note that the operator does not support upgrading from standalone to distributed mode.
     - servers: 4
+      ## custom pool name
+      name: pool-0
       ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
       volumesPerServer: 2
       ## This VolumeClaimTemplate is used across all the volumes provisioned for MinIO Tenant in this Pool.
