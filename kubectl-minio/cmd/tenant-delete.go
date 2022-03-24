@@ -145,5 +145,11 @@ func deleteTenant(client *operatorv1.Clientset, kclient *kubernetes.Clientset, d
 		}
 	}
 
+	for i, _ := range tenant.Spec.Pools {
+		fmt.Printf("Deleting MinIO Tenant StatefulSets %s\n", fmt.Sprintf("%s-pool-%d", name, i))
+		if err := kclient.AppsV1().StatefulSets(d.ns).Delete(context.Background(), fmt.Sprintf("%s-pool-%d", name, i), metav1.DeleteOptions{}); err != nil {
+			return err
+		}
+	}
 	return nil
 }
