@@ -46,6 +46,14 @@ spec:
           resources:
             requests:
               storage: {{ dig "size" "10Gi" . }}
+      {{- with (dig "annotations" (dict) .) }}
+      annotations:
+        {{ toYaml . | nindent 8 }}
+      {{ end }}
+      {{- with (dig "labels" (dict) .) }}
+      labels:
+        {{ toYaml . | nindent 8 }}
+      {{ end }}
       {{- with (dig "tolerations" (list) .) }}
       tolerations:
         {{ toYaml . | nindent 8 }}
