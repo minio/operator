@@ -41,7 +41,9 @@ function check_tenant_status_old() {
 
     echo "Tenant is created successfully, proceeding to validate 'mc admin info minio/'"
 
-    kubectl run admin-mc -i --tty --image minio/mc --command -- bash -c "until (mc alias set minio/ https://minio.tenant-lite.svc.cluster.local console console123); do echo \"...waiting... for 5secs\" && sleep 5; done; mc admin info minio/;"
+    kubectl run admin-mc -i --tty --image quay.io/minio/mc \
+	    --env="MC_HOST_minio=https://console:console123@minio.tenant-lite.svc.cluster.local" \
+	    --command -- bash -c "until (mc admin info minio/); do echo 'waiting... for 5secs' && sleep 5; done"
 
     echo "Done."
 }
@@ -52,13 +54,12 @@ function test_kes_tenant() {
 
     try kubectl apply -f "${SCRIPT_DIR}/../examples/vault/deployment.yaml"
 
-    kubectl get pods
+    try kubectl get pods
 
     echo "Waiting for Vault Pods (10s)"
     sleep 10
 
-    kubectl get pods
-
+    try kubectl get pods
 
     echo "Waiting for Vault (2m timeout)"
 
@@ -97,10 +98,10 @@ function test_kes_tenant() {
 
     echo "Creating Tenant"
     CREDENTIALS=$(curl 'http://localhost:9090/api/v1/tenants' \
-                       -X POST \
-                       -H 'Content-Type: application/json' \
-                       -H 'Cookie: token='$COOKIE'' \
-                       --data-raw '{"name":"kes-tenant","namespace":"default","access_key":"","secret_key":"","access_keys":[],"secret_keys":[],"enable_tls":true,"enable_console":true,"enable_prometheus":true,"service_name":"","image":"","expose_minio":true,"expose_console":true,"pools":[{"name":"pool-0","servers":4,"volumes_per_server":1,"volume_configuration":{"size":26843545600,"storage_class_name":"standard"},"securityContext":null,"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchExpressions":[{"key":"v1.min.io/tenant","operator":"In","values":["kes-tenant"]},{"key":"v1.min.io/pool","operator":"In","values":["pool-0"]}]},"topologyKey":"kubernetes.io/hostname"}]}}}],"erasureCodingParity":2,"logSearchConfiguration":{"image":"minio/operator:dev","postgres_image":"","postgres_init_image":""},"prometheusConfiguration":{"image":"","sidecar_image":"","init_image":""},"tls":{"minio":[],"ca_certificates":[],"console_ca_certificates":[]},"encryption":{"replicas":"1","securityContext":{"runAsUser":"1000","runAsGroup":"1000","fsGroup":"1000","runAsNonRoot":true},"image":"","vault":{"endpoint":"http://vault.default.svc.cluster.local:8200","engine":"","namespace":"","prefix":"my-minio","approle":{"engine":"","id":"'$ROLE_ID'","secret":"'$SECRET_ID'","retry":0},"tls":{},"status":{"ping":0}}},"idp":{"keys":[{"access_key":"console","secret_key":"console123"}]}}')
+		       -X POST \
+		       -H 'Content-Type: application/json' \
+		       -H 'Cookie: token='$COOKIE'' \
+		       --data-raw '{"name":"kes-tenant","namespace":"default","access_key":"","secret_key":"","access_keys":[],"secret_keys":[],"enable_tls":true,"enable_console":true,"enable_prometheus":true,"service_name":"","image":"","expose_minio":true,"expose_console":true,"pools":[{"name":"pool-0","servers":4,"volumes_per_server":1,"volume_configuration":{"size":26843545600,"storage_class_name":"standard"},"securityContext":null,"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchExpressions":[{"key":"v1.min.io/tenant","operator":"In","values":["kes-tenant"]},{"key":"v1.min.io/pool","operator":"In","values":["pool-0"]}]},"topologyKey":"kubernetes.io/hostname"}]}}}],"erasureCodingParity":2,"logSearchConfiguration":{"image":"minio/operator:dev","postgres_image":"","postgres_init_image":""},"prometheusConfiguration":{"image":"","sidecar_image":"","init_image":""},"tls":{"minio":[],"ca_certificates":[],"console_ca_certificates":[]},"encryption":{"replicas":"1","securityContext":{"runAsUser":"1000","runAsGroup":"1000","fsGroup":"1000","runAsNonRoot":true},"image":"","vault":{"endpoint":"http://vault.default.svc.cluster.local:8200","engine":"","namespace":"","prefix":"my-minio","approle":{"engine":"","id":"'$ROLE_ID'","secret":"'$SECRET_ID'","retry":0},"tls":{},"status":{"ping":0}}},"idp":{"keys":[{"access_key":"console","secret_key":"console123"}]}}')
 
 
     echo $CREDENTIALS
@@ -120,10 +121,10 @@ function test_kes_tenant() {
 	echo "...waiting... for 5secs" && sleep 5
 
 	totalwait=$((totalwait + 5))
-    	if [ "$totalwait" -gt 305 ]; then
-    	    echo "Unable to register mc tenant after 5 minutes, exiting."
-    	    try false
-    	fi
+	if [ "$totalwait" -gt 305 ]; then
+	    echo "Unable to register mc tenant after 5 minutes, exiting."
+	    try false
+	fi
 
     done;
     try mc admin kms key status kestest --insecure

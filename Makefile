@@ -33,11 +33,11 @@ getdeps:
 
 verify: getdeps govet gotest lint
 
-operator:
+operator: verify
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator
 
-docker:
-	@docker build -t $(TAG) .
+docker: operator logsearchapi
+	@docker build --no-cache -t $(TAG) .
 
 build: regen-crd verify plugin logsearchapi operator docker
 

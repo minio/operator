@@ -34,6 +34,7 @@ spec:
   pools:
   {{ range (dig "pools" (list) .) }}
     - servers: {{ dig "servers" 4 . }}
+      name: {{ dig "name" "" . }}
       volumesPerServer: {{ dig "volumesPerServer" 4 . }}
       volumeClaimTemplate:
         metadata:
