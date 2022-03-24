@@ -31,6 +31,8 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/apimachinery/pkg/version"
+
 	"github.com/minio/pkg/env"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -68,19 +70,18 @@ func isOperatorTLS() bool {
 	return (set && value == "on") || !set
 }
 
-var useCertificatesV1API bool
+var (
+	kubeAPIServerVersion *version.Info
+	useCertificatesV1API bool
+)
 
-func (c *Controller) getCertificatesAPIVersion() {
-	apiVersions, err := c.kubeClientSet.Discovery().ServerPreferredResources()
+func (c *Controller) getKubeAPIServerVersion() {
+	var err error
+	kubeAPIServerVersion, err = c.kubeClientSet.Discovery().ServerVersion()
 	if err != nil {
 		panic(err)
 	}
-	for _, api := range apiVersions {
-		if api.GroupVersion == "certificates.k8s.io/v1" {
-			useCertificatesV1API = true
-			break
-		}
-	}
+	useCertificatesV1API = versionCompare(kubeAPIServerVersion.String(), "v1.22.0") >= 0
 }
 
 func (c *Controller) generateTLSCert() (string, string) {
