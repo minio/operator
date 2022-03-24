@@ -112,6 +112,7 @@ const (
 	StatusFailedAlreadyExists                = "Another MinIO Tenant already exists in the namespace"
 	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
 	StatusRestartingMinIO                    = "Restarting MinIO"
+	StatusDecommissioningNotAllowed          = "Pool Decommissioning Not Allowed"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -601,6 +602,17 @@ func (c *Controller) syncHandler(key string) error {
 	// Set any required default values and init Global variables
 	nsName := types.NamespacedName{Namespace: namespace, Name: tenantName}
 
+	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
+	if err != nil {
+		return err
+	}
+
+	// Check if we are decommissioning a pool before we ensure defaults, as that would populate a defaulted pool name
+	tenant, err = c.checkForPoolDecommission(ctx, key, tenant, tenantConfiguration)
+	if err != nil {
+		return err
+	}
+
 	tenant.EnsureDefaults()
 
 	// Validate the MinIO Tenant
@@ -712,11 +724,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
-	if err != nil {
-		return err
-	}
-
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		return err
@@ -772,41 +779,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	restartInitializedPool := func(pool miniov2.Pool) error {
-		// get a new admin client that points to a pod of an already initialized pool (ie: pool-0)
-		livePods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, pool.Name),
-		})
-		if err != nil {
-			klog.Warning("Could not validate state of statefulset for pool", err)
-			return err
-		}
-		var livePod *corev1.Pod
-		for _, p := range livePods.Items {
-			if p.Status.Phase == v1.PodRunning {
-				livePod = &p
-				break
-			}
-		}
-		if livePod == nil {
-			return fmt.Errorf("no running pods found for statefulsets %s", pool.Name)
-		}
-
-		livePodAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(livePod.Name))
-		livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, c.getTransport())
-		if err != nil {
-			return err
-		}
-
-		// Now tell MinIO to restart
-		if err = livePodAdminClnt.ServiceRestart(ctx); err != nil {
-			klog.Infof("We failed to restart MinIO to adopt the new pool: %v", err)
-			return err
-		}
-
-		return nil
-	}
-
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
 	// this status value is zero only for new tenants or legacy tenants
 	if len(tenant.Status.Pools) == 0 {
@@ -828,90 +800,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		klog.Info("Detected we are updating a legacy tenant deployment")
-	}
-
-	if len(tenant.Status.Pools) > len(tenant.Spec.Pools) {
-		var noDecom bool
-		for _, pool := range tenant.Spec.Pools {
-			if pool.Name != "" {
-				continue
-			} // pool.Name empty decommission is not allowed.
-			noDecom = true
-			break
-		}
-		if noDecom {
-			klog.Warningf("%s Detected we are removing a pool but spec.Pool.Name is empty - disallowing removal", key)
-			return errors.New("removing pool not allowed")
-		}
-
-		var noDecomCommon bool
-		commonNames := set.NewStringSet()
-		for _, pool := range tenant.Spec.Pools {
-			if commonNames.Contains(pool.Name) {
-				noDecomCommon = true
-				break
-			}
-			commonNames.Add(pool.Name)
-		}
-		if noDecomCommon {
-			klog.Warningf("%s Detected we are removing a pool but spec.Pool.Name's are duplicated - disallowing removal", key)
-			return errors.New("removing pool not allowed")
-		}
-
-		klog.Infof("%s Detected we are removing a pool", key)
-		// This means we are attempting to remove a "pool", perhaps after a decommission event.
-		var poolNamesRemoved []string
-		var initializedPool miniov2.Pool
-		for i, pstatus := range tenant.Status.Pools {
-			var found bool
-			for _, pool := range tenant.Spec.Pools {
-				if pstatus.SSName == tenant.PoolStatefulsetName(&pool) {
-					found = true
-					if pstatus.State == miniov2.PoolInitialized {
-						initializedPool = pool
-					}
-					continue
-				}
-			}
-			if !found {
-				poolNamesRemoved = append(poolNamesRemoved, pstatus.SSName)
-				tenant.Status.Pools = append(tenant.Status.Pools[:i], tenant.Status.Pools[i+1:]...)
-			}
-		}
-
-		var restarted bool
-		// Only restart if there is an initialized pool to fetch the new args.
-		if len(poolNamesRemoved) > 0 && initializedPool.Name != "" {
-			// Restart services to get new args since we are shrinking the deployment here.
-			if err := restartInitializedPool(initializedPool); err != nil {
-				return err
-			}
-			metaNowTime := metav1.Now()
-			tenant.Status.WaitingOnReady = &metaNowTime
-			tenant.Status.CurrentState = StatusRestartingMinIO
-			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
-				klog.Infof("'%s' Can't update tenant status: %v", key, err)
-				return err
-			}
-			klog.Infof("'%s' was restarted", key)
-			restarted = true
-		}
-
-		for _, ssName := range poolNamesRemoved {
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolRemoved", fmt.Sprintf("Tenant pool %s removed", ssName))
-			if err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Delete(ctx, ssName, metav1.DeleteOptions{}); err != nil {
-				if k8serrors.IsNotFound(err) {
-					continue
-				}
-				return err
-			}
-		}
-
-		if restarted {
-			return ErrMinIORestarting
-		}
-
-		return nil
 	}
 
 	// Check if this is fresh setup not an expansion.
@@ -988,7 +876,7 @@ func (c *Controller) syncHandler(key string) error {
 		// pools no need to restart.
 		if initializedPool.Name != "" && addingNewPool {
 			// Restart services to get new args since we are expanding the deployment here.
-			if err := restartInitializedPool(initializedPool); err != nil {
+			if err := c.restartInitializedPool(ctx, tenant, initializedPool, tenantConfiguration); err != nil {
 				return err
 			}
 			metaNowTime := metav1.Now()
