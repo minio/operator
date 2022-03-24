@@ -343,7 +343,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 		go func() {
 			// Request kubernetes version from Kube ApiServer
-			c.getCertificatesAPIVersion()
+			c.getKubeAPIServerVersion()
 
 			if isOperatorTLS() {
 				publicCertPath, publicKeyPath := c.generateTLSCert()
