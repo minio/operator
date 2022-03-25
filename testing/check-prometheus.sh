@@ -60,11 +60,11 @@ function main() {
   echo 'Wait for pod to be ready for port forward'
   try kubectl wait --namespace tenant-lite \
     --for=condition=ready pod \
-    --selector=statefulset.kubernetes.io/pod-name=storage-lite-ss-0-0 \
+    --selector=statefulset.kubernetes.io/pod-name=storage-lite-pool-0-0 \
     --timeout=120s
 
   echo 'port forward without the hop, directly from the tenant/pod'
-  kubectl port-forward storage-lite-ss-0-0 9443 --namespace tenant-lite &
+  kubectl port-forward storage-lite-pool-0-0 9443 --namespace tenant-lite &
 
   echo 'start - wait for port-forward to be completed'
   sleep 15
