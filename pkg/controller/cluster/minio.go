@@ -38,7 +38,7 @@ import (
 
 func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
 	var err error
-	if useCertificatesV1API {
+	if !useCertificatesV1Beta1API {
 		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
 	} else {
 		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
@@ -61,7 +61,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 }
 
 func (c *Controller) deleteMinIOCSR(ctx context.Context, csrName string) error {
-	if useCertificatesV1API {
+	if !useCertificatesV1Beta1API {
 		if err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
 			return err
 		}
