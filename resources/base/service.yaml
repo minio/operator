@@ -10,6 +10,8 @@ spec:
   ports:
     - port: 4222
       name: https
+    - port: 4221
+      name: http
   selector:
     name: minio-operator
     operator: leader
