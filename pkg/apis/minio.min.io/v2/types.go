@@ -437,6 +437,16 @@ const (
 	HealthStatusRed HealthStatus = "red"
 )
 
+// TierUsage represents the usage from a tier setup by the tenant
+type TierUsage struct {
+	// Name of the tier
+	Name string `json:"Name"`
+	// type of the tier
+	Type string `json:"Type,omitempty"`
+	// TotalSize usage of the tier
+	TotalSize int64 `json:"totalSize"`
+}
+
 // TenantUsage are metrics regarding the usage and capacity of the tenant
 type TenantUsage struct {
 	// Capacity the usage capacity of this tenant in bytes.
@@ -451,6 +461,9 @@ type TenantUsage struct {
 	// Usage is the raw usage on disks in bytes.
 	// +optional
 	RawUsage int64 `json:"rawUsage,omitempty"`
+	// Tiers includes the usage of individual tiers in the tenant
+	// +optional
+	Tiers []TierUsage `json:"tiers,omitempty"`
 }
 
 // TenantStatus is the status for a Tenant resource

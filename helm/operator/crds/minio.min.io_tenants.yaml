@@ -3990,6 +3990,21 @@ spec:
                   rawUsage:
                     format: int64
                     type: integer
+                  tiers:
+                    items:
+                      properties:
+                        Name:
+                          type: string
+                        Type:
+                          type: string
+                        totalSize:
+                          format: int64
+                          type: integer
+                      required:
+                      - Name
+                      - totalSize
+                      type: object
+                    type: array
                   usage:
                     format: int64
                     type: integer
@@ -8209,6 +8224,21 @@ spec:
                   rawUsage:
                     format: int64
                     type: integer
+                  tiers:
+                    items:
+                      properties:
+                        Name:
+                          type: string
+                        Type:
+                          type: string
+                        totalSize:
+                          format: int64
+                          type: integer
+                      required:
+                      - Name
+                      - totalSize
+                      type: object
+                    type: array
                   usage:
                     format: int64
                     type: integer

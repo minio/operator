@@ -224,6 +224,28 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		klog.Infof("'%s/%s' Can't update tenant status: %v", tenant.Namespace, tenant.Name, err)
 	}
 
+	// Store the usage reported by the tiers
+	tiersStatsCtx, cancelTiers := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancelTiers()
+	tInfos, err := adminClnt.TierStats(tiersStatsCtx)
+	if err != nil {
+		klog.Infof("'%s/%s' Can't retrieve tenant tiers: %v", tenant.Namespace, tenant.Name, err)
+	}
+	if tInfos != nil {
+		var tiersUsage []miniov2.TierUsage
+		for _, tier := range tInfos {
+			tiersUsage = append(tiersUsage, miniov2.TierUsage{
+				Name:      tier.Name,
+				Type:      tier.Type,
+				TotalSize: int64(tier.Stats.TotalSize),
+			})
+		}
+		tenant.Status.Usage.Tiers = tiersUsage
+		if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
+			klog.Infof("'%s/%s' Can't update tenant status with tiers: %v", tenant.Namespace, tenant.Name, err)
+		}
+	}
+
 	// get usage from Prometheus Metrics
 	accessKey, ok := tenantConfiguration["accesskey"]
 	if !ok {
