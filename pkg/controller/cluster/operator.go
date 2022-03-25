@@ -31,8 +31,6 @@ import (
 	"os"
 	"time"
 
-	"k8s.io/apimachinery/pkg/version"
-
 	"github.com/minio/pkg/env"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -70,18 +68,22 @@ func isOperatorTLS() bool {
 	return (set && value == "on") || !set
 }
 
-var (
-	kubeAPIServerVersion *version.Info
-	useCertificatesV1API bool
-)
+var useCertificatesV1Beta1API bool
 
-func (c *Controller) getKubeAPIServerVersion() {
-	var err error
-	kubeAPIServerVersion, err = c.kubeClientSet.Discovery().ServerVersion()
+// getCertificatesAPIVersion chooses which certificates api version operator will use to generate certificates
+func (c *Controller) getCertificatesAPIVersion() {
+	apiVersions, err := c.kubeClientSet.Discovery().ServerPreferredResources()
 	if err != nil {
 		panic(err)
 	}
-	useCertificatesV1API = versionCompare(kubeAPIServerVersion.String(), "v1.22.0") >= 0
+	for _, api := range apiVersions {
+		// if certificates v1beta1 is present operator will use that api by default
+		// based on: https://github.com/aws/containers-roadmap/issues/1604#issuecomment-1072660824
+		if api.GroupVersion == "certificates.k8s.io/v1beta1" {
+			useCertificatesV1Beta1API = true
+			break
+		}
+	}
 }
 
 func (c *Controller) generateTLSCert() (string, string) {
@@ -253,7 +255,7 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 
 func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator metav1.Object) error {
 	var err error
-	if useCertificatesV1API {
+	if !useCertificatesV1Beta1API {
 		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
 	} else {
 		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
