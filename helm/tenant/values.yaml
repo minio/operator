@@ -64,6 +64,7 @@ tenants:
     metrics:
       enabled: false
       port: 9000
+      protocol: http
     certificate:
       ## Use this field to provide one or more external CA certificates. This is used by MinIO
       ## to verify TLS connections with other applications:

@@ -14,6 +14,7 @@ metadata:
     prometheus.io/path: /minio/v2/metrics/cluster
     prometheus.io/port: {{ dig "metrics" "port" 9000 . | quote }}
     prometheus.io/scrape: "true"
+    prometheus.io/scheme: {{ dig "metrics" "protocol" http . | quote }}
   {{ end }}
   {{ if dig "scheduler" "name" "" . }}
   scheduler:
