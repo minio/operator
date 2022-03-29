@@ -8,11 +8,11 @@ This approach creates TLS certificates automatically using the Kubernetes cluste
 
 To enable automatic CSR generation on Tenant, set `requestAutoCert` field in the config file to `true`. Optionally you can also pass additional configuration parameters to be used under `certConfig` section. The `certConfig` section currently supports below fields:
 
-- CommonName: By default this is set to a wild card domain name as per [Kubernetes StatefulSet Pod Identity](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-identity). Set it any other value as per your requirements.
+- commonName: By default this is set to a wild card domain name as per [Kubernetes StatefulSet Pod Identity](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-identity). Set it any other value as per your requirements.
 
-- Organization: By default set to `Acme Co`. Change it to the name of your organization.
+- organizationName: By default set to `system:node`. Change it to the name of your organization.
 
-- DNSNames: By default set to list of all pod DNS names that are part of current Tenant. Any value added under this section will be appended to the list of existing pod DNS names.
+- dnsNames: By default set to list of all pod DNS names that are part of current Tenant. Any value added under this section will be appended to the list of existing pod DNS names.
 
 Once you enable `requestAutoCert` field and create the Tenant, MinIO Operator creates a CSR for this instance and sends to the Kubernetes API server. MinIO Operator will then approve the CSR. After the CSR is approved and Certificate available, MinIO operator downloads the certificate and then mounts the Private Key and Certificate within the Tenant pod.
 
