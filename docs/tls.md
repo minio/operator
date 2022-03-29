@@ -10,7 +10,7 @@ To enable automatic CSR generation on Tenant, set `requestAutoCert` field in the
 
 - commonName: By default this is set to a wild card domain name as per [Kubernetes StatefulSet Pod Identity](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-identity). Set it any other value as per your requirements.
 
-- organizationName: By default set to `system:node`. Change it to the name of your organization.
+- organizationName: By default set to list `[system, node]`. Change it to the name of your organization. Any value added under this section will be appended to the list of existing organization names.
 
 - dnsNames: By default set to list of all pod DNS names that are part of current Tenant. Any value added under this section will be appended to the list of existing pod DNS names.
 
