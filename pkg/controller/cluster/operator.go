@@ -54,6 +54,8 @@ const (
 	OperatorTLSCASecretName = "operator-ca-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
+	// OperatorCertificatesVersion is the ENV var to force the certificates api version to use.
+	OperatorCertificatesVersion = "MINIO_OPERATOR_CERTIFICATES_VERSION"
 )
 
 var errOperatorWaitForTLS = errors.New("waiting for Operator cert")
@@ -68,20 +70,32 @@ func isOperatorTLS() bool {
 	return (set && value == "on") || !set
 }
 
+func certificatesAPIVersion() (string, bool) {
+	return os.LookupEnv(OperatorCertificatesVersion)
+}
+
 var useCertificatesV1Beta1API bool
 
 // getCertificatesAPIVersion chooses which certificates api version operator will use to generate certificates
 func (c *Controller) getCertificatesAPIVersion() {
-	apiVersions, err := c.kubeClientSet.Discovery().ServerPreferredResources()
-	if err != nil {
-		panic(err)
-	}
-	for _, api := range apiVersions {
-		// if certificates v1beta1 is present operator will use that api by default
-		// based on: https://github.com/aws/containers-roadmap/issues/1604#issuecomment-1072660824
-		if api.GroupVersion == "certificates.k8s.io/v1beta1" {
-			useCertificatesV1Beta1API = true
-			break
+	version, _ := certificatesAPIVersion()
+	switch version {
+	case "v1":
+		useCertificatesV1Beta1API = false
+	case "v1beta1":
+		useCertificatesV1Beta1API = true
+	default:
+		apiVersions, err := c.kubeClientSet.Discovery().ServerPreferredResources()
+		if err != nil {
+			panic(err)
+		}
+		for _, api := range apiVersions {
+			// if certificates v1beta1 is present operator will use that api by default
+			// based on: https://github.com/aws/containers-roadmap/issues/1604#issuecomment-1072660824
+			if api.GroupVersion == "certificates.k8s.io/v1beta1" {
+				useCertificatesV1Beta1API = true
+				break
+			}
 		}
 	}
 }
