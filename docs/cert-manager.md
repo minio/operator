@@ -9,7 +9,7 @@ This document explains how to deploy a MinIO tenant using certificates generated
 - Kubernetes version `+v1.19`. While cert-manager supports [earlier K8s versions](https://cert-manager.io/docs/installation/supported-releases/), the MinIO Operator requires 1.19 or later.
 - MinIO Operator installed
 - `kubectl` access to your `k8s` cluster
-- [cert-manager](https://cert-manager.io/docs/installation/) installed
+- [cert-manager](https://cert-manager.io/docs/installation/) 1.7.X or later installed
 ```bash
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.7.2/cert-manager.yaml
 ```
