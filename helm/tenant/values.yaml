@@ -120,3 +120,30 @@ tenants:
     ## This is applied to MinIO pods only.
     ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
     priorityClassName: ""
+    ## Define configuration for KES (stateless and distributed key-management system)
+    ## Refer https://github.com/minio/kes
+    kes:
+      image: "" # minio/kes:v0.17.6
+      replicas: 2
+      kesSecret:
+        name: kes-configuration
+      imagePullPolicy: "IfNotPresent"
+      externalCertSecret: null
+      clientCertSecret: null
+      ## Key name to be created on the KMS, default is "my-minio-key"
+      keyName: ""
+      resources: { }
+      nodeSelector: { }
+      affinity:
+        nodeAffinity: { }
+        podAffinity: { }
+        podAntiAffinity: { }
+      tolerations: [ ]
+      annotations: { }
+      labels: { }
+      serviceAccountName: ""
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
