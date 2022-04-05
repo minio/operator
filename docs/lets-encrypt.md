@@ -33,8 +33,7 @@ helm install nginx-ingress  nginx-stable/nginx-ingress \
     --set controller.config.use-proxy-protocol="true"
 ```
 - [kustomize](https://kustomize.io/) installed
-- Configure your DNS provider to route traffic from your domains `minio.example.com` (the MinIO s3 endpoint) and `console.example.com`
-(the graphical UI for MinIO) to the IP address of the server that will run the ingress.
+- Configure your DNS to route traffic from the MinIO Tenant S3 API hostname (e.g. minio.example.com) and the Tenant Console  hostname(e.g. console.example.com) to the IP address of the worker node running ingress.
 
 
 ### Deploy tenant
