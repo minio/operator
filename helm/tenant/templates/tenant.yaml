@@ -137,4 +137,43 @@ spec:
   {{ if dig "priorityClassName" "" . }}
   priorityClassName: {{ dig "priorityClassName" "" . }}
   {{ end }}
+  {{ if dig "kes" "kesSecret" "name" false . }}
+  kes:
+    image: {{ .kes.image | quote }}
+    replicas: {{ .kes.replicas | int }}
+    kesSecret:
+      name: {{ .kes.kesSecret.name | quote }}
+    imagePullPolicy: {{ .kes.imagePullPolicy | quote }}
+    externalCertSecret: {{ .kes.externalCertSecret | quote }}
+    clientCertSecret: {{ .kes.clientCertSecret | quote }}
+    ## Key name to be created on the KMS, default is "my-minio-key"
+    keyName: {{ .kes.keyName | quote }}
+    {{- with (dig "resources" (dict) .) }}
+    resources:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (dig "nodeSelector" (dict) .) }}
+    nodeSelector:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    affinity:
+      nodeAffinity: { }
+      podAffinity: { }
+      podAntiAffinity: { }
+    tolerations: [ ]
+    {{- with (dig "annotations" (dict) .) }}
+    annotations:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (dig "labels" (dict) .) }}
+    labels:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    serviceAccountName: {{ .kes.serviceAccountName | quote }}
+    securityContext:
+      runAsUser: {{ .kes.securityContext.runAsUser | int }}
+      runAsGroup: {{ .kes.securityContext.runAsGroup | int }}
+      runAsNonRoot: {{ .kes.securityContext.runAsNonRoot }}
+      fsGroup: {{ .kes.securityContext.fsGroup | int }}
+  {{ end }}
 {{ end }}
