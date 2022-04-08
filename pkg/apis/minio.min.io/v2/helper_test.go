@@ -221,3 +221,99 @@ func TestCompareEnvs(t *testing.T) {
 		})
 	}
 }
+
+func TestParseRawConfiguration(t *testing.T) {
+	type args struct {
+		configuration []byte
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantConfig map[string][]byte
+	}{
+		{
+			name: "ldap-configuration",
+			args: args{
+				configuration: []byte(`
+export MINIO_ROOT_USER=minio
+export MINIO_ROOT_PASSWORD=minio123
+
+export MINIO_IDENTITY_LDAP_SERVER_ADDR=localhost:389
+export MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN="cn=admin,dc=min,dc=io"
+export MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD="admin"
+export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_BASE_DN="dc=min,dc=io"
+export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER="(uid=%s)"
+export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=swengg,dc=min,dc=io"
+export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectclass=groupOfNames)(member=%d))"
+export MINIO_IDENTITY_LDAP_SERVER_INSECURE="on"
+
+export MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
+export MINIO_SERVER_URL=http://localhost:9000`),
+			},
+			wantConfig: map[string][]byte{
+				"accesskey":                                  []byte("minio"),
+				"secretkey":                                  []byte("minio123"),
+				"MINIO_ROOT_USER":                            []byte("minio"),
+				"MINIO_ROOT_PASSWORD":                        []byte("minio123"),
+				"MINIO_IDENTITY_LDAP_SERVER_ADDR":            []byte("localhost:389"),
+				"MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN":         []byte("cn=admin,dc=min,dc=io"),
+				"MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD":   []byte("admin"),
+				"MINIO_IDENTITY_LDAP_USER_DN_SEARCH_BASE_DN": []byte("dc=min,dc=io"),
+				"MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER":  []byte("(uid=%s)"),
+				"MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN":   []byte("ou=swengg,dc=min,dc=io"),
+				"MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER":    []byte("(&(objectclass=groupOfNames)(member=%d))"),
+				"MINIO_IDENTITY_LDAP_SERVER_INSECURE":        []byte("on"),
+				"MINIO_BROWSER_REDIRECT_URL":                 []byte("http://localhost:9001"),
+				"MINIO_SERVER_URL":                           []byte("http://localhost:9000"),
+			},
+		},
+		{
+			name: "oidc-configuration",
+			args: args{
+				configuration: []byte(`
+#!/bin/bash
+
+# // Auth0 Rule
+# function (user, context, callback) {
+#   const namespace = 'https://min.io/';
+#   context.accessToken[namespace + 'policy'] = 'mcsAdmin';
+#   context.idToken[namespace + 'policy'] = 'mcsAdmin';
+#   callback(null, user, context);
+# }
+
+export MINIO_ROOT_USER=minio
+export MINIO_ROOT_PASSWORD=minio123
+export MINIO_IDENTITY_OPENID_CONFIG_URL=https://*******************/.well-known/openid-configuration
+export MINIO_IDENTITY_OPENID_CLIENT_ID="****************************"
+export MINIO_IDENTITY_OPENID_CLIENT_SECRET="********************"
+export MINIO_IDENTITY_OPENID_SCOPES="openid,profile,email"
+export MINIO_IDENTITY_OPENID_CLAIM_NAME="https://min.io/policy"
+export MINIO_BROWSER_REDIRECT_URL=http://localhost:9001
+export MINIO_SERVER_URL=http://localhost:9000
+./minio server ~/Data --console-address ":9001"`),
+			},
+			wantConfig: map[string][]byte{
+				"accesskey":                           []byte("minio"),
+				"secretkey":                           []byte("minio123"),
+				"MINIO_ROOT_USER":                     []byte("minio"),
+				"MINIO_ROOT_PASSWORD":                 []byte("minio123"),
+				"MINIO_IDENTITY_OPENID_CONFIG_URL":    []byte("https://*******************/.well-known/openid-configuration"),
+				"MINIO_IDENTITY_OPENID_CLIENT_ID":     []byte("****************************"),
+				"MINIO_IDENTITY_OPENID_CLIENT_SECRET": []byte("********************"),
+				"MINIO_IDENTITY_OPENID_SCOPES":        []byte("openid,profile,email"),
+				"MINIO_IDENTITY_OPENID_CLAIM_NAME":    []byte("https://min.io/policy"),
+				"MINIO_BROWSER_REDIRECT_URL":          []byte("http://localhost:9001"),
+				"MINIO_SERVER_URL":                    []byte("http://localhost:9000"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parsedValues := ParseRawConfiguration(tt.args.configuration)
+			assert.Equalf(t, len(tt.wantConfig), len(parsedValues), "ParseRawConfiguration(%v)", string(tt.args.configuration))
+			for k := range tt.wantConfig {
+				assert.Equalf(t, string(tt.wantConfig[k]), string(parsedValues[k]), "ParseRawConfiguration(%v)", string(tt.args.configuration))
+			}
+		})
+	}
+}
