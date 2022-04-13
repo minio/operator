@@ -51,13 +51,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
-	batchinformers "k8s.io/client-go/informers/batch/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
-	batchlisters "k8s.io/client-go/listers/batch/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -150,13 +148,6 @@ type Controller struct {
 	// has synced at least once.
 	deploymentListerSynced cache.InformerSynced
 
-	// jobLister is able to list/get Deployments from a shared
-	// informer's store.
-	jobLister batchlisters.JobLister
-	// jobListerSynced returns true if the Deployment shared informer
-	// has synced at least once.
-	jobListerSynced cache.InformerSynced
-
 	// tenantsSynced returns true if the StatefulSet shared informer
 	// has synced at least once.
 	tenantsSynced cache.InformerSynced
@@ -205,7 +196,7 @@ type Controller struct {
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -227,8 +218,6 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		podInformer:             podInformer.Informer(),
 		deploymentLister:        deploymentInformer.Lister(),
 		deploymentListerSynced:  deploymentInformer.Informer().HasSynced,
-		jobLister:               jobInformer.Lister(),
-		jobListerSynced:         jobInformer.Informer().HasSynced,
 		tenantsSynced:           tenantInformer.Informer().HasSynced,
 		serviceLister:           serviceInformer.Lister(),
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
