@@ -31,6 +31,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/minio/operator/pkg/controller/cluster/certificates"
+
 	"github.com/minio/pkg/env"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -54,8 +56,6 @@ const (
 	OperatorTLSCASecretName = "operator-ca-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
-	// OperatorCertificatesVersion is the ENV var to force the certificates api version to use.
-	OperatorCertificatesVersion = "MINIO_OPERATOR_CERTIFICATES_VERSION"
 )
 
 var errOperatorWaitForTLS = errors.New("waiting for Operator cert")
@@ -68,36 +68,6 @@ func isOperatorTLS() bool {
 	value, set := os.LookupEnv(OperatorTLS)
 	// By default Operator TLS is used.
 	return (set && value == "on") || !set
-}
-
-func certificatesAPIVersion() (string, bool) {
-	return os.LookupEnv(OperatorCertificatesVersion)
-}
-
-var useCertificatesV1Beta1API bool
-
-// getCertificatesAPIVersion chooses which certificates api version operator will use to generate certificates
-func (c *Controller) getCertificatesAPIVersion() {
-	version, _ := certificatesAPIVersion()
-	switch version {
-	case "v1":
-		useCertificatesV1Beta1API = false
-	case "v1beta1":
-		useCertificatesV1Beta1API = true
-	default:
-		apiVersions, err := c.kubeClientSet.Discovery().ServerPreferredResources()
-		if err != nil {
-			panic(err)
-		}
-		for _, api := range apiVersions {
-			// if certificates v1beta1 is present operator will use that api by default
-			// based on: https://github.com/aws/containers-roadmap/issues/1604#issuecomment-1072660824
-			if api.GroupVersion == "certificates.k8s.io/v1beta1" {
-				useCertificatesV1Beta1API = true
-				break
-			}
-		}
-	}
 }
 
 func (c *Controller) generateTLSCert() (string, string) {
@@ -269,7 +239,7 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 
 func (c *Controller) checkAndCreateOperatorCSR(ctx context.Context, operator metav1.Object) error {
 	var err error
-	if !useCertificatesV1Beta1API {
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
 	} else {
 		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, c.operatorCSRName(), metav1.GetOptions{})
