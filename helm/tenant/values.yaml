@@ -110,7 +110,14 @@ tenants:
     prometheusOperator: false
     # Enable JSON, Anonymous logging for MinIO tenants.
     # Refer https://github.com/minio/operator/blob/master/pkg/apis/minio.min.io/v2/types.go#L303
-    logging: { }
+    # How logs will look:
+    # $ k logs minio1-pool-0-0 -n default
+    # {"level":"INFO","errKind":"","time":"2022-04-07T21:49:33.740058549Z","message":"All MinIO sub-systems initialized successfully"}
+    # Notice they are in JSON format to be consumed
+    logging:
+      anonymous: true
+      json: true
+      quiet: true
     ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific
     ## services created by the operator.
     serviceMetadata: { }
