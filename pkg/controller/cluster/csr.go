@@ -30,6 +30,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/controller/cluster/certificates"
+
 	certificatesV1 "k8s.io/api/certificates/v1"
 
 	"k8s.io/klog/v2"
@@ -71,8 +73,8 @@ func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 	// for the right set of csr configurations regarding CSR signers and Key usages please read:
 	// https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#kubernetes-signers
-	if !useCertificatesV1Beta1API {
-		csrSignerName := certificatesV1.KubeletServingSignerName
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
+		csrSignerName := certificates.GetCSRSignerName(c.kubeClientSet)
 		csrKeyUsage := []certificatesV1.KeyUsage{
 			certificatesV1.UsageDigitalSignature,
 			certificatesV1.UsageKeyEncipherment,
@@ -205,7 +207,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 			return nil, fmt.Errorf("%s", s.String())
 
 		case <-tick.C:
-			if !useCertificatesV1Beta1API {
+			if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 				r, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
 				if err != nil {
 					klog.Errorf("Unexpected error during certificate fetching of csr/%s V1: %s", csrName, err)
