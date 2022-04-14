@@ -26,6 +26,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/minio/operator/pkg/controller/cluster/certificates"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/minio/operator/pkg/resources/services"
@@ -154,7 +156,7 @@ func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *min
 					return err
 				}
 				// TLS secret not found, delete CSR if exists and start certificate generation process again
-				if !useCertificatesV1Beta1API {
+				if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, tenant.MinIOClientCSRName(), metav1.DeleteOptions{}); err != nil {
 						return err
 					}
@@ -175,7 +177,7 @@ func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *min
 					return err
 				}
 				// TLS secret not found, delete CSR if exists and start certificate generation process again
-				if !useCertificatesV1Beta1API {
+				if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, tenant.KESCSRName(), metav1.DeleteOptions{}); err != nil {
 						return err
 					}
@@ -269,7 +271,7 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 
 func (c *Controller) checkAndCreateMinIOClientCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
 	var err error
-	if !useCertificatesV1Beta1API {
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{})
 	} else {
 		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{})
@@ -295,7 +297,7 @@ func (c *Controller) checkAndCreateMinIOClientCSR(ctx context.Context, nsName ty
 
 func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
 	var err error
-	if !useCertificatesV1Beta1API {
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.KESCSRName(), metav1.GetOptions{})
 	} else {
 		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.KESCSRName(), metav1.GetOptions{})

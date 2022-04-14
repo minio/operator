@@ -22,6 +22,7 @@ rules:
       - ""
     resources:
       - namespaces
+      - nodes
     verbs:
       - get
       - watch
@@ -97,6 +98,7 @@ rules:
       - kubernetes.io/legacy-unknown
       - kubernetes.io/kube-apiserver-client
       - kubernetes.io/kubelet-serving
+      - beta.eks.amazonaws.com/app-serving
     resources:
       - signers
     verbs:
