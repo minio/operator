@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/controller/cluster/certificates"
+
 	"k8s.io/klog/v2"
 
 	"github.com/minio/minio-go/v7/pkg/set"
@@ -340,7 +342,8 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 		go func() {
 			// Request kubernetes version from Kube ApiServer
-			c.getCertificatesAPIVersion()
+			apiCsrVersion := certificates.GetCertificatesAPIVersion(c.kubeClientSet)
+			klog.Infof("Using Kubernetes CSR Version: %s", apiCsrVersion)
 
 			if isOperatorTLS() {
 				publicCertPath, publicKeyPath := c.generateTLSCert()
@@ -649,7 +652,7 @@ func (c *Controller) syncHandler(key string) error {
 		if tenant.Spec.RequestAutoCert == nil && tenant.APIVersion != "" {
 			// If we get certificate signing requests for MinIO is safe to assume the Tenant v1 was deployed using AutoCert
 			// otherwise AutoCert will be false
-			if !useCertificatesV1Beta1API {
+			if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 				tenantCSR, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
 				if err != nil || tenantCSR == nil {
 					autoCertEnabled = false
