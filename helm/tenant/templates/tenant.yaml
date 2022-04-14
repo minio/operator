@@ -176,4 +176,39 @@ spec:
       runAsNonRoot: {{ .kes.securityContext.runAsNonRoot }}
       fsGroup: {{ .kes.securityContext.fsGroup | int }}
   {{ end }}
+  ## Prometheus setup for MinIO Tenant.
+  {{ if dig "prometheus" "diskCapacityGB" false . }}
+  prometheus:
+    image: {{ .prometheus.image | quote }}
+    sidecarimage: {{ .prometheus.sidecarimage | quote }}
+    initimage: {{ .prometheus.initimage | quote }}
+    diskCapacityGB: {{ .prometheus.diskCapacityGB | int }}
+    storageClassName: {{ .prometheus.storageClassName }}
+    {{- with (dig "annotations" (dict) .) }}
+    annotations:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (dig "labels" (dict) .) }}
+    labels:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (dig "nodeSelector" (dict) .) }}
+    nodeSelector:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    affinity:
+      nodeAffinity: { }
+      podAffinity: { }
+      podAntiAffinity: { }
+    {{- with (dig "resources" (dict) .) }}
+    resources:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    serviceAccountName: {{ .prometheus.serviceAccountName | quote }}
+    securityContext:
+      runAsUser: {{ .prometheus.securityContext.runAsUser | int }}
+      runAsGroup: {{ .prometheus.securityContext.runAsGroup | int }}
+      runAsNonRoot: {{ .prometheus.securityContext.runAsNonRoot }}
+      fsGroup: {{ .prometheus.securityContext.fsGroup | int }}
+  {{ end }}
 {{ end }}
