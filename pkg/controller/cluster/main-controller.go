@@ -36,8 +36,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
-
 	"golang.org/x/time/rate"
 
 	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
@@ -1109,12 +1107,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 		// if the pool doesn't match the spec
 		if !poolMatchesSS {
-			// for legacy reasons, if the zone label is present in SS we must carry it over
-			carryOverLabels := make(map[string]string)
-			if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
-				carryOverLabels[miniov1.ZoneLabel] = val
-			}
-
 			nss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
 			ssCopy := ss.DeepCopy()
 
@@ -1123,9 +1115,6 @@ func (c *Controller) syncHandler(key string) error {
 
 			if ss.Spec.Template.ObjectMeta.Labels == nil {
 				ssCopy.Spec.Template.ObjectMeta.Labels = make(map[string]string)
-			}
-			for k, v := range carryOverLabels {
-				ssCopy.Spec.Template.ObjectMeta.Labels[k] = v
 			}
 
 			if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ssCopy, uOpts); err != nil {

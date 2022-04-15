@@ -28,7 +28,6 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -231,43 +230,6 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 		}
 
 		switch cr.GetObjectKind().GroupVersionKind().Version {
-		case "v1":
-
-			// cast to v1
-			// tenantV1 := obj.Object.(*miniov1.Tenant)
-			tenantV1 := miniov1.Tenant{}
-
-			// convert the runtime.Object to unstructured.Unstructured
-			err := runtime.DefaultUnstructuredConverter.FromUnstructured(cr.Object, &tenantV1)
-			if err != nil {
-				log.Println(err)
-				w.WriteHeader(500)
-				req.Response.Result.Status = metav1.StatusFailure
-				rawResp, _ := json.Marshal(req)
-				if _, err = w.Write(rawResp); err != nil {
-					log.Println(err)
-				}
-				return
-			}
-
-			switch req.Request.DesiredAPIVersion {
-			case "minio.min.io/v1":
-				req.Response.ConvertedObjects = append(req.Response.ConvertedObjects, runtime.RawExtension{Object: &tenantV1})
-			case "minio.min.io/v2":
-				tenantV2 := miniov2.Tenant{}
-				// convert to v2
-				if err := tenantV1.ConvertTo(&tenantV2); err != nil {
-					log.Println(err)
-					w.WriteHeader(500)
-					req.Response.Result.Status = metav1.StatusFailure
-					rawResp, _ := json.Marshal(req)
-					if _, err = w.Write(rawResp); err != nil {
-						log.Println(err)
-					}
-					return
-				}
-				req.Response.ConvertedObjects = append(req.Response.ConvertedObjects, runtime.RawExtension{Object: &tenantV2})
-			}
 		case "v2":
 			// cast to v2
 			tenantV2 := miniov2.Tenant{}
@@ -286,20 +248,6 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 			}
 
 			switch req.Request.DesiredAPIVersion {
-			case "minio.min.io/v1":
-				// convert to v1
-				var tenantV1 miniov1.Tenant
-				if err := tenantV1.ConvertFrom(&tenantV2); err != nil {
-					log.Println(err)
-					w.WriteHeader(500)
-					req.Response.Result.Status = metav1.StatusFailure
-					rawResp, _ := json.Marshal(req)
-					if _, err = w.Write(rawResp); err != nil {
-						log.Println(err)
-					}
-					return
-				}
-				req.Response.ConvertedObjects = append(req.Response.ConvertedObjects, runtime.RawExtension{Object: &tenantV1})
 			case "minio.min.io/v2":
 				req.Response.ConvertedObjects = append(req.Response.ConvertedObjects, runtime.RawExtension{Object: &tenantV2})
 			}

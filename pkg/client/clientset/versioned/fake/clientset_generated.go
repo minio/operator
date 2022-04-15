@@ -20,8 +20,6 @@ package fake
 
 import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
-	miniov1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v1"
-	fakeminiov1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v1/fake"
 	miniov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2"
 	fakeminiov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2/fake"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -77,11 +75,6 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 }
 
 var _ clientset.Interface = &Clientset{}
-
-// MinioV1 retrieves the MinioV1Client
-func (c *Clientset) MinioV1() miniov1.MinioV1Interface {
-	return &fakeminiov1.FakeMinioV1{Fake: &c.Fake}
-}
 
 // MinioV2 retrieves the MinioV2Client
 func (c *Clientset) MinioV2() miniov2.MinioV2Interface {
