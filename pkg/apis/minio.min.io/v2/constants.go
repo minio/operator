@@ -54,9 +54,6 @@ const TenantLabel = "v1.min.io/tenant"
 // PoolLabel is applied to all components in a Pool of a Tenant cluster
 const PoolLabel = "v1.min.io/pool"
 
-// ZoneLabel is used for compatibility with tenants deployed prior to operator 4.0.0
-const ZoneLabel = "v1.min.io/zone"
-
 // LogDbLabel is applied to all log db components of a Tenant cluster
 const LogDbLabel = "v1.min.io/logdb"
 
@@ -267,9 +264,6 @@ const clusterDomain = "CLUSTER_DOMAIN"
 
 // StatefulSetPrefix used by statefulsets
 const StatefulSetPrefix = "ss"
-
-// StatefulSetLegacyPrefix by old operators
-const StatefulSetLegacyPrefix = "zone"
 
 // MinIOPrometheusPathCluster is the path where MinIO tenant exposes cluster Prometheus metrics
 const MinIOPrometheusPathCluster = "/minio/v2/metrics/cluster"

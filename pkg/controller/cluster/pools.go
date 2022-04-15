@@ -37,14 +37,7 @@ import (
 func (c *Controller) getSSForPool(tenant *miniov2.Tenant, pool *miniov2.Pool) (*appsv1.StatefulSet, error) {
 	ss, err := c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Get(context.Background(), tenant.PoolStatefulsetName(pool), metav1.GetOptions{})
 	if err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return nil, err
-		}
-		// check if there are legacy statefulsets
-		ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Get(context.Background(), tenant.LegacyStatefulsetName(pool), metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 	return ss, nil
 }
@@ -137,15 +130,7 @@ func (c *Controller) restartInitializedPool(ctx context.Context, tenant *miniov2
 	})
 	if err != nil {
 		klog.Warning("Could not validate state of statefulset for pool", err)
-	}
-	if len(livePods.Items) == 0 {
-		livePods, err = c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", miniov2.ZoneLabel, pool.Name),
-		})
-		if err != nil {
-			klog.Warning("Could not validate state of statefulset for zone", err)
-			return err
-		}
+		return err
 	}
 	var livePod *corev1.Pod
 	for _, p := range livePods.Items {
