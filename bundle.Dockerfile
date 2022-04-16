@@ -9,5 +9,5 @@ LABEL operators.operatorframework.io.bundle.channels.v1=stable
 
 
 # Copy files to locations specified by labels.
-COPY bundles/4.4.15/manifests /manifests/
-COPY bundles/4.4.15/metadata /metadata/
+COPY bundles/4.4.16/manifests /manifests/
+COPY bundles/4.4.16/metadata /metadata/
