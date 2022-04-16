@@ -1,0 +1,82 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.7
+  creationTimestamp: null
+  name: policies.policy.min.io
+spec:
+  group: policy.min.io
+  names:
+    kind: Policy
+    listKind: PolicyList
+    plural: policies
+    shortNames:
+    - iampolicy
+    singular: iampolicy
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              statements:
+                items:
+                  properties:
+                    Action:
+                      items:
+                        type: string
+                      type: array
+                    Condition:
+                      additionalProperties:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      type: object
+                    Effect:
+                      type: string
+                    Resource:
+                      items:
+                        properties:
+                          BucketName:
+                            type: string
+                          Pattern:
+                            type: string
+                        required:
+                        - BucketName
+                        - Pattern
+                        type: object
+                      type: array
+                    Sid:
+                      type: string
+                  required:
+                  - Action
+                  - Effect
+                  type: object
+                type: array
+            required:
+            - statements
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

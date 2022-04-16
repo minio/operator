@@ -22,6 +22,8 @@ import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	miniov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2"
 	fakeminiov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2/fake"
+	policyv1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/policy.min.io/v1"
+	fakepolicyv1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/policy.min.io/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -79,4 +81,9 @@ var _ clientset.Interface = &Clientset{}
 // MinioV2 retrieves the MinioV2Client
 func (c *Clientset) MinioV2() miniov2.MinioV2Interface {
 	return &fakeminiov2.FakeMinioV2{Fake: &c.Fake}
+}
+
+// PolicyV1 retrieves the PolicyV1Client
+func (c *Clientset) PolicyV1() policyv1.PolicyV1Interface {
+	return &fakepolicyv1.FakePolicyV1{Fake: &c.Fake}
 }
