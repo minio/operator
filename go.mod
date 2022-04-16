@@ -9,9 +9,9 @@ require (
 	github.com/google/go-containerregistry v0.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.3.0
-	github.com/minio/madmin-go v1.3.0
-	github.com/minio/minio-go/v7 v7.0.20
-	github.com/minio/pkg v1.1.11
+	github.com/minio/madmin-go v1.3.11
+	github.com/minio/minio-go/v7 v7.0.23
+	github.com/minio/pkg v1.1.21
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.46.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.46.0
 	github.com/stretchr/testify v1.7.0
@@ -61,7 +61,7 @@ require (
 	github.com/googleapis/gnostic v0.5.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imdario/mergo v0.3.10 // indirect
-	github.com/json-iterator/go v1.1.10 // indirect
+	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/klauspost/compress v1.13.5 // indirect
 	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.4 // indirect
@@ -72,7 +72,6 @@ require (
 	github.com/lestrrat-go/jwx v1.2.0 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.0 // indirect
-	github.com/minio/argon2 v1.0.0 // indirect
 	github.com/minio/md5-simd v1.1.0 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
