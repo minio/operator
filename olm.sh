@@ -35,9 +35,16 @@ sed -i -e '/metrics/d' bundles/$RELEASE/metadata/annotations.yaml
 sed -i -e '/scorecard/d' bundles/$RELEASE/metadata/annotations.yaml
 sed -i -e '/testing/d' bundles/$RELEASE/metadata/annotations.yaml
 
-# Add openshift supported version
-echo "  # Annotations to specify OCP versions compatibility." >> bundles/$RELEASE/metadata/annotations.yaml
-echo "  com.redhat.openshift.versions: v4.6-v4.10" >> bundles/$RELEASE/metadata/annotations.yaml
+# Add openshift supported version & default channel
+# It needs to be added, since you have to declare both the potential eligible
+# channels for an operator via operators.operatorframework.io.bundle.channels
+# as well as the default.
+{
+  echo "  # Annotations to specify OCP versions compatibility."
+  echo "  com.redhat.openshift.versions: v4.6-v4.10"
+  echo "  # Annotation to add default bundle channel as potential is declared"
+  echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
+} >> bundles/$RELEASE/metadata/annotations.yaml
 
 # clean root level annotations.yaml
 sed -i -e '/metrics/d' metadata/annotations.yaml
