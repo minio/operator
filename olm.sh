@@ -35,6 +35,10 @@ sed -i -e '/metrics/d' bundles/$RELEASE/metadata/annotations.yaml
 sed -i -e '/scorecard/d' bundles/$RELEASE/metadata/annotations.yaml
 sed -i -e '/testing/d' bundles/$RELEASE/metadata/annotations.yaml
 
+# Add openshift supported version
+echo "  # Annotations to specify OCP versions compatibility." >> bundles/$RELEASE/metadata/annotations.yaml
+echo "  com.redhat.openshift.versions: v4.6-v4.10" >> bundles/$RELEASE/metadata/annotations.yaml
+
 # clean root level annotations.yaml
 sed -i -e '/metrics/d' metadata/annotations.yaml
 sed -i -e '/scorecard/d' metadata/annotations.yaml
