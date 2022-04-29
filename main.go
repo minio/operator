@@ -24,11 +24,10 @@ import (
 	"syscall"
 	"time"
 
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/minio/minio-go/v7/pkg/set"
-
-	"k8s.io/client-go/rest"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 

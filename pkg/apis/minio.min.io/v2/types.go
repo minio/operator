@@ -62,11 +62,13 @@ type Bucket struct {
 
 // TenantDomains (`domains`) - List of domains used to access the tenant from outside the kubernetes clusters.
 // this will only configure MinIO for the domains listed, but external DNS configuration is still needed.
+// The listed domains should include schema and port if any is used, i.e. https://minio.domain.com:8123
 type TenantDomains struct {
 	// List of Domains used by MinIO. This will enable DNS style access to the object store where the bucket name is
 	// inferred from a subdomain in the domain.
 	Minio []string `json:"minio,omitempty"`
 	// Domain used to expose the MinIO Console, this will configure the redirect on MinIO when visiting from the browser
+	// If Console is exposed via a subpath, the domain should include it, i.e. https://console.domain.com:8123/subpath/
 	Console string `json:"console,omitempty"`
 }
 

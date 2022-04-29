@@ -317,3 +317,205 @@ export MINIO_SERVER_URL=http://localhost:9000
 		})
 	}
 }
+
+func TestTenant_GetDomainHosts(t1 *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Scheduler  TenantScheduler
+		Spec       TenantSpec
+		Status     TenantStatus
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   []string
+	}{
+		{
+			name: "List of domains to host list",
+			fields: fields{
+				Spec: TenantSpec{
+					Features: &Features{
+						Domains: &TenantDomains{
+							Minio: []string{
+								"https://domain1.com:8080",
+								"http://domain2.com",
+							},
+						},
+					},
+				},
+			},
+			want: []string{
+				"domain1.com",
+				"domain2.com",
+			},
+		},
+		{
+			name: "Empty hosts",
+			fields: fields{
+				Spec: TenantSpec{
+					Features: &Features{},
+				},
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t1.Run(tt.name, func(t1 *testing.T) {
+			t := &Tenant{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Scheduler:  tt.fields.Scheduler,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			assert.Equalf(t1, tt.want, t.GetDomainHosts(), "GetDomainHosts()")
+		})
+	}
+}
+
+func TestTenant_HasEnv(t1 *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Scheduler  TenantScheduler
+		Spec       TenantSpec
+		Status     TenantStatus
+	}
+	type args struct {
+		envName string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   bool
+	}{
+		{
+			name: "Contains env",
+			fields: fields{
+				Spec: TenantSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "ENV1",
+							Value: "whatever",
+						},
+					},
+				},
+			},
+			args: args{
+				envName: "ENV1",
+			},
+			want: true,
+		},
+		{
+			name: "Does not Contains env",
+			fields: fields{
+				Spec: TenantSpec{
+					Env: []corev1.EnvVar{
+						{
+							Name:  "ENV1",
+							Value: "whatever",
+						},
+					},
+				},
+			},
+			args: args{
+				envName: "ENV2",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t1.Run(tt.name, func(t1 *testing.T) {
+			t := &Tenant{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Scheduler:  tt.fields.Scheduler,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			assert.Equalf(t1, tt.want, t.HasEnv(tt.args.envName), "HasEnv(%v)", tt.args.envName)
+		})
+	}
+}
+
+func TestTenant_ValidateDomains(t1 *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Scheduler  TenantScheduler
+		Spec       TenantSpec
+		Status     TenantStatus
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "Valid Domains",
+			fields: fields{
+				Spec: TenantSpec{
+					Features: &Features{
+						Domains: &TenantDomains{
+							Minio: []string{
+								"https://domain1.com:8080",
+								"http://domain2.com",
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Invalid Domains",
+			fields: fields{
+				Spec: TenantSpec{
+					Features: &Features{
+						Domains: &TenantDomains{
+							Minio: []string{
+								"http s://domain1.com:8080",
+								"http://domain2.com",
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Duplicate Domains",
+			fields: fields{
+				Spec: TenantSpec{
+					Features: &Features{
+						Domains: &TenantDomains{
+							Minio: []string{
+								"http://domain2.com",
+								"http://domain2.com",
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t1.Run(tt.name, func(t1 *testing.T) {
+			t := &Tenant{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Scheduler:  tt.fields.Scheduler,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			if tt.wantErr {
+				if err := t.ValidateDomains(); err == nil {
+					assert.Failf(t1, "Test %s did not return error", tt.name)
+				}
+			}
+		})
+	}
+}
