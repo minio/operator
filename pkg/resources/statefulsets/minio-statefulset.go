@@ -27,25 +27,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func envVarsContains(vars []corev1.EnvVar, envName string) bool {
-	for _, v := range vars {
-		if v.Name == envName {
-			return true
-		}
-	}
-	return false
-}
-
 // Adds required Console environment variables
 func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
-
-	if !envVarsContains(t.Spec.Env, "MINIO_SERVER_URL") {
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "MINIO_SERVER_URL",
-			Value: t.MinIOServerEndpoint(),
-		})
-	}
 
 	if t.HasLogEnabled() {
 		envVars = append(envVars, corev1.EnvVar{
@@ -134,24 +118,41 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 	}
 	// Check if any domains are configured
 	if t.HasMinIODomains() {
-		domains = append(domains, t.Spec.Features.Domains.Minio...)
+		domains = append(domains, t.GetDomainHosts()...)
 	}
-	// tell MinIO about all the domains meant to hit it
-	if len(domains) > 0 {
+	// tell MinIO about all the domains meant to hit it if they are not passed manually via .spec.env
+	if !t.HasEnv("MINIO_DOMAIN") && len(domains) > 0 {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_DOMAIN",
 			Value: strings.Join(domains, ","),
 		})
 	}
+	// If no specific server URL is specified we will specify the internal k8s url, but if a list of domains was
+	// provided we will use the first domain.
+	if !t.HasEnv("MINIO_SERVER_URL") {
+		serverURL := t.MinIOServerEndpoint()
+		if t.HasMinIODomains() {
+			serverURL = t.Spec.Features.Domains.Minio[0]
+		}
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "MINIO_SERVER_URL",
+			Value: serverURL,
+		})
+	}
+
 	// Set the redirect url for console
 	if t.HasConsoleDomains() {
-		schema := "http"
-		if t.TLS() {
-			schema = "https"
+		consoleDomain := t.Spec.Features.Domains.Console
+		if !strings.HasPrefix(consoleDomain, "http") {
+			useSchema := "http"
+			if t.TLS() {
+				useSchema = "https"
+			}
+			consoleDomain = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Console)
 		}
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_BROWSER_REDIRECT_URL",
-			Value: fmt.Sprintf("%s://%s", schema, t.Spec.Features.Domains.Console),
+			Value: consoleDomain,
 		})
 	}
 

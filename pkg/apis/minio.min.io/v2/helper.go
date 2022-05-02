@@ -31,11 +31,14 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"text/template"
 	"time"
+
+	"github.com/miekg/dns"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -869,6 +872,10 @@ func (t *Tenant) Validate() error {
 			return err
 		}
 	}
+	// make sure all the domains are valid
+	if err := t.ValidateDomains(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -1082,4 +1089,112 @@ func (t *Tenant) HasMinIODomains() bool {
 // HasConsoleDomains indicates whether a domain is being specified for Console
 func (t *Tenant) HasConsoleDomains() bool {
 	return t.Spec.Features != nil && t.Spec.Features.Domains != nil && t.Spec.Features.Domains.Console != ""
+}
+
+// ValidateDomains checks the validity of the domains configured on the tenant
+func (t *Tenant) ValidateDomains() error {
+	if t.HasMinIODomains() {
+		domains := t.Spec.Features.Domains.Minio
+		if len(domains) != 0 {
+			for _, domainName := range domains {
+				_, err := url.Parse(domainName)
+				if err != nil {
+					return err
+				}
+
+				if _, ok := dns.IsDomainName(domainName); !ok {
+					return fmt.Errorf("invalid domain `%s`", domainName)
+				}
+			}
+			sort.Strings(domains)
+			lcpSuf := lcpSuffix(domains)
+			for _, domainName := range domains {
+				if domainName == lcpSuf && len(domains) > 1 {
+					return fmt.Errorf("overlapping domains `%s` not allowed", domainName)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// GetDomainHosts returns a list of hosts in the .spec.features.domains.minio list to configure MINIO_DOMAIN
+func (t *Tenant) GetDomainHosts() []string {
+	if t.HasMinIODomains() {
+		domains := t.Spec.Features.Domains.Minio
+		var hosts []string
+		for _, d := range domains {
+			u, err := url.Parse(d)
+			if err != nil {
+				continue
+			}
+			// remove ports if any
+			hostParts := strings.Split(u.Host, ":")
+			hosts = append(hosts, hostParts[0])
+		}
+		return hosts
+	}
+	return nil
+}
+
+// HasEnv returns whether an environment variable is defined in the .spec.env field
+func (t *Tenant) HasEnv(envName string) bool {
+	for _, env := range t.Spec.Env {
+		if env.Name == envName {
+			return true
+		}
+	}
+	return false
+}
+
+// Suffix returns the longest common suffix of the provided strings
+func lcpSuffix(strs []string) string {
+	return lcp(strs, false)
+}
+
+func lcp(strs []string, pre bool) string {
+	// short-circuit empty list
+	if len(strs) == 0 {
+		return ""
+	}
+	xfix := strs[0]
+	// short-circuit single-element list
+	if len(strs) == 1 {
+		return xfix
+	}
+	// compare first to rest
+	for _, str := range strs[1:] {
+		xfixl := len(xfix)
+		strl := len(str)
+		// short-circuit empty strings
+		if xfixl == 0 || strl == 0 {
+			return ""
+		}
+		// maximum possible length
+		maxl := xfixl
+		if strl < maxl {
+			maxl = strl
+		}
+		// compare letters
+		if pre {
+			// prefix, iterate left to right
+			for i := 0; i < maxl; i++ {
+				if xfix[i] != str[i] {
+					xfix = xfix[:i]
+					break
+				}
+			}
+		} else {
+			// suffix, iterate right to left
+			for i := 0; i < maxl; i++ {
+				xi := xfixl - i - 1
+				si := strl - i - 1
+				if xfix[xi] != str[si] {
+					xfix = xfix[xi+1:]
+					break
+				}
+			}
+		}
+	}
+	return xfix
 }
