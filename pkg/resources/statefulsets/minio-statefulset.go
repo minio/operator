@@ -142,9 +142,17 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 
 	// Set the redirect url for console
 	if t.HasConsoleDomains() {
+		consoleDomain := t.Spec.Features.Domains.Console
+		if !strings.HasPrefix(consoleDomain, "http") {
+			useSchema := "http"
+			if t.TLS() {
+				useSchema = "https"
+			}
+			consoleDomain = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Console)
+		}
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "MINIO_BROWSER_REDIRECT_URL",
-			Value: t.Spec.Features.Domains.Console,
+			Value: consoleDomain,
 		})
 	}
 
