@@ -87,11 +87,13 @@ func (d *reportCmd) validate(args []string) error {
 func (d *reportCmd) run(args []string) error {
 	// Create operator client
 	ctx := context.Background()
-	oclient, err := helpers.GetKubeOperatorClient()
+
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	oclient, err := helpers.GetKubeOperatorClient(path)
 	if err != nil {
 		return err
 	}
-	client, err := helpers.GetKubeClient("")
+	client, err := helpers.GetKubeClient(path)
 	if err != nil {
 		return err
 	}

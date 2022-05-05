@@ -123,11 +123,11 @@ func (c *createCmd) validate(args []string) error {
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (c *createCmd) run(args []string) error {
 	// Create operator and kube client
-	operatorClient, err := helpers.GetKubeOperatorClient()
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	operatorClient, err := helpers.GetKubeOperatorClient(path)
 	if err != nil {
 		return err
 	}
-	path, _ := rootCmd.Flags().GetString(kubeconfig)
 	kubeClient, err := helpers.GetKubeClient(path)
 	if err != nil {
 		return err

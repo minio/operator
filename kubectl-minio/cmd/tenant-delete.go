@@ -88,11 +88,11 @@ func (d *tenantDeleteCmd) validate(args []string) error {
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (d *tenantDeleteCmd) run(args []string) error {
-	oclient, err := helpers.GetKubeOperatorClient()
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	oclient, err := helpers.GetKubeOperatorClient(path)
 	if err != nil {
 		return err
 	}
-	path, _ := rootCmd.Flags().GetString(kubeconfig)
 	kclient, err := helpers.GetKubeClient(path)
 	if err != nil {
 		return err
