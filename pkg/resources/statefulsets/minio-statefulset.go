@@ -89,10 +89,6 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 				},
 			},
 		}, corev1.EnvVar{
-			// Add a fallback in-case operator is down.
-			Name:  "MINIO_ENDPOINTS",
-			Value: strings.Join(GetContainerArgs(t, hostsTemplate), " "),
-		}, corev1.EnvVar{
 			Name:  "MINIO_OPERATOR_VERSION",
 			Value: opVersion,
 		}, corev1.EnvVar{

@@ -864,6 +864,8 @@ func (c *Controller) syncHandler(key string) error {
 			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
 			// Report the pool is properly created
 			tenant.Status.Pools[i].State = miniov2.PoolCreated
+			// mark we are adding a new pool to the next block can act accordingly
+			addingNewPool = true
 			// push updates to status
 			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
 				return err
@@ -901,6 +903,7 @@ func (c *Controller) syncHandler(key string) error {
 		if initializedPool.Name != "" && addingNewPool {
 			// Restart services to get new args since we are expanding the deployment here.
 			if err := c.restartInitializedPool(ctx, tenant, initializedPool, tenantConfiguration); err != nil {
+				klog.Infof("'%s' restart call failed", key)
 				return err
 			}
 			metaNowTime := metav1.Now()
