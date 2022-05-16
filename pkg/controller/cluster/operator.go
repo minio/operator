@@ -272,19 +272,20 @@ func (c *Controller) getTransport() *http.Transport {
 	if c.transport != nil {
 		return c.transport
 	}
-
+	rootCAs := miniov2.MustGetSystemCertPool()
+	// Default kubernetes CA certificate
+	rootCAs.AppendCertsFromPEM(miniov2.GetPodCAFromFile())
 	var caContent []byte
+	// Custom ca certificate to be used by operator
 	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorTLSCASecretName, metav1.GetOptions{})
-	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
-	if err != nil {
-		caContent = miniov2.GetPodCAFromFile()
-	} else {
+	if err == nil && operatorCATLSCert != nil {
 		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+			caContent = val
+		} else if val, ok = operatorCATLSCert.Data["public.crt"]; ok {
 			caContent = val
 		}
 	}
 
-	rootCAs := miniov2.MustGetSystemCertPool()
 	if len(caContent) > 0 {
 		rootCAs.AppendCertsFromPEM(caContent)
 	}
