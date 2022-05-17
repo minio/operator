@@ -27,6 +27,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"github.com/minio/operator/pkg/controller/cluster/certificates"
 
 	corev1 "k8s.io/api/core/v1"
@@ -142,6 +144,62 @@ func (c *Controller) recreateMinIOCertsOnTenant(ctx context.Context, tenant *min
 
 func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName string) (*corev1.Secret, error) {
 	return c.kubeClientSet.CoreV1().Secrets(nsName).Get(ctx, secretName, metav1.GetOptions{})
+}
+
+// checkOperatorTLSForMinIOTenant checks create or updates the operator-tls secret for tenant
+func (c *Controller) checkOperatorTLSForMinIOTenant(ctx context.Context, tenant *miniov2.Tenant) error {
+	if !isOperatorTLS() {
+		return nil
+	}
+	// get operator-tls in minio-operator namespace
+	operatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	// get operator-tls in tenant namespace
+	tenantOperatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return err
+	}
+	if operatorTLSPublicCrt, ok := operatorTLSSecret.Data["public.crt"]; ok {
+		// update tenant operator-tls secret
+		if tenantOperatorTLSPublicCrt, ok := tenantOperatorTLSSecret.Data["public.crt"]; ok {
+			if string(tenantOperatorTLSPublicCrt) != string(operatorTLSPublicCrt) {
+				klog.Infof("public key in operator-tls secret changed, updating operator-tls for '%s/%s'", tenant.Namespace, tenant.Name)
+				tenantOperatorTLSSecret.Data["public.crt"] = operatorTLSPublicCrt
+				_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantOperatorTLSSecret, metav1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			klog.Infof("operator-tls secret in tenant '%s/%s' not found, creating one now", tenant.Namespace, tenant.Name)
+			// create tenant operator-tls secret
+			opTLSSecret := &corev1.Secret{
+				Type: "Opaque",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      OperatorTLSSecretName,
+					Namespace: tenant.Namespace,
+					Labels:    tenant.MinIOPodLabels(),
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
+							Group:   miniov2.SchemeGroupVersion.Group,
+							Version: miniov2.SchemeGroupVersion.Version,
+							Kind:    miniov2.MinIOCRDResourceKind,
+						}),
+					},
+				},
+				Data: map[string][]byte{
+					"public.crt": operatorTLSPublicCrt,
+				},
+			}
+			_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, opTLSSecret, metav1.CreateOptions{})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // checkMinIOCertificatesStatus checks for the current status of MinIO and it's service

@@ -751,39 +751,13 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	if isOperatorTLS() {
-		// Copy Operator TLS certificate to Tenant Namespace
-		operatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if val, ok := operatorTLSSecret.Data["public.crt"]; ok {
-			secret := &corev1.Secret{
-				Type: "Opaque",
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      OperatorTLSSecretName,
-					Namespace: tenant.Namespace,
-					Labels:    tenant.MinIOPodLabels(),
-					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-							Group:   miniov2.SchemeGroupVersion.Group,
-							Version: miniov2.SchemeGroupVersion.Version,
-							Kind:    miniov2.MinIOCRDResourceKind,
-						}),
-					},
-				},
-				Data: map[string][]byte{
-					"public.crt": val,
-				},
-			}
-			_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
-			if err != nil && !k8serrors.IsAlreadyExists(err) {
-				return err
-			}
-		}
+	// check if operator-tls has to be updated or re-created in the tenant namespace
+	err = c.checkOperatorTLSForMinIOTenant(ctx, tenant)
+	if err != nil {
+		return err
 	}
 
-	// Create logSecret before deploying any statefulset
+	// Create logSecret before deploying any StatefulSet
 	if tenant.HasLogEnabled() {
 		_, err = c.checkAndCreateLogSecret(ctx, tenant)
 		if err != nil {
