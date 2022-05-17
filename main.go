@@ -124,17 +124,18 @@ func main() {
 	}
 
 	ctx := context.Background()
-	var caContent []byte
-	operatorCATLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
-	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
-	if err != nil {
-		caContent = miniov2.GetPodCAFromFile()
-	} else {
+
+	// Default kubernetes CA certificate
+	caContent := miniov2.GetPodCAFromFile()
+	// custom ca certificate to be used by operator
+	operatorCATLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, cluster.OperatorTLSCASecretName, metav1.GetOptions{})
+	if err == nil && operatorCATLSCert != nil {
 		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			caContent = val
+			caContent = append(caContent, val...)
+		} else if val, ok = operatorCATLSCert.Data["public.crt"]; ok {
+			caContent = append(caContent, val...)
 		}
 	}
-
 	if len(caContent) > 0 {
 		crd, err := extClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.Background(), "tenants.minio.min.io", metav1.GetOptions{})
 		if err != nil {
