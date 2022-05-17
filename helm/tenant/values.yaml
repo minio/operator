@@ -175,3 +175,51 @@ tenants:
         runAsGroup: 1000
         runAsNonRoot: true
         fsGroup: 1000
+    ## LogSearch API setup for MinIO Tenant.
+    log:
+      image: "" # defaults to minio/operator:v4.4.17
+      resources: { }
+      nodeSelector: { }
+      affinity:
+        nodeAffinity: { }
+        podAffinity: { }
+        podAntiAffinity: { }
+      tolerations: [ ]
+      annotations: { }
+      labels: { }
+      audit:
+        diskCapacityGB: 1
+      ## Postgres setup for LogSearch API
+      db:
+        image: "" # defaults to library/postgres
+        initimage: "" # defaults to busybox:1.33.1
+        volumeClaimTemplate:
+          metadata: { }
+          spec:
+            storageClassName: standard
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Gi
+        resources: { }
+        nodeSelector: { }
+        affinity:
+          nodeAffinity: { }
+          podAffinity: { }
+          podAntiAffinity: { }
+        tolerations: [ ]
+        annotations: { }
+        labels: { }
+        serviceAccountName: ""
+        securityContext:
+          runAsUser: 999
+          runAsGroup: 999
+          runAsNonRoot: true
+          fsGroup: 999
+      serviceAccountName: ""
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
+        fsGroup: 1000

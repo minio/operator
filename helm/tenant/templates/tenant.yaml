@@ -176,6 +176,7 @@ spec:
       runAsNonRoot: {{ .kes.securityContext.runAsNonRoot }}
       fsGroup: {{ .kes.securityContext.fsGroup | int }}
   {{ end }}
+
   ## Prometheus setup for MinIO Tenant.
   {{ if dig "prometheus" "diskCapacityGB" false . }}
   prometheus:
@@ -210,5 +211,83 @@ spec:
       runAsGroup: {{ .prometheus.securityContext.runAsGroup | int }}
       runAsNonRoot: {{ .prometheus.securityContext.runAsNonRoot }}
       fsGroup: {{ .prometheus.securityContext.fsGroup | int }}
+  {{ end }}
+
+## LogSearch API setup for MinIO Tenant.
+  {{ if dig "log" "audit" "diskCapacityGB" false . }}
+  log:
+    image: {{ .log.image | quote }}
+    {{- with (dig "resources" (dict) .) }}
+    resources:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (dig "nodeSelector" (dict) .) }}
+    nodeSelector:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    affinity:
+      nodeAffinity: { }
+      podAffinity: { }
+      podAntiAffinity: { }
+    tolerations: [ ]
+    {{- with (dig "annotations" (dict) .) }}
+    annotations:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with (dig "labels" (dict) .) }}
+    labels:
+      {{ toYaml . | nindent 4 }}
+    {{- end }}
+    audit:
+      diskCapacityGB: {{ .log.audit.diskCapacityGB | int }}
+    db:
+      image: {{ .log.db.image | quote }}
+      initimage: {{ .log.db.initimage | quote }}
+      volumeClaimTemplate:
+        {{- with (dig "metadata" (dict) .) }}
+        metadata:
+          {{ toYaml . | nindent 4 }}
+        {{- end }}
+        spec:
+          storageClassName: {{ .log.db.volumeClaimTemplate.spec.storageClassName | quote }}
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: {{ .log.db.volumeClaimTemplate.spec.resources.requests.storage | quote }}
+      {{- with (dig "resources" (dict) .) }}
+      resources:
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+      {{- with (dig "nodeSelector" (dict) .) }}
+      nodeSelector:
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+      affinity:
+        nodeAffinity: { }
+        podAffinity: { }
+        podAntiAffinity: { }
+      tolerations: [ ]
+
+      {{- with (dig "annotations" (dict) .) }}
+      annotations:
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+      {{- with (dig "labels" (dict) .) }}
+      labels:
+        {{ toYaml . | nindent 4 }}
+      {{- end }}
+      serviceAccountName: {{ .log.db.serviceAccountName | quote }}
+      securityContext:
+        runAsUser: {{ .log.db.securityContext.runAsUser | int }}
+        runAsGroup: {{ .log.db.securityContext.runAsGroup | int }}
+        runAsNonRoot: true
+        fsGroup: {{ .log.db.securityContext.fsGroup | int }}
+    serviceAccountName: {{ .log.serviceAccountName | quote }}
+    securityContext:
+      runAsUser: {{ .log.securityContext.runAsUser | int }}
+      runAsGroup: {{ .log.securityContext.runAsGroup | int }}
+      runAsNonRoot: true
+      fsGroup: {{ .log.securityContext.fsGroup | int }}
   {{ end }}
 {{ end }}
