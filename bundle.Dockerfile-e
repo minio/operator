@@ -7,6 +7,7 @@ LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=minio-operator-rhmp
 LABEL operators.operatorframework.io.bundle.channels.v1=stable
 
+# Labels for testing.
 
 # Copy files to locations specified by labels.
 COPY bundles/redhat-marketplace/4.4.19/manifests /manifests/

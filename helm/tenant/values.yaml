@@ -177,7 +177,7 @@ tenants:
         fsGroup: 1000
     ## LogSearch API setup for MinIO Tenant.
     log:
-      image: "" # defaults to minio/operator:v4.4.17
+      image: "" # defaults to minio/operator:v4.4.19
       resources: { }
       nodeSelector: { }
       affinity:

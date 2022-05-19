@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"strconv"
@@ -77,7 +78,12 @@ func getPrometheusMetricsForTenantWithRetry(tenant *miniov2.Tenant, bearer strin
 		klog.Infof("error pinging: %v", err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			klog.Warningf("Error closing prometheus check response body %+v", err)
+		}
+	}(resp.Body)
 
 	promMetrics := MinIOPrometheusMetrics{}
 

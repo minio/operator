@@ -19,6 +19,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -360,6 +361,12 @@ func getMinIOHealthStatusWithRetry(tenant *miniov2.Tenant, mode HealthMode, tryC
 		klog.Infof("error pinging: %v", err)
 		return nil, err
 	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			klog.Warningf("Error closing health check body %+v", err)
+		}
+	}(resp.Body)
 	driveskHealing := 0
 	if resp.Header.Get("X-Minio-Healing-Drives") != "" {
 		val, err := strconv.Atoi(resp.Header.Get("X-Minio-Healing-Drives"))
