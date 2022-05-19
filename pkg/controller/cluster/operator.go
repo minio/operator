@@ -212,7 +212,7 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 		return err
 	}
 	namespace := miniov2.GetNSFromFile()
-	err = c.createCertificateSigningRequest(ctx, map[string]string{}, c.operatorCSRName(), namespace, csrBytes, "server")
+	err = c.createCertificateSigningRequest(ctx, map[string]string{}, c.operatorCSRName(), namespace, csrBytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", c.operatorCSRName(), err)
 		return err

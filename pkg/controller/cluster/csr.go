@@ -69,7 +69,7 @@ func isEqual(a, b []string) bool {
 }
 
 // createCertificateSigningRequest is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, usage string) error {
+func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 	// for the right set of csr configurations regarding CSR signers and Key usages please read:
 	// https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#kubernetes-signers
@@ -79,14 +79,6 @@ func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels
 			certificatesV1.UsageDigitalSignature,
 			certificatesV1.UsageKeyEncipherment,
 			certificatesV1.UsageServerAuth,
-		}
-		if usage == "client" {
-			csrSignerName = certificatesV1.KubeAPIServerClientSignerName
-			csrKeyUsage = []certificatesV1.KeyUsage{
-				certificatesV1.UsageDigitalSignature,
-				certificatesV1.UsageKeyEncipherment,
-				certificatesV1.UsageClientAuth,
-			}
 		}
 		kubeCSR := &certificatesV1.CertificateSigningRequest{
 			TypeMeta: v1.TypeMeta{
