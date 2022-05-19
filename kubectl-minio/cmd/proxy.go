@@ -88,7 +88,11 @@ func (o *operatorProxyCmd) run() error {
 	if err != nil {
 		return err
 	}
-	secretName := sa.Secrets[0].Name
+
+	secretName := "console-sa-secret"
+	if len(sa.Secrets) > 0 {
+		secretName = sa.Secrets[0].Name
+	}
 
 	secret, err := client.CoreV1().Secrets(o.operatorOpts.Namespace).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
