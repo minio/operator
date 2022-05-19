@@ -50,7 +50,7 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Use:     "upgrade <TENANTNAME> --image <MINIO-IMAGE>",
 		Short:   "Upgrade MinIO image for existing tenant",
 		Long:    upgradeDesc,
-		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2022-05-08T23-50-31Z`,
+		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2022-05-19T18-20-59Z`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			return c.validate(args)
 		},
