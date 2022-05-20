@@ -389,7 +389,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Prometheus test on Kind
+      - name: Tenant KES
         run: |
           "${GITHUB_WORKSPACE}/testing/console-tenant+kes.sh"
           
