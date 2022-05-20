@@ -24,6 +24,24 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
+func (c *Controller) getTenantConfiguration(ctx context.Context, tenant *miniov2.Tenant) (map[string][]byte, error) {
+	tenantConfiguration := map[string][]byte{}
+	// Load tenant configuration from file
+	if tenant.HasConfigurationSecret() {
+		minioConfigurationSecretName := tenant.Spec.Configuration.Name
+		minioConfigurationSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioConfigurationSecretName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		configFromFile := miniov2.ParseRawConfiguration(minioConfigurationSecret.Data["config.env"])
+		for key, val := range configFromFile {
+			tenantConfiguration[key] = val
+		}
+	}
+	return tenantConfiguration, nil
+}
+
+// getTenantCredentials returns a combination of env, credsSecret and Configuration tenant credentials
 func (c *Controller) getTenantCredentials(ctx context.Context, tenant *miniov2.Tenant) (map[string][]byte, error) {
 	// Configuration for tenant can be passed using 3 different sources, tenant.spec.env, k8s credsSecret and config.env secret
 	// If the user provides duplicated configuration the override order will be:
@@ -47,16 +65,13 @@ func (c *Controller) getTenantCredentials(ctx context.Context, tenant *miniov2.T
 	}
 
 	// Load tenant configuration from file
-	if tenant.HasConfigurationSecret() {
-		minioConfigurationSecretName := tenant.Spec.Configuration.Name
-		minioConfigurationSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioConfigurationSecretName, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		configFromFile := miniov2.ParseRawConfiguration(minioConfigurationSecret.Data["config.env"])
-		for key, val := range configFromFile {
-			tenantConfiguration[key] = val
-		}
+	config, err := c.getTenantConfiguration(ctx, tenant)
+	if err != nil {
+		return nil, err
 	}
+	for key, val := range config {
+		tenantConfiguration[key] = val
+	}
+
 	return tenantConfiguration, nil
 }
