@@ -101,7 +101,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   sed -i -e '/scorecard/d' bundle.Dockerfile
   sed -i -e '/testing/d' bundle.Dockerfile
 
-  # clean released annotations
+  echo "clean released annotations"
   sed -i -e '/metrics/d' bundles/$catalog/$RELEASE/metadata/annotations.yaml
   sed -i -e '/scorecard/d' bundles/$catalog/$RELEASE/metadata/annotations.yaml
   sed -i -e '/testing/d' bundles/$catalog/$RELEASE/metadata/annotations.yaml
@@ -117,9 +117,9 @@ for catalog in "${redhatCatalogs[@]}"; do
     echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
   } >> bundles/$catalog/$RELEASE/metadata/annotations.yaml
 
-  # clean root level annotations.yaml
-  sed -i -e '/metrics/d' $catalog/metadata/annotations.yaml
-  sed -i -e '/scorecard/d' $catalog/metadata/annotations.yaml
-  sed -i -e '/testing/d' $catalog/metadata/annotations.yaml
+  echo "clean root level annotations.yaml"
+  sed -i -e '/metrics/d' bundles/$catalog/$RELEASE/metadata/annotations.yaml
+  sed -i -e '/scorecard/d' bundles/$catalog/$RELEASE/metadata/annotations.yaml
+  sed -i -e '/testing/d' bundles/$catalog/$RELEASE/metadata/annotations.yaml
 done
 echo " "
