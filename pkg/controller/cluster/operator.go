@@ -275,19 +275,16 @@ func (c *Controller) getTransport() *http.Transport {
 	rootCAs := miniov2.MustGetSystemCertPool()
 	// Default kubernetes CA certificate
 	rootCAs.AppendCertsFromPEM(miniov2.GetPodCAFromFile())
-	var caContent []byte
+
 	// Custom ca certificate to be used by operator
 	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorTLSCASecretName, metav1.GetOptions{})
 	if err == nil && operatorCATLSCert != nil {
 		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			caContent = val
-		} else if val, ok = operatorCATLSCert.Data["public.crt"]; ok {
-			caContent = val
+			rootCAs.AppendCertsFromPEM(val)
 		}
-	}
-
-	if len(caContent) > 0 {
-		rootCAs.AppendCertsFromPEM(caContent)
+		if val, ok := operatorCATLSCert.Data["public.crt"]; ok {
+			rootCAs.AppendCertsFromPEM(val)
+		}
 	}
 
 	c.transport = &http.Transport{
@@ -296,7 +293,7 @@ func (c *Controller) getTransport() *http.Transport {
 			Timeout:   15 * time.Second,
 			KeepAlive: 15 * time.Second,
 		}).DialContext,
-		MaxIdleConnsPerHost:   100,
+		MaxIdleConnsPerHost:   1024,
 		IdleConnTimeout:       15 * time.Second,
 		ResponseHeaderTimeout: 15 * time.Minute,
 		TLSHandshakeTimeout:   15 * time.Second,

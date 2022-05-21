@@ -77,7 +77,7 @@ func getPrometheusMetricsForTenantWithRetry(tenant *miniov2.Tenant, bearer strin
 		klog.Infof("error pinging: %v", err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer drainBody(resp.Body)
 
 	promMetrics := MinIOPrometheusMetrics{}
 
