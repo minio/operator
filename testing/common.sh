@@ -24,6 +24,10 @@ sudo chmod +x /usr/local/bin/kubectl
 sudo curl -#L "https://dl.min.io/client/mc/release/linux-amd64/mc" -o /usr/local/bin/mc
 sudo chmod +x /usr/local/bin/mc
 
+## Install yq
+sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+sudo chmod a+x /usr/local/bin/yq
+
 yell() { echo "$0: $*" >&2; }
 
 die() {

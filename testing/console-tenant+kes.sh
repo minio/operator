@@ -90,11 +90,29 @@ function test_kes_tenant() {
     echo "Port Forwarding console"
     kubectl -n minio-operator port-forward svc/console 9090 &
 
-    SA_TOKEN=$(kubectl -n minio-operator  get secret $(kubectl -n minio-operator get serviceaccount console-sa -o jsonpath="{.secrets[0].name}") -o jsonpath="{.data.token}" | base64 --decode)
+    # Beginning  Kubernetes 1.24 ----> Service Account Token Secrets are not
+    # automatically generated, to generate them manually, users must manually
+    # create the secret, for our examples where we lead people to get the JWT
+    # from the console-sa service account, they additionally need to manually
+    # generate the secret via
+    # Don't apply the entire file: kubectl apply -f "${SCRIPT_DIR}/../resources/base/console-ui.yaml"
+    # Because you will get 500 due to:
+    # CREDENTIALS: {"code":500,"detailedMessage":"secrets is forbidden: User \"system:serviceaccount:minio-operator:console-sa\"
+    # cannot create resource \"secrets\" in API group \"\" in the namespace \"default\"","message":"an errors occurred, please try again"}
+    RESOURCE=$(yq e 'select(.kind == "Secret")' "${SCRIPT_DIR}/../resources/base/console-ui.yaml")
+    echo $RESOURCE | kubectl apply -f -
+    SA_TOKEN=$(kubectl -n minio-operator  get secret console-sa-secret -o jsonpath="{.data.token}" | base64 --decode)
+    echo "SA_TOKEN: ${SA_TOKEN}"
+    if [ -z "$SA_TOKEN" ]
+    then
+      echo "\$SA_TOKEN is empty and it cannot be empty!"
+      return 1
+    fi
 
     COOKIE=$(curl 'http://localhost:9090/api/v1/login/operator' -X POST \
 		  -H 'Content-Type: application/json' \
 		  --data-raw '{"jwt":"'$SA_TOKEN'"}' -i | grep "Set-Cookie: token=" | sed -e "s/Set-Cookie: token=//g" | awk -F ';' '{print $1}')
+    echo "COOKIE: ${COOKIE}"
 
     echo "Creating Tenant"
     CREDENTIALS=$(curl 'http://localhost:9090/api/v1/tenants' \
@@ -102,10 +120,9 @@ function test_kes_tenant() {
 		       -H 'Content-Type: application/json' \
 		       -H 'Cookie: token='$COOKIE'' \
 		       --data-raw '{"name":"kes-tenant","namespace":"default","access_key":"","secret_key":"","access_keys":[],"secret_keys":[],"enable_tls":true,"enable_console":true,"enable_prometheus":true,"service_name":"","image":"","expose_minio":true,"expose_console":true,"pools":[{"name":"pool-0","servers":4,"volumes_per_server":1,"volume_configuration":{"size":26843545600,"storage_class_name":"standard"},"securityContext":null,"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchExpressions":[{"key":"v1.min.io/tenant","operator":"In","values":["kes-tenant"]},{"key":"v1.min.io/pool","operator":"In","values":["pool-0"]}]},"topologyKey":"kubernetes.io/hostname"}]}}}],"erasureCodingParity":2,"logSearchConfiguration":{"image":"minio/operator:dev","postgres_image":"","postgres_init_image":""},"prometheusConfiguration":{"image":"","sidecar_image":"","init_image":""},"tls":{"minio":[],"ca_certificates":[],"console_ca_certificates":[]},"encryption":{"replicas":"1","securityContext":{"runAsUser":"1000","runAsGroup":"1000","fsGroup":"1000","runAsNonRoot":true},"image":"","vault":{"endpoint":"http://vault.default.svc.cluster.local:8200","engine":"","namespace":"","prefix":"my-minio","approle":{"engine":"","id":"'$ROLE_ID'","secret":"'$SECRET_ID'","retry":0},"tls":{},"status":{"ping":0}}},"idp":{"keys":[{"access_key":"console","secret_key":"console123"}]}}')
+    echo "CREDENTIALS: ${CREDENTIALS}"
 
-
-    echo $CREDENTIALS
-
+    echo "Check Tenant Status in default name space for kes-tenant:"
     check_tenant_status default kes-tenant
 
     echo "Port Forwarding tenant"
