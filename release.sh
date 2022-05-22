@@ -33,3 +33,9 @@ for file in "${files[@]}"; do
   sed -i -e "s/RELEASE\.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]Z/${MINIO_RELEASE}/g"
   sed -i -e "s/${CONSOLE_FROM}/${CONSOLE_RELEASE}/g" "$file"
 done
+
+echo "Update olm catalogs with $RELEASE"
+./olm.sh
+
+echo "Re-indexing helm chart releases for $RELEASE"
+./helm-reindex.sh
