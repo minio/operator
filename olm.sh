@@ -70,11 +70,15 @@ for catalog in "${redhatCatalogs[@]}"; do
   myenv=$EXAMPLE yq -i e ".metadata.annotations.alm-examples |= (\"\${myenv}\" | envsubst)" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
   # Avoid message: "There are unpinned images digests!" by using Digest Sha256:xxxx rather than vx.x.x
-  containerImage="quay.io/minio/operator:v$RELEASE"
+  containerImage="quay.io/minio/operator:v${RELEASE}"
   echo "containerImage: ${containerImage}"
   digest=$(docker pull $containerImage | grep Digest | awk -F ' ' '{print $2}')
-  operatorImageDigest="quay.io/minio/operator:${RELEASE}"
-  echo "digest: ${operatorImageDigest} @ ${digest}"
+  operatorImageDigest="quay.io/minio/operator:v${RELEASE}"
+  if [ -n "${digest}" ]; then
+      echo "digest: ${operatorImageDigest} @ ${digest}"
+  else
+      echo "digest: ${operatorImageDigest}"
+  fi
   yq -i ".metadata.annotations.containerImage |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
   # Console Image in Digested form: sha256:xxxx
