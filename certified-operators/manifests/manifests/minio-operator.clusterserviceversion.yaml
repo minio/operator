@@ -6,7 +6,7 @@ metadata:
     capabilities: "Full Lifecycle"
     operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
     operators.operatorframework.io/project_layout: unknown
-    containerImage: quay.io/minio/operator:4.4.19
+    containerImage: quay.io/minio/operator:v4.4.19
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -14,7 +14,7 @@ metadata:
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
-  name: minio-operator.v4.4.19
+  name: minio-operator.vv4.4.19
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -489,7 +489,7 @@ spec:
                                 - minio-operator
                         topologyKey: kubernetes.io/hostname
                 containers:
-                  - image: quay.io/minio/operator:4.4.19
+                  - image: quay.io/minio/operator:v4.4.19
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -528,7 +528,7 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  version: 4.4.19
+  version: v4.4.19
   webhookdefinitions:
     - admissionReviewVersions:
         - v1
