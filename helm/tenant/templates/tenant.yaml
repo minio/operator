@@ -1,39 +1,37 @@
-{{ range .Values.tenants }}
----
+{{- with .Values.tenant }}
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: {{ .name }}
-  namespace: {{ .namespace }}
   ## Optionally pass labels to be applied to the statefulset pods
   labels:
     app: minio
-  {{ if dig "metrics" "enabled" false . }}
+  {{- if dig "metrics" "enabled" false . }}
   ## Annotations for MinIO Tenant Pods
   annotations:
     prometheus.io/path: /minio/v2/metrics/cluster
     prometheus.io/port: {{ dig "metrics" "port" 9000 . | quote }}
     prometheus.io/scrape: "true"
     prometheus.io/scheme: {{ dig "metrics" "protocol" "http" . | quote }}
-  {{ end }}
-  {{ if dig "scheduler" "name" "" . }}
+  {{- end }}
+  {{- if dig "scheduler" "name" "" . }}
   scheduler:
     name: {{ dig "scheduler" "name" "" . }}
-  {{ end }}
+  {{- end }}
 spec:
   image: {{ dig "image" "repository" "minio/minio" . }}:{{ dig "image" "tag" "RELEASE.2022-01-08T03-11-54Z" . }}
   imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" . }}
-  {{ if dig "imagePullSecret" "name" "" . }}
+  {{- if dig "imagePullSecret" "name" "" . }}
   imagePullSecret:
     name: {{ dig "imagePullSecret" "name" "" . }}
-  {{ end }}
+  {{- end }}
+  {{- if dig "secrets" "enabled" false ($.Values | merge (dict)) }}
   ## Secret with credentials to be used by MinIO Tenant.
-  {{ if dig "secrets" "enabled" false . }}
   credsSecret:
-    name: {{ dig "secrets" "name" "" . }}
-  {{ end }}
+    name: {{ dig "secrets" "name" "" ($.Values | merge (dict)) }}
+  {{- end }}
   pools:
-  {{ range (dig "pools" (list) .) }}
+  {{- range (dig "pools" (list) .) }}
     - servers: {{ dig "servers" 4 . }}
       name: {{ dig "name" "" . }}
       volumesPerServer: {{ dig "volumesPerServer" 4 . }}
@@ -49,47 +47,47 @@ spec:
               storage: {{ dig "size" "10Gi" . }}
       {{- with (dig "annotations" (dict) .) }}
       annotations:
-        {{ toYaml . | nindent 8 }}
-      {{ end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "labels" (dict) .) }}
       labels:
-        {{ toYaml . | nindent 8 }}
-      {{ end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "tolerations" (list) .) }}
       tolerations:
-        {{ toYaml . | nindent 8 }}
-      {{ end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "nodeSelector" (dict) .) }}
       nodeSelector:
-        {{ toYaml . | nindent 8 }}
-      {{ end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "affinity" (dict) .) }}
       affinity:
-        {{ toYaml . | nindent 8 }}
-      {{ end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "resources" (dict) .) }}
       resources:
-        {{ toYaml . | nindent 8 }}
-      {{ end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "securityContext" (dict) .) }}
       securityContext:
-        {{ toYaml . | nindent 8 }}
-      {{ end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "topologySpreadConstraints" (list) .) }}
       topologySpreadConstraints:
-        {{ toYaml . | nindent 8 }}
-      {{ end }}
-  {{ end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- end }}
   mountPath: {{ dig "mountPath" "/export" . }}
   subPath: {{ dig "subPath" "/data" . }}
   {{- with (dig "certificate" "externalCaCertSecret" (dict) .) }}
   externalCaCertSecret:
-    {{ toYaml . | nindent 6 }}
-  {{ end }}
+    {{- toYaml . | nindent 6 }}
+  {{- end }}
   {{- with (dig "certificate" "externalCertSecret" (dict) .) }}
   externalCertSecret:
-    {{ toYaml . | nindent 6 }}
-  {{ end }}
+    {{- toYaml . | nindent 6 }}
+  {{- end }}
   requestAutoCert: {{ dig "certificate" "requestAutoCert" false . }}
   s3:
     bucketDNS: {{ dig "s3" "bucketDNS" false . }}
@@ -103,41 +101,41 @@ spec:
   {{- end }}
   {{- with (dig "certificate" "certConfig" (dict) .) }}
   certConfig:
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" . }}
   {{- with (dig "readiness" (dict) .) }}
   readiness:
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "liveness" (dict) .) }}
   liveness:
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "exposeServices" (dict) .) }}
   exposeServices:
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{ if dig "serviceAccountName" "" . }}
+  {{- if dig "serviceAccountName" "" . }}
   serviceAccountName: {{ dig "serviceAccountName" "" . }}
-  {{ end }}
+  {{- end }}
   prometheusOperator: {{ dig "prometheusOperator" "false" . }}
   {{- with (dig "logging" (dict) .) }}
   logging:
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "serviceMetadata" (dict) .) }}
   serviceMetadata:
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "env" (dict) .) }}
   env:
-    {{ toYaml . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{ if dig "priorityClassName" "" . }}
+  {{- if dig "priorityClassName" "" . }}
   priorityClassName: {{ dig "priorityClassName" "" . }}
-  {{ end }}
-  {{ if dig "kes" "kesSecret" "name" false . }}
+  {{- end }}
+  {{- if dig "kes" "kesSecret" "name" false . }}
   kes:
     image: {{ .kes.image | quote }}
     replicas: {{ .kes.replicas | int }}
@@ -150,11 +148,11 @@ spec:
     keyName: {{ .kes.keyName | quote }}
     {{- with (dig "resources" (dict) .) }}
     resources:
-      {{ toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- with (dig "nodeSelector" (dict) .) }}
     nodeSelector:
-      {{ toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 4 }}
     {{- end }}
     affinity:
       nodeAffinity: { }
@@ -163,11 +161,11 @@ spec:
     tolerations: [ ]
     {{- with (dig "annotations" (dict) .) }}
     annotations:
-      {{ toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- with (dig "labels" (dict) .) }}
     labels:
-      {{ toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 4 }}
     {{- end }}
     serviceAccountName: {{ .kes.serviceAccountName | quote }}
     securityContext:
@@ -175,10 +173,10 @@ spec:
       runAsGroup: {{ .kes.securityContext.runAsGroup | int }}
       runAsNonRoot: {{ .kes.securityContext.runAsNonRoot }}
       fsGroup: {{ .kes.securityContext.fsGroup | int }}
-  {{ end }}
+  {{- end }}
 
+  {{- if dig "prometheus" "diskCapacityGB" false . }}
   ## Prometheus setup for MinIO Tenant.
-  {{ if dig "prometheus" "diskCapacityGB" false . }}
   prometheus:
     image: {{ .prometheus.image | quote }}
     sidecarimage: {{ .prometheus.sidecarimage | quote }}
@@ -187,15 +185,15 @@ spec:
     storageClassName: {{ .prometheus.storageClassName }}
     {{- with (dig "annotations" (dict) .) }}
     annotations:
-      {{ toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- with (dig "labels" (dict) .) }}
     labels:
-      {{ toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- with (dig "nodeSelector" (dict) .) }}
     nodeSelector:
-      {{ toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 4 }}
     {{- end }}
     affinity:
       nodeAffinity: { }
@@ -203,7 +201,7 @@ spec:
       podAntiAffinity: { }
     {{- with (dig "resources" (dict) .) }}
     resources:
-      {{ toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 4 }}
     {{- end }}
     serviceAccountName: {{ .prometheus.serviceAccountName | quote }}
     securityContext:
@@ -211,10 +209,10 @@ spec:
       runAsGroup: {{ .prometheus.securityContext.runAsGroup | int }}
       runAsNonRoot: {{ .prometheus.securityContext.runAsNonRoot }}
       fsGroup: {{ .prometheus.securityContext.fsGroup | int }}
-  {{ end }}
+  {{- end }}
 
-## LogSearch API setup for MinIO Tenant.
-  {{ if dig "log" "audit" "diskCapacityGB" false . }}
+  {{- if dig "log" "audit" "diskCapacityGB" false . }}
+  ## LogSearch API setup for MinIO Tenant.
   log:
     image: {{ .log.image | quote }}
     {{- with (dig "resources" (dict) .) }}
@@ -289,5 +287,5 @@ spec:
       runAsGroup: {{ .log.securityContext.runAsGroup | int }}
       runAsNonRoot: true
       fsGroup: {{ .log.securityContext.fsGroup | int }}
-  {{ end }}
-{{ end }}
+  {{- end }}
+{{- end }}

@@ -1,15 +1,13 @@
-{{ range .Values.tenants }}
-  To connect to the {{.name}} tenant if it doesn't have a service exposed, you can port-forward to it by running:
-    {{- if dig "certificate" "requestAutoCert" false .}}
+{{- with .Values.tenant }}
+  To connect to the {{ .name }} tenant if it doesn't have a service exposed, you can port-forward to it by running:
+  {{- if dig "certificate" "requestAutoCert" false . }}
 
-  kubectl --namespace {{ .namespace }} port-forward svc/{{ .name }}-console 9443:9443
+  kubectl --namespace {{ $.Release.Namespace }} port-forward svc/{{ .name }}-console 9443:9443
 
   Then visit the MinIO Console at https://127.0.0.1:9443
   {{ else }}
-  kubectl --namespace {{ .namespace }} port-forward svc/{{ .name }}-console 9090:9090
+  kubectl --namespace {{ $.Release.Namespace }} port-forward svc/{{ .name }}-console 9090:9090
 
   Then visit the MinIO Console at http://127.0.0.1:9090
   {{ end }}
-{{ end }}
-
-
+{{- end }}
