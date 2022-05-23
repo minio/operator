@@ -9,5 +9,5 @@ LABEL operators.operatorframework.io.bundle.channels.v1=stable
 
 
 # Copy files to locations specified by labels.
-COPY bundles/redhat-marketplace/4.4.19/manifests /manifests/
-COPY bundles/redhat-marketplace/4.4.19/metadata /metadata/
+COPY bundles/redhat-marketplace/4.4.20/manifests /manifests/
+COPY bundles/redhat-marketplace/4.4.20/metadata /metadata/

@@ -32,8 +32,8 @@ for catalog in "${redhatCatalogs[@]}"; do
   containerImage="quay.io/minio/operator:v$RELEASE"
   echo "containerImage: ${containerImage}"
   digest=$(docker pull $containerImage | grep Digest | awk -F ' ' '{print $2}')
-  operatorImageDigest="quay.io/minio/operator@${digest}"
-  echo "operatorImageDigest: ${operatorImageDigest}"
+  operatorImageDigest="quay.io/minio/operator@v$RELEASE"
+  echo "operatorImageDigest: ${operatorImageDigest} @ ${digest}"
   yq -i ".metadata.annotations.containerImage |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
   # Console Image in Digested form: sha256:xxxx
