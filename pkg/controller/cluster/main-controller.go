@@ -763,6 +763,12 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
+	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
+	operatorCATLSExists, err := c.checkOperatorCATLSForMinIOTenant(ctx, tenant)
+	if err != nil {
+		return err
+	}
+
 	// Create logSecret before deploying any StatefulSet
 	if tenant.HasLogEnabled() {
 		_, err = c.checkAndCreateLogSecret(ctx, tenant)
@@ -810,7 +816,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Check if we need to create any of the pools. It's important not to update the statefulsets
 	// in this loop because we need all the pools "as they are" for the hot-update below
-	operatorCAsIsMounted := false
+	operatorTLSCertIsMounted := false
 	for i, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 
@@ -835,7 +841,7 @@ func (c *Controller) syncHandler(key string) error {
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
 				return err
 			}
-			ss = statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss = statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -856,11 +862,11 @@ func (c *Controller) syncHandler(key string) error {
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 
 		// check if operator-tls public.crt is mounted on MinIO pods
-		if !operatorCAsIsMounted {
+		if !operatorTLSCertIsMounted {
 			for _, volume := range ss.Spec.Template.Spec.Volumes {
 				for _, vp := range volume.Projected.Sources {
 					if vp.Secret.Name == "operator-tls" {
-						operatorCAsIsMounted = true
+						operatorTLSCertIsMounted = true
 					}
 				}
 			}
@@ -977,7 +983,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 		protocol := "http"
 		// check operator is deployed with TLS enabled and also the MinIO pods has the certificate mounted in ~/.minio/certs/CAs/operator.crt
-		if isOperatorTLS() && operatorCAsIsMounted {
+		if isOperatorTLS() && operatorTLSCertIsMounted {
 			protocol = "https"
 		}
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("%s://operator.%s.svc.%s:%s%s",
@@ -1047,7 +1053,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
@@ -1099,7 +1105,7 @@ func (c *Controller) syncHandler(key string) error {
 				carryOverLabels[miniov1.ZoneLabel] = val
 			}
 
-			nss := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			nss := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
 			ssCopy := ss.DeepCopy()
 
 			ssCopy.Spec.Template = nss.Spec.Template
