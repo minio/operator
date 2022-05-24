@@ -2,13 +2,13 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"storage-lite","namespace":"tenant-lite"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"credsSecret":{"name":"storage-creds-secret"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"image":"quay.io/minio/minio@sha256:990aff1d8fe7f902f5b5bf640f53ebe5280bed84a3e12e02cd79bdb6b20ba164","imagePullSecret":{},"log":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"audit":{"diskCapacityGB":1},"db":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":999,"runAsGroup":999,"runAsNonRoot":true,"runAsUser":999},"serviceAccountName":"","tolerations":[],"volumeClaimTemplate":{"metadata":{},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"standard"}}},"image":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","tolerations":[]},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","prometheus":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"diskCapacityGB":1,"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","sidecarimage":"","storageClassName":"standard"},"requestAutoCert":true,"s3":{"bucketDNS":false},"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
+    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"storage-lite","namespace":"tenant-lite"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"credsSecret":{"name":"storage-creds-secret"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"image":"quay.io/minio/minio@sha256:a7a6852a9fbc89a0188a4a875bc1d9eb53e28657fc39cf3fc4765192c2bf231d","imagePullSecret":{},"log":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"audit":{"diskCapacityGB":1},"db":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":999,"runAsGroup":999,"runAsNonRoot":true,"runAsUser":999},"serviceAccountName":"","tolerations":[],"volumeClaimTemplate":{"metadata":{},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"standard"}}},"image":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","tolerations":[]},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","prometheus":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"diskCapacityGB":1,"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","sidecarimage":"","storageClassName":"standard"},"requestAutoCert":true,"s3":{"bucketDNS":false},"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
     capabilities: "Full Lifecycle"
-    operators.operatorframework.io/builder: operator-sdk-v1.19.0+git
+    operators.operatorframework.io/builder: operator-sdk-v1.16.0+git
     operators.operatorframework.io/project_layout: unknown
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
-    containerImage: quay.io/minio/operator:v4.4.20
+    containerImage: quay.io/minio/operator:v4.4.21
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -16,7 +16,7 @@ metadata:
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
-  name: minio-operator-rhmp.v4.4.20
+  name: minio-operator-rhmp.v4.4.21
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -78,6 +78,235 @@ spec:
     spec:
       clusterPermissions:
         - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - patch
+                - update
+                - deletecollection
+            - apiGroups:
+                - ""
+              resources:
+                - namespaces
+                - services
+                - events
+                - resourcequotas
+                - nodes
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - patch
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - patch
+                - delete
+                - deletecollection
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumeclaims
+              verbs:
+                - deletecollection
+                - list
+                - get
+                - watch
+                - update
+            - apiGroups:
+                - storage.k8s.io
+              resources:
+                - storageclasses
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - patch
+            - apiGroups:
+                - apps
+              resources:
+                - statefulsets
+                - deployments
+              verbs:
+                - get
+                - create
+                - list
+                - patch
+                - watch
+                - update
+                - delete
+            - apiGroups:
+                - batch
+              resources:
+                - jobs
+              verbs:
+                - get
+                - create
+                - list
+                - patch
+                - watch
+                - update
+                - delete
+            - apiGroups:
+                - certificates.k8s.io
+              resources:
+                - certificatesigningrequests
+                - certificatesigningrequests/approval
+                - certificatesigningrequests/status
+              verbs:
+                - update
+                - create
+                - get
+            - apiGroups:
+                - minio.min.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - min.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumes
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumeclaims
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - list
+                - watch
+                - update
+                - patch
+            - apiGroups:
+                - snapshot.storage.k8s.io
+              resources:
+                - volumesnapshots
+              verbs:
+                - get
+                - list
+            - apiGroups:
+                - snapshot.storage.k8s.io
+              resources:
+                - volumesnapshotcontents
+              verbs:
+                - get
+                - list
+            - apiGroups:
+                - storage.k8s.io
+              resources:
+                - csinodes
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - storage.k8s.io
+              resources:
+                - volumeattachments
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - endpoints
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - direct.csi.min.io
+              resources:
+                - volumes
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - direct.csi.min.io
+              resources:
+                - directcsidrives
+                - directcsivolumes
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - pod
+                - pods/log
+              verbs:
+                - get
+                - list
+                - watch
             - apiGroups:
                 - ""
               resources:
@@ -456,7 +685,37 @@ spec:
                     env:
                       - name: CONSOLE_OPERATOR_MODE
                         value: "on"
-                    image: quay.io/minio/console@sha256:f2d53ea7d4c7c6a4c2f5a0024bbe99cc34da9491655c89722be5fc2a484d2d85
+                    image: quay.io/minio/console@sha256:9791c3bfa7d4dfbb7e580c3ddcd1271585e0abf9f4e4b2439d713b67aae075fd
+                    imagePullPolicy: IfNotPresent
+                    name: console
+                    ports:
+                      - containerPort: 9090
+                        name: http
+                      - containerPort: 9433
+                        name: https
+                    resources: {}
+                    securityContext:
+                      runAsNonRoot: true
+                serviceAccountName: console-sa
+        - name: console
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: console
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  app: console
+              spec:
+                containers:
+                  - args:
+                      - server
+                    env:
+                      - name: CONSOLE_OPERATOR_MODE
+                        value: "on"
+                    image: quay.io/minio/operator:v4.4.21
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -491,7 +750,7 @@ spec:
                                 - minio-operator
                         topologyKey: kubernetes.io/hostname
                 containers:
-                  - image: quay.io/minio/operator:v4.4.20
+                  - image: minio/operator:v4.4.21
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -500,7 +759,9 @@ spec:
                         ephemeral-storage: 500Mi
                         memory: 256Mi
                     securityContext:
+                      runAsGroup: 1000
                       runAsNonRoot: true
+                      runAsUser: 1000
                 serviceAccountName: minio-operator
     strategy: deployment
   installModes:
@@ -530,7 +791,7 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  version: 4.4.20
+  version: 4.4.21
   webhookdefinitions:
     - admissionReviewVersions:
         - v1
