@@ -938,15 +938,17 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// compare all the images across all pools, they should always be the same.
-	for _, image := range images {
-		for i := 0; i < len(images); i++ {
-			if image != images[i] {
-				if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
-					return err
-				}
-				return fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
-					i+1)
+	compareImage := ""
+	for i, image := range images {
+		if compareImage == "" {
+			compareImage = image
+		}
+		if compareImage != image {
+			if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
+				return err
 			}
+			return fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
+				i+1)
 		}
 	}
 
