@@ -1,5 +1,15 @@
 1. Get the JWT for logging in to the console:
-  kubectl get secret $(kubectl get serviceaccount console-sa --namespace {{ .Release.Namespace }} -o jsonpath="{.secrets[0].name}") --namespace {{ .Release.Namespace }} -o jsonpath="{.data.token}" | base64 --decode 
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: console-sa-secret
+  namespace: minio-operator
+  annotations:
+    kubernetes.io/service-account.name: console-sa
+type: kubernetes.io/service-account-token
+EOF
+kubectl -n minio-operator  get secret console-sa-secret -o jsonpath="{.data.token}" | base64 --decode
 
 2. Get the Operator Console URL by running these commands:
   kubectl --namespace {{ .Release.Namespace }} port-forward svc/console 9090:9090
