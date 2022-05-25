@@ -80,6 +80,30 @@ existing tenant.
 
 ---
 
+# Upgrade MinIO Operator via Helm Charts
+
+Make sure your current version of the `tenants.minio.min.io` `CRD` includes the necessary `labels` and `annotations` for `Helm`
+to perform the upgrade:
+
+```bash
+kubectl label crd tenants.minio.min.io app.kubernetes.io/managed-by=Helm --overwrite
+kubectl annotate crd tenants.minio.min.io meta.helm.sh/release-name=minio-operator meta.helm.sh/release-namespace=minio-operator --overwrite
+```
+
+Run the `helm upgrade` command:
+
+```bash
+helm upgrade -n minio-operator [RELEASE] [CHART] [flags]
+```
+
+or
+
+```bash
+helm upgrade -n minio-operator minio-operator [RELEASE-FOLDER]
+```
+
+---
+
 # Upgrading from MinIO Operator `v4.2.2` to `v4.2.3` [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
 
 This document explains how to upgrade your MinIO tenants and the MinIO Operator `v4.2.2`, to `v4.2.3` or newer.
