@@ -758,13 +758,13 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// check if operator-tls has to be updated or re-created in the tenant namespace
-	err = c.checkOperatorTLSForMinIOTenant(ctx, tenant)
+	err = c.checkOperatorCertForTenant(ctx, tenant)
 	if err != nil {
 		return err
 	}
 
 	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
-	operatorCATLSExists, err := c.checkOperatorCATLSForMinIOTenant(ctx, tenant)
+	operatorCATLSExists, err := c.checkOperatorCaForTenant(ctx, tenant)
 	if err != nil {
 		return err
 	}
@@ -865,7 +865,7 @@ func (c *Controller) syncHandler(key string) error {
 		if !operatorTLSCertIsMounted {
 			for _, volume := range ss.Spec.Template.Spec.Volumes {
 				for _, vp := range volume.Projected.Sources {
-					if vp.Secret.Name == "operator-tls" {
+					if vp.Secret.Name == OperatorTLSSecretName {
 						operatorTLSCertIsMounted = true
 					}
 				}
