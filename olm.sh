@@ -19,7 +19,7 @@ EXAMPLE=$(kustomize build examples/kustomization/tenant-lite | yq ".spec.image =
 # 3. redhat-marketplace <---------- an be purchased from Red Hat Marketplace. <----------------------- We want this!
 # 4. community-operators <--------- No official support.
 
-redhatCatalogs=("certified-operators" "redhat-marketplace")
+redhatCatalogs=("certified-operators" "redhat-marketplace" "community-operators")
 
 for catalog in "${redhatCatalogs[@]}"; do
   echo " "
@@ -55,6 +55,17 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i eval 'del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].securityContext.runAsUser)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext.runAsGroup)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext.runAsUser)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+
+  # In order to deploy via OLM, we should let OLM to decide on the security
+  # context; otherwise deploy will fail and operator update will not be possible
+  # already tested this manually to prove the point:
+  # https://github.com/k8s-operatorhub/community-operators/pull/1212
+  # It only applies for community operators
+  if [[ "$catalog" == "community-operators" ]]
+  then
+    yq -i eval 'del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].securityContext.runAsNonRoot)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+    yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext.runAsNonRoot)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  fi
 
   # annotations-validation: To fix this issue define the annotation in 'manifests/*.clusterserviceversion.yaml' file.
   # [annotations-validation : bundle-parse] + EXPECTED_MARKETPLACE_SUPPORT_WORKFLOW='https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console'

@@ -16,7 +16,7 @@ echo "minioVersionDigest: ${minioVersionDigest}"
 # 3. redhat-marketplace <---------- an be purchased from Red Hat Marketplace. <----------------------- We want this!
 # 4. community-operators <--------- No official support.
 
-redhatCatalogs=("certified-operators" "redhat-marketplace")
+redhatCatalogs=("certified-operators" "redhat-marketplace" "community-operators")
 
 for catalog in "${redhatCatalogs[@]}"; do
   echo " "
