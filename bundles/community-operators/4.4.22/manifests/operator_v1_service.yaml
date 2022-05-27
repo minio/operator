@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    name: minio-operator
+  name: operator
+spec:
+  ports:
+  - name: https
+    port: 4222
+    targetPort: 0
+  - name: http
+    port: 4221
+    targetPort: 0
+  selector:
+    name: minio-operator
+    operator: leader
+  type: ClusterIP
+status:
+  loadBalancer: {}
