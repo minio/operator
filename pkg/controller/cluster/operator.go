@@ -52,8 +52,8 @@ const (
 	OperatorTLS = "MINIO_OPERATOR_TLS_ENABLE"
 	// OperatorTLSSecretName is the name of secret created with Operator TLS certs
 	OperatorTLSSecretName = "operator-tls"
-	// OperatorTLSCASecretName is the name of the secret for the operator CA
-	OperatorTLSCASecretName = "operator-ca-tls"
+	// OperatorCATLSSecretName is the name of the secret for the operator CA
+	OperatorCATLSSecretName = "operator-ca-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
 )
@@ -66,7 +66,7 @@ func getOperatorDeploymentName() string {
 
 func isOperatorTLS() bool {
 	value, set := os.LookupEnv(OperatorTLS)
-	// By default Operator TLS is used.
+	// By default, Operator TLS is used.
 	return (set && value == "on") || !set
 }
 
@@ -277,7 +277,7 @@ func (c *Controller) getTransport() *http.Transport {
 	rootCAs.AppendCertsFromPEM(miniov2.GetPodCAFromFile())
 
 	// Custom ca certificate to be used by operator
-	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorTLSCASecretName, metav1.GetOptions{})
+	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorCATLSSecretName, metav1.GetOptions{})
 	if err == nil && operatorCATLSCert != nil {
 		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
 			rootCAs.AppendCertsFromPEM(val)
