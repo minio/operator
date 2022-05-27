@@ -147,6 +147,65 @@ func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName
 	return c.kubeClientSet.CoreV1().Secrets(nsName).Get(ctx, secretName, metav1.GetOptions{})
 }
 
+// checkOperatorCATLSForMinIOTenant create or updates the operator-ca-tls secret for tenant if need it
+func (c *Controller) checkOperatorCATLSForMinIOTenant(ctx context.Context, tenant *miniov2.Tenant) (operatorCATLSExists bool, err error) {
+	// get operator-ca-tls in minio-operator namespace
+	operatorCATLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
+	if err != nil {
+		// if operator-ca-tls doesnt exists continue
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	// get operator-ca-tls in tenant namespace
+	tenantOperatorCATLSSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return false, err
+	}
+	if operatorCATLSPublicCrt, ok := operatorCATLSSecret.Data["public.crt"]; ok {
+		// update tenant operator-ca-tls secret
+		if tenantOperatorCATLSPublicCrt, ok := tenantOperatorCATLSSecret.Data["public.crt"]; ok {
+			if string(tenantOperatorCATLSPublicCrt) != string(operatorCATLSPublicCrt) {
+				klog.Infof("public key in operator-ca-tls secret changed, updating operator-ca-tls for '%s/%s'", tenant.Namespace, tenant.Name)
+				tenantOperatorCATLSSecret.Data["public.crt"] = operatorCATLSPublicCrt
+				_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantOperatorCATLSSecret, metav1.UpdateOptions{})
+				if err != nil {
+					return false, err
+				}
+			}
+		} else {
+			klog.Infof("operator-ca-tls secret in tenant '%s/%s' not found, creating one now", tenant.Namespace, tenant.Name)
+			// create tenant operator-ca-tls secret
+			opCATLSSecret := &corev1.Secret{
+				Type: "Opaque",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      OperatorCATLSSecretName,
+					Namespace: tenant.Namespace,
+					Labels:    tenant.MinIOPodLabels(),
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
+							Group:   miniov2.SchemeGroupVersion.Group,
+							Version: miniov2.SchemeGroupVersion.Version,
+							Kind:    miniov2.MinIOCRDResourceKind,
+						}),
+					},
+				},
+				Data: map[string][]byte{
+					"public.crt": operatorCATLSPublicCrt,
+				},
+			}
+			_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, opCATLSSecret, metav1.CreateOptions{})
+			if err != nil {
+				return false, err
+			}
+		}
+	} else {
+		return false, fmt.Errorf("public.crt not found in '%s' secret for '%s' namespace", OperatorCATLSSecretName, miniov2.GetNSFromFile())
+	}
+	return true, nil
+}
+
 // checkOperatorTLSForMinIOTenant checks create or updates the operator-tls secret for tenant
 func (c *Controller) checkOperatorTLSForMinIOTenant(ctx context.Context, tenant *miniov2.Tenant) error {
 	if !isOperatorTLS() {
@@ -199,6 +258,8 @@ func (c *Controller) checkOperatorTLSForMinIOTenant(ctx context.Context, tenant 
 				return err
 			}
 		}
+	} else {
+		return fmt.Errorf("public.crt not found in '%s' secret for '%s' namespace", OperatorTLSSecretName, miniov2.GetNSFromFile())
 	}
 	return nil
 }

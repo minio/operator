@@ -426,7 +426,7 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
-func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]byte, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
+func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]byte, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool, operatorCATLS bool) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	replicas := pool.Servers
 	var certVolumeSources []corev1.VolumeProjection
@@ -578,6 +578,22 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 					},
 					Items: []corev1.KeyToPath{
 						{Key: "public.crt", Path: "CAs/operator.crt"},
+					},
+				},
+			},
+		}...)
+	}
+	if operatorCATLS {
+		// Mount Operator CA TLS certificate to MinIO ~/cert/CAs
+		operatorCATLSSecretName := "operator-ca-tls"
+		certVolumeSources = append(certVolumeSources, []corev1.VolumeProjection{
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: operatorCATLSSecretName,
+					},
+					Items: []corev1.KeyToPath{
+						{Key: "public.crt", Path: "CAs/operator-ca.crt"},
 					},
 				},
 			},
