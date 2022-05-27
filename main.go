@@ -128,7 +128,7 @@ func main() {
 	// Default kubernetes CA certificate
 	caContent := miniov2.GetPodCAFromFile()
 	// custom ca certificate to be used by operator
-	operatorCATLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, cluster.OperatorTLSCASecretName, metav1.GetOptions{})
+	operatorCATLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, cluster.OperatorCATLSSecretName, metav1.GetOptions{})
 	if err == nil && operatorCATLSCert != nil {
 		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
 			caContent = append(caContent, val...)
