@@ -1,0 +1,5 @@
+operator:
+  image:
+    repository: miniodev/operator
+    tag: dev
+    pullPolicy: IfNotPresent
