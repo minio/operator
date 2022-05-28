@@ -138,3 +138,13 @@ for catalog in "${redhatCatalogs[@]}"; do
   sed -i -e '/testing/d' bundles/$catalog/$RELEASE/metadata/annotations.yaml
 done
 echo " "
+echo "clearn -e files"
+rm $(git status | grep -e "-e$" | awk '{print $1}')
+echo "Copying latest bundle to root"
+cp -R bundles/redhat-marketplace/$RELEASE/manifests manifests
+cp -R bundles/redhat-marketplace/$RELEASE/metadata metadata
+
+git add -u
+git add bundles
+git add community-operators
+git add helm-releases
