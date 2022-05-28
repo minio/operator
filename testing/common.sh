@@ -47,16 +47,16 @@ function install_operator() {
 
   # To compile current branch
   echo "Compiling Current Branch Operator"
-  (cd "${SCRIPT_DIR}/.." && make docker) # will not change your shell's current directory
+  (cd "${SCRIPT_DIR}/.." && TAG=minio/operator:noop make docker) # will not change your shell's current directory
 
   echo 'start - load compiled image so we can use it later on'
-  kind load docker-image docker.io/minio/operator:dev
+  kind load docker-image minio/operator:noop
   echo 'end - load compiled image so we can use it later on'
 
   if [ "$1" = "helm" ]; then
 
     echo "Change the version accordingly for image to be found within the cluster"
-    yq -i '.operator.image.tag = "dev"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
+    yq -i '.operator.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
 
     echo "Installing Current Operator via HELM"
     helm install \

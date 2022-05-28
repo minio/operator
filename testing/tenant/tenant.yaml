@@ -5,4 +5,4 @@ metadata:
   namespace: minio-tenant
 spec:
   log:
-    image: minio/operator:dev
+    image: minio/operator:noop
