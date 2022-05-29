@@ -99,22 +99,29 @@ func (c *Controller) generateTLSCert() (string, string) {
 				}
 			}
 		} else {
-			if val, ok := operatorTLSCert.Data["public.crt"]; ok {
+			// default secret keys for Opaque k8s secret
+			publicCertKey := "public.crt"
+			privateKeyKey := "private.key"
+			// if secret type is k8s tls or cert-manager use the right secret keys
+			if operatorTLSCert.Type == "kubernetes.io/tls" || operatorTLSCert.Type == "cert-manager.io/v1alpha2" || operatorTLSCert.Type == "cert-manager.io/v1" {
+				publicCertKey = "tls.crt"
+				privateKeyKey = "tls.key"
+			}
+			if val, ok := operatorTLSCert.Data[publicCertKey]; ok {
 				err := ioutil.WriteFile(publicCertPath, val, 0o644)
 				if err != nil {
 					panic(err)
 				}
 			} else {
-				panic(errors.New("operator TLS 'public.crt' missing"))
+				panic(fmt.Errorf("missing '%s' in %s/%s", publicCertKey, operatorTLSCert.Namespace, operatorTLSCert.Name))
 			}
-
-			if val, ok := operatorTLSCert.Data["private.key"]; ok {
+			if val, ok := operatorTLSCert.Data[privateKeyKey]; ok {
 				err := ioutil.WriteFile(publicKeyPath, val, 0o644)
 				if err != nil {
 					panic(err)
 				}
 			} else {
-				panic(errors.New("operator TLS 'private.key' missing"))
+				panic(fmt.Errorf("missing '%s' in %s/%s", publicCertKey, operatorTLSCert.Namespace, operatorTLSCert.Name))
 			}
 			break
 		}
@@ -229,9 +236,9 @@ func (c *Controller) createOperatorCSR(ctx context.Context, operator metav1.Obje
 	encodedPrivateKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
 
 	// Create secret for operator to use
-	err = c.createOperatorSecret(ctx, operator, map[string]string{}, "operator-tls", encodedPrivateKey, certBytes)
+	err = c.createOperatorSecret(ctx, operator, map[string]string{}, OperatorTLSSecretName, encodedPrivateKey, certBytes)
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", "operator-tls", err)
+		klog.Errorf("Unexpected error during the creation of the %s/%s secret: %v", operator.GetNamespace(), OperatorTLSSecretName, err)
 		return err
 	}
 	return nil
@@ -276,9 +283,28 @@ func (c *Controller) getTransport() *http.Transport {
 	// Default kubernetes CA certificate
 	rootCAs.AppendCertsFromPEM(miniov2.GetPodCAFromFile())
 
+	// If ca.crt exists in operator-tls (ie if the cert was issued by cert-manager) load the ca certificate from there
+	operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorTLSSecretName, metav1.GetOptions{})
+	if err == nil && operatorTLSCert != nil {
+		// default secret keys for Opaque k8s secret
+		caCertKey := "public.crt"
+		// if secret type is k8s tls or cert-manager use the right ca key
+		if operatorTLSCert.Type == "kubernetes.io/tls" {
+			caCertKey = "tls.crt"
+		} else if operatorTLSCert.Type == "cert-manager.io/v1alpha2" || operatorTLSCert.Type == "cert-manager.io/v1" {
+			caCertKey = "ca.crt"
+		}
+		if val, ok := operatorTLSCert.Data[caCertKey]; ok {
+			rootCAs.AppendCertsFromPEM(val)
+		}
+	}
+
 	// Custom ca certificate to be used by operator
 	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorCATLSSecretName, metav1.GetOptions{})
 	if err == nil && operatorCATLSCert != nil {
+		if val, ok := operatorCATLSCert.Data["tls.crt"]; ok {
+			rootCAs.AppendCertsFromPEM(val)
+		}
 		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
 			rootCAs.AppendCertsFromPEM(val)
 		}
