@@ -43,6 +43,26 @@ func restQueries(keys ...string) []string {
 	return accumulator
 }
 
+func configureHTTPUpgradeServer(c *Controller) *http.Server {
+	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
+
+	router.Methods(http.MethodGet).
+		PathPrefix(miniov2.WebhookAPIUpdate).
+		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
+
+	router.NotFoundHandler = http.NotFoundHandler()
+
+	s := &http.Server{
+		Addr:           ":4221",
+		Handler:        router,
+		ReadTimeout:    time.Minute,
+		WriteTimeout:   time.Minute,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	return s
+}
+
 func configureWebhookServer(c *Controller) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 

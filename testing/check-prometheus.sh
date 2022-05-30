@@ -34,6 +34,7 @@ function wait_on_prometheus_pods() {
     if [[ $i -eq 300 ]]; then
       kubectl get pods -n tenant-lite -o wide
       kubectl describe pods -n tenant-lite
+      kubectl logs -n minio-operator -l name=minio-operator
       break
     fi
   done
@@ -50,6 +51,8 @@ function main() {
 
   check_tenant_status tenant-lite storage-lite
 
+  try kubectl get pods --namespace tenant-lite
+
   echo 'start - wait for prometheus to appear'
   wait_on_prometheus_pods
   echo 'end - wait for prometheus to appear'
@@ -57,11 +60,11 @@ function main() {
   echo 'Wait for pod to be ready for port forward'
   try kubectl wait --namespace tenant-lite \
     --for=condition=ready pod \
-    --selector=statefulset.kubernetes.io/pod-name=storage-lite-ss-0-0 \
+    --selector=statefulset.kubernetes.io/pod-name=storage-lite-pool-0-0 \
     --timeout=120s
 
   echo 'port forward without the hop, directly from the tenant/pod'
-  kubectl port-forward storage-lite-ss-0-0 9443 --namespace tenant-lite &
+  kubectl port-forward storage-lite-pool-0-0 9443 --namespace tenant-lite &
 
   echo 'start - wait for port-forward to be completed'
   sleep 15
@@ -89,7 +92,7 @@ function main() {
 
   echo 'start - wait for prometheus to be ready'
 
-   wait_on_prometheus_pods
+  wait_on_prometheus_pods
 
   try kubectl wait --namespace tenant-lite \
     --for=condition=ready pod \

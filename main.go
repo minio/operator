@@ -24,11 +24,10 @@ import (
 	"syscall"
 	"time"
 
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/minio/minio-go/v7/pkg/set"
-
-	"k8s.io/client-go/rest"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 
@@ -125,17 +124,37 @@ func main() {
 	}
 
 	ctx := context.Background()
-	var caContent []byte
-	operatorCATLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, "operator-ca-tls", metav1.GetOptions{})
-	// if custom ca.crt is not present in kubernetes secrets use the one stored in the pod
-	if err != nil {
-		caContent = miniov2.GetPodCAFromFile()
-	} else {
-		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			caContent = val
+
+	// Default kubernetes CA certificate
+	caContent := miniov2.GetPodCAFromFile()
+
+	// If ca.crt exists in operator-tls secret load that too, ie: if the cert was issued by cert-manager=
+	operatorTLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), cluster.OperatorTLSSecretName, metav1.GetOptions{})
+	if err == nil && operatorTLSCert != nil {
+		if val, ok := operatorTLSCert.Data["public.crt"]; ok {
+			caContent = append(caContent, val...)
+		}
+		if val, ok := operatorTLSCert.Data["tls.crt"]; ok {
+			caContent = append(caContent, val...)
+		}
+		if val, ok := operatorTLSCert.Data["ca.crt"]; ok {
+			caContent = append(caContent, val...)
 		}
 	}
 
+	// custom ca certificate to be used by operator
+	operatorCATLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, cluster.OperatorCATLSSecretName, metav1.GetOptions{})
+	if err == nil && operatorCATLSCert != nil {
+		if val, ok := operatorCATLSCert.Data["public.crt"]; ok {
+			caContent = append(caContent, val...)
+		}
+		if val, ok := operatorCATLSCert.Data["tls.crt"]; ok {
+			caContent = append(caContent, val...)
+		}
+		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+			caContent = append(caContent, val...)
+		}
+	}
 	if len(caContent) > 0 {
 		crd, err := extClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.Background(), "tenants.minio.min.io", metav1.GetOptions{})
 		if err != nil {
@@ -170,7 +189,6 @@ func main() {
 		kubeInformerFactory.Apps().V1().StatefulSets(),
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Core().V1().Pods(),
-		kubeInformerFactory.Batch().V1().Jobs(),
 		minioInformerFactory.Minio().V2().Tenants(),
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,

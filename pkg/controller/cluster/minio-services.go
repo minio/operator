@@ -62,7 +62,7 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 	// check the specification of the MinIO ClusterIP service
 	if !minioSvcMatchesSpec {
 		if err != nil {
-			klog.Infof("Services don't match: %s", err)
+			klog.Infof("MinIO Services don't match: %s", err)
 		}
 
 		svc.ObjectMeta.Annotations = expectedSvc.ObjectMeta.Annotations

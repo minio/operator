@@ -26,7 +26,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/minio/madmin-go"
+	"github.com/minio/operator/pkg/controller/cluster/certificates"
+
 	"k8s.io/klog/v2"
 
 	"github.com/minio/minio-go/v7/pkg/set"
@@ -52,13 +53,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
-	batchinformers "k8s.io/client-go/informers/batch/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
-	batchlisters "k8s.io/client-go/listers/batch/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
 
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -113,6 +112,7 @@ const (
 	StatusFailedAlreadyExists                = "Another MinIO Tenant already exists in the namespace"
 	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
 	StatusRestartingMinIO                    = "Restarting MinIO"
+	StatusDecommissioningNotAllowed          = "Pool Decommissioning Not Allowed"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -150,13 +150,6 @@ type Controller struct {
 	// has synced at least once.
 	deploymentListerSynced cache.InformerSynced
 
-	// jobLister is able to list/get Deployments from a shared
-	// informer's store.
-	jobLister batchlisters.JobLister
-	// jobListerSynced returns true if the Deployment shared informer
-	// has synced at least once.
-	jobListerSynced cache.InformerSynced
-
 	// tenantsSynced returns true if the StatefulSet shared informer
 	// has synced at least once.
 	tenantsSynced cache.InformerSynced
@@ -187,6 +180,9 @@ type Controller struct {
 	// Webhook server instance
 	ws *http.Server
 
+	// HTTP Upgrade server instance
+	us *http.Server
+
 	// Client transport
 	transport *http.Transport
 
@@ -202,7 +198,7 @@ type Controller struct {
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, jobInformer batchinformers.JobInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -224,8 +220,6 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		podInformer:             podInformer.Informer(),
 		deploymentLister:        deploymentInformer.Lister(),
 		deploymentListerSynced:  deploymentInformer.Informer().HasSynced,
-		jobLister:               jobInformer.Lister(),
-		jobListerSynced:         jobInformer.Informer().HasSynced,
 		tenantsSynced:           tenantInformer.Informer().HasSynced,
 		serviceLister:           serviceInformer.Lister(),
 		serviceListerSynced:     serviceInformer.Informer().HasSynced,
@@ -238,6 +232,9 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 
 	// Initialize operator webhook handlers
 	controller.ws = configureWebhookServer(controller)
+
+	// Initialize operator HTTP upgrade server handlers
+	controller.us = configureHTTPUpgradeServer(controller)
 
 	klog.Info("Setting up event handlers")
 	// Set up an event handler for when Tenant resources change
@@ -339,16 +336,19 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	// Start the API and the Controller, but only if this pod is the leader
 	run := func(ctx context.Context) {
 		// we need to make sure the API is ready before starting operator
-		apiWillStart := make(chan interface{})
+		apiServerWillStart := make(chan interface{})
+		// we need to make sure the HTTP Upgrade server is ready before starting operator
+		upgradeServerWillStart := make(chan interface{})
 
 		go func() {
 			// Request kubernetes version from Kube ApiServer
-			c.getKubeAPIServerVersion()
+			apiCsrVersion := certificates.GetCertificatesAPIVersion(c.kubeClientSet)
+			klog.Infof("Using Kubernetes CSR Version: %s", apiCsrVersion)
 
 			if isOperatorTLS() {
 				publicCertPath, publicKeyPath := c.generateTLSCert()
 				klog.Infof("Starting HTTPS API server")
-				close(apiWillStart)
+				close(apiServerWillStart)
 				// use those certificates to configure the web server
 				if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
 					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
@@ -356,7 +356,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				}
 			} else {
 				klog.Infof("Starting HTTP API server")
-				close(apiWillStart)
+				close(apiServerWillStart)
 				// start server without TLS
 				if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
 					klog.Infof("HTTP server ListenAndServe failed: %v", err)
@@ -365,8 +365,20 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			}
 		}()
 
+		go func() {
+			klog.Infof("Starting HTTP Upgrade Tenant Image server")
+			close(upgradeServerWillStart)
+			if err := c.us.ListenAndServe(); err != http.ErrServerClosed {
+				klog.Infof("HTTP Upgrade Tenant Image server ListenAndServe failed: %v", err)
+				panic(err)
+			}
+		}()
+
 		klog.Info("Waiting for API to start")
-		<-apiWillStart
+		<-apiServerWillStart
+
+		klog.Info("Waiting for Upgrade Server to start")
+		<-upgradeServerWillStart
 
 		// Start the informer factories to begin populating the informer caches
 		klog.Info("Starting Tenant controller")
@@ -602,6 +614,23 @@ func (c *Controller) syncHandler(key string) error {
 	// Set any required default values and init Global variables
 	nsName := types.NamespacedName{Namespace: namespace, Name: tenantName}
 
+	// get combined configurations (tenant.env, tenant.credsSecret and tenant.Configuration) for tenant
+	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
+	if err != nil {
+		return err
+	}
+	// get existing configuration from config.env
+	skipEnvVars, err := c.getTenantConfiguration(ctx, tenant)
+	if err != nil {
+		return err
+	}
+
+	// Check if we are decommissioning a pool before we ensure defaults, as that would populate a defaulted pool name
+	tenant, err = c.checkForPoolDecommission(ctx, key, tenant, tenantConfiguration)
+	if err != nil {
+		return err
+	}
+
 	tenant.EnsureDefaults()
 
 	// Validate the MinIO Tenant
@@ -629,7 +658,7 @@ func (c *Controller) syncHandler(key string) error {
 		if tenant.Spec.RequestAutoCert == nil && tenant.APIVersion != "" {
 			// If we get certificate signing requests for MinIO is safe to assume the Tenant v1 was deployed using AutoCert
 			// otherwise AutoCert will be false
-			if useCertificatesV1API {
+			if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 				tenantCSR, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
 				if err != nil || tenantCSR == nil {
 					autoCertEnabled = false
@@ -713,11 +742,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
-	if err != nil {
-		return err
-	}
-
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		return err
@@ -733,39 +757,19 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	if isOperatorTLS() {
-		// Copy Operator TLS certificate to Tenant Namespace
-		operatorTLSSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		if val, ok := operatorTLSSecret.Data["public.crt"]; ok {
-			secret := &corev1.Secret{
-				Type: "Opaque",
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      OperatorTLSSecretName,
-					Namespace: tenant.Namespace,
-					Labels:    tenant.MinIOPodLabels(),
-					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-							Group:   miniov2.SchemeGroupVersion.Group,
-							Version: miniov2.SchemeGroupVersion.Version,
-							Kind:    miniov2.MinIOCRDResourceKind,
-						}),
-					},
-				},
-				Data: map[string][]byte{
-					"public.crt": val,
-				},
-			}
-			_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
-			if err != nil && !k8serrors.IsAlreadyExists(err) {
-				return err
-			}
-		}
+	// check if operator-tls has to be updated or re-created in the tenant namespace
+	err = c.checkOperatorCertForTenant(ctx, tenant)
+	if err != nil {
+		return err
 	}
 
-	// Create logSecret before deploying any statefulset
+	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
+	operatorCATLSExists, err := c.checkOperatorCaForTenant(ctx, tenant)
+	if err != nil {
+		return err
+	}
+
+	// Create logSecret before deploying any StatefulSet
 	if tenant.HasLogEnabled() {
 		_, err = c.checkAndCreateLogSecret(ctx, tenant)
 		if err != nil {
@@ -776,14 +780,14 @@ func (c *Controller) syncHandler(key string) error {
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
 	// this status value is zero only for new tenants or legacy tenants
 	if len(tenant.Status.Pools) == 0 {
-		poolDir, err := c.getAllSSForTenant(tenant)
+		pools, err := c.getAllSSForTenant(tenant)
 		if err != nil {
 			return err
 		}
-		for pi := range poolDir {
-			if poolDir[pi] != nil {
+		for _, pool := range pools {
+			if pool != nil {
 				tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
-					SSName: poolDir[pi].Name,
+					SSName: pool.Name,
 					State:  miniov2.PoolCreated,
 				})
 			}
@@ -792,6 +796,8 @@ func (c *Controller) syncHandler(key string) error {
 		if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
 			return err
 		}
+
+		klog.Info("Detected we are updating a legacy tenant deployment")
 	}
 
 	// Check if this is fresh setup not an expansion.
@@ -810,6 +816,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Check if we need to create any of the pools. It's important not to update the statefulsets
 	// in this loop because we need all the pools "as they are" for the hot-update below
+	operatorTLSCertIsMounted := false
 	for i, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 
@@ -831,18 +838,10 @@ func (c *Controller) syncHandler(key string) error {
 		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
 		if k8serrors.IsNotFound(err) {
 			klog.Infof("'%s/%s': Deploying pool %s", tenant.Namespace, tenant.Name, pool.Name)
-			// Check healthcheck for previous pool only if it's not a new setup,
-			// and check if they are online before adding this pool.
-			if addingNewPool && !tenant.MinIOHealthCheck(c.getTransport()) && len(tenant.Spec.Pools) > 1 {
-				klog.Infof("'%s/%s': Deploying new pool failed %s: MinIO is not Ready", tenant.Namespace, tenant.Name, pool.Name)
-				return ErrMinIONotReady
-			}
-
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
 				return err
 			}
-
-			ss = statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss = statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -850,6 +849,8 @@ func (c *Controller) syncHandler(key string) error {
 			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
 			// Report the pool is properly created
 			tenant.Status.Pools[i].State = miniov2.PoolCreated
+			// mark we are adding a new pool to the next block can act accordingly
+			addingNewPool = true
 			// push updates to status
 			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
 				return err
@@ -859,99 +860,60 @@ func (c *Controller) syncHandler(key string) error {
 		// keep track of all replicas
 		totalReplicas += ss.Status.Replicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
-	}
 
-	// validate each pool if it's initialized, and mark it if it is.
-	for pi, pool := range tenant.Spec.Pools {
-		// get a pod for the established statefulset
-		if tenant.Status.Pools[pi].State == miniov2.PoolCreated {
-			// get the first pod for the ss and try to reach the pool via that single pod.
-			pods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
-				LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, pool.Name),
-			})
-			if err != nil {
-				klog.Warning("Could not validate state of statefulset for pool", err)
-			}
-			if len(pods.Items) > 0 {
-				var ssPod *corev1.Pod
-				for _, p := range pods.Items {
-					if strings.HasSuffix(p.Name, "-0") {
-						ssPod = &p
-						break
+		// check if operator-tls public.crt is mounted on MinIO pods
+		if !operatorTLSCertIsMounted {
+			for _, volume := range ss.Spec.Template.Spec.Volumes {
+				for _, vp := range volume.Projected.Sources {
+					if vp.Secret.Name == OperatorTLSSecretName {
+						operatorTLSCertIsMounted = true
 					}
-				}
-				if ssPod == nil {
-					break
-				}
-				podAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(ssPod.Name))
-				podAdminClnt, err := tenant.NewMinIOAdminForAddress(podAddress, tenantConfiguration, c.getTransport())
-				if err != nil {
-					return err
-				}
-
-				_, err = podAdminClnt.ServerInfo(ctx)
-				// any error means we are not ready, if the call succeeds or we get `server not initialized`, the ss is ready
-				if err == nil || madmin.ToErrorResponse(err).Code == "XMinioServerNotInitialized" {
-
-					// Restart the services to fetch the new args, ignore any error.
-					// only perform `restart()` of server deployment when we are truly
-					// expanding an existing deployment. (a pool became initialized)
-					minioRestarted := false
-					if len(tenant.Spec.Pools) > 1 && addingNewPool {
-						// get a new admin client that points to a pod of an already initialized pool (ie: pool-0)
-						livePods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
-							LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, tenant.Spec.Pools[0].Name),
-						})
-						if err != nil {
-							klog.Warning("Could not validate state of statefulset for pool", err)
-						}
-						var livePod *corev1.Pod
-						for _, p := range livePods.Items {
-							if p.Status.Phase == v1.PodRunning {
-								livePod = &p
-								break
-							}
-						}
-						if livePod == nil {
-							break
-						}
-						livePodAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(livePod.Name))
-						livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, c.getTransport())
-						if err != nil {
-							return err
-						}
-						// Now tell MinIO to restart
-						if err = livePodAdminClnt.ServiceRestart(ctx); err != nil {
-							klog.Infof("We failed to restart MinIO to adopt the new pool: %v", err)
-						}
-						minioRestarted = true
-						metaNowTime := metav1.Now()
-						tenant.Status.WaitingOnReady = &metaNowTime
-						tenant.Status.CurrentState = StatusRestartingMinIO
-						if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
-							klog.Infof("'%s' Can't update tenant status: %v", key, err)
-						}
-						klog.Infof("'%s' Was restarted", key)
-					}
-
-					// Report the pool is properly created
-					tenant.Status.Pools[pi].State = miniov2.PoolInitialized
-					// push updates to status
-					if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
-						return err
-					}
-
-					if minioRestarted {
-						return ErrMinIORestarting
-					}
-
-				} else {
-					klog.Infof("'%s/%s' Error waiting for pool to be ready: %v", tenant.Namespace, tenant.Name,
-						err)
 				}
 			}
 		}
 	}
+
+	var initializedPool miniov2.Pool
+	// validate each pool if it's initialized, and mark it if it is.
+	for pi, pool := range tenant.Spec.Pools {
+		// get a pod for the established statefulset
+		if tenant.Status.Pools[pi].State == miniov2.PoolInitialized {
+			initializedPool = pool
+			continue
+		}
+
+		var restarted bool
+		// Only restart if there is an existing initialized pool, if there are no initialized
+		// pools no need to restart.
+		if initializedPool.Name != "" && addingNewPool {
+			// Restart services to get new args since we are expanding the deployment here.
+			if err := c.restartInitializedPool(ctx, tenant, initializedPool, tenantConfiguration); err != nil {
+				klog.Infof("'%s' restart call failed", key)
+				return err
+			}
+			metaNowTime := metav1.Now()
+			tenant.Status.WaitingOnReady = &metaNowTime
+			tenant.Status.CurrentState = StatusRestartingMinIO
+			if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+				klog.Infof("'%s' Can't update tenant status: %v", key, err)
+				return err
+			}
+			klog.Infof("'%s' was restarted", key)
+			restarted = true
+		}
+
+		// Report the pool is initialized.
+		tenant.Status.Pools[pi].State = miniov2.PoolInitialized
+		// push updates to status
+		if tenant, err = c.updatePoolStatus(ctx, tenant); err != nil {
+			return err
+		}
+
+		if restarted {
+			return ErrMinIORestarting
+		}
+	}
+
 	// wait here until all pools are initialized, so we can continue with updating versions and the ss resources.
 	for _, poolStatus := range tenant.Status.Pools {
 		if poolStatus.State != miniov2.PoolInitialized {
@@ -982,15 +944,17 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// compare all the images across all pools, they should always be the same.
-	for _, image := range images {
-		for i := 0; i < len(images); i++ {
-			if image != images[i] {
-				if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
-					return err
-				}
-				return fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
-					i+1)
+	compareImage := ""
+	for i, image := range images {
+		if compareImage == "" {
+			compareImage = image
+		}
+		if compareImage != image {
+			if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
+				return err
 			}
+			return fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
+				i+1)
 		}
 	}
 
@@ -1017,9 +981,10 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 			return err
 		}
-		protocol := "https"
-		if !isOperatorTLS() {
-			protocol = "http"
+		protocol := "http"
+		// check operator is deployed with TLS enabled and also the MinIO pods has the certificate mounted in ~/.minio/certs/CAs/operator.crt
+		if isOperatorTLS() && operatorTLSCertIsMounted {
+			protocol = "https"
 		}
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("%s://operator.%s.svc.%s:%s%s",
 			protocol,
@@ -1088,7 +1053,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			ss := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
@@ -1140,7 +1105,7 @@ func (c *Controller) syncHandler(key string) error {
 				carryOverLabels[miniov1.ZoneLabel] = val
 			}
 
-			nss := statefulsets.NewPool(tenant, secret, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS())
+			nss := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
 			ssCopy := ss.DeepCopy()
 
 			ssCopy.Spec.Template = nss.Spec.Template

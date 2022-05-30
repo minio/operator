@@ -16,6 +16,7 @@ package statefulsets
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -29,12 +30,8 @@ import (
 
 // Adds required Console environment variables
 func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
-	envVars := []corev1.EnvVar{
-		{
-			Name:  "MINIO_SERVER_URL",
-			Value: t.MinIOServerEndpoint(),
-		},
-	}
+	var envVars []corev1.EnvVar
+
 	if t.HasLogEnabled() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name: miniov2.LogQueryTokenKey,
@@ -67,22 +64,21 @@ func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
-func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate string, opVersion string) []corev1.EnvVar {
+func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVersion string) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
-	// Add all the environment variables
-	envVars = append(envVars, t.GetEnvVars()...)
-
 	// Enable `mc admin update` style updates to MinIO binaries
 	// within the container, only operator is supposed to perform
 	// these operations.
-	envVars = append(envVars,
-		corev1.EnvVar{
+	envVarsMap := map[string]corev1.EnvVar{
+		"MINIO_UPDATE": {
 			Name:  "MINIO_UPDATE",
 			Value: "on",
-		}, corev1.EnvVar{
+		},
+		"MINIO_UPDATE_MINISIGN_PUBKEY": {
 			Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
 			Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
-		}, corev1.EnvVar{
+		},
+		miniov2.WebhookMinIOArgs: {
 			Name: miniov2.WebhookMinIOArgs,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -92,23 +88,22 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 					Key: miniov2.WebhookMinIOArgs,
 				},
 			},
-		}, corev1.EnvVar{
-			// Add a fallback in-case operator is down.
-			Name:  "MINIO_ENDPOINTS",
-			Value: strings.Join(GetContainerArgs(t, hostsTemplate), " "),
-		}, corev1.EnvVar{
+		},
+		"MINIO_OPERATOR_VERSION": {
 			Name:  "MINIO_OPERATOR_VERSION",
 			Value: opVersion,
-		}, corev1.EnvVar{
+		},
+		"MINIO_PROMETHEUS_JOB_ID": {
 			Name:  "MINIO_PROMETHEUS_JOB_ID",
 			Value: t.PrometheusConfigJobName(),
-		})
+		},
+	}
 
 	var domains []string
 	// Enable Bucket DNS only if asked for by default turned off
 	if t.BucketDNS() {
 		domains = append(domains, t.MinIOBucketBaseDomain())
-		envVars = append(envVars, corev1.EnvVar{
+		envVarsMap[miniov2.WebhookMinIOBucket] = corev1.EnvVar{
 			Name: miniov2.WebhookMinIOBucket,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -118,25 +113,50 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 					Key: miniov2.WebhookMinIOArgs,
 				},
 			},
-		})
+		}
 	}
 	// Check if any domains are configured
 	if t.HasMinIODomains() {
-		domains = append(domains, t.Spec.Features.Domains.Minio...)
+		domains = append(domains, t.GetDomainHosts()...)
 	}
-	// tell MinIO about all the domains meant to hit it
+	// tell MinIO about all the domains meant to hit it if they are not passed manually via .spec.env
 	if len(domains) > 0 {
-		envVars = append(envVars, corev1.EnvVar{
+		envVarsMap["MINIO_DOMAIN"] = corev1.EnvVar{
 			Name:  "MINIO_DOMAIN",
 			Value: strings.Join(domains, ","),
-		})
+		}
+	}
+	// If no specific server URL is specified we will specify the internal k8s url, but if a list of domains was
+	// provided we will use the first domain.
+	serverURL := t.MinIOServerEndpoint()
+	if t.HasMinIODomains() {
+		serverURL = t.Spec.Features.Domains.Minio[0]
+	}
+	envVarsMap["MINIO_SERVER_URL"] = corev1.EnvVar{
+		Name:  "MINIO_SERVER_URL",
+		Value: serverURL,
 	}
 
-	// Add env variables from credentials secret, if no secret provided, dont use
-	// env vars. MinIO server automatically creates default credentials
-	if !t.HasConfigurationSecret() && t.HasCredsSecret() {
+	// Set the redirect url for console
+	if t.HasConsoleDomains() {
+		consoleDomain := t.Spec.Features.Domains.Console
+		if !strings.HasPrefix(consoleDomain, "http") {
+			useSchema := "http"
+			if t.TLS() {
+				useSchema = "https"
+			}
+			consoleDomain = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Console)
+		}
+		envVarsMap["MINIO_BROWSER_REDIRECT_URL"] = corev1.EnvVar{
+			Name:  "MINIO_BROWSER_REDIRECT_URL",
+			Value: consoleDomain,
+		}
+	}
+
+	// add env variables from tenant.Spec.CredsSecret.Name is deprecated and will be removed in the future
+	if t.HasCredsSecret() {
 		secretName := t.Spec.CredsSecret.Name
-		envVars = append(envVars, corev1.EnvVar{
+		envVarsMap["MINIO_ROOT_USER"] = corev1.EnvVar{
 			Name: "MINIO_ROOT_USER",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -146,7 +166,8 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 					Key: "accesskey",
 				},
 			},
-		}, corev1.EnvVar{
+		}
+		envVarsMap["MINIO_ROOT_PASSWORD"] = corev1.EnvVar{
 			Name: "MINIO_ROOT_PASSWORD",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -156,35 +177,59 @@ func minioEnvironmentVars(t *miniov2.Tenant, wsSecret *v1.Secret, hostsTemplate 
 					Key: "secretkey",
 				},
 			},
-		})
+		}
 	}
 
 	if t.HasKESEnabled() {
-		envVars = append(envVars, corev1.EnvVar{
+		envVarsMap["MINIO_KMS_KES_ENDPOINT"] = corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_ENDPOINT",
 			Value: t.KESServiceEndpoint(),
-		}, corev1.EnvVar{
+		}
+		envVarsMap["MINIO_KMS_KES_CERT_FILE"] = corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CERT_FILE",
 			Value: miniov2.MinIOCertPath + "/client.crt",
-		}, corev1.EnvVar{
+		}
+		envVarsMap["MINIO_KMS_KES_KEY_FILE"] = corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_FILE",
 			Value: miniov2.MinIOCertPath + "/client.key",
-		}, corev1.EnvVar{
+		}
+		envVarsMap["MINIO_KMS_KES_CA_PATH"] = corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CA_PATH",
 			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
-		}, corev1.EnvVar{
+		}
+		envVarsMap["MINIO_KMS_KES_KEY_NAME"] = corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
 			Value: t.Spec.KES.KeyName,
-		})
+		}
 	}
 
 	if t.HasConfigurationSecret() {
-		envVars = append(envVars, corev1.EnvVar{
+		envVarsMap["MINIO_CONFIG_ENV_FILE"] = corev1.EnvVar{
 			Name:  "MINIO_CONFIG_ENV_FILE",
 			Value: miniov2.TmpPath + "/minio-config/config.env",
-		})
+		}
 	}
 
+	// add console environment variables
+	for _, env := range consoleEnvVars(t) {
+		envVarsMap[env.Name] = env
+	}
+	// Add all the tenant.spec.env environment variables
+	// User defined environment variables will take precedence over default environment variables
+	for _, env := range t.GetEnvVars() {
+		envVarsMap[env.Name] = env
+	}
+
+	// transform map to array and skip configurations from config.env
+	for _, env := range envVarsMap {
+		if _, ok := skipEnvVars[env.Name]; !ok {
+			envVars = append(envVars, env)
+		}
+	}
+	// sort the array to produce the same result everytime
+	sort.Slice(envVars, func(i, j int) bool {
+		return envVars[i].Name < envVars[j].Name
+	})
 	// Return environment variables
 	return envVars
 }
@@ -285,7 +330,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool, certV
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool, certVolumeSources []v1.VolumeProjection) v1.Container {
+func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool, certVolumeSources []v1.VolumeProjection) v1.Container {
 	consolePort := miniov2.ConsolePort
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
@@ -320,7 +365,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, pool *mini
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, pool, operatorTLS, certVolumeSources),
 		Args:            args,
-		Env:             append(minioEnvironmentVars(t, wsSecret, hostsTemplate, opVersion), consoleEnvVars(t)...),
+		Env:             minioEnvironmentVars(t, skipEnvVars, opVersion),
 		Resources:       pool.Resources,
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
@@ -381,7 +426,7 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
-func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool) *appsv1.StatefulSet {
+func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]byte, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool, operatorCATLS bool) *appsv1.StatefulSet {
 	var podVolumes []corev1.Volume
 	replicas := pool.Servers
 	var certVolumeSources []corev1.VolumeProjection
@@ -538,6 +583,22 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 			},
 		}...)
 	}
+	if operatorCATLS {
+		// Mount Operator CA TLS certificate to MinIO ~/cert/CAs
+		operatorCATLSSecretName := "operator-ca-tls"
+		certVolumeSources = append(certVolumeSources, []corev1.VolumeProjection{
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: operatorCATLSSecretName,
+					},
+					Items: []corev1.KeyToPath{
+						{Key: "public.crt", Path: "CAs/operator-ca.crt"},
+					},
+				},
+			},
+		}...)
+	}
 	// If KES is enable mount TLS certificate secrets
 	if t.HasKESEnabled() {
 		// External Client certificates will have priority over AutoCert generated certificates
@@ -657,7 +718,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, pool *miniov2.Pool, poolSta
 	}
 
 	containers := []corev1.Container{
-		poolMinioServerContainer(t, wsSecret, pool, hostsTemplate, operatorVersion, operatorTLS, certVolumeSources),
+		poolMinioServerContainer(t, wsSecret, skipEnvVars, pool, hostsTemplate, operatorVersion, operatorTLS, certVolumeSources),
 	}
 
 	// attach any sidecar containers and volumes

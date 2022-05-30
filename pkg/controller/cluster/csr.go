@@ -30,6 +30,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/controller/cluster/certificates"
+
 	certificatesV1 "k8s.io/api/certificates/v1"
 
 	"k8s.io/klog/v2"
@@ -67,24 +69,16 @@ func isEqual(a, b []string) bool {
 }
 
 // createCertificateSigningRequest is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>
-func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte, usage string) error {
+func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels map[string]string, name, namespace string, csrBytes []byte) error {
 	encodedBytes := pem.EncodeToMemory(&pem.Block{Type: csrType, Bytes: csrBytes})
 	// for the right set of csr configurations regarding CSR signers and Key usages please read:
 	// https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#kubernetes-signers
-	if useCertificatesV1API {
-		csrSignerName := certificatesV1.KubeletServingSignerName
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
+		csrSignerName := certificates.GetCSRSignerName(c.kubeClientSet)
 		csrKeyUsage := []certificatesV1.KeyUsage{
 			certificatesV1.UsageDigitalSignature,
 			certificatesV1.UsageKeyEncipherment,
 			certificatesV1.UsageServerAuth,
-		}
-		if usage == "client" {
-			csrSignerName = certificatesV1.KubeAPIServerClientSignerName
-			csrKeyUsage = []certificatesV1.KeyUsage{
-				certificatesV1.UsageDigitalSignature,
-				certificatesV1.UsageKeyEncipherment,
-				certificatesV1.UsageClientAuth,
-			}
 		}
 		kubeCSR := &certificatesV1.CertificateSigningRequest{
 			TypeMeta: v1.TypeMeta{
@@ -205,7 +199,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 			return nil, fmt.Errorf("%s", s.String())
 
 		case <-tick.C:
-			if useCertificatesV1API {
+			if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 				r, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
 				if err != nil {
 					klog.Errorf("Unexpected error during certificate fetching of csr/%s V1: %s", csrName, err)

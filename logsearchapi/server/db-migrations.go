@@ -130,7 +130,10 @@ func addAccessKeyCol(ctx context.Context, c *DBClient) error {
 		}
 		return false
 	})
-	go updateAccessKeyCol(ctx, c)
+	if err == nil {
+		go updateAccessKeyCol(ctx, c)
+	}
+
 	return err
 }
 

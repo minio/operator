@@ -54,6 +54,9 @@ const TenantLabel = "v1.min.io/tenant"
 // PoolLabel is applied to all components in a Pool of a Tenant cluster
 const PoolLabel = "v1.min.io/pool"
 
+// ZoneLabel is used for compatibility with tenants deployed prior to operator 4.0.0
+const ZoneLabel = "v1.min.io/zone"
+
 // LogDbLabel is applied to all log db components of a Tenant cluster
 const LogDbLabel = "v1.min.io/logdb"
 
@@ -85,7 +88,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2022-02-24T22-12-01Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2022-05-26T05-48-41Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -147,7 +150,7 @@ const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/operator:v4.4.10"
+const DefaultLogSearchAPIImage = "minio/operator:v4.4.22"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres:13"
@@ -212,7 +215,7 @@ const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.17.6"
+const DefaultKESImage = "minio/kes:v0.18.0"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"

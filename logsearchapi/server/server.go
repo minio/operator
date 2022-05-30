@@ -134,7 +134,17 @@ func (ls *LogSearch) queryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
+	switch sq.ExportFormat {
+	case "csv":
+		w.Header().Add("Content-Type", "text/csv")
+		w.Header().Add("Content-Disposition", "attachment; filename=logs-export.csv")
+	case "ndjson":
+		// Ref: https://github.com/ndjson/ndjson-spec
+		w.Header().Add("Content-Type", "application/x-ndjson")
+		w.Header().Add("Content-Disposition", "attachment; filename=logs-export.ndjson")
+	default:
+		w.Header().Add("Content-Type", "application/json")
+	}
 	err = ls.DBClient.Search(r.Context(), sq, w)
 	if err != nil {
 		w.Header().Del("Content-Type")

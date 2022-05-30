@@ -26,9 +26,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/minio/operator/pkg/controller/cluster/certificates"
+
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/minio/operator/pkg/resources/jobs"
 	"github.com/minio/operator/pkg/resources/services"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -94,7 +95,7 @@ func (c *Controller) createKESCSR(ctx context.Context, tenant *miniov2.Tenant) e
 		return err
 	}
 
-	err = c.createCertificateSigningRequest(ctx, tenant.KESPodLabels(), tenant.KESCSRName(), tenant.Namespace, csrBytes, "server")
+	err = c.createCertificateSigningRequest(ctx, tenant.KESPodLabels(), tenant.KESCSRName(), tenant.Namespace, csrBytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
 		return err
@@ -147,24 +148,8 @@ func kesStatefulSetMatchesSpec(tenant *miniov2.Tenant, kesStatefulSet *appsv1.St
 
 func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) (err error) {
 	if !tenant.ExternalClientCert() {
-		// check if there's already a TLS secret for MinIO client to authenticate against KES
-		_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.MinIOClientTLSSecretName(), metav1.GetOptions{})
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				if err = c.checkAndCreateMinIOClientCSR(ctx, nsName, tenant); err != nil {
-					return err
-				}
-				// TLS secret not found, delete CSR if exists and start certificate generation process again
-				if useCertificatesV1API {
-					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, tenant.MinIOClientCSRName(), metav1.DeleteOptions{}); err != nil {
-						return err
-					}
-				} else {
-					if err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, tenant.MinIOClientCSRName(), metav1.DeleteOptions{}); err != nil {
-						return err
-					}
-				}
-			}
+		if err = c.checkAndCreateMinIOClientCertificates(ctx, nsName, tenant); err != nil {
+			return err
 		}
 	}
 	// if KES is enabled and user didn't provide KES server certificates generate them
@@ -176,7 +161,7 @@ func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *min
 					return err
 				}
 				// TLS secret not found, delete CSR if exists and start certificate generation process again
-				if useCertificatesV1API {
+				if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 					if err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, tenant.KESCSRName(), metav1.DeleteOptions{}); err != nil {
 						return err
 					}
@@ -220,7 +205,7 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "SvcFailed", fmt.Sprintf("KES Headless Service failed to create: %s", err))
 					return err
 				}
-				c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "SvcCreated", fmt.Sprintf("KES Headless Service failed to create: %s", err))
+				c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "KES Headless Service created")
 			} else {
 				return err
 			}
@@ -264,55 +249,34 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 				c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "StsUpdated", "KES Statefulset Updated")
 			}
 		}
-
-		// After KES and MinIO are deployed successfully, create the MinIO Key on KES KMS Backend
-		_, err = c.jobLister.Jobs(tenant.Namespace).Get(tenant.KESJobName())
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				j := jobs.NewForKES(tenant)
-				klog.V(2).Infof("Creating a new Job for cluster %q", nsName)
-				if _, err = c.kubeClientSet.BatchV1().Jobs(tenant.Namespace).Create(ctx, j, cOpts); err != nil {
-					klog.V(2).Infof(err.Error())
-					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "JobFailed", fmt.Sprintf("KES job failed to create: %s", err))
-					return err
-				}
-			} else {
-				return err
-			}
-		}
 	}
 	return nil
 }
 
-func (c *Controller) checkAndCreateMinIOClientCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
+func (c *Controller) checkAndCreateMinIOClientCertificates(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
 	var err error
-	if useCertificatesV1API {
-		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{})
-	} else {
-		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.MinIOClientCSRName(), metav1.GetOptions{})
-	}
+	_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.MinIOClientTLSSecretName(), metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusWaitingMinIOClientCert, 0); err != nil {
 				return err
 			}
-			klog.V(2).Infof("Creating a new Certificate Signing Request for MinIO Client Certs, cluster %q", nsName)
-			if err = c.createMinIOClientCSR(ctx, tenant); err != nil {
+			klog.V(2).Infof("Creating a new Client Certificate for MinIO, cluster %q", nsName)
+			if err = c.createMinIOClientCertificates(ctx, tenant); err != nil {
+				// we want to re-queue this tenant so we can re-check for the health at a later stage
+				c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CertFailed", fmt.Sprintf("KES MinIO Client Certificate failed to create: %s", err))
 				return err
 			}
-			// we want to re-queue this tenant so we can re-check for the health at a later stage
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("KES MinIO Client CSR failed to create: %s", err))
 			return errors.New("waiting for minio client cert")
 		}
 		return err
 	}
-
 	return nil
 }
 
 func (c *Controller) checkAndCreateKESCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
 	var err error
-	if useCertificatesV1API {
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.KESCSRName(), metav1.GetOptions{})
 	} else {
 		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.KESCSRName(), metav1.GetOptions{})

@@ -16,3 +16,5 @@ spec:
       value: "openid,profile,email"
     - name: MINIO_IDENTITY_OPENID_CLAIM_NAME
       value: "https://min.io/policy"
+    - name: MINIO_IDENTITY_OPENID_REDIRECT_URI
+      value: "https://your-console-endpoint.com/oauth_callback"

@@ -15,17 +15,22 @@
 package cluster
 
 import (
-	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
+	"net"
 	"time"
+
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/minio/operator/pkg/controller/cluster/certificates"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,7 +43,7 @@ import (
 
 func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.NamespacedName, tenant *miniov2.Tenant) error {
 	var err error
-	if useCertificatesV1API {
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		_, err = c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
 	} else {
 		_, err = c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, tenant.MinIOCSRName(), metav1.GetOptions{})
@@ -61,7 +66,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 }
 
 func (c *Controller) deleteMinIOCSR(ctx context.Context, csrName string) error {
-	if useCertificatesV1API {
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		if err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
 			return err
 		}
@@ -140,6 +145,164 @@ func (c *Controller) recreateMinIOCertsOnTenant(ctx context.Context, tenant *min
 
 func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName string) (*corev1.Secret, error) {
 	return c.kubeClientSet.CoreV1().Secrets(nsName).Get(ctx, secretName, metav1.GetOptions{})
+}
+
+// checkOperatorCaForTenant create or updates the operator-ca-tls secret for tenant if need it
+func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *miniov2.Tenant) (operatorCATLSExists bool, err error) {
+	var operatorCaCert []byte
+	var tenantCaCert []byte
+	var caCertKey string
+	// get operator-ca-tls in minio-operator namespace
+	operatorCaSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
+	if err != nil {
+		// if operator-ca-tls doesnt exists continue
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	caCertKey = "public.crt"
+	// if secret type is k8s tls or cert-manager use the right secret keys
+	if operatorCaSecret.Type == "kubernetes.io/tls" {
+		caCertKey = "tls.crt"
+	} else if operatorCaSecret.Type == "cert-manager.io/v1alpha2" || operatorCaSecret.Type == "cert-manager.io/v1" {
+		caCertKey = "ca.crt"
+	}
+
+	if _, ok := operatorCaSecret.Data[caCertKey]; !ok {
+		return false, fmt.Errorf("missing '%s' in %s/%s secret", caCertKey, miniov2.GetNSFromFile(), OperatorCATLSSecretName)
+	}
+
+	operatorCaCert = operatorCaSecret.Data[caCertKey]
+
+	tenantCaSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			klog.Infof("'%s/%s' secret not found, creating one now", tenant.Namespace, OperatorCATLSSecretName)
+			// create tenant operator-ca-tls secret
+			opCATLSSecret := &corev1.Secret{
+				Type: "Opaque",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      OperatorCATLSSecretName,
+					Namespace: tenant.Namespace,
+					Labels:    tenant.MinIOPodLabels(),
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
+							Group:   miniov2.SchemeGroupVersion.Group,
+							Version: miniov2.SchemeGroupVersion.Version,
+							Kind:    miniov2.MinIOCRDResourceKind,
+						}),
+					},
+				},
+				Data: map[string][]byte{
+					"public.crt": operatorCaCert,
+				},
+			}
+			_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, opCATLSSecret, metav1.CreateOptions{})
+			if err != nil {
+				return false, err
+			}
+		}
+		return false, err
+	}
+
+	if _, ok := tenantCaSecret.Data["public.crt"]; !ok {
+		err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, OperatorCATLSSecretName, metav1.DeleteOptions{})
+		if err != nil {
+			return false, err
+		}
+		return false, fmt.Errorf("missing 'public.crt' in %s/%s secret, re-creating it", tenant.Namespace, OperatorCATLSSecretName)
+	}
+
+	tenantCaCert = tenantCaSecret.Data["public.crt"]
+
+	if string(tenantCaCert) != string(operatorCaCert) {
+		tenantCaSecret.Data["public.crt"] = operatorCaCert
+		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
+		if err != nil {
+			return false, err
+		}
+		return false, fmt.Errorf("'%s' in '%s/%s' secret changed, updating '%s/%s' secret", caCertKey, miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
+	}
+
+	return true, nil
+}
+
+// checkOperatorCertForTenant checks create or updates the operator-tls secret for tenant
+func (c *Controller) checkOperatorCertForTenant(ctx context.Context, tenant *miniov2.Tenant) error {
+	if !isOperatorTLS() {
+		return nil
+	}
+	// get operator-tls in minio-operator namespace
+	operatorCertSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	// default secret keys for Opaque k8s secret
+	publicCertKey := "public.crt"
+	// if secret type is k8s tls or cert-manager use the right secret keys
+	if operatorCertSecret.Type == "kubernetes.io/tls" || operatorCertSecret.Type == "cert-manager.io/v1alpha2" || operatorCertSecret.Type == "cert-manager.io/v1" {
+		publicCertKey = "tls.crt"
+	}
+
+	if _, ok := operatorCertSecret.Data[publicCertKey]; !ok {
+		return fmt.Errorf("missing '%s' in %s/%s secret", publicCertKey, miniov2.GetNSFromFile(), OperatorTLSSecretName)
+	}
+
+	operatorCert := operatorCertSecret.Data[publicCertKey]
+
+	tenantOperatorCertSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, OperatorTLSSecretName, metav1.GetOptions{})
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			klog.Infof("'%s/%s' secret not found, creating one now", tenant.Namespace, OperatorTLSSecretName)
+			// create tenant operator-tls secret copying only the public.crt portion from the original operator-tls secret
+			opTLSSecret := &corev1.Secret{
+				Type: "Opaque",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      OperatorTLSSecretName,
+					Namespace: tenant.Namespace,
+					Labels:    tenant.MinIOPodLabels(),
+					OwnerReferences: []metav1.OwnerReference{
+						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
+							Group:   miniov2.SchemeGroupVersion.Group,
+							Version: miniov2.SchemeGroupVersion.Version,
+							Kind:    miniov2.MinIOCRDResourceKind,
+						}),
+					},
+				},
+				Data: map[string][]byte{
+					"public.crt": operatorCert,
+				},
+			}
+			_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, opTLSSecret, metav1.CreateOptions{})
+			if err != nil {
+				return err
+			}
+		}
+		return err
+	}
+
+	if _, ok := tenantOperatorCertSecret.Data["public.crt"]; !ok {
+		err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, OperatorTLSSecretName, metav1.DeleteOptions{})
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("missing 'public.crt' in %s/%s secret, re-creating it", tenant.Namespace, OperatorTLSSecretName)
+	}
+
+	tenantOperatorCert := tenantOperatorCertSecret.Data["public.crt"]
+
+	if string(tenantOperatorCert) != string(operatorCert) {
+		tenantOperatorCertSecret.Data["public.crt"] = operatorCert
+		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantOperatorCertSecret, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("'%s' key in %s/%s secret changed, updating '%s/%s' secret", publicCertKey, miniov2.GetNSFromFile(), OperatorTLSSecretName, tenant.Namespace, OperatorTLSSecretName)
+	}
+
+	return nil
 }
 
 // checkMinIOCertificatesStatus checks for the current status of MinIO and it's service
@@ -267,7 +430,7 @@ func (c *Controller) createMinIOCSR(ctx context.Context, tenant *miniov2.Tenant)
 		return err
 	}
 
-	err = c.createCertificateSigningRequest(ctx, tenant.MinIOPodLabels(), tenant.MinIOCSRName(), tenant.Namespace, csrBytes, "server")
+	err = c.createCertificateSigningRequest(ctx, tenant.MinIOPodLabels(), tenant.MinIOCSRName(), tenant.Namespace, csrBytes)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
 		return err
@@ -295,50 +458,50 @@ func (c *Controller) createMinIOCSR(ctx context.Context, tenant *miniov2.Tenant)
 	return nil
 }
 
-// createMinIOClientCSR handles all the steps required to create the CSR: from creation of keys, submitting CSR and
-// finally creating a secret that MinIO will use to authenticate (mTLS) with KES or other services
-func (c *Controller) createMinIOClientCSR(ctx context.Context, tenant *miniov2.Tenant) error {
-	privKeysBytes, csrBytes, err := generateMinIOCryptoData(tenant, c.hostsTemplate)
+// createMinIOClientCertificates handles all the steps required to create the MinIO <-> KES mTLS certificates
+func (c *Controller) createMinIOClientCertificates(ctx context.Context, tenant *miniov2.Tenant) error {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err
 	}
 
-	err = c.createCertificateSigningRequest(ctx, tenant.MinIOPodLabels(), tenant.MinIOClientCSRName(), tenant.Namespace, csrBytes, "client")
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
-		return err
-	}
-	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "CSRCreated", "MinIO Client CSR Created")
-
-	// fetch certificate from CSR
-	certbytes, err := c.fetchCertificate(ctx, tenant.MinIOClientCSRName())
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("MinIO Client CSR Failed to create: %s", err))
 		return err
 	}
 
-	// parse the certificate here to generate the identity for this certifcate.
-	// This is later used to update the identity in KES Server Config File
-	h := sha256.New()
-	cert, err := parseCertificate(bytes.NewReader(certbytes))
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			CommonName: tenant.MinIOFQDNServiceName(),
+		},
+		NotBefore: time.Now().UTC(),
+		NotAfter:  time.Now().UTC().Add(8760 * time.Hour),
+		KeyUsage:  x509.KeyUsageDigitalSignature,
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageServerAuth,
+			x509.ExtKeyUsageClientAuth,
+		},
+		DNSNames:              tenant.MinIOHosts(),
+		IPAddresses:           []net.IP{},
+		BasicConstraintsValid: true,
+	}
+
+	certBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey, privateKey)
 	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
+		return err
+	}
+	privBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
 		return err
 	}
 
-	_, err = h.Write(cert.RawSubjectPublicKeyInfo)
-	if err != nil {
-		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOClientCSRName(), err)
-		return err
-	}
-
-	// PEM encode private ECDSA key
-	encodedPrivKey := pem.EncodeToMemory(&pem.Block{Type: privateKeyType, Bytes: privKeysBytes})
+	keyPem := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privBytes})
+	certPem := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certBytes})
 
 	// Create secret for KES StatefulSet to use
-	err = c.createSecret(ctx, tenant, tenant.MinIOPodLabels(), tenant.MinIOClientTLSSecretName(), encodedPrivKey, certbytes)
+	err = c.createSecret(ctx, tenant, tenant.MinIOPodLabels(), tenant.MinIOClientTLSSecretName(), keyPem, certPem)
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the secret/%s: %v", tenant.MinIOClientTLSSecretName(), err)
 		return err

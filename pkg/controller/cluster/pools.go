@@ -18,8 +18,11 @@ package cluster
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
+
+	corev1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -124,4 +127,48 @@ func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.St
 	}
 
 	return poolMatchesSS, nil
+}
+
+// restartInitializedPool restarts a pool that is assumed to have been initialized
+func (c *Controller) restartInitializedPool(ctx context.Context, tenant *miniov2.Tenant, pool miniov2.Pool, tenantConfiguration map[string][]byte) error {
+	// get a new admin client that points to a pod of an already initialized pool (ie: pool-0)
+	livePods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, pool.Name),
+	})
+	if err != nil {
+		klog.Warning("Could not validate state of statefulset for pool", err)
+	}
+	if len(livePods.Items) == 0 {
+		livePods, err = c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s", miniov2.ZoneLabel, pool.Name),
+		})
+		if err != nil {
+			klog.Warning("Could not validate state of statefulset for zone", err)
+			return err
+		}
+	}
+	var livePod *corev1.Pod
+	for _, p := range livePods.Items {
+		if p.Status.Phase == corev1.PodRunning {
+			livePod = &p
+			break
+		}
+	}
+	if livePod == nil {
+		return fmt.Errorf("no running pods found for statefulsets %s", pool.Name)
+	}
+
+	livePodAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(livePod.Name))
+	livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, c.getTransport())
+	if err != nil {
+		return err
+	}
+
+	// Now tell MinIO to restart
+	if err = livePodAdminClnt.ServiceRestart(ctx); err != nil {
+		klog.Infof("We failed to restart MinIO to adopt the new pool: %v", err)
+		return err
+	}
+
+	return nil
 }

@@ -77,7 +77,7 @@ func getPrometheusMetricsForTenantWithRetry(tenant *miniov2.Tenant, bearer strin
 		klog.Infof("error pinging: %v", err)
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer drainBody(resp.Body)
 
 	promMetrics := MinIOPrometheusMetrics{}
 
@@ -92,7 +92,7 @@ func getPrometheusMetricsForTenantWithRetry(tenant *miniov2.Tenant, bearer strin
 				if err != nil {
 					klog.Infof("%s/%s Could not parse usage for tenant: %s", tenant.Namespace, tenant.Name, line)
 				}
-				promMetrics.Usage = int64(usage)
+				promMetrics.Usage = promMetrics.Usage + int64(usage)
 			}
 		}
 		// Usable capacity

@@ -19,6 +19,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -224,6 +226,28 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		klog.Infof("'%s/%s' Can't update tenant status: %v", tenant.Namespace, tenant.Name, err)
 	}
 
+	// Store the usage reported by the tiers
+	tiersStatsCtx, cancelTiers := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancelTiers()
+	tInfos, err := adminClnt.TierStats(tiersStatsCtx)
+	if err != nil {
+		klog.Infof("'%s/%s' Can't retrieve tenant tiers: %v", tenant.Namespace, tenant.Name, err)
+	}
+	if tInfos != nil {
+		var tiersUsage []miniov2.TierUsage
+		for _, tier := range tInfos {
+			tiersUsage = append(tiersUsage, miniov2.TierUsage{
+				Name:      tier.Name,
+				Type:      tier.Type,
+				TotalSize: int64(tier.Stats.TotalSize),
+			})
+		}
+		tenant.Status.Usage.Tiers = tiersUsage
+		if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
+			klog.Infof("'%s/%s' Can't update tenant status with tiers: %v", tenant.Namespace, tenant.Name, err)
+		}
+	}
+
 	// get usage from Prometheus Metrics
 	accessKey, ok := tenantConfiguration["accesskey"]
 	if !ok {
@@ -281,9 +305,10 @@ func getHealthCheckTransport() func() *http.Transport {
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
-			Timeout:   2 * time.Second,
-			KeepAlive: 10 * time.Second,
+			Timeout: 2 * time.Second,
 		}).DialContext,
+		MaxIdleConnsPerHost:   1024,
+		IdleConnTimeout:       30 * time.Second,
 		ResponseHeaderTimeout: 5 * time.Second,
 		TLSHandshakeTimeout:   5 * time.Second,
 		ExpectContinueTimeout: 5 * time.Second,
@@ -303,6 +328,26 @@ func getHealthCheckTransport() func() *http.Transport {
 // or if it's acceptable to remove a node `MaintenanceMode`
 func getMinIOHealthStatus(tenant *miniov2.Tenant, mode HealthMode) (*HealthResult, error) {
 	return getMinIOHealthStatusWithRetry(tenant, mode, 5)
+}
+
+// drainBody close non nil response with any response Body.
+// convenient wrapper to drain any remaining data on response body.
+//
+// Subsequently this allows golang http RoundTripper
+// to re-use the same connection for future requests.
+func drainBody(respBody io.ReadCloser) {
+	// Callers should close resp.Body when done reading from it.
+	// If resp.Body is not closed, the Client's underlying RoundTripper
+	// (typically Transport) may not be able to re-use a persistent TCP
+	// connection to the server for a subsequent "keep-alive" request.
+	if respBody != nil {
+		// Drain any remaining Body and then close the connection.
+		// Without this closing connection would disallow re-using
+		// the same connection for future uses.
+		//  - http://stackoverflow.com/a/17961593/4465767
+		defer respBody.Close()
+		io.Copy(ioutil.Discard, respBody)
+	}
 }
 
 // getMinIOHealthStatusWithRetry returns the cluster health for a Tenant.
@@ -338,6 +383,8 @@ func getMinIOHealthStatusWithRetry(tenant *miniov2.Tenant, mode HealthMode, tryC
 		klog.Infof("error pinging: %v", err)
 		return nil, err
 	}
+	defer drainBody(resp.Body)
+
 	driveskHealing := 0
 	if resp.Header.Get("X-Minio-Healing-Drives") != "" {
 		val, err := strconv.Atoi(resp.Header.Get("X-Minio-Healing-Drives"))

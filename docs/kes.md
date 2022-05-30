@@ -24,7 +24,7 @@ kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 -
 
 ## KES Configuration
 
-KES Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/operator/master/examples/tenant-encryption.yaml). The config offers below options
+KES Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/operator/master/examples/kustomization/tenant-kes-encryption/tenant.yaml). The config offers below options
 
 ### KES Fields
 

@@ -31,11 +31,14 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"text/template"
 	"time"
+
+	"github.com/miekg/dns"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -869,6 +872,10 @@ func (t *Tenant) Validate() error {
 			return err
 		}
 	}
+	// make sure all the domains are valid
+	if err := t.ValidateDomains(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -979,29 +986,80 @@ func (t *Tenant) GetTenantServiceURL() (svcURL string) {
 	return fmt.Sprintf("%s://%s", scheme, svc)
 }
 
+type envKV struct {
+	Key   string
+	Value string
+	Skip  bool
+}
+
+func (e envKV) String() string {
+	if e.Skip {
+		return ""
+	}
+	return fmt.Sprintf("%s=%s", e.Key, e.Value)
+}
+
+func parsEnvEntry(envEntry string) (envKV, error) {
+	envEntry = strings.TrimSpace(envEntry)
+	if envEntry == "" {
+		// Skip all empty lines
+		return envKV{
+			Skip: true,
+		}, nil
+	}
+	const envSeparator = "="
+	envTokens := strings.SplitN(strings.TrimSpace(strings.TrimPrefix(envEntry, "export")), envSeparator, 2)
+	if len(envTokens) != 2 {
+		return envKV{}, fmt.Errorf("envEntry malformed; %s, expected to be of form 'KEY=value'", envEntry)
+	}
+	key := envTokens[0]
+	val := envTokens[1]
+
+	if strings.HasPrefix(key, "#") {
+		// Skip commented lines
+		return envKV{
+			Skip: true,
+		}, nil
+	}
+
+	// Remove quotes from the value if found
+	if len(val) >= 2 {
+		quote := val[0]
+		if (quote == '"' || quote == '\'') && val[len(val)-1] == quote {
+			val = val[1 : len(val)-1]
+		}
+	}
+	return envKV{
+		Key:   key,
+		Value: val,
+	}, nil
+}
+
 // ParseRawConfiguration map[string][]byte representation of the MinIO config.env file
 func ParseRawConfiguration(configuration []byte) (config map[string][]byte) {
 	config = map[string][]byte{}
 	if configuration != nil {
 		scanner := bufio.NewScanner(strings.NewReader(string(configuration)))
 		for scanner.Scan() {
-			line := scanner.Text()
-			// parse only exported environment variables and ignore everything else
-			if strings.HasPrefix(line, "export") {
-				envVar := strings.Split(line, "=")
-				if len(envVar) == 2 {
-					// extract env variable key
-					confKey := strings.TrimSpace(strings.TrimPrefix(envVar[0], "export"))
-					// remove first and last quotes from value and trim spaces
-					confValue := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(envVar[1], "\""), "\""))
-					config[confKey] = []byte(confValue)
-					if confKey == "MINIO_ROOT_USER" || confKey == "MINIO_ACCESS_KEY" {
-						config["accesskey"] = config[confKey]
-					} else if confKey == "MINIO_ROOT_PASSWORD" || confKey == "MINIO_SECRET_KEY" {
-						config["secretkey"] = config[confKey]
-					}
-				}
+			ekv, err := parsEnvEntry(scanner.Text())
+			if err != nil {
+				klog.Errorf("Error parsing tenant configuration: %v", err.Error())
+				continue
 			}
+			if ekv.Skip {
+				// Skips empty lines
+				continue
+			}
+			config[ekv.Key] = []byte(ekv.Value)
+			if ekv.Key == "MINIO_ROOT_USER" || ekv.Key == "MINIO_ACCESS_KEY" {
+				config["accesskey"] = config[ekv.Key]
+			} else if ekv.Key == "MINIO_ROOT_PASSWORD" || ekv.Key == "MINIO_SECRET_KEY" {
+				config["secretkey"] = config[ekv.Key]
+			}
+		}
+		if err := scanner.Err(); err != nil {
+			klog.Errorf("Error parsing tenant configuration: %v", err.Error())
+			return config
 		}
 	}
 	return config
@@ -1026,4 +1084,117 @@ func GetPrometheusName() string {
 // HasMinIODomains indicates whether domains are being specified for MinIO
 func (t *Tenant) HasMinIODomains() bool {
 	return t.Spec.Features != nil && t.Spec.Features.Domains != nil && len(t.Spec.Features.Domains.Minio) > 0
+}
+
+// HasConsoleDomains indicates whether a domain is being specified for Console
+func (t *Tenant) HasConsoleDomains() bool {
+	return t.Spec.Features != nil && t.Spec.Features.Domains != nil && t.Spec.Features.Domains.Console != ""
+}
+
+// ValidateDomains checks the validity of the domains configured on the tenant
+func (t *Tenant) ValidateDomains() error {
+	if t.HasMinIODomains() {
+		domains := t.Spec.Features.Domains.Minio
+		if len(domains) != 0 {
+			for _, domainName := range domains {
+				_, err := url.Parse(domainName)
+				if err != nil {
+					return err
+				}
+
+				if _, ok := dns.IsDomainName(domainName); !ok {
+					return fmt.Errorf("invalid domain `%s`", domainName)
+				}
+			}
+			sort.Strings(domains)
+			lcpSuf := lcpSuffix(domains)
+			for _, domainName := range domains {
+				if domainName == lcpSuf && len(domains) > 1 {
+					return fmt.Errorf("overlapping domains `%s` not allowed", domainName)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// GetDomainHosts returns a list of hosts in the .spec.features.domains.minio list to configure MINIO_DOMAIN
+func (t *Tenant) GetDomainHosts() []string {
+	if t.HasMinIODomains() {
+		domains := t.Spec.Features.Domains.Minio
+		var hosts []string
+		for _, d := range domains {
+			u, err := url.Parse(d)
+			if err != nil {
+				continue
+			}
+			// remove ports if any
+			hostParts := strings.Split(u.Host, ":")
+			hosts = append(hosts, hostParts[0])
+		}
+		return hosts
+	}
+	return nil
+}
+
+// HasEnv returns whether an environment variable is defined in the .spec.env field
+func (t *Tenant) HasEnv(envName string) bool {
+	for _, env := range t.Spec.Env {
+		if env.Name == envName {
+			return true
+		}
+	}
+	return false
+}
+
+// Suffix returns the longest common suffix of the provided strings
+func lcpSuffix(strs []string) string {
+	return lcp(strs, false)
+}
+
+func lcp(strs []string, pre bool) string {
+	// short-circuit empty list
+	if len(strs) == 0 {
+		return ""
+	}
+	xfix := strs[0]
+	// short-circuit single-element list
+	if len(strs) == 1 {
+		return xfix
+	}
+	// compare first to rest
+	for _, str := range strs[1:] {
+		xfixl := len(xfix)
+		strl := len(str)
+		// short-circuit empty strings
+		if xfixl == 0 || strl == 0 {
+			return ""
+		}
+		// maximum possible length
+		maxl := xfixl
+		if strl < maxl {
+			maxl = strl
+		}
+		// compare letters
+		if pre {
+			// prefix, iterate left to right
+			for i := 0; i < maxl; i++ {
+				if xfix[i] != str[i] {
+					xfix = xfix[:i]
+					break
+				}
+			}
+		} else {
+			// suffix, iterate right to left
+			for i := 0; i < maxl; i++ {
+				xi := xfixl - i - 1
+				si := strl - i - 1
+				if xfix[xi] != str[si] {
+					xfix = xfix[xi+1:]
+					break
+				}
+			}
+		}
+	}
+	return xfix
 }

@@ -10,6 +10,8 @@ kubectl-minio/kubectl-minio
 *.zip
 kubectl-minio/crds
 logsearchapi/logsearchapi
+logsearchapi-bin
 *.log
 .vscode
 minio.yaml
+nancy

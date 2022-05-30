@@ -62,10 +62,14 @@ type Bucket struct {
 
 // TenantDomains (`domains`) - List of domains used to access the tenant from outside the kubernetes clusters.
 // this will only configure MinIO for the domains listed, but external DNS configuration is still needed.
+// The listed domains should include schema and port if any is used, i.e. https://minio.domain.com:8123
 type TenantDomains struct {
 	// List of Domains used by MinIO. This will enable DNS style access to the object store where the bucket name is
 	// inferred from a subdomain in the domain.
 	Minio []string `json:"minio,omitempty"`
+	// Domain used to expose the MinIO Console, this will configure the redirect on MinIO when visiting from the browser
+	// If Console is exposed via a subpath, the domain should include it, i.e. https://console.domain.com:8123/subpath/
+	Console string `json:"console,omitempty"`
 }
 
 // S3Features (`s3`) - Object describing which MinIO features to enable/disable in the MinIO Tenant. +
@@ -435,6 +439,16 @@ const (
 	HealthStatusRed HealthStatus = "red"
 )
 
+// TierUsage represents the usage from a tier setup by the tenant
+type TierUsage struct {
+	// Name of the tier
+	Name string `json:"Name"`
+	// type of the tier
+	Type string `json:"Type,omitempty"`
+	// TotalSize usage of the tier
+	TotalSize int64 `json:"totalSize"`
+}
+
 // TenantUsage are metrics regarding the usage and capacity of the tenant
 type TenantUsage struct {
 	// Capacity the usage capacity of this tenant in bytes.
@@ -449,6 +463,9 @@ type TenantUsage struct {
 	// Usage is the raw usage on disks in bytes.
 	// +optional
 	RawUsage int64 `json:"rawUsage,omitempty"`
+	// Tiers includes the usage of individual tiers in the tenant
+	// +optional
+	Tiers []TierUsage `json:"tiers,omitempty"`
 }
 
 // TenantStatus is the status for a Tenant resource

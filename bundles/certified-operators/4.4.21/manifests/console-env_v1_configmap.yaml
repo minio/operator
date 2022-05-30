@@ -1,0 +1,7 @@
+apiVersion: v1
+data:
+  CONSOLE_PORT: "9090"
+  CONSOLE_TLS_PORT: "9443"
+kind: ConfigMap
+metadata:
+  name: console-env

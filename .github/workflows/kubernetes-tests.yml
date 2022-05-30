@@ -284,14 +284,14 @@ jobs:
         with:
           path: |
             minio-operator
-          key: ${{ runner.os }}-operator-${{ hashFiles('minio-operator') }}
+          key: ${{ runner.os }}-operator-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: actions/cache@v2
         with:
           path: |
             logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ hashFiles('logsearchapi-bin') }}
+          key: ${{ runner.os }}-lsa-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
@@ -331,14 +331,14 @@ jobs:
         with:
           path: |
             minio-operator
-          key: ${{ runner.os }}-operator-${{ hashFiles('minio-operator') }}
+          key: ${{ runner.os }}-operator-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: actions/cache@v2
         with:
           path: |
             logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ hashFiles('logsearchapi-bin') }}
+          key: ${{ runner.os }}-lsa-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
@@ -378,21 +378,21 @@ jobs:
         with:
           path: |
             minio-operator
-          key: ${{ runner.os }}-operator-${{ hashFiles('minio-operator') }}
+          key: ${{ runner.os }}-operator-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: actions/cache@v2
         with:
           path: |
             logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ hashFiles('logsearchapi-bin') }}
+          key: ${{ runner.os }}-lsa-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
 
-      - name: Prometheus test on Kind
+      - name: Tenant KES
         run: |
           "${GITHUB_WORKSPACE}/testing/console-tenant+kes.sh"
           
