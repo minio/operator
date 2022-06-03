@@ -16,7 +16,6 @@
 package resources
 
 import (
-	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"log"
@@ -192,11 +191,11 @@ func copyDirtoMemFS(src string, dst string, memFS filesys.FileSystem) error {
 
 		if fd.IsDir() {
 			if err = copyDirtoMemFS(srcfp, dstfp, memFS); err != nil {
-				fmt.Println(err)
+				return err
 			}
 		} else {
 			if err = copyFileToMemFS(srcfp, dstfp, memFS); err != nil {
-				fmt.Println(err)
+				return err
 			}
 		}
 	}

@@ -13,7 +13,7 @@ GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
 HELM_HOME=helm/operator
-HELM_CRDS=$(HELM_HOME)/crds
+HELM_TEMPLATES=$(HELM_HOME)/templates
 
 KUSTOMIZE_HOME=resources
 KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/base/crds/
@@ -28,8 +28,6 @@ getdeps:
 	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
 	@which golangci-lint 1>/dev/null || (echo "Installing golangci-lint" && curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOPATH)/bin v1.43.0)
-	@echo "Go Mod Download"
-	@go mod download
 
 verify: getdeps govet gotest lint
 
@@ -61,13 +59,13 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@go install -v github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
+	@go install github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
 	@echo "WARNING: installing our fork github.com/minio/controller-tools/cmd/controller-gen@v0.4.7"
 	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
 	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@kustomize build resources/patch-crd > $(TMPFILE)
 	@mv -f $(TMPFILE) resources/base/crds/minio.min.io_tenants.yaml
-	@cp -f resources/base/crds/minio.min.io_tenants.yaml $(HELM_CRDS)/minio.min.io_tenants.yaml
+	@cp -f resources/base/crds/minio.min.io_tenants.yaml $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
 
 regen-crd-docs:
 	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go install -v github.com/elastic/crd-ref-docs@latest)

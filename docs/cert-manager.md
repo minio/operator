@@ -50,3 +50,23 @@ Then it creates a new tenant including the new `tenant-certmanager-tls` secret i
     - name: tenant-certmanager-tls
       type: cert-manager.io/v1
 ```
+
+### Create `operator-ca-tls` secret
+
+Copy the cert-manager ca from the tenant certficate
+
+```sh
+kubectl get secrets -n tenant-certmanager tenant-certmanager-tls -o=jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+```
+
+Create the secret
+
+```sh
+kubectl create secret generic operator-ca-tls --from-file=ca.crt -n minio-operator
+```
+
+Restart the minio-operator
+
+```sh
+kubectl rollout restart deployment.apps/minio-operator -n minio-operator
+```
