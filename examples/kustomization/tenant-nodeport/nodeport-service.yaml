@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-nodeport
+  labels:
+    v1.min.io/tenant: storage-nodeport
+spec:
+  ports:
+    - name: https-minio
+      port: 443
+      targetPort: 9000
+    - name: http-minio
+      port: 80
+      targetPort: 9000
+  selector:
+    v1.min.io/tenant: storage-nodeport
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: console-nodeport
+  labels:
+    v1.min.io/console: storage-nodeport-console
+spec:
+  ports:
+    - name: http-console
+      port: 9090
+      targetPort: 9090
+    - name: https-console
+      port: 9443
+      targetPort: 9443
+  selector:
+    v1.min.io/tenant: storage-nodeport
+  type: NodePort
+
