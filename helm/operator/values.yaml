@@ -55,6 +55,6 @@ console:
     tls: [ ]
     host: console.local
     path: /
+    pathType: Prefix
   volumes: [ ]
   volumeMounts: [ ]
-
