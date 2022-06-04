@@ -2,9 +2,11 @@ name: Tenant Tests On Kind
 on:
   pull_request:
     branches: [ master ]
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
   cancel-in-progress: true
+
 jobs:
   getdeps:
     runs-on: ${{ matrix.os }}

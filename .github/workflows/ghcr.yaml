@@ -1,0 +1,33 @@
+name: Operator container build
+
+on:
+  push:
+    # Publish `master` as Docker `latest` image.
+    branches:
+      - master
+
+  # Run tests for any PRs.
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build operator image
+        run: |
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          make clean
+          TAG=${IMAGE,,} make build
+
+      - name: Publish image
+        run: |
+          docker push ${IMAGE,,} # lowercase IMAGE
