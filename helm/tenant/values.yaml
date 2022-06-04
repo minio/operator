@@ -13,7 +13,7 @@ tenant:
   ## Registry location and Tag to download MinIO Server image
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2022-01-08T03-11-54Z
+    tag: RELEASE.2022-05-26T05-48-41Z
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported
@@ -40,7 +40,7 @@ tenant:
       ## Used to specify labels for pods
       labels: { }
       ## Used to specify a toleration for a pod
-      tolerations: { }
+      tolerations: [ ]
       ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be
       ## eligible to run on a node, the node must have each of the
       ## indicated key-value pairs as labels.
@@ -68,11 +68,11 @@ tenant:
     ## Use this field to provide one or more external CA certificates. This is used by MinIO
     ## to verify TLS connections with other applications:
     ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
-    externalCaCertSecret: { }
-    ## Use this field to provide a list of Secrets with external certificates. This can be used to to configure
+    externalCaCertSecret: [ ]
+    ## Use this field to provide a list of Secrets with external certificates. This can be used to configure
     ## TLS for MinIO Tenant pods. Create secrets as explained here:
     ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
-    externalCertSecret: { }
+    externalCertSecret: [ ]
     ## Enable automatic Kubernetes based certificate generation and signing as explained in
     ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
     requestAutoCert: true
@@ -121,7 +121,7 @@ tenant:
   ## services created by the operator.
   serviceMetadata: { }
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
-  env: { }
+  env: [ ]
   ## PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
   ## This is applied to MinIO pods only.
   ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
@@ -222,3 +222,23 @@ tenant:
       runAsGroup: 1000
       runAsNonRoot: true
       fsGroup: 1000
+
+ingress:
+  api:
+    enabled: false
+    ingressClassName: ""
+    labels: { }
+    annotations: { }
+    tls: [ ]
+    host: minio.local
+    path: /
+    pathType: Prefix
+  console:
+    enabled: false
+    ingressClassName: ""
+    labels: { }
+    annotations: { }
+    tls: [ ]
+    host: minio-console.local
+    path: /
+    pathType: Prefix

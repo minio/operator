@@ -80,11 +80,11 @@ spec:
   {{- end }}
   mountPath: {{ dig "mountPath" "/export" . }}
   subPath: {{ dig "subPath" "/data" . }}
-  {{- with (dig "certificate" "externalCaCertSecret" (dict) .) }}
+  {{- with (dig "certificate" "externalCaCertSecret" (list) .) }}
   externalCaCertSecret:
     {{- toYaml . | nindent 6 }}
   {{- end }}
-  {{- with (dig "certificate" "externalCertSecret" (dict) .) }}
+  {{- with (dig "certificate" "externalCertSecret" (list) .) }}
   externalCertSecret:
     {{- toYaml . | nindent 6 }}
   {{- end }}
@@ -128,7 +128,7 @@ spec:
   serviceMetadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
-  {{- with (dig "env" (dict) .) }}
+  {{- with (dig "env" (list) .) }}
   env:
     {{- toYaml . | nindent 4 }}
   {{- end }}
