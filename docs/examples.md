@@ -155,6 +155,16 @@ You can deploy a pre-configured example by running the following command:
 kustomize build examples/kustomization/tenant-kes-encryption | kubectl apply -f -
 ```
 
+## MinIO Tenant with Services expose through NodePort
+
+MinIO Operator can automatically generate `LoadBalancer` and `ClusterIP` type services when deploying tenants, however
+there is one more way to expose your services in case you don't want to deal with `load balancers` or `ingress` configurations and
+that is `NodePort`. NodePort type services will be accessible by opening a port on each Kubernetes cluster node, read more about [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport).
+
+```$xslt
+kustomize build examples/kustomization/tenant-nodeport  | kubectl apply -f -
+```
+
 ### Additional Examples
 
 For additional examples on how to deploy a tenant with [LDAP](https://docs.min.io/minio/baremetal/security/ad-ldap-external-identity-management/configure-ad-ldap-external-identity-management.html) or [OIDC](https://docs.min.io/minio/baremetal/security/openid-external-identity-management/configure-openid-external-identity-management.html) you can look at the [examples directory](https://github.com/minio/operator/tree/master/examples/kustomization)

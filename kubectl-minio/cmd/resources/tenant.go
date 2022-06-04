@@ -18,6 +18,7 @@ package resources
 import (
 	"errors"
 
+	"github.com/dustin/go-humanize"
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	operator "github.com/minio/operator/pkg/apis/minio.min.io"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -28,19 +29,25 @@ import (
 
 // TenantOptions encapsulates the CLI options for a MinIO Tenant
 type TenantOptions struct {
-	Name                string
-	SecretName          string
-	Servers             int32
-	Volumes             int32
-	Capacity            string
-	NS                  string
-	Image               string
-	StorageClass        string
-	KmsSecret           string
-	ConsoleSecret       string
-	DisableTLS          bool
-	ImagePullSecret     string
-	DisableAntiAffinity bool
+	Name                  string
+	SecretName            string
+	Servers               int32
+	Volumes               int32
+	Capacity              string
+	NS                    string
+	Image                 string
+	StorageClass          string
+	KmsSecret             string
+	ConsoleSecret         string
+	DisableTLS            bool
+	ImagePullSecret       string
+	DisableAntiAffinity   bool
+	EnableAuditLogs       bool
+	AuditLogsDiskSpace    int32
+	AuditLogsImage        string
+	AuditLogsPGImage      string
+	AuditLogsPGInitImage  string
+	AuditLogsStorageClass string
 }
 
 // Validate Tenant Options
@@ -134,5 +141,56 @@ func NewTenant(opts *TenantOptions, user *v1.Secret) (*miniov2.Tenant, error) {
 			},
 		},
 	}
+	if opts.EnableAuditLogs {
+		t.Spec.Log = getAuditLogConfig(opts)
+	}
 	return t, t.Validate()
+}
+
+func getAuditLogConfig(opts *TenantOptions) *miniov2.LogConfig {
+	diskSpace := int64(opts.AuditLogsDiskSpace) * humanize.GiByte
+	var logSearchStorageClass *string
+	if opts.AuditLogsStorageClass != "" {
+		logSearchStorageClass = &opts.AuditLogsStorageClass
+	}
+	// the audit max cap cannot be larger than disk size on the DB, else it won't trim the data
+	auditMaxCap := 10
+	if (diskSpace / humanize.GiByte) < int64(auditMaxCap) {
+		auditMaxCap = int(diskSpace / humanize.GiByte)
+	}
+	logConfig := createLogConfig(diskSpace, auditMaxCap, opts.Name, logSearchStorageClass)
+	if opts.AuditLogsImage != "" {
+		logConfig.Image = opts.AuditLogsImage
+	}
+	if opts.AuditLogsPGImage != "" {
+		logConfig.Db.Image = opts.AuditLogsPGImage
+	}
+	if opts.AuditLogsPGInitImage != "" {
+		logConfig.Db.InitImage = opts.AuditLogsPGInitImage
+	}
+	return logConfig
+}
+
+func createLogConfig(diskSpace int64, auditMaxCap int, name string, storage *string) *miniov2.LogConfig {
+	return &miniov2.LogConfig{
+		Audit: &miniov2.AuditConfig{DiskCapacityGB: &auditMaxCap},
+		Db: &miniov2.LogDbConfig{
+			VolumeClaimTemplate: &v1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name + "-log",
+				},
+				Spec: v1.PersistentVolumeClaimSpec{
+					AccessModes: []v1.PersistentVolumeAccessMode{
+						v1.ReadWriteOnce,
+					},
+					Resources: v1.ResourceRequirements{
+						Requests: v1.ResourceList{
+							v1.ResourceStorage: *resource.NewQuantity(diskSpace, resource.DecimalExponent),
+						},
+					},
+					StorageClassName: storage,
+				},
+			},
+		},
+	}
 }
