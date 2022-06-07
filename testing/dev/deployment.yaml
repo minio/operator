@@ -16,7 +16,7 @@ spec:
       serviceAccountName: minio-operator
       containers:
         - name: minio-operator
-          image: minio/operator:dev
+          image: minio/operator:noop
           imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 1000
