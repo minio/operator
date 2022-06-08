@@ -33,12 +33,29 @@ const (
 
 type fParam string
 
-func stringToFParam(s string) (f fParam, err error) {
+var rawQRequestFieldsMap = map[fParam]fParam{
+	"bucket":          "log->'api'->>'bucket'",
+	"object":          "log->'api'->>'object'",
+	"api_name":        "log->'api'->>'name'",
+	"access_key":      "log->'api'->>'accessKey'",
+	"request_id":      "log->>'requestID'",
+	"user_agent":      "log->>'userAgent'",
+	"response_status": "log->'api'->>'status'",
+}
+
+func stringToFParam(q qType, s string) (f fParam, err error) {
 	f = fParam(s)
 	switch f {
 	case "bucket", "object", "api_name", "access_key", "request_id", "user_agent", "response_status":
 	default:
 		return "", fmt.Errorf("Unknown filter param: %s", s)
+	}
+	if q == rawQ {
+		var ok bool
+		f, ok = rawQRequestFieldsMap[fParam(s)]
+		if !ok {
+			return "", fmt.Errorf("Unknown filter param for raw data table: %s", s)
+		}
 	}
 	return
 }
@@ -175,7 +192,7 @@ func searchQueryFromRequest(r *http.Request) (*SearchQuery, error) {
 			if len(ps) != 2 {
 				return nil, fmt.Errorf("Invalid filter parameter: %s", v)
 			}
-			key, err := stringToFParam(ps[0])
+			key, err := stringToFParam(q, ps[0])
 			if err != nil {
 				return nil, err
 			}
