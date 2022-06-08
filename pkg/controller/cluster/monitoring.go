@@ -305,11 +305,11 @@ func getHealthCheckTransport() func() *http.Transport {
 	tr := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
-			Timeout: 2 * time.Second,
+			Timeout: 15 * time.Second,
 		}).DialContext,
 		MaxIdleConnsPerHost:   1024,
 		IdleConnTimeout:       30 * time.Second,
-		ResponseHeaderTimeout: 5 * time.Second,
+		ResponseHeaderTimeout: 1 * time.Minute,
 		TLSHandshakeTimeout:   5 * time.Second,
 		ExpectContinueTimeout: 5 * time.Second,
 		TLSClientConfig:       tlsConfig,
