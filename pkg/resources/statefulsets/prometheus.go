@@ -125,11 +125,14 @@ func prometheusSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
+	fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
+
 	securityContext := corev1.PodSecurityContext{
-		RunAsNonRoot: &runAsNonRoot,
-		RunAsUser:    &runAsUser,
-		RunAsGroup:   &runAsGroup,
-		FSGroup:      &fsGroup,
+		RunAsNonRoot:        &runAsNonRoot,
+		RunAsUser:           &runAsUser,
+		RunAsGroup:          &runAsGroup,
+		FSGroup:             &fsGroup,
+		FSGroupChangePolicy: &fsGroupChangePolicy,
 	}
 	if t.HasPrometheusEnabled() && t.Spec.Prometheus.SecurityContext != nil {
 		securityContext = *t.Spec.Prometheus.SecurityContext

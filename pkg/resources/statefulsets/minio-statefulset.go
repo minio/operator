@@ -404,11 +404,14 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	var fsGroup int64 = 1000
+	fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
+
 	securityContext := corev1.PodSecurityContext{
-		RunAsNonRoot: &runAsNonRoot,
-		RunAsUser:    &runAsUser,
-		RunAsGroup:   &runAsGroup,
-		FSGroup:      &fsGroup,
+		RunAsNonRoot:        &runAsNonRoot,
+		RunAsUser:           &runAsUser,
+		RunAsGroup:          &runAsGroup,
+		FSGroup:             &fsGroup,
+		FSGroupChangePolicy: &fsGroupChangePolicy,
 	}
 
 	if pool != nil && pool.SecurityContext != nil {
