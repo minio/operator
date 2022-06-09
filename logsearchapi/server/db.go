@@ -346,15 +346,21 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 
 	switch s.Query {
 	case rawQ:
+		sqlArgs := []interface{}{}
+		dollarStart := 1
 		whereClauses := []string{}
 		// only filter by time if provided
 		if s.TimeStart != nil {
-			timeRangeClause := fmt.Sprintf("event_time >= '%s'", s.TimeStart.Format(time.RFC3339Nano))
+			timeRangeClause := fmt.Sprintf("event_time >= $%d", dollarStart)
+			sqlArgs = append(sqlArgs, s.TimeStart.Format(time.RFC3339Nano))
 			whereClauses = append(whereClauses, timeRangeClause)
+			dollarStart++
 		}
 		if s.TimeEnd != nil {
-			timeRangeClause := fmt.Sprintf("event_time < '%s'", s.TimeEnd.Format(time.RFC3339Nano))
+			timeRangeClause := fmt.Sprintf("event_time < $%d", dollarStart)
+			sqlArgs = append(sqlArgs, s.TimeEnd.Format(time.RFC3339Nano))
 			whereClauses = append(whereClauses, timeRangeClause)
+			dollarStart++
 		}
 		if s.LastDuration != nil {
 			// s.TimeEnd and s.TimeStart would be nil due to
@@ -364,6 +370,11 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 			whereClauses = append(whereClauses, timeRangeClause)
 		}
 
+		// Remaining dollar params are added for filter where clauses
+		filterClauses, filterArgs, dollarStart := generateFilterClauses(s.FParams, dollarStart)
+		whereClauses = append(whereClauses, filterClauses...)
+		sqlArgs = append(sqlArgs, filterArgs...)
+
 		whereClause := strings.Join(whereClauses, " AND ")
 		if len(whereClauses) > 0 {
 			whereClause = fmt.Sprintf("WHERE %s", whereClause)
@@ -371,17 +382,12 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 
 		pagingClause := ""
 		if s.ExportFormat == "" {
-			pagingClause = "OFFSET $1 LIMIT $2"
+			sqlArgs = append(sqlArgs, s.PageNumber*s.PageSize, s.PageSize)
+			pagingClause = fmt.Sprintf("OFFSET $%d LIMIT $%d", dollarStart, dollarStart+1)
 		}
 
 		q := logEventSelect.build(auditLogEventsTable.Name, whereClause, timeOrder, pagingClause)
-		var rows *sql.Rows
-		var err error
-		if pagingClause == "" {
-			rows, err = c.QueryContext(ctx, q)
-		} else {
-			rows, err = c.QueryContext(ctx, q, s.PageNumber*s.PageSize, s.PageSize)
-		}
+		rows, err := c.QueryContext(ctx, q, sqlArgs...)
 		if err != nil {
 			return fmt.Errorf("Error querying db: %v", err)
 		}
@@ -461,17 +467,14 @@ func (c *DBClient) Search(ctx context.Context, s *SearchQuery, w io.Writer) erro
 		whereClauses := []string{}
 		// only filter by time if provided
 		if s.TimeStart != nil {
-			timeRangeOp := ">="
-			timeRangeClause := fmt.Sprintf("time %s $%d", timeRangeOp, dollarStart)
+			timeRangeClause := fmt.Sprintf("time >= $%d", dollarStart)
 			sqlArgs = append(sqlArgs, s.TimeStart.Format(time.RFC3339Nano))
 			whereClauses = append(whereClauses, timeRangeClause)
 			dollarStart++
 		}
 		// only filter by time if provided
 		if s.TimeEnd != nil {
-			// $3 will be used for the time parameter
-			timeRangeOp := "<"
-			timeRangeClause := fmt.Sprintf("time %s $%d", timeRangeOp, dollarStart)
+			timeRangeClause := fmt.Sprintf("time < $%d", dollarStart)
 			sqlArgs = append(sqlArgs, s.TimeEnd.Format(time.RFC3339Nano))
 			whereClauses = append(whereClauses, timeRangeClause)
 			dollarStart++
