@@ -131,11 +131,14 @@ func postgresSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 	var runAsUser int64 = 999
 	var runAsGroup int64 = 999
 	var fsGroup int64 = 999
+	fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
+
 	securityContext := corev1.PodSecurityContext{
-		RunAsNonRoot: &runAsNonRoot,
-		RunAsUser:    &runAsUser,
-		RunAsGroup:   &runAsGroup,
-		FSGroup:      &fsGroup,
+		RunAsNonRoot:        &runAsNonRoot,
+		RunAsUser:           &runAsUser,
+		RunAsGroup:          &runAsGroup,
+		FSGroup:             &fsGroup,
+		FSGroupChangePolicy: &fsGroupChangePolicy,
 	}
 	if t.HasLogEnabled() && t.Spec.Log.Db != nil && t.Spec.Log.Db.SecurityContext != nil {
 		securityContext = *t.Spec.Log.Db.SecurityContext
