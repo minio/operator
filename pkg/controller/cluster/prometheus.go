@@ -25,6 +25,10 @@ import (
 	"strings"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/types"
+
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -171,20 +175,84 @@ func (c *Controller) checkAndCreatePrometheusHeadless(ctx context.Context, tenan
 	return svc, err
 }
 
-func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, tenant *miniov2.Tenant) error {
-	_, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PrometheusStatefulsetName())
-	if err == nil || !k8serrors.IsNotFound(err) {
+func (c *Controller) checkPrometheusStatus(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte, totalReplicas int32, cOpts metav1.CreateOptions, uOpts metav1.UpdateOptions, nsName types.NamespacedName) error {
+	if tenant.HasPrometheusEnabled() {
+		_, err := c.checkAndCreatePrometheusConfigMap(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
+		if err != nil {
+			return err
+		}
+		_, err = c.checkAndCreatePrometheusHeadless(ctx, tenant)
+		if err != nil {
+			return err
+		}
+		return c.checkAndCreatePrometheusStatefulSet(ctx, tenant, totalReplicas, cOpts, uOpts, nsName)
+	}
+	err := c.deletePrometheusHeadless(ctx, tenant)
+	if err != nil {
 		return err
 	}
+	return c.deletePrometheusStatefulSet(ctx, tenant)
+}
 
-	if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningPrometheusStatefulSet, 0); err != nil {
+// prometheusStatefulSetMatchesSpec checks if the StatefulSet for Prometheus matches what is expected and described from the Tenant
+func prometheusStatefulSetMatchesSpec(tenant *miniov2.Tenant, prometheusStatefulSet *appsv1.StatefulSet) (bool, error) {
+	if prometheusStatefulSet == nil {
+		return false, errors.New("cannot process an empty prometheus StatefulSet")
+	}
+	if tenant == nil {
+		return false, errors.New("cannot process an empty tenant")
+	}
+	// compare image directly
+	if !tenant.Spec.Prometheus.EqualImages(prometheusStatefulSet.Spec.Template.Spec.Containers) {
+		klog.V(2).Infof("Tenant %s Prometheus version doesn't match", tenant.Name)
+		return false, nil
+	}
+	// compare any other change from what is specified on the tenant
+	expectedStatefulSet := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName())
+	if !equality.Semantic.DeepDerivative(expectedStatefulSet.Spec, prometheusStatefulSet.Spec) {
+		// some field set by the operator has changed
+		return false, nil
+	}
+	return true, nil
+}
+
+func (c *Controller) checkAndCreatePrometheusStatefulSet(ctx context.Context, tenant *miniov2.Tenant, totalReplicas int32, cOpts metav1.CreateOptions, uOpts metav1.UpdateOptions, nsName types.NamespacedName) error {
+	// Get the StatefulSet with the name specified in spec
+	prometheusStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.PrometheusStatefulsetName())
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningPrometheusStatefulSet, 0); err != nil {
+				return err
+			}
+			klog.V(2).Infof("Creating a new Prometheus StatefulSet for %s", tenant.Namespace)
+			prometheusSS := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName())
+			_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, prometheusSS, metav1.CreateOptions{})
+			return err
+		}
 		return err
 	}
-
-	klog.V(2).Infof("Creating a new Prometheus StatefulSet for %s", tenant.Namespace)
-	prometheusSS := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName())
-	_, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, prometheusSS, metav1.CreateOptions{})
-	return err
+	// Verify if this prometheus StatefulSet matches the spec on the tenant (resources, affinity, sidecars, etc)
+	var ssSpecMatches bool
+	if ssSpecMatches, err = prometheusStatefulSetMatchesSpec(tenant, prometheusStatefulSet); err != nil {
+		return err
+	}
+	// if the Prometheus StatefulSet doesn't match the spec
+	if !ssSpecMatches {
+		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingPrometheus, totalReplicas); err != nil {
+			return err
+		}
+		newPrometheusSS := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName())
+		// updating fields
+		prometheusStatefulSet.Spec.Template = newPrometheusSS.Spec.Template
+		prometheusStatefulSet.Spec.Replicas = newPrometheusSS.Spec.Replicas
+		prometheusStatefulSet.Spec.UpdateStrategy = newPrometheusSS.Spec.UpdateStrategy
+		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, prometheusStatefulSet, uOpts); err != nil {
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("Prometheus Statefulset failed to update: %s", err))
+			return err
+		}
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "StsUpdated", "Prometheus Statefulset Updated")
+	}
+	return nil
 }
 
 func (c *Controller) getPrometheus(ctx context.Context) (*promv1.Prometheus, error) {
