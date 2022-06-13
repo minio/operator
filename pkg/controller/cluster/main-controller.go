@@ -104,6 +104,7 @@ const (
 	StatusWaitingKESCert                     = "Waiting for KES TLS Certificate"
 	StatusUpdatingMinIOVersion               = "Updating MinIO Version"
 	StatusUpdatingKES                        = "Updating KES"
+	StatusUpdatingPrometheus                 = "Updating Prometheus"
 	StatusUpdatingLogPGStatefulSet           = "Updating Postgres server"
 	StatusUpdatingLogSearchAPIServer         = "Updating Log Search API server"
 	StatusUpdatingResourceRequirements       = "Updating Resource Requirements"
@@ -1193,30 +1194,10 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if tenant.HasPrometheusEnabled() {
-		_, err := c.checkAndCreatePrometheusConfigMap(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
-		if err != nil {
-			return err
-		}
-
-		_, err = c.checkAndCreatePrometheusHeadless(ctx, tenant)
-		if err != nil {
-			return err
-		}
-
-		err = c.checkAndCreatePrometheusStatefulSet(ctx, tenant)
-		if err != nil {
-			return err
-		}
-	} else {
-		err = c.deletePrometheusHeadless(ctx, tenant)
-		if err != nil {
-			return err
-		}
-		err = c.deletePrometheusStatefulSet(ctx, tenant)
-		if err != nil {
-			return err
-		}
+	err = c.checkPrometheusStatus(ctx, tenant, tenantConfiguration, totalReplicas, cOpts, uOpts, nsName)
+	if err != nil {
+		klog.V(2).Infof("Error checking Prometheus state %v", err)
+		return err
 	}
 
 	if tenant.HasPrometheusOperatorEnabled() {

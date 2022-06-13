@@ -143,11 +143,6 @@ func prometheusSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 // NewForPrometheus creates a new Prometheus StatefulSet for prometheus metrics
 func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	var replicas int32 = 1
-	promMeta := metav1.ObjectMeta{
-		Name:            t.PrometheusStatefulsetName(),
-		Namespace:       t.Namespace,
-		OwnerReferences: t.OwnerRef(),
-	}
 	// Create a PVC to for prometheus storage
 	volumeReq := corev1.ResourceList{}
 	volumeSize := int64(prometheusDefaultVolumeSize)
@@ -229,7 +224,11 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 	}
 
 	ss := &appsv1.StatefulSet{
-		ObjectMeta: promMeta,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            t.PrometheusStatefulsetName(),
+			Namespace:       t.Namespace,
+			OwnerReferences: t.OwnerRef(),
+		},
 		Spec: appsv1.StatefulSetSpec{
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: miniov2.DefaultUpdateStrategy,

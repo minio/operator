@@ -633,8 +633,29 @@ func (lc *LogConfig) EqualImage(image string) bool {
 }
 
 // EqualImage returns true if config image and current input image are same
-func (c KESConfig) EqualImage(currentImage string) bool {
+func (c *KESConfig) EqualImage(currentImage string) bool {
+	if c == nil {
+		return false
+	}
 	return c.Image == currentImage
+}
+
+// EqualImages returns true if config image and current input image are same
+func (c *PrometheusConfig) EqualImages(containers []corev1.Container) bool {
+	if c == nil {
+		return false
+	}
+	prometheusImages := map[string]bool{
+		c.Image:        true,
+		c.InitImage:    true,
+		c.SideCarImage: true,
+	}
+	for _, c := range containers {
+		if _, ok := prometheusImages[c.Image]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // LogConfig (`log`) defines the configuration of the MinIO Log Search API deployed as part of the MinIO Tenant. The Operator deploys a PostgreSQL instance as part of the tenant to support storing and querying MinIO logs. +
