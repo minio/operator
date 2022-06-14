@@ -822,7 +822,7 @@ func (z *Pool) Validate(zi int) error {
 		case 2:
 			return fmt.Errorf("pool #%d with 2 servers must have at least 4 volumes in total", zi)
 		case 3:
-			return fmt.Errorf("pool #%d with 3 servers must have at least 4 volumes in total", zi)
+			return fmt.Errorf("pool #%d with 3 servers must have at least 6 volumes in total", zi)
 		}
 	}
 
