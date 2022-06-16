@@ -135,12 +135,12 @@ spec:
   {{- if dig "priorityClassName" "" . }}
   priorityClassName: {{ dig "priorityClassName" "" . }}
   {{- end }}
-  {{- if dig "kes" "kesSecret" "name" false . }}
+  {{- if dig "kes" "configuration" false . }}
   kes:
     image: {{ .kes.image | quote }}
     replicas: {{ .kes.replicas | int }}
     kesSecret:
-      name: {{ .kes.kesSecret.name | quote }}
+      name: "kes-configuration"
     imagePullPolicy: {{ .kes.imagePullPolicy | quote }}
     externalCertSecret: {{ .kes.externalCertSecret | quote }}
     clientCertSecret: {{ .kes.clientCertSecret | quote }}
