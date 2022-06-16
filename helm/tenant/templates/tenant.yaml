@@ -25,10 +25,13 @@ spec:
   imagePullSecret:
     name: {{ dig "imagePullSecret" "name" "" . }}
   {{- end }}
-  {{- if dig "secrets" "enabled" false ($.Values | merge (dict)) }}
+  {{- if dig "secrets" false ($.Values | merge (dict)) }}
   ## Secret with credentials to be used by MinIO Tenant.
-  credsSecret:
+  configuration:
     name: {{ dig "secrets" "name" "" ($.Values | merge (dict)) }}
+  ## Deprecated credsSecret
+  credsSecret:
+    name: "tenant-secret"
   {{- end }}
   pools:
   {{- range (dig "pools" (list) .) }}
