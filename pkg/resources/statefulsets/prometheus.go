@@ -16,6 +16,7 @@ package statefulsets
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -53,7 +54,15 @@ func prometheusSelector(t *miniov2.Tenant) *metav1.LabelSelector {
 }
 
 func prometheusEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
-	return []corev1.EnvVar{}
+	var envVars []corev1.EnvVar
+	// Add all the tenant.spec.prometheus.env environment variables
+	// User defined environment variables will take precedence over default environment variables
+	envVars = append(envVars, t.GetPrometheusEnvVars()...)
+	// sort the array to produce the same result everytime
+	sort.Slice(envVars, func(i, j int) bool {
+		return envVars[i].Name < envVars[j].Name
+	})
+	return envVars
 }
 
 func prometheusConfigVolumeMount(t *miniov2.Tenant) corev1.VolumeMount {

@@ -378,7 +378,7 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 	}
 
-	if t.HasLogEnabled() {
+	if t.HasLogSearchAPIEnabled() {
 		if t.Spec.Log.Image == "" {
 			t.Spec.Log.Image = DefaultLogSearchAPIImage
 		}
@@ -539,9 +539,14 @@ func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
 }
 
-// HasLogEnabled checks if Log feature has been enabled
-func (t *Tenant) HasLogEnabled() bool {
+// HasLogSearchAPIEnabled checks if Log feature has been enabled
+func (t *Tenant) HasLogSearchAPIEnabled() bool {
 	return t.Spec.Log != nil
+}
+
+// HasLogDBEnabled checks if Log DB feature has been enabled
+func (t *Tenant) HasLogDBEnabled() bool {
+	return t.Spec.Log != nil && t.Spec.Log.Db != nil
 }
 
 // HasPrometheusEnabled checks if Prometheus metrics has been enabled
@@ -557,6 +562,38 @@ func (t *Tenant) HasPrometheusOperatorEnabled() bool {
 // GetEnvVars returns the environment variables for tenant deployment.
 func (t *Tenant) GetEnvVars() (env []corev1.EnvVar) {
 	return t.Spec.Env
+}
+
+// GetLogSearchAPIEnvVars returns the environment variables for Log Search Api deployment.
+func (t *Tenant) GetLogSearchAPIEnvVars() (env []corev1.EnvVar) {
+	if !t.HasLogSearchAPIEnabled() {
+		return env
+	}
+	return t.Spec.Log.Env
+}
+
+// GetLogDBEnvVars returns the environment variables for Postgres deployment.
+func (t *Tenant) GetLogDBEnvVars() (env []corev1.EnvVar) {
+	if !t.HasLogDBEnabled() {
+		return env
+	}
+	return t.Spec.Log.Db.Env
+}
+
+// GetPrometheusEnvVars returns the environment variables for the Prometheus deployment.
+func (t *Tenant) GetPrometheusEnvVars() (env []corev1.EnvVar) {
+	if !t.HasPrometheusEnabled() {
+		return env
+	}
+	return t.Spec.Prometheus.Env
+}
+
+// GetKESEnvVars returns the environment variables for the KES deployment.
+func (t *Tenant) GetKESEnvVars() (env []corev1.EnvVar) {
+	if !t.HasKESEnabled() {
+		return env
+	}
+	return t.Spec.KES.Env
 }
 
 // UpdateURL returns the URL for the sha256sum location of the new binary
@@ -929,6 +966,29 @@ func ToMap(envs []corev1.EnvVar) map[string]string {
 		newMap[envs[i].Name] = envs[i].Value
 	}
 	return newMap
+}
+
+// IsContainersEnvUpdated compare environment variables of existing and expected containers and
+// returns true if there is a change
+func IsContainersEnvUpdated(existingContainers, expectedContainers []corev1.Container) bool {
+	// compare containers environment variables
+	expectedContainersEnvVars := map[string][]corev1.EnvVar{}
+	existingContainersEnvVars := map[string][]corev1.EnvVar{}
+	for _, c := range existingContainers {
+		existingContainersEnvVars[c.Name] = c.Env
+	}
+	for _, c := range expectedContainers {
+		expectedContainersEnvVars[c.Name] = c.Env
+	}
+	for key := range expectedContainersEnvVars {
+		if _, ok := existingContainersEnvVars[key]; !ok {
+			return true
+		}
+		if IsEnvUpdated(ToMap(existingContainersEnvVars[key]), ToMap(expectedContainersEnvVars[key])) {
+			return true
+		}
+	}
+	return false
 }
 
 // IsEnvUpdated looks for new env vars in the old env vars and returns true if

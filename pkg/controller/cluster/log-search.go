@@ -67,6 +67,10 @@ func logDBStatefulsetMatchesSpec(tenant *miniov2.Tenant, actualSS *appsv1.Statef
 	// search feature is internal to operator and is unaffectd by tenant
 	// spec changes we use `actualSS`'s service name to create `expectedSS`.
 	expectedSS := statefulsets.NewForLogDb(tenant, actualSS.Spec.ServiceName)
+	// compare containers environment variables
+	if miniov2.IsContainersEnvUpdated(expectedSS.Spec.Template.Spec.Containers, actualSS.Spec.Template.Spec.Containers) {
+		return false, nil
+	}
 	if !equality.Semantic.DeepDerivative(expectedSS.Spec, actualSS.Spec) {
 		// some fields set by the operator have changed
 		return false, nil
@@ -92,6 +96,10 @@ func logSearchAPIDeploymentMatchesSpec(tenant *miniov2.Tenant, actualDeployment 
 	}
 
 	expectedDeployment := deployments.NewForLogSearchAPI(tenant)
+	// compare containers environment variables
+	if miniov2.IsContainersEnvUpdated(expectedDeployment.Spec.Template.Spec.Containers, actualDeployment.Spec.Template.Spec.Containers) {
+		return false, nil
+	}
 	if !equality.Semantic.DeepDerivative(expectedDeployment.Spec, actualDeployment.Spec) {
 		// some fields set by the operator have changed
 		return false, nil

@@ -16,6 +16,7 @@ package statefulsets
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -63,16 +64,17 @@ func logDbMetadata(t *miniov2.Tenant) metav1.ObjectMeta {
 
 // logEnvVars returns env with POSTGRES_DB set to log database, POSTGRES_USER and POSTGRES_PASSWORD from Log's k8s secret
 func logEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
-	return []corev1.EnvVar{
-		{
+	var envVars []corev1.EnvVar
+	envVarsMap := map[string]corev1.EnvVar{
+		miniov2.LogAuditDBKey: {
 			Name:  miniov2.LogAuditDBKey,
 			Value: miniov2.LogAuditDB,
 		},
-		{
+		miniov2.LogPgUserKey: {
 			Name:  miniov2.LogPgUserKey,
 			Value: miniov2.LogPgUser,
 		},
-		{
+		miniov2.LogPgPassKey: {
 			Name: miniov2.LogPgPassKey,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -84,6 +86,20 @@ func logEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 			},
 		},
 	}
+	// Add all the tenant.spec.log.db.env environment variables
+	// User defined environment variables will take precedence over default environment variables
+	for _, env := range t.GetLogDBEnvVars() {
+		envVarsMap[env.Name] = env
+	}
+	// transform map to array
+	for _, env := range envVarsMap {
+		envVars = append(envVars, env)
+	}
+	// sort the array to produce the same result everytime
+	sort.Slice(envVars, func(i, j int) bool {
+		return envVars[i].Name < envVars[j].Name
+	})
+	return envVars
 }
 
 func logVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
@@ -140,7 +156,7 @@ func postgresSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 		FSGroup:             &fsGroup,
 		FSGroupChangePolicy: &fsGroupChangePolicy,
 	}
-	if t.HasLogEnabled() && t.Spec.Log.Db != nil && t.Spec.Log.Db.SecurityContext != nil {
+	if t.HasLogSearchAPIEnabled() && t.Spec.Log.Db != nil && t.Spec.Log.Db.SecurityContext != nil {
 		securityContext = *t.Spec.Log.Db.SecurityContext
 	}
 	return &securityContext

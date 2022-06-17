@@ -209,6 +209,10 @@ func prometheusStatefulSetMatchesSpec(tenant *miniov2.Tenant, prometheusStateful
 	}
 	// compare any other change from what is specified on the tenant
 	expectedStatefulSet := statefulsets.NewForPrometheus(tenant, tenant.PrometheusHLServiceName())
+	// compare containers environment variables
+	if miniov2.IsContainersEnvUpdated(expectedStatefulSet.Spec.Template.Spec.Containers, prometheusStatefulSet.Spec.Template.Spec.Containers) {
+		return false, nil
+	}
 	if !equality.Semantic.DeepDerivative(expectedStatefulSet.Spec, prometheusStatefulSet.Spec) {
 		// some field set by the operator has changed
 		return false, nil

@@ -141,6 +141,10 @@ spec:
   {{- if dig "kes" "configuration" false . }}
   kes:
     image: {{ .kes.image | quote }}
+    {{- with (dig "kes" "env" (list) .) }}
+    env:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
     replicas: {{ .kes.replicas | int }}
     kesSecret:
       name: "kes-configuration"
@@ -182,6 +186,10 @@ spec:
   ## Prometheus setup for MinIO Tenant.
   prometheus:
     image: {{ .prometheus.image | quote }}
+    {{- with (dig "prometheus" "env" (list) .) }}
+    env:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
     sidecarimage: {{ .prometheus.sidecarimage | quote }}
     initimage: {{ .prometheus.initimage | quote }}
     diskCapacityGB: {{ .prometheus.diskCapacityGB | int }}
@@ -218,6 +226,10 @@ spec:
   ## LogSearch API setup for MinIO Tenant.
   log:
     image: {{ .log.image | quote }}
+    {{- with (dig "log" "env" (list) .) }}
+    env:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
     {{- with (dig "resources" (dict) .) }}
     resources:
       {{ toYaml . | nindent 4 }}
@@ -243,6 +255,13 @@ spec:
       diskCapacityGB: {{ .log.audit.diskCapacityGB | int }}
     db:
       image: {{ .log.db.image | quote }}
+      {{- with (dig "log" "db" "env" (list) .) }}
+      env:
+      {{- range . }}
+        - name: {{ .name | quote }}
+          value: {{ .value | quote }}
+      {{- end }}
+      {{- end }}
       initimage: {{ .log.db.initimage | quote }}
       volumeClaimTemplate:
         {{- with (dig "metadata" (dict) .) }}

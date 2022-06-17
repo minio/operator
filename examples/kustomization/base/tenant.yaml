@@ -170,6 +170,7 @@ spec:
   ## Prometheus setup for MinIO Tenant.
   prometheus:
     image: "" # defaults to quay.io/prometheus/prometheus:latest
+    env: [ ]
     sidecarimage: "" # defaults to alpine
     initimage: "" # defaults to busybox:1.33.1
     diskCapacityGB: 1
@@ -195,6 +196,7 @@ spec:
   ## LogSearch API setup for MinIO Tenant.
   log:
     image: "" # defaults to minio/operator:v4.4.23
+    env: [ ]
     resources: { }
     nodeSelector: { }
     affinity:
@@ -209,6 +211,7 @@ spec:
     ## Postgres setup for LogSearch API
     db:
       image: "" # defaults to library/postgres
+      env: [ ]
       initimage: "" # defaults to busybox:1.33.1
       volumeClaimTemplate:
         metadata: { }

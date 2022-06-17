@@ -211,6 +211,13 @@ func (in *KESConfig) DeepCopyInto(out *KESConfig) {
 		*out = new(v1.PodSecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
@@ -299,6 +306,13 @@ func (in *LogConfig) DeepCopyInto(out *LogConfig) {
 		*out = new(v1.PodSecurityContext)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 
@@ -365,6 +379,13 @@ func (in *LogDbConfig) DeepCopyInto(out *LogDbConfig) {
 		in, out := &in.SecurityContext, &out.SecurityContext
 		*out = new(v1.PodSecurityContext)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	return
 }
@@ -529,6 +550,13 @@ func (in *PrometheusConfig) DeepCopyInto(out *PrometheusConfig) {
 		in, out := &in.SecurityContext, &out.SecurityContext
 		*out = new(v1.PodSecurityContext)
 		(*in).DeepCopyInto(*out)
+	}
+	if in.Env != nil {
+		in, out := &in.Env, &out.Env
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	return
 }

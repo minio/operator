@@ -16,6 +16,7 @@ package deployments
 
 import (
 	"fmt"
+	"sort"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
@@ -29,12 +30,13 @@ func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	if t.Spec.Log.Audit.DiskCapacityGB != nil {
 		diskCapacityGB = *t.Spec.Log.Audit.DiskCapacityGB
 	}
-	return []corev1.EnvVar{
-		{
+	var envVars []corev1.EnvVar
+	envVarsMap := map[string]corev1.EnvVar{
+		miniov2.LogSearchDiskCapacityGB: {
 			Name:  miniov2.LogSearchDiskCapacityGB,
 			Value: fmt.Sprintf("%d", diskCapacityGB),
 		},
-		{
+		miniov2.LogPgConnStr: {
 			Name: miniov2.LogPgConnStr,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -45,7 +47,7 @@ func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 				},
 			},
 		},
-		{
+		miniov2.LogAuditTokenKey: {
 			Name: miniov2.LogAuditTokenKey,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -56,7 +58,7 @@ func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 				},
 			},
 		},
-		{
+		miniov2.LogQueryTokenKey: {
 			Name: miniov2.LogQueryTokenKey,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
@@ -68,6 +70,20 @@ func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 			},
 		},
 	}
+	// Add all the tenant.spec.log.env environment variables
+	// User defined environment variables will take precedence over default environment variables
+	for _, env := range t.GetLogSearchAPIEnvVars() {
+		envVarsMap[env.Name] = env
+	}
+	// transform map to array
+	for _, env := range envVarsMap {
+		envVars = append(envVars, env)
+	}
+	// sort the array to produce the same result everytime
+	sort.Slice(envVars, func(i, j int) bool {
+		return envVars[i].Name < envVars[j].Name
+	})
+	return envVars
 }
 
 func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
@@ -138,7 +154,7 @@ func logSearchAPISecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 		FSGroup:             &fsGroup,
 		FSGroupChangePolicy: &fsGroupChangePolicy,
 	}
-	if t.HasLogEnabled() && t.Spec.Log.SecurityContext != nil {
+	if t.HasLogSearchAPIEnabled() && t.Spec.Log.SecurityContext != nil {
 		securityContext = *t.Spec.Log.SecurityContext
 	}
 	return &securityContext
