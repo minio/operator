@@ -102,7 +102,11 @@ func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.St
 	if !reflect.DeepEqual(expectedMetadata.Labels, ss.ObjectMeta.Labels) {
 		poolMatchesSS = false
 	}
-	if !reflect.DeepEqual(expectedMetadata.Annotations, ss.ObjectMeta.Annotations) {
+	expectedAnnotations := expectedMetadata.Annotations
+	currentAnnotations := ss.ObjectMeta.Annotations
+	delete(expectedAnnotations, corev1.LastAppliedConfigAnnotation)
+	delete(currentAnnotations, corev1.LastAppliedConfigAnnotation)
+	if !reflect.DeepEqual(expectedAnnotations, currentAnnotations) {
 		poolMatchesSS = false
 	}
 	// Try to detect changes in Env Vars

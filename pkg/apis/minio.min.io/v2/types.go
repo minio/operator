@@ -736,6 +736,11 @@ type LogConfig struct {
 	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// *Optional* +
+	//
+	// If provided, the MinIO Operator adds the specified environment variables when deploying the Log Search API resource.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // AuditConfig defines configuration parameters for Audit (type) logs
@@ -838,6 +843,11 @@ type PrometheusConfig struct {
 	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// *Optional* +
+	//
+	// If provided, the MinIO Operator adds the specified environment variables when deploying the Prometheus resource.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // LogDbConfig (`db`) defines the configuration of the PostgreSQL StatefulSet deployed to support the MinIO LogSearch API. +
@@ -917,6 +927,11 @@ type LogDbConfig struct {
 	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
 	// +optional
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`
+	// *Optional* +
+	//
+	// If provided, the MinIO Operator adds the specified environment variables when deploying the Postgres resource.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[MinIO Key Encryption Service] (KES) StatefulSet deployed as part of the MinIO Tenant. KES supports Server-Side Encryption of objects using an external Key Management Service (KMS). +
@@ -1037,6 +1052,11 @@ type KESConfig struct {
 	// * `seLinuxOptions` +
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// *Optional* +
+	//
+	// If provided, the MinIO Operator adds the specified environment variables when deploying the KES resource.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

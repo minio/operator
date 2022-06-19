@@ -139,6 +139,10 @@ func kesStatefulSetMatchesSpec(tenant *miniov2.Tenant, kesStatefulSet *appsv1.St
 	}
 	// compare any other change from what is specified on the tenant
 	expectedStatefulSet := statefulsets.NewForKES(tenant, tenant.KESHLServiceName())
+	// compare containers environment variables
+	if miniov2.IsContainersEnvUpdated(expectedStatefulSet.Spec.Template.Spec.Containers, kesStatefulSet.Spec.Template.Spec.Containers) {
+		return false, nil
+	}
 	if !equality.Semantic.DeepDerivative(expectedStatefulSet.Spec, kesStatefulSet.Spec) {
 		// some field set by the operator has changed
 		return false, nil
@@ -182,19 +186,25 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 			return err
 		}
 		var err error
+		var certificateClientIdentity string
 		if tenant.ExternalClientCert() {
 			// Since we're using external secret, store the identity for later use
-			miniov2.KESIdentity, err = c.getCertIdentity(tenant.Namespace, tenant.Spec.ExternalClientCertSecret)
+			certificateClientIdentity, err = c.getCertIdentity(tenant.Namespace, tenant.Spec.ExternalClientCertSecret)
 			if err != nil {
 				return err
 			}
 		} else {
 			// Calculate identity based on auto generated KES client certificate
-			miniov2.KESIdentity, err = c.getCertIdentity(tenant.Namespace, &miniov2.LocalCertificateReference{Name: tenant.MinIOClientTLSSecretName()})
+			certificateClientIdentity, err = c.getCertIdentity(tenant.Namespace, &miniov2.LocalCertificateReference{Name: tenant.MinIOClientTLSSecretName()})
 			if err != nil {
 				return err
 			}
 		}
+		// pass the identity of the MinIO client certificate
+		tenant.Spec.KES.Env = append(tenant.Spec.KES.Env, corev1.EnvVar{
+			Name:  "MINIO_KES_IDENTITY",
+			Value: certificateClientIdentity,
+		})
 
 		svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.KESHLServiceName())
 		if err != nil {

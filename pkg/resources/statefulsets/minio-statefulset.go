@@ -32,7 +32,7 @@ import (
 func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 
-	if t.HasLogEnabled() {
+	if t.HasLogSearchAPIEnabled() {
 		envVars = append(envVars, corev1.EnvVar{
 			Name: miniov2.LogQueryTokenKey,
 			ValueFrom: &corev1.EnvVarSource{

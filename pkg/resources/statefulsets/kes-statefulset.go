@@ -15,6 +15,8 @@
 package statefulsets
 
 import (
+	"sort"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -57,13 +59,15 @@ func KESVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
 
 // KESEnvironmentVars returns the KES environment variables set in configuration.
 func KESEnvironmentVars(t *miniov2.Tenant) []corev1.EnvVar {
-	// pass the identity created while generating the MinIO client cert
-	return []corev1.EnvVar{
-		{
-			Name:  "MINIO_KES_IDENTITY",
-			Value: miniov2.KESIdentity,
-		},
-	}
+	var envVars []corev1.EnvVar
+	// Add all the tenant.spec.kes.env environment variables
+	// User defined environment variables will take precedence over default environment variables
+	envVars = append(envVars, t.GetKESEnvVars()...)
+	// sort the array to produce the same result everytime
+	sort.Slice(envVars, func(i, j int) bool {
+		return envVars[i].Name < envVars[j].Name
+	})
+	return envVars
 }
 
 // KESServerContainer returns the KES container for a KES StatefulSet.

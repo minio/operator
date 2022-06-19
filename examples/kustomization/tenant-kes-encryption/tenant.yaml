@@ -8,6 +8,7 @@ spec:
   ## Refer https://github.com/minio/kes
   kes:
     image: "" # minio/kes:v0.18.0
+    env: [ ]
     replicas: 2
     kesSecret:
       name: kes-configuration

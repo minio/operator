@@ -771,7 +771,7 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Create logSecret before deploying any StatefulSet
-	if tenant.HasLogEnabled() {
+	if tenant.HasLogSearchAPIEnabled() {
 		_, err = c.checkAndCreateLogSecret(ctx, tenant)
 		if err != nil {
 			return err
@@ -1137,7 +1137,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	if tenant.HasLogEnabled() {
+	if tenant.HasLogSearchAPIEnabled() {
 		var logSecret *corev1.Secret
 		logSecret, err = c.checkAndCreateLogSecret(ctx, tenant)
 		if err != nil {
