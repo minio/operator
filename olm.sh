@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # get the minio version
 minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq '.spec.image' | tail -1)
 echo "minioVersionInExample: ${minioVersionInExample}"
@@ -132,12 +134,14 @@ for catalog in "${redhatCatalogs[@]}"; do
   sed -i -e '/testing/d' bundles/$catalog/$RELEASE/metadata/annotations.yaml
 done
 echo " "
-echo "clearn -e files"
-rm $(git status | grep -e "-e$" | awk '{print $1}')
+echo "clean -e files"
+rm -vf $(git status | grep -e "-e$" | awk '{print $1}')
+
 echo "Copying latest bundle to root"
 cp -R bundles/redhat-marketplace/$RELEASE/manifests manifests
 cp -R bundles/redhat-marketplace/$RELEASE/metadata metadata
 
+echo "Commit all assets"
 git add -u
 git add bundles
 git add community-operators

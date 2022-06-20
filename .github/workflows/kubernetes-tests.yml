@@ -10,19 +10,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -35,20 +26,11 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -61,20 +43,11 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -87,20 +60,11 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -113,27 +77,11 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ hashFiles('logsearchapi-bin') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -146,27 +94,11 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            minio-operator
-          key: ${{ runner.os }}-operator-${{ hashFiles('minio-operator') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -180,25 +112,11 @@ jobs:
       - operator
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            minio-operator
-          key: ${{ runner.os }}-operator-${{ hashFiles('minio-operator') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ hashFiles('logsearchapi-bin') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -218,34 +136,11 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            minio-operator
-          key: ${{ runner.os }}-operator-${{ hashFiles('minio-operator') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ hashFiles('logsearchapi-bin') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -263,34 +158,11 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            minio-operator
-          key: ${{ runner.os }}-operator-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -310,34 +182,11 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            minio-operator
-          key: ${{ runner.os }}-operator-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
@@ -357,34 +206,11 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.17.x ]
+        go-version: [ 1.18.x ]
         os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-            ~/go/bin
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            minio-operator
-          key: ${{ runner.os }}-operator-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            logsearchapi-bin
-          key: ${{ runner.os }}-lsa-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go-version }}
