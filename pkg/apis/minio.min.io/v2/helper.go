@@ -856,12 +856,10 @@ func (z *Pool) Validate(zi int) error {
 	if z.Servers*z.VolumesPerServer < 4 {
 		// Erasure coding has few requirements.
 		switch z.Servers {
-		case 1:
-			return fmt.Errorf("pool #%d setup must have a minimum of 4 volumes per server", zi)
 		case 2:
-			return fmt.Errorf("pool #%d setup must have a minimum of 2 volumes per server", zi)
+			return fmt.Errorf("pool #%d with 2 servers must have at least 4 volumes in total", zi)
 		case 3:
-			return fmt.Errorf("pool #%d setup must have a minimum of 2 volumes per server", zi)
+			return fmt.Errorf("pool #%d with 3 servers must have at least 6 volumes in total", zi)
 		}
 	}
 
