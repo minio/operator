@@ -52,7 +52,7 @@ func (c *Controller) fetchTag(path string) (string, error) {
 		return "", err
 	}
 	op := strings.Fields(out.String())
-	if len(op) != 3 {
+	if len(op) < 3 {
 		return "", fmt.Errorf("incorrect output while fetching tag value - %d", len((op)))
 	}
 	return op[2], nil
