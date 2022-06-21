@@ -17,13 +17,11 @@
 package cluster
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -42,21 +40,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
-
-func (c *Controller) fetchTag(path string) (string, error) {
-	cmd := exec.Command(path, "--version")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
-		return "", err
-	}
-	op := strings.Fields(out.String())
-	if len(op) < 3 {
-		return "", fmt.Errorf("incorrect output while fetching tag value - %d", len((op)))
-	}
-	return op[2], nil
-}
 
 // minioKeychain implements Keychain to pass custom credentials
 type minioKeychain struct {
@@ -140,6 +123,20 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest time.Time, e
 		return latest, err
 	}
 
+	cfg, err := img.ConfigFile()
+	if err != nil {
+		return latest, err
+	}
+
+	tag, ok := cfg.Config.Labels["release"]
+	if !ok {
+		tag, ok = cfg.Config.Labels["version"]
+	}
+	tag = strings.TrimSpace(tag)
+	if !ok || tag == "" {
+		return latest, errors.New("missing tag")
+	}
+
 	ls, err := img.Layers()
 	if err != nil {
 		return latest, err
@@ -198,11 +195,6 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest time.Time, e
 	srcBinary := "minio"
 	srcShaSum := "minio.sha256sum"
 	srcSig := "minio.minisig"
-
-	tag, err := c.fetchTag(basePath + srcBinary)
-	if err != nil {
-		return latest, err
-	}
 
 	latest, err = miniov2.ReleaseTagToReleaseTime(tag)
 	if err != nil {
