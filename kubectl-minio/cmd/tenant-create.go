@@ -40,8 +40,7 @@ import (
 const (
 	createDesc = `
 'create' command creates a new MinIO tenant`
-	createExample      = ` kubectl minio tenant create tenant1 --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
-	tenantSecretSuffix = "-creds-secret"
+	createExample = ` kubectl minio tenant create tenant1 --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns`
 )
 
 type createCmd struct {
@@ -112,68 +111,88 @@ func (c *createCmd) validate(args []string) error {
 		return err
 	}
 	c.tenantOpts.Name = args[0]
-	c.tenantOpts.SecretName = c.tenantOpts.Name + tenantSecretSuffix
+	c.tenantOpts.ConfigurationSecretName = fmt.Sprintf("%s-env-configuration", c.tenantOpts.Name)
 	return c.tenantOpts.Validate()
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (c *createCmd) run(args []string) error {
 	// Create operator and kube client
-	oclient, err := helpers.GetKubeOperatorClient()
+	operatorClient, err := helpers.GetKubeOperatorClient()
 	if err != nil {
 		return err
 	}
 	path, _ := rootCmd.Flags().GetString(kubeconfig)
-	kclient, err := helpers.GetKubeClient(path)
+	kubeClient, err := helpers.GetKubeClient(path)
 	if err != nil {
 		return err
 	}
-
-	// Generate console suer
-	consoleUser := resources.NewSecretForConsole(&c.tenantOpts, fmt.Sprintf("%s-user-1", c.tenantOpts.Name))
-
-	// generate the resources
-	t, err := resources.NewTenant(&c.tenantOpts, consoleUser)
+	// Generate MinIO user credentials
+	tenantUserCredentials, err := resources.NewUserCredentialsSecret(&c.tenantOpts, fmt.Sprintf("%s-user-1", c.tenantOpts.Name))
 	if err != nil {
 		return err
 	}
-	s := resources.NewSecretForTenant(&c.tenantOpts)
-
+	// deprecated tenant credsSecret required for deploying tenant, will be removed in operator v5.x.x
+	tenantCredsSecret, err := resources.NewTenantCredsSecret(&c.tenantOpts)
+	if err != nil {
+		return err
+	}
+	// generate tenant configuration
+	tenantConfiguration, err := resources.NewTenantConfigurationSecret(&c.tenantOpts)
+	if err != nil {
+		return err
+	}
+	// generate tenant resource
+	tenant, err := resources.NewTenant(&c.tenantOpts, tenantUserCredentials)
+	if err != nil {
+		return err
+	}
 	// create resources
 	if !c.output {
-		return createTenant(oclient, kclient, t, s, consoleUser)
+		return createTenant(operatorClient, kubeClient, tenant, tenantCredsSecret, tenantConfiguration, tenantUserCredentials)
 	}
-	ot, err := yaml.Marshal(&t)
+	tenantYAML, err := yaml.Marshal(&tenant)
 	if err != nil {
 		return err
 	}
-	os, err := yaml.Marshal(&s)
+	tenantConfigurationYAML, err := yaml.Marshal(&tenantConfiguration)
 	if err != nil {
 		return err
 	}
-	oc, err := yaml.Marshal(&consoleUser)
+	tenantCredsSecretYAML, err := yaml.Marshal(&tenantCredsSecret)
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(ot))
+	tenantUserYAML, err := yaml.Marshal(&tenantUserCredentials)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(tenantYAML))
 	fmt.Println("---")
-	fmt.Println(string(os))
+	fmt.Println(string(tenantConfigurationYAML))
 	fmt.Println("---")
-	fmt.Println(string(oc))
+	fmt.Println(string(tenantCredsSecretYAML))
+	fmt.Println("---")
+	fmt.Println(string(tenantUserYAML))
 	return nil
 }
 
-func createTenant(oclient *operatorv1.Clientset, kclient *kubernetes.Clientset, t *miniov2.Tenant, s, console *corev1.Secret) error {
-	if _, err := kclient.CoreV1().Namespaces().Get(context.Background(), t.Namespace, metav1.GetOptions{}); err != nil {
-		return fmt.Errorf("Namespace %s not found, please create the namespace using 'kubectl create ns %s'", t.Namespace, t.Namespace)
+func createTenant(operatorClient *operatorv1.Clientset, kubeClient *kubernetes.Clientset, tenant *miniov2.Tenant, tenantCredsSecret, tenantConfiguration, console *corev1.Secret) error {
+	if _, err := kubeClient.CoreV1().Namespaces().Get(context.Background(), tenant.Namespace, metav1.GetOptions{}); err != nil {
+		return fmt.Errorf("namespace %s not found, please create the namespace using 'kubectl create ns %s'", tenant.Namespace, tenant.Namespace)
 	}
-	if _, err := kclient.CoreV1().Secrets(t.Namespace).Create(context.Background(), s, metav1.CreateOptions{}); err != nil {
+	// deprecated tenant credsSecret required for deploying tenant
+	// The credsSecret field will be removed in operator v5.x.x
+	if _, err := kubeClient.CoreV1().Secrets(tenant.Namespace).Create(context.Background(), tenantCredsSecret, metav1.CreateOptions{}); err != nil {
 		return err
 	}
-	if _, err := kclient.CoreV1().Secrets(t.Namespace).Create(context.Background(), console, metav1.CreateOptions{}); err != nil {
+	if _, err := kubeClient.CoreV1().Secrets(tenant.Namespace).Create(context.Background(), tenantConfiguration, metav1.CreateOptions{}); err != nil {
 		return err
 	}
-	to, err := oclient.MinioV2().Tenants(t.Namespace).Create(context.Background(), t, v1.CreateOptions{})
+	if _, err := kubeClient.CoreV1().Secrets(tenant.Namespace).Create(context.Background(), console, metav1.CreateOptions{}); err != nil {
+		return err
+	}
+	to, err := operatorClient.MinioV2().Tenants(tenant.Namespace).Create(context.Background(), tenant, v1.CreateOptions{})
 	if err != nil {
 		return err
 	}
