@@ -29,25 +29,25 @@ import (
 
 // TenantOptions encapsulates the CLI options for a MinIO Tenant
 type TenantOptions struct {
-	Name                  string
-	SecretName            string
-	Servers               int32
-	Volumes               int32
-	Capacity              string
-	NS                    string
-	Image                 string
-	StorageClass          string
-	KmsSecret             string
-	ConsoleSecret         string
-	DisableTLS            bool
-	ImagePullSecret       string
-	DisableAntiAffinity   bool
-	EnableAuditLogs       bool
-	AuditLogsDiskSpace    int32
-	AuditLogsImage        string
-	AuditLogsPGImage      string
-	AuditLogsPGInitImage  string
-	AuditLogsStorageClass string
+	Name                    string
+	ConfigurationSecretName string
+	Servers                 int32
+	Volumes                 int32
+	Capacity                string
+	NS                      string
+	Image                   string
+	StorageClass            string
+	KmsSecret               string
+	ConsoleSecret           string
+	DisableTLS              bool
+	ImagePullSecret         string
+	DisableAntiAffinity     bool
+	EnableAuditLogs         bool
+	AuditLogsDiskSpace      int32
+	AuditLogsImage          string
+	AuditLogsPGImage        string
+	AuditLogsPGInitImage    string
+	AuditLogsStorageClass   string
 }
 
 // Validate Tenant Options
@@ -102,7 +102,7 @@ func storageClass(sc string) *string {
 }
 
 // NewTenant will return a new Tenant for a MinIO Operator
-func NewTenant(opts *TenantOptions, user *v1.Secret) (*miniov2.Tenant, error) {
+func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, error) {
 	autoCert := true
 	volumesPerServer := helpers.VolumesPerServer(opts.Volumes, opts.Servers)
 	capacityPerVolume, err := helpers.CapacityPerVolume(opts.Capacity, opts.Volumes)
@@ -121,8 +121,11 @@ func NewTenant(opts *TenantOptions, user *v1.Secret) (*miniov2.Tenant, error) {
 		},
 		Spec: miniov2.TenantSpec{
 			Image: opts.Image,
+			Configuration: &v1.LocalObjectReference{
+				Name: opts.ConfigurationSecretName,
+			},
 			CredsSecret: &v1.LocalObjectReference{
-				Name: opts.SecretName,
+				Name: opts.Name + "-creds-secret",
 			},
 			Pools:           []miniov2.Pool{Pool(opts, volumesPerServer, *capacityPerVolume)},
 			RequestAutoCert: &autoCert,
@@ -136,7 +139,7 @@ func NewTenant(opts *TenantOptions, user *v1.Secret) (*miniov2.Tenant, error) {
 			ImagePullSecret: v1.LocalObjectReference{Name: opts.ImagePullSecret},
 			Users: []*v1.LocalObjectReference{
 				{
-					Name: user.Name,
+					Name: userSecret.Name,
 				},
 			},
 		},
@@ -144,6 +147,9 @@ func NewTenant(opts *TenantOptions, user *v1.Secret) (*miniov2.Tenant, error) {
 	if opts.EnableAuditLogs {
 		t.Spec.Log = getAuditLogConfig(opts)
 	}
+
+	t.EnsureDefaults()
+
 	return t, t.Validate()
 }
 

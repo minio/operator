@@ -16,52 +16,73 @@
 package resources
 
 import (
-	"github.com/google/uuid"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func tenantSecretData() map[string][]byte {
-	m := make(map[string][]byte, 2)
-	m["accesskey"] = []byte(uuid.New().String())
-	m["secretkey"] = []byte(uuid.New().String())
-	return m
-}
-
-func consoleSecretData() map[string][]byte {
-	m := make(map[string][]byte, 5)
-	m["CONSOLE_ACCESS_KEY"] = []byte("admin")
-	m["CONSOLE_SECRET_KEY"] = []byte(uuid.New().String())
-	return m
-}
-
-// NewSecretForTenant will return a new secret a MinIO Tenant
-func NewSecretForTenant(opts *TenantOptions) *corev1.Secret {
+// NewTenantCredsSecret : deprecated
+func NewTenantCredsSecret(opts *TenantOptions) (*corev1.Secret, error) {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      opts.SecretName,
+			Name:      opts.Name + "-creds-secret",
 			Namespace: opts.NS,
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: v1.SchemeGroupVersion.Version,
 		},
-		Data: tenantSecretData(),
-	}
+		Data: map[string][]byte{
+			"accesskey": []byte(""),
+			"secretkey": []byte(""),
+		},
+	}, nil
 }
 
-// NewSecretForConsole will return a new secret a MinIO Tenant Console
-func NewSecretForConsole(opts *TenantOptions, name string) *corev1.Secret {
+// NewTenantConfigurationSecret will return a new secret a MinIO Tenant
+func NewTenantConfigurationSecret(opts *TenantOptions) (*corev1.Secret, error) {
+	accessKey, secretKey, err := miniov2.GenerateCredentials()
+	if err != nil {
+		return nil, err
+	}
+	tenantConfiguration := map[string]string{
+		"MINIO_ROOT_USER":     accessKey,
+		"MINIO_ROOT_PASSWORD": secretKey,
+	}
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      opts.ConfigurationSecretName,
 			Namespace: opts.NS,
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
 			APIVersion: v1.SchemeGroupVersion.Version,
 		},
-		Data: consoleSecretData(),
+		Data: map[string][]byte{
+			"config.env": []byte(miniov2.GenerateTenantConfigurationFile(tenantConfiguration)),
+		},
+	}, nil
+}
+
+// NewUserCredentialsSecret will return a new secret a MinIO Tenant Console
+func NewUserCredentialsSecret(opts *TenantOptions, secretName string) (*corev1.Secret, error) {
+	accessKey, secretKey, err := miniov2.GenerateCredentials()
+	if err != nil {
+		return nil, err
 	}
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretName,
+			Namespace: opts.NS,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: v1.SchemeGroupVersion.Version,
+		},
+		Data: map[string][]byte{
+			"CONSOLE_ACCESS_KEY": []byte(accessKey),
+			"CONSOLE_SECRET_KEY": []byte(secretKey),
+		},
+	}, nil
 }
