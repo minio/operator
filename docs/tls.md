@@ -26,7 +26,7 @@ This approach involves acquiring a CA signed or self-signed certificate and use 
 kubectl create secret generic tls-ssl-minio --from-file=path/to/private.key --from-file=path/to/public.crt
 ```
 
-Once created, set the name of Secret (here it is `tls-ssl-minio`) under `spec.externalCertSecret` field. Then create the Tenant. MinIO Operator will use this Secret to fetch key and certificate and mount it to relevant locations inside the Tenant pods. 
+Once created, set the name of Secret (here it is `tls-ssl-minio`) under `spec.externalCertSecret` field. Then create the Tenant. MinIO Operator will use this Secret to fetch key and certificate and mount it to relevant locations inside the Tenant pods. Make sure you explicitly set `requestAutoCert` field to `false` to disable automatic generation.
 
 ### Using Kubernetes TLS
 
@@ -87,6 +87,8 @@ Finally, configure MinIO to use the newly created TLS certificate:
     - name: tls-minio
       type: kubernetes.io/tls
 ```
+
+Make sure you explicitly set `requestAutoCert` field to `false` to disable automatic generation.
 
 ---
 
