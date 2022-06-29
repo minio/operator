@@ -87,6 +87,11 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&c.tenantOpts.AuditLogsPGImage, "audit-logs-pg-image", "", "(Only used when enable-audit-logs is on) The PostgreSQL Docker image to use for audit logs")
 	f.StringVar(&c.tenantOpts.AuditLogsPGInitImage, "audit-logs-pg-init-image", "", "(Only used when enable-audit-logs is on) Defines the Docker image to use as the init container for running the postgres server in audit logs")
 	f.StringVar(&c.tenantOpts.AuditLogsStorageClass, "audit-logs-storage-class", "", "(Only used when enable-audit-logs is on) Storage class for audit logs")
+	f.BoolVar(&c.tenantOpts.EnablePrometheus, "enable-prometheus", true, "Enable/Disable prometheus")
+	f.IntVar(&c.tenantOpts.PrometheusDiskSpace, "prometheus-disk-space", 5, "(Only used when enable-prometheus is on) Disk space for prometheus")
+	f.StringVar(&c.tenantOpts.PrometheusImage, "prometheus-image", "", "(Only used when enable-prometheus is on) The Docker image to use for prometheus")
+	f.StringVar(&c.tenantOpts.PrometheusSidecarImage, "prometheus-sidecar-image", "", "(Only used when enable-prometheus is on) The Docker image to use for prometheus sidecar")
+	f.StringVar(&c.tenantOpts.PrometheusImage, "prometheus-init-image", "", "(Only used when enable-prometheus is on) Defines the Docker image to use as the init container for running prometheus")
 	f.BoolVarP(&c.output, "output", "o", false, "generate tenant yaml for 'kubectl apply -f tenant.yaml'")
 
 	cmd.MarkFlagRequired("servers")

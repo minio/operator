@@ -48,6 +48,12 @@ type TenantOptions struct {
 	AuditLogsPGImage        string
 	AuditLogsPGInitImage    string
 	AuditLogsStorageClass   string
+	EnablePrometheus        bool
+	PrometheusDiskSpace     int
+	PrometheusStorageClass  string
+	PrometheusImage         string
+	PrometheusSidecarImage  string
+	PrometheusInitImage     string
 }
 
 // Validate Tenant Options
@@ -147,6 +153,9 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 	if opts.EnableAuditLogs {
 		t.Spec.Log = getAuditLogConfig(opts)
 	}
+	if opts.EnablePrometheus {
+		t.Spec.Prometheus = getPrometheusConfig(opts)
+	}
 
 	t.EnsureDefaults()
 
@@ -199,4 +208,25 @@ func createLogConfig(diskSpace int64, auditMaxCap int, name string, storage *str
 			},
 		},
 	}
+}
+
+func getPrometheusConfig(opts *TenantOptions) *miniov2.PrometheusConfig {
+	var prometheusStorageClass *string
+	if opts.PrometheusStorageClass != "" {
+		prometheusStorageClass = &opts.PrometheusStorageClass
+	}
+	prometheusConfig := &miniov2.PrometheusConfig{
+		DiskCapacityDB:   &opts.PrometheusDiskSpace,
+		StorageClassName: prometheusStorageClass,
+	}
+	if opts.PrometheusImage != "" {
+		prometheusConfig.Image = opts.PrometheusImage
+	}
+	if opts.PrometheusSidecarImage != "" {
+		prometheusConfig.SideCarImage = opts.PrometheusSidecarImage
+	}
+	if opts.PrometheusInitImage != "" {
+		prometheusConfig.InitImage = opts.PrometheusInitImage
+	}
+	return prometheusConfig
 }
