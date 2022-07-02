@@ -1,7 +1,9 @@
 ## Secret with credentials to be used by MinIO Tenant
 secrets:
-  # create a kubernetes configuration secret object with the accessKey and secretKey as defined here.
+  # Secret name
   name: minio1-env-configuration
+  # create a kubernetes configuration secret object with the accessKey and secretKey as defined here.
+  create: true
   accessKey: minio
   secretKey: minio123
 
