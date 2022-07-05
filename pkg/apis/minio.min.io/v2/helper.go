@@ -667,7 +667,7 @@ func (t *Tenant) MinIOHealthCheck(tr *http.Transport) bool {
 	if err != nil {
 		return false
 	}
-
+	defer resp.Body.Close()
 	return resp.StatusCode == http.StatusOK
 }
 
