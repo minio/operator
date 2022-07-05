@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -69,16 +68,7 @@ func newTenantInfoCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (d *infoCmd) validate(args []string) error {
-	if args == nil {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant info tenant1'")
-	}
-	if len(args) != 1 {
-		return errors.New("info command supports a single argument, e.g. 'kubectl minio tenant info tenant1'")
-	}
-	if args[0] == "" {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant info tenant1'")
-	}
-	return nil
+	return validateTenantArgs("info", args)
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.

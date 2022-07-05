@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -73,17 +72,7 @@ func newTenantDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (d *tenantDeleteCmd) validate(args []string) error {
-	if args == nil {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant delete tenant1'")
-	}
-	if len(args) != 1 {
-		return errors.New("delete command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant delete tenant1 --namespace tenant1-ns'")
-	}
-	if args[0] == "" {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant delete tenant1 --namespace tenant1-ns'")
-	}
-	// Tenant name should have DNS token restrictions
-	return helpers.CheckValidTenantName(args[0])
+	return validateTenantArgs("delete", args)
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.

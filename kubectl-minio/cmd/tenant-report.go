@@ -19,7 +19,6 @@ import (
 	"archive/zip"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -70,17 +69,7 @@ func newTenantReportCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (d *reportCmd) validate(args []string) error {
-	if args == nil {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant report tenant1'")
-	}
-	if len(args) != 1 {
-		return errors.New("report command supports a single argument, e.g. 'kubectl minio tenant report tenant1'")
-	}
-	if args[0] == "" {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant report tenant1'")
-	}
-	// Tenant name should have DNS token restrictions
-	return helpers.CheckValidTenantName(args[0])
+	return validateTenantArgs("report", args)
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
