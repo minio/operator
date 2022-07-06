@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -74,20 +73,10 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 }
 
 func (u *upgradeCmd) validate(args []string) error {
-	if args == nil {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant upgrade tenant1'")
-	}
-	if len(args) != 1 {
-		return errors.New("upgrade command requires a single argument, e.g. 'kubectl minio tenant upgrade tenant1'")
-	}
-	if args[0] == "" {
-		return errors.New("provide the name of the tenant, e.g. 'kubectl minio tenant upgrade tenant1'")
-	}
 	if u.tenantOpts.Image == "" {
 		return fmt.Errorf("provide the --image flag, e.g. 'kubectl minio tenant upgrade tenant1 --image %s'", helpers.DefaultTenantImage)
 	}
-	// Tenant name should have DNS token restrictions
-	return helpers.CheckValidTenantName(args[0])
+	return validateTenantArgs("upgrade", args)
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
