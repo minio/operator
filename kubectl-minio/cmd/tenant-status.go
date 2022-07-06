@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/dustin/go-humanize"
 	"github.com/minio/kubectl-minio/cmd/helpers"
@@ -125,30 +126,26 @@ func (d *statusCmd) printTenantStatus(tenant *v2.Tenant) error {
 }
 
 func (d *statusCmd) printRawTenantStatus(tenant *v2.Tenant) {
-	gb := float32(humanize.GiByte)
-	fmt.Printf(Blue("Current status: %s \n", tenant.Status.CurrentState))
-	fmt.Printf(Blue("Available replicas: %d \n", tenant.Status.AvailableReplicas))
-	fmt.Printf(Blue("Pools: %d \n", len(tenant.Status.Pools)))
-	fmt.Printf(Blue("Revision: %d \n", tenant.Status.Revision))
-	fmt.Printf(Blue("Sync version: %s \n", tenant.Status.SyncVersion))
-	fmt.Printf(Blue("Provisioned users: %t \n", tenant.Status.ProvisionedUsers))
-	fmt.Printf(Blue("Write quorum: %d \n", tenant.Status.WriteQuorum))
-	fmt.Printf(Blue("Drives online: %d \n", tenant.Status.DrivesOnline))
-	fmt.Printf(Blue("Drives offline: %d \n", tenant.Status.DrivesOffline))
-	fmt.Printf(Blue("Drives healing: %d \n", tenant.Status.DrivesHealing))
-	fmt.Printf(Blue("Health status: %s \n", tenant.Status.HealthStatus))
-	fmt.Printf(Blue("Capacity: %.1fGi \n", float32(tenant.Status.Usage.Capacity)/gb))
-	fmt.Printf(Blue("Raw capacity: %.1fGi \n", float32(tenant.Status.Usage.RawCapacity)/gb))
-	fmt.Printf(Blue("Raw usage: %.1fGi \n", float32(tenant.Status.Usage.RawUsage)/gb))
+	var s strings.Builder
+	s.WriteString(Blue("Current status: %s \n", tenant.Status.CurrentState))
+	s.WriteString(Blue("Available replicas: %d \n", tenant.Status.AvailableReplicas))
+	s.WriteString(Blue("Pools: %d \n", len(tenant.Status.Pools)))
+	s.WriteString(Blue("Revision: %d \n", tenant.Status.Revision))
+	s.WriteString(Blue("Sync version: %s \n", tenant.Status.SyncVersion))
+	s.WriteString(Blue("Provisioned users: %t \n", tenant.Status.ProvisionedUsers))
+	s.WriteString(Blue("Write quorum: %d \n", tenant.Status.WriteQuorum))
+	s.WriteString(Blue("Drives online: %d \n", tenant.Status.DrivesOnline))
+	s.WriteString(Blue("Drives offline: %d \n", tenant.Status.DrivesOffline))
+	s.WriteString(Blue("Drives healing: %d \n", tenant.Status.DrivesHealing))
+	s.WriteString(Blue("Health status: %s \n", tenant.Status.HealthStatus))
+	s.WriteString(Blue("Usable capacity: %s \n", humanize.IBytes(uint64(tenant.Status.Usage.Capacity))))
+	fmt.Fprintln(d.out, s.String())
 }
 
 func (d *statusCmd) printJSONTenantStatus(tenant *v2.Tenant) error {
-	statusJSON, err := json.MarshalIndent(tenant.Status, "", "   ")
-	if err != nil {
-		return err
-	}
-	fmt.Printf(Green(fmt.Sprintf("JSON:\n\n%s\n\n", string(statusJSON))))
-	return nil
+	enc := json.NewEncoder(d.out)
+	enc.SetIndent("", " ")
+	return enc.Encode(tenant.Status)
 }
 
 func (d *statusCmd) printYAMLTenantStatus(tenant *v2.Tenant) error {
@@ -156,6 +153,6 @@ func (d *statusCmd) printYAMLTenantStatus(tenant *v2.Tenant) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf(Yellow("YAML:\n\n%s", string(statusYAML)))
+	fmt.Fprintln(d.out, string(statusYAML))
 	return nil
 }
