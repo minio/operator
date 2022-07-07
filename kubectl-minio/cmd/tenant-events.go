@@ -133,9 +133,7 @@ func (d *eventsCmd) printRawTenantEvents(events *v1.EventList) {
 	defer w.Flush()
 	s.WriteString(fmt.Sprintf("%s\t%s\t%s\t%s\t%s", "LAST SEEN", "TYPE", "REASON", "OBJECT", "MESSAGE"))
 	for _, event := range events.Items {
-		s.WriteString(
-			fmt.Sprintf("\n%s\t%s\t%s\t%s\t%s",
-				duration.HumanDuration(time.Since(event.LastTimestamp.Time)), event.Type, event.Reason, event.InvolvedObject.Name, event.Message))
+		s.WriteString(fmt.Sprintf("\n%s\t%s\t%s\t%s\t%s", duration.HumanDuration(time.Since(event.LastTimestamp.Time)), event.Type, event.Reason, event.InvolvedObject.Name, event.Message))
 	}
 	fmt.Fprintln(w, s.String())
 }
