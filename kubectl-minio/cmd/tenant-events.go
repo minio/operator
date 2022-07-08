@@ -20,12 +20,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -127,15 +126,40 @@ func (d *eventsCmd) getTenantEvents(tenant *v2.Tenant) (*v1.EventList, error) {
 }
 
 func (d *eventsCmd) printRawTenantEvents(events *v1.EventList) {
-	var s strings.Builder
-	w := new(tabwriter.Writer)
-	w.Init(d.out, 8, 8, 0, '\t', 0)
-	defer w.Flush()
-	s.WriteString(fmt.Sprintf("%s\t%s\t%s\t%s\t%s", "LAST SEEN", "TYPE", "REASON", "OBJECT", "MESSAGE"))
+	table := d.initEventsTable()
+	data := d.getEventsData(events)
+	table.AppendBulk(data)
+	table.Render()
+}
+
+func (d *eventsCmd) initEventsTable() *tablewriter.Table {
+	table := tablewriter.NewWriter(d.out)
+	table.SetAutoWrapText(false)
+	table.SetAutoFormatHeaders(true)
+	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetCenterSeparator("")
+	table.SetColumnSeparator("")
+	table.SetRowSeparator("")
+	table.SetHeaderLine(false)
+	table.SetBorder(false)
+	table.SetTablePadding("\t")
+	table.SetNoWhiteSpace(true)
+	table.SetHeader([]string{"LAST SEEN", "TYPE", "REASON", "OBJECT", "MESSAGE"})
+	return table
+}
+
+func (d *eventsCmd) getEventsData(events *v1.EventList) (data [][]string) {
 	for _, event := range events.Items {
-		s.WriteString(fmt.Sprintf("\n%s\t%s\t%s\t%s\t%s", duration.HumanDuration(time.Since(event.LastTimestamp.Time)), event.Type, event.Reason, event.InvolvedObject.Name, event.Message))
+		data = append(data, []string{
+			duration.HumanDuration(time.Since(event.LastTimestamp.Time)),
+			event.Type,
+			event.Reason,
+			event.InvolvedObject.Name,
+			event.Message,
+		})
 	}
-	fmt.Fprintln(w, s.String())
+	return data
 }
 
 func (d *eventsCmd) printJSONTenantEvents(events *v1.EventList) error {
