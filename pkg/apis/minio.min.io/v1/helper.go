@@ -465,53 +465,6 @@ func (t *Tenant) MinIOServerEndpoint() string {
 	return u.String()
 }
 
-// MinIOHealthCheck check MinIO cluster health
-func (t *Tenant) MinIOHealthCheck() bool {
-	// Keep TLS config.
-	tlsConfig := &tls.Config{
-		// Can't use SSLv3 because of POODLE and BEAST
-		// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
-		// Can't use TLSv1.1 because of RC4 cipher usage
-		MinVersion:         tls.VersionTLS12,
-		InsecureSkipVerify: true, // FIXME: use trusted CA
-	}
-
-	req, err := http.NewRequest(http.MethodGet, t.MinIOServerEndpoint()+"/minio/health/cluster", nil)
-	if err != nil {
-		return false
-	}
-
-	httpClient := &http.Client{
-		Transport:
-		// For more details about various values used here refer
-		// https://golang.org/pkg/net/http/#Transport documentation
-		&http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: (&net.Dialer{
-				Timeout:   2 * time.Second,
-				KeepAlive: 10 * time.Second,
-			}).DialContext,
-			ResponseHeaderTimeout: 5 * time.Second,
-			TLSHandshakeTimeout:   5 * time.Second,
-			ExpectContinueTimeout: 5 * time.Second,
-			TLSClientConfig:       tlsConfig,
-			// Go net/http automatically unzip if content-type is
-			// Go net/http automatically unzip if content-type is
-			// gzip disable this feature, as we are always interested
-			// in raw stream.
-			DisableCompression: true,
-		},
-	}
-	defer httpClient.CloseIdleConnections()
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return false
-	}
-
-	return resp.StatusCode == http.StatusOK
-}
-
 // NewMinIOAdmin initializes a new madmin.Client for operator interaction
 func (t *Tenant) NewMinIOAdmin(minioSecret map[string][]byte) (*madmin.AdminClient, error) {
 	host := t.MinIOServerHostAddress()
