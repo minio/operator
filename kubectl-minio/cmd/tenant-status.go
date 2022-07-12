@@ -127,18 +127,20 @@ func (d *statusCmd) printTenantStatus(tenant *v2.Tenant) error {
 
 func (d *statusCmd) printRawTenantStatus(tenant *v2.Tenant) {
 	var s strings.Builder
-	s.WriteString(Blue("Current status: %s \n", tenant.Status.CurrentState))
-	s.WriteString(Blue("Available replicas: %d \n", tenant.Status.AvailableReplicas))
-	s.WriteString(Blue("Pools: %d \n", len(tenant.Status.Pools)))
-	s.WriteString(Blue("Revision: %d \n", tenant.Status.Revision))
-	s.WriteString(Blue("Sync version: %s \n", tenant.Status.SyncVersion))
-	s.WriteString(Blue("Provisioned users: %t \n", tenant.Status.ProvisionedUsers))
-	s.WriteString(Blue("Write quorum: %d \n", tenant.Status.WriteQuorum))
-	s.WriteString(Blue("Drives online: %d \n", tenant.Status.DrivesOnline))
-	s.WriteString(Blue("Drives offline: %d \n", tenant.Status.DrivesOffline))
-	s.WriteString(Blue("Drives healing: %d \n", tenant.Status.DrivesHealing))
-	s.WriteString(Blue("Health status: %s \n", tenant.Status.HealthStatus))
-	s.WriteString(Blue("Usable capacity: %s \n", humanize.IBytes(uint64(tenant.Status.Usage.Capacity))))
+	s.WriteString("=====================\n")
+	s.WriteString(Bold("Pools:              %d \n", len(tenant.Status.Pools)))
+	s.WriteString(Bold("Revision:           %d \n", tenant.Status.Revision))
+	s.WriteString(Bold("Sync version:       %s \n", tenant.Status.SyncVersion))
+	s.WriteString(Bold("Write quorum:       %d \n", tenant.Status.WriteQuorum))
+	s.WriteString(Bold("Health status:      %s \n", tenant.Status.HealthStatus))
+	s.WriteString(Bold("Drives online:      %d \n", tenant.Status.DrivesOnline))
+	s.WriteString(Bold("Drives offline:     %d \n", tenant.Status.DrivesOffline))
+	s.WriteString(Bold("Drives healing:     %d \n", tenant.Status.DrivesHealing))
+	s.WriteString(Bold("Current status:     %s \n", tenant.Status.CurrentState))
+	s.WriteString(Bold("Usable capacity:    %s \n", humanize.IBytes(uint64(tenant.Status.Usage.Capacity))))
+	s.WriteString(Bold("Provisioned users:  %t \n", tenant.Status.ProvisionedUsers))
+	s.WriteString(Bold("Available replicas: %d \n", tenant.Status.AvailableReplicas))
+
 	fmt.Fprintln(d.out, s.String())
 }
 

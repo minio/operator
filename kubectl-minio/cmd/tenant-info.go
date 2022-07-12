@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/dustin/go-humanize"
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
@@ -109,20 +110,26 @@ func printTenantInfo(tenant miniov2.Tenant) {
 	for _, p := range conSvc.Spec.Ports {
 		consolePorts = consolePorts + strconv.Itoa(int(p.Port)) + ","
 	}
-	fmt.Printf(Bold(fmt.Sprintf("\nTenant '%s', Namespace '%s', Total capacity %s\n\n", tenant.Name, tenant.ObjectMeta.Namespace, helpers.TotalCapacity(tenant))))
-	fmt.Printf(Blue("  Current status: %s \n", tenant.Status.CurrentState))
-	fmt.Printf(Blue("  MinIO version: %s \n", tenant.Spec.Image))
-	fmt.Printf(Blue("  MinIO service: %s/ClusterIP (port %s)\n\n", minSvc.Name, strings.TrimSuffix(minPorts, ",")))
-	fmt.Printf(Blue("  Console service: %s/ClusterIP (port %s)\n\n", conSvc.Name, strings.TrimSuffix(consolePorts, ",")))
+	fmt.Printf(Bold(fmt.Sprintf("Tenant '%s', Namespace '%s', Total capacity %s\n\n", tenant.Name, tenant.ObjectMeta.Namespace, helpers.TotalCapacity(tenant))))
+	fmt.Printf(Blue("Current status: %s\n", tenant.Status.CurrentState))
+	fmt.Printf(Blue("MinIO version: %s\n", tenant.Spec.Image))
+	fmt.Printf(Blue("MinIO service: %s/ClusterIP (port %s)\n", minSvc.Name, strings.TrimSuffix(minPorts, ",")))
+	fmt.Printf(Blue("Console service: %s/ClusterIP (port %s)\n", conSvc.Name, strings.TrimSuffix(consolePorts, ",")))
 	if tenant.Spec.KES != nil && tenant.Spec.KES.Image != "" {
-		fmt.Printf(Blue("  KES version: %s \n\n", tenant.Spec.KES.Image))
+		fmt.Printf(Blue("KES version: %s \n\n", tenant.Spec.KES.Image))
+	} else {
+		fmt.Println()
 	}
 
 	t := helpers.GetTable()
-	t.SetHeader([]string{"Pool", "Servers", "Volumes Per Server", "Capacity Per Volume"})
+	t.SetHeader([]string{"Pool", "Servers", "Volumes(server)", "Capacity(volume)"})
 	for i, z := range tenant.Spec.Pools {
-		t.Append([]string{strconv.Itoa(i), strconv.Itoa(int(z.Servers)), strconv.Itoa(int(z.VolumesPerServer)), z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().String()})
+		t.Append([]string{
+			strconv.Itoa(i),
+			strconv.Itoa(int(z.Servers)),
+			strconv.Itoa(int(z.VolumesPerServer)),
+			humanize.IBytes(uint64(z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value())),
+		})
 	}
 	t.Render()
-	fmt.Println()
 }
