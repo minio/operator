@@ -79,11 +79,11 @@ tenant:
     ## for the auto-generated certificate. Internal DNS name for the pod will be used if CommonName is
     ## not provided. DNS name format is *.minio.default.svc.cluster.local
     certConfig: { }
-  ## Enable S3 specific features such as Bucket DNS which would allow `buckets` to be
-  ## accessible as DNS entries of form `<bucketname>.minio.default.svc.cluster.local`
-  s3:
-    ## This feature is turned off by default
+  ## MinIO features to enable or disable in the MinIO Tenant
+  ## https://github.com/minio/operator/blob/master/docs/crd.adoc#features
+  features:
     bucketDNS: false
+    domains: { }
   ## List of bucket names to create during tenant provisioning
   buckets: [ ]
   ## List of secret names to use for generating MinIO users during tenant provisioning

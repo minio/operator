@@ -92,8 +92,15 @@ spec:
     {{- toYaml . | nindent 6 }}
   {{- end }}
   requestAutoCert: {{ dig "certificate" "requestAutoCert" false . }}
-  s3:
-    bucketDNS: {{ dig "s3" "bucketDNS" false . }}
+  {{- if dig "s3" "bucketDNS" false . }}
+  {{- fail "Value 'tenant.s3.bucketDNS' is deprecated since Operator v4.3.2, use 'tenant.features.bucketDNS' instead" }}
+  {{- end }}
+  features:
+    bucketDNS: {{ dig "features" "bucketDNS" false . }}
+    {{- with (dig "features" "domains" (dict) .) }}
+    domains:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
   {{- with (dig "buckets" (list) .) }}
   buckets:
     {{- toYaml . | nindent 4 }}
