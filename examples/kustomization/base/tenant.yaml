@@ -18,11 +18,13 @@ metadata:
 #  name: my-custom-scheduler
 
 spec:
-  ## Enable S3 specific features such as Bucket DNS which would allow `buckets` to be
-  ## accessible as DNS entries of form `<bucketname>.minio.namespace.svc.cluster.local`
-  s3:
+  features:
+    ## Enable S3 specific features such as Bucket DNS which would allow `buckets` to be
+    ## accessible as DNS entries of form `<bucketname>.minio.namespace.svc.cluster.local`
     ## This feature is turned off by default
     bucketDNS: false
+    ## Specify a list of domains used to access MinIO and Console
+    domains: { }
   ## Create users in the Tenant using this field. Make sure to create secrets per user added here.
   ## Secret should follow the format used in `minio-creds-secret`.
   users:
