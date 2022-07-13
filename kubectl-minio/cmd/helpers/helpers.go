@@ -206,8 +206,16 @@ func ToYaml(objs []runtime.Object) ([]string, error) {
 func GetTable() *table.Table {
 	t := table.NewWriter(os.Stdout)
 	t.SetAutoWrapText(false)
+	t.SetAutoFormatHeaders(true)
 	t.SetHeaderAlignment(table.ALIGN_LEFT)
 	t.SetAlignment(table.ALIGN_LEFT)
+	t.SetCenterSeparator("")
+	t.SetColumnSeparator("")
+	t.SetRowSeparator("")
+	t.SetHeaderLine(false)
+	t.SetBorder(false)
+	t.SetTablePadding("\t")
+	t.SetNoWhiteSpace(true)
 	return t
 }
 
