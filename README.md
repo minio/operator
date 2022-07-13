@@ -157,7 +157,7 @@ See the ``krew`` [installation documentation](https://krew.sigs.k8s.io/docs/user
 Run the following command to verify installation of the plugin:
 
 ```sh
-kubectl minio version
+kubectl krew version
 ```
 
 As an alternative to `krew`, you can download the `kubectl-minio` plugin from the [Operator Releases Page](https://github.com/minio/operator/releases).  Download the `kubectl-minio` package appropriate for your operating system and extract the contents as `kubectl-minio`. Set the `kubectl-minio` binary to be executable (e.g. `chmod +x`) and place it in your system `PATH`.
