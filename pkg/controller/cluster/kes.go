@@ -124,26 +124,26 @@ func (c *Controller) createKESCSR(ctx context.Context, tenant *miniov2.Tenant) e
 }
 
 // kesStatefulSetMatchesSpec checks if the StatefulSet for KES matches what is expected and described from the Tenant
-func kesStatefulSetMatchesSpec(tenant *miniov2.Tenant, kesStatefulSet *appsv1.StatefulSet) (bool, error) {
-	if kesStatefulSet == nil {
+func kesStatefulSetMatchesSpec(tenant *miniov2.Tenant, existingStatefulSet *appsv1.StatefulSet) (bool, error) {
+	if existingStatefulSet == nil {
 		return false, errors.New("cannot process an empty kes StatefulSet")
 	}
 	if tenant == nil {
 		return false, errors.New("cannot process an empty tenant")
 	}
 	// compare image directly
-	if !tenant.Spec.KES.EqualImage(kesStatefulSet.Spec.Template.Spec.Containers[0].Image) {
+	if !tenant.Spec.KES.EqualImage(existingStatefulSet.Spec.Template.Spec.Containers[0].Image) {
 		klog.V(2).Infof("Tenant %s KES version %s doesn't match: %s", tenant.Name,
-			tenant.Spec.KES.Image, kesStatefulSet.Spec.Template.Spec.Containers[0].Image)
+			tenant.Spec.KES.Image, existingStatefulSet.Spec.Template.Spec.Containers[0].Image)
 		return false, nil
 	}
 	// compare any other change from what is specified on the tenant
 	expectedStatefulSet := statefulsets.NewForKES(tenant, tenant.KESHLServiceName())
 	// compare containers environment variables
-	if miniov2.IsContainersEnvUpdated(expectedStatefulSet.Spec.Template.Spec.Containers, kesStatefulSet.Spec.Template.Spec.Containers) {
+	if miniov2.IsContainersEnvUpdated(existingStatefulSet.Spec.Template.Spec.Containers, expectedStatefulSet.Spec.Template.Spec.Containers) {
 		return false, nil
 	}
-	if !equality.Semantic.DeepDerivative(expectedStatefulSet.Spec, kesStatefulSet.Spec) {
+	if !equality.Semantic.DeepDerivative(expectedStatefulSet.Spec, existingStatefulSet.Spec) {
 		// some field set by the operator has changed
 		return false, nil
 	}
@@ -201,11 +201,12 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 			}
 		}
 		// pass the identity of the MinIO client certificate
-		tenant.Spec.KES.Env = append(tenant.Spec.KES.Env, corev1.EnvVar{
-			Name:  "MINIO_KES_IDENTITY",
-			Value: certificateClientIdentity,
-		})
-
+		if !tenant.HasEnv("MINIO_KES_IDENTITY") {
+			tenant.Spec.KES.Env = append(tenant.Spec.KES.Env, corev1.EnvVar{
+				Name:  "MINIO_KES_IDENTITY",
+				Value: certificateClientIdentity,
+			})
+		}
 		svc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.KESHLServiceName())
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
@@ -222,13 +223,12 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 		}
 
 		// Get the StatefulSet with the name specified in spec
-		if kesStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.KESStatefulSetName()); err != nil {
+		if existingStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(tenant.KESStatefulSetName()); err != nil {
 			if k8serrors.IsNotFound(err) {
+				ks := statefulsets.NewForKES(tenant, svc.Name)
 				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningKESStatefulSet, 0); err != nil {
 					return err
 				}
-
-				ks := statefulsets.NewForKES(tenant, svc.Name)
 				klog.V(2).Infof("Creating a new KES StatefulSet for %q", nsName)
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ks, cOpts); err != nil {
 					klog.V(2).Infof(err.Error())
@@ -241,17 +241,17 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 			}
 		} else {
 			// Verify if this KES StatefulSet matches the spec on the tenant (resources, affinity, sidecars, etc)
-			kesStatefulSetMatchesSpec, err := kesStatefulSetMatchesSpec(tenant, kesStatefulSet)
+			kesStatefulSetMatchesSpec, err := kesStatefulSetMatchesSpec(tenant, existingStatefulSet)
 			if err != nil {
 				return err
 			}
 
 			// if the KES StatefulSet doesn't match the spec
 			if !kesStatefulSetMatchesSpec {
+				ks := statefulsets.NewForKES(tenant, svc.Name)
 				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingKES, totalReplicas); err != nil {
 					return err
 				}
-				ks := statefulsets.NewForKES(tenant, svc.Name)
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ks, uOpts); err != nil {
 					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("KES Statefulset failed to update: %s", err))
 					return err
