@@ -18,7 +18,6 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -78,16 +77,15 @@ func (d *statusCmd) validate(args []string) error {
 
 func validateTenantArgs(cmd string, args []string) error {
 	if args == nil {
-		return errors.New(fmt.Sprintf("provide the name of the tenant, e.g. 'kubectl minio tenant %s tenant1'", cmd))
+		return fmt.Errorf("provide the name of the tenant, e.g. 'kubectl minio tenant %s tenant1'", cmd)
 	}
 	if len(args) != 1 {
-		return errors.New(fmt.Sprintf("%s command supports a single argument, e.g. 'kubectl minio %s tenant1'", cmd, cmd))
+		return fmt.Errorf("%s command supports a single argument, e.g. 'kubectl minio %s tenant1'", cmd, cmd)
 	}
 	if args[0] == "" {
-		return errors.New(fmt.Sprintf("provide the name of the tenant, e.g. 'kubectl minio tenant %s tenant1'", cmd))
+		return fmt.Errorf("provide the name of the tenant, e.g. 'kubectl minio tenant %s tenant1'", cmd)
 	}
 	return helpers.CheckValidTenantName(args[0])
-
 }
 
 func (d *statusCmd) run(args []string) error {
