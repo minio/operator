@@ -82,6 +82,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.BoolVar(&c.tenantOpts.DisableAntiAffinity, "enable-host-sharing", false, "[TESTING-ONLY] disable anti-affinity to allow pods to be co-located on a single node (unsupported in production environment)")
 	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret for KES KMS setup, refer https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
 	f.BoolVar(&c.tenantOpts.EnableAuditLogs, "enable-audit-logs", true, "Enable/Disable audit logs")
+	f.BoolVar(&c.tenantOpts.EnableTLS, "enable-tls", true, "Enable/Disable TLS")
 	f.Int32Var(&c.tenantOpts.AuditLogsDiskSpace, "audit-logs-disk-space", 5, "(Only used when enable-audit-logs is on) Disk space for audit logs")
 	f.StringVar(&c.tenantOpts.AuditLogsImage, "audit-logs-image", "", "(Only used when enable-audit-logs is on) The Docker image to use for audit logs")
 	f.StringVar(&c.tenantOpts.AuditLogsPGImage, "audit-logs-pg-image", "", "(Only used when enable-audit-logs is on) The PostgreSQL Docker image to use for audit logs")

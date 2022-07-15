@@ -39,7 +39,7 @@ type TenantOptions struct {
 	StorageClass            string
 	KmsSecret               string
 	ConsoleSecret           string
-	DisableTLS              bool
+	EnableTLS               bool
 	ImagePullSecret         string
 	DisableAntiAffinity     bool
 	EnableAuditLogs         bool
@@ -109,7 +109,6 @@ func storageClass(sc string) *string {
 
 // NewTenant will return a new Tenant for a MinIO Operator
 func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, error) {
-	autoCert := true
 	volumesPerServer := helpers.VolumesPerServer(opts.Volumes, opts.Servers)
 	capacityPerVolume, err := helpers.CapacityPerVolume(opts.Capacity, opts.Volumes)
 	if err != nil {
@@ -134,12 +133,6 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 				Name: opts.Name + "-creds-secret",
 			},
 			Pools:           []miniov2.Pool{Pool(opts, volumesPerServer, *capacityPerVolume)},
-			RequestAutoCert: &autoCert,
-			CertConfig: &miniov2.CertificateConfig{
-				CommonName:       "",
-				OrganizationName: []string{},
-				DNSNames:         []string{},
-			},
 			Mountpath:       helpers.MinIOMountPath,
 			KES:             tenantKESConfig(opts.Name, opts.KmsSecret),
 			ImagePullSecret: v1.LocalObjectReference{Name: opts.ImagePullSecret},
@@ -150,6 +143,12 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 			},
 		},
 	}
+
+	t.Spec.RequestAutoCert = &opts.EnableTLS
+	if opts.EnableTLS {
+		t.Spec.CertConfig = getAutoCertConfig(opts)
+	}
+
 	if opts.EnableAuditLogs {
 		t.Spec.Log = getAuditLogConfig(opts)
 	}
@@ -160,6 +159,14 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 	t.EnsureDefaults()
 
 	return t, t.Validate()
+}
+
+func getAutoCertConfig(opts *TenantOptions) *miniov2.CertificateConfig {
+	return &miniov2.CertificateConfig{
+		CommonName:       "",
+		OrganizationName: []string{},
+		DNSNames:         []string{},
+	}
 }
 
 func getAuditLogConfig(opts *TenantOptions) *miniov2.LogConfig {
