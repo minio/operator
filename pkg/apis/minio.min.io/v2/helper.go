@@ -215,26 +215,23 @@ func (t *Tenant) KESReplicas() int32 {
 const (
 	minioReleaseTagTimeLayout       = "2006-01-02T15-04-05Z"
 	minioReleaseTagTimeLayoutBackup = "2006-01-02T15:04:05Z"
-	releasePrefix                   = "RELEASE"
 )
 
 // ReleaseTagToReleaseTime - converts a 'RELEASE.2017-09-29T19-16-56Z.hotfix' into the build time
 func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err error) {
 	fields := strings.Split(releaseTag, ".")
-	if len(fields) == 1 {
-		releaseTime, err = time.Parse(minioReleaseTagTimeLayout, fields[0])
-		if err != nil {
-			return time.Parse(minioReleaseTagTimeLayoutBackup, fields[0])
-		}
-		return releaseTime, nil
+	if len(fields) < 1 {
+		return releaseTime, fmt.Errorf("%s not a valid release tag", releaseTag)
 	}
-	if len(fields) < 2 || len(fields) > 3 {
-		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
+	releaseTimeStr := fields[0]
+	if len(fields) > 1 {
+		releaseTimeStr = fields[1]
 	}
-	if fields[0] != releasePrefix {
-		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
+	releaseTime, err = time.Parse(minioReleaseTagTimeLayout, releaseTimeStr)
+	if err != nil {
+		return time.Parse(minioReleaseTagTimeLayoutBackup, releaseTimeStr)
 	}
-	return time.Parse(minioReleaseTagTimeLayout, fields[1])
+	return releaseTime, nil
 }
 
 // ExtractTar extracts all tar files from the list `filesToExtract` and puts the files in the `basePath` location
@@ -597,7 +594,7 @@ func (t *Tenant) GetKESEnvVars() (env []corev1.EnvVar) {
 }
 
 // UpdateURL returns the URL for the sha256sum location of the new binary
-func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error) {
+func (t *Tenant) UpdateURL(ltag string, overrideURL string) (string, error) {
 	if overrideURL == "" {
 		overrideURL = DefaultMinIOUpdateURL
 	}
@@ -605,7 +602,7 @@ func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error)
 	if err != nil {
 		return "", err
 	}
-	u.Path = u.Path + "/minio." + releasePrefix + "." + lrTime.Format(minioReleaseTagTimeLayout) + ".sha256sum"
+	u.Path = u.Path + "/minio." + ltag + ".sha256sum"
 	return u.String(), nil
 }
 

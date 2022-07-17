@@ -22,8 +22,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/docker/cli/cli/config/configfile"
 
@@ -93,7 +93,7 @@ func (c *Controller) getKeychainForTenant(ctx context.Context, ref name.Referenc
 
 // Attempts to fetch given image and then extracts and keeps relevant files
 // (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
-func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest time.Time, err error) {
+func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest string, err error) {
 	basePath := updatePath
 
 	if err = os.MkdirAll(basePath, 1777); err != nil {
@@ -196,8 +196,7 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest time.Time, e
 	srcShaSum := "minio.sha256sum"
 	srcSig := "minio.minisig"
 
-	latest, err = miniov2.ReleaseTagToReleaseTime(tag)
-	if err != nil {
+	if _, err = miniov2.ReleaseTagToReleaseTime(tag); err != nil {
 		return latest, err
 	}
 
@@ -209,11 +208,11 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest time.Time, e
 	// rename all files to add tag specific values in the name.
 	// this is because minio updater looks for files in this name format.
 	for s, d := range filesToRename {
-		if err = os.Rename(basePath+s, basePath+d); err != nil {
-			return latest, err
+		if err = os.Rename(filepath.Join(basePath, s), filepath.Join(basePath, d)); err != nil {
+			return tag, err
 		}
 	}
-	return latest, nil
+	return tag, nil
 }
 
 // Remove all the files created during upload process
