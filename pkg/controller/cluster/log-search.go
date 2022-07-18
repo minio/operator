@@ -107,7 +107,10 @@ func logSearchAPIDeploymentMatchesSpec(tenant *miniov2.Tenant, actualDeployment 
 	return true, nil
 }
 
-func (c *Controller) deleteLogHeadlessService(ctx context.Context, tenant *miniov2.Tenant) error {
+func (c *Controller) deleteLogHeadlessService(ctx context.Context, tenant *miniov2.Tenant, adminClnt *madmin.AdminClient) error {
+	if _, err := adminClnt.DelConfigKV(ctx, fmt.Sprintf("audit_webhook:%s", tenant.LogSearchAPIDeploymentName())); err != nil {
+		return err
+	}
 	_, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogHLServiceName())
 	if k8serrors.IsNotFound(err) {
 		return nil

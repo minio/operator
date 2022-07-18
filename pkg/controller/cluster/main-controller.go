@@ -1176,7 +1176,7 @@ func (c *Controller) syncHandler(key string) error {
 			return err
 		}
 	} else {
-		err := c.deleteLogHeadlessService(ctx, tenant)
+		err := c.deleteLogHeadlessService(ctx, tenant, adminClnt)
 		if err != nil {
 			return err
 		}
