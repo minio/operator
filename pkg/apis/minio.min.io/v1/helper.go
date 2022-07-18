@@ -146,23 +146,6 @@ func (t *Tenant) KESReplicas() int32 {
 	return replicas
 }
 
-const (
-	minioReleaseTagTimeLayout = "2006-01-02T15-04-05Z"
-	releasePrefix             = "RELEASE"
-)
-
-// ReleaseTagToReleaseTime - converts a 'RELEASE.2017-09-29T19-16-56Z.hotfix' into the build time
-func ReleaseTagToReleaseTime(releaseTag string) (releaseTime time.Time, err error) {
-	fields := strings.Split(releaseTag, ".")
-	if len(fields) < 2 || len(fields) > 3 {
-		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
-	}
-	if fields[0] != releasePrefix {
-		return releaseTime, fmt.Errorf("%s is not a valid release tag", releaseTag)
-	}
-	return time.Parse(minioReleaseTagTimeLayout, fields[1])
-}
-
 // ExtractTar extracts all tar files from the list `filesToExtract` and puts the files in the `basePath` location
 func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 	tarFile, err := os.Open(basePath + tarFileName)
@@ -424,19 +407,6 @@ func (t *Tenant) S3BucketDNS() bool {
 // HasKESEnabled checks if kes configuration is provided by user
 func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
-}
-
-// UpdateURL returns the URL for the sha256sum location of the new binary
-func (t *Tenant) UpdateURL(lrTime time.Time, overrideURL string) (string, error) {
-	if overrideURL == "" {
-		overrideURL = miniov2.DefaultMinIOUpdateURL
-	}
-	u, err := url.Parse(overrideURL)
-	if err != nil {
-		return "", err
-	}
-	u.Path = u.Path + "/minio." + releasePrefix + "." + lrTime.Format(minioReleaseTagTimeLayout) + ".sha256sum"
-	return u.String(), nil
 }
 
 // MinIOServerHostAddress similar to MinIOServerHost but returns host with port
