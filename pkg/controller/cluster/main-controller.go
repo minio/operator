@@ -1222,7 +1222,7 @@ func (c *Controller) syncHandler(key string) error {
 		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "UsersCreated", "Users created")
 	}
 
-	// Ensure we are only creating the bucket once using the console user
+	// Ensure we are only creating the bucket
 	if !tenant.Status.ProvisionedBuckets && len(tenant.Spec.Buckets) > 0 {
 		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)

@@ -736,49 +736,26 @@ func (t *Tenant) getMinIOTenantDetails(address string, minioSecret map[string][]
 }
 
 // NewMinIOUser initializes a new console user
-func (t *Tenant) NewMinIOUser(userCredentialSecrets []*corev1.Secret, tr *http.Transport) (*minio.Client, error) {
-	return t.NewMinIOUserForAddress("", userCredentialSecrets, tr)
+func (t *Tenant) NewMinIOUser(minioSecret map[string][]byte, tr *http.Transport) (*minio.Client, error) {
+	return t.NewMinIOUserForAddress("", minioSecret, tr)
 }
 
 // NewMinIOUserForAddress initializes a new console user
-func (t *Tenant) NewMinIOUserForAddress(address string, userCredentialSecrets []*corev1.Secret, tr *http.Transport) (*minio.Client, error) {
-	host := address
-	if host == "" {
-		host = t.MinIOServerHostAddress()
-		if host == "" {
-			return nil, errors.New("MinIO server host is empty")
-		}
+func (t *Tenant) NewMinIOUserForAddress(address string, minioSecret map[string][]byte, tr *http.Transport) (*minio.Client, error) {
+	host, accessKey, secretKey, err := t.getMinIOTenantDetails(address, minioSecret)
+	if err != nil {
+		return nil, err
 	}
-
-	for _, cred := range userCredentialSecrets {
-		consoleAccessKey, ok := cred.Data["CONSOLE_ACCESS_KEY"]
-		if !ok {
-			return nil, errors.New("CONSOLE_ACCESS_KEY not provided")
-		}
-		// remove spaces and line breaks from access key
-		userAccessKey := strings.TrimSpace(string(consoleAccessKey))
-		consoleSecretKey, ok := cred.Data["CONSOLE_SECRET_KEY"]
-		// remove spaces and line breaks from secret key
-		userSecretKey := strings.TrimSpace(string(consoleSecretKey))
-		if !ok {
-			return nil, errors.New("CONSOLE_SECRET_KEY not provided")
-		}
-
-		opts := &minio.Options{
-			Transport: tr,
-			Secure:    t.TLS(),
-			Creds:     credentials.NewStaticV4(userAccessKey, userSecretKey, ""),
-		}
-
-		minioClnt, err := minio.New(host, opts)
-		if err != nil {
-			return nil, err
-		}
-
-		return minioClnt, nil
+	opts := &minio.Options{
+		Transport: tr,
+		Secure:    t.TLS(),
+		Creds:     credentials.NewStaticV4(string(accessKey), string(secretKey), ""),
 	}
-
-	return nil, errors.New("no user credentials specified to initialize")
+	minioClient, err := minio.New(host, opts)
+	if err != nil {
+		return nil, err
+	}
+	return minioClient, nil
 }
 
 // MustGetSystemCertPool - return system CAs or empty pool in case of error (or windows)
@@ -790,20 +767,12 @@ func MustGetSystemCertPool() *x509.CertPool {
 	return pool
 }
 
-// IsLDAPEnabled ldap enabled
-func (t *Tenant) IsLDAPEnabled() bool {
-	for _, env := range t.GetEnvVars() {
-		if env.Name == "MINIO_IDENTITY_LDAP_SERVER_ADDR" && env.Value != "" {
-			return true
-		}
-	}
-	return false
-}
-
 // CreateUsers creates a list of admin users on MinIO, optionally creating users is disabled.
-func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret) error {
-	skipCreateUser := t.IsLDAPEnabled() // Skip creating users if LDAP is enabled.
-
+func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets []*corev1.Secret, tenantConfiguration map[string][]byte) error {
+	var skipCreateUser bool // Skip creating users if LDAP is enabled.
+	if ldapAddress, ok := tenantConfiguration["MINIO_IDENTITY_LDAP_SERVER_ADDR"]; ok {
+		skipCreateUser = string(ldapAddress) != ""
+	}
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
