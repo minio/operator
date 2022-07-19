@@ -359,7 +359,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	}
 
 	// get a new admin client
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
+	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		// show the error and continue
 		klog.Errorf("Error instantiating madmin: %v", err)
@@ -368,7 +368,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 
 	// configuration that means MinIO is running with LDAP enabled
 	// and we need to skip the console user creation
-	if err = tenant.CreateUsers(adminClnt, userCredentials); err != nil {
+	if err = tenant.CreateUsers(adminClient, userCredentials, tenantConfiguration); err != nil {
 		klog.V(2).Infof("Unable to create MinIO users: %v", err)
 	}
 
@@ -384,7 +384,8 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 		}
 	}()
 
-	if tenant.IsLDAPEnabled() {
+	tenantBuckets := tenant.Spec.Buckets
+	if len(tenantBuckets) == 0 {
 		return nil
 	}
 
@@ -392,17 +393,15 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 		return err
 	}
 
-	userCredentials := c.fetchUserCredentials(ctx, tenant)
-
-	// Create bucket using the console user
-	minioClnt, err := tenant.NewMinIOUser(userCredentials, c.getTransport())
+	// get a new admin client
+	minioClient, err := tenant.NewMinIOUser(tenantConfiguration, c.getTransport())
 	if err != nil {
 		// show the error and continue
-		klog.Errorf("Error instantiating minio Client: %v, no buckets will be provisioned please verify if you have 'spec.users' set", err)
+		klog.Errorf("Error instantiating minio Client: %v ", err)
 		return err
 	}
 
-	if err := tenant.CreateBuckets(minioClnt, tenant.Spec.Buckets...); err != nil {
+	if err := tenant.CreateBuckets(minioClient, tenantBuckets...); err != nil {
 		klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
 		return err
 	}
