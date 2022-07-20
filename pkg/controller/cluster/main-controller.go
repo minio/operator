@@ -559,7 +559,7 @@ func (c *Controller) processNextWorkItem() bool {
 		if err := c.syncHandler(key); err != nil {
 			// Put the item back on the workqueue to handle any transient errors.
 			c.workqueue.AddRateLimited(key)
-			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
+			return fmt.Errorf("error syncing '%s': %w", key, err)
 		}
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
@@ -995,7 +995,7 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			_ = c.removeArtifacts()
 
-			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", tenantName, err)
+			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %w", tenantName, err)
 			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalReplicas); terr != nil {
 				return terr
 			}

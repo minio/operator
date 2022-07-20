@@ -43,7 +43,7 @@ func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, t
 		}
 		if noDecom {
 			klog.Warningf("%s Detected we are removing a pool but spec.Pool[].Name is empty - disallowing removal", key)
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusDecommissioningNotAllowed, 0); err != nil {
+			if _, err = c.updateTenantStatus(ctx, tenant, StatusDecommissioningNotAllowed, 0); err != nil {
 				return nil, err
 			}
 			return nil, errors.New("removing pool not allowed")

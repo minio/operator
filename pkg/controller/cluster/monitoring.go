@@ -442,7 +442,7 @@ func (c *Controller) processNextHealthCheckItem() bool {
 		// Run the syncHandler, passing it the namespace/name string of the
 		// Tenant resource to be synced.
 		if err := c.syncHealthCheckHandler(key); err != nil {
-			return fmt.Errorf("error checking health check '%s': %s", key, err.Error())
+			return fmt.Errorf("error checking health check '%s': %w", key, err)
 		}
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
