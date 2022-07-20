@@ -18,6 +18,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -71,6 +72,21 @@ func (c *Controller) getTenantCredentials(ctx context.Context, tenant *miniov2.T
 	}
 	for key, val := range config {
 		tenantConfiguration[key] = val
+	}
+
+	var accessKey string
+	var secretKey string
+
+	if _, ok := tenantConfiguration["accesskey"]; ok {
+		accessKey = string(tenantConfiguration["accesskey"])
+	}
+
+	if _, ok := tenantConfiguration["secretkey"]; ok {
+		secretKey = string(tenantConfiguration["secretkey"])
+	}
+
+	if accessKey == "" || secretKey == "" {
+		return tenantConfiguration, errors.New("empty tenant credentials")
 	}
 
 	return tenantConfiguration, nil
