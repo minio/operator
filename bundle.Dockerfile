@@ -7,6 +7,7 @@ LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=minio-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=stable
 
+
 # Copy files to locations specified by labels.
-COPY bundles/community-operators/4.4.25/manifests /manifests/
-COPY bundles/community-operators/4.4.25/metadata /metadata/
+COPY bundles/community-operators/4.4.26/manifests /manifests/
+COPY bundles/community-operators/4.4.26/metadata /metadata/
