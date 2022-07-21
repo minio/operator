@@ -865,6 +865,9 @@ func (c *Controller) syncHandler(key string) error {
 		// check if operator-tls public.crt is mounted on MinIO pods
 		if !operatorTLSCertIsMounted {
 			for _, volume := range ss.Spec.Template.Spec.Volumes {
+				if volume.Projected == nil || volume.Projected.Sources == nil {
+					continue
+				}
 				for _, vp := range volume.Projected.Sources {
 					if vp.Secret.Name == OperatorTLSSecretName {
 						operatorTLSCertIsMounted = true
