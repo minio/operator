@@ -111,6 +111,8 @@ rules:
       - update
       - create
       - get
+      - delete
+      - list
   - apiGroups:
       - minio.min.io
     resources:
