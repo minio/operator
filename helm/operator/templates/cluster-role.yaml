@@ -92,6 +92,7 @@ rules:
       - create
       - get
       - delete
+      - list
   - apiGroups:
       - certificates.k8s.io
     resourceNames:
