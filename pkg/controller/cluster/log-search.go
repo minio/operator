@@ -108,12 +108,12 @@ func logSearchAPIDeploymentMatchesSpec(tenant *miniov2.Tenant, actualDeployment 
 }
 
 func (c *Controller) deleteLogHeadlessService(ctx context.Context, tenant *miniov2.Tenant, adminClnt *madmin.AdminClient) error {
-	if _, err := adminClnt.DelConfigKV(ctx, fmt.Sprintf("audit_webhook:%s", tenant.LogSearchAPIDeploymentName())); err != nil {
-		return err
-	}
 	_, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.LogHLServiceName())
 	if k8serrors.IsNotFound(err) {
 		return nil
+	}
+	if _, err := adminClnt.DelConfigKV(ctx, fmt.Sprintf("audit_webhook:%s", tenant.LogSearchAPIDeploymentName())); err != nil {
+		return err
 	}
 	klog.V(2).Infof("Deleting Log Headless Service for %s", tenant.Namespace)
 	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.LogHLServiceName(), metav1.DeleteOptions{})
