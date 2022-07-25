@@ -1,0 +1,12 @@
+---
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: storage
+  namespace: minio-tenant
+spec:
+  log:
+    db:
+      serviceAccountName: tenant-log-db-sa
+  prometheus:
+    serviceAccountName: tenant-prometheus-sa

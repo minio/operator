@@ -1,0 +1,81 @@
+---
+# This is an example of a restrictive policy that requires users to run as an
+# unprivileged user, blocks possible escalations to root, and requires use of
+# several security mechanisms.
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: minio-tenant-psp
+  # annotations:
+  #   # docker/default identifies a profile for seccomp, but it is not particularly tied to the Docker runtime
+  #   seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'docker/default,runtime/default'
+  #   apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+  #   apparmor.security.beta.kubernetes.io/defaultProfileName:  'runtime/default'
+spec:
+  allowPrivilegeEscalation: false
+  # This is redundant with non-root + disallow privilege escalation,
+  # but we can provide it for defense in depth.
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  hostIPC: false
+  hostNetwork: false
+  hostPID: false
+  privileged: false
+  readOnlyRootFilesystem: false
+  # Required to prevent escalations to root.
+  requiredDropCapabilities:
+    - ALL
+  runAsUser:
+    # Require the container to run without root privileges.
+    rule: 'MustRunAsNonRoot'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      # Forbid adding the root group.
+      - min: 1
+        max: 65535
+  # Allow core volume types.
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'projected'
+    # Assume that persistentVolumes set up by the cluster admin are safe to use.
+    - 'persistentVolumeClaim'
+  seLinux:
+    # This policy assumes the nodes are using AppArmor rather than SELinux.
+    rule: 'RunAsAny'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: minio-tenant-cluster-role
+rules:
+  - apiGroups:
+      - policy
+    resourceNames:
+      - minio-tenant-psp
+    resources:
+      - podsecuritypolicies
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: minio-tenant-role-binding
+  namespace: minio-tenant
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: minio-tenant-cluster-role
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:serviceaccounts:tenant-psp
