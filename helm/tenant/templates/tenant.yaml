@@ -38,6 +38,9 @@ spec:
     - servers: {{ dig "servers" 4 . }}
       name: {{ dig "name" "" . }}
       volumesPerServer: {{ dig "volumesPerServer" 4 . }}
+      {{- if dig "runtimeClassName" "" . }}
+      runtimeClassName: {{ dig "runtimeClassName" "" . }}
+      {{- end }}
       volumeClaimTemplate:
         metadata:
           name: data
