@@ -776,5 +776,11 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 	if t.Spec.SideCars != nil && len(t.Spec.SideCars.VolumeClaimTemplates) > 0 {
 		ss.Spec.VolumeClaimTemplates = append(ss.Spec.VolumeClaimTemplates, t.Spec.SideCars.VolumeClaimTemplates...)
 	}
+
+	// pass on RuntimeClassName
+	if pool.RuntimeClassName != nil && *pool.RuntimeClassName != "" {
+		ss.Spec.Template.Spec.RuntimeClassName = pool.RuntimeClassName
+	}
+
 	return ss
 }
