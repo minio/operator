@@ -5,6 +5,7 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.4.7
     meta.helm.sh/release-name: minio-operator
     meta.helm.sh/release-namespace: minio-operator
+  creationTimestamp: null
   labels:
     app.kubernetes.io/managed-by: Helm
   name: tenants.minio.min.io
@@ -6544,6 +6545,8 @@ spec:
                             x-kubernetes-int-or-string: true
                           type: object
                       type: object
+                    runtimeClassName:
+                      type: string
                     securityContext:
                       properties:
                         fsGroup:
