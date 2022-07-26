@@ -6544,6 +6544,8 @@ spec:
                               x-kubernetes-int-or-string: true
                             type: object
                         type: object
+                      runtimeClassName:
+                        type: string
                       securityContext:
                         properties:
                           fsGroup:

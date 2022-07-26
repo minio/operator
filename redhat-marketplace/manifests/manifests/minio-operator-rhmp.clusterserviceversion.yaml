@@ -8,7 +8,7 @@ metadata:
     operators.operatorframework.io/project_layout: unknown
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
-    containerImage: quay.io/minio/operator:v4.4.26
+    containerImage: quay.io/minio/operator:v4.4.27
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -16,7 +16,7 @@ metadata:
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
-  name: minio-operator-rhmp.v4.4.26
+  name: minio-operator-rhmp.v4.4.27
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -171,6 +171,8 @@ spec:
                 - update
                 - create
                 - get
+                - delete
+                - list
             - apiGroups:
                 - minio.min.io
               resources:
@@ -400,6 +402,8 @@ spec:
                 - update
                 - create
                 - get
+                - delete
+                - list
             - apiGroups:
                 - minio.min.io
               resources:
@@ -627,6 +631,7 @@ spec:
                 - create
                 - get
                 - delete
+                - list
             - apiGroups:
                 - certificates.k8s.io
               resourceNames:
@@ -685,7 +690,7 @@ spec:
                     env:
                       - name: CONSOLE_OPERATOR_MODE
                         value: "on"
-                    image: quay.io/minio/console@sha256:b84261a847684e10f26f9d526b6ca71df9393c68656d4b60eb1cd934a7464450
+                    image: quay.io/minio/console@sha256:9dfef70fd62dfcdf4763d975943060f511853a1d0f2757cfda3117e1013fb139
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -715,7 +720,7 @@ spec:
                     env:
                       - name: CONSOLE_OPERATOR_MODE
                         value: "on"
-                    image: quay.io/minio/operator:v4.4.26
+                    image: quay.io/minio/operator:v4.4.27
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -750,7 +755,7 @@ spec:
                                 - minio-operator
                         topologyKey: kubernetes.io/hostname
                 containers:
-                  - image: minio/operator:v4.4.26
+                  - image: minio/operator:v4.4.27
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -791,7 +796,7 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  version: 4.4.26
+  version: 4.4.27
   webhookdefinitions:
     - admissionReviewVersions:
         - v1
