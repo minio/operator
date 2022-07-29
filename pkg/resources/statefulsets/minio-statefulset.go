@@ -121,8 +121,8 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	}
 	// tell MinIO about all the domains meant to hit it if they are not passed manually via .spec.env
 	if len(domains) > 0 {
-		envVarsMap["MINIO_DOMAIN"] = corev1.EnvVar{
-			Name:  "MINIO_DOMAIN",
+		envVarsMap[miniov2.MinIODomain] = corev1.EnvVar{
+			Name:  miniov2.MinIODomain,
 			Value: strings.Join(domains, ","),
 		}
 	}
@@ -132,8 +132,8 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	if t.HasMinIODomains() {
 		serverURL = t.Spec.Features.Domains.Minio[0]
 	}
-	envVarsMap["MINIO_SERVER_URL"] = corev1.EnvVar{
-		Name:  "MINIO_SERVER_URL",
+	envVarsMap[miniov2.MinIOServerURL] = corev1.EnvVar{
+		Name:  miniov2.MinIOServerURL,
 		Value: serverURL,
 	}
 
@@ -147,8 +147,8 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 			}
 			consoleDomain = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Console)
 		}
-		envVarsMap["MINIO_BROWSER_REDIRECT_URL"] = corev1.EnvVar{
-			Name:  "MINIO_BROWSER_REDIRECT_URL",
+		envVarsMap[miniov2.MinIOBrowserRedirectURL] = corev1.EnvVar{
+			Name:  miniov2.MinIOBrowserRedirectURL,
 			Value: consoleDomain,
 		}
 	}
@@ -156,8 +156,8 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	// add env variables from tenant.Spec.CredsSecret.Name is deprecated and will be removed in the future
 	if t.HasCredsSecret() {
 		secretName := t.Spec.CredsSecret.Name
-		envVarsMap["MINIO_ROOT_USER"] = corev1.EnvVar{
-			Name: "MINIO_ROOT_USER",
+		envVarsMap[miniov2.MinIORootUser] = corev1.EnvVar{
+			Name: miniov2.MinIORootUser,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -167,8 +167,8 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 				},
 			},
 		}
-		envVarsMap["MINIO_ROOT_PASSWORD"] = corev1.EnvVar{
-			Name: "MINIO_ROOT_PASSWORD",
+		envVarsMap[miniov2.MinIORootPassword] = corev1.EnvVar{
+			Name: miniov2.MinIORootPassword,
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -310,7 +310,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool, certV
 		}
 	}
 
-	// CertPath (/tmp/certs) will always be mounted even if the tenant doesnt have any TLS certificate
+	// CertPath (/tmp/certs) will always be mounted even if the tenant doesn't have any TLS certificate
 	// operator will still mount the operator public cert under /tmp/certs/CAs/operator.crt
 	if operatorTLS || len(certVolumeSources) > 0 {
 		mounts = append(mounts, corev1.VolumeMount{

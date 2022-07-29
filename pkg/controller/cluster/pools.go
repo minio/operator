@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -111,25 +110,21 @@ func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.St
 	}
 	// Try to detect changes in Env Vars
 	// Merge the statefulset env with incoming tenant envs and compare with statefulset envs.
-	new := miniov2.MergeMaps(miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env), miniov2.ToMap(tenant.GetEnvVars()))
-	current := miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env)
-	if miniov2.IsEnvUpdated(current, new) {
+	expectedEnvVars := miniov2.MergeMaps(miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env), miniov2.ToMap(tenant.GetEnvVars()))
+	currentEnvVars := miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env)
+	if miniov2.IsEnvUpdated(currentEnvVars, expectedEnvVars) {
 		poolMatchesSS = false
 	}
 	// Check if endpoints protocol changed because of TLS configuration and pods need to be restarted
-	if new["MINIO_ENDPOINTS"] != "" {
-		if tenant.TLS() && !strings.HasPrefix(new["MINIO_ENDPOINTS"], "https") {
-			poolMatchesSS = false
-		} else if !tenant.TLS() && strings.HasPrefix(new["MINIO_ENDPOINTS"], "http") {
+	if currentMinIOServerURL, ok := currentEnvVars[miniov2.MinIOServerURL]; ok {
+		if tenant.GetTenantServiceURL() != currentMinIOServerURL {
 			poolMatchesSS = false
 		}
 	}
-
 	// Check for topology spread constraints changes
 	if !reflect.DeepEqual(pool.TopologySpreadConstraints, ss.Spec.Template.Spec.TopologySpreadConstraints) {
 		poolMatchesSS = false
 	}
-
 	return poolMatchesSS, nil
 }
 

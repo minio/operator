@@ -65,6 +65,13 @@ const (
 	WebhookMinIOArgs   = "MINIO_ARGS"
 	WebhookMinIOBucket = "MINIO_DNS_WEBHOOK_ENDPOINT"
 
+	MinIOServerURL          = "MINIO_SERVER_URL"
+	MinIODomain             = "MINIO_DOMAIN"
+	MinIOBrowserRedirectURL = "MINIO_BROWSER_REDIRECT_URL"
+
+	MinIORootUser     = "MINIO_ROOT_USER"
+	MinIORootPassword = "MINIO_ROOT_PASSWORD"
+
 	defaultPrometheusJWTExpiry = 100 * 365 * 24 * time.Hour
 )
 
