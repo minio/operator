@@ -1,8 +1,8 @@
 apiVersion: v2
 description: A Helm chart for MinIO Operator
 name: tenant
-version: 4.4.27
-appVersion: v4.4.27
+version: 4.4.28
+appVersion: v4.4.28
 keywords:
   - storage
   - object-storage
