@@ -1,0 +1,101 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.7
+    meta.helm.sh/release-name: minio-operator
+    meta.helm.sh/release-namespace: minio-operator
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: policybindings.minio.min.io
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: operator
+          namespace: minio-operator
+          path: /webhook/v1/crd-conversion
+          port: 4222
+      conversionReviewVersions:
+      - v1
+  group: minio.min.io
+  names:
+    kind: PolicyBinding
+    listKind: PolicyBindingList
+    plural: policybindings
+    shortNames:
+    - policybinding
+    singular: policybinding
+    preserveUnknownFields: false
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          scheduler:
+            properties:
+              name:
+                type: string
+            required:
+            - name
+            type: object
+          spec:
+            properties:
+              application:
+                properties:
+                  namespace:
+                    type: string
+                  serviceaccount:
+                    type: string
+                required:
+                - namespace
+                - serviceaccount
+                type: object
+              policies:
+                items:
+                  type: string
+                type: array
+            required:
+            - Application
+            - Policies
+            type: object
+          status:
+            properties:
+              currentState:
+                type: string
+              usage:
+                properties:
+                  authotizations:
+                    format: int64
+                    type: integer
+                type: object
+            required:
+            - currentState
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
