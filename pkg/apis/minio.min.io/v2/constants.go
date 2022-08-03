@@ -224,16 +224,26 @@ const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.18.0"
+const DefaultKESImage = "minio/kes:v0.22.3"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"
 
+// StatefulKESInstanceLabel is applied to the stateful KES pods of a Tenant cluster
+const StatefulKESInstanceLabel = "v1.min.io/stateful-kes"
+
 // KESPort specifies the default KES Service's port number.
 const KESPort = 7373
 
+// StatefulKESPort specifies the default Stateful KES Service's port number.
+// Same port as either one of them will be enabled on not both
+const StatefulKESPort = 7373
+
 // KESServicePortName specifies the default KES Service's port name.
 const KESServicePortName = "http-kes"
+
+// StatefulKESServicePortName specifies the default Stateful KES Service's port name.
+const StatefulKESServicePortName = "http-stateful-kes"
 
 // KESMinIOKey is the name of key that KES creates on the KMS backend
 const KESMinIOKey = "my-minio-key"
@@ -244,15 +254,29 @@ const KESJobRestartPolicy = corev1.RestartPolicyOnFailure
 // KESHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service for KES
 const KESHLSvcNameSuffix = "-kes-hl-svc"
 
+// StatefulKESHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service for StatefulKES
+const StatefulKESHLSvcNameSuffix = "-stateful-kes-hl-svc"
+
 // KESName specifies the default container name for KES
 const KESName = "-kes"
+
+// StatefulKESName specifies the default container name for Stateful KES
+const StatefulKESName = "-stateful-kes"
 
 // KESConfigMountPath specifies the path where KES config file and all secrets are mounted
 // We keep this to /tmp so it doesn't require any special permissions
 const KESConfigMountPath = "/tmp/kes"
 
+// StatefulKESConfigMountPath specifies the path where stateful KES init config file and all secrets are mounted
+// We keep this to /tmp so it doesn't require any special permissions
+const StatefulKESConfigMountPath = "/tmp/stateful-kes"
+
 // DefaultKESReplicas specifies the default number of KES pods to be created if not specified
 const DefaultKESReplicas = 2
+
+// DefaultStatefulKESReplicas specifies the default number of StatefulKES pods to be created if not specified
+// Note: the replica count should be 1 as multi-node is not yet supported
+const DefaultStatefulKESReplicas = 1
 
 // Auto TLS related constants
 
@@ -312,3 +336,9 @@ const PrometheusAddlScrapeConfigSecret = "minio-prom-additional-scrape-config"
 
 // PrometheusAddlScrapeConfigKey is the key in secret data
 const PrometheusAddlScrapeConfigKey = "prometheus-additional.yaml"
+
+// SysAdminConfigSuffix is the suffix applied to StatefulKES sysadmin creds
+const SysAdminConfigSuffix = "-sys-admin-config"
+
+// EnclaveAdminConfigSuffix is the suffix applied to StatefulKES enclave admin creds
+const EnclaveAdminConfigSuffix = "-enclave-admin-config"

@@ -145,6 +145,50 @@ func TestTenant_KESServiceEndpoint(t1 *testing.T) {
 	}
 }
 
+func TestTenant_StatefulKESServiceEndpoint(t1 *testing.T) {
+	type fields struct {
+		TypeMeta   metav1.TypeMeta
+		ObjectMeta metav1.ObjectMeta
+		Scheduler  TenantScheduler
+		Spec       TenantSpec
+		Status     TenantStatus
+	}
+	autoCertEnabled := true
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		{
+			name: "Success",
+			fields: fields{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "stateful-kes",
+					Namespace: "namespace",
+				},
+				Spec: TenantSpec{
+					RequestAutoCert: &autoCertEnabled,
+				},
+			},
+			want: "https://stateful-kes" + StatefulKESHLSvcNameSuffix + ".namespace.svc.cluster.local:7373",
+		},
+	}
+	for _, tt := range tests {
+		t1.Run(tt.name, func(t1 *testing.T) {
+			t := &Tenant{
+				TypeMeta:   tt.fields.TypeMeta,
+				ObjectMeta: tt.fields.ObjectMeta,
+				Scheduler:  tt.fields.Scheduler,
+				Spec:       tt.fields.Spec,
+				Status:     tt.fields.Status,
+			}
+			if got := t.StatefulKESServiceEndpoint(); got != tt.want {
+				t1.Errorf("StatefulKESServiceEndpoint() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestCompareEnvs(t *testing.T) {
 	type args struct {
 		old map[string]string

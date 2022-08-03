@@ -1,0 +1,95 @@
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: storage
+  namespace: minio-tenant
+spec:
+  ## Specification for MinIO Pool(s) in this Tenant.
+  pools:
+    ## Servers specifies the number of MinIO Tenant Pods / Servers in this pool.
+    ## For standalone mode, supply 1. For distributed mode, supply 4 or more.
+    ## Note that the operator does not support upgrading from standalone to distributed mode.
+    - servers: 1
+      ## custom pool name
+      name: pool-0
+      ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
+      volumesPerServer: 4
+      ## This VolumeClaimTemplate is used across all the volumes provisioned for MinIO Tenant in this
+      ## Pool.
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 100Mi
+          storageClassName: directpv-min-io
+  ## Define configuration for Stateful-KES
+  ## Refer https://github.com/minio/kes
+  ##
+  ## [PLEASE NOTE THAT STATEFUL-KES IS STRICTLY EXPERIMENTAL AND NOT RECOMMENDED FOR PRODUCTION USECASES]
+  ##
+  stateful-kes:
+    image: "minio/kes:v0.22.3" # minio/kes:v0.18.0
+    env:
+    - name: KES_UNSEAL_KEY
+      value: "UP9GnCU93v8dh5+4YE77e5StU5mtopns1N/wqJGcscA="
+    replicas: 1
+    kesSecret:
+      name: init-kes-configuration
+    imagePullPolicy: "IfNotPresent"
+    ## Use this field to provide external certificates for the StatefulKES server. TLS for StatefulKES pods will be configured
+    ## by mounting a Kubernetes secret under /tmp/stateful-kes folder, supported types:
+    ## Opaque | kubernetes.io/tls | cert-manager.io/v1alpha2 | cert-manager.io/v1
+    ##
+    ## ie:
+    ##
+    ##  externalCertSecret:
+    ##    name: tls-certificates-for-kes
+    ##    type: kubernetes.io/tls
+    ##
+    ## Create secrets as explained here:
+    ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+    # externalCertSecret: null
+    ## Use this field to provide client certificates for StatefulKES. This can be used to configure
+    ## mTLS for StatefulKES and your KMS. Files will be mounted under /tmp/stateful-kes folder, supported types:
+    ## Opaque | kubernetes.io/tls | cert-manager.io/v1alpha2 | cert-manager.io/v1
+    ##
+    ## ie:
+    ##
+    ##  clientCertSecret:
+    ##    name: mtls-certificates-for-kms
+    ##    type: Opaque
+    ##
+    ## Create secrets as explained here:
+    ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+    clientCertSecret: null
+    ## Key name to be created on the KMS, default is "my-minio-key"
+    keyName: "minio-key"
+    volumeClaimTemplate:
+        metadata:
+          name: stateful-kes-data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 200Mi
+          storageClassName: directpv-min-io
+    resources: { }
+    nodeSelector: { }
+    affinity:
+      nodeAffinity: { }
+      podAffinity: { }
+      podAntiAffinity: { }
+    tolerations: [ ]
+    annotations: { }
+    labels: { }
+    serviceAccountName: ""
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      fsGroup: 1000

@@ -184,6 +184,29 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 		}
 	}
 
+	if t.HasStatefulKESEnabled() {
+		envVarsMap["MINIO_KMS_KES_ENDPOINT"] = corev1.EnvVar{
+			Name:  "MINIO_KMS_KES_ENDPOINT",
+			Value: t.StatefulKESServiceEndpoint(),
+		}
+		envVarsMap["MINIO_KMS_KES_CERT_FILE"] = corev1.EnvVar{
+			Name:  "MINIO_KMS_KES_CERT_FILE",
+			Value: miniov2.MinIOCertPath + "/client.crt",
+		}
+		envVarsMap["MINIO_KMS_KES_KEY_FILE"] = corev1.EnvVar{
+			Name:  "MINIO_KMS_KES_KEY_FILE",
+			Value: miniov2.MinIOCertPath + "/client.key",
+		}
+		envVarsMap["MINIO_KMS_KES_CA_PATH"] = corev1.EnvVar{
+			Name:  "MINIO_KMS_KES_CA_PATH",
+			Value: miniov2.MinIOCertPath + "/CAs/stateful-kes.crt",
+		}
+		envVarsMap["MINIO_KMS_KES_KEY_NAME"] = corev1.EnvVar{
+			Name:  "MINIO_KMS_KES_KEY_NAME",
+			Value: t.Spec.StatefulKES.KeyName,
+		}
+	}
+
 	if t.HasConfigurationSecret() {
 		envVarsMap["MINIO_CONFIG_ENV_FILE"] = corev1.EnvVar{
 			Name:  "MINIO_CONFIG_ENV_FILE",
@@ -493,6 +516,10 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	KESCertPath := []corev1.KeyToPath{
 		{Key: "public.crt", Path: "CAs/kes.crt"},
 	}
+	var statefulkesCertSecret string
+	StatefulKESCertPath := []corev1.KeyToPath{
+		{Key: "public.crt", Path: "CAs/stateful-kes.crt"},
+	}
 
 	// Create an empty dir volume to share the configuration between the main container and side-car
 
@@ -757,6 +784,61 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 						Name: kesCertSecret,
 					},
 					Items: KESCertPath,
+				},
+			},
+		}...)
+	}
+	// If stateful KES is enabled mount TLS certificate secrets
+	if t.HasStatefulKESEnabled() {
+		// External Client certificates will have priority over AutoCert generated certificates
+		if t.ExternalClientCert() {
+			clientCertSecret = t.Spec.ExternalClientCertSecret.Name
+			// This covers both secrets of type "kubernetes.io/tls" and
+			// "cert-manager.io/v1alpha2" / cert-manager.io/v1 because of same keys in both.
+			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
+				clientCertPaths = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: "client.crt"},
+					{Key: "tls.key", Path: "client.key"},
+				}
+			} else {
+				clientCertPaths = []corev1.KeyToPath{
+					{Key: "public.crt", Path: "client.crt"},
+					{Key: "private.key", Path: "client.key"},
+				}
+			}
+		} else {
+			clientCertSecret = t.MinIOClientTLSSecretName()
+		}
+
+		// KES External certificates will have priority over AutoCert generated certificates
+		if t.StatefulKESExternalCert() {
+			statefulkesCertSecret = t.Spec.StatefulKES.ExternalCertSecret.Name
+			// This covers both secrets of type "kubernetes.io/tls" and
+			// "cert-manager.io/v1alpha2" because of same keys in both.
+			if t.Spec.StatefulKES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.StatefulKES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.StatefulKES.ExternalCertSecret.Type == "cert-manager.io/v1" {
+				StatefulKESCertPath = []corev1.KeyToPath{
+					{Key: "tls.crt", Path: "CAs/stateful-kes.crt"},
+				}
+			}
+		} else {
+			statefulkesCertSecret = t.StatefulKESTLSSecretName()
+		}
+
+		certVolumeSources = append(certVolumeSources, []corev1.VolumeProjection{
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: clientCertSecret,
+					},
+					Items: clientCertPaths,
+				},
+			},
+			{
+				Secret: &corev1.SecretProjection{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: statefulkesCertSecret,
+					},
+					Items: StatefulKESCertPath,
 				},
 			},
 		}...)

@@ -31,6 +31,12 @@ const MinIOVolumeInitContainer = "minio-vol-wait"
 // KESContainerName specifies the default container name for KES
 const KESContainerName = "kes"
 
+// StatefulKESContainerName specifies the default container name for stateful KES
+const StatefulKESContainerName = "stateful-kes"
+
+// StatefulKESInitContainerName specifies the default init container name for stateful KES
+const StatefulKESInitContainerName = "init-stateful-kes"
+
 // ConsoleContainerName specifies the default container name for Console
 const ConsoleContainerName = "console"
 
@@ -139,15 +145,31 @@ func (t *Tenant) KESStatefulSetName() string {
 	return t.Name + KESName
 }
 
+// StatefulKESStatefulSetName returns the name for stateful KES StatefulSet
+func (t *Tenant) StatefulKESStatefulSetName() string {
+	return t.Name + StatefulKESName
+}
+
 // KESHLServiceName returns the name of headless service that is created to manage the
 // StatefulSet of this Tenant
 func (t *Tenant) KESHLServiceName() string {
 	return t.Name + KESHLSvcNameSuffix
 }
 
+// StatefulKESHLServiceName returns the name of headless service that is created to manage the
+// stateful KES deployment of this Tenant
+func (t *Tenant) StatefulKESHLServiceName() string {
+	return t.Name + StatefulKESHLSvcNameSuffix
+}
+
 // KESVolMountName returns the name of Secret that has TLS related Info (Cert & Private Key)
 func (t *Tenant) KESVolMountName() string {
 	return t.Name + KESName
+}
+
+// StatefulKESVolMountName returns the name of Secret that has TLS related Info (Cert & Private Key)
+func (t *Tenant) StatefulKESVolMountName() string {
+	return t.Name + StatefulKESName
 }
 
 // KESWildCardName returns the wild card name managed by headless service created for
@@ -156,9 +178,30 @@ func (t *Tenant) KESWildCardName() string {
 	return fmt.Sprintf("*.%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, GetClusterDomain())
 }
 
+// StatefulKESWildCardName returns the wild card name managed by headless service created for
+// stateful KES StatefulSet in current Tenant
+func (t *Tenant) StatefulKESWildCardName() string {
+	return fmt.Sprintf("*.%s.%s.svc.%s", t.StatefulKESHLServiceName(), t.Namespace, GetClusterDomain())
+}
+
 // KESTLSSecretName returns the name of Secret that has KES TLS related Info (Cert & Private Key)
 func (t *Tenant) KESTLSSecretName() string {
 	return t.KESStatefulSetName() + TLSSecretSuffix
+}
+
+// StatefulKESTLSSecretName returns the name of Secret that has KES TLS related Info (Cert & Private Key)
+func (t *Tenant) StatefulKESTLSSecretName() string {
+	return t.StatefulKESStatefulSetName() + TLSSecretSuffix
+}
+
+// StatefulKESSysAdminSecretName is the name of the secret for sysadmin creds in statefulKES
+func (t *Tenant) StatefulKESSysAdminSecretName() string {
+	return t.StatefulKESStatefulSetName() + SysAdminConfigSuffix
+}
+
+// StatefulKESEnclaveAdminSecretName is the name of the secret for enclave creds in statefulKES
+func (t *Tenant) StatefulKESEnclaveAdminSecretName() string {
+	return t.StatefulKESStatefulSetName() + EnclaveAdminConfigSuffix
 }
 
 // KESCSRName returns the name of CSR that generated if AutoTLS is enabled for KES
@@ -166,6 +209,13 @@ func (t *Tenant) KESTLSSecretName() string {
 // since CSR is not a namespaced resource
 func (t *Tenant) KESCSRName() string {
 	return t.KESStatefulSetName() + "-" + t.Namespace + CSRNameSuffix
+}
+
+// StatefulKESCSRName returns the name of CSR that generated if AutoTLS is enabled for Stateful KES
+// Namespace adds uniqueness to the CSR name (single stateful KES tenant per namsepace)
+// since CSR is not a namespaced resource
+func (t *Tenant) StatefulKESCSRName() string {
+	return t.StatefulKESStatefulSetName() + "-" + t.Namespace + CSRNameSuffix
 }
 
 // Console Related Names

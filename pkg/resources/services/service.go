@@ -191,6 +191,27 @@ func NewHeadlessForKES(t *miniov2.Tenant) *corev1.Service {
 	return svc
 }
 
+// NewHeadlessForStatefulKES will return a new headless Kubernetes service for stateful KES
+func NewHeadlessForStatefulKES(t *miniov2.Tenant) *corev1.Service {
+	kesPort := corev1.ServicePort{Port: miniov2.StatefulKESPort, Name: miniov2.StatefulKESServicePortName}
+	svc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels:          t.StatefulKESPodLabels(),
+			Name:            t.StatefulKESHLServiceName(),
+			Namespace:       t.Namespace,
+			OwnerReferences: t.OwnerRef(),
+		},
+		Spec: corev1.ServiceSpec{
+			Ports:     []corev1.ServicePort{kesPort},
+			Selector:  t.StatefulKESPodLabels(),
+			Type:      corev1.ServiceTypeClusterIP,
+			ClusterIP: corev1.ClusterIPNone,
+		},
+	}
+
+	return svc
+}
+
 // NewHeadlessForLog returns a k8s Headless service object for Log
 func NewHeadlessForLog(t *miniov2.Tenant) *corev1.Service {
 	searchPort := corev1.ServicePort{Port: miniov2.LogPgPort, Name: miniov2.LogPgPortName}

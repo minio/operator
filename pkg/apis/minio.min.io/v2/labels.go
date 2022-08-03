@@ -28,6 +28,13 @@ func (t *Tenant) KESPodLabels() map[string]string {
 	return m
 }
 
+// StatefulKESPodLabels returns the default labels for Stateful KES Pod
+func (t *Tenant) StatefulKESPodLabels() map[string]string {
+	m := make(map[string]string, 1)
+	m[StatefulKESInstanceLabel] = t.StatefulKESStatefulSetName()
+	return m
+}
+
 // LogPgPodLabels returns the default labels for Log Postgres server pods
 func (t *Tenant) LogPgPodLabels() map[string]string {
 	m := make(map[string]string, 1)

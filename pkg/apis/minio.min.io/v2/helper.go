@@ -200,10 +200,22 @@ func (t *Tenant) KESExternalCert() bool {
 	return t.Spec.KES != nil && t.Spec.KES.ExternalCertSecret != nil && t.Spec.KES.ExternalCertSecret.Name != ""
 }
 
+// StatefulKESExternalCert returns true is the user has provided a secret
+// that contains CA cert, server cert and server key for Stateful KES pods
+func (t *Tenant) StatefulKESExternalCert() bool {
+	return t.Spec.StatefulKES != nil && t.Spec.StatefulKES.ExternalCertSecret != nil && t.Spec.StatefulKES.ExternalCertSecret.Name != ""
+}
+
 // KESClientCert returns true is the user has provided a secret
 // that contains CA cert, client cert and client key for KES pods
 func (t *Tenant) KESClientCert() bool {
 	return t.Spec.KES != nil && t.Spec.KES.ClientCertSecret != nil && t.Spec.KES.ClientCertSecret.Name != ""
+}
+
+// StatefulKESClientCert returns true is the user has provided a secret
+// that contains CA cert, client cert and client key for Stateful KES pods
+func (t *Tenant) StatefulKESClientCert() bool {
+	return t.Spec.StatefulKES != nil && t.Spec.StatefulKES.ClientCertSecret != nil && t.Spec.StatefulKES.ClientCertSecret.Name != ""
 }
 
 // AutoCert is enabled by default, otherwise we return the user provided value
@@ -231,6 +243,16 @@ func (t *Tenant) KESReplicas() int32 {
 	var replicas int32
 	if t.Spec.KES != nil && t.Spec.KES.Replicas != 0 {
 		replicas = t.Spec.KES.Replicas
+	}
+	return replicas
+}
+
+// StatefulKESReplicas returns the number of total Stateful KES replicas
+// required for this cluster
+func (t *Tenant) StatefulKESReplicas() int32 {
+	var replicas int32
+	if t.Spec.StatefulKES != nil && t.Spec.StatefulKES.Replicas != 0 {
+		replicas = t.Spec.StatefulKES.Replicas
 	}
 	return replicas
 }
@@ -386,6 +408,21 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 	}
 
+	if t.HasStatefulKESEnabled() {
+		if t.Spec.StatefulKES.Image == "" {
+			t.Spec.StatefulKES.Image = GetTenantKesImage()
+		}
+		if t.Spec.StatefulKES.Replicas == 0 {
+			t.Spec.StatefulKES.Replicas = DefaultStatefulKESReplicas
+		}
+		if t.Spec.StatefulKES.ImagePullPolicy == "" {
+			t.Spec.StatefulKES.ImagePullPolicy = DefaultImagePullPolicy
+		}
+		if t.Spec.StatefulKES.KeyName == "" {
+			t.Spec.StatefulKES.KeyName = KESMinIOKey
+		}
+	}
+
 	if t.HasPrometheusEnabled() {
 		if t.Spec.Prometheus.Image == "" {
 			t.Spec.Prometheus.Image = GetPrometheusImage()
@@ -538,6 +575,18 @@ func (t *Tenant) KESHosts() []string {
 	return hosts
 }
 
+// StatefulKESHosts returns the host names created for current stateful KES StatefulSet
+func (t *Tenant) StatefulKESHosts() []string {
+	hosts := make([]string, 0)
+	var i int32
+	for i < t.Spec.StatefulKES.Replicas {
+		hosts = append(hosts, fmt.Sprintf("%s-"+strconv.Itoa(int(i))+".%s.%s.svc.%s", t.StatefulKESStatefulSetName(), t.StatefulKESHLServiceName(), t.Namespace, GetClusterDomain()))
+		i++
+	}
+	hosts = append(hosts, t.StatefulKESServiceHost())
+	return hosts
+}
+
 // KESServiceEndpoint similar to KESServiceHost but a URL with current scheme
 func (t *Tenant) KESServiceEndpoint() string {
 	u := &url.URL{
@@ -547,9 +596,23 @@ func (t *Tenant) KESServiceEndpoint() string {
 	return u.String()
 }
 
+// StatefulKESServiceEndpoint similar to StatefulKESServiceHost but a URL with current scheme
+func (t *Tenant) StatefulKESServiceEndpoint() string {
+	u := &url.URL{
+		Scheme: "https",
+		Host:   net.JoinHostPort(t.StatefulKESServiceHost(), strconv.Itoa(StatefulKESPort)),
+	}
+	return u.String()
+}
+
 // KESServiceHost returns headless service Host for KES in current Tenant
 func (t *Tenant) KESServiceHost() string {
 	return fmt.Sprintf("%s.%s.svc.%s", t.KESHLServiceName(), t.Namespace, GetClusterDomain())
+}
+
+// StatefulKESServiceHost returns headless service Host for stateful KES in current Tenant
+func (t *Tenant) StatefulKESServiceHost() string {
+	return fmt.Sprintf("%s.%s.svc.%s", t.StatefulKESHLServiceName(), t.Namespace, GetClusterDomain())
 }
 
 // BucketDNS indicates if Bucket DNS feature is enabled.
@@ -561,6 +624,11 @@ func (t *Tenant) BucketDNS() bool {
 // HasKESEnabled checks if kes configuration is provided by user
 func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
+}
+
+// HasStatefulKESEnabled checks if stateful-kes configuration is provided by user
+func (t *Tenant) HasStatefulKESEnabled() bool {
+	return t.Spec.StatefulKES != nil
 }
 
 // HasLogSearchAPIEnabled checks if Log feature has been enabled
@@ -618,6 +686,14 @@ func (t *Tenant) GetKESEnvVars() (env []corev1.EnvVar) {
 		return env
 	}
 	return t.Spec.KES.Env
+}
+
+// GetStatefulKESEnvVars returns the environment variables for the stateful KES deployment.
+func (t *Tenant) GetStatefulKESEnvVars() (env []corev1.EnvVar) {
+	if !t.HasStatefulKESEnabled() {
+		return env
+	}
+	return t.Spec.StatefulKES.Env
 }
 
 // UpdateURL returns the URL for the sha256sum location of the new binary
@@ -893,8 +969,19 @@ func (t *Tenant) Validate() error {
 		return errors.New("please set 'configuration' secret with credentials for Tenant")
 	}
 
+	if t.HasKESEnabled() && t.HasStatefulKESEnabled() {
+		return errors.New("either kes or stateful-kes should be set, not both")
+	}
+
+	if t.HasStatefulKESEnabled() && t.Spec.StatefulKES.Replicas > 1 {
+		return errors.New("multi-node stateful KES isn't supported yet, please reduce the replica count")
+	}
+
 	// Every pool must contain a Volume Claim Template
 	for zi, pool := range t.Spec.Pools {
+		if t.HasStatefulKESEnabled() && pool.Servers > 1 {
+			return errors.New("multi-node stateful KES isn't supported yet, please reduce the server count to 1")
+		}
 		if err := pool.Validate(zi); err != nil {
 			return err
 		}

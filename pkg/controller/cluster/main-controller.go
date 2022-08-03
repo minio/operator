@@ -117,6 +117,9 @@ const (
 	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
 	StatusRestartingMinIO                    = "Restarting MinIO"
 	StatusDecommissioningNotAllowed          = "Pool Decommissioning Not Allowed"
+	StatusUpdatingStatefulKES                = "Updating stateful KES"
+	StatusWaitingStatefulKESCert             = "Waiting for stateful KES TLS Certificate"
+	StatusProvisioningStatefulKESStatefulSet = "Provisioning stateful KES StatefulSet"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -856,6 +859,11 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
+	err = c.checkStatefulKESStatus(ctx, tenant, totalReplicas, cOpts, uOpts, nsName)
+	if err != nil {
+		klog.V(2).Infof("Error checking stateful KES state %v", err)
+		return err
+	}
 	// check if operator-tls has to be updated or re-created in the tenant namespace
 	err = c.checkOperatorCertForTenant(ctx, tenant)
 	if err != nil {

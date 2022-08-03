@@ -42,7 +42,7 @@ const (
 	DefaultTenantImage = "minio/minio:RELEASE.2023-01-12T02-06-16Z"
 
 	// DefaultKESImage is the default KES image used while creating tenant
-	DefaultKESImage = "minio/kes:v0.18.0"
+	DefaultKESImage = "minio/kes:v0.22.3"
 )
 
 // KESReplicas is the number of replicas for MinIO KES
