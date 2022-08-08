@@ -1,7 +1,8 @@
-## Secret with credentials to be used by MinIO Tenant
+## Secret with default environment variable configurations to be used by MinIO Tenant.
+## Not recommended for production deployments! Create the secret manually instead.
 secrets:
-  # create a kubernetes configuration secret object with the accessKey and secretKey as defined here.
   name: minio1-env-configuration
+  # MinIO root user and password
   accessKey: minio
   secretKey: minio123
 
@@ -20,6 +21,10 @@ tenant:
   ## If a scheduler is specified here, Tenant pods will be dispatched by specified scheduler.
   ## If not specified, the Tenant pods will be dispatched by default scheduler.
   scheduler: { }
+  ## Secret name that contains additional environment variable configurations.
+  ## The secret is expected to have a key named config.env containing environment variables exports.
+  configuration:
+    name: minio1-env-configuration
   ## Specification for MinIO Pool(s) in this Tenant.
   pools:
     ## Servers specifies the number of MinIO Tenant Pods / Servers in this pool.
