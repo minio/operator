@@ -88,8 +88,11 @@ func GetKubeClient(path string) (*kubernetes.Clientset, error) {
 }
 
 // GetKubeExtensionClient provides k8s client for CRDs
-func GetKubeExtensionClient() (*apiextension.Clientset, error) {
+func GetKubeExtensionClient(path string) (*apiextension.Clientset, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if path != "" {
+		loadingRules.ExplicitPath = path
+	}
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 
@@ -107,8 +110,11 @@ func GetKubeExtensionClient() (*apiextension.Clientset, error) {
 }
 
 // GetKubeDynamicClient provides k8s client for CRDs
-func GetKubeDynamicClient() (dynamic.Interface, error) {
+func GetKubeDynamicClient(path string) (dynamic.Interface, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if path != "" {
+		loadingRules.ExplicitPath = path
+	}
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 
@@ -121,8 +127,11 @@ func GetKubeDynamicClient() (dynamic.Interface, error) {
 }
 
 // GetKubeOperatorClient provides k8s client for operator
-func GetKubeOperatorClient() (*operatorv1.Clientset, error) {
+func GetKubeOperatorClient(path string) (*operatorv1.Clientset, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if path != "" {
+		loadingRules.ExplicitPath = path
+	}
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 
