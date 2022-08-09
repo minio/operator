@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/go-version v1.3.0
 	github.com/miekg/dns v1.1.48
-	github.com/minio/madmin-go v1.3.11
+	github.com/minio/madmin-go v1.4.9
 	github.com/minio/minio-go/v7 v7.0.23
 	github.com/minio/pkg v1.1.21
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.46.0

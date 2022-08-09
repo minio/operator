@@ -24,7 +24,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/minio/madmin-go"
@@ -102,13 +101,6 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		return nil
 	}
 
-	// get cluster health for tenant
-	healthResult, err := getMinIOHealthStatus(tenant, RegularMode)
-	if err != nil {
-		// show the error and continue
-		klog.Infof("'%s/%s' Failed to get cluster health: %v", tenant.Namespace, tenant.Name, err)
-		return nil
-	}
 	tenantConfiguration, err := c.getTenantCredentials(context.Background(), tenant)
 	if err != nil {
 		return err
@@ -121,30 +113,34 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		return nil
 	}
 
+	aClnt, err := madmin.NewAnonymousClient(tenant.MinIOServerHostAddress(), tenant.TLS())
+	if err != nil {
+		// show the error and continue
+		klog.Infof("'%s/%s': %v", tenant.Namespace, tenant.Name, err)
+		return nil
+	}
+	aClnt.SetCustomTransport(c.getTransport())
+
+	hctx, hcancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer hcancel()
+
+	// get cluster health for tenant
+	healthResult, err := aClnt.Healthy(hctx, madmin.HealthOpts{})
+	if err != nil {
+		// show the error and continue
+		klog.Infof("'%s/%s' Failed to get cluster health: %v", tenant.Namespace, tenant.Name, err)
+		return nil
+	}
+
 	tenant.Status.DrivesHealing = int32(healthResult.HealingDrives)
-	tenant.Status.WriteQuorum = int32(healthResult.WriteQuorumDrives)
+	tenant.Status.WriteQuorum = int32(healthResult.WriteQuorum)
 
-	switch healthResult.StatusCode {
-
-	case http.StatusServiceUnavailable:
-		tenant.Status.HealthStatus = miniov2.HealthStatusRed
-		tenant.Status.HealthMessage = HealthUnavailableMessage
-	case http.StatusPreconditionFailed:
-		tenant.Status.HealthStatus = miniov2.HealthStatusYellow
-		// set message status to show number of drives being healed
-		if healthResult.HealingDrives > 0 {
-			tenant.Status.HealthMessage = fmt.Sprintf("%s %d Drives", HealthHealingMessage, healthResult.HealingDrives)
-		} else {
-			tenant.Status.HealthMessage = HealthAboutToLoseQuorumMessage
-		}
-
-	case http.StatusOK:
+	if healthResult.Healthy {
 		tenant.Status.HealthStatus = miniov2.HealthStatusGreen
 		tenant.Status.HealthMessage = ""
-	default:
-		tenant.Status.HealthStatus = miniov2.HealthStatusYellow
-		tenant.Status.HealthMessage = ""
-		log.Printf("tenant's health response code: %d not handled\n", healthResult.StatusCode)
+	} else {
+		tenant.Status.HealthStatus = miniov2.HealthStatusRed
+		tenant.Status.HealthMessage = HealthUnavailableMessage
 	}
 
 	// check all the tenant pods, if at least 1 is not running, we go yellow
@@ -323,13 +319,6 @@ func getHealthCheckTransport() func() *http.Transport {
 	}
 }
 
-// getMinIOHealthStatus returns the cluster health for a Tenant.
-// There's two types of questions we can make to MinIO's cluster/health one asking if the cluster is healthy `RegularMode`
-// or if it's acceptable to remove a node `MaintenanceMode`
-func getMinIOHealthStatus(tenant *miniov2.Tenant, mode HealthMode) (*HealthResult, error) {
-	return getMinIOHealthStatusWithRetry(tenant, mode, 5)
-}
-
 // drainBody close non nil response with any response Body.
 // convenient wrapper to drain any remaining data on response body.
 //
@@ -348,62 +337,6 @@ func drainBody(respBody io.ReadCloser) {
 		defer respBody.Close()
 		io.Copy(ioutil.Discard, respBody)
 	}
-}
-
-// getMinIOHealthStatusWithRetry returns the cluster health for a Tenant.
-// There's two types of questions we can make to MinIO's cluster/health one asking if the cluster is healthy `RegularMode`
-// or if it's acceptable to remove a node `MaintenanceMode`
-func getMinIOHealthStatusWithRetry(tenant *miniov2.Tenant, mode HealthMode, tryCount int) (*HealthResult, error) {
-	// build the endpoint to contact the Tenant
-	svcURL := tenant.GetTenantServiceURL()
-
-	endpoint := fmt.Sprintf("%s%s", svcURL, "/minio/health/cluster")
-	if mode == MaintenanceMode {
-		endpoint = fmt.Sprintf("%s?maintenance=true", endpoint)
-	}
-
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
-	if err != nil {
-		klog.Infof("error request pinging: %v", err)
-		return nil, err
-	}
-
-	httpClient := &http.Client{
-		Transport: getHealthCheckTransport()(),
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		// if we fail due to timeout, retry
-		if err, ok := err.(net.Error); ok && err.Timeout() && tryCount > 0 {
-			klog.Infof("health check failed, retrying %d, err: %s", tryCount, err)
-			time.Sleep(10 * time.Second)
-			return getMinIOHealthStatusWithRetry(tenant, mode, tryCount-1)
-		}
-		klog.Infof("error pinging: %v", err)
-		return nil, err
-	}
-	defer drainBody(resp.Body)
-
-	driveskHealing := 0
-	if resp.Header.Get("X-Minio-Healing-Drives") != "" {
-		val, err := strconv.Atoi(resp.Header.Get("X-Minio-Healing-Drives"))
-		if err != nil {
-			klog.Infof("Cannot parse healing drives from health check")
-		} else {
-			driveskHealing = val
-		}
-	}
-	minDriveWrites := 0
-	if resp.Header.Get("X-Minio-Write-Quorum") != "" {
-		val, err := strconv.Atoi(resp.Header.Get("X-Minio-Write-Quorum"))
-		if err != nil {
-			klog.Infof("Cannot parse min write drives from health check")
-		} else {
-			minDriveWrites = val
-		}
-	}
-	return &HealthResult{StatusCode: resp.StatusCode, HealingDrives: driveskHealing, WriteQuorumDrives: minDriveWrites}, nil
 }
 
 // processNextHealthCheckItem will read a single work item off the workqueue and

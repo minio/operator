@@ -7,7 +7,6 @@ replace github.com/minio/operator => ../
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.12.0
-	github.com/google/uuid v1.2.0
 	github.com/manifoldco/promptui v0.8.0
 	github.com/minio/operator v0.0.0-00010101000000-000000000000
 	github.com/olekukonko/tablewriter v0.0.4
@@ -53,6 +52,7 @@ require (
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	github.com/google/uuid v1.2.0 // indirect
 	github.com/googleapis/gnostic v0.5.1 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
@@ -70,7 +70,7 @@ require (
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/miekg/dns v1.1.48 // indirect
-	github.com/minio/madmin-go v1.3.11 // indirect
+	github.com/minio/madmin-go v1.4.9 // indirect
 	github.com/minio/md5-simd v1.1.0 // indirect
 	github.com/minio/minio-go/v7 v7.0.23 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
