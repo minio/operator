@@ -54,7 +54,8 @@ func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Short: "Manage MinIO tenant(s)",
 		Long:  tenantDesc,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			client, err := helpers.GetKubeExtensionClient()
+			path, _ := rootCmd.Flags().GetString(kubeconfig)
+			client, err := helpers.GetKubeExtensionClient(path)
 			if err != nil {
 				return err
 			}
