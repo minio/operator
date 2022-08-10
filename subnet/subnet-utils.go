@@ -59,7 +59,7 @@ type SubnetMFAReq struct {
 	Token    string `json:"token"`
 }
 
-func subnetBaseURL() string {
+func SubnetBaseURL() string {
 	url := os.Getenv(subnetBaseURLEnvVar)
 	if url != "" {
 		return url
@@ -67,23 +67,23 @@ func subnetBaseURL() string {
 	return "https://subnet.min.io"
 }
 
-func subnetRegisterURL() string {
-	return subnetBaseURL() + "/api/cluster/register"
+func SubnetRegisterURL() string {
+	return SubnetBaseURL() + "/api/cluster/register"
 }
 
-func subnetLoginURL() string {
-	return subnetBaseURL() + "/api/auth/login"
+func SubnetLoginURL() string {
+	return SubnetBaseURL() + "/api/auth/login"
 }
 
-func subnetMFAURL() string {
-	return subnetBaseURL() + "/api/auth/mfa-login"
+func SubnetMFAURL() string {
+	return SubnetBaseURL() + "/api/auth/mfa-login"
 }
 
-func subnetAPIKeyURL() string {
-	return subnetBaseURL() + "/api/auth/api-key"
+func SubnetAPIKeyURL() string {
+	return SubnetBaseURL() + "/api/auth/api-key"
 }
 
-func checkURLReachable(url string) error {
+func CheckURLReachable(url string) error {
 	client := GetHTTPClient()
 	req, err := http.NewRequest(http.MethodHead, url, nil)
 	if err != nil {
@@ -108,10 +108,10 @@ func GetHTTPClient() *http.Client {
 }
 
 func prepareHTTPClient(insecure bool) *http.Client {
-	return &http.Client{Transport: prepareClientTransport(insecure)}
+	return &http.Client{Transport: PrepareClientTransport(insecure)}
 }
 
-func prepareClientTransport(insecure bool) *http.Transport {
+func PrepareClientTransport(insecure bool) *http.Transport {
 	DefaultTransport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -133,7 +133,7 @@ func prepareClientTransport(insecure bool) *http.Transport {
 
 func RegisterWithAPIKey(admInfo madmin.InfoMessage, apiKey string) (*LicenseTokenConfig, error) {
 	regInfo := GetClusterRegInfo(admInfo)
-	regURL := fmt.Sprintf("%s?api_key=%s", subnetRegisterURL(), apiKey)
+	regURL := fmt.Sprintf("%s?api_key=%s", SubnetRegisterURL(), apiKey)
 	regToken, err := GenerateRegToken(regInfo)
 	if err != nil {
 		return nil, err
@@ -206,7 +206,7 @@ func GenerateRegToken(clusterRegInfo mc.ClusterRegistrationInfo) (string, error)
 }
 
 func SubnetGetAPIKey(token string) (string, error) {
-	resp, err := subnetGetReq(subnetAPIKeyURL(), subnetAuthHeaders(token))
+	resp, err := subnetGetReq(SubnetAPIKeyURL(), subnetAuthHeaders(token))
 	if err != nil {
 		return "", err
 	}
@@ -260,7 +260,7 @@ func SubnetLogin() (string, error) {
 		"username": username,
 		"password": string(bytepw),
 	}
-	respStr, e := subnetPostReq(subnetLoginURL(), loginReq, nil)
+	respStr, e := subnetPostReq(SubnetLoginURL(), loginReq, nil)
 	if e != nil {
 		return "", e
 	}
@@ -273,7 +273,7 @@ func SubnetLogin() (string, error) {
 		fmt.Println()
 
 		mfaLoginReq := SubnetMFAReq{Username: username, OTP: string(byteotp), Token: mfaToken}
-		respStr, e = subnetPostReq(subnetMFAURL(), mfaLoginReq, nil)
+		respStr, e = subnetPostReq(SubnetMFAURL(), mfaLoginReq, nil)
 		if e != nil {
 			return "", e
 		}
