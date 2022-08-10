@@ -49,7 +49,7 @@ func newTenantUpgradeCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Use:     "upgrade <TENANTNAME> --image <MINIO-IMAGE>",
 		Short:   "Upgrade MinIO image for existing tenant",
 		Long:    upgradeDesc,
-		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2022-07-26T00-53-03Z`,
+		Example: ` kubectl minio upgrade tenant1 --image quay.io/minio/minio:RELEASE.2022-08-02T23-59-16Z`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			return c.validate(args)
 		},
@@ -82,7 +82,9 @@ func (u *upgradeCmd) validate(args []string) error {
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (u *upgradeCmd) run() error {
 	// Create operator client
-	client, err := helpers.GetKubeOperatorClient()
+
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	client, err := helpers.GetKubeOperatorClient(path)
 	if err != nil {
 		return err
 	}
