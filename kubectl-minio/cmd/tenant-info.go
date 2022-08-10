@@ -75,7 +75,8 @@ func (d *infoCmd) validate(args []string) error {
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (d *infoCmd) run(args []string) error {
 	// Create operator client
-	oclient, err := helpers.GetKubeOperatorClient()
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	oclient, err := helpers.GetKubeOperatorClient(path)
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.4.7
     meta.helm.sh/release-name: minio-operator
     meta.helm.sh/release-namespace: minio-operator
-  creationTimestamp: null
   labels:
     app.kubernetes.io/managed-by: Helm
   name: tenants.minio.min.io
