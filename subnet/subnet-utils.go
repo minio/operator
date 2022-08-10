@@ -47,19 +47,21 @@ var (
 	httpClient          *http.Client
 )
 
+// LicenseTokenConfig stores subnet license information
 type LicenseTokenConfig struct {
 	APIKey  string
 	License string
 	Proxy   string
 }
 
-type SubnetMFAReq struct {
+type subnetMFAReq struct {
 	Username string `json:"username"`
 	OTP      string `json:"otp"`
 	Token    string `json:"token"`
 }
 
-func SubnetBaseURL() string {
+// BaseURL returns subnet base url
+func BaseURL() string {
 	url := os.Getenv(subnetBaseURLEnvVar)
 	if url != "" {
 		return url
@@ -67,22 +69,27 @@ func SubnetBaseURL() string {
 	return "https://subnet.min.io"
 }
 
-func SubnetRegisterURL() string {
-	return SubnetBaseURL() + "/api/cluster/register"
+// RegisterURL returns subnet register url
+func RegisterURL() string {
+	return BaseURL() + "/api/cluster/register"
 }
 
-func SubnetLoginURL() string {
-	return SubnetBaseURL() + "/api/auth/login"
+// LoginURL returns subnet login url
+func LoginURL() string {
+	return BaseURL() + "/api/auth/login"
 }
 
-func SubnetMFAURL() string {
-	return SubnetBaseURL() + "/api/auth/mfa-login"
+// MFAURL returns subnet mfa url
+func MFAURL() string {
+	return BaseURL() + "/api/auth/mfa-login"
 }
 
-func SubnetAPIKeyURL() string {
-	return SubnetBaseURL() + "/api/auth/api-key"
+// APIKeyURL returns subnet api key url
+func APIKeyURL() string {
+	return BaseURL() + "/api/auth/api-key"
 }
 
+// CheckURLReachable checks if subnet is available
 func CheckURLReachable(url string) error {
 	client := GetHTTPClient()
 	req, err := http.NewRequest(http.MethodHead, url, nil)
@@ -100,6 +107,7 @@ func CheckURLReachable(url string) error {
 	return nil
 }
 
+// GetHTTPClient returns a http client to communicate with subnet
 func GetHTTPClient() *http.Client {
 	if httpClient == nil {
 		httpClient = prepareHTTPClient(false)
@@ -111,6 +119,7 @@ func prepareHTTPClient(insecure bool) *http.Client {
 	return &http.Client{Transport: PrepareClientTransport(insecure)}
 }
 
+// PrepareClientTransport prepares http transport
 func PrepareClientTransport(insecure bool) *http.Transport {
 	DefaultTransport := &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
@@ -131,10 +140,11 @@ func PrepareClientTransport(insecure bool) *http.Transport {
 	return DefaultTransport
 }
 
+// RegisterWithAPIKey registers minio instance in subnet
 func RegisterWithAPIKey(admInfo madmin.InfoMessage, apiKey string) (*LicenseTokenConfig, error) {
-	regInfo := GetClusterRegInfo(admInfo)
-	regURL := fmt.Sprintf("%s?api_key=%s", SubnetRegisterURL(), apiKey)
-	regToken, err := GenerateRegToken(regInfo)
+	regInfo := getClusterRegInfo(admInfo)
+	regURL := fmt.Sprintf("%s?api_key=%s", RegisterURL(), apiKey)
+	regToken, err := generateRegToken(regInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +166,7 @@ func RegisterWithAPIKey(admInfo madmin.InfoMessage, apiKey string) (*LicenseToke
 	return nil, errors.New("subnet api key not found")
 }
 
-func GetClusterRegInfo(admInfo madmin.InfoMessage) mc.ClusterRegistrationInfo {
+func getClusterRegInfo(admInfo madmin.InfoMessage) mc.ClusterRegistrationInfo {
 	noOfPools := 1
 	noOfDrives := 0
 	for _, srvr := range admInfo.Servers {
@@ -197,7 +207,7 @@ func getDriveSpaceInfo(admInfo madmin.InfoMessage) (uint64, uint64) {
 	return total, used
 }
 
-func GenerateRegToken(clusterRegInfo mc.ClusterRegistrationInfo) (string, error) {
+func generateRegToken(clusterRegInfo mc.ClusterRegistrationInfo) (string, error) {
 	token, e := json.Marshal(clusterRegInfo)
 	if e != nil {
 		return "", e
@@ -205,8 +215,9 @@ func GenerateRegToken(clusterRegInfo mc.ClusterRegistrationInfo) (string, error)
 	return base64.StdEncoding.EncodeToString(token), nil
 }
 
-func SubnetGetAPIKey(token string) (string, error) {
-	resp, err := subnetGetReq(SubnetAPIKeyURL(), subnetAuthHeaders(token))
+// GetAPIKey returns api key from subnet
+func GetAPIKey(token string) (string, error) {
+	resp, err := subnetGetReq(APIKeyURL(), subnetAuthHeaders(token))
 	if err != nil {
 		return "", err
 	}
@@ -215,6 +226,7 @@ func SubnetGetAPIKey(token string) (string, error) {
 	return apiKey, nil
 }
 
+// GetSubnetKeyFromMinIOConfig return subnet config stored in minio
 func GetSubnetKeyFromMinIOConfig(ctx context.Context, adminClient *madmin.AdminClient) (*LicenseTokenConfig, error) {
 	sh, err := adminClient.HelpConfigKV(ctx, "subnet", "", false)
 	if err != nil {
@@ -242,7 +254,8 @@ func GetSubnetKeyFromMinIOConfig(ctx context.Context, adminClient *madmin.AdminC
 	return &res, nil
 }
 
-func SubnetLogin() (string, error) {
+// Login helper function to login to subnet in a terminal
+func Login() (string, error) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("SUBNET username: ")
 	username, _ := reader.ReadString('\n')
@@ -260,7 +273,7 @@ func SubnetLogin() (string, error) {
 		"username": username,
 		"password": string(bytepw),
 	}
-	respStr, e := subnetPostReq(SubnetLoginURL(), loginReq, nil)
+	respStr, e := subnetPostReq(LoginURL(), loginReq, nil)
 	if e != nil {
 		return "", e
 	}
@@ -272,8 +285,8 @@ func SubnetLogin() (string, error) {
 		byteotp, _ := terminal.ReadPassword(int(os.Stdin.Fd()))
 		fmt.Println()
 
-		mfaLoginReq := SubnetMFAReq{Username: username, OTP: string(byteotp), Token: mfaToken}
-		respStr, e = subnetPostReq(SubnetMFAURL(), mfaLoginReq, nil)
+		mfaLoginReq := subnetMFAReq{Username: username, OTP: string(byteotp), Token: mfaToken}
+		respStr, e = subnetPostReq(MFAURL(), mfaLoginReq, nil)
 		if e != nil {
 			return "", e
 		}
