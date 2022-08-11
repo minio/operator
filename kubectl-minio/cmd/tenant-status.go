@@ -89,7 +89,8 @@ func validateTenantArgs(cmd string, args []string) error {
 }
 
 func (d *statusCmd) run(args []string) error {
-	oclient, err := helpers.GetKubeOperatorClient()
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+	oclient, err := helpers.GetKubeOperatorClient(path)
 	if err != nil {
 		return err
 	}
