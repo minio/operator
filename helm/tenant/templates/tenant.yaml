@@ -25,14 +25,12 @@ spec:
   imagePullSecret:
     name: {{ dig "imagePullSecret" "name" "" . }}
   {{- end }}
-  {{- if dig "secrets" false ($.Values | merge (dict)) }}
-  ## Secret with credentials to be used by MinIO Tenant.
+  ## Secret with default environment variable configurations
   configuration:
-    name: {{ dig "secrets" "name" "" ($.Values | merge (dict)) }}
+    name: {{ .configuration.name }}
   ## Deprecated credsSecret
   credsSecret:
     name: "tenant-secret"
-  {{- end }}
   pools:
   {{- range (dig "pools" (list) .) }}
     - servers: {{ dig "servers" 4 . }}
