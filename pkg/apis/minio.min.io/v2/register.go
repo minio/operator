@@ -52,6 +52,11 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Tenant{},
 		&TenantList{},
 	)
+
+	scheme.AddKnownTypes(SchemeGroupVersion,
+		&PolicyBinding{},
+		&PolicyBindingList{},
+	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }

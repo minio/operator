@@ -190,6 +190,7 @@ func main() {
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Core().V1().Pods(),
 		minioInformerFactory.Minio().V2().Tenants(),
+		minioInformerFactory.Minio().V2().PolicyBindings(),
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,
 		version,

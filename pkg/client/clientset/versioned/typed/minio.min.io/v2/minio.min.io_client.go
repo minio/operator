@@ -26,12 +26,17 @@ import (
 
 type MinioV2Interface interface {
 	RESTClient() rest.Interface
+	PolicyBindingsGetter
 	TenantsGetter
 }
 
 // MinioV2Client is used to interact with features provided by the minio.min.io group.
 type MinioV2Client struct {
 	restClient rest.Interface
+}
+
+func (c *MinioV2Client) PolicyBindings(namespace string) PolicyBindingInterface {
+	return newPolicyBindings(c, namespace)
 }
 
 func (c *MinioV2Client) Tenants(namespace string) TenantInterface {
