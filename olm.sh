@@ -91,7 +91,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # Console Image in Digested form: sha256:xxxx
   consoleImage=$(yq '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
   echo "consoleImage: ${consoleImage}"
-  consoleImageDigest=$(docker pull $consoleImage | grep Digest | awk -F ' ' '{print $2}')
+  consoleImageDigest=$(docker pull "quay.io/"${consoleImage} | grep Digest | awk -F ' ' '{print $2}')
   echo "consoleImageDigest: ${consoleImageDigest}"
   consoleImageDigest="quay.io/minio/console@${consoleImageDigest}"
   yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${consoleImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
