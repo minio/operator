@@ -16,6 +16,7 @@ package cluster
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -25,6 +26,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	xcerts "github.com/minio/pkg/certs"
 
 	"github.com/minio/operator/pkg/controller/cluster/certificates"
 
@@ -350,8 +353,16 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				publicCertPath, publicKeyPath := c.generateTLSCert()
 				klog.Infof("Starting HTTPS API server")
 				close(apiServerWillStart)
-				// use those certificates to configure the web server
-				if err := c.ws.ListenAndServeTLS(publicCertPath, publicKeyPath); err != http.ErrServerClosed {
+				certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
+				if err != nil {
+					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
+					panic(err)
+				}
+				serverCertsManager = certsManager
+				c.ws.TLSConfig = &tls.Config{
+					GetCertificate: certsManager.GetCertificate,
+				}
+				if err := c.ws.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
 					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
 					panic(err)
 				}
@@ -680,6 +691,11 @@ func (c *Controller) syncHandler(key string) error {
 
 	secret, err := c.applyOperatorWebhookSecret(ctx, tenant)
 	if err != nil {
+		return err
+	}
+
+	// In case the operator certificate is removed or expired, re-create them
+	if err := c.recreateOperatorCertsIfRequired(ctx); err != nil {
 		return err
 	}
 
