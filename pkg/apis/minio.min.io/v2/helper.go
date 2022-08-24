@@ -92,6 +92,7 @@ const (
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
 	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
 	WebhookCRDConversaion   = WebhookAPIVersion + "/crd-conversion"
+	WebHookSTS              = WebhookAPIVersion + "/sts"
 )
 
 type hostsTemplateValues struct {
