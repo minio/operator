@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.7
     meta.helm.sh/release-name: minio-operator
-    meta.helm.sh/release-namespace: minio-operator
+    meta.helm.sh/release-namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/managed-by: Helm
   name: tenants.minio.min.io
@@ -15,7 +15,7 @@ spec:
       clientConfig:
         service:
           name: operator
-          namespace: minio-operator
+          namespace: {{ .Release.Namespace }}
           path: /webhook/v1/crd-conversion
           port: 4222
       conversionReviewVersions:
