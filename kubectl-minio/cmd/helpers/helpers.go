@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"k8s.io/client-go/dynamic"
@@ -246,4 +247,47 @@ func Ask(label string) bool {
 	}
 	_, err := prompt.Run()
 	return err == nil
+}
+
+// Ask user for number input."
+func AskNumber(label string, validate func(int) error) int {
+	prompt := promptui.Prompt{
+		Label: label,
+		Validate: func(input string) error {
+			value, err := strconv.Atoi(input)
+			if err != nil {
+				return nil
+			}
+			if validate != nil {
+				return validate(value)
+			} else {
+				return nil
+			}
+		},
+	}
+	result, err := prompt.Run()
+	if err == promptui.ErrInterrupt {
+		os.Exit(-1)
+	}
+	r, _ := strconv.Atoi(result)
+	return r
+}
+
+// AskQuestion user for generic input."
+func AskQuestion(label string, validate func(string) error) string {
+	prompt := promptui.Prompt{
+		Label: label,
+		Validate: func(input string) error {
+			if validate != nil {
+				return validate(input)
+			} else {
+				return nil
+			}
+		},
+	}
+	result, err := prompt.Run()
+	if err == promptui.ErrInterrupt {
+		os.Exit(-1)
+	}
+	return result
 }
