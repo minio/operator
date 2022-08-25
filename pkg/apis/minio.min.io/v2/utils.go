@@ -15,10 +15,14 @@
 package v2
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"io"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -88,4 +92,22 @@ func GenerateTenantConfigurationFile(configuration map[string]string) string {
 		rawConfiguration.WriteString(fmt.Sprintf(`export %s="%s"`, key, val) + "\n")
 	}
 	return rawConfiguration.String()
+}
+
+// GetTenantConfiguration returns tenant configuration
+func GetTenantConfiguration(ctx context.Context, tenant *Tenant, clientSet kubernetes.Interface) (map[string][]byte, error) {
+	tenantConfiguration := map[string][]byte{}
+	// Load tenant configuration from file
+	if tenant.HasConfigurationSecret() {
+		minioConfigurationSecretName := tenant.Spec.Configuration.Name
+		minioConfigurationSecret, err := clientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioConfigurationSecretName, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+		configFromFile := ParseRawConfiguration(minioConfigurationSecret.Data["config.env"])
+		for key, val := range configFromFile {
+			tenantConfiguration[key] = val
+		}
+	}
+	return tenantConfiguration, nil
 }

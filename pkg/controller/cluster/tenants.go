@@ -20,26 +20,12 @@ import (
 	"context"
 	"errors"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (c *Controller) getTenantConfiguration(ctx context.Context, tenant *miniov2.Tenant) (map[string][]byte, error) {
-	tenantConfiguration := map[string][]byte{}
-	// Load tenant configuration from file
-	if tenant.HasConfigurationSecret() {
-		minioConfigurationSecretName := tenant.Spec.Configuration.Name
-		minioConfigurationSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioConfigurationSecretName, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		configFromFile := miniov2.ParseRawConfiguration(minioConfigurationSecret.Data["config.env"])
-		for key, val := range configFromFile {
-			tenantConfiguration[key] = val
-		}
-	}
-	return tenantConfiguration, nil
+	return miniov2.GetTenantConfiguration(ctx, tenant, c.kubeClientSet)
 }
 
 // getTenantCredentials returns a combination of env, credsSecret and Configuration tenant credentials
