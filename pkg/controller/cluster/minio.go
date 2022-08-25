@@ -130,33 +130,33 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 
 	tenantCaSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			klog.Infof("'%s/%s' secret not found, creating one now", tenant.Namespace, OperatorCATLSSecretName)
-			// create tenant operator-ca-tls secret
-			opCATLSSecret := &corev1.Secret{
-				Type: "Opaque",
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      OperatorCATLSSecretName,
-					Namespace: tenant.Namespace,
-					Labels:    tenant.MinIOPodLabels(),
-					OwnerReferences: []metav1.OwnerReference{
-						*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-							Group:   miniov2.SchemeGroupVersion.Group,
-							Version: miniov2.SchemeGroupVersion.Version,
-							Kind:    miniov2.MinIOCRDResourceKind,
-						}),
-					},
-				},
-				Data: map[string][]byte{
-					"public.crt": operatorCaCert,
-				},
-			}
-			_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, opCATLSSecret, metav1.CreateOptions{})
-			if err != nil {
-				return false, err
-			}
+		if !k8serrors.IsNotFound(err) {
+			return false, err
 		}
-		return false, err
+		klog.Infof("'%s/%s' secret not found, creating one now", tenant.Namespace, OperatorCATLSSecretName)
+		// create tenant operator-ca-tls secret
+		tenantCaSecret = &corev1.Secret{
+			Type: "Opaque",
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      OperatorCATLSSecretName,
+				Namespace: tenant.Namespace,
+				Labels:    tenant.MinIOPodLabels(),
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
+						Group:   miniov2.SchemeGroupVersion.Group,
+						Version: miniov2.SchemeGroupVersion.Version,
+						Kind:    miniov2.MinIOCRDResourceKind,
+					}),
+				},
+			},
+			Data: map[string][]byte{
+				"public.crt": operatorCaCert,
+			},
+		}
+		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, tenantCaSecret, metav1.CreateOptions{})
+		if err != nil {
+			return false, err
+		}
 	}
 
 	if _, ok := tenantCaSecret.Data["public.crt"]; !ok {
