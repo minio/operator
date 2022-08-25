@@ -65,7 +65,7 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 	return nil
 }
 
-func (c *Controller) deleteMinIOCSR(ctx context.Context, csrName string) error {
+func (c *Controller) deleteCSR(ctx context.Context, csrName string) error {
 	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		if err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
 			return err
@@ -75,47 +75,6 @@ func (c *Controller) deleteMinIOCSR(ctx context.Context, csrName string) error {
 			return err
 		}
 	}
-	return nil
-}
-
-// recreateMinIOCertsIfRequired - generate TLS certs if not present, or expired
-func (c *Controller) recreateMinIOCertsIfRequired(ctx context.Context) error {
-	namespace := miniov2.GetNSFromFile()
-	operatorTLSSecret, err := c.getTLSSecret(ctx, namespace, OperatorTLSSecretName)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			klog.V(2).Info("TLS certificate not found. Generating one.")
-			c.generateTLSCert()
-			return nil
-		}
-		return err
-	}
-
-	needsRenewal, err := c.certNeedsRenewal(ctx, operatorTLSSecret)
-	if err != nil {
-		return err
-	}
-
-	if !needsRenewal {
-		return nil
-	}
-
-	// Expired cert. Delete the secret + CSR and re-create the cert
-
-	klog.V(2).Info("Deleting the TLS secret of expired cert on operator")
-	err = c.kubeClientSet.CoreV1().Secrets(namespace).Delete(ctx, OperatorTLSSecretName, metav1.DeleteOptions{})
-	if err != nil {
-		return err
-	}
-
-	err = c.deleteMinIOCSR(ctx, c.operatorCSRName())
-	if err != nil {
-		return err
-	}
-
-	klog.V(2).Info("Generating a fresh TLS certificate")
-	c.generateTLSCert()
-
 	return nil
 }
 
@@ -129,16 +88,10 @@ func (c *Controller) recreateMinIOCertsOnTenant(ctx context.Context, tenant *min
 	}
 
 	// Then delete the CSR
-	err = c.deleteMinIOCSR(ctx, tenant.MinIOCSRName())
+	err = c.deleteCSR(ctx, tenant.MinIOCSRName())
 	if err != nil {
 		return err
 	}
-
-	// In case the certs on operator are also expired, re-create them
-	if err := c.recreateMinIOCertsIfRequired(ctx); err != nil {
-		return err
-	}
-
 	// Finally re-create the certs on the tenant
 	return c.checkAndCreateMinIOCSR(ctx, nsName, tenant)
 }
@@ -316,7 +269,7 @@ func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *m
 					return err
 				}
 				// TLS secret not found, delete CSR if exists and start certificate generation process again
-				if err := c.deleteMinIOCSR(ctx, tenant.MinIOCSRName()); err != nil {
+				if err := c.deleteCSR(ctx, tenant.MinIOCSRName()); err != nil {
 					return err
 				}
 			} else {
@@ -324,7 +277,7 @@ func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *m
 			}
 		}
 
-		needsRenewal, err := c.certNeedsRenewal(ctx, tlsSecret)
+		needsRenewal, err := c.certNeedsRenewal(tlsSecret)
 		if err != nil {
 			return err
 		}
@@ -339,27 +292,47 @@ func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *m
 
 // certNeedsRenewal - returns true if the TLS certificate from given secret has expired or is
 // about to expire within the next two days.
-func (c *Controller) certNeedsRenewal(ctx context.Context, tlsSecret *corev1.Secret) (bool, error) {
-	if pubCert, ok := tlsSecret.Data["public.crt"]; ok {
-		if privKey, ok := tlsSecret.Data["private.key"]; ok {
-			tlsCert, err := tls.X509KeyPair(pubCert, privKey)
-			if err != nil {
-				return false, err
-			}
+func (c *Controller) certNeedsRenewal(tlsSecret *corev1.Secret) (bool, error) {
+	var certPublicKey []byte
+	var certPrivateKey []byte
 
-			leaf := tlsCert.Leaf
-			if leaf == nil {
-				leaf, err = x509.ParseCertificate(tlsCert.Certificate[0])
-				if err != nil {
-					return false, err
-				}
-			}
-			if leaf.NotAfter.Before(time.Now().Add(time.Hour * 48)) {
-				klog.V(2).Infof("TLS Certificate expiry on %s", leaf.NotAfter.String())
-				return true, nil
-			}
+	publicKey := "public.crt"
+	privateKey := "private.key"
+
+	if tlsSecret.Type == "kubernetes.io/tls" || tlsSecret.Type == "cert-manager.io/v1alpha2" || tlsSecret.Type == "cert-manager.io/v1" {
+		publicKey = "tls.crt"
+		privateKey = "tls.key"
+	}
+
+	if _, exist := tlsSecret.Data[publicKey]; !exist {
+		return false, fmt.Errorf("missing '%s' in %s/%s secret", publicKey, tlsSecret.Namespace, tlsSecret.Name)
+	}
+
+	if _, exist := tlsSecret.Data[privateKey]; !exist {
+		return false, fmt.Errorf("missing '%s' in %s/%s secret", privateKey, tlsSecret.Namespace, tlsSecret.Name)
+	}
+
+	certPublicKey = tlsSecret.Data[publicKey]
+	certPrivateKey = tlsSecret.Data[privateKey]
+
+	tlsCert, err := tls.X509KeyPair(certPublicKey, certPrivateKey)
+	if err != nil {
+		return false, err
+	}
+
+	leaf := tlsCert.Leaf
+	if leaf == nil && len(tlsCert.Certificate) > 0 {
+		leaf, err = x509.ParseCertificate(tlsCert.Certificate[0])
+		if err != nil {
+			return false, err
 		}
 	}
+
+	if leaf.NotAfter.Before(time.Now().Add(time.Hour * 48)) {
+		klog.V(2).Infof("TLS Certificate expiry on %s", leaf.NotAfter.String())
+		return true, nil
+	}
+
 	return false, nil
 }
 
