@@ -31,6 +31,8 @@ import (
 	"os"
 	"time"
 
+	xcerts "github.com/minio/pkg/certs"
+
 	"github.com/minio/operator/pkg/controller/cluster/certificates"
 
 	"github.com/minio/pkg/env"
@@ -50,6 +52,8 @@ import (
 const (
 	// OperatorTLS is the ENV var to turn on / off Operator TLS.
 	OperatorTLS = "MINIO_OPERATOR_TLS_ENABLE"
+	// EnvCertPassword ENV var is used to decrypt the private key in the TLS certificate for operator if need it
+	EnvCertPassword = "OPERATOR_CERT_PASSWD"
 	// OperatorTLSSecretName is the name of secret created with Operator TLS certs
 	OperatorTLSSecretName = "operator-tls"
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
@@ -70,7 +74,7 @@ func isOperatorTLS() bool {
 	return (set && value == "on") || !set
 }
 
-func (c *Controller) generateTLSCert() (string, string) {
+func (c *Controller) generateTLSCert() (*string, *string) {
 	ctx := context.Background()
 	namespace := miniov2.GetNSFromFile()
 	// operator deployment for owner reference
@@ -92,7 +96,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 					klog.Infof("Waiting for the operator certificates to be issued %v", err.Error())
 					time.Sleep(time.Second * 10)
 				} else {
-					err = c.deleteMinIOCSR(ctx, c.operatorCSRName())
+					err = c.deleteCSR(ctx, c.operatorCSRName())
 					if err != nil {
 						klog.Infof(err.Error())
 					}
@@ -132,7 +136,7 @@ func (c *Controller) generateTLSCert() (string, string) {
 		panic(err)
 	}
 
-	return publicCertPath, publicKeyPath
+	return &publicCertPath, &publicKeyPath
 }
 
 func generateOperatorCryptoData() ([]byte, []byte, error) {
@@ -412,4 +416,87 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 func (c *Controller) operatorCSRName() string {
 	namespace := miniov2.GetNSFromFile()
 	return fmt.Sprintf("operator-%s-csr", namespace)
+}
+
+// recreateOperatorCertsIfRequired - Generate Operator TLS certs if not present or if is expired
+func (c *Controller) recreateOperatorCertsIfRequired(ctx context.Context) error {
+	namespace := miniov2.GetNSFromFile()
+	operatorTLSSecret, err := c.getTLSSecret(ctx, namespace, OperatorTLSSecretName)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			klog.V(2).Info("TLS certificate not found. Generating one.")
+			// Generate new certificate KeyPair for Operator server
+			c.generateTLSCert()
+			// reload in memory certificate for the operator server
+			if serverCertsManager != nil {
+				serverCertsManager.ReloadCerts()
+			}
+
+			return nil
+		}
+		return err
+	}
+
+	needsRenewal, err := c.certNeedsRenewal(operatorTLSSecret)
+	if err != nil {
+		return err
+	}
+
+	if !needsRenewal {
+		return nil
+	}
+
+	// Expired cert. Delete the secret + CSR and re-create the cert
+	err = c.deleteCSR(ctx, c.operatorCSRName())
+	if err != nil {
+		return err
+	}
+	klog.V(2).Info("Deleting the TLS secret of expired cert on operator")
+	err = c.kubeClientSet.CoreV1().Secrets(namespace).Delete(ctx, OperatorTLSSecretName, metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	klog.V(2).Info("Generating a fresh TLS certificate for Operator")
+	// Generate new certificate KeyPair for Operator server
+	c.generateTLSCert()
+
+	// reload in memory certificate for the operator server
+	if serverCertsManager != nil {
+		serverCertsManager.ReloadCerts()
+	}
+
+	return nil
+}
+
+var serverCertsManager *xcerts.Manager
+
+// LoadX509KeyPair - load an X509 key pair (private key , certificate)
+// from the provided paths. The private key may be encrypted and is
+// decrypted using the ENV_VAR: OPERATOR_CERT_PASSWD.
+func LoadX509KeyPair(certFile, keyFile string) (tls.Certificate, error) {
+	certPEMBlock, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	keyPEMBlock, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	key, rest := pem.Decode(keyPEMBlock)
+	if len(rest) > 0 {
+		return tls.Certificate{}, errors.New("the private key contains additional data")
+	}
+	if x509.IsEncryptedPEMBlock(key) {
+		password := env.Get(EnvCertPassword, "")
+		if len(password) == 0 {
+			return tls.Certificate{}, errors.New("no password")
+		}
+		decryptedKey, decErr := x509.DecryptPEMBlock(key, []byte(password))
+		if decErr != nil {
+			return tls.Certificate{}, decErr
+		}
+		keyPEMBlock = pem.EncodeToMemory(&pem.Block{Type: key.Type, Bytes: decryptedKey})
+	}
+	return tls.X509KeyPair(certPEMBlock, keyPEMBlock)
 }
