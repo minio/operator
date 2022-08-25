@@ -218,7 +218,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	// attach the patches to the kustomization file
 	if len(operatorDepPatches) > 0 {
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
-			Patch: o.serializeJSONPachOps(operatorDepPatches),
+			Patch: o.serializeJSONPatchOps(operatorDepPatches),
 			Target: &types.Selector{
 				Gvk: resid.Gvk{
 					Group:   "apps",
@@ -232,7 +232,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 
 	if o.operatorOpts.ConsoleImage != "" {
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
-			Patch: o.serializeJSONPachOps([]interface{}{
+			Patch: o.serializeJSONPatchOps([]interface{}{
 				opStr{
 					Op:    "replace",
 					Path:  "/spec/template/spec/containers/0/image",
@@ -336,7 +336,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	return nil
 }
 
-func (o *operatorInitCmd) serializeJSONPachOps(jp []interface{}) string {
+func (o *operatorInitCmd) serializeJSONPatchOps(jp []interface{}) string {
 	jpJSON, _ := json.Marshal(jp)
 	return string(jpJSON)
 }

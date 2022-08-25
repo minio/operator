@@ -2,6 +2,24 @@
 
 set -e
 
+#binary versions
+OPERATOR_SDK_VERSION=v1.22.2
+TMP_BIN_DIR="$(mktemp -d)"
+
+function install_binaries() {
+  
+  echo "Installing temporary Binaries into: $TMP_BIN_DIR";
+  echo "Installing temporary operator-sdk binary: $OPERATOR_SDK_VERSION"
+  ARCH=`{ case "$(uname -m)" in "x86_64") echo -n "amd64";; "aarch64") echo -n "arm64";; *) echo -n "$(uname -m)";; esac; }`
+  OS=$(uname | awk '{print tolower($0)}')
+  OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION
+  curl -L ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH} -o ${TMP_BIN_DIR}/operator-sdk
+  OPERATOR_SDK_BIN=${TMP_BIN_DIR}/operator-sdk
+  chmod +x $OPERATOR_SDK_BIN
+}
+
+install_binaries
+
 # get the minio version
 minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq '.spec.image' | tail -1)
 echo "minioVersionInExample: ${minioVersionInExample}"
@@ -32,7 +50,7 @@ for catalog in "${redhatCatalogs[@]}"; do
     package=minio-operator-rhmp
   fi
   echo "package: ${package}"
-  operator-sdk generate bundle \
+  $OPERATOR_SDK_BIN generate bundle \
     --package $package \
     --version $RELEASE \
     --deploy-dir resources/base \
@@ -91,7 +109,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # Console Image in Digested form: sha256:xxxx
   consoleImage=$(yq '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
   echo "consoleImage: ${consoleImage}"
-  consoleImageDigest=$(docker pull $consoleImage | grep Digest | awk -F ' ' '{print $2}')
+  consoleImageDigest=$(docker pull "quay.io/"${consoleImage} | grep Digest | awk -F ' ' '{print $2}')
   echo "consoleImageDigest: ${consoleImageDigest}"
   consoleImageDigest="quay.io/minio/console@${consoleImageDigest}"
   yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${consoleImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
@@ -146,3 +164,6 @@ git add -u
 git add bundles
 git add community-operators
 git add helm-releases
+
+echo "Removing temporary binaries in: $TMP_BIN_DIR"
+rm -rf $TMP_BIN_DIR

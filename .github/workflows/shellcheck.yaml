@@ -17,7 +17,7 @@ jobs:
     - name: Run ShellCheck
       uses: ludeeus/action-shellcheck@master
       env:
-        SHELLCHECK_OPTS: -e SC2046 -e SC1091 -e SC2086 -e SC2090 -e SC2089
+        SHELLCHECK_OPTS: -e SC2046 -e SC1091 -e SC2086 -e SC2090 -e SC2089 -e SC2006
     - name: Run nancy vulnerability report
       run: |
         nancy_version=$(curl --retry 10 -Ls -o /dev/null -w "%{url_effective}" https://github.com/sonatype-nexus-community/nancy/releases/latest | sed "s/https:\/\/github.com\/sonatype-nexus-community\/nancy\/releases\/tag\///")

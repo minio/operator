@@ -30,6 +30,7 @@ import (
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -96,17 +97,16 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.IntVar(&c.tenantOpts.PrometheusDiskSpace, "prometheus-disk-space", 5, "(Only used when enable-prometheus is on) Disk space for prometheus")
 	f.StringVar(&c.tenantOpts.PrometheusImage, "prometheus-image", "", "(Only used when enable-prometheus is on) The Docker image to use for prometheus")
 	f.StringVar(&c.tenantOpts.PrometheusSidecarImage, "prometheus-sidecar-image", "", "(Only used when enable-prometheus is on) The Docker image to use for prometheus sidecar")
-	f.StringVar(&c.tenantOpts.PrometheusImage, "prometheus-init-image", "", "(Only used when enable-prometheus is on) Defines the Docker image to use as the init container for running prometheus")
+	f.StringVar(&c.tenantOpts.PrometheusInitImage, "prometheus-init-image", "", "(Only used when enable-prometheus is on) Defines the Docker image to use as the init container for running prometheus")
 	f.BoolVarP(&c.output, "output", "o", false, "generate tenant yaml for 'kubectl apply -f tenant.yaml'")
-
-	cmd.MarkFlagRequired("servers")
-	cmd.MarkFlagRequired("volumes")
-	cmd.MarkFlagRequired("capacity")
-	cmd.MarkFlagRequired("namespace")
+	f.BoolVar(&c.tenantOpts.Interactive, "interactive", false, "Create tenant in interactive mode")
 	return cmd
 }
 
 func (c *createCmd) validate(args []string) error {
+	if c.tenantOpts.Interactive {
+		return nil
+	}
 	if args == nil {
 		return errors.New("create command requires specifying the tenant name as an argument, e.g. 'kubectl minio tenant create tenant1'")
 	}
@@ -136,6 +136,11 @@ func (c *createCmd) run(args []string) error {
 	kubeClient, err := helpers.GetKubeClient(path)
 	if err != nil {
 		return err
+	}
+	if c.tenantOpts.Interactive {
+		if err := c.populateInteractiveTenant(); err != nil {
+			return err
+		}
 	}
 	// Generate MinIO user credentials
 	tenantUserCredentials, err := resources.NewUserCredentialsSecret(&c.tenantOpts, fmt.Sprintf("%s-user-1", c.tenantOpts.Name))
@@ -184,6 +189,69 @@ func (c *createCmd) run(args []string) error {
 	fmt.Println(string(tenantCredsSecretYAML))
 	fmt.Println("---")
 	fmt.Println(string(tenantUserYAML))
+	return nil
+}
+
+func (c *createCmd) populateInteractiveTenant() error {
+	c.tenantOpts.Name = helpers.AskQuestion("Tenant name", helpers.CheckValidTenantName)
+	c.tenantOpts.ConfigurationSecretName = fmt.Sprintf("%s-env-configuration", c.tenantOpts.Name)
+	c.tenantOpts.Servers = int32(helpers.AskNumber("Total of servers", greaterThanZero))
+	c.tenantOpts.Volumes = int32(helpers.AskNumber("Total of volumes", greaterThanZero))
+	c.tenantOpts.NS = helpers.AskQuestion("Namespace", validateEmptyInput)
+	c.tenantOpts.Capacity = helpers.AskQuestion("Capacity", validateCapacity)
+	if err := c.tenantOpts.Validate(); err != nil {
+		return err
+	}
+	c.tenantOpts.DisableTLS = helpers.Ask("Disable TLS")
+	c.tenantOpts.EnableAuditLogs = !helpers.Ask("Disable audit logs")
+	if c.tenantOpts.EnableAuditLogs {
+		c.populateAuditConfig()
+	}
+	c.tenantOpts.EnablePrometheus = !helpers.Ask("Disable prometheus")
+	if c.tenantOpts.EnablePrometheus {
+		c.populatePrometheus()
+	}
+	return nil
+}
+
+func (c *createCmd) populateAuditConfig() {
+	if helpers.Ask("Would you like to customize configuration for audit logs?") {
+		c.tenantOpts.AuditLogsDiskSpace = int32(helpers.AskNumber("Disk space", greaterThanZero))
+		c.tenantOpts.AuditLogsImage = helpers.AskQuestion("Logs image", validateEmptyInput)
+		c.tenantOpts.AuditLogsPGImage = helpers.AskQuestion("Postgres image", validateEmptyInput)
+		c.tenantOpts.AuditLogsPGInitImage = helpers.AskQuestion("Postgres init image", validateEmptyInput)
+		c.tenantOpts.AuditLogsStorageClass = helpers.AskQuestion("Storage class", validateEmptyInput)
+	}
+}
+
+func (c *createCmd) populatePrometheus() {
+	if helpers.Ask("Would you like to customize configuration for prometheus?") {
+		c.tenantOpts.PrometheusDiskSpace = helpers.AskNumber("Disk space", greaterThanZero)
+		c.tenantOpts.PrometheusImage = helpers.AskQuestion("Prometheus image", validateEmptyInput)
+		c.tenantOpts.PrometheusSidecarImage = helpers.AskQuestion("Prometheus sidecar image", validateEmptyInput)
+		c.tenantOpts.PrometheusInitImage = helpers.AskQuestion("Prometheus init image", validateEmptyInput)
+	}
+}
+
+func validateEmptyInput(value string) error {
+	if value == "" {
+		return errors.New("value can't be empty")
+	}
+	return nil
+}
+
+func validateCapacity(value string) error {
+	if err := validateEmptyInput(value); err != nil {
+		return err
+	}
+	_, err := resource.ParseQuantity(value)
+	return err
+}
+
+func greaterThanZero(value int) error {
+	if value <= 0 {
+		return errors.New("value needs to be greater than zero")
+	}
 	return nil
 }
 
