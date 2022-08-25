@@ -1251,6 +1251,16 @@ func (c *Controller) syncHandler(key string) error {
 		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
 	}
 
+	if err := c.registerTenantInSubnet(ctx, tenant, adminClnt); err != nil {
+		registerMsg := fmt.Sprintf("Tenant %s was not registered to subnet: %v", tenant.Name, err)
+		klog.V(2).Infof(registerMsg)
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "TenantRegisterFailed", registerMsg)
+	} else {
+		registerMsg := fmt.Sprintf("Tenant %s registered to subnet", tenant.Name)
+		klog.V(2).Infof(registerMsg)
+		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "TenantRegister", registerMsg)
+	}
+
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
 	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalReplicas)
