@@ -65,7 +65,7 @@ regen-crd:
 	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@kustomize build resources/patch-crd > $(TMPFILE)
 	@mv -f $(TMPFILE) resources/base/crds/minio.min.io_tenants.yaml
-	@cp -f resources/base/crds/minio.min.io_tenants.yaml $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
+	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/minio.min.io_tenants.yaml > $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
 
 regen-crd-docs:
 	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go install -v github.com/elastic/crd-ref-docs@latest)
