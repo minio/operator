@@ -249,20 +249,19 @@ func Ask(label string) bool {
 	return err == nil
 }
 
-// Ask user for number input."
+// AskNumber prompt user for number input
 func AskNumber(label string, validate func(int) error) int {
 	prompt := promptui.Prompt{
 		Label: label,
 		Validate: func(input string) error {
 			value, err := strconv.Atoi(input)
 			if err != nil {
-				return nil
+				return err
 			}
 			if validate != nil {
 				return validate(value)
-			} else {
-				return nil
 			}
+			return nil
 		},
 	}
 	result, err := prompt.Run()
@@ -280,9 +279,8 @@ func AskQuestion(label string, validate func(string) error) string {
 		Validate: func(input string) error {
 			if validate != nil {
 				return validate(input)
-			} else {
-				return nil
 			}
+			return nil
 		},
 	}
 	result, err := prompt.Run()
