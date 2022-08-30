@@ -196,6 +196,31 @@ type TenantSpec struct {
 	ExternalClientCertSecret *LocalCertificateReference `json:"externalClientCertSecret,omitempty"`
 	// *Optional* +
 	//
+	// Provide support for mounting additional client certificate into MinIO Tenant pods
+	// Multiple client certificates will be mounted using the following folder structure:
+	//
+	//	certs
+	//		|
+	//		+ client-0
+	//		|			+ client.crt
+	//		|			+ client.key
+	//		+ client-1
+	//		|			+ client.crt
+	//		|			+ client.key
+	//		+ client-2
+	//		|			+ client.crt
+	//		|			+ client.key
+	//
+	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified certificate to every MinIO server pod in the tenant that later can be referenced using environment variables. The secret *must* contain the following fields: +
+	//
+	// * `name` - The name of the Kubernetes secret containing the TLS certificate. +
+	//
+	// * `type` - Specify `kubernetes.io/tls` +
+	//
+	// +optional
+	ExternalClientCertSecrets []*LocalCertificateReference `json:"externalClientCertSecrets,omitempty"`
+	// *Optional* +
+	//
 	// Mount path for MinIO volume (PV). Defaults to `/export`
 	// +optional
 	Mountpath string `json:"mountPath,omitempty"`

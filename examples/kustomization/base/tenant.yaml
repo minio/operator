@@ -112,6 +112,37 @@ spec:
   ## Create secrets as explained here:
   ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
   # externalClientCertSecret: {}
+  ##
+  ## Use this field to provide additional client certificate for the MinIO Tenant
+  ## Certificate secret files will be mounted under /tmp/certs folder, supported types:
+  ## Opaque | kubernetes.io/tls | cert-manager.io/v1alpha2 | cert-manager.io/v1
+  ##
+  ## mount path inside container:
+  ##
+  ##	certs
+  ##		|
+  ##		+ client-0
+  ##		|			+ client.crt
+  ##		|			+ client.key
+  ##		+ client-1
+  ##		|			+ client.crt
+  ##		|			+ client.key
+  ##		+ client-2
+  ##		|			+ client.crt
+  ##		|			+ client.key
+  ## ie:
+  ##
+  ##    externalClientCertSecrets:
+  ##      - name: client-certificate-1
+  ##        type: kubernetes.io/tls
+  ##      - name: client-certificate-2
+  ##        type: kubernetes.io/tls
+  ##      - name:client-certificate-3
+  ##        type: kubernetes.io/tls
+  ##
+  ## Create secrets as explained here:
+  ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
+  externalClientCertSecrets: [ ]
   ## Registry location and Tag to download MinIO Server image
   image: quay.io/minio/minio:RELEASE.2022-08-02T23-59-16Z
   imagePullSecret: { }

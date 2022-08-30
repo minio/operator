@@ -18,15 +18,14 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"github.com/minio/operator/pkg/resources/statefulsets"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -64,68 +63,30 @@ func (c *Controller) getAllSSForTenant(tenant *miniov2.Tenant) (map[int]*appsv1.
 }
 
 // poolSSMatchesSpec checks if the statefulset for the pool matches what is expected and described from the Tenant
-func poolSSMatchesSpec(tenant *miniov2.Tenant, pool *miniov2.Pool, ss *appsv1.StatefulSet, opVersion string) (bool, error) {
-	// Verify Resources
-	poolMatchesSS := true
-	if pool.Resources.String() != ss.Spec.Template.Spec.Containers[0].Resources.String() {
-		klog.V(4).Infof("resource requirements updates for pool %s", pool.Name)
-		poolMatchesSS = false
+func poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet *appsv1.StatefulSet) (bool, error) {
+	if expectedStatefulSet == nil || existingStatefulSet == nil {
+		return false, errors.New("cannot process an empty MinIO StatefulSet")
 	}
-	// Verify Affinity clauses
-	if pool.Affinity.String() != ss.Spec.Template.Spec.Affinity.String() {
-		klog.V(4).Infof("affinity update for pool %s", pool.Name)
-		poolMatchesSS = false
-	}
-	// Verify all sidecars
-	if tenant.Spec.SideCars != nil {
-		if len(ss.Spec.Template.Spec.Containers) != len(tenant.Spec.SideCars.Containers)+1 {
-			klog.V(4).Infof("Side cars for pool %s don't match", pool.Name)
-			poolMatchesSS = false
-		}
-		// compare each container spec to the sidecars (shifted by one as container 0 is MinIO)
-		for i := 1; i < len(ss.Spec.Template.Spec.Containers); i++ {
-			if !equality.Semantic.DeepDerivative(ss.Spec.Template.Spec.Containers[i], tenant.Spec.SideCars.Containers[i-1]) {
-				// container doesn't match
-				poolMatchesSS = false
-				break
-			}
-		}
-	}
-	if tenant.Spec.SideCars == nil && len(ss.Spec.Template.Spec.Containers) > 1 {
-		klog.V(4).Infof("Side cars  removed for pool %s", pool.Name)
-		poolMatchesSS = false
-	}
-
 	// Try to detect changes in the labels or annotations
-	expectedMetadata := statefulsets.PodMetadata(tenant, pool, opVersion)
-	if !reflect.DeepEqual(expectedMetadata.Labels, ss.ObjectMeta.Labels) {
-		poolMatchesSS = false
+	expectedMetadata := expectedStatefulSet.ObjectMeta
+	if !equality.Semantic.DeepEqual(expectedMetadata.Labels, existingStatefulSet.ObjectMeta.Labels) {
+		return false, nil
 	}
 	expectedAnnotations := expectedMetadata.Annotations
-	currentAnnotations := ss.ObjectMeta.Annotations
+	currentAnnotations := existingStatefulSet.ObjectMeta.Annotations
 	delete(expectedAnnotations, corev1.LastAppliedConfigAnnotation)
 	delete(currentAnnotations, corev1.LastAppliedConfigAnnotation)
-	if !reflect.DeepEqual(expectedAnnotations, currentAnnotations) {
-		poolMatchesSS = false
+	if !equality.Semantic.DeepEqual(expectedAnnotations, currentAnnotations) {
+		return false, nil
 	}
-	// Try to detect changes in Env Vars
-	// Merge the statefulset env with incoming tenant envs and compare with statefulset envs.
-	expectedEnvVars := miniov2.MergeMaps(miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env), miniov2.ToMap(tenant.GetEnvVars()))
-	currentEnvVars := miniov2.ToMap(ss.Spec.Template.Spec.Containers[0].Env)
-	if miniov2.IsEnvUpdated(currentEnvVars, expectedEnvVars) {
-		poolMatchesSS = false
+	if miniov2.IsContainersEnvUpdated(existingStatefulSet.Spec.Template.Spec.Containers, expectedStatefulSet.Spec.Template.Spec.Containers) {
+		return false, nil
 	}
-	// Check if endpoints protocol changed because of TLS configuration and pods need to be restarted
-	if currentMinIOServerURL, ok := currentEnvVars[miniov2.MinIOServerURL]; ok {
-		if tenant.GetTenantServiceURL() != currentMinIOServerURL {
-			poolMatchesSS = false
-		}
+	if !equality.Semantic.DeepEqual(expectedStatefulSet.Spec, existingStatefulSet.Spec) {
+		// some field set by the operator has changed
+		return false, nil
 	}
-	// Check for topology spread constraints changes
-	if !reflect.DeepEqual(pool.TopologySpreadConstraints, ss.Spec.Template.Spec.TopologySpreadConstraints) {
-		poolMatchesSS = false
-	}
-	return poolMatchesSS, nil
+	return true, nil
 }
 
 // restartInitializedPool restarts a pool that is assumed to have been initialized

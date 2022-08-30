@@ -934,7 +934,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
-	// wait here until all pools are initialized, so we can continue with updating versions and the ss resources.
+	// wait here until all pools are initialized, so we can continue with updating versions and the existingSS resources.
 	for _, poolStatus := range tenant.Status.Pools {
 		if poolStatus.State != miniov2.PoolInitialized {
 			// at least 1 is not initialized, stop here until they all are.
@@ -1100,20 +1100,22 @@ func (c *Controller) syncHandler(key string) error {
 				return err
 			}
 		}
-		ss, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
-		// at this point the ss should already exist, error out
+		existingStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
+		// at this point the existingStatefulSet should already exist, error out
 		if k8serrors.IsNotFound(err) {
 			klog.Errorf("%s's pool %s doesn't exist: %v", tenant.Name, ssName, err)
 			return err
 		}
-		if pool.Servers != *ss.Spec.Replicas {
+		if pool.Servers != *existingStatefulSet.Spec.Replicas {
 			// warn the user that replica count of an existing pool can't be changed
 			if tenant, err = c.updateTenantStatus(ctx, tenant, fmt.Sprintf("Can't modify server count for pool %s", pool.Name), 0); err != nil {
 				return err
 			}
 		}
+		// generated the expected StatefulSet based on the new tenant configuration
+		expectedStatefulSet := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
 		// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
-		poolMatchesSS, err := poolSSMatchesSpec(tenant, &pool, ss, c.operatorVersion)
+		poolMatchesSS, err := poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet)
 		if err != nil {
 			return err
 		}
@@ -1121,35 +1123,34 @@ func (c *Controller) syncHandler(key string) error {
 		if !poolMatchesSS {
 			// for legacy reasons, if the zone label is present in SS we must carry it over
 			carryOverLabels := make(map[string]string)
-			if val, ok := ss.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
+			if val, ok := existingStatefulSet.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
 				carryOverLabels[miniov1.ZoneLabel] = val
 			}
 
-			nss := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
-			ssCopy := ss.DeepCopy()
+			newStatefulSet := existingStatefulSet.DeepCopy()
 
-			ssCopy.Spec.Template = nss.Spec.Template
-			ssCopy.Spec.UpdateStrategy = nss.Spec.UpdateStrategy
+			newStatefulSet.Spec.Template = expectedStatefulSet.Spec.Template
+			newStatefulSet.Spec.UpdateStrategy = expectedStatefulSet.Spec.UpdateStrategy
 
-			if ss.Spec.Template.ObjectMeta.Labels == nil {
-				ssCopy.Spec.Template.ObjectMeta.Labels = make(map[string]string)
+			if existingStatefulSet.Spec.Template.ObjectMeta.Labels == nil {
+				newStatefulSet.Spec.Template.ObjectMeta.Labels = make(map[string]string)
 			}
 			for k, v := range carryOverLabels {
-				ssCopy.Spec.Template.ObjectMeta.Labels[k] = v
+				newStatefulSet.Spec.Template.ObjectMeta.Labels[k] = v
 			}
 
-			if ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ssCopy, uOpts); err != nil {
+			if existingStatefulSet, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, newStatefulSet, uOpts); err != nil {
 				return err
 			}
 		}
 
 		// If the StatefulSet is not controlled by this Tenant resource, we should log
 		// a warning to the event recorder and ret
-		if !metav1.IsControlledBy(ss, tenant) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusNotOwned, ss.Status.Replicas); err != nil {
+		if !metav1.IsControlledBy(existingStatefulSet, tenant) {
+			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusNotOwned, existingStatefulSet.Status.Replicas); err != nil {
 				return err
 			}
-			msg := fmt.Sprintf(MessageResourceExists, ss.Name)
+			msg := fmt.Sprintf(MessageResourceExists, existingStatefulSet.Name)
 			c.recorder.Event(tenant, corev1.EventTypeWarning, ErrResourceExists, msg)
 			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
 			return nil
