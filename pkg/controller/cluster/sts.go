@@ -195,10 +195,27 @@ var stsErrCodes = stsErrorCodeMap{
 	},
 }
 
+// AssumedRoleUser - The identifiers for the temporary security credentials that
+// the operation returns. Please also see https://docs.aws.amazon.com/goto/WebAPI/sts-2011-06-15/AssumedRoleUser
+type AssumedRoleUser struct {
+	Arn           string
+	AssumedRoleID string `xml:"AssumeRoleId"`
+}
+
 type AssumeRoleResult struct {
-	AssumedRoleUser  AssumedRoleUser  `xml:",omitempty"`
-	Credentials      auth.Credentials `xml:",omitempty"`
-	PackedPolicySize int              `xml:",omitempty"`
+	AssumedRoleUser  AssumedRoleUser `xml:",omitempty"`
+	Credentials      Credentials     `xml:",omitempty"`
+	PackedPolicySize int             `xml:",omitempty"`
+}
+
+// AssumeRoleResponse contains the result of successful AssumeRole request.
+type AssumeRoleResponse struct {
+	XMLName xml.Name `xml:"https://sts.amazonaws.com/doc/2011-06-15/ AssumeRoleResponse" json:"-"`
+
+	Result           AssumeRoleResult `xml:"AssumeRoleResult"`
+	ResponseMetadata struct {
+		RequestID string `xml:"RequestId,omitempty"`
+	} `xml:"ResponseMetadata,omitempty"`
 }
 
 // writeSTSErrorRespone writes error headers

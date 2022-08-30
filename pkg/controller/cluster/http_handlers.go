@@ -456,8 +456,14 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 
 	assumeRoleResponse := &AssumeRoleResponse{
 		Result: AssumeRoleResult{
-			Credentials: stsCredentials,
+			Credentials: Credentials{
+				AccessKey: stsCredentials.AccessKeyID,
+				SecretKey: stsCredentials.SecretAccessKey,
+			},
 		},
 	}
+
+	asumeRoleResponse.ResponseMetadata.RequestID = w.Header().Get(xhttp.AmzRequestID)
+	writeSuccessResponseXML(w, encodeResponse(assumeRoleResponse))
 
 }
