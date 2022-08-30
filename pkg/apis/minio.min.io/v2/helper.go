@@ -179,6 +179,11 @@ func (t *Tenant) ExternalClientCert() bool {
 	return t.Spec.ExternalClientCertSecret != nil && t.Spec.ExternalClientCertSecret.Name != ""
 }
 
+// ExternalClientCerts returns true is the user has provided additional client certificates
+func (t *Tenant) ExternalClientCerts() bool {
+	return len(t.Spec.ExternalClientCertSecrets) > 0
+}
+
 // KESExternalCert returns true is the user has provided a secret
 // that contains CA cert, server cert and server key for KES pods
 func (t *Tenant) KESExternalCert() bool {

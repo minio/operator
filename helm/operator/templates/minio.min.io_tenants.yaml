@@ -179,6 +179,17 @@ spec:
                 required:
                 - name
                 type: object
+              externalClientCertSecrets:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
               image:
                 type: string
               imagePullPolicy:
@@ -4541,6 +4552,17 @@ spec:
                 required:
                 - name
                 type: object
+              externalClientCertSecrets:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
               features:
                 properties:
                   bucketDNS:
