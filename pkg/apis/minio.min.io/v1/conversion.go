@@ -76,6 +76,7 @@ func (src *Tenant) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.ExternalCertSecret = src.Spec.ExternalCertSecret
 	dst.Spec.ExternalCaCertSecret = src.Spec.ExternalCaCertSecret
 	dst.Spec.ExternalClientCertSecret = src.Spec.ExternalClientCertSecret
+	dst.Spec.ExternalClientCertSecrets = src.Spec.ExternalClientCertSecrets
 	dst.Spec.Mountpath = src.Spec.Mountpath
 	dst.Spec.Subpath = src.Spec.Subpath
 	dst.Spec.RequestAutoCert = src.Spec.RequestAutoCert
@@ -150,6 +151,7 @@ func (dst *Tenant) ConvertFrom(srcRaw conversion.Hub) error { //nolint
 	dst.Spec.ExternalCertSecret = src.Spec.ExternalCertSecret
 	dst.Spec.ExternalCaCertSecret = src.Spec.ExternalCaCertSecret
 	dst.Spec.ExternalClientCertSecret = src.Spec.ExternalClientCertSecret
+	dst.Spec.ExternalClientCertSecrets = src.Spec.ExternalClientCertSecrets
 	dst.Spec.Mountpath = src.Spec.Mountpath
 	dst.Spec.Subpath = src.Spec.Subpath
 	dst.Spec.RequestAutoCert = src.Spec.RequestAutoCert
