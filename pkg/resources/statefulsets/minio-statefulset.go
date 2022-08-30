@@ -535,6 +535,51 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 			},
 		})
 	}
+	// Multiple client certificates will be mounted using the following folder structure:
+	//
+	//	certs
+	//		|
+	//		+ client-0
+	//		|			+ client.crt
+	//		|			+ client.key
+	//		+ client-1
+	//		|			+ client.crt
+	//		|			+ client.key
+	//		+ client-2
+	//		|			+ client.crt
+	//		|			+ client.key
+	//
+	// Iterate over all provided client TLS certificates and store them on the list of Volumes that will be mounted to the Pod
+	for index, secret := range t.Spec.ExternalClientCertSecrets {
+		crtMountPath := fmt.Sprintf("client-%d/client.crt", index)
+		keyMountPath := fmt.Sprintf("client-%d/client.key", index)
+		var clientKeyPairPaths []corev1.KeyToPath
+		if secret.Type == "kubernetes.io/tls" {
+			clientKeyPairPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: crtMountPath},
+				{Key: "tls.key", Path: keyMountPath},
+			}
+		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
+			clientKeyPairPaths = []corev1.KeyToPath{
+				{Key: "tls.crt", Path: crtMountPath},
+				{Key: "tls.key", Path: keyMountPath},
+				{Key: "ca.crt", Path: fmt.Sprintf("CAs/client-ca-%d.crt", index)},
+			}
+		} else {
+			clientKeyPairPaths = []corev1.KeyToPath{
+				{Key: "public.crt", Path: crtMountPath},
+				{Key: "private.key", Path: keyMountPath},
+			}
+		}
+		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secret.Name,
+				},
+				Items: clientKeyPairPaths,
+			},
+		})
+	}
 
 	// Will mount into ~/.minio/certs/CAs folder the user provided CA certificates.
 	// This is used for MinIO to verify TLS connections with other applications.

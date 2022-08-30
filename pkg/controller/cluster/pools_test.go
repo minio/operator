@@ -28,11 +28,11 @@ import (
 )
 
 func Test_poolSSMatchesSpec(t *testing.T) {
+	always := corev1.FSGroupChangeAlways
+	onRootMismatch := corev1.FSGroupChangeOnRootMismatch
 	type args struct {
-		tenant          *miniov2.Tenant
-		pool            *miniov2.Pool
-		ss              *appsv1.StatefulSet
-		operatorVersion string
+		expectedSS *appsv1.StatefulSet
+		existingSS *appsv1.StatefulSet
 	}
 	tests := []struct {
 		name    string
@@ -43,16 +43,7 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Tenant Unchanged",
 			args: args{
-				tenant: &miniov2.Tenant{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
-					},
-					Spec: miniov2.TenantSpec{},
-				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -76,7 +67,30 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
+				existingSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:          "pool-0",
+							miniov2.TenantLabel:        "tenant-a",
+							miniov2.ConsoleTenantLabel: "tenant-a-console",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 			want:    true,
 			wantErr: false,
@@ -84,24 +98,33 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Sidecar added",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
 					},
-					Spec: miniov2.TenantSpec{
-						SideCars: &miniov2.SideCars{
-							Containers: []corev1.Container{
-								{
-									Name: "warp",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+									{
+										Name: "warp",
+									},
 								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -124,7 +147,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
@@ -132,22 +154,30 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Sidecar removed",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
 					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name: "pool-0",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -174,7 +204,92 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "minio image upgrade",
+			args: args{
+				expectedSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name:  "minio",
+										Image: "minio/minio:RELEASE.2022-08-25T07-17-05Z",
+									},
+								},
+							},
+						},
+					},
+				},
+				existingSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name:  "minio",
+										Image: "minio/minio:RELEASE.2022-08-22T23-53-06Z",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "security context change",
+			args: args{
+				expectedSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								SecurityContext: &corev1.PodSecurityContext{
+									FSGroupChangePolicy: &always,
+								},
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
+				existingSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								SecurityContext: &corev1.PodSecurityContext{
+									FSGroupChangePolicy: &onRootMismatch,
+								},
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 			want:    false,
 			wantErr: false,
@@ -182,25 +297,34 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Sidecar image changed",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
 					},
-					Spec: miniov2.TenantSpec{
-						SideCars: &miniov2.SideCars{
-							Containers: []corev1.Container{
-								{
-									Name:  "warp",
-									Image: "minio/warp:v0.3.21",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+									{
+										Name:  "warp",
+										Image: "minio/warp:v0.3.21",
+									},
 								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -227,7 +351,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
@@ -235,34 +358,36 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Tenant Resource Change",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
 					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name: "pool-0",
-								Resources: corev1.ResourceRequirements{
-									Limits: nil,
-									Requests: corev1.ResourceList{
-										corev1.ResourceCPU: resource.MustParse("16"),
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+										Resources: corev1.ResourceRequirements{
+											Limits: nil,
+											Requests: corev1.ResourceList{
+												corev1.ResourceCPU: resource.MustParse("16"),
+											},
+										},
 									},
 								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-					Resources: corev1.ResourceRequirements{
-						Limits: nil,
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU: resource.MustParse("16"),
-						},
-					},
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -291,7 +416,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
@@ -299,22 +423,30 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Tenant Resource Removed",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
 					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name: "pool-0",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -343,7 +475,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
@@ -351,14 +482,20 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Tenant Affinity Change",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
 					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name: "pool-0",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
 								Affinity: &corev1.Affinity{
 									PodAntiAffinity: &corev1.PodAntiAffinity{
 										RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
@@ -380,35 +517,16 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 										},
 									},
 								},
-							},
-						},
-					},
-				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-					Affinity: &corev1.Affinity{
-						PodAntiAffinity: &corev1.PodAntiAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-								{
-									LabelSelector: &metav1.LabelSelector{
-										MatchExpressions: []metav1.LabelSelectorRequirement{
-											{
-												Key:      miniov2.TenantLabel,
-												Operator: metav1.LabelSelectorOpIn,
-												Values:   []string{"tenant-a"},
-											}, {
-												Key:      miniov2.PoolLabel,
-												Operator: metav1.LabelSelectorOpIn,
-												Values:   []string{"pool-0"},
-											},
-										},
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
 									},
 								},
 							},
 						},
 					},
 				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -431,7 +549,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
@@ -439,22 +556,30 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Tenant Affinity Removed",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
 					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name: "pool-0",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -498,7 +623,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
@@ -506,25 +630,51 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Annotations Changed",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
+						Labels: map[string]string{
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+						},
 						Annotations: map[string]string{
 							"x": "y",
 						},
 					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name: "pool-0",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+								Affinity: &corev1.Affinity{
+									PodAntiAffinity: &corev1.PodAntiAffinity{
+										RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+											{
+												LabelSelector: &metav1.LabelSelector{
+													MatchExpressions: []metav1.LabelSelectorRequirement{
+														{
+															Key:      miniov2.TenantLabel,
+															Operator: metav1.LabelSelectorOpIn,
+															Values:   []string{"tenant-a"},
+														}, {
+															Key:      miniov2.PoolLabel,
+															Operator: metav1.LabelSelectorOpIn,
+															Values:   []string{"pool-0"},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -569,7 +719,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
@@ -577,25 +726,50 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Label Changed",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
 							"x": "y",
 						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
+						},
 					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name: "pool-0",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+								Affinity: &corev1.Affinity{
+									PodAntiAffinity: &corev1.PodAntiAffinity{
+										RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+											{
+												LabelSelector: &metav1.LabelSelector{
+													MatchExpressions: []metav1.LabelSelectorRequirement{
+														{
+															Key:      miniov2.TenantLabel,
+															Operator: metav1.LabelSelectorOpIn,
+															Values:   []string{"tenant-a"},
+														}, {
+															Key:      miniov2.PoolLabel,
+															Operator: metav1.LabelSelectorOpIn,
+															Values:   []string{"pool-0"},
+														},
+													},
+												},
+											},
+										},
+									},
+								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -640,7 +814,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
@@ -648,17 +821,21 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 		{
 			name: "Topology Spread Constraints Changed",
 			args: args{
-				tenant: &miniov2.Tenant{
+				expectedSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a",
+						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
-							"x": "y",
+							miniov2.PoolLabel:   "pool-0",
+							miniov2.TenantLabel: "tenant-a",
+							"x":                 "x",
+						},
+						Annotations: map[string]string{
+							miniov2.Revision: "0",
 						},
 					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name: "pool-0",
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
 								TopologySpreadConstraints: []corev1.TopologySpreadConstraint{
 									{
 										MaxSkew:           1,
@@ -675,14 +852,16 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 										},
 									},
 								},
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
 							},
 						},
 					},
 				},
-				pool: &miniov2.Pool{
-					Name: "pool-0",
-				},
-				ss: &appsv1.StatefulSet{
+				existingSS: &appsv1.StatefulSet{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "tenant-a-pool-0",
 						Labels: map[string]string{
@@ -706,15 +885,228 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 						},
 					},
 				},
-				operatorVersion: "0.1",
 			},
 			want:    false,
 			wantErr: false,
 		},
+		{
+			name: "Environment variable added",
+			args: args{
+				expectedSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+										Env: []corev1.EnvVar{
+											{
+												Name:  "MINIO_BROWSER_REDIRECT_URL",
+												Value: "http://localhost:9000",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				existingSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "Environment variable removed",
+			args: args{
+				expectedSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
+				existingSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+										Env: []corev1.EnvVar{
+											{
+												Name:  "MINIO_BROWSER_REDIRECT_URL",
+												Value: "http://localhost:9000",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "Certificate mounted",
+			args: args{
+				expectedSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Volumes: []corev1.Volume{
+									{
+										Name: "tenant-tls",
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      "tenant-tls",
+												MountPath: "/tmp/certs",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				existingSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "Certificate removed",
+			args: args{
+				expectedSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
+				existingSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Volumes: []corev1.Volume{
+									{
+										Name: "tenant-tls",
+									},
+								},
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+										VolumeMounts: []corev1.VolumeMount{
+											{
+												Name:      "tenant-tls",
+												MountPath: "/tmp/certs",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name: "provide nil statefulset",
+			args: args{
+				expectedSS: &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "tenant-a-pool-0",
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{
+									{
+										Name: "minio",
+									},
+								},
+							},
+						},
+					},
+				},
+				existingSS: nil,
+			},
+			want:    false,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := poolSSMatchesSpec(tt.args.tenant, tt.args.pool, tt.args.ss, tt.args.operatorVersion)
+			got, err := poolSSMatchesSpec(tt.args.expectedSS, tt.args.existingSS)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("poolSSMatchesSpec() error = %v, wantErr %v", err, tt.wantErr)
 				return

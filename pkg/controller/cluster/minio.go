@@ -15,6 +15,7 @@
 package cluster
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -100,11 +101,23 @@ func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName
 	return c.kubeClientSet.CoreV1().Secrets(nsName).Get(ctx, secretName, metav1.GetOptions{})
 }
 
+func getOperatorCACert(secretData map[string][]byte) ([]byte, error) {
+	for _, key := range []string{
+		"tls.crt",
+		"ca.crt",
+		"public.crt",
+	} {
+		data, ok := secretData[key]
+		if ok {
+			return data, nil
+		}
+	}
+	return nil, fmt.Errorf("missing 'public.crt' in %s/%s secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName)
+}
+
 // checkOperatorCaForTenant create or updates the operator-ca-tls secret for tenant if need it
 func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *miniov2.Tenant) (operatorCATLSExists bool, err error) {
-	var operatorCaCert []byte
 	var tenantCaCert []byte
-	var caCertKey string
 	// get operator-ca-tls in minio-operator namespace
 	operatorCaSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -114,26 +127,15 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 		}
 		return false, err
 	}
-	caCertKey = "public.crt"
-	// if secret type is k8s tls or cert-manager use the right secret keys
-	if operatorCaSecret.Type == "kubernetes.io/tls" {
-		caCertKey = "tls.crt"
-	} else if operatorCaSecret.Type == "cert-manager.io/v1alpha2" || operatorCaSecret.Type == "cert-manager.io/v1" {
-		caCertKey = "ca.crt"
-	}
 
-	if _, ok := operatorCaSecret.Data[caCertKey]; !ok {
-		return false, fmt.Errorf("missing '%s' in %s/%s secret", caCertKey, miniov2.GetNSFromFile(), OperatorCATLSSecretName)
-	}
-
-	operatorCaCert = operatorCaSecret.Data[caCertKey]
-
-	tenantCaSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
+	operatorCaCert, err := getOperatorCACert(operatorCaSecret.Data)
 	if err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return false, err
-		}
-		klog.Infof("'%s/%s' secret not found, creating one now", tenant.Namespace, OperatorCATLSSecretName)
+		return false, err
+	}
+
+	var tenantCaSecret *corev1.Secret
+
+	createTenantCASecret := func() error {
 		// create tenant operator-ca-tls secret
 		tenantCaSecret = &corev1.Secret{
 			Type: "Opaque",
@@ -154,28 +156,28 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 			},
 		}
 		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, tenantCaSecret, metav1.CreateOptions{})
-		if err != nil {
-			return false, err
-		}
+		return err
 	}
 
-	if _, ok := tenantCaSecret.Data["public.crt"]; !ok {
-		err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, OperatorCATLSSecretName, metav1.DeleteOptions{})
-		if err != nil {
+	tenantCaSecret, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
+	if err != nil {
+		if !k8serrors.IsNotFound(err) {
 			return false, err
 		}
-		return false, fmt.Errorf("missing 'public.crt' in %s/%s secret, re-creating it", tenant.Namespace, OperatorCATLSSecretName)
+		klog.Infof("'%s/%s' secret not found, creating one now", tenant.Namespace, OperatorCATLSSecretName)
+		if err = createTenantCASecret(); err != nil {
+			return false, err
+		}
 	}
 
 	tenantCaCert = tenantCaSecret.Data["public.crt"]
-
-	if string(tenantCaCert) != string(operatorCaCert) {
+	if !bytes.Equal(tenantCaCert, operatorCaCert) {
 		tenantCaSecret.Data["public.crt"] = operatorCaCert
 		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
 		if err != nil {
 			return false, err
 		}
-		return false, fmt.Errorf("'%s' in '%s/%s' secret changed, updating '%s/%s' secret", caCertKey, miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
+		return false, fmt.Errorf("'public.crt' in '%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
 	}
 
 	return true, nil

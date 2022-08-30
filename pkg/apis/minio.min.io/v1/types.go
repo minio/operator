@@ -68,10 +68,14 @@ type TenantSpec struct {
 	// used for enabling TLS with SNI support on MinIO Pods.
 	// +optional
 	ExternalCertSecret []*miniov2.LocalCertificateReference `json:"externalCertSecret,omitempty"`
-	// ExternalClientCertSecret allows a user to specify custom CA client certificate, and private key. This is
+	// ExternalClientCertSecret allows a user to specify custom client certificate, and private key. This is
 	// used for adding client certificates on MinIO Pods --> used for KES authentication.
 	// +optional
 	ExternalClientCertSecret *miniov2.LocalCertificateReference `json:"externalClientCertSecret,omitempty"`
+	// ExternalClientCertSecrets allows a user to specify additional client certificates, and private keys. This is
+	// used for adding client certificates on MinIO Pods and perform mTLS with external services.
+	// +optional
+	ExternalClientCertSecrets []*miniov2.LocalCertificateReference `json:"externalClientCertSecrets,omitempty"`
 	// ExternalCaCertSecret allows a user to provide additional CA certificates. This is
 	// used for Console to verify TLS connections with other applications.
 	// +optional
