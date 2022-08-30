@@ -5,11 +5,15 @@ import (
 	"encoding/xml"
 	"errors"
 	"net/http"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xhttp "github.com/minio/operator/pkg/internal"
+	authv1 "k8s.io/api/authentication/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 )
 
@@ -26,8 +30,15 @@ const (
 	stsWebIdentityToken = "WebIdentityToken"
 	stsDurationSeconds  = "DurationSeconds"
 	AmzRequestID        = "x-amz-request-id"
-	stsRequestBodyLimit = 10 * (1 << 20) // 10 MiB
+	stsRequestBodyLimit = 10 * (1 << 20)                  // 10 MiB
+	defaultExpiraion    = time.Duration(60) * time.Minute // Defaults to 1hr.
+)
 
+// AWS Signature Version '4' constants.
+const (
+	signV4Algorithm = "AWS4-HMAC-SHA256"
+	iso8601Format   = "20060102T150405Z"
+	yyyymmdd        = "20060102"
 )
 
 type contextKeyType string
@@ -69,6 +80,18 @@ type ReqInfo struct {
 	AccessKey  string // Access Key
 	ObjectName string // Object name
 	sync.RWMutex
+}
+
+// Credentials holds access and secret keys.
+type Credentials struct {
+	AccessKey    string                 `xml:"AccessKeyId" json:"accessKey,omitempty"`
+	SecretKey    string                 `xml:"SecretAccessKey" json:"secretKey,omitempty"`
+	Expiration   time.Time              `xml:"Expiration" json:"expiration,omitempty"`
+	SessionToken string                 `xml:"SessionToken" json:"sessionToken,omitempty"`
+	Status       string                 `xml:"-" json:"status,omitempty"`
+	ParentUser   string                 `xml:"-" json:"parentUser,omitempty"`
+	Groups       []string               `xml:"-" json:"groups,omitempty"`
+	Claims       map[string]interface{} `xml:"-" json:"claims,omitempty"`
 }
 
 // STSErrorCode type of error status.
@@ -172,6 +195,12 @@ var stsErrCodes = stsErrorCodeMap{
 	},
 }
 
+type AssumeRoleResult struct {
+	AssumedRoleUser  AssumedRoleUser  `xml:",omitempty"`
+	Credentials      auth.Credentials `xml:",omitempty"`
+	PackedPolicySize int              `xml:",omitempty"`
+}
+
 // writeSTSErrorRespone writes error headers
 func writeSTSErrorResponse(ctx context.Context, w http.ResponseWriter, isErrCodeSTS bool, errCode STSErrorCode, errCtxt error) {
 	var err STSError
@@ -211,85 +240,84 @@ func (e stsErrorCodeMap) ToSTSErr(errCode STSErrorCode) STSError {
 	return apiErr
 }
 
-func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sessionPolicy string) (bool, error) {
+func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sessionPolicy string, duration int64) (*credentials.Value, error) {
 
 	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
 	transport := c.getTransport()
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	host := tenant.MinIOServerHostAddress()
 	if host == "" {
-		return false, errors.New("MinIO server host is empty")
+		return nil, errors.New("MinIO server host is empty")
 	}
 
 	accessKey, ok := tenantConfiguration["accesskey"]
 	if !ok {
-		return false, errors.New("MinIO server accesskey not set")
+		return nil, errors.New("MinIO server accesskey not set")
 	}
 
 	secretKey, ok := tenantConfiguration["secretkey"]
 	if !ok {
-		return false, errors.New("MinIO server secretkey not set")
+		return nil, errors.New("MinIO server secretkey not set")
 	}
 
 	stsOptions := credentials.STSAssumeRoleOptions{
 		AccessKey:       string(accessKey),
 		SecretKey:       string(secretKey),
 		Policy:          sessionPolicy,
-		DurationSeconds: 600, //TODO: get duration and calculate maxium
+		DurationSeconds: duration,
 	}
 
-	// creds, err := credentials.NewSTSAssumeRole(host, stsOptions)
-	// if err != nil {
-	// 	return false, err
-	// }
-
-	// opts := &minio.Options{
-	// 	Transport: transport,
-	// 	Secure:    tenant.TLS(),
-	// 	Creds:     creds,
-	// }
-
-	// minioClient, err := minio.New(host, opts)
-	// if err != nil {
-	// 	return false, err
-	// }
-
-	// minioClient.ListBuckets(ctx)
 	client := &http.Client{
 		Transport: transport,
 	}
 
 	stsAssumeRole := &credentials.STSAssumeRole{
 		Client:      client,
-		STSEndpoint: host,
+		STSEndpoint: host, //TODO: Set the protocol right before the host var
 		Options:     stsOptions,
 	}
-	p := &credentials.STSWebIdentity{
-		Client:      http.DefaultClient,
-		STSEndpoint: host,
-	}
 
-	credentials, err := p.Retrieve()
+	stsCredentialsResponse, err := stsAssumeRole.Retrieve()
 
 	if err != nil {
-		return false, err
+		return nil, err
+	}
+	return &stsCredentialsResponse, nil
+}
+
+func GetDefaultExpiration(secs string) (int64, error) {
+	if secs != "" {
+		expirySecs, err := strconv.ParseInt(secs, 10, 64)
+		if err != nil {
+			return 0, errors.New("invalid token expiry")
+		}
+		if expirySecs < 900 || expirySecs > 31536000 {
+			return 0, errors.New("invalid token expiry")
+		}
+
+		duration := time.Now().UTC().Add(time.Duration(expirySecs) * time.Second).Unix()
+		return duration, nil
+	}
+	return time.Now().UTC().Add(defaultExpiraion).Unix(), nil
+}
+
+func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token string) (*authv1.TokenReview, error) {
+	tr := authv1.TokenReview{
+		Spec: authv1.TokenReviewSpec{
+			Token:     token,
+			Audiences: []string{"server"},
+		},
 	}
 
-	//minioClient, err := tenant.NewMinIOUser(tenantConfiguration, c.getTransport())
+	tokenReviewResult, err := c.kubeClientSet.AuthenticationV1().TokenReviews().Create(*ctx, &tr, metav1.CreateOptions{})
 
-	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
-		klog.Errorf("Error instantiating madmin: %v", err)
-		return false, err
+		klog.Fatalf("Error building Kubernetes clientset: %s", err.Error())
+		return nil, err
 	}
-	//adminClient.AddUser(ctx, ac, sk)
-	//iampolicy.SessionPolicyName
-	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
-	if err != nil {
-		klog.Errorf("Error instantiating madmin: %v", err)
-		return
-	}
+
+	return tokenReviewResult, nil
 }

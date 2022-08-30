@@ -371,22 +371,45 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		return
 	}
 
-	// RoleArn will contain the Namespace/Tenant Key
-	roleArn := strings.TrimSpace(r.Form.Get(stsRoleArn))
+	// TODO: Check what is next to do with the roleArn
+	// roleArn := strings.TrimSpace(r.Form.Get(stsRoleArn))
 
-	if roleArn == "" {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("missing %s", roleArn))
+	// if roleArn == "" {
+	// 	writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("missing %s", roleArn))
+	// 	return
+	// }
+
+	//VALIDATE JWT
+	accessToken := r.Form.Get(stsWebIdentityToken)
+
+	saAuthResult, err := c.ValidateServiceAccountJWT(&ctx, accessToken)
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidIdentityToken, err)
 		return
 	}
 
-	//TODO: Validate namespace/tenant formar
+	if !saAuthResult.Status.Authenticated {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token"))
+		return
+	}
 
-	tenantKey := strings.Split(roleArn, "/")
+	saNamespace := saAuthResult.Namespace
 
-	namespace := tenantKey[0]
-	tenantName := tenantKey[1]
+	if !c.namespacesToWatch.Contains(saNamespace) {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("No tenants in namespace '%'", saNamespace))
+		return
+	}
 
-	//VALIDATE JWT
+	tenants, err := c.minioClientSet.MinioV2().Tenants(saNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Tenant not available in the Service Account namespace '%'", saNamespace))
+		return
+	}
+
+	saTenant := tenants.Items[0]
+
+	namespace := saTenant.Namespace
+	tenantName := saTenant.Name
 
 	// Session Policy
 	sessionPolicyStr := r.Form.Get(stsPolicy)
@@ -411,15 +434,30 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		}
 	}
 
+	duration, err := GetDefaultExpiration(r.Form.Get(stsDurationSeconds))
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, err)
+		return
+	}
+
 	// Get the Tenant resource with this namespace/name
 	tenant, err := c.minioClientSet.MinioV2().Tenants(namespace).Get(context.Background(), tenantName, metav1.GetOptions{})
 	if err != nil {
 		// The Tenant resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Tenant not found %s", roleArn))
+			writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Tenant not found %s", tenantName))
 			return
 		}
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Tenant not found %s", tenantName))
 		return
+	}
+
+	stsCredentials, err := AssumeRole(ctx, c, tenant, sessionPolicyStr, duration)
+
+	assumeRoleResponse := &AssumeRoleResponse{
+		Result: AssumeRoleResult{
+			Credentials: stsCredentials,
+		},
 	}
 
 }
