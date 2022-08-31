@@ -220,7 +220,7 @@ spec:
     {{- end }}
     {{- with (dig "prometheus" "tolerations" (list) .) }}
     tolerations:
-      {{- toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 6 }}
     {{- end }}
     {{- with (dig "resources" (dict) .) }}
     resources:
@@ -252,11 +252,11 @@ spec:
     {{- end }}
     {{- with (dig "log" "affinity" (dict) .) }}
     affinity:
-      {{- toYaml . | nindent 8 }}
+      {{- toYaml . | nindent 6 }}
     {{- end }}
     {{- with (dig "log" "tolerations" (list) .) }}
     tolerations:
-      {{- toYaml . | nindent 4 }}
+      {{- toYaml . | nindent 6 }}
     {{- end }}
     {{- with (dig "annotations" (dict) .) }}
     annotations:
@@ -304,7 +304,7 @@ spec:
       {{- end }}
       {{- with (dig "log" "db" "tolerations" (list) .) }}
       tolerations:
-        {{- toYaml . | nindent 6 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "annotations" (dict) .) }}
       annotations:
