@@ -30,25 +30,13 @@ func (c *Controller) getTenantConfiguration(ctx context.Context, tenant *miniov2
 
 // getTenantCredentials returns a combination of env, credsSecret and Configuration tenant credentials
 func (c *Controller) getTenantCredentials(ctx context.Context, tenant *miniov2.Tenant) (map[string][]byte, error) {
-	// Configuration for tenant can be passed using 3 different sources, tenant.spec.env, k8s credsSecret and config.env secret
+	// Configuration for tenant can be passed using 2 different sources, tenant.spec.env and config.env secret
 	// If the user provides duplicated configuration the override order will be:
-	// tenant.Spec.Env < credsSecret (k8s secret) < config.env file (k8s secret)
+	// tenant.Spec.Env < config.env file (k8s secret)
 	tenantConfiguration := map[string][]byte{}
 
 	for _, config := range tenant.GetEnvVars() {
 		tenantConfiguration[config.Name] = []byte(config.Value)
-	}
-
-	if tenant.HasCredsSecret() {
-		minioSecretName := tenant.Spec.CredsSecret.Name
-		minioSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, minioSecretName, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-		configFromCredsSecret := minioSecret.Data
-		for key, val := range configFromCredsSecret {
-			tenantConfiguration[key] = val
-		}
 	}
 
 	// Load tenant configuration from file

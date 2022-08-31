@@ -147,11 +147,6 @@ func (c *createCmd) run(args []string) error {
 	if err != nil {
 		return err
 	}
-	// deprecated tenant credsSecret required for deploying tenant, will be removed in operator v5.x.x
-	tenantCredsSecret, err := resources.NewTenantCredsSecret(&c.tenantOpts)
-	if err != nil {
-		return err
-	}
 	// generate tenant configuration
 	tenantConfiguration, err := resources.NewTenantConfigurationSecret(&c.tenantOpts)
 	if err != nil {
@@ -164,17 +159,13 @@ func (c *createCmd) run(args []string) error {
 	}
 	// create resources
 	if !c.output {
-		return createTenant(operatorClient, kubeClient, tenant, tenantCredsSecret, tenantConfiguration, tenantUserCredentials)
+		return createTenant(operatorClient, kubeClient, tenant, tenantConfiguration, tenantUserCredentials)
 	}
 	tenantYAML, err := yaml.Marshal(&tenant)
 	if err != nil {
 		return err
 	}
 	tenantConfigurationYAML, err := yaml.Marshal(&tenantConfiguration)
-	if err != nil {
-		return err
-	}
-	tenantCredsSecretYAML, err := yaml.Marshal(&tenantCredsSecret)
 	if err != nil {
 		return err
 	}
@@ -185,8 +176,6 @@ func (c *createCmd) run(args []string) error {
 	fmt.Println(string(tenantYAML))
 	fmt.Println("---")
 	fmt.Println(string(tenantConfigurationYAML))
-	fmt.Println("---")
-	fmt.Println(string(tenantCredsSecretYAML))
 	fmt.Println("---")
 	fmt.Println(string(tenantUserYAML))
 	return nil
@@ -255,14 +244,9 @@ func greaterThanZero(value int) error {
 	return nil
 }
 
-func createTenant(operatorClient *operatorv1.Clientset, kubeClient *kubernetes.Clientset, tenant *miniov2.Tenant, tenantCredsSecret, tenantConfiguration, console *corev1.Secret) error {
+func createTenant(operatorClient *operatorv1.Clientset, kubeClient *kubernetes.Clientset, tenant *miniov2.Tenant, tenantConfiguration, console *corev1.Secret) error {
 	if _, err := kubeClient.CoreV1().Namespaces().Get(context.Background(), tenant.Namespace, metav1.GetOptions{}); err != nil {
 		return fmt.Errorf("namespace %s not found, please create the namespace using 'kubectl create ns %s'", tenant.Namespace, tenant.Namespace)
-	}
-	// deprecated tenant credsSecret required for deploying tenant
-	// The credsSecret field will be removed in operator v5.x.x
-	if _, err := kubeClient.CoreV1().Secrets(tenant.Namespace).Create(context.Background(), tenantCredsSecret, metav1.CreateOptions{}); err != nil {
-		return err
 	}
 	if _, err := kubeClient.CoreV1().Secrets(tenant.Namespace).Create(context.Background(), tenantConfiguration, metav1.CreateOptions{}); err != nil {
 		return err

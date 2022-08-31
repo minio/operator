@@ -4,6 +4,5 @@ namespace: minio-tenant
 resources:
   - namespace.yaml
   - tenant-config.yaml
-  - tenant-minio-creds-secret_deprecated.yaml
   - storage-user.yaml
   - tenant.yaml

@@ -130,7 +130,7 @@ type TenantSpec struct {
 	// Pod Management Policy for pod created by StatefulSet
 	// +optional
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
-	// *Required* +
+	// *optional* +
 	//
 	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] to use for setting the MinIO root access key and secret key. Specify the secret as `name: <secret>`. The Kubernetes secret must contain the following fields: +
 	//
