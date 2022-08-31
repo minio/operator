@@ -48,9 +48,6 @@ spec:
   ## Secret with credentials and configurations to be used by MinIO Tenant.
   configuration:
     name: storage-configuration
-  ## DEPRECATED: Secret with credentials to be used by MinIO Tenant.
-  credsSecret:
-    name: storage-creds-secret
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
   env: [ ]
   ## serviceMetadata allows passing additional labels and annotations to MinIO and Console specific

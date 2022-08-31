@@ -872,8 +872,8 @@ func (t *Tenant) Validate() error {
 		return errors.New("pools must be configured")
 	}
 
-	if t.Spec.CredsSecret == nil {
-		return errors.New("please set credsSecret secret with credentials for Tenant")
+	if !t.HasConfigurationSecret() && !t.HasCredsSecret() {
+		return errors.New("please set 'configuration' secret with credentials for Tenant")
 	}
 
 	// Every pool must contain a Volume Claim Template

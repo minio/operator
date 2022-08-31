@@ -223,6 +223,11 @@ func (t *Tenant) LogHLServiceName() string {
 	return t.Name + LogHLSvcNameSuffix
 }
 
+// ConfigurationSecretName returns name of secret used to store the tenant configuration
+func (t *Tenant) ConfigurationSecretName() string {
+	return fmt.Sprintf("%s%s", t.Name, TenantConfigurationSecretSuffix)
+}
+
 // LogSecretName returns name of secret shared by Log PG server and log-search-api server
 func (t *Tenant) LogSecretName() string {
 	return fmt.Sprintf("%s-%s", t.Name, "log-secret")

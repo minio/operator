@@ -97,6 +97,9 @@ const DefaultMinIOUpdateURL = "https://dl.min.io/server/minio/release/" + runtim
 // MinIOHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service
 const MinIOHLSvcNameSuffix = "-hl"
 
+// TenantConfigurationSecretSuffix specifies the suffix added to tenant name to create the configuration secret name
+const TenantConfigurationSecretSuffix = "-configuration"
+
 // Console Related Constants
 
 // ConsoleTenantLabel is applied to the Console pods of a Tenant cluster

@@ -365,8 +365,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	// get a new admin client
 	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
-		// show the error and continue
-		klog.Errorf("Error instantiating madmin: %v", err)
+		klog.Errorf("Error instantiating adminClnt: %v", err)
 		return err
 	}
 
