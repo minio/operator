@@ -21,7 +21,6 @@ import (
 	"errors"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (c *Controller) getTenantConfiguration(ctx context.Context, tenant *miniov2.Tenant) (map[string][]byte, error) {
