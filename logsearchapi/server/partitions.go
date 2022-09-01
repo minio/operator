@@ -110,7 +110,11 @@ func (c *DBClient) getExistingPartitions(ctx context.Context, t Table) (tableNam
 	)
 
 	q := listPartitions.build(t.Name)
-	rows, _ := c.QueryContext(ctx, q)
+	rows, err := c.QueryContext(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("Error listing partitions for %s: %v", t.Name, err)
+	}
+
 	var childTables []childTableInfo
 	if err := sqlscan.ScanAll(&childTables, rows); err != nil {
 		return nil, fmt.Errorf("Error accessing db: %v", err)
@@ -123,7 +127,7 @@ func (c *DBClient) getExistingPartitions(ctx context.Context, t Table) (tableNam
 }
 
 func (c *DBClient) getTablesDiskUsage(ctx context.Context) (m map[Table]map[string]uint64, _ error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	const (
@@ -194,13 +198,14 @@ func (c *DBClient) maintainLowWatermarkUsage(ctx context.Context, diskCapacityGB
 	totalUsage := totalDiskUsage(du)
 	diskCap := uint64(diskCapacityGBs) * 1024 * 1024 * 1024
 	hi, lo := calculateHiLoWaterMarks(diskCap)
-	var index int
+
 	if float64(totalUsage) <= hi {
 		return nil
 	}
 
 	// Delete oldest child tables in each parent table, until usage is below
 	// `lo`.
+	var index int
 	for float64(totalUsage) >= lo {
 		var recoveredSpace uint64
 		for _, table := range allTables {
@@ -222,7 +227,7 @@ func (c *DBClient) maintainLowWatermarkUsage(ctx context.Context, diskCapacityGB
 }
 
 // vacuumData should be called in a new go routine.
-func (c *DBClient) vacuumData(diskCapacityGBs int) {
+func (c *DBClient) vacuumData(ctx context.Context, diskCapacityGBs int) {
 	var (
 		normalInterval = 1 * time.Hour
 		retryInterval  = 2 * time.Minute
@@ -230,40 +235,54 @@ func (c *DBClient) vacuumData(diskCapacityGBs int) {
 	timer := time.NewTimer(normalInterval)
 	defer timer.Stop()
 
-	for range timer.C {
-		timer.Reset(retryInterval) // timer fired, reset it right here.
+	for {
+		select {
+		case <-timer.C:
+			timer.Reset(retryInterval) // timer fired, reset it right here.
 
-		err := c.maintainLowWatermarkUsage(context.Background(), diskCapacityGBs)
-		if err != nil {
-			log.Printf("Error maintaining high-water mark disk usage: %v (retrying in %s)", err, retryInterval)
-			continue
+			err := c.maintainLowWatermarkUsage(ctx, diskCapacityGBs)
+			if err != nil {
+				log.Printf("Error maintaining high-water mark disk usage: %v (retrying in %s)", err, retryInterval)
+				continue
+			}
+
+		case <-ctx.Done():
+			log.Println("Vacuum thread exiting.")
+			return
 		}
 	}
 }
 
-func (c *DBClient) partitionTables() {
+func (c *DBClient) partitionTables(ctx context.Context) {
 	checkInterval := 1 * time.Hour
-	bgCtx := context.Background()
-	tables := []Table{auditLogEventsTable, requestInfoTable}
+
+	timer := time.NewTimer(checkInterval)
+	defer timer.Stop()
+
 	for {
-		// Check if the partition table to store audit logs 48hrs from now exists
-		aDayLater := time.Now().Add(48 * time.Hour)
-		for _, table := range tables {
-			partitionExists, err := c.checkPartitionTableExists(bgCtx, table.Name, aDayLater)
-			if err != nil {
-				log.Printf("Error while checking if partition for %s exists %s", table.Name, err)
+		select {
+		case <-timer.C:
+			timer.Reset(checkInterval)
+			// Check if the partition table to store audit logs 48hrs from now exists
+			later := time.Now().Add(48 * time.Hour)
+			for _, table := range allTables {
+				partitionExists, err := c.checkPartitionTableExists(ctx, table.Name, later)
+				if err != nil {
+					log.Printf("Error while checking if partition for %s exists %s", table.Name, err)
+				}
+
+				if partitionExists {
+					continue
+				}
+
+				if err := c.createTablePartition(ctx, table, later); err != nil {
+					log.Printf("Error while creating partition for %s", table.Name)
+				}
 			}
 
-			if partitionExists {
-				continue
-			}
-
-			if err := c.createTablePartition(bgCtx, table, aDayLater); err != nil {
-				log.Printf("Error while creating partition for %s", table.Name)
-			}
+		case <-ctx.Done():
+			log.Println("Table partitioner thread exiting.")
+			return
 		}
-
-		// Check again after `checkInterval` hrs
-		time.Sleep(checkInterval)
 	}
 }

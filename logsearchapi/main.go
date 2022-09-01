@@ -16,7 +16,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 
 	_ "github.com/lib/pq"
 
@@ -28,10 +27,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	s := &http.Server{
-		Addr:    ":8080",
-		Handler: ls,
-	}
-	log.Print("Log Search API Listening on Port :8080")
-	log.Fatal(s.ListenAndServe())
+	ls.StartServer()
 }
