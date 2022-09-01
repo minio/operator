@@ -27,10 +27,7 @@ spec:
   {{- end }}
   ## Secret with default environment variable configurations
   configuration:
-    name: {{ .configuration.name }}
-  ## Deprecated credsSecret
-  credsSecret:
-    name: "tenant-secret"
+    name: {{ dig "secrets" "name" "" ($.Values | merge (dict)) }}
   pools:
   {{- range (dig "pools" (list) .) }}
     - servers: {{ dig "servers" 4 . }}

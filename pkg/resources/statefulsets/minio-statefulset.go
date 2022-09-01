@@ -153,33 +153,6 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 		}
 	}
 
-	// add env variables from tenant.Spec.CredsSecret.Name is deprecated and will be removed in the future
-	if t.HasCredsSecret() {
-		secretName := t.Spec.CredsSecret.Name
-		envVarsMap[miniov2.MinIORootUser] = corev1.EnvVar{
-			Name: miniov2.MinIORootUser,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "accesskey",
-				},
-			},
-		}
-		envVarsMap[miniov2.MinIORootPassword] = corev1.EnvVar{
-			Name: miniov2.MinIORootPassword,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secretName,
-					},
-					Key: "secretkey",
-				},
-			},
-		}
-	}
-
 	if t.HasKESEnabled() {
 		envVarsMap["MINIO_KMS_KES_ENDPOINT"] = corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_ENDPOINT",
