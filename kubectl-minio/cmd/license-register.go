@@ -106,7 +106,8 @@ func (d *licenseRegisterCmd) registerTenants(tenants []v2.Tenant, kubeClient *ku
 	for _, tenant := range tenants {
 		fmt.Printf("Registering tenant %s\n", tenant.Name)
 		if err := d.registerTenant(ctx, tenant, kubeClient); err != nil {
-			return err
+			fmt.Printf("Failed to register tenant %s: %s\n", tenant.Name, err.Error())
+			continue
 		}
 		fmt.Printf("Tenant %s registered\n", tenant.Name)
 	}
