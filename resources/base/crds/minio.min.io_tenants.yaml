@@ -2238,6 +2238,22 @@ spec:
                     type: string
                   storageClassName:
                     type: string
+                  tolerations:
+                    items:
+                      properties:
+                        effect:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        tolerationSeconds:
+                          format: int64
+                          type: integer
+                        value:
+                          type: string
+                      type: object
+                    type: array
                   topologySpreadConstraints:
                     items:
                       properties:
@@ -7260,6 +7276,22 @@ spec:
                     type: string
                   storageClassName:
                     type: string
+                  tolerations:
+                    items:
+                      properties:
+                        effect:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        tolerationSeconds:
+                          format: int64
+                          type: integer
+                        value:
+                          type: string
+                      type: object
+                    type: array
                   topologySpreadConstraints:
                     items:
                       properties:

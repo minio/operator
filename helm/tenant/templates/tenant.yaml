@@ -211,10 +211,14 @@ spec:
     nodeSelector:
       {{- toYaml . | nindent 4 }}
     {{- end }}
+    {{- with (dig "prometheus" "affinity" (dict) .) }}
     affinity:
-      nodeAffinity: { }
-      podAffinity: { }
-      podAntiAffinity: { }
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with (dig "prometheus" "tolerations" (list) .) }}
+    tolerations:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
     {{- with (dig "resources" (dict) .) }}
     resources:
       {{- toYaml . | nindent 4 }}
@@ -243,11 +247,14 @@ spec:
     nodeSelector:
       {{ toYaml . | nindent 4 }}
     {{- end }}
+    {{- with (dig "log" "affinity" (dict) .) }}
     affinity:
-      nodeAffinity: { }
-      podAffinity: { }
-      podAntiAffinity: { }
-    tolerations: [ ]
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with (dig "log" "tolerations" (list) .) }}
+    tolerations:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
     {{- with (dig "annotations" (dict) .) }}
     annotations:
       {{ toYaml . | nindent 4 }}
@@ -288,12 +295,14 @@ spec:
       nodeSelector:
         {{ toYaml . | nindent 4 }}
       {{- end }}
+      {{- with (dig "log" "db" "affinity" (dict) .) }}
       affinity:
-        nodeAffinity: { }
-        podAffinity: { }
-        podAntiAffinity: { }
-      tolerations: [ ]
-
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (dig "log" "db" "tolerations" (list) .) }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "annotations" (dict) .) }}
       annotations:
         {{ toYaml . | nindent 4 }}

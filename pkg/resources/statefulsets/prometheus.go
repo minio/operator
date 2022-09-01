@@ -257,6 +257,7 @@ func NewForPrometheus(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet
 					SchedulerName:             t.Scheduler.Name,
 					NodeSelector:              t.Spec.Prometheus.NodeSelector,
 					Affinity:                  t.Spec.Prometheus.Affinity,
+					Tolerations:               t.Spec.Prometheus.Tolerations,
 					TopologySpreadConstraints: t.Spec.Prometheus.TopologySpreadConstraints,
 					InitContainers:            initContainers,
 					SecurityContext:           securityContext,
