@@ -1,4 +1,4 @@
-// Copyright (C) 2020, MinIO, Inc.
+// Copyright (C) 2022, MinIO, Inc.
 //
 // This code is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License, version 3,
@@ -49,14 +49,14 @@ func (t *Table) getCreateStatement() string {
 var (
 	auditLogEventsTable = Table{
 		Name: "audit_log_events",
-		CreateStatement: `CREATE TABLE %s (
+		CreateStatement: `CREATE TABLE IF NOT EXISTS %s (
                                     event_time TIMESTAMPTZ NOT NULL,
                                     log JSONB NOT NULL
                                   ) PARTITION BY RANGE (event_time);`,
 	}
 	requestInfoTable = Table{
 		Name: "request_info",
-		CreateStatement: `CREATE TABLE %s (
+		CreateStatement: `CREATE TABLE IF NOT EXISTS %s (
                                     time TIMESTAMPTZ NOT NULL,
                                     api_name TEXT NOT NULL,
                                     access_key TEXT,
@@ -115,17 +115,7 @@ func (c *DBClient) checkPartitionTableExists(ctx context.Context, table string, 
 
 	p := newPartitionTimeRange(givenTime)
 	partitionTable := fmt.Sprintf("%s_%s", table, p.getPartnameSuffix())
-	const existsQuery QTemplate = `SELECT 1 FROM %s WHERE false;`
-	_, err := c.QueryContext(ctx, existsQuery.build(partitionTable))
-	if err != nil {
-		// check for table does not exist error
-		if strings.Contains(err.Error(), fmt.Sprintf(`relation "%s" does not exist`, table)) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
+	return c.checkTableExists(ctx, partitionTable)
 }
 
 func (c *DBClient) createTablePartition(ctx context.Context, table Table, givenTime time.Time) error {
@@ -135,24 +125,36 @@ func (c *DBClient) createTablePartition(ctx context.Context, table Table, givenT
 }
 
 func (c *DBClient) createTableAndPartition(ctx context.Context, table Table) error {
-	if exists, err := c.checkTableExists(ctx, table.Name); err != nil {
-		return err
-	} else if exists {
-		return nil
-	}
-
 	if _, err := c.ExecContext(ctx, table.getCreateStatement()); err != nil {
 		return err
 	}
 
-	return c.createTablePartition(ctx, table, time.Now())
+	// Tables are partitioned such that there are 4 partitions per month. At
+	// startup we create the partitions for the current time along with the
+	// "previous" and next "partitions". The partition for the past is created
+	// only to enable some amount of manual data insertion via a script.
+	now := time.Now()
+	partitionNow := newPartitionTimeRange(now)
+	partitionTimes := []time.Time{
+		partitionNow.previous().StartDate,
+		now,
+		partitionNow.next().StartDate,
+	}
+	for _, pt := range partitionTimes {
+		if err := c.createTablePartition(ctx, table, pt); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *DBClient) createTables(ctx context.Context) error {
-	if err := c.createTableAndPartition(ctx, auditLogEventsTable); err != nil {
-		return err
+	for _, table := range allTables {
+		if err := c.createTableAndPartition(ctx, table); err != nil {
+			return err
+		}
 	}
-	return c.createTableAndPartition(ctx, requestInfoTable)
+	return nil
 }
 
 // InitDBTables Creates tables in the DB.

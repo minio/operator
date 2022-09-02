@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	createTablePartition QTemplate = `CREATE TABLE %s PARTITION OF %s
+	createTablePartition QTemplate = `CREATE TABLE IF NOT EXISTS %s PARTITION OF %s
                                             FOR VALUES FROM ('%s') TO ('%s');`
 )
 
@@ -41,19 +41,34 @@ func (t *Table) getCreatePartitionStatement(p partitionTimeRange) string {
 	return createTablePartition.build(partitionName, t.Name, start, end)
 }
 
+// partitionTimeRange is created from a given time by `newPartitionTimeRange`.
+// It represents an interval of dates (i.e whole days) within the same month
+// including the given time.
 type partitionTimeRange struct {
 	GivenTime          time.Time
 	StartDate, EndDate time.Time
 }
 
 // newPartitionTimeRange computes the partitionTimeRange including the
-// givenTime.
+// givenTime. For a fixed value of partitionsPerMonth, the days in a month are
+// always partitioned in the same way regardless of the given time.
+//
+// Using partitionsPerMonth = 4:
+//
+// - the partitions for a 28 day month have number of days: [7,7,7,7]
+//
+// - the partitions for a 30 day month have number of days: [8,8,7,7]
+//
+// - the partitions for a 31 day month have number of days: [8,8,8,7]
 func newPartitionTimeRange(givenTime time.Time) partitionTimeRange {
 	// Convert to UTC and zero out the time.
 	t := givenTime.In(time.UTC)
 	t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+
+	// Find the number of days in the month.
 	lastDateOfMonth := t.AddDate(0, 1, -t.Day())
 	daysInMonth := lastDateOfMonth.Day()
+
 	quot := daysInMonth / partitionsPerMonth
 	remDays := daysInMonth % partitionsPerMonth
 	rangeStart := t.AddDate(0, 0, 1-t.Day())
@@ -83,6 +98,23 @@ func (p *partitionTimeRange) getPartnameSuffix() string {
 
 func (p *partitionTimeRange) getRangeArgs() (string, string) {
 	return p.StartDate.Format("2006_01_02"), p.EndDate.Format("2006_01_02")
+}
+
+func (p *partitionTimeRange) String() string {
+	return fmt.Sprintf("%s -> %s", p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339))
+}
+
+// isSame checks if the partitions represented by the arguments are the same.
+func (p *partitionTimeRange) isSame(q *partitionTimeRange) bool {
+	return p.StartDate == q.StartDate && p.EndDate == q.EndDate
+}
+
+func (p *partitionTimeRange) previous() partitionTimeRange {
+	return newPartitionTimeRange(p.StartDate.Add(-time.Second))
+}
+
+func (p *partitionTimeRange) next() partitionTimeRange {
+	return newPartitionTimeRange(p.EndDate)
 }
 
 type childTableInfo struct {
