@@ -27,7 +27,7 @@ all: build
 getdeps:
 	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
-	@echo "Installing golangci-lint" && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.45.2
+	@echo "Installing golangci-lint" && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0
 
 verify: getdeps govet gotest lint
 

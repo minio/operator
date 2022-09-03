@@ -141,7 +141,7 @@ func (ls *LogSearch) writeErrorResponse(w http.ResponseWriter, status int, msg s
 
 // ingestHandler handles:
 //
-//   POST /api/ingest?token=xxx
+//	POST /api/ingest?token=xxx
 //
 // The json body represents the Audit log data. If it is an empty object the
 // request is ignored but returns success.
@@ -167,7 +167,7 @@ func (ls *LogSearch) ingestHandler(w http.ResponseWriter, r *http.Request) {
 
 // queryHandler handles:
 //
-//   GET /api/query?token=xxx&q=(raw|reqinfo)&pageNo=0&pageSize=50&timeAsc|timeDesc&timeStart=?
+//	GET /api/query?token=xxx&q=(raw|reqinfo)&pageNo=0&pageSize=50&timeAsc|timeDesc&timeStart=?
 func (ls *LogSearch) queryHandler(w http.ResponseWriter, r *http.Request) {
 	// Request is assumed to be authenticated at this point.
 
