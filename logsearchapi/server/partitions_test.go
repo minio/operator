@@ -18,6 +18,7 @@
 package server
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -79,6 +80,54 @@ func TestNewPartitionTimeRange(t *testing.T) {
 		got := newPartitionTimeRange(testCase.givenTime)
 		if got != testCase.expectedPartitionTimeRange {
 			t.Errorf("%v:\ngot: %#v\nexpected: %#v", i+1, got, testCase.expectedPartitionTimeRange)
+		}
+	}
+}
+
+// Generate a random time in the interval (now - 10 years, now + 10 years)
+func randomTime() time.Time {
+	dur10years := int64((3650 * 24 * time.Hour).Seconds()) // roughly 10 years in seconds
+
+	// r is a unix time stamp in the desired 20 year interval.
+	r := time.Now().Unix() - dur10years + rand.Int63n(2*dur10years)
+	return time.Unix(r, 0)
+}
+
+func TestPartitionTimeRangeNextPrev(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+
+	// For some randomly generated times, test some properties.
+	for i := 0; i < 1000; i++ {
+		r := randomTime()
+		p1 := newPartitionTimeRange(r)
+		p0, p2 := p1.previous(), p1.next()
+
+		p0next := p0.next()
+		if !p0next.isSame(&p1) {
+			t.Errorf("Test %d: r=%v p1=%s p0=%s (p0.next() != p1)", i, r, p1.String(), p0.String())
+		}
+
+		p2prev := p2.previous()
+		if !p2prev.isSame(&p1) {
+			t.Errorf("Test %d: r=%v p1=%s p2=%s (p2.previous() != p1)", i, r, p1.String(), p2.String())
+		}
+
+		p0nextnext := p0next.next()
+		if !p0nextnext.isSame(&p2) {
+			t.Errorf("Test %d: r=%v p0=%s p2=%s (p0.next().next() != p2)", i, r, p0.String(), p2.String())
+		}
+
+		p2prevprev := p2prev.previous()
+		if !p2prevprev.isSame(&p0) {
+			t.Errorf("Test %d: r=%v p0=%s p2=%s (p2.previous().previous() != p0)", i, r, p0.String(), p2.String())
+		}
+
+		if p := newPartitionTimeRange(p1.StartDate); !p.isSame(&p1) {
+			t.Errorf("Test %d: r=%v p1=%s p=%s (newPartitionTimeRange(p1.StartTime) != p1)", i, r, p1.String(), p.String())
+		}
+
+		if p := newPartitionTimeRange(p1.EndDate); !p.isSame(&p2) {
+			t.Errorf("Test %d: r=%v p1=%s p2=%s p=%s (newPartitionTimeRange(p1.EndDate) != p2)", i, r, p1.String(), p2.String(), p.String())
 		}
 	}
 }
