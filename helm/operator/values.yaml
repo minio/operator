@@ -19,8 +19,18 @@ operator:
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
-    runAsNonRoot: true
     fsGroup: 1000
+    runAsNonRoot: true    
+  containerSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true  
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL    
   nodeSelector: { }
   affinity: { }
   tolerations: [ ]
@@ -46,7 +56,19 @@ console:
   resources: { }
   securityContext:
     runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
     runAsNonRoot: true
+  containerSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true  
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+      - ALL
   ingress:
     enabled: false
     ingressClassName: ""

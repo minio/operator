@@ -59,6 +59,10 @@ spec:
                 {{- end }}
           resources:
           {{- toYaml .Values.console.resources | nindent 12 }}
+          {{- with .Values.console.containerSecurityContext }}
+          securityContext:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}                
           volumeMounts:
           {{- with .Values.console.volumeMounts }}
           {{- toYaml . | nindent 12 }}
