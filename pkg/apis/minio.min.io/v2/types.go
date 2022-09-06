@@ -30,7 +30,6 @@ import (
 // +kubebuilder:storageversion
 
 // Tenant is a https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/[Kubernetes object] describing a MinIO Tenant. +
-//
 type Tenant struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -74,7 +73,6 @@ type TenantDomains struct {
 
 // S3Features (`s3`) - Object describing which MinIO features to enable/disable in the MinIO Tenant. +
 // *Deprecated in Operator v4.3.2* +
-//
 type S3Features struct {
 	// *Optional* +
 	//
@@ -84,7 +82,6 @@ type S3Features struct {
 }
 
 // Features (`features`) - Object describing which MinIO features to enable/disable in the MinIO Tenant. +
-//
 type Features struct {
 	// *Optional* +
 	//
@@ -103,8 +100,6 @@ type Features struct {
 // The following parameters are specific to the `minio.min.io/v2` MinIO CRD API `spec` definition added as part of the MinIO Operator v4.0.0. +
 //
 // For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation]. +
-//
-//
 type TenantSpec struct {
 	// *Required* +
 	//
