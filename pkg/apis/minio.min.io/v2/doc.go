@@ -19,7 +19,6 @@
 //
 // The `minio.min.io/v2` API was released with the v4.0.0 MinIO Operator. The MinIO Operator automatically converts existing tenants using the `/v1` API to `/v2`. +
 //
-//
 // +groupName=minio.min.io
 // +versionName=v2
 package v2

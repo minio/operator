@@ -22,7 +22,16 @@ operator:
     runAsNonRoot: true
     fsGroup: 1000
   nodeSelector: { }
-  affinity: { }
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: name
+                operator: In
+                values:
+                  - minio-operator
+          topologyKey: kubernetes.io/hostname
   tolerations: [ ]
   topologySpreadConstraints: [ ]
   resources:

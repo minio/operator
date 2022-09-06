@@ -272,7 +272,7 @@ func AskNumber(label string, validate func(int) error) int {
 	return r
 }
 
-// AskQuestion user for generic input."
+// AskQuestion ask user for generic input
 func AskQuestion(label string, validate func(string) error) string {
 	prompt := promptui.Prompt{
 		Label: label,

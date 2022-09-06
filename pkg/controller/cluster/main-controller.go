@@ -114,6 +114,7 @@ const (
 	StatusUpdatingAffinity                   = "Updating Pod Affinity"
 	StatusNotOwned                           = "Statefulset not controlled by operator"
 	StatusFailedAlreadyExists                = "Another MinIO Tenant already exists in the namespace"
+	StatusTenantCredentialsNotSet            = "Tenant credentials are not set properly"
 	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
 	StatusRestartingMinIO                    = "Restarting MinIO"
 	StatusDecommissioningNotAllowed          = "Pool Decommissioning Not Allowed"
@@ -623,6 +624,12 @@ func (c *Controller) syncHandler(key string) error {
 		}
 		return nil
 	}
+
+	// Check the Sync Version to see if the tenant needs upgrade
+	if tenant, err = c.checkForUpgrades(ctx, tenant); err != nil {
+		return err
+	}
+
 	// Set any required default values and init Global variables
 	nsName := types.NamespacedName{Namespace: namespace, Name: tenantName}
 
@@ -654,11 +661,6 @@ func (c *Controller) syncHandler(key string) error {
 		}
 		// return nil so we don't re-queue this work item
 		return nil
-	}
-
-	// Check the Sync Version to see if the tenant needs upgrade
-	if tenant, err = c.checkForUpgrades(ctx, tenant); err != nil {
-		return err
 	}
 
 	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2
@@ -761,6 +763,10 @@ func (c *Controller) syncHandler(key string) error {
 
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
+		if _, uerr := c.updateTenantStatus(ctx, tenant, StatusTenantCredentialsNotSet, 0); uerr != nil {
+			return uerr
+		}
+		klog.Errorf("Error initializing minio admin client: %v", err)
 		return err
 	}
 

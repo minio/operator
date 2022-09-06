@@ -181,15 +181,15 @@ func NewForLogSearchAPI(t *miniov2.Tenant) *appsv1.Deployment {
 
 	if t.Spec.Log.Db != nil {
 		// attach affinity clauses
-		if t.Spec.Log.Db.Affinity != nil {
-			apiPod.Spec.Affinity = t.Spec.Log.Db.Affinity
+		if t.Spec.Log.Affinity != nil {
+			apiPod.Spec.Affinity = t.Spec.Log.Affinity
 		}
 		// attach node selector clauses
-		apiPod.Spec.NodeSelector = t.Spec.Log.Db.NodeSelector
+		apiPod.Spec.NodeSelector = t.Spec.Log.NodeSelector
 		// attach tolerations
-		apiPod.Spec.Tolerations = t.Spec.Log.Db.Tolerations
+		apiPod.Spec.Tolerations = t.Spec.Log.Tolerations
 		// attach topology spread constraints
-		apiPod.Spec.TopologySpreadConstraints = t.Spec.Log.Db.TopologySpreadConstraints
+		apiPod.Spec.TopologySpreadConstraints = t.Spec.Log.TopologySpreadConstraints
 	}
 
 	d := &appsv1.Deployment{

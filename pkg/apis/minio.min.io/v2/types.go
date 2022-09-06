@@ -30,7 +30,6 @@ import (
 // +kubebuilder:storageversion
 
 // Tenant is a https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/[Kubernetes object] describing a MinIO Tenant. +
-//
 type Tenant struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -74,7 +73,6 @@ type TenantDomains struct {
 
 // S3Features (`s3`) - Object describing which MinIO features to enable/disable in the MinIO Tenant. +
 // *Deprecated in Operator v4.3.2* +
-//
 type S3Features struct {
 	// *Optional* +
 	//
@@ -84,7 +82,6 @@ type S3Features struct {
 }
 
 // Features (`features`) - Object describing which MinIO features to enable/disable in the MinIO Tenant. +
-//
 type Features struct {
 	// *Optional* +
 	//
@@ -103,8 +100,6 @@ type Features struct {
 // The following parameters are specific to the `minio.min.io/v2` MinIO CRD API `spec` definition added as part of the MinIO Operator v4.0.0. +
 //
 // For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation]. +
-//
-//
 type TenantSpec struct {
 	// *Required* +
 	//
@@ -130,7 +125,7 @@ type TenantSpec struct {
 	// Pod Management Policy for pod created by StatefulSet
 	// +optional
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
-	// *Required* +
+	// *optional* +
 	//
 	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] to use for setting the MinIO root access key and secret key. Specify the secret as `name: <secret>`. The Kubernetes secret must contain the following fields: +
 	//
@@ -841,6 +836,11 @@ type PrometheusConfig struct {
 	// Specify node affinity, pod affinity, and pod anti-affinity for the Prometheus pods. +
 	// +optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+	// *Optional* +
+	//
+	// Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to the Prometheus pods.
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	// *Optional* +
 	//
 	// Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.

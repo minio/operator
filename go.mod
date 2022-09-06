@@ -12,7 +12,7 @@ require (
 	github.com/miekg/dns v1.1.48
 	github.com/minio/madmin-go v1.4.15
 	github.com/minio/mc v0.0.0-20220810181532-c2f1770cec1f
-	github.com/minio/minio-go/v7 v7.0.34
+	github.com/minio/minio-go/v7 v7.0.35
 	github.com/minio/pkg v1.2.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.46.0
 	github.com/prometheus-operator/prometheus-operator/pkg/client v0.46.0

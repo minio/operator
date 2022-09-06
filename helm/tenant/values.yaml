@@ -225,6 +225,7 @@ tenant:
     annotations: { }
     labels: { }
     nodeSelector: { }
+    tolerations: [ ]
     affinity:
       nodeAffinity: { }
       podAffinity: { }

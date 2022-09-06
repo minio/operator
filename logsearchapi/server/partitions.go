@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	createTablePartition QTemplate = `CREATE TABLE %s PARTITION OF %s
+	createTablePartition QTemplate = `CREATE TABLE IF NOT EXISTS %s PARTITION OF %s
                                             FOR VALUES FROM ('%s') TO ('%s');`
 )
 
@@ -41,19 +41,34 @@ func (t *Table) getCreatePartitionStatement(p partitionTimeRange) string {
 	return createTablePartition.build(partitionName, t.Name, start, end)
 }
 
+// partitionTimeRange is created from a given time by `newPartitionTimeRange`.
+// It represents an interval of dates (i.e whole days) within the same month
+// including the given time.
 type partitionTimeRange struct {
 	GivenTime          time.Time
 	StartDate, EndDate time.Time
 }
 
 // newPartitionTimeRange computes the partitionTimeRange including the
-// givenTime.
+// givenTime. For a fixed value of partitionsPerMonth, the days in a month are
+// always partitioned in the same way regardless of the given time.
+//
+// Using partitionsPerMonth = 4:
+//
+// - the partitions for a 28 day month have number of days: [7,7,7,7]
+//
+// - the partitions for a 30 day month have number of days: [8,8,7,7]
+//
+// - the partitions for a 31 day month have number of days: [8,8,8,7]
 func newPartitionTimeRange(givenTime time.Time) partitionTimeRange {
 	// Convert to UTC and zero out the time.
 	t := givenTime.In(time.UTC)
 	t = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+
+	// Find the number of days in the month.
 	lastDateOfMonth := t.AddDate(0, 1, -t.Day())
 	daysInMonth := lastDateOfMonth.Day()
+
 	quot := daysInMonth / partitionsPerMonth
 	remDays := daysInMonth % partitionsPerMonth
 	rangeStart := t.AddDate(0, 0, 1-t.Day())
@@ -85,6 +100,23 @@ func (p *partitionTimeRange) getRangeArgs() (string, string) {
 	return p.StartDate.Format("2006_01_02"), p.EndDate.Format("2006_01_02")
 }
 
+func (p *partitionTimeRange) String() string {
+	return fmt.Sprintf("%s -> %s", p.StartDate.Format(time.RFC3339), p.EndDate.Format(time.RFC3339))
+}
+
+// isSame checks if the partitions represented by the arguments are the same.
+func (p *partitionTimeRange) isSame(q *partitionTimeRange) bool {
+	return p.StartDate == q.StartDate && p.EndDate == q.EndDate
+}
+
+func (p *partitionTimeRange) previous() partitionTimeRange {
+	return newPartitionTimeRange(p.StartDate.Add(-time.Second))
+}
+
+func (p *partitionTimeRange) next() partitionTimeRange {
+	return newPartitionTimeRange(p.EndDate)
+}
+
 type childTableInfo struct {
 	ParentSchema string
 	Parent       string
@@ -110,7 +142,11 @@ func (c *DBClient) getExistingPartitions(ctx context.Context, t Table) (tableNam
 	)
 
 	q := listPartitions.build(t.Name)
-	rows, _ := c.QueryContext(ctx, q)
+	rows, err := c.QueryContext(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("Error listing partitions for %s: %v", t.Name, err)
+	}
+
 	var childTables []childTableInfo
 	if err := sqlscan.ScanAll(&childTables, rows); err != nil {
 		return nil, fmt.Errorf("Error accessing db: %v", err)
@@ -123,7 +159,7 @@ func (c *DBClient) getExistingPartitions(ctx context.Context, t Table) (tableNam
 }
 
 func (c *DBClient) getTablesDiskUsage(ctx context.Context) (m map[Table]map[string]uint64, _ error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	const (
@@ -194,13 +230,14 @@ func (c *DBClient) maintainLowWatermarkUsage(ctx context.Context, diskCapacityGB
 	totalUsage := totalDiskUsage(du)
 	diskCap := uint64(diskCapacityGBs) * 1024 * 1024 * 1024
 	hi, lo := calculateHiLoWaterMarks(diskCap)
-	var index int
+
 	if float64(totalUsage) <= hi {
 		return nil
 	}
 
 	// Delete oldest child tables in each parent table, until usage is below
 	// `lo`.
+	var index int
 	for float64(totalUsage) >= lo {
 		var recoveredSpace uint64
 		for _, table := range allTables {
@@ -222,7 +259,7 @@ func (c *DBClient) maintainLowWatermarkUsage(ctx context.Context, diskCapacityGB
 }
 
 // vacuumData should be called in a new go routine.
-func (c *DBClient) vacuumData(diskCapacityGBs int) {
+func (c *DBClient) vacuumData(ctx context.Context, diskCapacityGBs int) {
 	var (
 		normalInterval = 1 * time.Hour
 		retryInterval  = 2 * time.Minute
@@ -230,40 +267,54 @@ func (c *DBClient) vacuumData(diskCapacityGBs int) {
 	timer := time.NewTimer(normalInterval)
 	defer timer.Stop()
 
-	for range timer.C {
-		timer.Reset(retryInterval) // timer fired, reset it right here.
+	for {
+		select {
+		case <-timer.C:
+			timer.Reset(retryInterval) // timer fired, reset it right here.
 
-		err := c.maintainLowWatermarkUsage(context.Background(), diskCapacityGBs)
-		if err != nil {
-			log.Printf("Error maintaining high-water mark disk usage: %v (retrying in %s)", err, retryInterval)
-			continue
+			err := c.maintainLowWatermarkUsage(ctx, diskCapacityGBs)
+			if err != nil {
+				log.Printf("Error maintaining high-water mark disk usage: %v (retrying in %s)", err, retryInterval)
+				continue
+			}
+
+		case <-ctx.Done():
+			log.Println("Vacuum thread exiting.")
+			return
 		}
 	}
 }
 
-func (c *DBClient) partitionTables() {
+func (c *DBClient) partitionTables(ctx context.Context) {
 	checkInterval := 1 * time.Hour
-	bgCtx := context.Background()
-	tables := []Table{auditLogEventsTable, requestInfoTable}
+
+	timer := time.NewTimer(checkInterval)
+	defer timer.Stop()
+
 	for {
-		// Check if the partition table to store audit logs 48hrs from now exists
-		aDayLater := time.Now().Add(48 * time.Hour)
-		for _, table := range tables {
-			partitionExists, err := c.checkPartitionTableExists(bgCtx, table.Name, aDayLater)
-			if err != nil {
-				log.Printf("Error while checking if partition for %s exists %s", table.Name, err)
+		select {
+		case <-timer.C:
+			timer.Reset(checkInterval)
+			// Check if the partition table to store audit logs 48hrs from now exists
+			later := time.Now().Add(48 * time.Hour)
+			for _, table := range allTables {
+				partitionExists, err := c.checkPartitionTableExists(ctx, table.Name, later)
+				if err != nil {
+					log.Printf("Error while checking if partition for %s exists %s", table.Name, err)
+				}
+
+				if partitionExists {
+					continue
+				}
+
+				if err := c.createTablePartition(ctx, table, later); err != nil {
+					log.Printf("Error while creating partition for %s", table.Name)
+				}
 			}
 
-			if partitionExists {
-				continue
-			}
-
-			if err := c.createTablePartition(bgCtx, table, aDayLater); err != nil {
-				log.Printf("Error while creating partition for %s", table.Name)
-			}
+		case <-ctx.Done():
+			log.Println("Table partitioner thread exiting.")
+			return
 		}
-
-		// Check again after `checkInterval` hrs
-		time.Sleep(checkInterval)
 	}
 }

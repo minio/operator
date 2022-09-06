@@ -1,4 +1,4 @@
-// Copyright (C) 2020, MinIO, Inc.
+// Copyright (C) 2022, MinIO, Inc.
 //
 // This code is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License, version 3,
@@ -22,7 +22,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
+)
+
+var (
+	globalContext context.Context
+	globalCancel  context.CancelFunc
 )
 
 // LogSearch represents the Log Search API server
@@ -46,29 +53,44 @@ func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, diskC
 		DiskCapacityGBs: diskCapacity,
 	}
 
+	// Initialize global context
+	globalContext, globalCancel = context.WithCancel(context.Background())
+
+	// Start signal handler so we quit gracefully.
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+
+		s := <-c
+		log.Println("Got signal:", s)
+		globalCancel()
+	}()
+
 	// Initialize DB Client
-	ls.DBClient, err = NewDBClient(context.Background(), ls.PGConnStr)
+	ls.DBClient, err = NewDBClient(globalContext, ls.PGConnStr)
 	if err != nil {
 		return nil, fmt.Errorf("Error connecting to db: %v", err)
 	}
 
 	// Initialize tables in db
-	err = ls.DBClient.InitDBTables(context.Background())
+	err = ls.DBClient.InitDBTables(globalContext)
 	if err != nil {
 		return nil, fmt.Errorf("Error initializing tables: %v", err)
 	}
 
 	// Run migrations on db
-	err = ls.DBClient.runMigrations(context.Background())
+	err = ls.DBClient.runMigrations(globalContext)
 	if err != nil {
 		return nil, fmt.Errorf("error running migrations: %v", err)
 	}
 
 	// Create indices on db
 	go func() {
-		err := ls.DBClient.CreateIndices(context.Background())
+		err := ls.DBClient.CreateIndices(globalContext)
 		if err != nil {
 			log.Printf("Failed to create some indices: %v", err)
+		} else {
+			log.Println("Indices created.")
 		}
 	}()
 
@@ -81,14 +103,35 @@ func NewLogSearch(pgConnStr, auditAuthToken string, queryAuthToken string, diskC
 	// Start vacuum thread
 	if ls.DiskCapacityGBs <= 0 {
 		// Treat disk as unlimited!
-		log.Printf("Disk Capacity is set to 0 or negative - older data will not be automatically removed.")
+		log.Println("Disk Capacity is set to 0 or negative - older data will not be automatically removed.")
 	} else {
-		go ls.DBClient.vacuumData(ls.DiskCapacityGBs)
+		go ls.DBClient.vacuumData(globalContext, ls.DiskCapacityGBs)
 	}
 
-	go ls.DBClient.partitionTables()
+	go ls.DBClient.partitionTables(globalContext)
 
 	return ls, nil
+}
+
+// StartServer starts the webserver.
+func (ls *LogSearch) StartServer() {
+	s := &http.Server{
+		Addr:    ":8080",
+		Handler: ls,
+	}
+
+	go func() {
+		<-globalContext.Done()
+		err := s.Shutdown(context.Background())
+		if err != nil {
+			log.Printf("HTTP server shutdown: %v\n", err)
+		}
+	}()
+
+	log.Println("Log Search API starting on Port :8080")
+	if err := s.ListenAndServe(); err != http.ErrServerClosed {
+		log.Fatalf("HTTP server ListenAndServe error: %v", err)
+	}
 }
 
 func (ls *LogSearch) writeErrorResponse(w http.ResponseWriter, status int, msg string, err error) {
@@ -98,7 +141,7 @@ func (ls *LogSearch) writeErrorResponse(w http.ResponseWriter, status int, msg s
 
 // ingestHandler handles:
 //
-//   POST /api/ingest?token=xxx
+//	POST /api/ingest?token=xxx
 //
 // The json body represents the Audit log data. If it is an empty object the
 // request is ignored but returns success.
@@ -124,7 +167,7 @@ func (ls *LogSearch) ingestHandler(w http.ResponseWriter, r *http.Request) {
 
 // queryHandler handles:
 //
-//   GET /api/query?token=xxx&q=(raw|reqinfo)&pageNo=0&pageSize=50&timeAsc|timeDesc&timeStart=?
+//	GET /api/query?token=xxx&q=(raw|reqinfo)&pageNo=0&pageSize=50&timeAsc|timeDesc&timeStart=?
 func (ls *LogSearch) queryHandler(w http.ResponseWriter, r *http.Request) {
 	// Request is assumed to be authenticated at this point.
 

@@ -134,9 +134,6 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 			Configuration: &v1.LocalObjectReference{
 				Name: opts.ConfigurationSecretName,
 			},
-			CredsSecret: &v1.LocalObjectReference{
-				Name: opts.Name + "-creds-secret",
-			},
 			Pools:           []miniov2.Pool{Pool(opts, volumesPerServer, *capacityPerVolume)},
 			RequestAutoCert: &autoCert,
 			Mountpath:       helpers.MinIOMountPath,
