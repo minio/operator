@@ -54,14 +54,3 @@ spec:
       initContainers:
       {{- toYaml . | nindent 8 }}
       {{- end}}
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: name
-                    operator: In
-                    values:
-                      - minio-operator
-              topologyKey: kubernetes.io/hostname
-
