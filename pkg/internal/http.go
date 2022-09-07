@@ -57,25 +57,24 @@ const (
 type mimeType string
 
 const (
-	// Means no response type.
+	// MimeNone Means no response type.
 	MimeNone mimeType = ""
-	// Means response type is JSON.
+	// MimeJSON Means response type is JSON.
 	MimeJSON mimeType = "application/json"
-	// Means response type is XML.
+	// MimeXML Means response type is XML.
 	MimeXML mimeType = "application/xml"
 )
 
-//URL unencode the path
+// UnescapeQueryPath URL unencode the path
 func UnescapeQueryPath(ep string) (string, error) {
 	ep, err := url.QueryUnescape(ep)
-
 	if err != nil {
 		return "", err
 	}
 	return TrimLeadingSlash(ep), nil
 }
 
-//Cleans and ensure there is a leading slash path in the URL
+// TrimLeadingSlash Cleans and ensure there is a leading slash path in the URL
 func TrimLeadingSlash(ep string) string {
 	if len(ep) > 0 && ep[0] == '/' {
 		// Path ends with '/' preserve it
@@ -132,7 +131,7 @@ func GetSourceIPFromHeaders(r *http.Request) string {
 	return addr
 }
 
-// Encodes the response headers into XML format.
+// EncodeResponse Encodes the response headers into XML format.
 func EncodeResponse(response interface{}) []byte {
 	var bytesBuffer bytes.Buffer
 	bytesBuffer.WriteString(xml.Header)
@@ -141,6 +140,7 @@ func EncodeResponse(response interface{}) []byte {
 	return bytesBuffer.Bytes()
 }
 
+// ParseForm Parses form fields
 func ParseForm(r *http.Request) error {
 	if err := r.ParseForm(); err != nil {
 		return err
@@ -153,6 +153,7 @@ func ParseForm(r *http.Request) error {
 	return nil
 }
 
+// WriteResponse writes ressponse to http.ResponseWriter
 func WriteResponse(w http.ResponseWriter, statusCode int, response []byte, mType mimeType) {
 	if statusCode == 0 {
 		statusCode = 200
@@ -173,7 +174,7 @@ func WriteResponse(w http.ResponseWriter, statusCode int, response []byte, mType
 	}
 }
 
-// Write http common headers
+// SetCommonHeaders writes http common headers
 func SetCommonHeaders(w http.ResponseWriter) {
 	// Set the "Server" http header.
 	w.Header().Set(ServerInfo, "MinIO")

@@ -53,6 +53,8 @@ const (
 	updatePath            = "/tmp" + miniov2.WebhookAPIUpdate + slashSeparator
 )
 
+const contextLogKey = contextKeyType("operatorlog")
+
 // BucketSrvHandler - POST /webhook/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
 func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -325,9 +327,7 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 // Eg:-
 //    $ curl https://operator:9443/webhook/v1/sts/?Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>
 func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *http.Request) {
-
 	routerVars := mux.Vars(r)
-	//queryVars := r.URL.Query()
 	prefix, err := xhttp.UnescapeQueryPath(routerVars["prefix"])
 	if err != nil {
 		prefix = routerVars["prefix"]
@@ -342,7 +342,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		ObjectName: prefix,
 	}
 
-	ctx := context.WithValue(r.Context(), ContextLogKey, reqInfo)
+	ctx := context.WithValue(r.Context(), contextLogKey, &reqInfo)
 
 	// Parse the incoming form data.
 	if err := xhttp.ParseForm(r); err != nil {
@@ -351,7 +351,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	}
 
 	if r.Form.Get(stsVersion) != stsAPIVersion {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("invalid STS API version %s, expecting %s", r.Form.Get("Version"), stsAPIVersion))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("Invalid STS API version %s, expecting %s", r.Form.Get("Version"), stsAPIVersion))
 		return
 	}
 
@@ -360,26 +360,21 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	// For now we only do WebIdentity, leaving it in case we want to implement certificate authentication
 	case webIdentity:
 	default:
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("unsupported action %s", action))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Unsupported action %s", action))
 		return
 	}
 
 	token := strings.TrimSpace(r.Form.Get(stsWebIdentityToken))
 
 	if token == "" {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("missing %s", stsWebIdentityToken))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("Missing %s", stsWebIdentityToken))
 		return
 	}
 
-	// TODO: Check what is next to do with the roleArn
+	// roleArn is an ignored parameter
 	// roleArn := strings.TrimSpace(r.Form.Get(stsRoleArn))
 
-	// if roleArn == "" {
-	// 	writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("missing %s", roleArn))
-	// 	return
-	// }
-
-	//VALIDATE JWT
+	// VALIDATE JWT
 	accessToken := r.Form.Get(stsWebIdentityToken)
 
 	saAuthResult, err := c.ValidateServiceAccountJWT(&ctx, accessToken)
@@ -396,13 +391,13 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	saNamespace := saAuthResult.Namespace
 
 	if !c.namespacesToWatch.Contains(saNamespace) {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("No tenants in namespace '%'", saNamespace))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("No tenants in namespace '%s", saNamespace))
 		return
 	}
 
 	tenants, err := c.minioClientSet.MinioV2().Tenants(saNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Tenant not available in the Service Account namespace '%'", saNamespace))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Tenant not available in the Service Account namespace '%s'", saNamespace))
 		return
 	}
 
@@ -416,7 +411,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	// The plain text that you use for both inline and managed session
 	// policies shouldn't exceed 2048 characters.
 	if len(sessionPolicyStr) > 2048 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("session policy should not exceed 2048 characters"))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("Session policy should not exceed 2048 characters"))
 		return
 	}
 
@@ -434,10 +429,14 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		}
 	}
 
-	duration, err := GetDefaultExpiration(r.Form.Get(stsDurationSeconds))
+	durationStr := r.Form.Get(stsDurationSeconds)
+	duration, err := strconv.Atoi(durationStr)
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, err)
-		return
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid token expiry"))
+	}
+
+	if duration < 900 || duration > 31536000 {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid token expiry"))
 	}
 
 	// Get the Tenant resource with this namespace/name
@@ -453,17 +452,20 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	}
 
 	stsCredentials, err := AssumeRole(ctx, c, tenant, sessionPolicyStr, duration)
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, err)
+	}
 
 	assumeRoleResponse := &AssumeRoleResponse{
 		Result: AssumeRoleResult{
 			Credentials: Credentials{
-				AccessKey: stsCredentials.AccessKeyID,
-				SecretKey: stsCredentials.SecretAccessKey,
+				AccessKey:    stsCredentials.AccessKeyID,
+				SecretKey:    stsCredentials.SecretAccessKey,
+				SessionToken: stsCredentials.SessionToken,
 			},
 		},
 	}
 
-	asumeRoleResponse.ResponseMetadata.RequestID = w.Header().Get(xhttp.AmzRequestID)
-	writeSuccessResponseXML(w, encodeResponse(assumeRoleResponse))
-
+	assumeRoleResponse.ResponseMetadata.RequestID = w.Header().Get(AmzRequestID)
+	writeSuccessResponseXML(w, xhttp.EncodeResponse(assumeRoleResponse))
 }

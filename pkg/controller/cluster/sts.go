@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -19,31 +18,17 @@ import (
 
 // STS Handler constants
 const (
-	assumeRole          = "AssumeRole"
 	webIdentity         = "AssumeRoleWithWebIdentity"
 	stsAPIVersion       = "2011-06-15"
 	stsVersion          = "Version"
 	stsAction           = "Action"
 	stsPolicy           = "Policy"
-	stsToken            = "Token"
-	stsRoleArn          = "RoleArn"
 	stsWebIdentityToken = "WebIdentityToken"
 	stsDurationSeconds  = "DurationSeconds"
 	AmzRequestID        = "x-amz-request-id"
-	stsRequestBodyLimit = 10 * (1 << 20)                  // 10 MiB
-	defaultExpiraion    = time.Duration(60) * time.Minute // Defaults to 1hr.
-)
-
-// AWS Signature Version '4' constants.
-const (
-	signV4Algorithm = "AWS4-HMAC-SHA256"
-	iso8601Format   = "20060102T150405Z"
-	yyyymmdd        = "20060102"
 )
 
 type contextKeyType string
-
-const ContextLogKey = contextKeyType("operatorlog")
 
 //go:generate stringer -type=STSErrorCode -trimprefix=Err $GOFILE
 
@@ -67,7 +52,7 @@ const (
 	ErrSTSPackedPolicyTooLarge
 )
 
-type stsErrorCodeMap map[STSErrorCode]STSError
+type stsErrorCodeMap map[STSErrorCode]APIError
 
 // ReqInfo stores the request info.
 // Reading/writing directly to struct requires appropriate R/W lock.
@@ -97,8 +82,8 @@ type Credentials struct {
 // STSErrorCode type of error status.
 type STSErrorCode int
 
-// STSError structure
-type STSError struct {
+// APIError structure
+type APIError struct {
 	Code           string
 	Description    string
 	HTTPStatusCode int
@@ -202,6 +187,9 @@ type AssumedRoleUser struct {
 	AssumedRoleID string `xml:"AssumeRoleId"`
 }
 
+// AssumeRoleResult - Contains the response to a successful AssumeRole
+// request, including temporary credentials that can be used to make
+// MinIO API requests.
 type AssumeRoleResult struct {
 	AssumedRoleUser  AssumedRoleUser `xml:",omitempty"`
 	Credentials      Credentials     `xml:",omitempty"`
@@ -220,24 +208,15 @@ type AssumeRoleResponse struct {
 
 // writeSTSErrorRespone writes error headers
 func writeSTSErrorResponse(ctx context.Context, w http.ResponseWriter, isErrCodeSTS bool, errCode STSErrorCode, errCtxt error) {
-	var err STSError
+	var err APIError
 	if isErrCodeSTS {
 		err = stsErrCodes.ToSTSErr(errCode)
 	}
-	//TODO Parse error from Minio Instance
-	// if err.Code == "InternalError" || !isErrCodeSTS {
-	// 	aerr := getAPIError(APIErrorCode(errCode))
-	// 	if aerr.Code != "InternalError" {
-	// 		err.Code = aerr.Code
-	// 		err.Description = aerr.Description
-	// 		err.HTTPStatusCode = aerr.HTTPStatusCode
-	// 	}
-	// }
-	// Generate error response.
+
 	stsErrorResponse := STSErrorResponse{}
 	stsErrorResponse.Error.Code = err.Code
 	stsErrorResponse.RequestID = w.Header().Get(AmzRequestID)
-	stsErrorResponse.Error.Message = err.Descripton
+	stsErrorResponse.Error.Message = err.Description
 	if errCtxt != nil {
 		stsErrorResponse.Error.Message = errCtxt.Error()
 	}
@@ -249,7 +228,11 @@ func writeSTSErrorResponse(ctx context.Context, w http.ResponseWriter, isErrCode
 	xhttp.WriteResponse(w, err.HTTPStatusCode, encodedErrorResponse, xhttp.MimeXML)
 }
 
-func (e stsErrorCodeMap) ToSTSErr(errCode STSErrorCode) STSError {
+func writeSuccessResponseXML(w http.ResponseWriter, response []byte) {
+	xhttp.WriteResponse(w, http.StatusOK, response, xhttp.MimeXML)
+}
+
+func (e stsErrorCodeMap) ToSTSErr(errCode STSErrorCode) APIError {
 	apiErr, ok := e[errCode]
 	if !ok {
 		return e[ErrSTSInternalError]
@@ -257,8 +240,8 @@ func (e stsErrorCodeMap) ToSTSErr(errCode STSErrorCode) STSError {
 	return apiErr
 }
 
-func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sessionPolicy string, duration int64) (*credentials.Value, error) {
-
+// AssumeRole invokes the AssumeRole method in the Minio Tenant
+func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sessionPolicy string, duration int) (*credentials.Value, error) {
 	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
 	transport := c.getTransport()
 	if err != nil {
@@ -293,34 +276,19 @@ func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sess
 
 	stsAssumeRole := &credentials.STSAssumeRole{
 		Client:      client,
-		STSEndpoint: host, //TODO: Set the protocol right before the host var
+		STSEndpoint: host, // TODO: Set the protocol right before the host var
 		Options:     stsOptions,
 	}
 
 	stsCredentialsResponse, err := stsAssumeRole.Retrieve()
-
 	if err != nil {
 		return nil, err
 	}
 	return &stsCredentialsResponse, nil
 }
 
-func GetDefaultExpiration(secs string) (int64, error) {
-	if secs != "" {
-		expirySecs, err := strconv.ParseInt(secs, 10, 64)
-		if err != nil {
-			return 0, errors.New("invalid token expiry")
-		}
-		if expirySecs < 900 || expirySecs > 31536000 {
-			return 0, errors.New("invalid token expiry")
-		}
-
-		duration := time.Now().UTC().Add(time.Duration(expirySecs) * time.Second).Unix()
-		return duration, nil
-	}
-	return time.Now().UTC().Add(defaultExpiraion).Unix(), nil
-}
-
+// ValidateServiceAccountJWT Executes a call to TokenReview  API to verify if the JWT Token received from the client
+// is a valid Service Account JWT Token
 func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token string) (*authv1.TokenReview, error) {
 	tr := authv1.TokenReview{
 		Spec: authv1.TokenReviewSpec{
@@ -330,7 +298,6 @@ func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token strin
 	}
 
 	tokenReviewResult, err := c.kubeClientSet.AuthenticationV1().TokenReviews().Create(*ctx, &tr, metav1.CreateOptions{})
-
 	if err != nil {
 		klog.Fatalf("Error building Kubernetes clientset: %s", err.Error())
 		return nil, err
