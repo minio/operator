@@ -1137,8 +1137,7 @@ type SideCars struct {
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:storageversion
 
-// PolicyBinding is a https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/[Kubernetes object] describing a MinIO PolicyBinding. +
-//
+// PolicyBinding is a https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/[Kubernetes object] describing a MinIO PolicyBinding.
 type PolicyBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -1173,11 +1172,7 @@ type PolicyBindingUsage struct {
 // The following parameters are specific to the `minio.min.io/v2` MinIO Policy Binding CRD API `spec` definition added as part of the MinIO Operator v4.0.0. +
 //
 // PolicyBinding is a Auhtorization mechanism managed by the Minio Operator using Kubernetes ServiceAccount native object, the Binding allow to an ServiceAccount to assume policies inside a tenant.
-//
-//
-//
-// For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation]. +
-//
+// For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation].
 type PolicyBindingSpec struct {
 	// *Required* +
 	//

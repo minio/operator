@@ -105,7 +105,7 @@ rules:
     verbs:
       - approve
       - sign
-  - apigroups:
+  - apiGroups:
       - authentication.k8s.io
     resources:
       - tokenreviews
