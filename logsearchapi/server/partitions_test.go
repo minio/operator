@@ -131,3 +131,22 @@ func TestPartitionTimeRangeNextPrev(t *testing.T) {
 		}
 	}
 }
+
+func TestPartitionNameParsing(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+
+	for i := 0; i < 1000; i++ {
+		r := randomTime()
+		p1 := newPartitionTimeRange(r)
+
+		name := "table_" + p1.getPartnameSuffix()
+
+		res, err := getPartitionTimeRangeForTable(name)
+		if err != nil {
+			t.Errorf("Test %d: r=%v unexpected err: %v", i, r, err)
+		}
+		if !res.isSame(&p1) {
+			t.Errorf("Test %d: r=%v, expected: %v got %v", i, r, p1.String(), res.String())
+		}
+	}
+}
