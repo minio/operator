@@ -325,7 +325,7 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 // AssumeRoleWithWebIdentity - implementation of AWS STS API works with Kubernetes Service accounts JWT for autentication
 // and PolicyBinding CRD as Mapping of the Plocies that the ServiceAccount can assume
 // Eg:-
-//    $ curl https://operator:9443/webhook/v1/sts/?Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>
+// $ curl https://operator:9443/webhook/v1/sts/?Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>
 func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *http.Request) {
 	routerVars := mux.Vars(r)
 	prefix, err := xhttp.UnescapeQueryPath(routerVars["prefix"])
