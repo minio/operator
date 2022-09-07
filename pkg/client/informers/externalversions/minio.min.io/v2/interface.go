@@ -24,6 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
+	// PolicyBindings returns a PolicyBindingInformer.
+	PolicyBindings() PolicyBindingInformer
 	// Tenants returns a TenantInformer.
 	Tenants() TenantInformer
 }
@@ -37,6 +39,11 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
+}
+
+// PolicyBindings returns a PolicyBindingInformer.
+func (v *version) PolicyBindings() PolicyBindingInformer {
+	return &policyBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Tenants returns a TenantInformer.

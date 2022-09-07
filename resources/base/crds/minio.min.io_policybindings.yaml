@@ -1,0 +1,85 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.7
+  creationTimestamp: null
+  name: policybindings.minio.min.io
+spec:
+  group: minio.min.io
+  names:
+    kind: PolicyBinding
+    listKind: PolicyBindingList
+    plural: policybindings
+    shortNames:
+    - policybinding
+    singular: policybinding
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.currentState
+      name: State
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v2
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              application:
+                properties:
+                  namespace:
+                    type: string
+                  serviceaccount:
+                    type: string
+                required:
+                - namespace
+                - serviceaccount
+                type: object
+              policies:
+                items:
+                  type: string
+                type: array
+            required:
+            - application
+            - policies
+            type: object
+          status:
+            properties:
+              currentState:
+                type: string
+              usage:
+                nullable: true
+                properties:
+                  authotizations:
+                    format: int64
+                    type: integer
+                type: object
+            required:
+            - currentState
+            - usage
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
