@@ -4,3 +4,4 @@ kind: Kustomization
 
 resources:
   - crds/minio.min.io_tenants.yaml
+  - crds/minio.min.io_policybindings.yaml
