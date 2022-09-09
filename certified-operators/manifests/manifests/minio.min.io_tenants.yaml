@@ -179,6 +179,17 @@ spec:
                   required:
                     - name
                   type: object
+                externalClientCertSecrets:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      type:
+                        type: string
+                    required:
+                      - name
+                    type: object
+                  type: array
                 image:
                   type: string
                 imagePullPolicy:
@@ -2227,6 +2238,22 @@ spec:
                       type: string
                     storageClassName:
                       type: string
+                    tolerations:
+                      items:
+                        properties:
+                          effect:
+                            type: string
+                          key:
+                            type: string
+                          operator:
+                            type: string
+                          tolerationSeconds:
+                            format: int64
+                            type: integer
+                          value:
+                            type: string
+                        type: object
+                      type: array
                     topologySpreadConstraints:
                       items:
                         properties:
@@ -4541,6 +4568,17 @@ spec:
                   required:
                     - name
                   type: object
+                externalClientCertSecrets:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      type:
+                        type: string
+                    required:
+                      - name
+                    type: object
+                  type: array
                 features:
                   properties:
                     bucketDNS:
@@ -7238,6 +7276,22 @@ spec:
                       type: string
                     storageClassName:
                       type: string
+                    tolerations:
+                      items:
+                        properties:
+                          effect:
+                            type: string
+                          key:
+                            type: string
+                          operator:
+                            type: string
+                          tolerationSeconds:
+                            format: int64
+                            type: integer
+                          value:
+                            type: string
+                        type: object
+                      type: array
                     topologySpreadConstraints:
                       items:
                         properties:
