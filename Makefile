@@ -27,7 +27,10 @@ all: build
 getdeps:
 	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
-	@echo "Installing golangci-lint" && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0
+	@echo "Installing golangci-lint" && \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0 && \
+		echo "Installing govulncheck" && \
+		go install golang.org/x/vuln/cmd/govulncheck@latest
 
 verify: getdeps govet gotest lint
 
@@ -50,6 +53,9 @@ govet:
 
 gotest:
 	@go test -race ./...
+
+vulncheck:
+	@${GOPATH}/bin/govulncheck ./...
 
 clean:
 	@echo "Cleaning up all the generated files"
