@@ -65,10 +65,8 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@go install github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
-	@echo "WARNING: installing our fork github.com/minio/controller-tools/cmd/controller-gen@v0.4.7"
-	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
-	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
+	@go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.0
+	@GO111MODULE=on ${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@kustomize build resources/patch-crd > $(TMPFILE)
 	@mv -f $(TMPFILE) resources/base/crds/minio.min.io_tenants.yaml
 	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/minio.min.io_tenants.yaml > $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
