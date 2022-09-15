@@ -21,29 +21,6 @@ The `minio.min.io/v2` API was released with the v4.0.0 MinIO Operator. The MinIO
 
 
 
-[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-application"]
-==== Application 
-
-Application defines the `Namespace` and  `ServiceAccount`
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-policybindingspec[$$PolicyBindingSpec$$]
-****
-
-[cols="25a,75a", options="header"]
-|===
-| Field | Description
-
-|*`namespace`* __string__ 
-|*Required* +
-
-|*`serviceaccount`* __string__ 
-|*Required* +
-
-|===
-
-
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-auditconfig"]
 ==== AuditConfig 
 
@@ -512,82 +489,6 @@ Logging describes Logging for MinIO tenants.
 |===
 
 
-[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-policybinding"]
-==== PolicyBinding 
-
-PolicyBinding is a https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/[Kubernetes object] describing a MinIO PolicyBinding. +
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-policybindinglist[$$PolicyBindingList$$]
-****
-
-[cols="25a,75a", options="header"]
-|===
-| Field | Description
-
-|*`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#objectmeta-v1-meta[$$ObjectMeta$$]__ 
-|Refer to Kubernetes API documentation for fields of `metadata`.
-
-
-|*`spec`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-policybindingspec[$$PolicyBindingSpec$$]__ 
-|*Required* + 
- The root field for the MinIO PolicyBinding object.
-
-|===
-
-
-
-
-[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-policybindingspec"]
-==== PolicyBindingSpec 
-
-PolicyBindingSpec (`spec`) defines the configuration of a MinIO PolicyBinding object. + 
- The following parameters are specific to the `minio.min.io/v2` MinIO Policy Binding CRD API `spec` definition added as part of the MinIO Operator v4.0.0. + 
- PolicyBinding is a Auhtorization mechanism managed by the Minio Operator using Kubernetes ServiceAccount native object, the Binding allow to an ServiceAccount to assume policies inside a tenant. 
- For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation]. +
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-policybinding[$$PolicyBinding$$]
-****
-
-[cols="25a,75a", options="header"]
-|===
-| Field | Description
-
-|*`application`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-application[$$Application$$]__ 
-|*Required* + 
- The Application Property identifies the namespace and service account that will be authorized
-
-|*`policies`* __string array__ 
-|*Required* +
-
-|===
-
-
-
-
-[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-policybindingusage"]
-==== PolicyBindingUsage 
-
-PolicyBindingUsage are metrics regarding the usage of the policyBinding
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-policybindingstatus[$$PolicyBindingStatus$$]
-****
-
-[cols="25a,75a", options="header"]
-|===
-| Field | Description
-
-|*`authotizations`* __integer__ 
-|
-
-|===
-
-
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-pool"]
 ==== Pool 
 
@@ -761,6 +662,10 @@ PrometheusConfig (`prometheus`) defines the configuration of a Prometheus instan
 |*`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#affinity-v1-core[$$Affinity$$]__ 
 |*Optional* + 
  Specify node affinity, pod affinity, and pod anti-affinity for the Prometheus pods. +
+
+|*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#toleration-v1-core[$$Toleration$$] array__ 
+|*Optional* + 
+ Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to the Prometheus pods.
 
 |*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ 
 |*Optional* + 
@@ -983,7 +888,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  Pod Management Policy for pod created by StatefulSet
 
 |*`credsSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
-|*Required* + 
+|*optional* + 
  Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] to use for setting the MinIO root access key and secret key. Specify the secret as `name: <secret>`. The Kubernetes secret must contain the following fields: + 
  * `data.accesskey` - The access key for the root credentials + 
  * `data.secretkey` - The secret key for the root credentials +
@@ -1019,6 +924,14 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  The specified certificate *must* correspond to an identity on the KES server. See the https://github.com/minio/kes/wiki/Configuration#policy-configuration[KES Wiki] for more information on KES identities. + 
  If deploying KES with the MinIO Operator, include the hash of the certificate as part of the <<k8s-api-github-com-minio-operator-pkg-apis-minio-min-io-v2-kesconfig,`kes`>> object specification. + 
  See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+
+|*`externalClientCertSecrets`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$] array__ 
+|*Optional* + 
+ Provide support for mounting additional client certificate into MinIO Tenant pods Multiple client certificates will be mounted using the following folder structure: 
+ 	certs 		| 		|			+ client.crt 		|			+ client.key 		|			+ client.crt 		|			+ client.key 		|			+ client.crt 		|			+ client.key 
+ Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified certificate to every MinIO server pod in the tenant that later can be referenced using environment variables. The secret *must* contain the following fields: + 
+ * `name` - The name of the Kubernetes secret containing the TLS certificate. + 
+ * `type` - Specify `kubernetes.io/tls` +
 
 |*`mountPath`* __string__ 
 |*Optional* + 
