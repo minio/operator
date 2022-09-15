@@ -23,6 +23,7 @@ import (
 
 	miniov1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v1"
 	miniov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2"
+	stsv1beta1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -32,14 +33,16 @@ type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	MinioV1() miniov1.MinioV1Interface
 	MinioV2() miniov2.MinioV2Interface
+	StsV1beta1() stsv1beta1.StsV1beta1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	minioV1 *miniov1.MinioV1Client
-	minioV2 *miniov2.MinioV2Client
+	minioV1    *miniov1.MinioV1Client
+	minioV2    *miniov2.MinioV2Client
+	stsV1beta1 *stsv1beta1.StsV1beta1Client
 }
 
 // MinioV1 retrieves the MinioV1Client
@@ -50,6 +53,11 @@ func (c *Clientset) MinioV1() miniov1.MinioV1Interface {
 // MinioV2 retrieves the MinioV2Client
 func (c *Clientset) MinioV2() miniov2.MinioV2Interface {
 	return c.minioV2
+}
+
+// StsV1beta1 retrieves the StsV1beta1Client
+func (c *Clientset) StsV1beta1() stsv1beta1.StsV1beta1Interface {
+	return c.stsV1beta1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -81,6 +89,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	if err != nil {
 		return nil, err
 	}
+	cs.stsV1beta1, err = stsv1beta1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfig(&configShallowCopy)
 	if err != nil {
@@ -95,6 +107,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
 	cs.minioV1 = miniov1.NewForConfigOrDie(c)
 	cs.minioV2 = miniov2.NewForConfigOrDie(c)
+	cs.stsV1beta1 = stsv1beta1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -105,6 +118,7 @@ func New(c rest.Interface) *Clientset {
 	var cs Clientset
 	cs.minioV1 = miniov1.New(c)
 	cs.minioV2 = miniov2.New(c)
+	cs.stsV1beta1 = stsv1beta1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
