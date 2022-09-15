@@ -28,10 +28,6 @@ type FakeMinioV2 struct {
 	*testing.Fake
 }
 
-func (c *FakeMinioV2) PolicyBindings(namespace string) v2.PolicyBindingInterface {
-	return &FakePolicyBindings{c, namespace}
-}
-
 func (c *FakeMinioV2) Tenants(namespace string) v2.TenantInterface {
 	return &FakeTenants{c, namespace}
 }

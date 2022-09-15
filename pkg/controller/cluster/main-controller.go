@@ -203,7 +203,7 @@ type Controller struct {
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer informers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.

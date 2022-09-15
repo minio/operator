@@ -18,6 +18,4 @@
 
 package v2
 
-type PolicyBindingExpansion interface{}
-
 type TenantExpansion interface{}

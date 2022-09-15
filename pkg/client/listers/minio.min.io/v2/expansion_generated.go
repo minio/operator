@@ -18,14 +18,6 @@
 
 package v2
 
-// PolicyBindingListerExpansion allows custom methods to be added to
-// PolicyBindingLister.
-type PolicyBindingListerExpansion interface{}
-
-// PolicyBindingNamespaceListerExpansion allows custom methods to be added to
-// PolicyBindingNamespaceLister.
-type PolicyBindingNamespaceListerExpansion interface{}
-
 // TenantListerExpansion allows custom methods to be added to
 // TenantLister.
 type TenantListerExpansion interface{}

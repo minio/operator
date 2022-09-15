@@ -58,8 +58,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Minio().V1().Tenants().Informer()}, nil
 
 		// Group=minio.min.io, Version=v2
-	case v2.SchemeGroupVersion.WithResource("policybindings"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Minio().V2().PolicyBindings().Informer()}, nil
 	case v2.SchemeGroupVersion.WithResource("tenants"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Minio().V2().Tenants().Informer()}, nil
 
