@@ -155,6 +155,9 @@ func generateOperatorCryptoData() ([]byte, []byte, error) {
 	opCommon := fmt.Sprintf("operator.%s.svc.%s", miniov2.GetNSFromFile(), miniov2.GetClusterDomain())
 	opCommonNoDomain := fmt.Sprintf("operator.%s.svc", miniov2.GetNSFromFile())
 
+	opStsCommon := fmt.Sprintf("sts.%s.svc.%s", miniov2.GetNSFromFile(), miniov2.GetClusterDomain())
+	opStsCommonNoDomain := fmt.Sprintf("sts.%s.svc", miniov2.GetNSFromFile())
+
 	csrTemplate := x509.CertificateRequest{
 		Subject: pkix.Name{
 			CommonName:   fmt.Sprintf("system:node:%s", opCommonNoDomain),
@@ -176,9 +179,24 @@ func generateOperatorCryptoData() ([]byte, []byte, error) {
 				Critical: false,
 				Value:    []byte(opCommon),
 			},
+			{
+				Id:       nil,
+				Critical: false,
+				Value:    []byte("sts"),
+			},
+			{
+				Id:       nil,
+				Critical: false,
+				Value:    []byte(opStsCommon),
+			},
+			{
+				Id:       nil,
+				Critical: false,
+				Value:    []byte(opStsCommonNoDomain),
+			},
 		},
 		SignatureAlgorithm: x509.ECDSAWithSHA512,
-		DNSNames:           []string{"operator", opCommonNoDomain, opCommon},
+		DNSNames:           []string{"operator", opCommonNoDomain, opCommon, "sts", opStsCommon, opStsCommonNoDomain},
 	}
 
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privateKey)

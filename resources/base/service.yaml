@@ -30,7 +30,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 4223
+    - port: 4222
       name: https
   selector:
     name: minio-operator
