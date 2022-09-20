@@ -89,7 +89,6 @@ func configureWebhookServer(c *Controller) *http.Server {
 		Path(miniov2.WebHookSTS).
 		Queries(stsAction, webIdentity).
 		Queries(stsVersion, stsAPIVersion).
-		Queries(stsWebIdentityToken, "{Token:.*}").
 		HandlerFunc(c.AssumeRoleWithWebIdentityHandler)
 
 	router.NotFoundHandler = http.NotFoundHandler()
