@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"regexp"
 
+	"k8s.io/klog"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/blang/semver/v4"
 	"github.com/hashicorp/go-version"
-
-	"k8s.io/klog/v2"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -104,7 +104,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.LogSecretName(), metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
-		return nil, err
+		return tenant, err
 	}
 
 	if k8serrors.IsNotFound(err) {
@@ -126,7 +126,7 @@ func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*m
 		if secretChanged {
 			_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, logSearchSecret, metav1.UpdateOptions{})
 			if err != nil {
-				return nil, err
+				return tenant, err
 			}
 		}
 
@@ -278,7 +278,7 @@ func (c *Controller) upgrade429(ctx context.Context, tenant *miniov2.Tenant) (*m
 func (c *Controller) upgrade430(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.LogSecretName(), metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
-		return nil, err
+		return tenant, err
 	}
 
 	if k8serrors.IsNotFound(err) {
@@ -294,7 +294,7 @@ func (c *Controller) upgrade430(ctx context.Context, tenant *miniov2.Tenant) (*m
 		if secretChanged {
 			_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, logSearchSecret, metav1.UpdateOptions{})
 			if err != nil {
-				return nil, err
+				return tenant, err
 			}
 		}
 
