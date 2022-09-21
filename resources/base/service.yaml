@@ -28,10 +28,10 @@ metadata:
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: operator-tls # To solve "remote error: tls: bad certificate"
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - port: 4222
+      targetPort: 4222
       name: https
   selector:
     name: minio-operator
-
