@@ -690,7 +690,7 @@ spec:
                     env:
                       - name: CONSOLE_OPERATOR_MODE
                         value: "on"
-                    image: quay.io/minio/console@sha256:084c5c650a130e10e6d47c56912b2a3680bb2bc91340e94887ddd552a51d483e
+                    image: quay.io/minio/console@sha256:8dce83e096fb72373aa27634f5d9d0cad574d6d89dd4d89f9b27334d77e7465e
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
