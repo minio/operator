@@ -26,6 +26,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // Adds required Console environment variables
@@ -748,11 +749,26 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 		podVolumes = append(podVolumes, t.Spec.SideCars.Volumes...)
 	}
 
+	moreServers := pool.Servers > 4
+	unavailable := intstr.FromInt(1)
+	if moreServers {
+		// if we have more servers than 4 nodes in a statefulset,
+		// we can allow rolling update strategy to roll two pods
+		// at a time instead of just '1' (default), MinIO servers
+		// beyond 4 servers are capable of tolerating a minimum
+		// of 2 replicas being down - this allows for faster
+		// rolling update strategy for all our deployments.
+		unavailable = intstr.FromInt(2)
+	}
+
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: ssMeta,
 		Spec: appsv1.StatefulSetSpec{
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: miniov2.DefaultUpdateStrategy,
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
+					MaxUnavailable: &unavailable,
+				},
 			},
 			PodManagementPolicy: t.Spec.PodManagementPolicy,
 			Selector:            ContainerMatchLabels(t, pool),

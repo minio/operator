@@ -154,8 +154,14 @@ spec:
     kesSecret:
       name: "kes-configuration"
     imagePullPolicy: {{ .kes.imagePullPolicy | quote }}
-    externalCertSecret: {{ .kes.externalCertSecret | quote }}
-    clientCertSecret: {{ .kes.clientCertSecret | quote }}
+    {{- with (dig "kes" "externalCertSecret" (dict) .) }}
+    externalCertSecret:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with (dig "kes" "clientCertSecret" (dict) .) }}
+    clientCertSecret:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
     ## Key name to be created on the KMS, default is "my-minio-key"
     keyName: {{ .kes.keyName | quote }}
     {{- with (dig "resources" (dict) .) }}

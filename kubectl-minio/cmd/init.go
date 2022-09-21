@@ -26,7 +26,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	"sigs.k8s.io/kustomize/api/resid"
+	"sigs.k8s.io/kustomize/kyaml/resid"
 
 	"sigs.k8s.io/yaml"
 
@@ -220,12 +220,14 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
 			Patch: o.serializeJSONPatchOps(operatorDepPatches),
 			Target: &types.Selector{
-				Gvk: resid.Gvk{
-					Group:   "apps",
-					Version: "v1",
-					Kind:    "Deployment",
+				ResId: resid.ResId{
+					Gvk: resid.Gvk{
+						Group:   "apps",
+						Version: "v1",
+						Kind:    "Deployment",
+					},
+					Name: "minio-operator",
 				},
-				Name: "minio-operator",
 			},
 		})
 	}
@@ -240,12 +242,14 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 				},
 			}),
 			Target: &types.Selector{
-				Gvk: resid.Gvk{
-					Group:   "apps",
-					Version: "v1",
-					Kind:    "Deployment",
+				ResId: resid.ResId{
+					Gvk: resid.Gvk{
+						Group:   "apps",
+						Version: "v1",
+						Kind:    "Deployment",
+					},
+					Name: "console",
 				},
-				Name: "console",
 			},
 		})
 	}
