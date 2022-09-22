@@ -69,6 +69,7 @@ func newTenantExpandCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
+	f.StringVarP(&v.tenantOpts.NS, "namespace", "n", "", "k8s namespace for this MinIO tenant")
 	f.Int32Var(&v.tenantOpts.Servers, "servers", 0, "total number of pods to add to tenant")
 	f.Int32Var(&v.tenantOpts.Volumes, "volumes", 0, "total number of volumes to add to tenant")
 	f.StringVar(&v.tenantOpts.Capacity, "capacity", "", "total raw capacity to add to tenant, e.g. 16Ti")

@@ -122,6 +122,9 @@ func (c *createCmd) validate(args []string) error {
 	}
 	c.tenantOpts.Name = args[0]
 	c.tenantOpts.ConfigurationSecretName = fmt.Sprintf("%s-env-configuration", c.tenantOpts.Name)
+	if c.tenantOpts.NS == "" {
+		return errors.New("--namespace flag is required")
+	}
 	return c.tenantOpts.Validate()
 }
 

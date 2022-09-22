@@ -65,9 +65,6 @@ func (t TenantOptions) Validate() error {
 	if t.Volumes <= 0 {
 		return errors.New("--volumes is required. Specify a positive value")
 	}
-	if t.NS == "" {
-		return errors.New("--namespace flag is required")
-	}
 	if t.Capacity == "" {
 		return errors.New("--capacity flag is required")
 	}
