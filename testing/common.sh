@@ -40,7 +40,11 @@ die() {
 try() { "$@" || die "cannot $*"; }
 
 function setup_kind() {
-  try kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml"
+  if ["$TEST_FLOOR" == "true"]; then
+    try kind create cluster --config "${SCRIPT_DIR}/kind-config-floor.yaml"
+  else
+    try kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml"
+  fi
   echo "Kind is ready"
   try kubectl get nodes
 }
