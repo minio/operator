@@ -98,6 +98,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&c.tenantOpts.PrometheusImage, "prometheus-image", "", "(Only used when enable-prometheus is on) The Docker image to use for prometheus")
 	f.StringVar(&c.tenantOpts.PrometheusSidecarImage, "prometheus-sidecar-image", "", "(Only used when enable-prometheus is on) The Docker image to use for prometheus sidecar")
 	f.StringVar(&c.tenantOpts.PrometheusInitImage, "prometheus-init-image", "", "(Only used when enable-prometheus is on) Defines the Docker image to use as the init container for running prometheus")
+	f.StringVar(&c.tenantOpts.PrometheusStorageClass, "prometheus-storage-class", "", "(Only used when enable-prometheus is on) Storage class for prometheus")
 	f.BoolVarP(&c.output, "output", "o", false, "generate tenant yaml for 'kubectl apply -f tenant.yaml'")
 	f.BoolVar(&c.tenantOpts.Interactive, "interactive", false, "Create tenant in interactive mode")
 	return cmd
@@ -211,8 +212,8 @@ func (c *createCmd) populateAuditConfig() {
 		c.tenantOpts.AuditLogsDiskSpace = int32(helpers.AskNumber("Disk space", greaterThanZero))
 		c.tenantOpts.AuditLogsImage = helpers.AskQuestion("Logs image", validateEmptyInput)
 		c.tenantOpts.AuditLogsPGImage = helpers.AskQuestion("Postgres image", validateEmptyInput)
-		c.tenantOpts.AuditLogsPGInitImage = helpers.AskQuestion("Postgres init image", validateEmptyInput)
-		c.tenantOpts.AuditLogsStorageClass = helpers.AskQuestion("Storage class", validateEmptyInput)
+		c.tenantOpts.AuditLogsPGInitImage = helpers.AskQuestion("Postgres initContainer image", validateEmptyInput)
+		c.tenantOpts.AuditLogsStorageClass = helpers.AskQuestion("Logs Storage class", validateEmptyInput)
 	}
 }
 
@@ -221,7 +222,8 @@ func (c *createCmd) populatePrometheus() {
 		c.tenantOpts.PrometheusDiskSpace = helpers.AskNumber("Disk space", greaterThanZero)
 		c.tenantOpts.PrometheusImage = helpers.AskQuestion("Prometheus image", validateEmptyInput)
 		c.tenantOpts.PrometheusSidecarImage = helpers.AskQuestion("Prometheus sidecar image", validateEmptyInput)
-		c.tenantOpts.PrometheusInitImage = helpers.AskQuestion("Prometheus init image", validateEmptyInput)
+		c.tenantOpts.PrometheusInitImage = helpers.AskQuestion("Prometheus initContainer image", validateEmptyInput)
+		c.tenantOpts.PrometheusStorageClass = helpers.AskQuestion("Prometheus Storage class", validateEmptyInput)
 	}
 }
 
