@@ -40,7 +40,7 @@ die() {
 try() { "$@" || die "cannot $*"; }
 
 function setup_kind() {
-  if ["$TEST_FLOOR" == "true"]; then
+  if [ "$TEST_FLOOR" = "true" ]; then
     try kind create cluster --config "${SCRIPT_DIR}/kind-config-floor.yaml"
   else
     try kind create cluster --config "${SCRIPT_DIR}/kind-config.yaml"
