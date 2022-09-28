@@ -475,26 +475,38 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			OnNewLeader: func(identity string) {
 				// we're notified when new leader elected
 				if identity == c.podName {
-					klog.Infof("%s: I've become the leader", c.podName)
+					klog.Infof("%s: I am the leader, applying leader labels on myself", c.podName)
 					// Patch this pod so the main service uses it
 					p := []patchAnnotation{{
 						Op:    "add",
-						Path:  fmt.Sprintf("/metadata/labels/%s", strings.Replace("operator", "/", "~1", -1)),
+						Path:  "/metadata/labels/operator",
 						Value: "leader",
 					}}
 
 					payloadBytes, err := json.Marshal(p)
 					if err != nil {
-						klog.Errorf("failed to marshal patch: %+v", err)
+						klog.Errorf("failed to marshal patch: %#v", err)
+					} else {
+						_, err = c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+						if err != nil {
+							klog.Errorf("failed to patch operator leader pod: %+v", err)
+						}
 					}
-					_, err = c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
-					if err != nil {
-						klog.Errorf("failed to patch operator leader pod: %+v", err)
-					}
+				} else {
+					klog.Infof("%s: is the leader, removing any leader labels that I '%s' might have", identity, c.podName)
+					// Patch this pod so the main service uses it
+					p := []patchAnnotation{{
+						Op:   "remove",
+						Path: "/metadata/labels/operator",
+					}}
 
-					return
+					payloadBytes, err := json.Marshal(p)
+					if err != nil {
+						klog.Errorf("failed to marshal patch: %#v", err)
+					} else {
+						c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+					}
 				}
-				klog.Infof("new leader elected: %s", identity)
 			},
 		},
 	})
