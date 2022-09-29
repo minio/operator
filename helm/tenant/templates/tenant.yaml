@@ -27,7 +27,7 @@ spec:
   {{- end }}
   ## Secret with default environment variable configurations
   configuration:
-    name: {{ dig "secrets" "name" "" ($.Values | merge (dict)) }}
+    name: {{ .configuration.name }}
   pools:
   {{- range (dig "pools" (list) .) }}
     - servers: {{ dig "servers" 4 . }}
