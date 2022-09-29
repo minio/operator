@@ -212,8 +212,8 @@ func configureSTSServer(c *Controller) *http.Server {
 
 	router.Methods(http.MethodPost).
 		Path(miniov2.STSEndpoint).
-		Queries(stsAction, webIdentity).
-		Queries(stsVersion, stsAPIVersion).
+		//		Queries(stsAction, webIdentity).
+		//		Queries(stsVersion, stsAPIVersion).
 		HandlerFunc(c.AssumeRoleWithWebIdentityHandler)
 
 	router.NotFoundHandler = http.NotFoundHandler()

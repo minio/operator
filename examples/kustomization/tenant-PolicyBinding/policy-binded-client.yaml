@@ -9,9 +9,10 @@ metadata:
   namespace: gosdk
   name: goapp
 ---
-apiVersion: minio.min.io/v2
+apiVersion: sts.min.io/v1beta1
 kind: PolicyBinding
 metadata:
+  name: binding-1
   namespace: gosdk
 spec:
   application:
