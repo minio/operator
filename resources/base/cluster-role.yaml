@@ -113,6 +113,7 @@ rules:
       - create
   - apiGroups:
       - minio.min.io
+      - sts.min.io
     resources:
       - "*"
     verbs:

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xhttp "github.com/minio/operator/pkg/internal"
@@ -204,6 +205,28 @@ type AssumeRoleResponse struct {
 	ResponseMetadata struct {
 		RequestID string `xml:"RequestId,omitempty"`
 	} `xml:"ResponseMetadata,omitempty"`
+}
+
+func configureSTSServer(c *Controller) *http.Server {
+	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
+
+	router.Methods(http.MethodPost).
+		Path(miniov2.STSEndpoint).
+		Queries(stsAction, webIdentity).
+		Queries(stsVersion, stsAPIVersion).
+		HandlerFunc(c.AssumeRoleWithWebIdentityHandler)
+
+	router.NotFoundHandler = http.NotFoundHandler()
+
+	s := &http.Server{
+		Addr:           ":" + miniov2.STSDefaultPort,
+		Handler:        router,
+		ReadTimeout:    time.Minute,
+		WriteTimeout:   time.Minute,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	return s
 }
 
 // writeSTSErrorRespone writes error headers

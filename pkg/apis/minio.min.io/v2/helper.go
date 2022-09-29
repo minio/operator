@@ -92,7 +92,12 @@ const (
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
 	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
 	WebhookCRDConversaion   = WebhookAPIVersion + "/crd-conversion"
-	WebHookSTS              = "/sts"
+)
+
+// STS API constants
+const (
+	STSDefaultPort = "4223"
+	STSEndpoint    = "/sts"
 )
 
 type hostsTemplateValues struct {
