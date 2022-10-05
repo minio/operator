@@ -13,7 +13,7 @@ apiVersion: sts.min.io/v1beta1
 kind: PolicyBinding
 metadata:
   name: binding-1
-  namespace: gosdk
+  namespace: minio-tenant-1
 spec:
   application:
     namespace: gosdk
@@ -27,14 +27,11 @@ metadata:
   name: go-example
   namespace: gosdk
 spec:
-  serviceAccountName: goapp
   backoffLimit: 1
   template:
     spec:
       restartPolicy: Never
+      serviceAccountName: goapp
       containers:
         - name: go-sdk
-          image: pjuarezd/minio-operator-sts-example-go # possibly switch to minio/minio-operator-sts-example-go
-          env:
-            - name: AWS_WEB_IDENTITY_TOKEN_FILE
-              value: /var/run/secrets/kubernetes.io/serviceaccount/token
+          image: pjuarezd/minio-operator-sts-example-python # possibly switch to minio/minio-operator-sts-example-go

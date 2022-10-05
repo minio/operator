@@ -504,7 +504,11 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		},
 	}
 
-	go runSTS(ctx)
+	if IsSTSEnabled() {
+		go runSTS(ctx)
+	} else {
+		klog.Info("STS Api server is not enabled, not starting")
+	}
 
 	// start the leader election code loop
 	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{

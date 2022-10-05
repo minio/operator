@@ -155,6 +155,15 @@ func main() {
 			caContent = append(caContent, val...)
 		}
 	}
+
+	// certificate for Operator STS, we need tenants to also trust the Operator STS
+	stsCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, cluster.STSTLSSecretName, metav1.GetOptions{})
+	if err == nil && stsCert != nil {
+		if cert, ok := stsCert.Data["public.crt"]; ok {
+			caContent = append(caContent, cert...)
+		}
+	}
+
 	if len(caContent) > 0 {
 		crd, err := extClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.Background(), "tenants.minio.min.io", metav1.GetOptions{})
 		if err != nil {

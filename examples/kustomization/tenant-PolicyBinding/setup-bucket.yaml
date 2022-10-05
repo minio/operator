@@ -1,13 +1,8 @@
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: setup-bucket
----
-apiVersion: v1
 kind: ConfigMap
 metadata: 
   name: start-config-script
-  namespace: setup-bucket
+  namespace: minio-tenant-1
 data:
   setup.sh: |
     #!/bin/bash
@@ -37,7 +32,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: setup-bucket
-  namespace: setup-bucket
+  namespace: minio-tenant-1
 spec:
   backoffLimit: 1
   template:
@@ -59,14 +54,13 @@ spec:
             - name: ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-tenant-user-1
+                  name: minio-tenant-1-user-1
                   key: CONSOLE_ACCESS_KEY
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-tenant-user-1
+                  name: minio-tenant-1-user-1
                   key: CONSOLE_SECRET_KEY
 
             - name: MC_HOST_local
-              value: https://$(ACCESS_KEY):$(SECRET_KEY)@minio.minio-tenant.svc.cluster.local
-
+              value: https://$(ACCESS_KEY):$(SECRET_KEY)@minio.minio-tenant-1.svc.cluster.local

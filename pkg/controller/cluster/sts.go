@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -27,6 +28,15 @@ const (
 	stsWebIdentityToken = "WebIdentityToken"
 	stsDurationSeconds  = "DurationSeconds"
 	AmzRequestID        = "x-amz-request-id"
+	// stsRoleArn          = "RoleArn"
+)
+
+const (
+	// STSEnabled states either if the STS Service is enabled, enabled by default
+	STSEnabled = "MINIO_OPERATOR_STS_ENABLED"
+
+	// STSTLSSecretName is the name of secret created for the Operator STS TLS certs
+	STSTLSSecretName = "sts-tls"
 )
 
 type contextKeyType string
@@ -188,20 +198,51 @@ type AssumedRoleUser struct {
 	AssumedRoleID string `xml:"AssumeRoleId"`
 }
 
-// AssumeRoleResult - Contains the response to a successful AssumeRole
-// request, including temporary credentials that can be used to make
-// MinIO API requests.
-type AssumeRoleResult struct {
-	AssumedRoleUser  AssumedRoleUser `xml:",omitempty"`
-	Credentials      Credentials     `xml:",omitempty"`
-	PackedPolicySize int             `xml:",omitempty"`
+// WebIdentityResult - Contains the response to a successful AssumeRoleWithWebIdentity
+// request, including temporary credentials that can be used to make MinIO API requests.
+type WebIdentityResult struct {
+	// The identifiers for the temporary security credentials that the operation
+	// returns.
+	AssumedRoleUser AssumedRoleUser `xml:",omitempty"`
+
+	// The intended audience (also known as client ID) of the web identity token.
+	// This is traditionally the client identifier issued to the application that
+	// requested the client grants.
+	Audience string `xml:",omitempty"`
+
+	// The temporary security credentials, which include an access key ID, a secret
+	// access key, and a security (or session) token.
+	//
+	// Note: The size of the security token that STS APIs return is not fixed. We
+	// strongly recommend that you make no assumptions about the maximum size. As
+	// of this writing, the typical size is less than 4096 bytes, but that can vary.
+	// Also, future updates to AWS might require larger sizes.
+	Credentials Credentials `xml:",omitempty"`
+
+	// A percentage value that indicates the size of the policy in packed form.
+	// The service rejects any policy with a packed size greater than 100 percent,
+	// which means the policy exceeded the allowed space.
+	PackedPolicySize int `xml:",omitempty"`
+
+	// The issuing authority of the web identity token presented. For OpenID Connect
+	// ID tokens, this contains the value of the iss field. For OAuth 2.0 id_tokens,
+	// this contains the value of the ProviderId parameter that was passed in the
+	// AssumeRoleWithWebIdentity request.
+	Provider string `xml:",omitempty"`
+
+	// The unique user identifier that is returned by the identity provider.
+	// This identifier is associated with the Token that was submitted
+	// with the AssumeRoleWithWebIdentity call. The identifier is typically unique to
+	// the user and the application that acquired the WebIdentityToken (pairwise identifier).
+	// For OpenID Connect ID tokens, this field contains the value returned by the identity
+	// provider as the token's sub (Subject) claim.
+	SubjectFromWebIdentityToken string `xml:",omitempty"`
 }
 
-// AssumeRoleResponse contains the result of successful AssumeRole request.
-type AssumeRoleResponse struct {
-	XMLName xml.Name `xml:"https://sts.amazonaws.com/doc/2011-06-15/ AssumeRoleResponse" json:"-"`
-
-	Result           AssumeRoleResult `xml:"AssumeRoleResult"`
+// AssumeRoleWithWebIdentityResponse contains the result of successful AssumeRoleWithWebIdentity request.
+type AssumeRoleWithWebIdentityResponse struct {
+	XMLName          xml.Name          `xml:"https://sts.amazonaws.com/doc/2011-06-15/ AssumeRoleWithWebIdentityResponse" json:"-"`
+	Result           WebIdentityResult `xml:"AssumeRoleWithWebIdentityResult"`
 	ResponseMetadata struct {
 		RequestID string `xml:"RequestId,omitempty"`
 	} `xml:"ResponseMetadata,omitempty"`
@@ -211,9 +252,7 @@ func configureSTSServer(c *Controller) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
 	router.Methods(http.MethodPost).
-		Path(miniov2.STSEndpoint).
-		//		Queries(stsAction, webIdentity).
-		//		Queries(stsVersion, stsAPIVersion).
+		Path(miniov2.STSEndpoint + "/{namespace}").
 		HandlerFunc(c.AssumeRoleWithWebIdentityHandler)
 
 	router.NotFoundHandler = http.NotFoundHandler()
@@ -271,7 +310,7 @@ func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sess
 		return nil, err
 	}
 
-	host := tenant.MinIOServerHostAddress()
+	host := tenant.MinIOServerEndpoint()
 	if host == "" {
 		return nil, errors.New("MinIO server host is empty")
 	}
@@ -299,7 +338,7 @@ func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sess
 
 	stsAssumeRole := &credentials.STSAssumeRole{
 		Client:      client,
-		STSEndpoint: host, // TODO: Set the protocol right before the host var
+		STSEndpoint: host,
 		Options:     stsOptions,
 	}
 
@@ -315,8 +354,7 @@ func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sess
 func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token string) (*authv1.TokenReview, error) {
 	tr := authv1.TokenReview{
 		Spec: authv1.TokenReviewSpec{
-			Token:     token,
-			Audiences: []string{"server"},
+			Token: token,
 		},
 	}
 
@@ -327,4 +365,10 @@ func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token strin
 	}
 
 	return tokenReviewResult, nil
+}
+
+// IsSTSEnabled Validates if the STS API is turned on, By default, STS is enabled by default
+func IsSTSEnabled() bool {
+	value, set := os.LookupEnv(STSEnabled)
+	return (set && value == "on") || !set
 }

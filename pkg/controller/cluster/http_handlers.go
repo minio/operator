@@ -30,6 +30,7 @@ import (
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	"github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -321,17 +322,20 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// AssumeRoleWithWebIdentityHandler - POST /webhook/v1/sts/
-// AssumeRoleWithWebIdentity - implementation of AWS STS API works with Kubernetes Service accounts JWT for autentication
-// and PolicyBinding CRD as Mapping of the Plocies that the ServiceAccount can assume
+// AssumeRoleWithWebIdentityHandler - POST /sts/
+// AssumeRoleWithWebIdentity - implementation of AWS STS API.
+// Authenticates a Kubernetes Service accounts using a JWT Token
+// Evalues a PolicyBinding CRD as Mapping of the Minio Policies that the ServiceAccount can assume on a minio tenant
 // Eg:-
-// $ curl https://operator:9443/webhook/v1/sts/?Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>
+// $ curl -k -X POST https://operator:9443/sts/{tenantNamespace} -d "Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>" -H "Content-Type: application/x-www-form-urlencoded"
 func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *http.Request) {
 	routerVars := mux.Vars(r)
 	prefix, err := xhttp.UnescapeQueryPath(routerVars["prefix"])
 	if err != nil {
 		prefix = routerVars["prefix"]
 	}
+
+	tenantNamespace := routerVars["namespace"]
 
 	reqInfo := ReqInfo{
 		RequestID:  w.Header().Get(AmzRequestID),
@@ -351,7 +355,9 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	}
 
 	if r.Form.Get(stsVersion) != stsAPIVersion {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("Invalid STS API version %s, expecting %s", r.Form.Get("Version"), stsAPIVersion))
+
+		err := fmt.Errorf("invalid STS API version %s, expecting %s", r.Form.Get("Version"), stsAPIVersion)
+		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, err)
 		return
 	}
 
@@ -360,18 +366,18 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	// For now we only do WebIdentity, leaving it in case we want to implement certificate authentication
 	case webIdentity:
 	default:
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Unsupported action %s", action))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("unsupported action %s", action))
 		return
 	}
 
 	token := strings.TrimSpace(r.Form.Get(stsWebIdentityToken))
 
 	if token == "" {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("Missing %s", stsWebIdentityToken))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("missing %s", stsWebIdentityToken))
 		return
 	}
 
-	// roleArn is an ignored parameter
+	// roleArn is ignored
 	// roleArn := strings.TrimSpace(r.Form.Get(stsRoleArn))
 
 	// VALIDATE JWT
@@ -384,34 +390,49 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	}
 
 	if !saAuthResult.Status.Authenticated {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token"))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("access denied: Invalid Token"))
 		return
 	}
-
-	saNamespace := saAuthResult.Namespace
-
-	if !c.namespacesToWatch.Contains(saNamespace) {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("No tenants in namespace '%s", saNamespace))
-		return
-	}
-
-	tenants, err := c.minioClientSet.MinioV2().Tenants(saNamespace).List(ctx, metav1.ListOptions{})
+	pbs, err := c.minioClientSet.StsV1beta1().PolicyBindings(tenantNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Tenant not available in the Service Account namespace '%s'", saNamespace))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("error obtaining PolicyBindings: %s", err))
 		return
 	}
 
-	saTenant := tenants.Items[0]
+	chunks := strings.Split(strings.Replace(saAuthResult.Status.User.Username, "system:serviceaccount:", "", -1), ":")
+	// saNamespace Service account Namespace
+	saNamespace := chunks[0]
+	// saName service account username
+	saName := chunks[1]
+	// Authorized PolicyBindings for the Service Account
+	// Need to optimize it with a Cache (probably)
+	policyBindings := []v1beta1.PolicyBinding{}
+	for _, pb := range pbs.Items {
+		if pb.Spec.Application.Namespace == saNamespace && pb.Spec.Application.ServiceAccount == saName {
+			policyBindings = append(policyBindings, pb)
+		}
+	}
 
-	namespace := saTenant.Namespace
-	tenantName := saTenant.Name
+	if len(policyBindings) == 0 {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("service Account '%s' is not granted to AssumeRole in any Tenant", saAuthResult.Status.User.Username))
+		return
+	}
+
+	tenants, err := c.minioClientSet.MinioV2().Tenants(tenantNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil || len(tenants.Items) == 0 {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("no Tenants available in the namespace '%s'", tenantNamespace))
+		return
+	}
+
+	// Only one tenant is allowed in a single namespace, gathering the first tenant in the list
+	tenant := tenants.Items[0]
 
 	// Session Policy
 	sessionPolicyStr := r.Form.Get(stsPolicy)
 	// The plain text that you use for both inline and managed session
 	// policies shouldn't exceed 2048 characters.
 	if len(sessionPolicyStr) > 2048 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("Session policy should not exceed 2048 characters"))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("session policy should not exceed 2048 characters"))
 		return
 	}
 
@@ -424,7 +445,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 
 		// Version in policy must not be empty
 		if sessionPolicy.Version == "" {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid session policy version"))
+			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid session policy version"))
 			return
 		}
 	}
@@ -432,32 +453,20 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	durationStr := r.Form.Get(stsDurationSeconds)
 	duration, err := strconv.Atoi(durationStr)
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid token expiry"))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry"))
 	}
 
 	if duration < 900 || duration > 31536000 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid token expiry"))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry"))
 	}
 
-	// Get the Tenant resource with this namespace/name
-	tenant, err := c.minioClientSet.MinioV2().Tenants(namespace).Get(context.Background(), tenantName, metav1.GetOptions{})
-	if err != nil {
-		// The Tenant resource may no longer exist, in which case we stop processing.
-		if k8serrors.IsNotFound(err) {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Tenant not found %s", tenantName))
-			return
-		}
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Tenant not found %s", tenantName))
-		return
-	}
-
-	stsCredentials, err := AssumeRole(ctx, c, tenant, sessionPolicyStr, duration)
+	stsCredentials, err := AssumeRole(ctx, c, &tenant, sessionPolicyStr, duration)
 	if err != nil {
 		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, err)
 	}
 
-	assumeRoleResponse := &AssumeRoleResponse{
-		Result: AssumeRoleResult{
+	assumeRoleResponse := &AssumeRoleWithWebIdentityResponse{
+		Result: WebIdentityResult{
 			Credentials: Credentials{
 				AccessKey:    stsCredentials.AccessKeyID,
 				SecretKey:    stsCredentials.SecretAccessKey,
