@@ -322,7 +322,7 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-// AssumeRoleWithWebIdentityHandler - POST /sts/
+// AssumeRoleWithWebIdentityHandler - POST /sts/{tenantNamespace}
 // AssumeRoleWithWebIdentity - implementation of AWS STS API.
 // Authenticates a Kubernetes Service accounts using a JWT Token
 // Evalues a PolicyBinding CRD as Mapping of the Minio Policies that the ServiceAccount can assume on a minio tenant

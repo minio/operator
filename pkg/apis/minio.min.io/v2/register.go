@@ -52,7 +52,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Tenant{},
 		&TenantList{},
 	)
-
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }

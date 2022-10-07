@@ -22,9 +22,9 @@ metadata:
   labels:
     {{- include "minio-operator.labels" . | nindent 4 }}
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
-    - port: 4222
+    - port: 4223
       name: https
   selector:
     {{- include "minio-operator.selectorLabels" . | nindent 4 }}
