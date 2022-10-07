@@ -3,7 +3,7 @@
 set -e
 
 #binary versions
-OPERATOR_SDK_VERSION=v1.22.2
+OPERATOR_SDK_VERSION=v1.16.0
 TMP_BIN_DIR="$(mktemp -d)"
 
 function install_binaries() {
