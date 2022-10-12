@@ -303,25 +303,6 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool, certV
 	return mounts
 }
 
-// Build the startup probe for MinIO container.
-func startupProbe(t *miniov2.Tenant) *corev1.Probe {
-	scheme := corev1.URISchemeHTTP
-	if t.TLS() {
-		scheme = corev1.URISchemeHTTPS
-	}
-	return &corev1.Probe{
-		ProbeHandler: v1.ProbeHandler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path:   "/minio/health/live",
-				Port:   intstr.FromInt(miniov2.MinIOPort),
-				Scheme: scheme,
-			},
-		},
-		PeriodSeconds:    1,
-		FailureThreshold: 30,
-	}
-}
-
 // Builds the MinIO container for a Tenant.
 func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool, certVolumeSources []v1.VolumeProjection) v1.Container {
 	consolePort := miniov2.ConsolePort
@@ -362,7 +343,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVar
 		Resources:       pool.Resources,
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
-		StartupProbe:    startupProbe(t),
+		StartupProbe:    t.Spec.Startup,
 	}
 }
 

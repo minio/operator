@@ -855,6 +855,11 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(v1.Probe)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Startup != nil {
+		in, out := &in.Startup, &out.Startup
+		*out = new(v1.Probe)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.S3 != nil {
 		in, out := &in.S3, &out.S3
 		*out = new(S3Features)
