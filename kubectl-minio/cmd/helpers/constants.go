@@ -78,6 +78,9 @@ const (
 
 	// DefaultOperatorServiceName is the default service name for operator
 	DefaultOperatorServiceName = "operator"
+
+	// DefaultOperatorDeploymentLabels is the default Deployment labels for operator
+	DefaultOperatorDeploymentLabels = `app.kubernetes.io/instance=minio-operator,app.kubernetes.io/name=operator`
 )
 
 var (

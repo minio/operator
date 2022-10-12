@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"k8s.io/apimachinery/pkg/labels"
 	"os"
 	"os/exec"
 	"strings"
@@ -77,6 +78,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVarP(&o.operatorOpts.Image, "image", "i", helpers.DefaultOperatorImage, "operator image")
 	f.StringVarP(&o.operatorOpts.Namespace, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	f.StringVarP(&o.operatorOpts.ClusterDomain, "cluster-domain", "d", helpers.DefaultClusterDomain, "cluster domain of the Kubernetes cluster")
+	f.StringVar(&o.operatorOpts.ExtraDeploymentLabels, "extra-deployment-labels", "", "extra labels of the operator deployment")
 	f.StringVar(&o.operatorOpts.NSToWatch, "namespace-to-watch", "", "namespace where operator looks for MinIO tenants, leave empty for all namespaces")
 	f.StringVar(&o.operatorOpts.ImagePullSecret, "image-pull-secret", "", "image pull secret to be used for pulling MinIO Operator")
 	f.StringVar(&o.operatorOpts.ConsoleImage, "console-image", "", "console image")
@@ -136,6 +138,20 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		Op:    "add",
 		Path:  "/spec/template/spec/containers/0/env",
 		Value: []interface{}{},
+	})
+
+	deploymentLabelsStr := helpers.DefaultOperatorDeploymentLabels
+	if o.operatorOpts.ExtraDeploymentLabels != "" {
+		deploymentLabelsStr += "," + o.operatorOpts.ExtraDeploymentLabels
+	}
+	deploymentLabels, err := labels.Parse(deploymentLabelsStr)
+	if err != nil {
+		return err
+	}
+	operatorDepPatches = append(operatorDepPatches, opInterface{
+		Op:    "replace",
+		Path:  "/metadata/labels",
+		Value: deploymentLabels,
 	})
 
 	if o.operatorOpts.ClusterDomain != "" {
