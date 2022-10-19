@@ -107,6 +107,10 @@ spec:
   users:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with (dig "sideCars" (dict) .) }}
+  sideCars:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- with (dig "certificate" "certConfig" (dict) .) }}
   certConfig:
     {{- toYaml . | nindent 4 }}
