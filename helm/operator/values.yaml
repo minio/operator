@@ -34,7 +34,8 @@ operator:
           topologyKey: kubernetes.io/hostname
   tolerations: [ ]
   topologySpreadConstraints: [ ]
-  extraVolumes: [ ]
+  volumes: [ ]
+  volumeMounts: [ ]
   resources:
     requests:
       cpu: 200m
