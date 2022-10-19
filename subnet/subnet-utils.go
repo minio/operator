@@ -228,27 +228,25 @@ func GetAPIKey(token string) (string, error) {
 
 // GetSubnetKeyFromMinIOConfig return subnet config stored in minio
 func GetSubnetKeyFromMinIOConfig(ctx context.Context, adminClient *madmin.AdminClient) (*LicenseTokenConfig, error) {
-	sh, err := adminClient.HelpConfigKV(ctx, "subnet", "", false)
-	if err != nil {
-		return nil, err
-	}
 	buf, err := adminClient.GetConfigKV(ctx, "subnet")
 	if err != nil {
 		return nil, err
 	}
-	tgt, err := madmin.ParseSubSysTarget(buf, sh)
+	tgt, err := madmin.ParseServerConfigOutput(string(buf))
 	if err != nil {
 		return nil, err
 	}
 	res := LicenseTokenConfig{}
-	for _, kv := range tgt.KVS {
-		switch kv.Key {
-		case "api_key":
-			res.APIKey = kv.Value
-		case "license":
-			res.License = kv.Value
-		case "proxy":
-			res.Proxy = kv.Value
+	for _, t := range tgt {
+		for _, kv := range t.KV {
+			switch kv.Key {
+			case "api_key":
+				res.APIKey = kv.Value
+			case "license":
+				res.License = kv.Value
+			case "proxy":
+				res.Proxy = kv.Value
+			}
 		}
 	}
 	return &res, nil
