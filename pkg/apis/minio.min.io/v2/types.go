@@ -246,6 +246,10 @@ type TenantSpec struct {
 	// +optional
 	Readiness *corev1.Probe `json:"readiness,omitempty"`
 
+	// Startup Probe allows to configure a max grace period for a pod to start before getting traffic routed to it.
+	// +optional
+	Startup *corev1.Probe `json:"startup,omitempty"`
+
 	// *Optional* +
 	// *Deprecated in Operator v4.3.2* +
 	//
