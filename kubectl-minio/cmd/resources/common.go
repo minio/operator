@@ -58,6 +58,7 @@ func tenantStorage(q resource.Quantity) corev1.ResourceList {
 // Pool returns a Pool object from given values
 func Pool(opts *TenantOptions, volumes int32, q resource.Quantity) miniov2.Pool {
 	p := miniov2.Pool{
+		Name:             opts.PoolName,
 		Servers:          opts.Servers,
 		VolumesPerServer: volumes,
 		VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
