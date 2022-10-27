@@ -103,18 +103,30 @@ type hostsTemplateValues struct {
 }
 
 var (
-	once                    sync.Once
-	tenantMinIOImageOnce    sync.Once
-	tenantKesImageOnce      sync.Once
-	monitoringIntervalOnce  sync.Once
-	k8sClusterDomain        string
-	tenantMinIOImage        string
-	tenantKesImage          string
-	monitoringInterval      int
-	prometheusNamespace     string
-	prometheusName          string
-	prometheusNamespaceOnce sync.Once
-	prometheusNameOnce      sync.Once
+	once                              sync.Once
+	tenantMinIOImageOnce              sync.Once
+	tenantKesImageOnce                sync.Once
+	monitoringIntervalOnce            sync.Once
+	k8sClusterDomain                  string
+	tenantMinIOImage                  string
+	tenantKesImage                    string
+	monitoringInterval                int
+	prometheusNamespace               string
+	prometheusName                    string
+	prometheusNamespaceOnce           sync.Once
+	prometheusNameOnce                sync.Once
+	prometheusDefaultImageOnce        sync.Once
+	prometheusDefaultImage            = PrometheusImage
+	prometheusSidecarDefaultImageOnce sync.Once
+	prometheusSicecarDefaultImage     = PrometheusSideCarImage
+	prometheusInitDefaultImageOnce    sync.Once
+	prometheusInitDefaultImage        = PrometheusInitImage
+	searchDefaultImageOnce            sync.Once
+	searchDefaultImage                = DefaultLogSearchAPIImage
+	searchInitDefaultImageOnce        sync.Once
+	searchInitDefaultImage            = InitContainerImage
+	pgDefaultImageOnce                sync.Once
+	pgDefaultImage                    = LogPgImage
 )
 
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
@@ -377,26 +389,26 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 
 	if t.HasPrometheusEnabled() {
 		if t.Spec.Prometheus.Image == "" {
-			t.Spec.Prometheus.Image = PrometheusImage
+			t.Spec.Prometheus.Image = GetPrometheusImage()
 		}
 		if t.Spec.Prometheus.SideCarImage == "" {
-			t.Spec.Prometheus.SideCarImage = PrometheusSideCarImage
+			t.Spec.Prometheus.SideCarImage = GetPrometheusSidecarImage()
 		}
 		if t.Spec.Prometheus.InitImage == "" {
-			t.Spec.Prometheus.InitImage = PrometheusInitImage
+			t.Spec.Prometheus.InitImage = GetPrometheusInitImage()
 		}
 	}
 
 	if t.HasLogSearchAPIEnabled() {
 		if t.Spec.Log.Image == "" {
-			t.Spec.Log.Image = DefaultLogSearchAPIImage
+			t.Spec.Log.Image = GetSearchImage()
 		}
 		if t.Spec.Log.Db != nil {
 			if t.Spec.Log.Db.Image == "" {
-				t.Spec.Log.Db.Image = LogPgImage
+				t.Spec.Log.Db.Image = GetPgImage()
 			}
 			if t.Spec.Log.Db.InitImage == "" {
-				t.Spec.Log.Db.InitImage = InitContainerImage
+				t.Spec.Log.Db.InitImage = GetSearchInitImage()
 			}
 		}
 	}
@@ -1230,4 +1242,70 @@ func lcp(strs []string, pre bool) string {
 		}
 	}
 	return xfix
+}
+
+// GetPrometheusImage returns the defaulted prometheus image
+func GetPrometheusImage() string {
+	// will make sure to read the env value just once
+	prometheusDefaultImageOnce.Do(func() {
+		if val, ok := os.LookupEnv("MINIO_PROMETHEUS_DEFAULT_IMAGE"); ok {
+			prometheusDefaultImage = val
+		}
+	})
+	return prometheusDefaultImage
+}
+
+// GetPrometheusSidecarImage returns the defaulted prometheus sidecar image
+func GetPrometheusSidecarImage() string {
+	// will make sure to read the env value just once
+	prometheusSidecarDefaultImageOnce.Do(func() {
+		if val, ok := os.LookupEnv("MINIO_PROMETHEUS_SIDECAR_DEFAULT_IMAGE"); ok {
+			prometheusSicecarDefaultImage = val
+		}
+	})
+	return prometheusSicecarDefaultImage
+}
+
+// GetPrometheusInitImage returns the defaulted prometheus init image
+func GetPrometheusInitImage() string {
+	// will make sure to read the env value just once
+	prometheusInitDefaultImageOnce.Do(func() {
+		if val, ok := os.LookupEnv("MINIO_PROMETHEUS_INIT_DEFAULT_IMAGE"); ok {
+			prometheusInitDefaultImage = val
+		}
+	})
+	return prometheusInitDefaultImage
+}
+
+// GetSearchImage returns the defaulted search image
+func GetSearchImage() string {
+	// will make sure to read the env value just once
+	searchDefaultImageOnce.Do(func() {
+		if val, ok := os.LookupEnv("MINIO_SEARCH_DEFAULT_IMAGE"); ok {
+			searchDefaultImage = val
+		}
+	})
+	return searchDefaultImage
+}
+
+// GetSearchInitImage returns the defaulted search image
+func GetSearchInitImage() string {
+	// will make sure to read the env value just once
+	searchInitDefaultImageOnce.Do(func() {
+		if val, ok := os.LookupEnv("MINIO_SEARCH_INIT_DEFAULT_IMAGE"); ok {
+			searchInitDefaultImage = val
+		}
+	})
+	return searchInitDefaultImage
+}
+
+// GetPgImage returns the defaulted search image
+func GetPgImage() string {
+	// will make sure to read the env value just once
+	pgDefaultImageOnce.Do(func() {
+		if val, ok := os.LookupEnv("MINIO_POSTGRES_DEFAULT_IMAGE"); ok {
+			pgDefaultImage = val
+		}
+	})
+	return pgDefaultImage
 }
