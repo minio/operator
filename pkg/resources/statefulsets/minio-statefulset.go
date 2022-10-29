@@ -210,7 +210,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 
 // PodMetadata Returns the MinIO pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that metadata.
-func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1.ObjectMeta {
+func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	// Copy Labels and Annotations from Tenant
 	labels := t.ObjectMeta.Labels
@@ -776,7 +776,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: PodMetadata(t, pool, operatorVersion),
+				ObjectMeta: PodMetadata(t, pool),
 				Spec: corev1.PodSpec{
 					Containers:                containers,
 					Volumes:                   podVolumes,
