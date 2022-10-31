@@ -27,11 +27,11 @@ metadata:
   name: go-example
   namespace: gosdk
 spec:
-  backoffLimit: 1
+  backoffLimit: 5
   template:
     spec:
-      restartPolicy: Never
+      restartPolicy: OnFailure
       serviceAccountName: goapp
       containers:
         - name: go-sdk
-          image: pjuarezd/minio-operator-sts-example-python # possibly switch to minio/minio-operator-sts-example-go
+          image: pjuarezd/minio-operator-sts-example:go

@@ -54,13 +54,12 @@ spec:
             - name: ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-tenant-1-user-1
+                  name: minio-tenant-1-user-0
                   key: CONSOLE_ACCESS_KEY
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-tenant-1-user-1
+                  name: minio-tenant-1-user-0
                   key: CONSOLE_SECRET_KEY
-
             - name: MC_HOST_local
               value: https://$(ACCESS_KEY):$(SECRET_KEY)@minio.minio-tenant-1.svc.cluster.local
