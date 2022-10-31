@@ -55,7 +55,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &createCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "create <TENANTNAME> --servers <NSERVERS> --volumes <NVOLUMES> --capacity <SIZE> --namespace <TENANTNS>",
+		Use:     "create <TENANTNAME> --pool <POOLNAME> --servers <NSERVERS> --volumes <NVOLUMES> --capacity <SIZE> --namespace <TENANTNS>",
 		Short:   "Create a MinIO tenant",
 		Long:    createDesc,
 		Example: createExample,
@@ -77,6 +77,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	}
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
+	f.StringVarP(&c.tenantOpts.PoolName, "pool", "p", "", "name for this pool")
 	f.Int32Var(&c.tenantOpts.Servers, "servers", 0, "total number of pods in MinIO tenant")
 	f.Int32Var(&c.tenantOpts.Volumes, "volumes", 0, "total number of volumes in the MinIO tenant")
 	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this pool, e.g. 16Ti")
