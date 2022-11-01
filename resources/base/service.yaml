@@ -4,6 +4,8 @@ metadata:
   name: operator # Please do not change this value
   labels:
     name: minio-operator
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
   namespace: minio-operator
   annotations:
     service.alpha.openshift.io/serving-cert-secret-name: operator-tls # To solve "remote error: tls: bad certificate"
