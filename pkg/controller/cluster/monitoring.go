@@ -408,7 +408,7 @@ func (c *Controller) syncHealthCheckHandler(key string) error {
 			runtime.HandleError(fmt.Errorf("Tenant '%s' in work queue no longer exists", key))
 			return nil
 		}
-		return nil
+		return err
 	}
 
 	tenant.EnsureDefaults()
