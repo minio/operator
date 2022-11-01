@@ -61,16 +61,21 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 	// check the specification of the MinIO ClusterIP service
 	if !svcMatchesSpec {
 		if err != nil {
-			klog.Infof("Console Service don't match: %s", err)
+			klog.Infof("Console Service don't match: %s. Conciliating", err)
 		}
 
 		svc.ObjectMeta.Annotations = expectedSvc.ObjectMeta.Annotations
 		svc.ObjectMeta.Labels = expectedSvc.ObjectMeta.Labels
 		svc.Spec.Ports = expectedSvc.Spec.Ports
-		// we can only expose the service, not un-expose it
-		if tenant.Spec.ExposeServices != nil && tenant.Spec.ExposeServices.MinIO && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
-			svc.Spec.Type = v1.ServiceTypeLoadBalancer
+		// Only when ExposeServices is set an explicit value we do modifications to the service type
+		if tenant.Spec.ExposeServices != nil {
+			if tenant.Spec.ExposeServices.Console {
+				svc.Spec.Type = v1.ServiceTypeLoadBalancer
+			} else {
+				svc.Spec.Type = v1.ServiceTypeClusterIP
+			}
 		}
+
 		// update the selector
 		svc.Spec.Selector = expectedSvc.Spec.Selector
 
