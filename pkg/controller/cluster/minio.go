@@ -293,7 +293,7 @@ func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *m
 }
 
 // certNeedsRenewal - returns true if the TLS certificate from given secret has expired or is
-// about to expire within the next two days.
+// about to expire shortly.
 func (c *Controller) certNeedsRenewal(tlsSecret *corev1.Secret) (bool, error) {
 	var certPublicKey []byte
 	var certPrivateKey []byte
@@ -330,7 +330,10 @@ func (c *Controller) certNeedsRenewal(tlsSecret *corev1.Secret) (bool, error) {
 		}
 	}
 
-	if leaf.NotAfter.Before(time.Now().Add(time.Hour * 48)) {
+	// Renew the certificate when 80% of the time between the creation and expiration date
+	// has elapsed so this can work with short lived certifcates as well.
+	timeElapsedBeforeRenewal := time.Duration(float64(leaf.NotAfter.Sub(leaf.NotBefore)) * 0.8)
+	if leaf.NotBefore.Add(timeElapsedBeforeRenewal).Before(time.Now()) {
 		klog.V(2).Infof("TLS Certificate expiry on %s", leaf.NotAfter.String())
 		return true, nil
 	}
