@@ -11,9 +11,9 @@ docker run --rm -it -e "POSTGRES_PASSWORD=example" -p 5432:5432 postgres:13-alpi
 2. Start logsearchapi server:
 
 ```shell
-export LOGSEARCH_PG_CONN_STR="postgres://postgres:example@localhost/postgres"
+export LOGSEARCH_PG_CONN_STR="postgres://postgres:example@localhost/postgres?sslmode=disable"
 export LOGSEARCH_AUDIT_AUTH_TOKEN=xxx
-export MINIO_LOG_QUERY_AUTH_TOKEN=yyy
+export MINIO_QUERY_AUTH_TOKEN=yyy
 export LOGSEARCH_DISK_CAPACITY_GB=5
 go build && ./logsearchapi
 ```
@@ -30,6 +30,18 @@ mc admin service restart myminio
 
 ```shell
 curl -v "http://localhost:8080/api/query?token=yyy&q=raw&pageNo=0&pageSize=10&timeStart=2020-11-04T22:26:12.732402319Z"
+```
+
+To enable the audit logs in MinIO Console, add the environment variables to MinIO configuration:
+
+```
+# The url path "/api/query?token=yyy" will be appended by server
+MINIO_LOG_QUERY_URL=http://localhost:8080
+MINIO_LOG_QUERY_AUTH_TOKEN=yyy
+
+# If you are using MinIO Console standalone
+CONSOLE_LOG_QUERY_URL=http://localhost:8080
+CONSOLE_LOG_QUERY_AUTH_TOKEN=yyy
 ```
 
 ## Log Storage
