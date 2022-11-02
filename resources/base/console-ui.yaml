@@ -276,6 +276,8 @@ kind: Service
 metadata:
   labels:
     name: console
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
   name: console
 spec:
   ports:
@@ -290,6 +292,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: console
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
 spec:
   replicas: 1
   selector:
@@ -299,6 +304,8 @@ spec:
     metadata:
       labels:
         app: console
+        app.kubernetes.io/instance: minio-operator-console
+        app.kubernetes.io/name: operator
     spec:
       containers:
         - args:

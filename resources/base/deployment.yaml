@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: minio-operator
   namespace: minio-operator
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
 spec:
   replicas: 2
   selector:
@@ -12,6 +15,8 @@ spec:
     metadata:
       labels:
         name: minio-operator
+        app.kubernetes.io/instance: minio-operator
+        app.kubernetes.io/name: operator
     spec:
       serviceAccountName: minio-operator
       containers:
