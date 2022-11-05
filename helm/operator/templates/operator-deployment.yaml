@@ -15,6 +15,9 @@ spec:
       labels:
     {{- include "minio-operator.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.runtimeClassName }}
+      runtimeClassName: "{{ .Values.runtimeClassName }}"
+      {{- end }}
       {{- with .Values.operator.imagePullSecrets }}
       imagePullSecrets:
       {{- toYaml . | nindent 8 }}

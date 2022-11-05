@@ -45,6 +45,7 @@ console:
     repository: minio/console
     tag: v0.21.1
     pullPolicy: IfNotPresent
+  runtimeClassName: ""
   imagePullSecrets: [ ]
   initcontainers: [ ]
   replicaCount: 1
