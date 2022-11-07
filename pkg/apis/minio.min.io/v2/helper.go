@@ -807,7 +807,7 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 // CreateBuckets creates buckets and skips if bucket already present
 func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) error {
 	for _, bucket := range buckets {
-		if err := s3utils.CheckValidBucketName(bucket.Name); err != nil {
+		if err := s3utils.CheckValidBucketNameStrict(bucket.Name); err != nil {
 			return err
 		}
 		// create each bucket with a 20 seconds timeout
