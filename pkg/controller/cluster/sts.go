@@ -68,13 +68,13 @@ type stsErrorCodeMap map[STSErrorCode]APIError
 // ReqInfo stores the request info.
 // Reading/writing directly to struct requires appropriate R/W lock.
 type ReqInfo struct {
-	RemoteHost string // Client Host/IP
-	Host       string // Node Host/IP
-	UserAgent  string // User Agent
-	RequestID  string // x-amz-request-id
-	API        string // API name - GetObject PutObject NewMultipartUpload etc.
-	AccessKey  string // Access Key
-	ObjectName string // Object name
+	RemoteHost      string // Client Host/IP
+	Host            string // Node Host/IP
+	UserAgent       string // User Agent
+	RequestID       string // x-amz-request-id
+	API             string // API name
+	AccessKey       string // Access Key
+	TenantNamespace string // tenant namespace
 	sync.RWMutex
 }
 
@@ -252,7 +252,7 @@ func configureSTSServer(c *Controller) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
 	router.Methods(http.MethodPost).
-		Path(miniov2.STSEndpoint + "/{namespace}").
+		Path(miniov2.STSEndpoint + "/{tenantNamespace}").
 		HandlerFunc(c.AssumeRoleWithWebIdentityHandler)
 
 	router.NotFoundHandler = http.NotFoundHandler()

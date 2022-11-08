@@ -330,23 +330,23 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 // $ curl -k -X POST https://operator:9443/sts/{tenantNamespace} -d "Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>" -H "Content-Type: application/x-www-form-urlencoded"
 func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *http.Request) {
 	routerVars := mux.Vars(r)
-	prefix, err := xhttp.UnescapeQueryPath(routerVars["prefix"])
-	if err != nil {
-		prefix = routerVars["prefix"]
-	}
-
-	tenantNamespace := routerVars["namespace"]
+	tenantNamespace := ""
+	tenantNamespace, err := xhttp.UnescapeQueryPath(routerVars["tenantNamespace"])
 
 	reqInfo := ReqInfo{
-		RequestID:  w.Header().Get(AmzRequestID),
-		RemoteHost: xhttp.GetSourceIPFromHeaders(r),
-		Host:       r.Host,
-		UserAgent:  r.UserAgent(),
-		API:        webIdentity,
-		ObjectName: prefix,
+		RequestID:       w.Header().Get(AmzRequestID),
+		RemoteHost:      xhttp.GetSourceIPFromHeaders(r),
+		Host:            r.Host,
+		UserAgent:       r.UserAgent(),
+		API:             webIdentity,
+		TenantNamespace: tenantNamespace,
 	}
 
 	ctx := context.WithValue(r.Context(), contextLogKey, &reqInfo)
+
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("tenant namespace is missing"))
+	}
 
 	// Parse the incoming form data.
 	if err := xhttp.ParseForm(r); err != nil {
@@ -355,7 +355,6 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	}
 
 	if r.Form.Get(stsVersion) != stsAPIVersion {
-
 		err := fmt.Errorf("invalid STS API version %s, expecting %s", r.Form.Get("Version"), stsAPIVersion)
 		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, err)
 		return
