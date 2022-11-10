@@ -304,8 +304,7 @@ func (e stsErrorCodeMap) ToSTSErr(errCode STSErrorCode) APIError {
 
 // AssumeRole invokes the AssumeRole method in the Minio Tenant
 func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sessionPolicy string, duration int) (*credentials.Value, error) {
-	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
-	transport := c.getTransport()
+	client, accessKey, secretKey, err := getTenantClient(ctx, c, tenant)
 	if err != nil {
 		return nil, err
 	}
@@ -315,25 +314,11 @@ func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sess
 		return nil, errors.New("MinIO server host is empty")
 	}
 
-	accessKey, ok := tenantConfiguration["accesskey"]
-	if !ok {
-		return nil, errors.New("MinIO server accesskey not set")
-	}
-
-	secretKey, ok := tenantConfiguration["secretkey"]
-	if !ok {
-		return nil, errors.New("MinIO server secretkey not set")
-	}
-
 	stsOptions := credentials.STSAssumeRoleOptions{
-		AccessKey:       string(accessKey),
-		SecretKey:       string(secretKey),
+		AccessKey:       accessKey,
+		SecretKey:       secretKey,
 		Policy:          sessionPolicy,
 		DurationSeconds: duration,
-	}
-
-	client := &http.Client{
-		Transport: transport,
 	}
 
 	stsAssumeRole := &credentials.STSAssumeRole{
@@ -347,6 +332,30 @@ func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sess
 		return nil, err
 	}
 	return &stsCredentialsResponse, nil
+}
+
+// getTenantClient returns an http client that can be used to connect with the tenant
+func getTenantClient(ctx context.Context, c *Controller, tenant *miniov2.Tenant) (*http.Client, string, string, error) {
+	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
+	transport := c.getTransport()
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	accessKey, ok := tenantConfiguration["accesskey"]
+	if !ok {
+		return nil, "", "", errors.New("MinIO server accesskey not set")
+	}
+
+	secretKey, ok := tenantConfiguration["secretkey"]
+	if !ok {
+		return nil, "", "", errors.New("MinIO server secretkey not set")
+	}
+
+	client := &http.Client{
+		Transport: transport,
+	}
+	return client, string(accessKey), string(secretKey), nil
 }
 
 // ValidateServiceAccountJWT Executes a call to TokenReview  API to verify if the JWT Token received from the client
