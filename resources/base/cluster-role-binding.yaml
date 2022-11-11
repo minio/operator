@@ -9,4 +9,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: minio-operator
-    namespace: default
+    namespace: minio-operator

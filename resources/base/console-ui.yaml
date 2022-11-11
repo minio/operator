@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: console-sa
-  namespace: default
+  namespace: minio-operator
 ---
 apiVersion: v1
 kind: Secret
@@ -261,7 +261,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: console-sa
-    namespace: default
+    namespace: minio-operator
 ---
 apiVersion: v1
 data:
