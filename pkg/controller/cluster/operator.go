@@ -25,7 +25,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -112,7 +111,7 @@ func (c *Controller) generateTLSCert() (*string, *string) {
 				privateKeyKey = "tls.key"
 			}
 			if val, ok := operatorTLSCert.Data[publicCertKey]; ok {
-				err := ioutil.WriteFile(publicCertPath, val, 0o644)
+				err := os.WriteFile(publicCertPath, val, 0o644)
 				if err != nil {
 					panic(err)
 				}
@@ -120,7 +119,7 @@ func (c *Controller) generateTLSCert() (*string, *string) {
 				panic(fmt.Errorf("missing '%s' in %s/%s", publicCertKey, operatorTLSCert.Namespace, operatorTLSCert.Name))
 			}
 			if val, ok := operatorTLSCert.Data[privateKeyKey]; ok {
-				err := ioutil.WriteFile(publicKeyPath, val, 0o644)
+				err := os.WriteFile(publicKeyPath, val, 0o644)
 				if err != nil {
 					panic(err)
 				}
@@ -474,11 +473,11 @@ var serverCertsManager *xcerts.Manager
 // from the provided paths. The private key may be encrypted and is
 // decrypted using the ENV_VAR: OPERATOR_CERT_PASSWD.
 func LoadX509KeyPair(certFile, keyFile string) (tls.Certificate, error) {
-	certPEMBlock, err := ioutil.ReadFile(certFile)
+	certPEMBlock, err := os.ReadFile(certFile)
 	if err != nil {
 		return tls.Certificate{}, err
 	}
-	keyPEMBlock, err := ioutil.ReadFile(keyFile)
+	keyPEMBlock, err := os.ReadFile(keyFile)
 	if err != nil {
 		return tls.Certificate{}, err
 	}
