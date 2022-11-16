@@ -33,8 +33,6 @@ const (
 	OperatorRuntime = "MINIO_OPERATOR_RUNTIME"
 	// CSRSignerName is the name to use for the CSR Signer, will override the default
 	CSRSignerName = "MINIO_OPERATOR_CSR_SIGNER_NAME"
-	// CSRSignerNameClient is the name to use for the CSR Signer, will override the default
-	CSRSignerNameClient = "MINIO_OPERATOR_CSR_SIGNER_NAME_CLIENT"
 	// EKSCsrSignerName is the signer we should use on EKS after version 1.22
 	EKSCsrSignerName = "beta.eks.amazonaws.com/app-serving"
 )
@@ -51,16 +49,12 @@ const (
 )
 
 var (
-	csrVersion                     CSRVersion
-	certificateVersionOnce         sync.Once
-	defaultCsrSignerName           string
-	defaultCsrSignerNameOnce       sync.Once
-	defaultCsrSignerNameClient     string
-	defaultCsrSignerNameClientOnce sync.Once
-	csrSignerName                  string
-	csrSignerNameOnce              sync.Once
-	csrSignerNameClient            string
-	csrSignerNameClientOnce        sync.Once
+	csrVersion               CSRVersion
+	certificateVersionOnce   sync.Once
+	defaultCsrSignerName     string
+	defaultCsrSignerNameOnce sync.Once
+	csrSignerName            string
+	csrSignerNameOnce        sync.Once
 )
 
 func getDefaultCsrSignerName() string {
@@ -71,16 +65,6 @@ func getDefaultCsrSignerName() string {
 		defaultCsrSignerName = certificatesV1.KubeletServingSignerName
 	})
 	return defaultCsrSignerName
-}
-
-func getDefaultCsrSignerNameClient() string {
-	defaultCsrSignerNameClientOnce.Do(func() {
-		if os.Getenv(CSRSignerNameClient) != "" {
-			defaultCsrSignerNameClient = os.Getenv(CSRSignerNameClient)
-		}
-		defaultCsrSignerNameClient = certificatesV1.KubeAPIServerClientSignerName
-	})
-	return defaultCsrSignerNameClient
 }
 
 // GetCertificatesAPIVersion returns which certificates api version operator will use to generate certificates
