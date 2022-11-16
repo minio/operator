@@ -146,33 +146,3 @@ func GetCSRSignerName(clientSet kubernetes.Interface) string {
 	})
 	return csrSignerName
 }
-
-// GetCSRSignerNameForClient returns the signer to be used for client certificates
-func GetCSRSignerNameForClient(clientSet kubernetes.Interface) string {
-	csrSignerNameClientOnce.Do(func() {
-		// At the moment we will use kubernetes.io/kube-apiserver-client as the default
-		csrSignerNameClient = getDefaultCsrSignerNameClient()
-		// only for csr api v1 we will try to detect if we are running inside an EKS cluster and switch to AWS's way to
-		// get certificates using their CSRSignerName https://docs.aws.amazon.com/eks/latest/userguide/cert-signing.html
-		if GetCertificatesAPIVersion(clientSet) == CSRV1 {
-			nodes, err := clientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
-			if err != nil {
-				klog.Infof("Could not retrieve nodes to determine if we are in EKS: %v", err)
-			}
-			// if we find a single node with a kubeletVersion that contains "eks" or a label that starts with
-			// "eks.amazonaws.com", we'll start using AWS EKS signer name
-			for _, n := range nodes.Items {
-				if strings.Contains(n.Status.NodeInfo.KubeletVersion, "eks") {
-					csrSignerNameClient = EKSCsrSignerName
-					break
-				}
-				for k := range n.ObjectMeta.Labels {
-					if strings.HasPrefix(k, "eks.amazonaws.com") {
-						csrSignerNameClient = EKSCsrSignerName
-					}
-				}
-			}
-		}
-	})
-	return csrSignerNameClient
-}
