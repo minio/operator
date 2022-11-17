@@ -330,4 +330,8 @@ spec:
       runAsNonRoot: true
       fsGroup: {{ .log.securityContext.fsGroup | int }}
   {{- end }}
+  {{- with (dig "securityContext" (dict) .) }}
+  securityContext:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 {{- end }}

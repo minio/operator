@@ -362,6 +362,10 @@ type TenantSpec struct {
 	// The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
 	// +optional
 	Configuration *corev1.LocalObjectReference `json:"configuration,omitempty"`
+	// *Optional* +
+	//
+	// Specify container security context for tenant
+	SecurityContext *corev1.SecurityContext `json:"securityContext,omitempty"`
 }
 
 // Logging describes Logging for MinIO tenants.

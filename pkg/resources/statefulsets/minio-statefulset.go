@@ -344,6 +344,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVar
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
 		StartupProbe:    t.Spec.Startup,
+		SecurityContext: t.Spec.SecurityContext,
 	}
 }
 
