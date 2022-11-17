@@ -50,6 +50,8 @@ func (c *Controller) generateTLSCert(serviceName string, secretName string, depl
 		panic(err)
 	}
 
+	_ = os.Mkdir(fmt.Sprintf("/tmp/%s", serviceName), os.ModePerm)
+
 	publicCertPath := fmt.Sprintf("/tmp/%s/public.crt", serviceName)
 	publicKeyPath := fmt.Sprintf("/tmp/%s/private.key", serviceName)
 
