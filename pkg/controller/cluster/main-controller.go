@@ -16,7 +16,6 @@ package cluster
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -351,7 +350,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			klog.Infof("Using Kubernetes CSR Version: %s", apiCsrVersion)
 
 			if isOperatorTLS() {
-				publicCertPath, publicKeyPath := c.generateTLSCert()
+				publicCertPath, publicKeyPath := c.generateOperatorTLSCert()
 				klog.Infof("Starting HTTPS API server")
 				close(apiServerWillStart)
 				certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
@@ -360,21 +359,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 					panic(err)
 				}
 				serverCertsManager = certsManager
-				c.ws.TLSConfig = &tls.Config{
-					PreferServerCipherSuites: true,
-					CurvePreferences:         []tls.CurveID{tls.CurveP256},
-					NextProtos:               []string{"h2", "http/1.1"},
-					MinVersion:               tls.VersionTLS12,
-					CipherSuites: []uint16{
-						tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-						tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-						tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-						tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-						tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
-						tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
-					},
-					GetCertificate: certsManager.GetCertificate,
-				}
+				c.ws.TLSConfig = c.createTLSConfig(serverCertsManager)
 				if err := c.ws.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
 					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
 					panic(err)

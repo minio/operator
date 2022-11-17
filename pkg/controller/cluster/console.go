@@ -29,6 +29,15 @@ import (
 	"k8s.io/klog/v2"
 )
 
+const (
+	// ConsoleTLSEnv Env variable to turn on / off Console TLS.
+	ConsoleTLSEnv = "MINIO_CONSOLE_TLS_ENABLE"
+	// DefaultConsoleDeploymentName is the default name of the console deployment
+	DefaultConsoleDeploymentName = "console"
+	// OperatorConsoleTLSSecretName is the name of secret created with TLS certs for Operator console
+	OperatorConsoleTLSSecretName = "operator-console-tls"
+)
+
 // checkConsoleSvc validates the existence of the MinIO service and validate it's status against what the specification
 // states
 func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
@@ -87,3 +96,19 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 	}
 	return err
 }
+
+// isConsoleTLS Internal func, reads MINIO_OPERATOR_TLS_ENABLE ENV to identify if Operator TLS is enabled, default "off"
+// **WARNING** This will change and will be default to "on" in operator v5
+// func isConsoleTLS() bool {
+// 	value, set := os.LookupEnv(ConsoleTLSEnv)
+// 	// By default, Console TLS is NOT used.
+// 	return (set && value == "on") || set
+// }
+
+// func getConsoleDeploymentName() string {
+// 	return env.Get("MINIO_CONSOLE_DEPLOYMENT_NAME", DefaultConsoleDeploymentName)
+// }
+
+// func (c *Controller) generateConsoleTLSCert() (*string, *string) {
+// 	return c.generateTLSCert("console", OperatorConsoleTLSSecretName, getConsoleDeploymentName())
+// }

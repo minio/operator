@@ -44,6 +44,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	// OperatorWatchedNamespaceEnv Env variable name, the namespaces which the operator watches for MinIO tenants. Defaults to "" for all namespaces.
+	OperatorWatchedNamespaceEnv = "WATCHED_NAMESPACE"
+	// HostnameEnv Host name env variable
+	HostnameEnv = "HOSTNAME"
+)
+
 // version provides the version of this operator
 var version = "DEVELOPMENT.GOGET"
 
@@ -110,7 +117,7 @@ func main() {
 	}
 
 	// Get a comma separated list of namespaces to watch
-	namespacesENv, isNamespaced := os.LookupEnv("WATCHED_NAMESPACE")
+	namespacesENv, isNamespaced := os.LookupEnv(OperatorWatchedNamespaceEnv)
 	var namespaces set.StringSet
 	if isNamespaced {
 		namespaces = set.NewStringSet()
@@ -174,9 +181,9 @@ func main() {
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
-	podName := os.Getenv("HOSTNAME")
+	podName := os.Getenv(HostnameEnv)
 	if podName == "" {
-		klog.Info("Could not determine $HOSTNAME, defaulting to pod name: operator-pod")
+		klog.Info("Could not determine $%s, defaulting to pod name: operator-pod", HostnameEnv)
 		podName = "operator-pod"
 	}
 
