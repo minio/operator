@@ -70,10 +70,18 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 func (c *Controller) deleteCSR(ctx context.Context, csrName string) error {
 	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		if err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
+			// CSR have a short time live, we should not return error when a NotFound is thrown
+			// https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#request-signing-process
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 	} else {
 		if err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 	}
