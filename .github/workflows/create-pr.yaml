@@ -1,0 +1,67 @@
+name: Pull Request Action
+on: [release]
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create PR
+        run: |
+          echo ""
+          echo "####################"
+          echo "# Branch Name:"
+          echo "####################"
+          echo ""
+          branchName=${{github.ref_name}}
+          echo $branchName
+
+          echo ""
+          echo "####################"
+          echo "# Clone the repo:"
+          echo "####################"
+          echo ""
+          cd $GITHUB_WORKSPACE
+          git clone "https://cniackz:${{ secrets.ENTERPRISE_SECRET }}@github.com/cniackz/enterprise.git"
+          cd $GITHUB_WORKSPACE/enterprise
+          ls
+
+          echo ""
+          echo "####################"
+          echo "# Update the repo:"
+          echo "####################"
+          echo ""
+          git remote add upstream "https://${{ secrets.ENTERPRISE_SECRET }}@github.com/miniohq/enterprise"
+          git fetch upstream
+          git rebase upstream/master
+          git push
+
+          echo ""
+          echo "####################"
+          echo "# Create new branch:"
+          echo "####################"
+          echo ""
+          git checkout -b $branchName
+
+          echo ""
+          echo "####################"
+          echo "# Add & commit a file:"
+          echo "####################"
+          echo ""
+          touch a.txt
+          git status
+          git add a.txt
+          git status
+          git config --global user.email "celis.hernandez.cesar@gmail.com"
+          git config --global user.name "Cesar Celis"
+          git commit -m "${branchName}"
+
+          echo ""
+          echo "####################"
+          echo "# Create the PR:"
+          echo "####################"
+          echo ""
+          echo "${{ secrets.ENTERPRISE_SECRET }}" > mytoken.txt
+          gh auth login --with-token < mytoken.txt
+          echo "        gh-resolved = base" >> .git/config
+          git push -u origin HEAD
+          gh pr create --fill
+
