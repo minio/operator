@@ -24,14 +24,18 @@ import (
 	"os"
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xcerts "github.com/minio/pkg/certs"
 	"github.com/minio/pkg/env"
 	"k8s.io/klog/v2"
+	k8sscheme "k8s.io/kubectl/pkg/scheme"
 )
 
 const (
@@ -59,10 +63,17 @@ func (c *Controller) rolloutRestartDeployment(deployName string) error {
 	if err != nil {
 		return err
 	}
-
-	_, errUpdt := c.kubeClientSet.AppsV1().Deployments(namespace).Update(ctx, deployment, metav1.UpdateOptions{FieldManager: "kubectl-rollout"})
-	if errUpdt != nil {
-		return errUpdt
+	if deployment.Spec.Template.ObjectMeta.Annotations == nil {
+		deployment.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
+	}
+	deployment.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
+	data, err := runtime.Encode(k8sscheme.Codecs.LegacyCodec(appsv1.SchemeGroupVersion), deployment)
+	if err != nil {
+		return err
+	}
+	_, err2 := c.kubeClientSet.AppsV1().Deployments(namespace).Patch(ctx, deployName, types.StrategicMergePatchType, data, metav1.PatchOptions{FieldManager: "kubectl-rollout"})
+	if err2 != nil {
+		return err2
 	}
 	return nil
 }
