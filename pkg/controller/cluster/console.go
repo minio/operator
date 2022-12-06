@@ -18,9 +18,11 @@ package cluster
 
 import (
 	"context"
+	"os"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
+	"github.com/minio/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -97,18 +99,64 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 	return err
 }
 
-// isConsoleTLS Internal func, reads MINIO_OPERATOR_TLS_ENABLE ENV to identify if Operator TLS is enabled, default "off"
+// generateConsoleTLSCert Issues the Operator Console TLS Certificate
+func (c *Controller) generateConsoleTLSCert() (*string, *string) {
+	return c.generateTLSCert("console", OperatorConsoleTLSSecretName, getConsoleDeploymentName())
+}
+
+func (c *Controller) recreateOperatorConsoleCertsIfRequired(ctx context.Context) error {
+	namespace := miniov2.GetNSFromFile()
+	operatorConsoleTLSSecret, err := c.getTLSSecret(ctx, namespace, OperatorConsoleTLSSecretName)
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			klog.V(2).Info("TLS certificate not found. Generating one.")
+			// Generate new certificate KeyPair for Operator Console
+			c.generateConsoleTLSCert()
+			return nil
+		}
+		return err
+	}
+
+	needsRenewal, err := c.certNeedsRenewal(operatorConsoleTLSSecret)
+	if err != nil {
+		return err
+	}
+
+	if !needsRenewal {
+		return nil
+	}
+
+	// Expired cert. Delete the secret + CSR and re-create the cert
+	err = c.deleteCSR(ctx, consoleCSRName())
+	if err != nil {
+		return err
+	}
+	klog.V(2).Info("Deleting the TLS secret of expired console cert")
+	err = c.kubeClientSet.CoreV1().Secrets(namespace).Delete(ctx, OperatorConsoleTLSSecretName, metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	klog.V(2).Info("Generating a fresh TLS certificate for Console")
+	// Generate new certificate KeyPair for Operator Console
+	c.generateConsoleTLSCert()
+
+	return nil
+}
+
+// isOperatorConsoleTLS Internal func, reads MINIO_OPERATOR_TLS_ENABLE ENV to identify if Operator Console TLS is enabled, default "off"
 // **WARNING** This will change and will be default to "on" in operator v5
-// func isConsoleTLS() bool {
-// 	value, set := os.LookupEnv(ConsoleTLSEnv)
-// 	// By default, Console TLS is NOT used.
-// 	return (set && value == "on") || set
-// }
+func isOperatorConsoleTLS() bool {
+	value, set := os.LookupEnv(ConsoleTLSEnv)
+	// By default, Console TLS is NOT used.
+	return (set && value == "on")
+}
 
-// func getConsoleDeploymentName() string {
-// 	return env.Get("MINIO_CONSOLE_DEPLOYMENT_NAME", DefaultConsoleDeploymentName)
-// }
+func getConsoleDeploymentName() string {
+	return env.Get("MINIO_CONSOLE_DEPLOYMENT_NAME", DefaultConsoleDeploymentName)
+}
 
-// func (c *Controller) generateConsoleTLSCert() (*string, *string) {
-// 	return c.generateTLSCert("console", OperatorConsoleTLSSecretName, getConsoleDeploymentName())
-// }
+// consoleCSRName Internal func returns the given console CSR name
+func consoleCSRName() string {
+	return getCSRName("console")
+}

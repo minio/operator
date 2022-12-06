@@ -343,6 +343,8 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		apiServerWillStart := make(chan interface{})
 		// we need to make sure the HTTP Upgrade server is ready before starting operator
 		upgradeServerWillStart := make(chan interface{})
+		// pausing the process until console has it's TLS certificate (if enabled)
+		consoleTLS := make(chan interface{})
 
 		go func() {
 			// Request kubernetes version from Kube ApiServer
@@ -384,11 +386,34 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			}
 		}()
 
+		go func() {
+			klog.Infof("Starting console TLS certificate setup")
+			if isOperatorConsoleTLS() {
+				klog.Infof("Console TLS enabled")
+				err := c.recreateOperatorConsoleCertsIfRequired(ctx)
+				close(consoleTLS)
+				if err != nil {
+					panic(err)
+				}
+				klog.Infof("Restarting Console pods")
+				err = c.rolloutRestartDeployment(getConsoleDeploymentName())
+				if err != nil {
+					klog.Errorf("Console deployment didn't restart: %s", err)
+				}
+			} else {
+				klog.Infof("Console TLS is not enabled")
+				close(consoleTLS)
+			}
+		}()
+
 		klog.Info("Waiting for API to start")
 		<-apiServerWillStart
 
 		klog.Info("Waiting for Upgrade Server to start")
 		<-upgradeServerWillStart
+
+		klog.Info("Waiting for Console TLS")
+		<-consoleTLS
 
 		// Start the informer factories to begin populating the informer caches
 		klog.Info("Starting Tenant controller")

@@ -51,6 +51,22 @@ const (
 
 var serverCertsManager *xcerts.Manager
 
+// rolloutRestartDeployment - executes the equivalent to kubectl rollout restart deployment
+func (c *Controller) rolloutRestartDeployment(deployName string) error {
+	ctx := context.Background()
+	namespace := miniov2.GetNSFromFile()
+	deployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, deployName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	_, errUpdt := c.kubeClientSet.AppsV1().Deployments(namespace).Update(ctx, deployment, metav1.UpdateOptions{FieldManager: "kubectl-rollout"})
+	if errUpdt != nil {
+		return errUpdt
+	}
+	return nil
+}
+
 // generateOperatorTLSCert Issues the Operator TLS Certificate
 func (c *Controller) generateOperatorTLSCert() (*string, *string) {
 	return c.generateTLSCert("operator", OperatorTLSSecretName, getOperatorDeploymentName())

@@ -296,6 +296,11 @@ metadata:
     app.kubernetes.io/instance: minio-operator
     app.kubernetes.io/name: operator
 spec:
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
   replicas: 1
   selector:
     matchLabels:
@@ -310,6 +315,7 @@ spec:
       containers:
         - args:
             - server
+            - --certs-dir=/tmp/certs
           env:
             - name: CONSOLE_OPERATOR_MODE
               value: "on"
@@ -325,4 +331,27 @@ spec:
               name: http
             - containerPort: 9433
               name: https
+          volumeMounts:
+            - mountPath: /tmp/certs
+              name: tls-certificates
+      volumes:
+        - name: tls-certificates
+          projected:
+            sources:
+              - secret:
+                  items:
+                    - key: public.crt
+                      path: public.crt
+                    - key: public.crt
+                      path: CAs/public.crt
+                    - key: private.key
+                      path: private.key
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.crt
+                      path: CAs/tls.crt
+                    - key: tls.key
+                      path: tls.key
+                  name: operator-console-tls
+                  optional: true
       serviceAccountName: console-sa
