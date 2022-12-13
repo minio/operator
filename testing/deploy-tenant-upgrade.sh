@@ -30,6 +30,27 @@ dummy="dummy.data"
 localport="9000"
 alias="minios3"
 
+# Announce test
+function announce_test() {
+  local lower_text
+  local upper_text
+  if [ -n "$lower_version" ] 
+  then 
+    lower_text=$lower_version; 
+  else 
+    lower_text="latest Operator release"; 
+  fi
+
+  if [ -n "$upper_version" ] 
+  then 
+    upper_text=$upper_version; 
+  else 
+    upper_text="current branch of Operator"; 
+  fi
+
+  echo "## Testing upgrade of Operator from $lower_text to $upper_text ##"
+}
+
 # Port forward
 function port_forward() {
   totalwait=0
@@ -49,7 +70,7 @@ function port_forward() {
   done
 
   echo "Killing any current port-forward"
-  for pid in $(lsof -i :$localport | awk '{print $2}' | grep -o '\d*')
+  for pid in $(lsof -i :$localport | awk '{print $2}' | uniq | grep -o '[0-9]*')
   do
     if [ -n "$pid" ] 
     then
@@ -59,7 +80,7 @@ function port_forward() {
   done
 
   echo "Establishing port-forward"
-  kubectl port-forward service/$tenant-hl -n $namespace $localport:$localport &
+  kubectl port-forward service/$tenant-hl -n $namespace $localport &
 
   echo 'start - wait for port-forward to be completed'
   sleep 15
@@ -67,6 +88,7 @@ function port_forward() {
 }
 
 # Preparing tenant for bucket manipulation
+# shellcheck disable=SC2317
 function bootstrap_tenant() {
   port_forward
 
@@ -107,6 +129,8 @@ function download_dummy_data() {
 }
 
 function main() {
+  announce_test
+
   destroy_kind
 
   setup_kind
