@@ -134,11 +134,9 @@ func (o *deleteCmd) run(writer io.Writer) error {
 
 	path, _ := rootCmd.Flags().GetString(kubeconfig)
 
-	var parameters []string
+	parameters := []string{"delete", "-f", "-"}
 	if path != "" {
-		parameters = append(parameters, "--kubeconfig", path, "delete", "-f", "-")
-	} else {
-		parameters = append(parameters, "delete", "-f", "-")
+		parameters = append([]string{"--kubeconfig", path}, parameters...)
 	}
 
 	// do kubectl apply
