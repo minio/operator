@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -153,7 +153,7 @@ func (ls *LogSearch) ingestHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buf, err := ioutil.ReadAll(r.Body)
+	buf, err := io.ReadAll(r.Body)
 	if err != nil {
 		ls.writeErrorResponse(w, 500, "Error reading request body", err)
 		return

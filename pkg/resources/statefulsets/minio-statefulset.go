@@ -210,7 +210,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 
 // PodMetadata Returns the MinIO pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that metadata.
-func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool, opVersion string) metav1.ObjectMeta {
+func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
 	// Copy Labels and Annotations from Tenant
 	labels := t.ObjectMeta.Labels
@@ -303,25 +303,6 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool, certV
 	return mounts
 }
 
-// Build the startup probe for MinIO container.
-func startupProbe(t *miniov2.Tenant) *corev1.Probe {
-	scheme := corev1.URISchemeHTTP
-	if t.TLS() {
-		scheme = corev1.URISchemeHTTPS
-	}
-	return &corev1.Probe{
-		ProbeHandler: v1.ProbeHandler{
-			HTTPGet: &v1.HTTPGetAction{
-				Path:   "/minio/health/live",
-				Port:   intstr.FromInt(miniov2.MinIOPort),
-				Scheme: scheme,
-			},
-		},
-		PeriodSeconds:    1,
-		FailureThreshold: 30,
-	}
-}
-
 // Builds the MinIO container for a Tenant.
 func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool, certVolumeSources []v1.VolumeProjection) v1.Container {
 	consolePort := miniov2.ConsolePort
@@ -362,7 +343,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVar
 		Resources:       pool.Resources,
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
-		StartupProbe:    startupProbe(t),
+		StartupProbe:    t.Spec.Startup,
 	}
 }
 
@@ -795,7 +776,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 			ServiceName:         serviceName,
 			Replicas:            &replicas,
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: PodMetadata(t, pool, operatorVersion),
+				ObjectMeta: PodMetadata(t, pool),
 				Spec: corev1.PodSpec{
 					Containers:                containers,
 					Volumes:                   podVolumes,

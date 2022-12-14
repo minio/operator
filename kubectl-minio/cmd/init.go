@@ -293,8 +293,14 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		return err
 	}
 
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+
+	parameters := []string{"apply", "-f", "-"}
+	if path != "" {
+		parameters = append([]string{"--kubeconfig", path}, parameters...)
+	}
 	// do kubectl apply
-	cmd := exec.Command("kubectl", "apply", "-f", "-")
+	cmd := exec.Command("kubectl", parameters...)
 
 	cmd.Stdin = strings.NewReader(string(yml))
 

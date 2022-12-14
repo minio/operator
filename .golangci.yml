@@ -1,9 +1,11 @@
 linters-settings:
   golint:
     min-confidence: 0
-
   misspell:
     locale: US
+
+run:
+  go: '1.18'
 
 linters:
   disable-all: true
@@ -15,13 +17,9 @@ linters:
     - revive
     - ineffassign
     - gosimple
-    - deadcode
-    - structcheck
     - gomodguard
     - unused
-    - structcheck
     - unconvert
-    - varcheck
     - gofumpt
 
 issues:

@@ -16,8 +16,8 @@
 package resources
 
 import (
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"path"
 	"strings"
@@ -58,6 +58,7 @@ func tenantStorage(q resource.Quantity) corev1.ResourceList {
 // Pool returns a Pool object from given values
 func Pool(opts *TenantOptions, volumes int32, q resource.Quantity) miniov2.Pool {
 	p := miniov2.Pool{
+		Name:             opts.PoolName,
 		Servers:          opts.Servers,
 		VolumesPerServer: volumes,
 		VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
@@ -116,7 +117,7 @@ func LoadTenantCRD(decode func(data []byte, defaults *schema.GroupVersionKind, i
 	if err != nil {
 		log.Fatal(err)
 	}
-	contentBytes, err := ioutil.ReadAll(contents)
+	contentBytes, err := io.ReadAll(contents)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -165,7 +166,7 @@ func copyFileToMemFS(src, dst string, memFS filesys.FileSystem) error {
 	defer dstFileDesc.Close()
 
 	// Note: I had to read the whole string, for some reason io.Copy was not copying the whole content
-	input, err := ioutil.ReadAll(srcFileDesc)
+	input, err := io.ReadAll(srcFileDesc)
 	if err != nil {
 		return err
 	}

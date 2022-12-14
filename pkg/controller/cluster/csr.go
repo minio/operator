@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -268,7 +267,7 @@ func (c *Controller) createSecret(ctx context.Context, tenant *miniov2.Tenant, l
 }
 
 func parseCertificate(r io.Reader) (*x509.Certificate, error) {
-	certPEMBlock, err := ioutil.ReadAll(r)
+	certPEMBlock, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -334,7 +333,7 @@ func drainBody(respBody io.ReadCloser) {
 		// the same connection for future uses.
 		//  - http://stackoverflow.com/a/17961593/4465767
 		defer respBody.Close()
-		io.Copy(ioutil.Discard, respBody)
+		io.Copy(io.Discard, respBody)
 	}
 }
 
@@ -408,7 +407,7 @@ func (c *Controller) syncHealthCheckHandler(key string) error {
 			runtime.HandleError(fmt.Errorf("Tenant '%s' in work queue no longer exists", key))
 			return nil
 		}
-		return nil
+		return err
 	}
 
 	tenant.EnsureDefaults()

@@ -30,6 +30,7 @@ import (
 // TenantOptions encapsulates the CLI options for a MinIO Tenant
 type TenantOptions struct {
 	Name                    string
+	PoolName                string
 	ConfigurationSecretName string
 	Servers                 int32
 	Volumes                 int32
