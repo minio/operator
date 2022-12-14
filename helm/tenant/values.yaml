@@ -105,6 +105,9 @@ tenant:
   # Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
   # Refer https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
   readiness: { }
+  # Startup Probe for container startup. Container will be restarted if the probe fails.
+  # Refer https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  startup: { }
   ## exposeServices defines the exposure of the MinIO object storage and Console services.
   ## service is exposed as a loadbalancer in k8s service.
   exposeServices: { }
