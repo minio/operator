@@ -149,6 +149,16 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			},
 		})
 	}
+	if o.operatorOpts.NSToWatch != "" {
+		operatorDepPatches = append(operatorDepPatches, opInterface{
+			Op:   "add",
+			Path: "/spec/template/spec/containers/0/env/0",
+			Value: corev1.EnvVar{
+				Name:  "WATCHED_NAMESPACE",
+				Value: o.operatorOpts.NSToWatch,
+			},
+		})
+	}
 	if o.operatorOpts.ConsoleTLS {
 		operatorDepPatches = append(operatorDepPatches, opInterface{
 			Op:   "add",
