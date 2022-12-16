@@ -16,7 +16,3 @@ package v1
 
 // ClusterDomain is used to store the Kubernetes cluster domain
 var ClusterDomain string
-
-// KESIdentity is the public identity generated for MinIO Server based on
-// Used only during KES Deployments
-var KESIdentity string

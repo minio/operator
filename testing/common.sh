@@ -100,6 +100,54 @@ function install_operator() {
   echo "end - get data to verify proper image is being used"
 }
 
+function install_operator_version() {
+  # Obtain release
+  version="$1"
+  if [ -z "$version" ]
+  then
+    version=$(curl https://api.github.com/repos/minio/operator/releases/latest | jq --raw-output '.tag_name | "\(.[1:])"')
+  fi
+  echo "Target operator release: $version"
+  sudo curl -#L "https://github.com/minio/operator/releases/download/v${version}/kubectl-minio_${version}_${OS}_${ARCH}" -o /usr/local/bin/kubectl-minio
+  sudo chmod +x /usr/local/bin/kubectl-minio
+
+  # Initialize the MinIO Kubernetes Operator
+  kubectl minio init
+
+  # Verify installation of the plugin
+  echo "Installed operator release: $(kubectl minio version)"
+
+  if [ "$1" = "helm" ]; then
+    echo "key, value for pod selector in helm test"
+    key=app.kubernetes.io/name
+    value=operator
+  else
+    echo "key, value for pod selector in kustomize test"
+    key=name
+    value=minio-operator
+  fi
+
+  # Reusing the wait for both, Kustomize and Helm
+  echo "Waiting for k8s api"
+  sleep 10
+
+  kubectl get ns
+
+  kubectl -n minio-operator get deployments
+  kubectl -n minio-operator get pods
+
+  echo "Waiting for Operator Pods to come online (2m timeout)"
+  try kubectl wait --namespace minio-operator \
+    --for=condition=ready pod \
+    --selector $key=$value \
+    --timeout=120s
+
+  echo "start - get data to verify proper image is being used"
+  kubectl get pods --namespace minio-operator
+  kubectl describe pods -n minio-operator | grep Image
+  echo "end - get data to verify proper image is being used"
+}
+
 function destroy_kind() {
   kind delete cluster
 }
