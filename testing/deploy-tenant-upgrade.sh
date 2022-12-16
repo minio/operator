@@ -145,6 +145,7 @@ function main() {
       install_operator_version
     fi
   } 2>&1 )
+  
   echo "$error"
   if [ -n "$error" ]
   then
