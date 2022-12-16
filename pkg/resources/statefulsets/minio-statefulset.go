@@ -344,6 +344,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVar
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
 		StartupProbe:    t.Spec.Startup,
+		SecurityContext: poolContainerSecurityContext(pool),
 	}
 }
 
@@ -399,6 +400,24 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 	if securityContext.FSGroupChangePolicy == nil {
 		fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
 		securityContext.FSGroupChangePolicy = &fsGroupChangePolicy
+	}
+	return &securityContext
+}
+
+// Builds the security context for containers in a Pool
+func poolContainerSecurityContext(pool *miniov2.Pool) *v1.SecurityContext {
+	runAsNonRoot := true
+	var runAsUser int64 = 1000
+	var runAsGroup int64 = 1000
+
+	securityContext := corev1.SecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+		RunAsUser:    &runAsUser,
+		RunAsGroup:   &runAsGroup,
+	}
+
+	if pool != nil && pool.ContainerSecurityContext != nil {
+		securityContext = *pool.ContainerSecurityContext
 	}
 	return &securityContext
 }
