@@ -5,6 +5,8 @@ operator:
   # env:
   #   - name: MINIO_OPERATOR_TLS_ENABLE
   #     value: "off"
+  #   - name: MINIO_CONSOLE_TLS_ENABLE
+  #     value: "off"
   #   - name: CLUSTER_DOMAIN
   #     value: "cluster.domain"
   #   - name: WATCHED_NAMESPACE

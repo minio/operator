@@ -45,7 +45,5 @@ const (
 	DefaultKESImage = "minio/kes:v0.18.0"
 )
 
-var (
-	// KESReplicas is the number of replicas for MinIO KES
-	KESReplicas int32 = 2
-)
+// KESReplicas is the number of replicas for MinIO KES
+var KESReplicas int32 = 2
