@@ -135,7 +135,7 @@ function main() {
 
   setup_kind
 
-  {
+  error=$( {
     if [ -n "$lower_version" ]
     then
       # Test specific version of operator
@@ -144,11 +144,14 @@ function main() {
       # Test latest release
       install_operator_version
     fi
-  } ||
-  {
+  } 2>&1 )
+  echo "$error"
+  if [ -n "$error" ]
+  then
+    echo "$error"
     echo "Installing current branch"
     install_operator
-  }
+  fi
 
   install_tenant
 
