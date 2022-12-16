@@ -296,11 +296,6 @@ metadata:
     app.kubernetes.io/instance: minio-operator
     app.kubernetes.io/name: operator
 spec:
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
   replicas: 1
   selector:
     matchLabels:
