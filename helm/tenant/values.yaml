@@ -61,6 +61,15 @@ tenant:
       topologySpreadConstraints: [ ]
       ## Configure Runtime Class
       # runtimeClassName: ""
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+      containerSecurityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
   ## Sub path inside Mount path where MinIO stores data.
