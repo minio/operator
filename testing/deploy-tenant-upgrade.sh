@@ -148,8 +148,6 @@ function main() {
   echo "$error"
   if [ -n "$error" ]
   then
-    echo "$error"
-    echo "Installing current branch"
     install_operator
   fi
 
