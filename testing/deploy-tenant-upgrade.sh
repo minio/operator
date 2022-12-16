@@ -135,14 +135,20 @@ function main() {
 
   setup_kind
 
-  if [ -n "$lower_version" ]
-  then
-    # Test specific version of operator
-    install_operator_version $lower_version
-  else
-    # Test latest release
-    install_operator_version
-  fi
+  {
+    if [ -n "$lower_version" ]
+    then
+      # Test specific version of operator
+      install_operator_version $lower_version
+    else
+      # Test latest release
+      install_operator_version
+    fi
+  } ||
+  {
+    echo "Installing current branch"
+    install_operator
+  }
 
   install_tenant
 
