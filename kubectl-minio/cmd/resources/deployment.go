@@ -24,6 +24,7 @@ type OperatorOptions struct {
 	ClusterDomain       string
 	ImagePullSecret     string
 	ConsoleImage        string
+	ConsoleTLS          bool
 	TenantMinIOImage    string
 	TenantConsoleImage  string
 	TenantKesImage      string

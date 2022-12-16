@@ -66,13 +66,22 @@ func (c *Controller) checkAndCreateMinIOCSR(ctx context.Context, nsName types.Na
 	return nil
 }
 
+// deleteCSR Removes a CSR
 func (c *Controller) deleteCSR(ctx context.Context, csrName string) error {
 	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
 		if err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
+			// CSR have a short time live, we should not return error when a NotFound is thrown
+			// https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/#request-signing-process
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 	} else {
 		if err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Delete(ctx, csrName, metav1.DeleteOptions{}); err != nil {
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 	}
@@ -298,13 +307,7 @@ func (c *Controller) certNeedsRenewal(tlsSecret *corev1.Secret) (bool, error) {
 	var certPublicKey []byte
 	var certPrivateKey []byte
 
-	publicKey := "public.crt"
-	privateKey := "private.key"
-
-	if tlsSecret.Type == "kubernetes.io/tls" || tlsSecret.Type == "cert-manager.io/v1alpha2" || tlsSecret.Type == "cert-manager.io/v1" {
-		publicKey = "tls.crt"
-		privateKey = "tls.key"
-	}
+	publicKey, privateKey := c.getKeyNames(tlsSecret)
 
 	if _, exist := tlsSecret.Data[publicKey]; !exist {
 		return false, fmt.Errorf("missing '%s' in %s/%s secret", publicKey, tlsSecret.Namespace, tlsSecret.Name)

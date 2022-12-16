@@ -80,6 +80,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&o.operatorOpts.NSToWatch, "namespace-to-watch", "", "namespace where operator looks for MinIO tenants, leave empty for all namespaces")
 	f.StringVar(&o.operatorOpts.ImagePullSecret, "image-pull-secret", "", "image pull secret to be used for pulling MinIO Operator")
 	f.StringVar(&o.operatorOpts.ConsoleImage, "console-image", "", "console image")
+	f.BoolVar(&o.operatorOpts.ConsoleTLS, "console-tls", false, "enable tls for Operator console")
 	f.StringVar(&o.operatorOpts.TenantMinIOImage, "default-minio-image", "", "default tenant MinIO image")
 	f.StringVar(&o.operatorOpts.TenantConsoleImage, "default-console-image", "", "default tenant Console image")
 	f.StringVar(&o.operatorOpts.TenantKesImage, "default-kes-image", "", "default tenant KES image")
@@ -155,6 +156,16 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			Value: corev1.EnvVar{
 				Name:  "WATCHED_NAMESPACE",
 				Value: o.operatorOpts.NSToWatch,
+			},
+		})
+	}
+	if o.operatorOpts.ConsoleTLS {
+		operatorDepPatches = append(operatorDepPatches, opInterface{
+			Op:   "add",
+			Path: "/spec/template/spec/containers/0/env/0",
+			Value: corev1.EnvVar{
+				Name:  "MINIO_CONSOLE_TLS_ENABLE",
+				Value: "on",
 			},
 		})
 	}
