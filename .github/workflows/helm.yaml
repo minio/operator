@@ -40,3 +40,28 @@ jobs:
           chmod +x kubectl
           mv kubectl /usr/local/bin
           "${GITHUB_WORKSPACE}/testing/check-helm.sh"
+  build-floor:
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go-version: [1.18.x]
+        os: [ubuntu-latest]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      # Runs a set of commands using the runners shell
+      - name: Deploy a MinIO Tenant on Kind
+        env:
+          TEST_FLOOR: true
+        run: |
+          curl -sLO "https://dl.k8s.io/release/v1.23.1/bin/linux/amd64/kubectl" -o kubectl
+          chmod +x kubectl
+          mv kubectl /usr/local/bin
+          "${GITHUB_WORKSPACE}/testing/check-helm.sh"
