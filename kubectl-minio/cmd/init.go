@@ -124,6 +124,9 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	}
 
 	var operatorDepPatches []interface{}
+
+	var consoleDepPatches []interface{}
+
 	// create patches for the supplied arguments
 	if o.operatorOpts.Image != "" {
 		operatorDepPatches = append(operatorDepPatches, opStr{
@@ -205,6 +208,11 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			Path:  "/spec/template/spec/imagePullSecrets",
 			Value: []corev1.LocalObjectReference{{Name: o.operatorOpts.ImagePullSecret}},
 		})
+		consoleDepPatches = append(consoleDepPatches, opInterface{
+			Op:    "add",
+			Path:  "/spec/template/spec/imagePullSecrets",
+			Value: []corev1.LocalObjectReference{{Name: o.operatorOpts.ImagePullSecret}},
+		})
 	}
 	if o.operatorOpts.PrometheusNamespace != "" {
 		operatorDepPatches = append(operatorDepPatches, opInterface{
@@ -226,6 +234,13 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			},
 		})
 	}
+	if o.operatorOpts.ConsoleImage != "" {
+		consoleDepPatches = append(consoleDepPatches, opStr{
+			Op:    "replace",
+			Path:  "/spec/template/spec/containers/0/image",
+			Value: o.operatorOpts.ConsoleImage,
+		})
+	}
 	// attach the patches to the kustomization file
 	if len(operatorDepPatches) > 0 {
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
@@ -243,15 +258,9 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		})
 	}
 
-	if o.operatorOpts.ConsoleImage != "" {
+	if len(consoleDepPatches) > 0 {
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
-			Patch: o.serializeJSONPatchOps([]interface{}{
-				opStr{
-					Op:    "replace",
-					Path:  "/spec/template/spec/containers/0/image",
-					Value: o.operatorOpts.ConsoleImage,
-				},
-			}),
+			Patch: o.serializeJSONPatchOps(consoleDepPatches),
 			Target: &types.Selector{
 				ResId: resid.ResId{
 					Gvk: resid.Gvk{
