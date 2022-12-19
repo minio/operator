@@ -1,7 +1,6 @@
 name: Tenant Tests On Kind
 on:
-  pull_request:
-    branches: [ master ]
+  workflow_dispatch
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
   cancel-in-progress: true

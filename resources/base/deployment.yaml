@@ -32,6 +32,9 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
             runAsNonRoot: true
+          env:
+            - name: MINIO_CONSOLE_TLS_ENABLE
+              value: "off"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

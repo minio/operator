@@ -80,6 +80,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&o.operatorOpts.NSToWatch, "namespace-to-watch", "", "namespace where operator looks for MinIO tenants, leave empty for all namespaces")
 	f.StringVar(&o.operatorOpts.ImagePullSecret, "image-pull-secret", "", "image pull secret to be used for pulling MinIO Operator")
 	f.StringVar(&o.operatorOpts.ConsoleImage, "console-image", "", "console image")
+	f.BoolVar(&o.operatorOpts.ConsoleTLS, "console-tls", false, "enable tls for Operator console")
 	f.StringVar(&o.operatorOpts.TenantMinIOImage, "default-minio-image", "", "default tenant MinIO image")
 	f.StringVar(&o.operatorOpts.TenantConsoleImage, "default-console-image", "", "default tenant Console image")
 	f.StringVar(&o.operatorOpts.TenantKesImage, "default-kes-image", "", "default tenant KES image")
@@ -123,6 +124,9 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	}
 
 	var operatorDepPatches []interface{}
+
+	var consoleDepPatches []interface{}
+
 	// create patches for the supplied arguments
 	if o.operatorOpts.Image != "" {
 		operatorDepPatches = append(operatorDepPatches, opStr{
@@ -155,6 +159,16 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			Value: corev1.EnvVar{
 				Name:  "WATCHED_NAMESPACE",
 				Value: o.operatorOpts.NSToWatch,
+			},
+		})
+	}
+	if o.operatorOpts.ConsoleTLS {
+		operatorDepPatches = append(operatorDepPatches, opInterface{
+			Op:   "add",
+			Path: "/spec/template/spec/containers/0/env/0",
+			Value: corev1.EnvVar{
+				Name:  "MINIO_CONSOLE_TLS_ENABLE",
+				Value: "on",
 			},
 		})
 	}
@@ -194,6 +208,11 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			Path:  "/spec/template/spec/imagePullSecrets",
 			Value: []corev1.LocalObjectReference{{Name: o.operatorOpts.ImagePullSecret}},
 		})
+		consoleDepPatches = append(consoleDepPatches, opInterface{
+			Op:    "add",
+			Path:  "/spec/template/spec/imagePullSecrets",
+			Value: []corev1.LocalObjectReference{{Name: o.operatorOpts.ImagePullSecret}},
+		})
 	}
 	if o.operatorOpts.PrometheusNamespace != "" {
 		operatorDepPatches = append(operatorDepPatches, opInterface{
@@ -215,6 +234,13 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			},
 		})
 	}
+	if o.operatorOpts.ConsoleImage != "" {
+		consoleDepPatches = append(consoleDepPatches, opStr{
+			Op:    "replace",
+			Path:  "/spec/template/spec/containers/0/image",
+			Value: o.operatorOpts.ConsoleImage,
+		})
+	}
 	// attach the patches to the kustomization file
 	if len(operatorDepPatches) > 0 {
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
@@ -232,15 +258,9 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		})
 	}
 
-	if o.operatorOpts.ConsoleImage != "" {
+	if len(consoleDepPatches) > 0 {
 		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
-			Patch: o.serializeJSONPatchOps([]interface{}{
-				opStr{
-					Op:    "replace",
-					Path:  "/spec/template/spec/containers/0/image",
-					Value: o.operatorOpts.ConsoleImage,
-				},
-			}),
+			Patch: o.serializeJSONPatchOps(consoleDepPatches),
 			Target: &types.Selector{
 				ResId: resid.ResId{
 					Gvk: resid.Gvk{
