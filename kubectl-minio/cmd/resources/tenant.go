@@ -44,6 +44,8 @@ type TenantOptions struct {
 	ImagePullSecret         string
 	DisableAntiAffinity     bool
 	EnableAuditLogs         bool
+	ExposeMinioService      bool
+	ExposeConsoleService    bool
 	AuditLogsDiskSpace      int32
 	AuditLogsImage          string
 	AuditLogsPGImage        string
@@ -131,6 +133,10 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 			Image: opts.Image,
 			Configuration: &v1.LocalObjectReference{
 				Name: opts.ConfigurationSecretName,
+			},
+			ExposeServices: &miniov2.ExposeServices{
+				Console: opts.ExposeConsoleService,
+				MinIO:   opts.ExposeMinioService,
 			},
 			Pools:           []miniov2.Pool{Pool(opts, volumesPerServer, *capacityPerVolume)},
 			RequestAutoCert: &autoCert,
