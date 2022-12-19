@@ -416,16 +416,16 @@ func poolContainerSecurityContext(pool *miniov2.Pool) *v1.SecurityContext {
 		runAsGroup = *pool.SecurityContext.RunAsGroup
 	}
 
-	securityContext := corev1.SecurityContext{
+	containerSecurityContext := corev1.SecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
 	}
 
 	if pool != nil && pool.ContainerSecurityContext != nil {
-		securityContext = *pool.ContainerSecurityContext
+		containerSecurityContext = *pool.ContainerSecurityContext
 	}
-	return &securityContext
+	return &containerSecurityContext
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
