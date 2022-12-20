@@ -23,6 +23,10 @@ operator:
     runAsGroup: 1000
     runAsNonRoot: true
     fsGroup: 1000
+  containerSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
   nodeSelector: { }
   affinity:
     podAntiAffinity:
@@ -56,6 +60,9 @@ console:
   topologySpreadConstraints: [ ]
   resources: { }
   securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
+  containerSecurityContext:
     runAsUser: 1000
     runAsNonRoot: true
   ingress:

@@ -49,7 +49,11 @@ spec:
           {{ toYaml . | nindent 10 }}
           {{- end }}
           resources:
-      {{- toYaml .Values.operator.resources | nindent 12 }}
+          {{- toYaml .Values.operator.resources | nindent 12 }}
+          securityContext:
+          {{- with .Values.operator.containerSecurityContext }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
       {{- with .Values.operator.initContainers }}
       initContainers:
       {{- toYaml . | nindent 8 }}
