@@ -56,20 +56,20 @@ tenant:
       ## Configure resource requests and limits for MinIO containers
       resources: { }
       ## Configure security context
-      securityContext: { }
-      ## Configure topology constraints
-      topologySpreadConstraints: [ ]
-      ## Configure Runtime Class
-      # runtimeClassName: ""
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
         runAsNonRoot: true
+      ## Configure container security context
       containerSecurityContext:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
+      ## Configure topology constraints
+      topologySpreadConstraints: [ ]
+      ## Configure Runtime Class
+      # runtimeClassName: ""
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
   ## Sub path inside Mount path where MinIO stores data.
