@@ -24,3 +24,7 @@ spec:
           resources:
             requests:
               storage: 2Gi
+      containerSecurityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true

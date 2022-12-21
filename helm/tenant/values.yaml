@@ -56,7 +56,16 @@ tenant:
       ## Configure resource requests and limits for MinIO containers
       resources: { }
       ## Configure security context
-      securityContext: { }
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+      ## Configure container security context
+      containerSecurityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
       ## Configure topology constraints
       topologySpreadConstraints: [ ]
       ## Configure Runtime Class
