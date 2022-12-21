@@ -74,6 +74,10 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with (dig "containerSecurityContext" (dict) .) }}
+      containerSecurityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- with (dig "topologySpreadConstraints" (list) .) }}
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}

@@ -135,13 +135,21 @@ function main() {
 
   setup_kind
 
-  if [ -n "$lower_version" ]
+  error=$( {
+    if [ -n "$lower_version" ]
+    then
+      # Test specific version of operator
+      install_operator_version $lower_version
+    else
+      # Test latest release
+      install_operator_version
+    fi
+  } 2>&1 )
+  
+  echo "$error"
+  if [ -n "$error" ]
   then
-    # Test specific version of operator
-    install_operator_version $lower_version
-  else
-    # Test latest release
-    install_operator_version
+    install_operator
   fi
 
   install_tenant

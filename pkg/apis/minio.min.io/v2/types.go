@@ -628,10 +628,18 @@ type Pool struct {
 	//
 	// * `runAsUser` +
 	//
-	// * `seLinuxOptions` +
-	//
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of containers in the pool. The Operator supports only the following container security fields: +
+	//
+	// * `runAsGroup` +
+	//
+	// * `runAsNonRoot` +
+	//
+	// * `runAsUser` +
+	//
+	// +optional
+	ContainerSecurityContext *corev1.SecurityContext `json:"containerSecurityContext,omitempty"`
 	// *Optional* +
 	//
 	// Specify custom labels and annotations to append to the Pool.
