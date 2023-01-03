@@ -36,10 +36,10 @@ const (
 	MinIOAccessMode = "ReadWriteOnce"
 
 	// DefaultOperatorImage is the default operator image to be used
-	DefaultOperatorImage = "minio/operator:v4.5.5"
+	DefaultOperatorImage = "minio/operator:v4.5.6"
 
 	// DefaultTenantImage is the default MinIO image used while creating tenant
-	DefaultTenantImage = "minio/minio:RELEASE.2022-12-07T00-56-37Z"
+	DefaultTenantImage = "minio/minio:RELEASE.2023-01-02T09-40-09Z"
 
 	// DefaultKESImage is the default KES image used while creating tenant
 	DefaultKESImage = "minio/kes:v0.18.0"
