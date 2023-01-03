@@ -731,64 +731,6 @@ spec:
         - label:
             app.kubernetes.io/instance: minio-operator
             app.kubernetes.io/name: operator
-          name: console
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: console
-            strategy: {}
-            template:
-              metadata:
-                labels:
-                  app: console
-                  app.kubernetes.io/instance: minio-operator-console
-                  app.kubernetes.io/name: operator
-              spec:
-                containers:
-                  - args:
-                      - server
-                      - --certs-dir=/tmp/certs
-                    env:
-                      - name: CONSOLE_OPERATOR_MODE
-                        value: "on"
-                    image: quay.io/minio/operator:v4.5.6
-                    imagePullPolicy: IfNotPresent
-                    name: console
-                    ports:
-                      - containerPort: 9090
-                        name: http
-                      - containerPort: 9433
-                        name: https
-                    resources: {}
-                    securityContext: {}
-                    volumeMounts:
-                      - mountPath: /tmp/certs
-                        name: tls-certificates
-                serviceAccountName: console-sa
-                volumes:
-                  - name: tls-certificates
-                    projected:
-                      sources:
-                        - secret:
-                            items:
-                              - key: public.crt
-                                path: public.crt
-                              - key: public.crt
-                                path: CAs/public.crt
-                              - key: private.key
-                                path: private.key
-                              - key: tls.crt
-                                path: tls.crt
-                              - key: tls.crt
-                                path: CAs/tls.crt
-                              - key: tls.key
-                                path: tls.key
-                            name: operator-console-tls
-                            optional: true
-        - label:
-            app.kubernetes.io/instance: minio-operator
-            app.kubernetes.io/name: operator
           name: minio-operator
           spec:
             replicas: 2
@@ -817,7 +759,7 @@ spec:
                   - env:
                       - name: MINIO_CONSOLE_TLS_ENABLE
                         value: "off"
-                    image: minio/operator:v4.5.6
+                    image: quay.io/minio/operator:v4.5.6
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -825,10 +767,7 @@ spec:
                         cpu: 200m
                         ephemeral-storage: 500Mi
                         memory: 256Mi
-                    securityContext:
-                      runAsGroup: 1000
-                      runAsNonRoot: true
-                      runAsUser: 1000
+                    securityContext: {}
                 serviceAccountName: minio-operator
     strategy: deployment
   installModes:
