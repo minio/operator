@@ -298,6 +298,19 @@ func generateCSRCryptoData(serviceName string) ([]byte, []byte, error) {
 		DNSNames:           []string{serviceName, opCommonNoDomain, opCommon},
 	}
 
+	// This sections addresses the edge case "remote error: tls: bad certificate" error in  https://github.com/minio/operator/issues/1234
+	// Openshift OLM creates an additional service `minio-operator-service`, there is no option to choose the name of the service
+	// This aditonal DNSName is to handle the calls from kube-apiserver trough that service, is the easiest way to have a clean operator fresh install.
+	if serviceName == "operator" {
+		openshiftWebhookServiceCommon := fmt.Sprintf("minio-operator-service.%s.svc", miniov2.GetNSFromFile())
+		csrTemplate.Extensions = append(csrTemplate.Extensions, pkix.Extension{
+			Id:       nil,
+			Critical: false,
+			Value:    []byte(openshiftWebhookServiceCommon),
+		})
+		csrTemplate.DNSNames = append(csrTemplate.DNSNames, openshiftWebhookServiceCommon)
+	}
+
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privateKey)
 	if err != nil {
 		klog.Errorf("Unexpected error during creating the CSR: %v", err)
