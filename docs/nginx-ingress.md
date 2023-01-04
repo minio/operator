@@ -6,13 +6,13 @@ Ingress exposes HTTP and HTTPS routes from outside the cluster to services withi
 
 ### Prerequisites
 
-- MinIO Operator up and running as explained in the [document here](https://docs.min.io/minio/k8s/deployment/deploy-minio-operator.html).
+- MinIO Operator up and running as explained in the [document here](https://min.io/docs/minio/kubernetes/upstream/operations/installation.html).
 - Nginx Ingress Controller installed and running as explained [here](https://kubernetes.github.io/ingress-nginx/deploy/).
 - Network routing rules that enable external client access to Kubernetes worker nodes. For example, this tutorial assumes `minio.example.com` and `console.minio.example.com` as an externally resolvable URL.
 
 ### Create MinIO Tenant
 
-Use the `kubectl minio` plugin to create the MinIO tenant if one does not already exist. See [Deploy a MinIO Tenant using the MinIO Plugin](https://docs.min.io/minio/k8s/tenant-management/deploy-minio-tenant.html) for more complete documentation. 
+Use the `kubectl minio` plugin to create the MinIO tenant if one does not already exist. See [Deploy a MinIO Tenant using the MinIO Plugin](https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html) or [`kubectl minio tenant create`](https://min.io/docs/minio/kubernetes/upstream/reference/kubectl-minio-plugin/kubectl-minio-tenant-create.html#command-kubectl.minio.tenant.create)for more complete documentation. 
 
 The following example deploys a MinIO Tenant with 4 servers and 16 volumes in total and a total capacity of 16 Terabytes into the `tenant1-ns` namespace using the default Kubernetes storage class. Change these values as appropriate for your requirements.
 
