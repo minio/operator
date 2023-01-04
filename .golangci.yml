@@ -5,7 +5,7 @@ linters-settings:
     locale: US
 
 run:
-  go: '1.18'
+  go: '1.19'
 
 linters:
   disable-all: true
@@ -25,8 +25,8 @@ linters:
 issues:
   exclude-use-default: false
   exclude:
-      - should have a package comment
-      - error strings should not be capitalized or end with punctuation or a newline
+    - should have a package comment
+    - error strings should not be capitalized or end with punctuation or a newline
   exclude-rules:
     # Exclude linters from running on auto-generated files.
     - path: pkg/client

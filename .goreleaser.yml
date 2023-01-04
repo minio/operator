@@ -15,7 +15,7 @@ before:
   hooks:
     - make clean
     - go generate ./...
-    - go mod tidy -compat=1.18
+    - go mod tidy -compat=1.19
     - go mod download
 
 builds:
