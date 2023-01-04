@@ -21,7 +21,7 @@ function install_binaries() {
 install_binaries
 
 # get the minio version
-minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq '.spec.image' | tail -1)
+minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '.spec.image' | tail -1)
 echo "minioVersionInExample: ${minioVersionInExample}"
 
 # Get sha form of minio version
@@ -107,7 +107,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i ".metadata.annotations.containerImage |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
   # Console Image in Digested form: sha256:xxxx
-  consoleImage=$(yq '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
+  consoleImage=$(yq eval-all '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
   echo "consoleImage: ${consoleImage}"
   consoleImageDigest=$(docker pull "quay.io/"${consoleImage} | grep Digest | awk -F ' ' '{print $2}')
   echo "consoleImageDigest: ${consoleImageDigest}"
