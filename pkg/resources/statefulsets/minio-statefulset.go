@@ -99,6 +99,16 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 			Value: t.PrometheusConfigJobName(),
 		},
 	}
+	// Specific case of bug in runtimeClass crun where $HOME is not set
+	for _, pool := range t.Spec.Pools {
+		if *pool.RuntimeClassName == "runc" {
+			// Set HOME to /
+			envVarsMap["HOME"] = corev1.EnvVar{
+				Name:  "HOME",
+				Value: "/",
+			}
+		}
+	}
 
 	var domains []string
 	// Enable Bucket DNS only if asked for by default turned off
