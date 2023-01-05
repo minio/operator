@@ -101,7 +101,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	}
 	// Specific case of bug in runtimeClass crun where $HOME is not set
 	for _, pool := range t.Spec.Pools {
-		if *pool.RuntimeClassName == "runc" {
+		if pool.RuntimeClassName != nil && *pool.RuntimeClassName == "crun" {
 			// Set HOME to /
 			envVarsMap["HOME"] = corev1.EnvVar{
 				Name:  "HOME",
