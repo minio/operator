@@ -8,7 +8,7 @@ MinIO Kubernetes Operator supports deploying MinIO Tenants onto private and publ
 cloud infrastructures ("Hybrid" Cloud).
 
 This README provides a high level description of the MinIO Operator and 
-quickstart instructions. See https://docs.min.io/minio/k8s/ for 
+quickstart instructions. See https://min.io/docs/minio/kubernetes/upstream/index.html for 
 complete documentation on the MinIO Operator.
 
 ## Table of Contents
@@ -307,10 +307,10 @@ Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICE
 
 # Explore Further
 
-[MinIO Hybrid Cloud Storage Documentation](https://docs.min.io/minio/k8s/index.html)
-- [Deploy MinIO Operator on Kubernetes](https://docs.min.io/minio/k8s/deployment/deploy-minio-operator.html)
-- [Deploy a MinIO Tenant using the MinIO Plugin](https://docs.min.io/minio/k8s/tenant-management/deploy-minio-tenant.html)
-- [Configure TLS/SSL for MinIO Tenants](https://docs.min.io/minio/k8s/tutorials/transport-layer-security.html)
+[MinIO Hybrid Cloud Storage Documentation](https://min.io/docs/minio/kubernetes/upstream/index.html)
+- [Deploy MinIO Operator on Kubernetes](https://min.io/docs/minio/kubernetes/upstream/operations/installation.html)
+- [Deploy a MinIO Tenant using the MinIO Plugin](https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html)
+- [Configure TLS/SSL for MinIO Tenants](https://min.io/docs/minio/kubernetes/upstream/operations/network-encryption.html)
 
 [Github Resources](https://github.com/minio/operator/blob/master/docs/)
 - [Examples for MinIO Tenant Settings](https://github.com/minio/operator/blob/master/docs/examples.md)
