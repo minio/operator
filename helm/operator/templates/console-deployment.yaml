@@ -74,4 +74,8 @@ spec:
       {{- with .Values.console.initContainers }}
       initContainers:
       {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operator.runtimeClassName }}
+      runtimeClassName: 
+      {{- toYaml . | nindent 8 }}
   {{- end}}
