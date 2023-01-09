@@ -106,4 +106,3 @@ generate-openshift-manifests:
 
 release: generate-openshift-manifests
 	@./release.sh
-	@./helm-reindex.sh
