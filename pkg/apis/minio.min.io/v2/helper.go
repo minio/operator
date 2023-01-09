@@ -820,6 +820,8 @@ func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) err
 			case "BucketAlreadyOwnedByYou", "BucketAlreadyExists":
 				klog.Infof(err.Error())
 				continue
+			default:
+				return err
 			}
 		}
 		klog.Infof("Successfully created bucket %s", bucket.Name)
