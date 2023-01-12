@@ -658,7 +658,7 @@ type Pool struct {
 	//
 	// If provided, each pod on the Statefulset will run with the specified RuntimeClassName, for more info https://kubernetes.io/docs/concepts/containers/runtime-class/
 	// +optional
-	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
+	RuntimeClassName string `json:"runtimeClassName,omitempty"`
 }
 
 // EqualImage returns true if image specified in `LogConfig` is equal to `image`

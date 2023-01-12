@@ -470,11 +470,6 @@ func (in *Pool) DeepCopyInto(out *Pool) {
 			(*out)[key] = val
 		}
 	}
-	if in.RuntimeClassName != nil {
-		in, out := &in.RuntimeClassName, &out.RuntimeClassName
-		*out = new(string)
-		**out = **in
-	}
 	return
 }
 
