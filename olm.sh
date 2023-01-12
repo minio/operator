@@ -58,7 +58,8 @@ for catalog in "${redhatCatalogs[@]}"; do
     --manifests \
     --metadata \
     --output-dir bundles/$catalog/$RELEASE \
-    --channels stable
+    --channels stable \
+    --overwrite
 
   # deploymentName has to be minio-operator, the reason is in case/03206318 or redhat support.
   # the deployment name you set is "operator", and in CSV, there are two deployments 'console' and 'minio-operator'
@@ -123,8 +124,8 @@ for catalog in "${redhatCatalogs[@]}"; do
   rm -Rf metadata
 
   mkdir -p $catalog
-  cp -R bundles/$catalog/$RELEASE/manifests $catalog/manifests
-  cp -R bundles/$catalog/$RELEASE/metadata $catalog/metadata
+  cp -R bundles/$catalog/$RELEASE/manifests $catalog
+  cp -R bundles/$catalog/$RELEASE/metadata $catalog
 
   sed -i -e '/metrics/d' bundle.Dockerfile
   sed -i -e '/scorecard/d' bundle.Dockerfile
@@ -141,7 +142,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # as well as the default.
   {
     echo "  # Annotations to specify OCP versions compatibility."
-    echo "  com.redhat.openshift.versions: v4.6-v4.10"
+    echo "  com.redhat.openshift.versions: v4.6-v4.12"
     echo "  # Annotation to add default bundle channel as potential is declared"
     echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
   } >> bundles/$catalog/$RELEASE/metadata/annotations.yaml

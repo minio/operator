@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.7
+    controller-gen.kubebuilder.io/version: v0.11.1
     meta.helm.sh/release-name: minio-operator
     meta.helm.sh/release-namespace: minio-operator
   creationTimestamp: null
@@ -76,11 +76,13 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 credsSecret:
                   properties:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 env:
                   items:
                     properties:
@@ -101,6 +103,7 @@ spec:
                             required:
                               - key
                             type: object
+                            x-kubernetes-map-type: atomic
                           fieldRef:
                             properties:
                               apiVersion:
@@ -110,6 +113,7 @@ spec:
                             required:
                               - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           resourceFieldRef:
                             properties:
                               containerName:
@@ -125,6 +129,7 @@ spec:
                             required:
                               - resource
                             type: object
+                            x-kubernetes-map-type: atomic
                           secretKeyRef:
                             properties:
                               key:
@@ -136,6 +141,7 @@ spec:
                             required:
                               - key
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                     required:
                       - name
@@ -179,6 +185,17 @@ spec:
                   required:
                     - name
                   type: object
+                externalClientCertSecrets:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      type:
+                        type: string
+                    required:
+                      - name
+                    type: object
+                  type: array
                 image:
                   type: string
                 imagePullPolicy:
@@ -188,6 +205,7 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 kes:
                   properties:
                     affinity:
@@ -232,6 +250,7 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   weight:
                                     format: int32
                                     type: integer
@@ -278,10 +297,12 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   type: array
                               required:
                                 - nodeSelectorTerms
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         podAffinity:
                           properties:
@@ -313,6 +334,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -356,6 +402,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -397,6 +468,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -440,6 +536,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -465,6 +586,70 @@ spec:
                       required:
                         - name
                       type: object
+                    env:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              configMapKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              fieldRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                  - fieldPath
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              resourceFieldRef:
+                                properties:
+                                  containerName:
+                                    type: string
+                                  divisor:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  resource:
+                                    type: string
+                                required:
+                                  - resource
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        required:
+                          - name
+                        type: object
+                      type: array
                     externalCertSecret:
                       properties:
                         name:
@@ -483,6 +668,7 @@ spec:
                         name:
                           type: string
                       type: object
+                      x-kubernetes-map-type: atomic
                     keyName:
                       type: string
                     labels:
@@ -573,6 +759,8 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                            hostProcess:
+                              type: boolean
                             runAsUserName:
                               type: string
                           type: object
@@ -621,9 +809,22 @@ spec:
                                   type: string
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
+                          matchLabelKeys:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
                           maxSkew:
                             format: int32
                             type: integer
+                          minDomains:
+                            format: int32
+                            type: integer
+                          nodeAffinityPolicy:
+                            type: string
+                          nodeTaintsPolicy:
+                            type: string
                           topologyKey:
                             type: string
                           whenUnsatisfiable:
@@ -681,6 +882,7 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   weight:
                                     format: int32
                                     type: integer
@@ -727,10 +929,12 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   type: array
                               required:
                                 - nodeSelectorTerms
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         podAffinity:
                           properties:
@@ -762,6 +966,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -805,6 +1034,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -846,6 +1100,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -889,6 +1168,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -954,6 +1258,7 @@ spec:
                                               type: object
                                             type: array
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       weight:
                                         format: int32
                                         type: integer
@@ -1000,10 +1305,12 @@ spec:
                                               type: object
                                             type: array
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       type: array
                                   required:
                                     - nodeSelectorTerms
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                             podAffinity:
                               properties:
@@ -1035,6 +1342,31 @@ spec:
                                                   type: string
                                                 type: object
                                             type: object
+                                            x-kubernetes-map-type: atomic
+                                          namespaceSelector:
+                                            properties:
+                                              matchExpressions:
+                                                items:
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      items:
+                                                        type: string
+                                                      type: array
+                                                  required:
+                                                    - key
+                                                    - operator
+                                                  type: object
+                                                type: array
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                            type: object
+                                            x-kubernetes-map-type: atomic
                                           namespaces:
                                             items:
                                               type: string
@@ -1078,6 +1410,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -1119,6 +1476,31 @@ spec:
                                                   type: string
                                                 type: object
                                             type: object
+                                            x-kubernetes-map-type: atomic
+                                          namespaceSelector:
+                                            properties:
+                                              matchExpressions:
+                                                items:
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      items:
+                                                        type: string
+                                                      type: array
+                                                  required:
+                                                    - key
+                                                    - operator
+                                                  type: object
+                                                type: array
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                            type: object
+                                            x-kubernetes-map-type: atomic
                                           namespaces:
                                             items:
                                               type: string
@@ -1162,6 +1544,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -1178,6 +1585,70 @@ spec:
                           additionalProperties:
                             type: string
                           type: object
+                        env:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  configMapKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                      - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  fieldRef:
+                                    properties:
+                                      apiVersion:
+                                        type: string
+                                      fieldPath:
+                                        type: string
+                                    required:
+                                      - fieldPath
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  resourceFieldRef:
+                                    properties:
+                                      containerName:
+                                        type: string
+                                      divisor:
+                                        anyOf:
+                                          - type: integer
+                                          - type: string
+                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                        x-kubernetes-int-or-string: true
+                                      resource:
+                                        type: string
+                                    required:
+                                      - resource
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                      - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                            required:
+                              - name
+                            type: object
+                          type: array
                         image:
                           type: string
                         initimage:
@@ -1267,6 +1738,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 runAsUserName:
                                   type: string
                               type: object
@@ -1315,9 +1788,22 @@ spec:
                                       type: string
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
+                              matchLabelKeys:
+                                items:
+                                  type: string
+                                type: array
+                                x-kubernetes-list-type: atomic
                               maxSkew:
                                 format: int32
                                 type: integer
+                              minDomains:
+                                format: int32
+                                type: integer
+                              nodeAffinityPolicy:
+                                type: string
+                              nodeTaintsPolicy:
+                                type: string
                               topologyKey:
                                 type: string
                               whenUnsatisfiable:
@@ -1371,6 +1857,20 @@ spec:
                                     - kind
                                     - name
                                   type: object
+                                  x-kubernetes-map-type: atomic
+                                dataSourceRef:
+                                  properties:
+                                    apiGroup:
+                                      type: string
+                                    kind:
+                                      type: string
+                                    name:
+                                      type: string
+                                  required:
+                                    - kind
+                                    - name
+                                  type: object
+                                  x-kubernetes-map-type: atomic
                                 resources:
                                   properties:
                                     limits:
@@ -1413,6 +1913,7 @@ spec:
                                         type: string
                                       type: object
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 storageClassName:
                                   type: string
                                 volumeMode:
@@ -1426,6 +1927,14 @@ spec:
                                   items:
                                     type: string
                                   type: array
+                                allocatedResources:
+                                  additionalProperties:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  type: object
                                 capacity:
                                   additionalProperties:
                                     anyOf:
@@ -1458,11 +1967,77 @@ spec:
                                   type: array
                                 phase:
                                   type: string
+                                resizeStatus:
+                                  type: string
                               type: object
                           type: object
                       required:
                         - volumeClaimTemplate
                       type: object
+                    env:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              configMapKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              fieldRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                  - fieldPath
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              resourceFieldRef:
+                                properties:
+                                  containerName:
+                                    type: string
+                                  divisor:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  resource:
+                                    type: string
+                                required:
+                                  - resource
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        required:
+                          - name
+                        type: object
+                      type: array
                     image:
                       type: string
                     labels:
@@ -1550,6 +2125,8 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                            hostProcess:
+                              type: boolean
                             runAsUserName:
                               type: string
                           type: object
@@ -1598,9 +2175,22 @@ spec:
                                   type: string
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
+                          matchLabelKeys:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
                           maxSkew:
                             format: int32
                             type: integer
+                          minDomains:
+                            format: int32
+                            type: integer
+                          nodeAffinityPolicy:
+                            type: string
+                          nodeTaintsPolicy:
+                            type: string
                           topologyKey:
                             type: string
                           whenUnsatisfiable:
@@ -1662,6 +2252,7 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   weight:
                                     format: int32
                                     type: integer
@@ -1708,10 +2299,12 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   type: array
                               required:
                                 - nodeSelectorTerms
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         podAffinity:
                           properties:
@@ -1743,6 +2336,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -1786,6 +2404,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -1827,6 +2470,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -1870,6 +2538,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -1888,6 +2581,70 @@ spec:
                       type: object
                     diskCapacityGB:
                       type: integer
+                    env:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              configMapKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              fieldRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                  - fieldPath
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              resourceFieldRef:
+                                properties:
+                                  containerName:
+                                    type: string
+                                  divisor:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  resource:
+                                    type: string
+                                required:
+                                  - resource
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        required:
+                          - name
+                        type: object
+                      type: array
                     image:
                       type: string
                     initimage:
@@ -1977,6 +2734,8 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                            hostProcess:
+                              type: boolean
                             runAsUserName:
                               type: string
                           type: object
@@ -1987,6 +2746,22 @@ spec:
                       type: string
                     storageClassName:
                       type: string
+                    tolerations:
+                      items:
+                        properties:
+                          effect:
+                            type: string
+                          key:
+                            type: string
+                          operator:
+                            type: string
+                          tolerationSeconds:
+                            format: int64
+                            type: integer
+                          value:
+                            type: string
+                        type: object
+                      type: array
                     topologySpreadConstraints:
                       items:
                         properties:
@@ -2013,9 +2788,22 @@ spec:
                                   type: string
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
+                          matchLabelKeys:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
                           maxSkew:
                             format: int32
                             type: integer
+                          minDomains:
+                            format: int32
+                            type: integer
+                          nodeAffinityPolicy:
+                            type: string
+                          nodeTaintsPolicy:
+                            type: string
                           topologyKey:
                             type: string
                           whenUnsatisfiable:
@@ -2092,6 +2880,8 @@ spec:
                           type: string
                         gmsaCredentialSpecName:
                           type: string
+                        hostProcess:
+                          type: boolean
                         runAsUserName:
                           type: string
                       type: object
@@ -2131,6 +2921,7 @@ spec:
                                       required:
                                         - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     fieldRef:
                                       properties:
                                         apiVersion:
@@ -2140,6 +2931,7 @@ spec:
                                       required:
                                         - fieldPath
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     resourceFieldRef:
                                       properties:
                                         containerName:
@@ -2155,6 +2947,7 @@ spec:
                                       required:
                                         - resource
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     secretKeyRef:
                                       properties:
                                         key:
@@ -2166,6 +2959,7 @@ spec:
                                       required:
                                         - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                   type: object
                               required:
                                 - name
@@ -2181,6 +2975,7 @@ spec:
                                     optional:
                                       type: boolean
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 prefix:
                                   type: string
                                 secretRef:
@@ -2190,6 +2985,7 @@ spec:
                                     optional:
                                       type: boolean
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                             type: array
                           image:
@@ -2311,6 +3107,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -2360,6 +3166,9 @@ spec:
                                 required:
                                   - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -2402,6 +3211,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -2451,6 +3270,9 @@ spec:
                                 required:
                                   - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -2529,6 +3351,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                                 type: object
@@ -2545,6 +3369,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -2594,6 +3428,9 @@ spec:
                                 required:
                                   - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -2690,6 +3527,20 @@ spec:
                                   - kind
                                   - name
                                 type: object
+                                x-kubernetes-map-type: atomic
+                              dataSourceRef:
+                                properties:
+                                  apiGroup:
+                                    type: string
+                                  kind:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                  - kind
+                                  - name
+                                type: object
+                                x-kubernetes-map-type: atomic
                               resources:
                                 properties:
                                   limits:
@@ -2732,6 +3583,7 @@ spec:
                                       type: string
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
                               storageClassName:
                                 type: string
                               volumeMode:
@@ -2745,6 +3597,14 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                              allocatedResources:
+                                additionalProperties:
+                                  anyOf:
+                                    - type: integer
+                                    - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                type: object
                               capacity:
                                 additionalProperties:
                                   anyOf:
@@ -2776,6 +3636,8 @@ spec:
                                   type: object
                                 type: array
                               phase:
+                                type: string
+                              resizeStatus:
                                 type: string
                             type: object
                         type: object
@@ -2844,6 +3706,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               user:
                                 type: string
                             required:
@@ -2860,6 +3723,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               volumeID:
                                 type: string
                             required:
@@ -2890,6 +3754,7 @@ spec:
                               optional:
                                 type: boolean
                             type: object
+                            x-kubernetes-map-type: atomic
                           csi:
                             properties:
                               driver:
@@ -2901,6 +3766,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               readOnly:
                                 type: boolean
                               volumeAttributes:
@@ -2927,6 +3793,7 @@ spec:
                                       required:
                                         - fieldPath
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     mode:
                                       format: int32
                                       type: integer
@@ -2947,6 +3814,7 @@ spec:
                                       required:
                                         - resource
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                   required:
                                     - path
                                   type: object
@@ -2965,8 +3833,6 @@ spec:
                             type: object
                           ephemeral:
                             properties:
-                              readOnly:
-                                type: boolean
                               volumeClaimTemplate:
                                 properties:
                                   metadata:
@@ -3006,6 +3872,20 @@ spec:
                                           - kind
                                           - name
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      dataSourceRef:
+                                        properties:
+                                          apiGroup:
+                                            type: string
+                                          kind:
+                                            type: string
+                                          name:
+                                            type: string
+                                        required:
+                                          - kind
+                                          - name
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       resources:
                                         properties:
                                           limits:
@@ -3048,6 +3928,7 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       storageClassName:
                                         type: string
                                       volumeMode:
@@ -3094,6 +3975,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                             required:
                               - driver
                             type: object
@@ -3178,6 +4060,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               targetPortal:
                                 type: string
                             required:
@@ -3258,6 +4141,7 @@ spec:
                                         optional:
                                           type: boolean
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     downwardAPI:
                                       properties:
                                         items:
@@ -3272,6 +4156,7 @@ spec:
                                                 required:
                                                   - fieldPath
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               mode:
                                                 format: int32
                                                 type: integer
@@ -3292,6 +4177,7 @@ spec:
                                                 required:
                                                   - resource
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                             required:
                                               - path
                                             type: object
@@ -3319,6 +4205,7 @@ spec:
                                         optional:
                                           type: boolean
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     serviceAccountToken:
                                       properties:
                                         audience:
@@ -3373,6 +4260,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               user:
                                 type: string
                             required:
@@ -3394,6 +4282,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               sslEnabled:
                                 type: boolean
                               storageMode:
@@ -3445,6 +4334,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               volumeName:
                                 type: string
                               volumeNamespace:
@@ -3478,6 +4368,7 @@ spec:
                       name:
                         type: string
                     type: object
+                    x-kubernetes-map-type: atomic
                   type: array
                 zones:
                   items:
@@ -3524,6 +4415,7 @@ spec:
                                             type: object
                                           type: array
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     weight:
                                       format: int32
                                       type: integer
@@ -3570,10 +4462,12 @@ spec:
                                             type: object
                                           type: array
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     type: array
                                 required:
                                   - nodeSelectorTerms
                                 type: object
+                                x-kubernetes-map-type: atomic
                             type: object
                           podAffinity:
                             properties:
@@ -3605,6 +4499,31 @@ spec:
                                                 type: string
                                               type: object
                                           type: object
+                                          x-kubernetes-map-type: atomic
+                                        namespaceSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                  - key
+                                                  - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                          x-kubernetes-map-type: atomic
                                         namespaces:
                                           items:
                                             type: string
@@ -3648,6 +4567,31 @@ spec:
                                             type: string
                                           type: object
                                       type: object
+                                      x-kubernetes-map-type: atomic
+                                    namespaceSelector:
+                                      properties:
+                                        matchExpressions:
+                                          items:
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                items:
+                                                  type: string
+                                                type: array
+                                            required:
+                                              - key
+                                              - operator
+                                            type: object
+                                          type: array
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                      type: object
+                                      x-kubernetes-map-type: atomic
                                     namespaces:
                                       items:
                                         type: string
@@ -3689,6 +4633,31 @@ spec:
                                                 type: string
                                               type: object
                                           type: object
+                                          x-kubernetes-map-type: atomic
+                                        namespaceSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                  - key
+                                                  - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                          x-kubernetes-map-type: atomic
                                         namespaces:
                                           items:
                                             type: string
@@ -3732,6 +4701,31 @@ spec:
                                             type: string
                                           type: object
                                       type: object
+                                      x-kubernetes-map-type: atomic
+                                    namespaceSelector:
+                                      properties:
+                                        matchExpressions:
+                                          items:
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                items:
+                                                  type: string
+                                                type: array
+                                            required:
+                                              - key
+                                              - operator
+                                            type: object
+                                          type: array
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                      type: object
+                                      x-kubernetes-map-type: atomic
                                     namespaces:
                                       items:
                                         type: string
@@ -3835,6 +4829,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                             type: object
@@ -3884,9 +4880,22 @@ spec:
                                     type: string
                                   type: object
                               type: object
+                              x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               format: int32
                               type: integer
+                            minDomains:
+                              format: int32
+                              type: integer
+                            nodeAffinityPolicy:
+                              type: string
+                            nodeTaintsPolicy:
+                              type: string
                             topologyKey:
                               type: string
                             whenUnsatisfiable:
@@ -3940,6 +4949,20 @@ spec:
                                   - kind
                                   - name
                                 type: object
+                                x-kubernetes-map-type: atomic
+                              dataSourceRef:
+                                properties:
+                                  apiGroup:
+                                    type: string
+                                  kind:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                  - kind
+                                  - name
+                                type: object
+                                x-kubernetes-map-type: atomic
                               resources:
                                 properties:
                                   limits:
@@ -3982,6 +5005,7 @@ spec:
                                       type: string
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
                               storageClassName:
                                 type: string
                               volumeMode:
@@ -3995,6 +5019,14 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                              allocatedResources:
+                                additionalProperties:
+                                  anyOf:
+                                    - type: integer
+                                    - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                type: object
                               capacity:
                                 additionalProperties:
                                   anyOf:
@@ -4026,6 +5058,8 @@ spec:
                                   type: object
                                 type: array
                               phase:
+                                type: string
+                              resizeStatus:
                                 type: string
                             type: object
                         type: object
@@ -4198,11 +5232,13 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 credsSecret:
                   properties:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 env:
                   items:
                     properties:
@@ -4223,6 +5259,7 @@ spec:
                             required:
                               - key
                             type: object
+                            x-kubernetes-map-type: atomic
                           fieldRef:
                             properties:
                               apiVersion:
@@ -4232,6 +5269,7 @@ spec:
                             required:
                               - fieldPath
                             type: object
+                            x-kubernetes-map-type: atomic
                           resourceFieldRef:
                             properties:
                               containerName:
@@ -4247,6 +5285,7 @@ spec:
                             required:
                               - resource
                             type: object
+                            x-kubernetes-map-type: atomic
                           secretKeyRef:
                             properties:
                               key:
@@ -4258,6 +5297,7 @@ spec:
                             required:
                               - key
                             type: object
+                            x-kubernetes-map-type: atomic
                         type: object
                     required:
                       - name
@@ -4301,6 +5341,17 @@ spec:
                   required:
                     - name
                   type: object
+                externalClientCertSecrets:
+                  items:
+                    properties:
+                      name:
+                        type: string
+                      type:
+                        type: string
+                    required:
+                      - name
+                    type: object
+                  type: array
                 features:
                   properties:
                     bucketDNS:
@@ -4324,6 +5375,7 @@ spec:
                     name:
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 kes:
                   properties:
                     affinity:
@@ -4368,6 +5420,7 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   weight:
                                     format: int32
                                     type: integer
@@ -4414,10 +5467,12 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   type: array
                               required:
                                 - nodeSelectorTerms
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         podAffinity:
                           properties:
@@ -4449,6 +5504,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -4492,6 +5572,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -4533,6 +5638,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -4576,6 +5706,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -4601,6 +5756,70 @@ spec:
                       required:
                         - name
                       type: object
+                    env:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              configMapKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              fieldRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                  - fieldPath
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              resourceFieldRef:
+                                properties:
+                                  containerName:
+                                    type: string
+                                  divisor:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  resource:
+                                    type: string
+                                required:
+                                  - resource
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        required:
+                          - name
+                        type: object
+                      type: array
                     externalCertSecret:
                       properties:
                         name:
@@ -4619,6 +5838,7 @@ spec:
                         name:
                           type: string
                       type: object
+                      x-kubernetes-map-type: atomic
                     keyName:
                       type: string
                     labels:
@@ -4709,6 +5929,8 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                            hostProcess:
+                              type: boolean
                             runAsUserName:
                               type: string
                           type: object
@@ -4757,9 +5979,22 @@ spec:
                                   type: string
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
+                          matchLabelKeys:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
                           maxSkew:
                             format: int32
                             type: integer
+                          minDomains:
+                            format: int32
+                            type: integer
+                          nodeAffinityPolicy:
+                            type: string
+                          nodeTaintsPolicy:
+                            type: string
                           topologyKey:
                             type: string
                           whenUnsatisfiable:
@@ -4785,6 +6020,16 @@ spec:
                     failureThreshold:
                       format: int32
                       type: integer
+                    grpc:
+                      properties:
+                        port:
+                          format: int32
+                          type: integer
+                        service:
+                          type: string
+                      required:
+                        - port
+                      type: object
                     httpGet:
                       properties:
                         host:
@@ -4834,6 +6079,9 @@ spec:
                       required:
                         - port
                       type: object
+                    terminationGracePeriodSeconds:
+                      format: int64
+                      type: integer
                     timeoutSeconds:
                       format: int32
                       type: integer
@@ -4882,6 +6130,7 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   weight:
                                     format: int32
                                     type: integer
@@ -4928,10 +6177,12 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   type: array
                               required:
                                 - nodeSelectorTerms
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         podAffinity:
                           properties:
@@ -4963,6 +6214,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -5006,6 +6282,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -5047,6 +6348,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -5090,6 +6416,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -5155,6 +6506,7 @@ spec:
                                               type: object
                                             type: array
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       weight:
                                         format: int32
                                         type: integer
@@ -5201,10 +6553,12 @@ spec:
                                               type: object
                                             type: array
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       type: array
                                   required:
                                     - nodeSelectorTerms
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                             podAffinity:
                               properties:
@@ -5236,6 +6590,31 @@ spec:
                                                   type: string
                                                 type: object
                                             type: object
+                                            x-kubernetes-map-type: atomic
+                                          namespaceSelector:
+                                            properties:
+                                              matchExpressions:
+                                                items:
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      items:
+                                                        type: string
+                                                      type: array
+                                                  required:
+                                                    - key
+                                                    - operator
+                                                  type: object
+                                                type: array
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                            type: object
+                                            x-kubernetes-map-type: atomic
                                           namespaces:
                                             items:
                                               type: string
@@ -5279,6 +6658,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -5320,6 +6724,31 @@ spec:
                                                   type: string
                                                 type: object
                                             type: object
+                                            x-kubernetes-map-type: atomic
+                                          namespaceSelector:
+                                            properties:
+                                              matchExpressions:
+                                                items:
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      items:
+                                                        type: string
+                                                      type: array
+                                                  required:
+                                                    - key
+                                                    - operator
+                                                  type: object
+                                                type: array
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                            type: object
+                                            x-kubernetes-map-type: atomic
                                           namespaces:
                                             items:
                                               type: string
@@ -5363,6 +6792,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -5379,6 +6833,70 @@ spec:
                           additionalProperties:
                             type: string
                           type: object
+                        env:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                              valueFrom:
+                                properties:
+                                  configMapKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                      - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  fieldRef:
+                                    properties:
+                                      apiVersion:
+                                        type: string
+                                      fieldPath:
+                                        type: string
+                                    required:
+                                      - fieldPath
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  resourceFieldRef:
+                                    properties:
+                                      containerName:
+                                        type: string
+                                      divisor:
+                                        anyOf:
+                                          - type: integer
+                                          - type: string
+                                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                        x-kubernetes-int-or-string: true
+                                      resource:
+                                        type: string
+                                    required:
+                                      - resource
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                  secretKeyRef:
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    required:
+                                      - key
+                                    type: object
+                                    x-kubernetes-map-type: atomic
+                                type: object
+                            required:
+                              - name
+                            type: object
+                          type: array
                         image:
                           type: string
                         initimage:
@@ -5468,6 +6986,8 @@ spec:
                                   type: string
                                 gmsaCredentialSpecName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 runAsUserName:
                                   type: string
                               type: object
@@ -5516,9 +7036,22 @@ spec:
                                       type: string
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
+                              matchLabelKeys:
+                                items:
+                                  type: string
+                                type: array
+                                x-kubernetes-list-type: atomic
                               maxSkew:
                                 format: int32
                                 type: integer
+                              minDomains:
+                                format: int32
+                                type: integer
+                              nodeAffinityPolicy:
+                                type: string
+                              nodeTaintsPolicy:
+                                type: string
                               topologyKey:
                                 type: string
                               whenUnsatisfiable:
@@ -5572,6 +7105,20 @@ spec:
                                     - kind
                                     - name
                                   type: object
+                                  x-kubernetes-map-type: atomic
+                                dataSourceRef:
+                                  properties:
+                                    apiGroup:
+                                      type: string
+                                    kind:
+                                      type: string
+                                    name:
+                                      type: string
+                                  required:
+                                    - kind
+                                    - name
+                                  type: object
+                                  x-kubernetes-map-type: atomic
                                 resources:
                                   properties:
                                     limits:
@@ -5614,6 +7161,7 @@ spec:
                                         type: string
                                       type: object
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 storageClassName:
                                   type: string
                                 volumeMode:
@@ -5627,6 +7175,14 @@ spec:
                                   items:
                                     type: string
                                   type: array
+                                allocatedResources:
+                                  additionalProperties:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  type: object
                                 capacity:
                                   additionalProperties:
                                     anyOf:
@@ -5659,11 +7215,77 @@ spec:
                                   type: array
                                 phase:
                                   type: string
+                                resizeStatus:
+                                  type: string
                               type: object
                           type: object
                       required:
                         - volumeClaimTemplate
                       type: object
+                    env:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              configMapKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              fieldRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                  - fieldPath
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              resourceFieldRef:
+                                properties:
+                                  containerName:
+                                    type: string
+                                  divisor:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  resource:
+                                    type: string
+                                required:
+                                  - resource
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        required:
+                          - name
+                        type: object
+                      type: array
                     image:
                       type: string
                     labels:
@@ -5751,6 +7373,8 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                            hostProcess:
+                              type: boolean
                             runAsUserName:
                               type: string
                           type: object
@@ -5799,9 +7423,22 @@ spec:
                                   type: string
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
+                          matchLabelKeys:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
                           maxSkew:
                             format: int32
                             type: integer
+                          minDomains:
+                            format: int32
+                            type: integer
+                          nodeAffinityPolicy:
+                            type: string
+                          nodeTaintsPolicy:
+                            type: string
                           topologyKey:
                             type: string
                           whenUnsatisfiable:
@@ -5871,6 +7508,7 @@ spec:
                                             type: object
                                           type: array
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     weight:
                                       format: int32
                                       type: integer
@@ -5917,10 +7555,12 @@ spec:
                                             type: object
                                           type: array
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     type: array
                                 required:
                                   - nodeSelectorTerms
                                 type: object
+                                x-kubernetes-map-type: atomic
                             type: object
                           podAffinity:
                             properties:
@@ -5952,6 +7592,31 @@ spec:
                                                 type: string
                                               type: object
                                           type: object
+                                          x-kubernetes-map-type: atomic
+                                        namespaceSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                  - key
+                                                  - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                          x-kubernetes-map-type: atomic
                                         namespaces:
                                           items:
                                             type: string
@@ -5995,6 +7660,31 @@ spec:
                                             type: string
                                           type: object
                                       type: object
+                                      x-kubernetes-map-type: atomic
+                                    namespaceSelector:
+                                      properties:
+                                        matchExpressions:
+                                          items:
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                items:
+                                                  type: string
+                                                type: array
+                                            required:
+                                              - key
+                                              - operator
+                                            type: object
+                                          type: array
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                      type: object
+                                      x-kubernetes-map-type: atomic
                                     namespaces:
                                       items:
                                         type: string
@@ -6036,6 +7726,31 @@ spec:
                                                 type: string
                                               type: object
                                           type: object
+                                          x-kubernetes-map-type: atomic
+                                        namespaceSelector:
+                                          properties:
+                                            matchExpressions:
+                                              items:
+                                                properties:
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                  values:
+                                                    items:
+                                                      type: string
+                                                    type: array
+                                                required:
+                                                  - key
+                                                  - operator
+                                                type: object
+                                              type: array
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
+                                          type: object
+                                          x-kubernetes-map-type: atomic
                                         namespaces:
                                           items:
                                             type: string
@@ -6079,6 +7794,31 @@ spec:
                                             type: string
                                           type: object
                                       type: object
+                                      x-kubernetes-map-type: atomic
+                                    namespaceSelector:
+                                      properties:
+                                        matchExpressions:
+                                          items:
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                items:
+                                                  type: string
+                                                type: array
+                                            required:
+                                              - key
+                                              - operator
+                                            type: object
+                                          type: array
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                      type: object
+                                      x-kubernetes-map-type: atomic
                                     namespaces:
                                       items:
                                         type: string
@@ -6094,6 +7834,67 @@ spec:
                       annotations:
                         additionalProperties:
                           type: string
+                        type: object
+                      containerSecurityContext:
+                        properties:
+                          allowPrivilegeEscalation:
+                            type: boolean
+                          capabilities:
+                            properties:
+                              add:
+                                items:
+                                  type: string
+                                type: array
+                              drop:
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          privileged:
+                            type: boolean
+                          procMount:
+                            type: string
+                          readOnlyRootFilesystem:
+                            type: boolean
+                          runAsGroup:
+                            format: int64
+                            type: integer
+                          runAsNonRoot:
+                            type: boolean
+                          runAsUser:
+                            format: int64
+                            type: integer
+                          seLinuxOptions:
+                            properties:
+                              level:
+                                type: string
+                              role:
+                                type: string
+                              type:
+                                type: string
+                              user:
+                                type: string
+                            type: object
+                          seccompProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                              - type
+                            type: object
+                          windowsOptions:
+                            properties:
+                              gmsaCredentialSpec:
+                                type: string
+                              gmsaCredentialSpecName:
+                                type: string
+                              hostProcess:
+                                type: boolean
+                              runAsUserName:
+                                type: string
+                            type: object
                         type: object
                       labels:
                         additionalProperties:
@@ -6124,6 +7925,8 @@ spec:
                               x-kubernetes-int-or-string: true
                             type: object
                         type: object
+                      runtimeClassName:
+                        type: string
                       securityContext:
                         properties:
                           fsGroup:
@@ -6182,6 +7985,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                             type: object
@@ -6231,9 +8036,22 @@ spec:
                                     type: string
                                   type: object
                               type: object
+                              x-kubernetes-map-type: atomic
+                            matchLabelKeys:
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
                             maxSkew:
                               format: int32
                               type: integer
+                            minDomains:
+                              format: int32
+                              type: integer
+                            nodeAffinityPolicy:
+                              type: string
+                            nodeTaintsPolicy:
+                              type: string
                             topologyKey:
                               type: string
                             whenUnsatisfiable:
@@ -6287,6 +8105,20 @@ spec:
                                   - kind
                                   - name
                                 type: object
+                                x-kubernetes-map-type: atomic
+                              dataSourceRef:
+                                properties:
+                                  apiGroup:
+                                    type: string
+                                  kind:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                  - kind
+                                  - name
+                                type: object
+                                x-kubernetes-map-type: atomic
                               resources:
                                 properties:
                                   limits:
@@ -6329,6 +8161,7 @@ spec:
                                       type: string
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
                               storageClassName:
                                 type: string
                               volumeMode:
@@ -6342,6 +8175,14 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                              allocatedResources:
+                                additionalProperties:
+                                  anyOf:
+                                    - type: integer
+                                    - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                type: object
                               capacity:
                                 additionalProperties:
                                   anyOf:
@@ -6373,6 +8214,8 @@ spec:
                                   type: object
                                 type: array
                               phase:
+                                type: string
+                              resizeStatus:
                                 type: string
                             type: object
                         type: object
@@ -6431,6 +8274,7 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   weight:
                                     format: int32
                                     type: integer
@@ -6477,10 +8321,12 @@ spec:
                                           type: object
                                         type: array
                                     type: object
+                                    x-kubernetes-map-type: atomic
                                   type: array
                               required:
                                 - nodeSelectorTerms
                               type: object
+                              x-kubernetes-map-type: atomic
                           type: object
                         podAffinity:
                           properties:
@@ -6512,6 +8358,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -6555,6 +8426,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -6596,6 +8492,31 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      namespaceSelector:
+                                        properties:
+                                          matchExpressions:
+                                            items:
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  items:
+                                                    type: string
+                                                  type: array
+                                              required:
+                                                - key
+                                                - operator
+                                              type: object
+                                            type: array
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       namespaces:
                                         items:
                                           type: string
@@ -6639,6 +8560,31 @@ spec:
                                           type: string
                                         type: object
                                     type: object
+                                    x-kubernetes-map-type: atomic
+                                  namespaceSelector:
+                                    properties:
+                                      matchExpressions:
+                                        items:
+                                          properties:
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                            values:
+                                              items:
+                                                type: string
+                                              type: array
+                                          required:
+                                            - key
+                                            - operator
+                                          type: object
+                                        type: array
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
+                                    type: object
+                                    x-kubernetes-map-type: atomic
                                   namespaces:
                                     items:
                                       type: string
@@ -6657,6 +8603,70 @@ spec:
                       type: object
                     diskCapacityGB:
                       type: integer
+                    env:
+                      items:
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            properties:
+                              configMapKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              fieldRef:
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                  - fieldPath
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              resourceFieldRef:
+                                properties:
+                                  containerName:
+                                    type: string
+                                  divisor:
+                                    anyOf:
+                                      - type: integer
+                                      - type: string
+                                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                    x-kubernetes-int-or-string: true
+                                  resource:
+                                    type: string
+                                required:
+                                  - resource
+                                type: object
+                                x-kubernetes-map-type: atomic
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                required:
+                                  - key
+                                type: object
+                                x-kubernetes-map-type: atomic
+                            type: object
+                        required:
+                          - name
+                        type: object
+                      type: array
                     image:
                       type: string
                     initimage:
@@ -6746,6 +8756,8 @@ spec:
                               type: string
                             gmsaCredentialSpecName:
                               type: string
+                            hostProcess:
+                              type: boolean
                             runAsUserName:
                               type: string
                           type: object
@@ -6756,6 +8768,22 @@ spec:
                       type: string
                     storageClassName:
                       type: string
+                    tolerations:
+                      items:
+                        properties:
+                          effect:
+                            type: string
+                          key:
+                            type: string
+                          operator:
+                            type: string
+                          tolerationSeconds:
+                            format: int64
+                            type: integer
+                          value:
+                            type: string
+                        type: object
+                      type: array
                     topologySpreadConstraints:
                       items:
                         properties:
@@ -6782,9 +8810,22 @@ spec:
                                   type: string
                                 type: object
                             type: object
+                            x-kubernetes-map-type: atomic
+                          matchLabelKeys:
+                            items:
+                              type: string
+                            type: array
+                            x-kubernetes-list-type: atomic
                           maxSkew:
                             format: int32
                             type: integer
+                          minDomains:
+                            format: int32
+                            type: integer
+                          nodeAffinityPolicy:
+                            type: string
+                          nodeTaintsPolicy:
+                            type: string
                           topologyKey:
                             type: string
                           whenUnsatisfiable:
@@ -6810,6 +8851,16 @@ spec:
                     failureThreshold:
                       format: int32
                       type: integer
+                    grpc:
+                      properties:
+                        port:
+                          format: int32
+                          type: integer
+                        service:
+                          type: string
+                      required:
+                        - port
+                      type: object
                     httpGet:
                       properties:
                         host:
@@ -6859,6 +8910,9 @@ spec:
                       required:
                         - port
                       type: object
+                    terminationGracePeriodSeconds:
+                      format: int64
+                      type: integer
                     timeoutSeconds:
                       format: int32
                       type: integer
@@ -6924,6 +8978,7 @@ spec:
                                       required:
                                         - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     fieldRef:
                                       properties:
                                         apiVersion:
@@ -6933,6 +8988,7 @@ spec:
                                       required:
                                         - fieldPath
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     resourceFieldRef:
                                       properties:
                                         containerName:
@@ -6948,6 +9004,7 @@ spec:
                                       required:
                                         - resource
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     secretKeyRef:
                                       properties:
                                         key:
@@ -6959,6 +9016,7 @@ spec:
                                       required:
                                         - key
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                   type: object
                               required:
                                 - name
@@ -6974,6 +9032,7 @@ spec:
                                     optional:
                                       type: boolean
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 prefix:
                                   type: string
                                 secretRef:
@@ -6983,6 +9042,7 @@ spec:
                                     optional:
                                       type: boolean
                                   type: object
+                                  x-kubernetes-map-type: atomic
                               type: object
                             type: array
                           image:
@@ -7104,6 +9164,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -7153,6 +9223,9 @@ spec:
                                 required:
                                   - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -7195,6 +9268,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -7244,6 +9327,9 @@ spec:
                                 required:
                                   - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -7322,6 +9408,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                                 type: object
@@ -7338,6 +9426,16 @@ spec:
                               failureThreshold:
                                 format: int32
                                 type: integer
+                              grpc:
+                                properties:
+                                  port:
+                                    format: int32
+                                    type: integer
+                                  service:
+                                    type: string
+                                required:
+                                  - port
+                                type: object
                               httpGet:
                                 properties:
                                   host:
@@ -7387,6 +9485,9 @@ spec:
                                 required:
                                   - port
                                 type: object
+                              terminationGracePeriodSeconds:
+                                format: int64
+                                type: integer
                               timeoutSeconds:
                                 format: int32
                                 type: integer
@@ -7483,6 +9584,20 @@ spec:
                                   - kind
                                   - name
                                 type: object
+                                x-kubernetes-map-type: atomic
+                              dataSourceRef:
+                                properties:
+                                  apiGroup:
+                                    type: string
+                                  kind:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                  - kind
+                                  - name
+                                type: object
+                                x-kubernetes-map-type: atomic
                               resources:
                                 properties:
                                   limits:
@@ -7525,6 +9640,7 @@ spec:
                                       type: string
                                     type: object
                                 type: object
+                                x-kubernetes-map-type: atomic
                               storageClassName:
                                 type: string
                               volumeMode:
@@ -7538,6 +9654,14 @@ spec:
                                 items:
                                   type: string
                                 type: array
+                              allocatedResources:
+                                additionalProperties:
+                                  anyOf:
+                                    - type: integer
+                                    - type: string
+                                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                                  x-kubernetes-int-or-string: true
+                                type: object
                               capacity:
                                 additionalProperties:
                                   anyOf:
@@ -7569,6 +9693,8 @@ spec:
                                   type: object
                                 type: array
                               phase:
+                                type: string
+                              resizeStatus:
                                 type: string
                             type: object
                         type: object
@@ -7637,6 +9763,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               user:
                                 type: string
                             required:
@@ -7653,6 +9780,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               volumeID:
                                 type: string
                             required:
@@ -7683,6 +9811,7 @@ spec:
                               optional:
                                 type: boolean
                             type: object
+                            x-kubernetes-map-type: atomic
                           csi:
                             properties:
                               driver:
@@ -7694,6 +9823,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               readOnly:
                                 type: boolean
                               volumeAttributes:
@@ -7720,6 +9850,7 @@ spec:
                                       required:
                                         - fieldPath
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     mode:
                                       format: int32
                                       type: integer
@@ -7740,6 +9871,7 @@ spec:
                                       required:
                                         - resource
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                   required:
                                     - path
                                   type: object
@@ -7758,8 +9890,6 @@ spec:
                             type: object
                           ephemeral:
                             properties:
-                              readOnly:
-                                type: boolean
                               volumeClaimTemplate:
                                 properties:
                                   metadata:
@@ -7799,6 +9929,20 @@ spec:
                                           - kind
                                           - name
                                         type: object
+                                        x-kubernetes-map-type: atomic
+                                      dataSourceRef:
+                                        properties:
+                                          apiGroup:
+                                            type: string
+                                          kind:
+                                            type: string
+                                          name:
+                                            type: string
+                                        required:
+                                          - kind
+                                          - name
+                                        type: object
+                                        x-kubernetes-map-type: atomic
                                       resources:
                                         properties:
                                           limits:
@@ -7841,6 +9985,7 @@ spec:
                                               type: string
                                             type: object
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                       storageClassName:
                                         type: string
                                       volumeMode:
@@ -7887,6 +10032,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                             required:
                               - driver
                             type: object
@@ -7971,6 +10117,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               targetPortal:
                                 type: string
                             required:
@@ -8051,6 +10198,7 @@ spec:
                                         optional:
                                           type: boolean
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     downwardAPI:
                                       properties:
                                         items:
@@ -8065,6 +10213,7 @@ spec:
                                                 required:
                                                   - fieldPath
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               mode:
                                                 format: int32
                                                 type: integer
@@ -8085,6 +10234,7 @@ spec:
                                                 required:
                                                   - resource
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                             required:
                                               - path
                                             type: object
@@ -8112,6 +10262,7 @@ spec:
                                         optional:
                                           type: boolean
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     serviceAccountToken:
                                       properties:
                                         audience:
@@ -8166,6 +10317,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               user:
                                 type: string
                             required:
@@ -8187,6 +10339,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               sslEnabled:
                                 type: boolean
                               storageMode:
@@ -8238,6 +10391,7 @@ spec:
                                   name:
                                     type: string
                                 type: object
+                                x-kubernetes-map-type: atomic
                               volumeName:
                                 type: string
                               volumeNamespace:
@@ -8263,6 +10417,84 @@ spec:
                   required:
                     - containers
                   type: object
+                startup:
+                  properties:
+                    exec:
+                      properties:
+                        command:
+                          items:
+                            type: string
+                          type: array
+                      type: object
+                    failureThreshold:
+                      format: int32
+                      type: integer
+                    grpc:
+                      properties:
+                        port:
+                          format: int32
+                          type: integer
+                        service:
+                          type: string
+                      required:
+                        - port
+                      type: object
+                    httpGet:
+                      properties:
+                        host:
+                          type: string
+                        httpHeaders:
+                          items:
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+                            required:
+                              - name
+                              - value
+                            type: object
+                          type: array
+                        path:
+                          type: string
+                        port:
+                          anyOf:
+                            - type: integer
+                            - type: string
+                          x-kubernetes-int-or-string: true
+                        scheme:
+                          type: string
+                      required:
+                        - port
+                      type: object
+                    initialDelaySeconds:
+                      format: int32
+                      type: integer
+                    periodSeconds:
+                      format: int32
+                      type: integer
+                    successThreshold:
+                      format: int32
+                      type: integer
+                    tcpSocket:
+                      properties:
+                        host:
+                          type: string
+                        port:
+                          anyOf:
+                            - type: integer
+                            - type: string
+                          x-kubernetes-int-or-string: true
+                      required:
+                        - port
+                      type: object
+                    terminationGracePeriodSeconds:
+                      format: int64
+                      type: integer
+                    timeoutSeconds:
+                      format: int32
+                      type: integer
+                  type: object
                 subPath:
                   type: string
                 users:
@@ -8271,6 +10503,7 @@ spec:
                       name:
                         type: string
                     type: object
+                    x-kubernetes-map-type: atomic
                   type: array
               required:
                 - pools
@@ -8381,5 +10614,5 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: []
-  storedVersions: []
+  conditions: null
+  storedVersions: null
