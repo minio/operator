@@ -201,7 +201,7 @@ spec:
       fsGroup: {{ .kes.securityContext.fsGroup | int }}
   {{- end }}
 
-  {{- if dig "prometheus" "diskCapacityGB" false . }}
+  {{- if ne (dig "prometheus" "disable" false .) true}}
   ## Prometheus setup for MinIO Tenant.
   prometheus:
     image: {{ .prometheus.image | quote }}
@@ -245,7 +245,7 @@ spec:
       fsGroup: {{ .prometheus.securityContext.fsGroup | int }}
   {{- end }}
 
-  {{- if dig "log" "audit" "diskCapacityGB" false . }}
+  {{- if ne (dig "log" "disable" false .) true}}
   ## LogSearch API setup for MinIO Tenant.
   log:
     image: {{ .log.image | quote }}
