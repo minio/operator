@@ -213,15 +213,15 @@ spec:
     initimage: {{ .prometheus.initimage | quote }}
     diskCapacityGB: {{ .prometheus.diskCapacityGB | int }}
     storageClassName: {{ .prometheus.storageClassName }}
-    {{- with (dig "annotations" (dict) .) }}
+    {{- with (dig "prometheus" "annotations" (dict) .) }}
     annotations:
       {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "labels" (dict) .) }}
+    {{- with (dig "prometheus" "labels" (dict) .) }}
     labels:
       {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "nodeSelector" (dict) .) }}
+    {{- with (dig "prometheus" "nodeSelector" (dict) .) }}
     nodeSelector:
       {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -233,7 +233,7 @@ spec:
     tolerations:
       {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with (dig "resources" (dict) .) }}
+    {{- with (dig "prometheus" "resources" (dict) .) }}
     resources:
       {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -253,11 +253,11 @@ spec:
     env:
       {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "resources" (dict) .) }}
+    {{- with (dig "log" "resources" (dict) .) }}
     resources:
       {{ toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "nodeSelector" (dict) .) }}
+    {{- with (dig "log" "nodeSelector" (dict) .) }}
     nodeSelector:
       {{ toYaml . | nindent 4 }}
     {{- end }}
@@ -269,11 +269,11 @@ spec:
     tolerations:
       {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with (dig "annotations" (dict) .) }}
+    {{- with (dig "log" "annotations" (dict) .) }}
     annotations:
       {{ toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "labels" (dict) .) }}
+    {{- with (dig "log" "labels" (dict) .) }}
     labels:
       {{ toYaml . | nindent 4 }}
     {{- end }}
@@ -290,7 +290,7 @@ spec:
       {{- end }}
       initimage: {{ .log.db.initimage | quote }}
       volumeClaimTemplate:
-        {{- with (dig "metadata" (dict) .) }}
+        {{- with (dig "log" "db" "volumeClaimTemplate" "metadata" (dict) .) }}
         metadata:
           {{ toYaml . | nindent 4 }}
         {{- end }}
@@ -301,11 +301,11 @@ spec:
           resources:
             requests:
               storage: {{ .log.db.volumeClaimTemplate.spec.resources.requests.storage | quote }}
-      {{- with (dig "resources" (dict) .) }}
+      {{- with (dig "log" "db" "resources" (dict) .) }}
       resources:
         {{ toYaml . | nindent 4 }}
       {{- end }}
-      {{- with (dig "nodeSelector" (dict) .) }}
+      {{- with (dig "log" "db" "nodeSelector" (dict) .) }}
       nodeSelector:
         {{ toYaml . | nindent 4 }}
       {{- end }}
@@ -317,11 +317,11 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (dig "annotations" (dict) .) }}
+      {{- with (dig "log" "db" "annotations" (dict) .) }}
       annotations:
         {{ toYaml . | nindent 4 }}
       {{- end }}
-      {{- with (dig "labels" (dict) .) }}
+      {{- with (dig "log" "db" "labels" (dict) .) }}
       labels:
         {{ toYaml . | nindent 4 }}
       {{- end }}
