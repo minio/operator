@@ -154,17 +154,17 @@ for catalog in "${redhatCatalogs[@]}"; do
 done
 echo " "
 echo "clean -e files"
-rm -vf $(git status | grep -e "-e$" | awk '{print $1}')
+rm -vf $(git ls-files --others | grep -e "-e$" | awk '{print $1}')
 
 echo "Copying latest bundle to root"
 cp -R bundles/redhat-marketplace/$RELEASE/manifests manifests
 cp -R bundles/redhat-marketplace/$RELEASE/metadata metadata
 
 echo "Commit all assets"
-git add -u
-git add bundles
-git add community-operators
-git add helm-releases
+#git add -u
+#git add bundles
+#git add community-operators
+#git add helm-releases
 
 echo "Removing temporary binaries in: $TMP_BIN_DIR"
 rm -rf $TMP_BIN_DIR
