@@ -20,7 +20,7 @@ Creates MinIO Operator Deployment along with MinIO Tenant CRD, Service account, 
 
 Options:
 
-- `--image=minio/operator:v4.5.6`
+- `--image=minio/operator:v4.5.7`
 - `--namespace=minio-operator`
 - `--cluster-domain=cluster.local`
 - `--namespace-to-watch=default`
@@ -87,7 +87,7 @@ Command: `kubectl minio tenant upgrade TENANT_NAME --image IMAGE_TAG [options]`
 
 Upgrade MinIO Docker image for the given MinIO Tenant.
 
-example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2023-01-02T09-40-09Z`
+example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2023-01-12T02-06-16Z`
 
 Options:
 
