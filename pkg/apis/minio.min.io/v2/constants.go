@@ -88,7 +88,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2023-01-02T09-40-09Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2023-01-12T02-06-16Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -153,7 +153,7 @@ const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
 // Log related constants
 
 // DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/operator:v4.5.6"
+const DefaultLogSearchAPIImage = "minio/operator:v4.5.7"
 
 // LogPgImage specifies the latest Postgres container image
 const LogPgImage = "library/postgres:13"
