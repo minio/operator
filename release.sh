@@ -35,11 +35,11 @@ for file in "${files[@]}"; do
   sed -i -e "s/${CONSOLE_CURRENT_RELEASE}/${CONSOLE_RELEASE}/g" "$file"
 done
 
-echo "Update olm catalogs with $RELEASE"
-./olm.sh
-
 echo "Re-indexing helm chart releases for $RELEASE"
 ./helm-reindex.sh
 
 # Add all the generated files to git
 
+echo "clean -e files"
+rm -vf $(git ls-files --others | grep -e "-e$" | awk '{print $1}')
+git add .

@@ -58,7 +58,8 @@ for catalog in "${redhatCatalogs[@]}"; do
     --manifests \
     --metadata \
     --output-dir bundles/$catalog/$RELEASE \
-    --channels stable
+    --channels stable \
+    --overwrite
 
   # deploymentName has to be minio-operator, the reason is in case/03206318 or redhat support.
   # the deployment name you set is "operator", and in CSV, there are two deployments 'console' and 'minio-operator'
@@ -123,8 +124,8 @@ for catalog in "${redhatCatalogs[@]}"; do
   rm -Rf metadata
 
   mkdir -p $catalog
-  cp -R bundles/$catalog/$RELEASE/manifests $catalog/manifests
-  cp -R bundles/$catalog/$RELEASE/metadata $catalog/metadata
+  cp -R bundles/$catalog/$RELEASE/manifests $catalog
+  cp -R bundles/$catalog/$RELEASE/metadata $catalog
 
   sed -i -e '/metrics/d' bundle.Dockerfile
   sed -i -e '/scorecard/d' bundle.Dockerfile
@@ -141,7 +142,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # as well as the default.
   {
     echo "  # Annotations to specify OCP versions compatibility."
-    echo "  com.redhat.openshift.versions: v4.6-v4.10"
+    echo "  com.redhat.openshift.versions: v4.6-v4.12"
     echo "  # Annotation to add default bundle channel as potential is declared"
     echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
   } >> bundles/$catalog/$RELEASE/metadata/annotations.yaml
@@ -153,17 +154,17 @@ for catalog in "${redhatCatalogs[@]}"; do
 done
 echo " "
 echo "clean -e files"
-rm -vf $(git status | grep -e "-e$" | awk '{print $1}')
+rm -vf $(git ls-files --others | grep -e "-e$" | awk '{print $1}')
 
 echo "Copying latest bundle to root"
 cp -R bundles/redhat-marketplace/$RELEASE/manifests manifests
 cp -R bundles/redhat-marketplace/$RELEASE/metadata metadata
 
 echo "Commit all assets"
-git add -u
-git add bundles
-git add community-operators
-git add helm-releases
+#git add -u
+#git add bundles
+#git add community-operators
+#git add helm-releases
 
 echo "Removing temporary binaries in: $TMP_BIN_DIR"
 rm -rf $TMP_BIN_DIR
