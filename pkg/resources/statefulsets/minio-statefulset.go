@@ -421,9 +421,15 @@ func poolContainerSecurityContext(pool *miniov2.Pool) *v1.SecurityContext {
 	var runAsGroup int64 = 1000
 	// Default to Pod values
 	if pool.SecurityContext != nil {
-		runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
-		runAsUser = *pool.SecurityContext.RunAsUser
-		runAsGroup = *pool.SecurityContext.RunAsGroup
+		if pool.SecurityContext.RunAsNonRoot != nil {
+			runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
+		}
+		if pool.SecurityContext.RunAsUser != nil {
+			runAsUser = *pool.SecurityContext.RunAsUser
+		}
+		if pool.SecurityContext.RunAsGroup != nil {
+			runAsGroup = *pool.SecurityContext.RunAsGroup
+		}
 	}
 
 	containerSecurityContext := corev1.SecurityContext{
