@@ -2,13 +2,13 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"storage-lite","namespace":"tenant-lite"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:7432b4bcdff3b0255aec760af10d34fb392988ca921248ca39b68beec46a7472","imagePullSecret":{},"log":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"audit":{"diskCapacityGB":1},"db":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"env":[],"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":999,"runAsGroup":999,"runAsNonRoot":true,"runAsUser":999},"serviceAccountName":"","tolerations":[],"volumeClaimTemplate":{"metadata":{},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"standard"}}},"env":[],"image":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","tolerations":[]},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"containerSecurityContext":{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","prometheus":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"diskCapacityGB":1,"env":[],"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","sidecarimage":"","storageClassName":"standard"},"requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
+    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"storage-lite","namespace":"tenant-lite"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:fc6bedc99355fbdf1982a734475b56d01f4bbc59a9ec6f9a7bc4e222f74f5326","imagePullSecret":{},"log":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"audit":{"diskCapacityGB":1},"db":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"env":[],"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":999,"runAsGroup":999,"runAsNonRoot":true,"runAsUser":999},"serviceAccountName":"","tolerations":[],"volumeClaimTemplate":{"metadata":{},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"standard"}}},"env":[],"image":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","tolerations":[]},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"containerSecurityContext":{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","prometheus":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"diskCapacityGB":1,"env":[],"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","sidecarimage":"","storageClassName":"standard"},"requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
     capabilities: "Full Lifecycle"
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
-    containerImage: quay.io/minio/operator:v4.5.7
+    containerImage: quay.io/minio/operator:v4.5.8
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -16,7 +16,7 @@ metadata:
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
-  name: minio-operator-rhmp.v4.5.7
+  name: minio-operator-rhmp.v4.5.8
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -465,7 +465,7 @@ spec:
                     env:
                       - name: CONSOLE_OPERATOR_MODE
                         value: "on"
-                    image: quay.io/minio/console@sha256:c6f4b55a0b424000d40892695967222d51fc26da9ab92d1008276007711de76b
+                    image: quay.io/minio/console@sha256:9827b3b7c89d5b809aa8b90233fd6802711e664aeba87288488255a012ba9d28
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -531,7 +531,7 @@ spec:
                   - env:
                       - name: MINIO_CONSOLE_TLS_ENABLE
                         value: "off"
-                    image: quay.io/minio/operator:v4.5.7
+                    image: quay.io/minio/operator:v4.5.8
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -570,17 +570,4 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  version: 4.5.7
-  webhookdefinitions:
-    - admissionReviewVersions:
-        - v1
-        - v2
-      containerPort: 4222
-      conversionCRDs:
-        - tenants.minio.min.io
-      deploymentName: minio-operator
-      generateName: ctenants.kb.io
-      sideEffects: None
-      targetPort: 0
-      type: ConversionWebhook
-      webhookPath: /webhook/v1/crd-conversion
+  version: 4.5.8

@@ -15,7 +15,7 @@ spec:
     webhook:
       clientConfig:
         service:
-          name: minio-operator
+          name: operator
           namespace: minio-operator
           path: /webhook/v1/crd-conversion
           port: 4222
