@@ -420,28 +420,29 @@ func poolContainerSecurityContext(pool *miniov2.Pool) *v1.SecurityContext {
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	// Default to Pod values
-	if pool.SecurityContext != nil {
-		if pool.SecurityContext.RunAsNonRoot != nil {
-			runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
-		}
-		if pool.SecurityContext.RunAsUser != nil {
-			runAsUser = *pool.SecurityContext.RunAsUser
-		}
-		if pool.SecurityContext.RunAsGroup != nil {
-			runAsGroup = *pool.SecurityContext.RunAsGroup
-		}
-	}
-
-	containerSecurityContext := corev1.SecurityContext{
+	containerSecurityContext := &corev1.SecurityContext{
 		RunAsNonRoot: &runAsNonRoot,
 		RunAsUser:    &runAsUser,
 		RunAsGroup:   &runAsGroup,
 	}
 
-	if pool != nil && pool.ContainerSecurityContext != nil {
-		containerSecurityContext = *pool.ContainerSecurityContext
+	if pool == nil {
+		return containerSecurityContext
 	}
-	return &containerSecurityContext
+
+	if pool.SecurityContext != nil {
+		if pool.SecurityContext.RunAsNonRoot != nil {
+			containerSecurityContext.RunAsNonRoot = pool.SecurityContext.RunAsNonRoot
+		}
+		// Allow nil values for RunAsUser and RunAsGroup in case Openshift 4. Openshift 4 supports auto generation these values for security reason.
+		containerSecurityContext.RunAsUser = pool.SecurityContext.RunAsUser
+		containerSecurityContext.RunAsGroup = pool.SecurityContext.RunAsGroup
+	}
+
+	if pool.ContainerSecurityContext != nil {
+		containerSecurityContext = pool.ContainerSecurityContext
+	}
+	return containerSecurityContext
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
