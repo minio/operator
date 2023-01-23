@@ -78,7 +78,10 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 	return c.tracker
 }
 
-var _ clientset.Interface = &Clientset{}
+var (
+	_ clientset.Interface = &Clientset{}
+	_ testing.FakeClient  = &Clientset{}
+)
 
 // MinioV1 retrieves the MinioV1Client
 func (c *Clientset) MinioV1() miniov1.MinioV1Interface {

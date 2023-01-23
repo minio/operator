@@ -117,7 +117,7 @@ func (c *FakePolicyBindings) UpdateStatus(ctx context.Context, policyBinding *v1
 // Delete takes name of the policyBinding and deletes it. Returns an error if one occurs.
 func (c *FakePolicyBindings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(policybindingsResource, c.ns, name), &v1beta1.PolicyBinding{})
+		Invokes(testing.NewDeleteActionWithOptions(policybindingsResource, c.ns, name, opts), &v1beta1.PolicyBinding{})
 
 	return err
 }
