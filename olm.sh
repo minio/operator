@@ -21,7 +21,7 @@ function install_binaries() {
 install_binaries
 
 # get the minio version
-minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq '.spec.image' | tail -1)
+minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '.spec.image' | tail -1)
 echo "minioVersionInExample: ${minioVersionInExample}"
 
 # Get sha form of minio version
@@ -58,13 +58,14 @@ for catalog in "${redhatCatalogs[@]}"; do
     --manifests \
     --metadata \
     --output-dir bundles/$catalog/$RELEASE \
-    --channels stable
+    --channels stable \
+    --overwrite
 
   # deploymentName has to be minio-operator, the reason is in case/03206318 or redhat support.
   # the deployment name you set is "operator", and in CSV, there are two deployments 'console' and 'minio-operator'
   # but there is no 'operator' option, without this change error is: "calculated deployment install is bad"
-  yq -i '.spec.webhookdefinitions[0].deploymentName = "minio-operator"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-  yq -i '.spec.conversion.webhook.clientConfig.service.name = "minio-operator"' bundles/$catalog/$RELEASE/manifests/minio.min.io_tenants.yaml
+  yq -i 'del(.spec.webhookdefinitions)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml 
+  yq -i '.spec.conversion.webhook.clientConfig.service.name = "operator"' bundles/$catalog/$RELEASE/manifests/minio.min.io_tenants.yaml
 
   # I get the update from engineering team, typically no user/group specification is made in a container image.
   # Rather, the user spec (if there is one) is placed in the clusterserviceversion.yaml file as a RunAsUser clause.
@@ -107,7 +108,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i ".metadata.annotations.containerImage |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
   # Console Image in Digested form: sha256:xxxx
-  consoleImage=$(yq '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
+  consoleImage=$(yq eval-all '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
   echo "consoleImage: ${consoleImage}"
   consoleImageDigest=$(docker pull "quay.io/"${consoleImage} | grep Digest | awk -F ' ' '{print $2}')
   echo "consoleImageDigest: ${consoleImageDigest}"
@@ -123,8 +124,8 @@ for catalog in "${redhatCatalogs[@]}"; do
   rm -Rf metadata
 
   mkdir -p $catalog
-  cp -R bundles/$catalog/$RELEASE/manifests $catalog/manifests
-  cp -R bundles/$catalog/$RELEASE/metadata $catalog/metadata
+  cp -R bundles/$catalog/$RELEASE/manifests $catalog
+  cp -R bundles/$catalog/$RELEASE/metadata $catalog
 
   sed -i -e '/metrics/d' bundle.Dockerfile
   sed -i -e '/scorecard/d' bundle.Dockerfile
@@ -141,7 +142,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # as well as the default.
   {
     echo "  # Annotations to specify OCP versions compatibility."
-    echo "  com.redhat.openshift.versions: v4.6-v4.10"
+    echo "  com.redhat.openshift.versions: v4.6-v4.12"
     echo "  # Annotation to add default bundle channel as potential is declared"
     echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
   } >> bundles/$catalog/$RELEASE/metadata/annotations.yaml
@@ -153,17 +154,17 @@ for catalog in "${redhatCatalogs[@]}"; do
 done
 echo " "
 echo "clean -e files"
-rm -vf $(git status | grep -e "-e$" | awk '{print $1}')
+rm -vf $(git ls-files --others | grep -e "-e$" | awk '{print $1}')
 
 echo "Copying latest bundle to root"
 cp -R bundles/redhat-marketplace/$RELEASE/manifests manifests
 cp -R bundles/redhat-marketplace/$RELEASE/metadata metadata
 
 echo "Commit all assets"
-git add -u
-git add bundles
-git add community-operators
-git add helm-releases
+#git add -u
+#git add bundles
+#git add community-operators
+#git add helm-releases
 
 echo "Removing temporary binaries in: $TMP_BIN_DIR"
 rm -rf $TMP_BIN_DIR

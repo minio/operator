@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -63,7 +62,7 @@ type hostsTemplateValues struct {
 // GetNSFromFile assumes the operator is running inside a k8s pod and extract the
 // current namespace from the /var/run/secrets/kubernetes.io/serviceaccount/namespace file
 func GetNSFromFile() string {
-	namespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	namespace, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
 		return "minio-operator"
 	}

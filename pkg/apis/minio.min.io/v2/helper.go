@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -138,7 +137,7 @@ var (
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
 // current ca certificate from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 func GetPodCAFromFile() []byte {
-	namespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	namespace, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
 		return nil
 	}
@@ -148,7 +147,7 @@ func GetPodCAFromFile() []byte {
 // GetNSFromFile assumes the operator is running inside a k8s pod and extract the
 // current namespace from the /var/run/secrets/kubernetes.io/serviceaccount/namespace file
 func GetNSFromFile() string {
-	namespace, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	namespace, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
 		return "minio-operator"
 	}
@@ -813,7 +812,7 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 // CreateBuckets creates buckets and skips if bucket already present
 func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) error {
 	for _, bucket := range buckets {
-		if err := s3utils.CheckValidBucketName(bucket.Name); err != nil {
+		if err := s3utils.CheckValidBucketNameStrict(bucket.Name); err != nil {
 			return err
 		}
 		// create each bucket with a 20 seconds timeout
@@ -827,6 +826,8 @@ func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) err
 			case "BucketAlreadyOwnedByYou", "BucketAlreadyExists":
 				klog.Infof(err.Error())
 				continue
+			default:
+				return err
 			}
 		}
 		klog.Infof("Successfully created bucket %s", bucket.Name)

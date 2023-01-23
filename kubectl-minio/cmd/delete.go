@@ -132,8 +132,15 @@ func (o *deleteCmd) run(writer io.Writer) error {
 		return err
 	}
 
+	path, _ := rootCmd.Flags().GetString(kubeconfig)
+
+	parameters := []string{"delete", "-f", "-"}
+	if path != "" {
+		parameters = append([]string{"--kubeconfig", path}, parameters...)
+	}
+
 	// do kubectl apply
-	cmd := exec.Command("kubectl", "delete", "-f", "-")
+	cmd := exec.Command("kubectl", parameters...)
 
 	cmd.Stdin = strings.NewReader(string(yml))
 

@@ -63,11 +63,19 @@ spec:
           {{- with .Values.console.volumeMounts }}
           {{- toYaml . | nindent 12 }}
           {{- end }}
+          securityContext:
+          {{- with .Values.console.containerSecurityContext }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
       volumes:
       {{- with .Values.console.volumes }}
       {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.console.initContainers }}
       initContainers:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operator.runtimeClassName }}
+      runtimeClassName: 
       {{- toYaml . | nindent 8 }}
   {{- end}}

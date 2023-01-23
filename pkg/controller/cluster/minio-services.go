@@ -77,6 +77,10 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 				svc.Spec.Type = v1.ServiceTypeClusterIP
 			}
 		}
+
+		// update the selector
+		svc.Spec.Selector = expectedSvc.Spec.Selector
+
 		_, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, svc, metav1.UpdateOptions{})
 		if err != nil {
 			return err

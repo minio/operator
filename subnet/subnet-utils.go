@@ -25,7 +25,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -337,7 +336,7 @@ func subnetReqDo(r *http.Request, headers map[string]string) (string, error) {
 	}
 
 	defer resp.Body.Close()
-	respBytes, e := ioutil.ReadAll(io.LimitReader(resp.Body, subnetRespBodyLimit))
+	respBytes, e := io.ReadAll(io.LimitReader(resp.Body, subnetRespBodyLimit))
 	if e != nil {
 		return "", e
 	}

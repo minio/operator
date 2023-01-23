@@ -13,7 +13,7 @@ tenant:
   ## Registry location and Tag to download MinIO Server image
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2022-05-26T05-48-41Z
+    tag: RELEASE.2023-01-12T02-06-16Z
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported
@@ -56,7 +56,16 @@ tenant:
       ## Configure resource requests and limits for MinIO containers
       resources: { }
       ## Configure security context
-      securityContext: { }
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        runAsNonRoot: true
+      ## Configure container security context
+      containerSecurityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        runAsNonRoot: true
       ## Configure topology constraints
       topologySpreadConstraints: [ ]
       ## Configure Runtime Class
@@ -105,6 +114,9 @@ tenant:
   # Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
   # Refer https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
   readiness: { }
+  # Startup Probe for container startup. Container will be restarted if the probe fails.
+  # Refer https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+  startup: { }
   ## exposeServices defines the exposure of the MinIO object storage and Console services.
   ## service is exposed as a loadbalancer in k8s service.
   exposeServices: { }
@@ -216,6 +228,8 @@ tenant:
   #    fsGroup: 1000
   ## Prometheus setup for MinIO Tenant.
   prometheus:
+    # When set to true disables the creation of prometheus deployment
+    disabled: false
     image: "" # defaults to quay.io/prometheus/prometheus:latest
     env: [ ]
     sidecarimage: "" # defaults to alpine
@@ -239,6 +253,8 @@ tenant:
       fsGroup: 1000
   ## LogSearch API setup for MinIO Tenant.
   log:
+    # When set to true disables the creation of logsearch api deployment
+    disabled: false
     image: "" # defaults to minio/operator:v4.4.17
     env: [ ]
     resources: { }

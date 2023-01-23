@@ -99,7 +99,7 @@ type Features struct {
 //
 // The following parameters are specific to the `minio.min.io/v2` MinIO CRD API `spec` definition added as part of the MinIO Operator v4.0.0. +
 //
-// For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation]. +
+// For more complete documentation on this object, see the https://min.io/docs/minio/kubernetes/upstream/operations/installation.html[MinIO Kubernetes Documentation]. +
 type TenantSpec struct {
 	// *Required* +
 	//
@@ -107,7 +107,7 @@ type TenantSpec struct {
 	//
 	// The MinIO Tenant `spec` *must have* at least *one* element in the `pools` array. +
 	//
-	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#server-pools[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation.
+	// See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation.
 	Pools []Pool `json:"pools"`
 	// *Optional* +
 	//
@@ -153,7 +153,7 @@ type TenantSpec struct {
 	//
 	// * - `type` - Specify `kubernetes.io/tls` +
 	//
-	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+	// See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 	// +optional
 	ExternalCertSecret []*LocalCertificateReference `json:"externalCertSecret,omitempty"`
 	// *Optional* +
@@ -168,7 +168,7 @@ type TenantSpec struct {
 	//
 	// * - `type` - Specify `kubernetes.io/tls`. +
 	//
-	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+	// See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 	// +optional
 	ExternalCaCertSecret []*LocalCertificateReference `json:"externalCaCertSecret,omitempty"`
 	// *Optional* +
@@ -185,7 +185,7 @@ type TenantSpec struct {
 	//
 	// If deploying KES with the MinIO Operator, include the hash of the certificate as part of the <<k8s-api-github-com-minio-operator-pkg-apis-minio-min-io-v2-kesconfig,`kes`>> object specification. +
 	//
-	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+	// See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 	//
 	// +optional
 	ExternalClientCertSecret *LocalCertificateReference `json:"externalClientCertSecret,omitempty"`
@@ -234,7 +234,7 @@ type TenantSpec struct {
 	//
 	// If `requestAutoCert` is set to `false` *and* `externalCertSecret` is omitted, the MinIO Tenant deploys *without* TLS enabled.
 	//
-	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+	// See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 	// +optional
 	RequestAutoCert *bool `json:"requestAutoCert,omitempty"`
 
@@ -563,7 +563,7 @@ type CertificateConfig struct {
 
 // Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a set of MinIO server pods which "pool" their storage resources for supporting object storage and retrieval requests. Each server pool is independent of all others and supports horizontal scaling of available storage resources in the MinIO Tenant. +
 //
-// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#server-pools[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation. +
+// See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#procedure-command-line[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation. +
 type Pool struct {
 	// *Optional* +
 	//
@@ -628,10 +628,18 @@ type Pool struct {
 	//
 	// * `runAsUser` +
 	//
-	// * `seLinuxOptions` +
-	//
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of containers in the pool. The Operator supports only the following container security fields: +
+	//
+	// * `runAsGroup` +
+	//
+	// * `runAsNonRoot` +
+	//
+	// * `runAsUser` +
+	//
+	// +optional
+	ContainerSecurityContext *corev1.SecurityContext `json:"containerSecurityContext,omitempty"`
 	// *Optional* +
 	//
 	// Specify custom labels and annotations to append to the Pool.
@@ -1015,7 +1023,7 @@ type KESConfig struct {
 	//
 	// * - `type` - Specify `kubernetes.io/tls` +
 	//
-	// See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+	// See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#procedure-command-line[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 	// +optional
 	ExternalCertSecret *LocalCertificateReference `json:"externalCertSecret,omitempty"`
 	// *Optional* +

@@ -102,6 +102,8 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&c.tenantOpts.PrometheusStorageClass, "prometheus-storage-class", "", "(Only used when enable-prometheus is on) Storage class for prometheus")
 	f.BoolVarP(&c.output, "output", "o", false, "generate tenant yaml for 'kubectl apply -f tenant.yaml'")
 	f.BoolVar(&c.tenantOpts.Interactive, "interactive", false, "Create tenant in interactive mode")
+	f.BoolVar(&c.tenantOpts.ExposeMinioService, "expose-minio-service", false, "Enable/Disable expose the Minio Service")
+	f.BoolVar(&c.tenantOpts.ExposeConsoleService, "expose-console-service", false, "Enable/Disable expose the Console service")
 	return cmd
 }
 
@@ -205,6 +207,8 @@ func (c *createCmd) populateInteractiveTenant() error {
 	if c.tenantOpts.EnablePrometheus {
 		c.populatePrometheus()
 	}
+	c.tenantOpts.ExposeMinioService = helpers.Ask("Expose Minio Service")
+	c.tenantOpts.ExposeConsoleService = helpers.Ask("Expose Console Service")
 	return nil
 }
 

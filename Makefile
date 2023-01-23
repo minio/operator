@@ -66,9 +66,7 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@go install github.com/minio/controller-tools/cmd/controller-gen@v0.4.7
-	@echo "WARNING: installing our fork github.com/minio/controller-tools/cmd/controller-gen@v0.4.7"
-	@echo "Any other controller-gen will cause the generated CRD to lose the volumeClaimTemplate metadata to be lost"
+	@go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.1
 	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@mv $(KUSTOMIZE_CRDS)/minio.min.io_tenants.yaml $(KUSTOMIZE_CRDS)/tenant
 	@mv $(KUSTOMIZE_CRDS)/sts.min.io_policybindings.yaml $(KUSTOMIZE_CRDS)/policybinding
@@ -115,4 +113,3 @@ generate-openshift-manifests:
 
 release: generate-openshift-manifests
 	@./release.sh
-	@./helm-reindex.sh

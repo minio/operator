@@ -99,6 +99,16 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 			Value: t.PrometheusConfigJobName(),
 		},
 	}
+	// Specific case of bug in runtimeClass crun where $HOME is not set
+	for _, pool := range t.Spec.Pools {
+		if pool.RuntimeClassName != nil && *pool.RuntimeClassName == "crun" {
+			// Set HOME to /
+			envVarsMap["HOME"] = corev1.EnvVar{
+				Name:  "HOME",
+				Value: "/",
+			}
+		}
+	}
 
 	var domains []string
 	// Enable Bucket DNS only if asked for by default turned off
@@ -344,6 +354,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVar
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
 		StartupProbe:    t.Spec.Startup,
+		SecurityContext: poolContainerSecurityContext(pool),
 	}
 }
 
@@ -401,6 +412,36 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 		securityContext.FSGroupChangePolicy = &fsGroupChangePolicy
 	}
 	return &securityContext
+}
+
+// Builds the security context for containers in a Pool
+func poolContainerSecurityContext(pool *miniov2.Pool) *v1.SecurityContext {
+	runAsNonRoot := true
+	var runAsUser int64 = 1000
+	var runAsGroup int64 = 1000
+	// Default to Pod values
+	if pool.SecurityContext != nil {
+		if pool.SecurityContext.RunAsNonRoot != nil {
+			runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
+		}
+		if pool.SecurityContext.RunAsUser != nil {
+			runAsUser = *pool.SecurityContext.RunAsUser
+		}
+		if pool.SecurityContext.RunAsGroup != nil {
+			runAsGroup = *pool.SecurityContext.RunAsGroup
+		}
+	}
+
+	containerSecurityContext := corev1.SecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+		RunAsUser:    &runAsUser,
+		RunAsGroup:   &runAsGroup,
+	}
+
+	if pool != nil && pool.ContainerSecurityContext != nil {
+		containerSecurityContext = *pool.ContainerSecurityContext
+	}
+	return &containerSecurityContext
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.

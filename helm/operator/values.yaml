@@ -5,13 +5,15 @@ operator:
   # env:
   #   - name: MINIO_OPERATOR_TLS_ENABLE
   #     value: "off"
+  #   - name: MINIO_CONSOLE_TLS_ENABLE
+  #     value: "off"
   #   - name: CLUSTER_DOMAIN
   #     value: "cluster.domain"
   #   - name: WATCHED_NAMESPACE
   #     value: ""
   image:
     repository: minio/operator
-    tag: v4.5.4
+    tag: v4.5.8
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]
@@ -21,6 +23,10 @@ operator:
     runAsGroup: 1000
     runAsNonRoot: true
     fsGroup: 1000
+  containerSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
   nodeSelector: { }
   affinity:
     podAntiAffinity:
@@ -43,7 +49,7 @@ operator:
 console:
   image:
     repository: minio/console
-    tag: v0.21.1
+    tag: v0.22.5
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]
@@ -54,6 +60,9 @@ console:
   topologySpreadConstraints: [ ]
   resources: { }
   securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
+  containerSecurityContext:
     runAsUser: 1000
     runAsNonRoot: true
   ingress:

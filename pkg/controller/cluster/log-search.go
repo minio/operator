@@ -112,8 +112,13 @@ func (c *Controller) deleteLogHeadlessService(ctx context.Context, tenant *minio
 	if k8serrors.IsNotFound(err) {
 		return nil
 	}
+	// Delete the audit webhook configuration and ignore config not found error
 	if _, err := adminClnt.DelConfigKV(ctx, fmt.Sprintf("audit_webhook:%s", tenant.LogSearchAPIDeploymentName())); err != nil {
-		return err
+		// TODO(@vadmeste): Remove XMinioConfigError check with is not returned since Dec 2022
+		if adminErr := madmin.ToErrorResponse(err); adminErr.Code != "XMinioConfigError" &&
+			adminErr.Code != "XMinioConfigNotFoundError" {
+			return err
+		}
 	}
 	klog.V(2).Infof("Deleting Log Headless Service for %s", tenant.Namespace)
 	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.LogHLServiceName(), metav1.DeleteOptions{})

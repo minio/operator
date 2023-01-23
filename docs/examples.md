@@ -167,4 +167,4 @@ kustomize build examples/kustomization/tenant-nodeport  | kubectl apply -f -
 
 ### Additional Examples
 
-For additional examples on how to deploy a tenant with [LDAP](https://docs.min.io/minio/baremetal/security/ad-ldap-external-identity-management/configure-ad-ldap-external-identity-management.html) or [OIDC](https://docs.min.io/minio/baremetal/security/openid-external-identity-management/configure-openid-external-identity-management.html) you can look at the [examples directory](https://github.com/minio/operator/tree/master/examples/kustomization)
+For additional examples on how to deploy a tenant with [LDAP](https://min.io/docs/minio/kubernetes/upstream/operations/external-iam/configure-ad-ldap-external-identity-management.html) or [OIDC](https://min.io/docs/minio/kubernetes/upstream/operations/external-iam/configure-openid-external-identity-management.html) you can look at the [examples directory](https://github.com/minio/operator/tree/master/examples/kustomization)
