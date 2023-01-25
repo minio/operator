@@ -169,6 +169,12 @@ func main() {
 		if cert, ok := stsCert.Data["public.crt"]; ok {
 			caContent = append(caContent, cert...)
 		}
+		if val, ok := operatorTLSCert.Data["tls.crt"]; ok {
+			caContent = append(caContent, val...)
+		}
+		if val, ok := operatorTLSCert.Data["ca.crt"]; ok {
+			caContent = append(caContent, val...)
+		}
 	}
 
 	if len(caContent) > 0 {

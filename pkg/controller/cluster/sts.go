@@ -376,8 +376,19 @@ func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token strin
 	return tokenReviewResult, nil
 }
 
-// IsSTSEnabled Validates if the STS API is turned on, By default, STS is enabled by default
+// IsSTSEnabled Validates if the STS API is turned on, STS is disabled by default
+// **WARNING** This will change and will be default to "on" in operator v5
 func IsSTSEnabled() bool {
 	value, set := os.LookupEnv(STSEnabled)
-	return (set && value == "on") || !set
+	return (set && value == "on")
+}
+
+// generateConsoleTLSCert Issues the Operator Console TLS Certificate
+func (c *Controller) generateSTSTLSCert() (*string, *string) {
+	return c.generateTLSCert("sts", STSTLSSecretName, getOperatorDeploymentName())
+}
+
+// waitSTSTLSCert Waits for the Operator leader to issue the TLS Certificate for STS
+func (c *Controller) waitSTSTLSCert() (*string, *string) {
+	return c.waitForCertSecretReady("sts", STSTLSSecretName)
 }

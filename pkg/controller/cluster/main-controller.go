@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -373,12 +374,16 @@ func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	// Start the API and the Controller, but only if this pod is the leader
 	run := func(ctx context.Context) {
-		// we need to make sure the API is ready before starting operator
-		apiServerWillStart := make(chan interface{})
-		// we need to make sure the HTTP Upgrade server is ready before starting operator
-		upgradeServerWillStart := make(chan interface{})
-		// pausing the process until console has it's TLS certificate (if enabled)
-		consoleTLS := make(chan interface{})
+		var wg sync.WaitGroup
+
+		// 1) we need to make sure the API server is ready before starting operator
+		// 2) wait for STS API to be ready before starting operator
+		// 3) we need to make sure the HTTP Upgrade server is ready before starting operator
+		// 4) pausing the process until console has it's TLS certificate (if enabled)
+		wg.Add(3)
+		klog.Info("Waiting for API to start")
+		klog.Info("Waiting for Upgrade Server to start")
+		klog.Info("Waiting for Console TLS")
 
 		go func() {
 			// Request kubernetes version from Kube ApiServer
@@ -388,7 +393,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			if isOperatorTLS() {
 				publicCertPath, publicKeyPath := c.generateOperatorTLSCert()
 				klog.Infof("Starting HTTPS API server")
-				close(apiServerWillStart)
+				wg.Done()
 				certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
 				if err != nil {
 					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
@@ -402,7 +407,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				}
 			} else {
 				klog.Infof("Starting HTTP API server")
-				close(apiServerWillStart)
+				wg.Done()
 				// start server without TLS
 				if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
 					klog.Infof("HTTP server ListenAndServe failed: %v", err)
@@ -413,7 +418,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 		go func() {
 			klog.Infof("Starting HTTP Upgrade Tenant Image server")
-			close(upgradeServerWillStart)
+			wg.Done()
 			if err := c.us.ListenAndServe(); err != http.ErrServerClosed {
 				klog.Infof("HTTP Upgrade Tenant Image server ListenAndServe failed: %v", err)
 				panic(err)
@@ -421,11 +426,10 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		}()
 
 		go func() {
-			klog.Infof("Starting console TLS certificate setup")
 			if isOperatorConsoleTLS() {
-				klog.Infof("Console TLS enabled")
+				klog.Infof("Console TLS enabled, starting console TLS certificate setup")
 				err := c.recreateOperatorConsoleCertsIfRequired(ctx)
-				close(consoleTLS)
+				wg.Done()
 				if err != nil {
 					panic(err)
 				}
@@ -436,18 +440,20 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				}
 			} else {
 				klog.Infof("Console TLS is not enabled")
-				close(consoleTLS)
+				wg.Done()
 			}
 		}()
 
-		klog.Info("Waiting for API to start")
-		<-apiServerWillStart
+		if IsSTSEnabled() {
+			wg.Add(1)
+			go func() {
+				klog.Infof("STS is enabled, starting STS API certificate setup")
+				c.generateSTSTLSCert()
+				wg.Done()
+			}()
+		}
 
-		klog.Info("Waiting for Upgrade Server to start")
-		<-upgradeServerWillStart
-
-		klog.Info("Waiting for Console TLS")
-		<-consoleTLS
+		wg.Wait()
 
 		// Start the informer factories to begin populating the informer caches
 		klog.Info("Starting Tenant controller")
@@ -481,9 +487,16 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		go func() {
 			klog.Infof("Starting STS API server")
 			close(stsServerWillStart)
-			// start server without TLS
-			if err := c.sts.ListenAndServe(); err != http.ErrServerClosed {
-				klog.Infof("HTTP server ListenAndServe failed: %v", err)
+			publicCertPath, publicKeyPath := c.waitSTSTLSCert()
+			certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
+			if err != nil {
+				klog.Infof("STS HTTPS server ListenAndServeTLS failed: %v", err)
+				panic(err)
+			}
+			serverCertsManager = certsManager
+			c.sts.TLSConfig = c.createTLSConfig(serverCertsManager)
+			if err := c.sts.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
+				klog.Infof("STS  HTTPS server ListenAndServeTLS failed: %v", err)
 				panic(err)
 			}
 		}()
