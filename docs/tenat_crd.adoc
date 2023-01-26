@@ -4,17 +4,17 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2022-09-07T22-25-02Z]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-01-12T02-06-16Z]
 :kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:v0.18.0]
 :prometheus-image: https://quay.io/prometheus/prometheus:latest[prometheus/prometheus:latest]
-:logsearch-image: https://hub.docker.com/r/minio/operator/tags[minio/operator:v4.5.0]
+:logsearch-image: https://hub.docker.com/r/minio/operator/tags[minio/operator:v4.5.8]
 :postgres-image: https://github.com/docker-library/postgres[library/postgres]
 
 
 [id="{anchor_prefix}-minio-min-io-v2"]
 === minio.min.io/v2
 
-Package v2 - This page provides a quick automatically generated reference for the MinIO Operator `minio.min.io/v2` CRD. For more complete documentation on the MinIO Operator CRD, see https://docs.min.io/minio/k8s/reference/minio-operator-reference[MinIO Kubernetes Documentation]. +
+Package v2 - This page provides a quick automatically generated reference for the MinIO Operator `minio.min.io/v2` CRD. For more complete documentation on the MinIO Operator CRD, see https://min.io/docs/minio/kubernetes/upstream/index.html[MinIO Kubernetes Documentation]. +
 
 The `minio.min.io/v2` API was released with the v4.0.0 MinIO Operator. The MinIO Operator automatically converts existing tenants using the `/v1` API to `/v2`. +
 
@@ -225,7 +225,7 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
  Specify an object containing the following fields: + 
  * - `name` - The name of the Kubernetes secret containing the TLS certificate. + 
  * - `type` - Specify `kubernetes.io/tls` + 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+ See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#procedure-command-line[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 
 |*`clientCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$]__ 
 |*Optional* + 
@@ -493,7 +493,7 @@ Logging describes Logging for MinIO tenants.
 ==== Pool 
 
 Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a set of MinIO server pods which "pool" their storage resources for supporting object storage and retrieval requests. Each server pool is independent of all others and supports horizontal scaling of available storage resources in the MinIO Tenant. + 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#server-pools[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation. +
+ See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#procedure-command-line[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation. +
 
 .Appears In:
 ****
@@ -550,8 +550,13 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
  * `fsGroupChangePolicy` + 
  * `runAsGroup` + 
  * `runAsNonRoot` + 
- * `runAsUser` + 
- * `seLinuxOptions` +
+ * `runAsUser` +
+
+|*`containerSecurityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#securitycontext-v1-core[$$SecurityContext$$]__ 
+|Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of containers in the pool. The Operator supports only the following container security fields: + 
+ * `runAsGroup` + 
+ * `runAsNonRoot` + 
+ * `runAsUser` +
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 
@@ -858,7 +863,7 @@ TenantScheduler (`scheduler`) - Object describing Kubernetes Scheduler to use fo
 
 TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. + 
  The following parameters are specific to the `minio.min.io/v2` MinIO CRD API `spec` definition added as part of the MinIO Operator v4.0.0. + 
- For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation]. +
+ For more complete documentation on this object, see the https://min.io/docs/minio/kubernetes/upstream/operations/installation.html[MinIO Kubernetes Documentation]. +
 
 .Appears In:
 ****
@@ -873,7 +878,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*Required* + 
  An array of objects describing each MinIO server pool deployed in the MinIO Tenant. Each pool consists of a set of MinIO server pods which "pool" their storage resources for supporting object storage and retrieval requests. Each server pool is independent of all others and supports horizontal scaling of available storage resources in the MinIO Tenant. + 
  The MinIO Tenant `spec` *must have* at least *one* element in the `pools` array. + 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#server-pools[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation.
+ See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation.
 
 |*`image`* __string__ 
 |*Optional* + 
@@ -904,7 +909,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  Each element in the `externalCertSecret` array is an object containing the following fields: + 
  * - `name` - The name of the Kubernetes secret containing the TLS certificate. + 
  * - `type` - Specify `kubernetes.io/tls` + 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+ See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 
 |*`externalCaCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$] array__ 
 |*Optional* + 
@@ -913,7 +918,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  Each element in the `externalCertSecret` array is an object containing the following fields: + 
  * - `name` - The name of the Kubernetes secret containing the Certificate Authority. + 
  * - `type` - Specify `kubernetes.io/tls`. + 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+ See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 
 |*`externalClientCertSecret`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$]__ 
 |*Optional* + 
@@ -923,7 +928,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  * `type` - Specify `kubernetes.io/tls` + 
  The specified certificate *must* correspond to an identity on the KES server. See the https://github.com/minio/kes/wiki/Configuration#policy-configuration[KES Wiki] for more information on KES identities. + 
  If deploying KES with the MinIO Operator, include the hash of the certificate as part of the <<k8s-api-github-com-minio-operator-pkg-apis-minio-min-io-v2-kesconfig,`kes`>> object specification. + 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+ See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 
 |*`externalClientCertSecrets`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$] array__ 
 |*Optional* + 
@@ -947,13 +952,16 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  * Specify `true` to explicitly enable automatic certificate generate (Default). + 
  * Specify `false` to disable automatic certificate generation. + 
  If `requestAutoCert` is set to `false` *and* `externalCertSecret` is omitted, the MinIO Tenant deploys *without* TLS enabled. 
- See the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#transport-layer-encryption-tls[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+ See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 
 |*`liveness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#probe-v1-core[$$Probe$$]__ 
 |Liveness Probe for container liveness. Container will be restarted if the probe fails.
 
 |*`readiness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#probe-v1-core[$$Probe$$]__ 
 |Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
+
+|*`startup`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#probe-v1-core[$$Probe$$]__ 
+|Startup Probe allows to configure a max grace period for a pod to start before getting traffic routed to it.
 
 |*`s3`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-s3features[$$S3Features$$]__ 
 |*Optional* + *Deprecated in Operator v4.3.2* + 
