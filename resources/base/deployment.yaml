@@ -35,7 +35,7 @@ spec:
           env:
             - name: MINIO_CONSOLE_TLS_ENABLE
               value: "off"
-            - name: MINIO_OPERATOR_STS_ENABLED
+            - name: OPERATOR_STS_ENABLED
               value: "off"
       affinity:
         podAntiAffinity:

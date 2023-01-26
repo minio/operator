@@ -32,8 +32,8 @@ const (
 )
 
 const (
-	// STSEnabled states either if the STS Service is enabled, enabled by default
-	STSEnabled = "MINIO_OPERATOR_STS_ENABLED"
+	// STSEnabled Env variable name to turn on and off the STS Service is enabled, disabled by default
+	STSEnabled = "OPERATOR_STS_ENABLED"
 
 	// STSTLSSecretName is the name of secret created for the Operator STS TLS certs
 	STSTLSSecretName = "sts-tls"
