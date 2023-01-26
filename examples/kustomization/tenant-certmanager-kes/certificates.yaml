@@ -1,0 +1,35 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: tenant-certmanager-issuer
+  namespace: minio-tenant
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tenant-certmanager-cert
+  namespace: minio-tenant
+spec:
+  dnsNames:
+    - "*.tenant-certmanager.svc.cluster.local"
+    - "*.storage-certmanager.tenant-certmanager.svc.cluster.local"
+    - "*.storage-certmanager-hl.tenant-certmanager.svc.cluster.local"
+  secretName: tenant-certmanager-tls
+  issuerRef:
+    name: tenant-certmanager-issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tenant-certmanager-2-cert
+  namespace: tenant-certmanager
+spec:
+  dnsNames:
+    - "*.tenant-certmanager.svc.cluster.local"
+    - "*.storage-certmanager.tenant-certmanager.svc.cluster.local"
+    - "*.storage-certmanager-hl.tenant-certmanager.svc.cluster.local"
+  secretName: tenant-certmanager-2-tls
+  issuerRef:
+    name: tenant-certmanager-issuer
