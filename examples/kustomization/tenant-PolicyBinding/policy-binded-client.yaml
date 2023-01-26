@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gosdk
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: gosdk
+  name: goapp
+---
+apiVersion: sts.min.io/v1beta1
+kind: PolicyBinding
+metadata:
+  name: binding-1
+  namespace: minio-tenant-1
+spec:
+  application:
+    namespace: gosdk
+    serviceaccount: goapp
+  policies:
+    - test-bucket-rw
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: go-example
+  namespace: gosdk
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: goapp
+      containers:
+        - name: go-sdk
+          image: pjuarezd/minio-operator-sts-example:go

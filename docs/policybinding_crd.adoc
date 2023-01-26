@@ -1,0 +1,118 @@
+// Generated documentation. Please do not edit.
+:anchor_prefix: k8s-api
+
+[id="{p}-api-reference"]
+== API Reference
+
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-01-12T02-06-16Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:v0.18.0]
+:prometheus-image: https://quay.io/prometheus/prometheus:latest[prometheus/prometheus:latest]
+:logsearch-image: https://hub.docker.com/r/minio/operator/tags[minio/operator:v4.5.8]
+:postgres-image: https://github.com/docker-library/postgres[library/postgres]
+
+
+[id="{anchor_prefix}-sts-min-io-v1beta1"]
+=== sts.min.io/v1beta1
+
+Package v1beta1 is the v1beta1 version of the API.
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-application"]
+==== Application 
+
+Application defines the `Namespace` and  `ServiceAccount`
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybindingspec[$$PolicyBindingSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`namespace`* __string__ 
+|*Required* +
+
+|*`serviceaccount`* __string__ 
+|*Required* +
+
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybinding"]
+==== PolicyBinding 
+
+PolicyBinding is a https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/[Kubernetes object] describing a MinIO PolicyBinding.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybindinglist[$$PolicyBindingList$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#objectmeta-v1-meta[$$ObjectMeta$$]__ 
+|Refer to Kubernetes API documentation for fields of `metadata`.
+
+
+|*`spec`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybindingspec[$$PolicyBindingSpec$$]__ 
+|*Required* + 
+ The root field for the MinIO PolicyBinding object.
+
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybindingspec"]
+==== PolicyBindingSpec 
+
+PolicyBindingSpec (`spec`) defines the configuration of a MinIO PolicyBinding object. + 
+ The following parameters are specific to the `sts.min.io/v1beta1` MinIO Policy Binding CRD API `spec` definition added as part of the MinIO Operator v5.0.0. + 
+ PolicyBinding is a Auhtorization mechanism managed by the Minio Operator using Kubernetes ServiceAccount native object, the Binding allow to an ServiceAccount to assume policies inside a tenant. For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation].
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybinding[$$PolicyBinding$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`application`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-application[$$Application$$]__ 
+|*Required* + 
+ The Application Property identifies the namespace and service account that will be authorized
+
+|*`policies`* __string array__ 
+|*Required* +
+
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybindingusage"]
+==== PolicyBindingUsage 
+
+PolicyBindingUsage are metrics regarding the usage of the policyBinding
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybindingstatus[$$PolicyBindingStatus$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`authotizations`* __integer__ 
+|
+
+|===
+
+

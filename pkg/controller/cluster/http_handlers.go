@@ -17,6 +17,7 @@
 package cluster
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -29,13 +30,16 @@ import (
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 
 	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
+	"github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/minio/operator/pkg/resources/statefulsets"
+	iampolicy "github.com/minio/pkg/iam/policy"
 
 	"github.com/gorilla/mux"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	xhttp "github.com/minio/operator/pkg/internal"
 	"github.com/minio/operator/pkg/resources/services"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,6 +53,8 @@ const (
 	envMinIOServiceTarget = "MINIO_DNS_WEBHOOK_ENDPOINT"
 	updatePath            = "/tmp" + miniov2.WebhookAPIUpdate + slashSeparator
 )
+
+const contextLogKey = contextKeyType("operatorlog")
 
 // BucketSrvHandler - POST /webhook/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
 func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
@@ -314,4 +320,160 @@ func (c *Controller) CRDConversionHandler(w http.ResponseWriter, r *http.Request
 	if _, err := w.Write(rawResp); err != nil {
 		log.Println(err)
 	}
+}
+
+// AssumeRoleWithWebIdentityHandler - POST /sts/{tenantNamespace}
+// AssumeRoleWithWebIdentity - implementation of AWS STS API.
+// Authenticates a Kubernetes Service accounts using a JWT Token
+// Evalues a PolicyBinding CRD as Mapping of the Minio Policies that the ServiceAccount can assume on a minio tenant
+// Eg:-
+// $ curl -k -X POST https://operator:9443/sts/{tenantNamespace} -d "Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>" -H "Content-Type: application/x-www-form-urlencoded"
+func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *http.Request) {
+	routerVars := mux.Vars(r)
+	tenantNamespace := ""
+	tenantNamespace, err := xhttp.UnescapeQueryPath(routerVars["tenantNamespace"])
+
+	reqInfo := ReqInfo{
+		RequestID:       w.Header().Get(AmzRequestID),
+		RemoteHost:      xhttp.GetSourceIPFromHeaders(r),
+		Host:            r.Host,
+		UserAgent:       r.UserAgent(),
+		API:             webIdentity,
+		TenantNamespace: tenantNamespace,
+	}
+
+	ctx := context.WithValue(r.Context(), contextLogKey, &reqInfo)
+
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("tenant namespace is missing"))
+	}
+
+	// Parse the incoming form data.
+	if err := xhttp.ParseForm(r); err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, err)
+		return
+	}
+
+	if r.Form.Get(stsVersion) != stsAPIVersion {
+		err := fmt.Errorf("invalid STS API version %s, expecting %s", r.Form.Get("Version"), stsAPIVersion)
+		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, err)
+		return
+	}
+
+	action := r.Form.Get(stsAction)
+	switch action {
+	// For now we only do WebIdentity, leaving it in case we want to implement certificate authentication
+	case webIdentity:
+	default:
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("unsupported action %s", action))
+		return
+	}
+
+	token := strings.TrimSpace(r.Form.Get(stsWebIdentityToken))
+
+	if token == "" {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("missing %s", stsWebIdentityToken))
+		return
+	}
+
+	// roleArn is ignored
+	// roleArn := strings.TrimSpace(r.Form.Get(stsRoleArn))
+
+	// VALIDATE JWT
+	accessToken := r.Form.Get(stsWebIdentityToken)
+
+	saAuthResult, err := c.ValidateServiceAccountJWT(&ctx, accessToken)
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidIdentityToken, err)
+		return
+	}
+
+	if !saAuthResult.Status.Authenticated {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("access denied: Invalid Token"))
+		return
+	}
+	pbs, err := c.minioClientSet.StsV1beta1().PolicyBindings(tenantNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("error obtaining PolicyBindings: %s", err))
+		return
+	}
+
+	chunks := strings.Split(strings.Replace(saAuthResult.Status.User.Username, "system:serviceaccount:", "", -1), ":")
+	// saNamespace Service account Namespace
+	saNamespace := chunks[0]
+	// saName service account username
+	saName := chunks[1]
+	// Authorized PolicyBindings for the Service Account
+	// Need to optimize it with a Cache (probably)
+	policyBindings := []v1beta1.PolicyBinding{}
+	for _, pb := range pbs.Items {
+		if pb.Spec.Application.Namespace == saNamespace && pb.Spec.Application.ServiceAccount == saName {
+			policyBindings = append(policyBindings, pb)
+		}
+	}
+
+	if len(policyBindings) == 0 {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("service Account '%s' is not granted to AssumeRole in any Tenant", saAuthResult.Status.User.Username))
+		return
+	}
+
+	tenants, err := c.minioClientSet.MinioV2().Tenants(tenantNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil || len(tenants.Items) == 0 {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("no Tenants available in the namespace '%s'", tenantNamespace))
+		return
+	}
+
+	// Only one tenant is allowed in a single namespace, gathering the first tenant in the list
+	tenant := tenants.Items[0]
+
+	// Session Policy
+	sessionPolicyStr := r.Form.Get(stsPolicy)
+	// The plain text that you use for both inline and managed session
+	// policies shouldn't exceed 2048 characters.
+	if len(sessionPolicyStr) > 2048 {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("session policy should not exceed 2048 characters"))
+		return
+	}
+
+	if len(sessionPolicyStr) > 0 {
+		sessionPolicy, err := iampolicy.ParseConfig(bytes.NewReader([]byte(sessionPolicyStr)))
+		if err != nil {
+			writeSTSErrorResponse(ctx, w, true, ErrSTSMalformedPolicyDocument, err)
+			return
+		}
+
+		// Version in policy must not be empty
+		if sessionPolicy.Version == "" {
+			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid session policy version"))
+			return
+		}
+	}
+
+	durationStr := r.Form.Get(stsDurationSeconds)
+	duration, err := strconv.Atoi(durationStr)
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry"))
+	}
+
+	if duration < 900 || duration > 31536000 {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry: min 900s, max 31536000s"))
+	}
+
+	stsCredentials, err := AssumeRole(ctx, c, &tenant, sessionPolicyStr, duration)
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, err)
+	}
+
+	assumeRoleResponse := &AssumeRoleWithWebIdentityResponse{
+		Result: WebIdentityResult{
+			Credentials: Credentials{
+				AccessKey:    stsCredentials.AccessKeyID,
+				SecretKey:    stsCredentials.SecretAccessKey,
+				SessionToken: stsCredentials.SessionToken,
+			},
+		},
+	}
+
+	assumeRoleResponse.ResponseMetadata.RequestID = w.Header().Get(AmzRequestID)
+	writeSuccessResponseXML(w, xhttp.EncodeResponse(assumeRoleResponse))
 }

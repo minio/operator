@@ -11,7 +11,7 @@ resources:
   - resources/base/service-account.yaml
   - resources/base/cluster-role.yaml
   - resources/base/cluster-role-binding.yaml
-  - resources/base/crds/minio.min.io_tenants.yaml
+  - resources/base/crds
   - resources/base/service.yaml
   - resources/base/deployment.yaml
   - resources/base/console-ui.yaml

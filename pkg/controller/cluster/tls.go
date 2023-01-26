@@ -39,17 +39,43 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// generateTLSCert Generic method to generate TLS Certificartes for different services
-func (c *Controller) generateTLSCert(serviceName string, secretName string, deploymentName string) (*string, *string) {
+// waitForCertSecretReady Function designed to run in a non-leader operator container to wait for the leader to issue a TLS certificate
+func (c *Controller) waitForCertSecretReady(serviceName string, secretName string) (*string, *string) {
 	ctx := context.Background()
 	namespace := miniov2.GetNSFromFile()
-	csrName := getCSRName(serviceName)
-	// operator deployment for owner reference
-	operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
-	if err != nil {
+	var publicCertPath, publicKeyPath string
+
+	for {
+		tlsCertSecret, err := c.getCertificateSecret(ctx, namespace, secretName)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				klog.Infof("Waiting for the %s certificates secret to be issued", serviceName)
+				time.Sleep(time.Second * 10)
+			} else {
+				klog.Infof(err.Error())
+			}
+		} else {
+			publicCertPath, publicKeyPath = c.writeCertSecretToFile(tlsCertSecret, serviceName)
+			break
+		}
+	}
+
+	// validate certificates if they are valid, if not panic right here.
+	if _, err := tls.LoadX509KeyPair(publicCertPath, publicKeyPath); err != nil {
 		panic(err)
 	}
 
+	return &publicCertPath, &publicKeyPath
+}
+
+// getCertificateSecret gets a TLS Certificate secret
+func (c *Controller) getCertificateSecret(ctx context.Context, namespace string, secretName string) (*corev1.Secret, error) {
+	return c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
+}
+
+// writeCertSecretToFile receives a [corev1.Secret] and save it's contain to the filesystem.
+// returns publicCertPath (filesystem path to the public certificate file), publicKeyPath, (filesystem path to the private key file)
+func (c *Controller) writeCertSecretToFile(tlsCertSecret *corev1.Secret, serviceName string) (string, string) {
 	mkdirerr := os.MkdirAll(fmt.Sprintf("/tmp/%s", serviceName), 0o777)
 	if mkdirerr != nil {
 		panic(mkdirerr)
@@ -57,13 +83,47 @@ func (c *Controller) generateTLSCert(serviceName string, secretName string, depl
 
 	publicCertPath := fmt.Sprintf("/tmp/%s/public.crt", serviceName)
 	publicKeyPath := fmt.Sprintf("/tmp/%s/private.key", serviceName)
+	publicCertKey, privateKeyKey := c.getKeyNames(tlsCertSecret)
+
+	if val, ok := tlsCertSecret.Data[publicCertKey]; ok {
+		err := os.WriteFile(publicCertPath, val, 0o644)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		panic(fmt.Errorf("missing '%s' in %s/%s", publicCertKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
+	}
+	if val, ok := tlsCertSecret.Data[privateKeyKey]; ok {
+		err := os.WriteFile(publicKeyPath, val, 0o644)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		panic(fmt.Errorf("missing '%s' in %s/%s", privateKeyKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
+	}
+	return publicCertPath, publicKeyPath
+}
+
+// generateTLSCert Generic method to generate TLS Certificartes for different services
+func (c *Controller) generateTLSCert(serviceName string, secretName string, deploymentName string) (*string, *string) {
+	ctx := context.Background()
+	namespace := miniov2.GetNSFromFile()
+	csrName := getCSRName(serviceName)
+	var publicCertPath, publicKeyPath string
+	// operator deployment for owner reference
+	operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, deploymentName, metav1.GetOptions{})
+	if err != nil {
+		panic(err)
+	}
 
 	for {
 		// TLS certificates
-		tlsCertSecret, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
+		tlsCertSecret, err := c.getCertificateSecret(ctx, namespace, secretName)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				klog.Infof("%s TLS secret not found: %v", serviceName, err)
+				if k8serrors.IsNotFound(err) {
+					klog.Infof("%s TLS secret not found: %v", secretName, err)
+				}
 				if err = c.checkAndCreateCSR(ctx, operatorDeployment, serviceName, csrName, secretName); err != nil {
 					klog.Infof("Waiting for the %s certificates to be issued %v", serviceName, err.Error())
 					time.Sleep(time.Second * 10)
@@ -75,23 +135,7 @@ func (c *Controller) generateTLSCert(serviceName string, secretName string, depl
 				}
 			}
 		} else {
-			publicCertKey, privateKeyKey := c.getKeyNames(tlsCertSecret)
-			if val, ok := tlsCertSecret.Data[publicCertKey]; ok {
-				err := os.WriteFile(publicCertPath, val, 0o644)
-				if err != nil {
-					panic(err)
-				}
-			} else {
-				panic(fmt.Errorf("missing '%s' in %s/%s", publicCertKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
-			}
-			if val, ok := tlsCertSecret.Data[privateKeyKey]; ok {
-				err := os.WriteFile(publicKeyPath, val, 0o644)
-				if err != nil {
-					panic(err)
-				}
-			} else {
-				panic(fmt.Errorf("missing '%s' in %s/%s", publicCertKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
-			}
+			publicCertPath, publicKeyPath = c.writeCertSecretToFile(tlsCertSecret, serviceName)
 			break
 		}
 	}

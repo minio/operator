@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -66,12 +67,15 @@ import (
 
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/workqueue"
 	queue "k8s.io/client-go/util/workqueue"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	stsv1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
+	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1beta1"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
@@ -187,6 +191,9 @@ type Controller struct {
 	// HTTP Upgrade server instance
 	us *http.Server
 
+	// STS API server instance
+	sts *http.Server
+
 	// Client transport
 	transport *http.Transport
 
@@ -199,10 +206,21 @@ type Controller struct {
 	// time, and makes it easy to ensure we are never processing the same item
 	// simultaneously in two different workers.
 	healthCheckQueue queue.RateLimitingInterface
+
+	// queue is a rate limited work queue. This is used to queue work to be
+	// processed instead of performing it as soon as a change happens. This
+	// means we can ensure we only process a fixed amount of resources at a
+	// time, and makes it easy to ensure we are never processing the same item
+	// simultaneously in two different workers.
+	policyBindingQueue queue.RateLimitingInterface
+
+	// policyBindingListerSynced returns true if the PolicyBinding shared informer
+	// has synced at least once.
+	policyBindingListerSynced cache.InformerSynced
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -214,24 +232,26 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	controller := &Controller{
-		podName:                 podName,
-		namespacesToWatch:       namespacesToWatch,
-		kubeClientSet:           kubeClientSet,
-		minioClientSet:          minioClientSet,
-		promClient:              promClient,
-		statefulSetLister:       statefulSetInformer.Lister(),
-		statefulSetListerSynced: statefulSetInformer.Informer().HasSynced,
-		podInformer:             podInformer.Informer(),
-		deploymentLister:        deploymentInformer.Lister(),
-		deploymentListerSynced:  deploymentInformer.Informer().HasSynced,
-		tenantsSynced:           tenantInformer.Informer().HasSynced,
-		serviceLister:           serviceInformer.Lister(),
-		serviceListerSynced:     serviceInformer.Informer().HasSynced,
-		workqueue:               queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
-		healthCheckQueue:        queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "TenantsHealth"),
-		recorder:                recorder,
-		hostsTemplate:           hostsTemplate,
-		operatorVersion:         operatorVersion,
+		podName:                   podName,
+		namespacesToWatch:         namespacesToWatch,
+		kubeClientSet:             kubeClientSet,
+		minioClientSet:            minioClientSet,
+		promClient:                promClient,
+		statefulSetLister:         statefulSetInformer.Lister(),
+		statefulSetListerSynced:   statefulSetInformer.Informer().HasSynced,
+		podInformer:               podInformer.Informer(),
+		deploymentLister:          deploymentInformer.Lister(),
+		deploymentListerSynced:    deploymentInformer.Informer().HasSynced,
+		tenantsSynced:             tenantInformer.Informer().HasSynced,
+		serviceLister:             serviceInformer.Lister(),
+		serviceListerSynced:       serviceInformer.Informer().HasSynced,
+		workqueue:                 queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
+		healthCheckQueue:          queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "TenantsHealth"),
+		recorder:                  recorder,
+		hostsTemplate:             hostsTemplate,
+		operatorVersion:           operatorVersion,
+		policyBindingQueue:        queue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "PolicyBindings"),
+		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 	}
 
 	// Initialize operator webhook handlers
@@ -239,6 +259,9 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 
 	// Initialize operator HTTP upgrade server handlers
 	controller.us = configureHTTPUpgradeServer(controller)
+
+	// Initialize STS API server handlers
+	controller.sts = configureSTSServer(controller)
 
 	klog.Info("Setting up event handlers")
 	// Set up an event handler for when Tenant resources change
@@ -253,6 +276,18 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 				return
 			}
 			controller.enqueueTenant(new)
+		},
+	})
+	// Event handler for PolicyBinding resources changes
+	policyBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: controller.enqueuePB,
+		UpdateFunc: func(old, new interface{}) {
+			oldPB := old.(*stsv1beta1.PolicyBinding)
+			newPB := new.(*stsv1beta1.PolicyBinding)
+			if newPB.ResourceVersion == oldPB.ResourceVersion {
+				return
+			}
+			controller.enqueuePB(new)
 		},
 	})
 	// Set up an event handler for when StatefulSet resources change. This
@@ -339,12 +374,16 @@ func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	// Start the API and the Controller, but only if this pod is the leader
 	run := func(ctx context.Context) {
-		// we need to make sure the API is ready before starting operator
-		apiServerWillStart := make(chan interface{})
-		// we need to make sure the HTTP Upgrade server is ready before starting operator
-		upgradeServerWillStart := make(chan interface{})
-		// pausing the process until console has it's TLS certificate (if enabled)
-		consoleTLS := make(chan interface{})
+		var wg sync.WaitGroup
+
+		// 1) we need to make sure the API server is ready before starting operator
+		// 2) wait for STS API to be ready before starting operator
+		// 3) we need to make sure the HTTP Upgrade server is ready before starting operator
+		// 4) pausing the process until console has it's TLS certificate (if enabled)
+		wg.Add(3)
+		klog.Info("Waiting for API to start")
+		klog.Info("Waiting for Upgrade Server to start")
+		klog.Info("Waiting for Console TLS")
 
 		go func() {
 			// Request kubernetes version from Kube ApiServer
@@ -354,7 +393,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			if isOperatorTLS() {
 				publicCertPath, publicKeyPath := c.generateOperatorTLSCert()
 				klog.Infof("Starting HTTPS API server")
-				close(apiServerWillStart)
+				wg.Done()
 				certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
 				if err != nil {
 					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
@@ -368,7 +407,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				}
 			} else {
 				klog.Infof("Starting HTTP API server")
-				close(apiServerWillStart)
+				wg.Done()
 				// start server without TLS
 				if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
 					klog.Infof("HTTP server ListenAndServe failed: %v", err)
@@ -379,7 +418,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 		go func() {
 			klog.Infof("Starting HTTP Upgrade Tenant Image server")
-			close(upgradeServerWillStart)
+			wg.Done()
 			if err := c.us.ListenAndServe(); err != http.ErrServerClosed {
 				klog.Infof("HTTP Upgrade Tenant Image server ListenAndServe failed: %v", err)
 				panic(err)
@@ -387,11 +426,10 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		}()
 
 		go func() {
-			klog.Infof("Starting console TLS certificate setup")
 			if isOperatorConsoleTLS() {
-				klog.Infof("Console TLS enabled")
+				klog.Infof("Console TLS enabled, starting console TLS certificate setup")
 				err := c.recreateOperatorConsoleCertsIfRequired(ctx)
-				close(consoleTLS)
+				wg.Done()
 				if err != nil {
 					panic(err)
 				}
@@ -402,25 +440,27 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				}
 			} else {
 				klog.Infof("Console TLS is not enabled")
-				close(consoleTLS)
+				wg.Done()
 			}
 		}()
 
-		klog.Info("Waiting for API to start")
-		<-apiServerWillStart
+		if IsSTSEnabled() {
+			wg.Add(1)
+			go func() {
+				klog.Infof("STS is enabled, starting STS API certificate setup")
+				c.generateSTSTLSCert()
+				wg.Done()
+			}()
+		}
 
-		klog.Info("Waiting for Upgrade Server to start")
-		<-upgradeServerWillStart
-
-		klog.Info("Waiting for Console TLS")
-		<-consoleTLS
+		wg.Wait()
 
 		// Start the informer factories to begin populating the informer caches
 		klog.Info("Starting Tenant controller")
 
 		// Wait for the caches to be synced before starting workers
 		klog.Info("Waiting for informer caches to sync")
-		if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced); !ok {
+		if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
 			panic("failed to wait for caches to sync")
 		}
 
@@ -435,6 +475,34 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 
 		// Launch a goroutine to monitor all Tenants
 		go c.recurrentTenantStatusMonitor(stopCh)
+
+		select {}
+	}
+
+	// runSTS starts the STS API even if the pod is not the leader
+	runSTS := func(ctx context.Context) {
+		// stsServerWillStart is a channel for the STS Server API
+		stsServerWillStart := make(chan interface{})
+
+		go func() {
+			klog.Infof("Starting STS API server")
+			close(stsServerWillStart)
+			publicCertPath, publicKeyPath := c.waitSTSTLSCert()
+			certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
+			if err != nil {
+				klog.Infof("STS HTTPS server ListenAndServeTLS failed: %v", err)
+				panic(err)
+			}
+			serverCertsManager = certsManager
+			c.sts.TLSConfig = c.createTLSConfig(serverCertsManager)
+			if err := c.sts.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
+				klog.Infof("STS  HTTPS server ListenAndServeTLS failed: %v", err)
+				panic(err)
+			}
+		}()
+
+		klog.Info("Waiting for STS API to start")
+		<-stsServerWillStart
 
 		select {}
 	}
@@ -469,6 +537,12 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		LockConfig: resourcelock.ResourceLockConfig{
 			Identity: c.podName,
 		},
+	}
+
+	if IsSTSEnabled() {
+		go runSTS(ctx)
+	} else {
+		klog.Info("STS Api server is not enabled, not starting")
 	}
 
 	// start the leader election code loop
@@ -547,6 +621,7 @@ func (c *Controller) Stop() {
 	klog.Info("Stopping the minio controller")
 	c.workqueue.ShutDown()
 	c.healthCheckQueue.ShutDown()
+	c.policyBindingQueue.ShutDown()
 }
 
 // runWorker is a long-running function that will continually call the
@@ -1320,6 +1395,30 @@ func (c *Controller) enqueueTenant(obj interface{}) {
 	}
 
 	c.workqueue.AddRateLimited(key)
+}
+
+// enqueuePolicyBinding takes a PolicyBinding resource and converts it into a namespance/name string
+// This key is put into the workqueue.
+// It will ignore any PolicyBinding not in the namespaces that the Operator watches.
+// Only PolicyBindings in the watched namespaces where Operator manage tenants are Honored.
+func (c *Controller) enqueuePB(obj interface{}) {
+	key, err := cache.MetaNamespaceKeyFunc(obj)
+	if err != nil {
+		runtime.HandleError(err)
+		return
+	}
+	if !c.namespacesToWatch.IsEmpty() {
+		meta, err := meta.Accessor(obj)
+		if err != nil {
+			runtime.HandleError(err)
+			return
+		}
+		if !c.namespacesToWatch.Contains(meta.GetNamespace()) {
+			klog.Infof("Ignoring PolicyBindig `%s` in namespace that is not watched by this controller.", key)
+			return
+		}
+	}
+	c.policyBindingQueue.AddRateLimited(key)
 }
 
 // handleObject will take any resource implementing metav1.Object and attempt

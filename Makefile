@@ -7,7 +7,8 @@ VERSIONV ?= $(shell git describe --tags | sed 's,v,,g')
 endif
 TAG ?= "minio/operator:$(VERSION)"
 LDFLAGS ?= "-s -w -X main.Version=$(VERSION)"
-TMPFILE := $(shell mktemp)
+TMP_TENANT_CRD_FILE := $(shell mktemp)
+TMP_PB_CRD_FILE := $(shell mktemp)
 GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
@@ -67,13 +68,19 @@ clean:
 regen-crd:
 	@go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.1
 	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
-	@kustomize build resources/patch-crd > $(TMPFILE)
-	@mv -f $(TMPFILE) resources/base/crds/minio.min.io_tenants.yaml
-	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/minio.min.io_tenants.yaml > $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
+	@mv $(KUSTOMIZE_CRDS)/minio.min.io_tenants.yaml $(KUSTOMIZE_CRDS)/tenant
+	@mv $(KUSTOMIZE_CRDS)/sts.min.io_policybindings.yaml $(KUSTOMIZE_CRDS)/policybinding
+	@kustomize build resources/base/crds/tenant > $(TMP_TENANT_CRD_FILE)
+	@mv -f $(TMP_TENANT_CRD_FILE) resources/base/crds/tenant/minio.min.io_tenants.yaml
+	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/tenant/minio.min.io_tenants.yaml > $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
+	@kustomize build resources/base/crds/policybinding > $(TMP_PB_CRD_FILE)
+	@mv -f $(TMP_PB_CRD_FILE) resources/base/crds/policybinding/sts.min.io_policybindings.yaml	
+	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/policybinding/sts.min.io_policybindings.yaml > $(HELM_TEMPLATES)/sts.min.io_policybindings.yaml
 
 regen-crd-docs:
 	@which crd-ref-docs 1>/dev/null || (echo "Installing crd-ref-docs" && GO111MODULE=on go install -v github.com/elastic/crd-ref-docs@latest)
-	@${GOPATH}/bin/crd-ref-docs --source-path=./pkg/apis/minio.min.io/v2 --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/crd.adoc --templates-dir=docs/templates/asciidoctor/
+	@${GOPATH}/bin/crd-ref-docs --source-path=./pkg/apis/minio.min.io/v2  --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/tenat_crd.adoc --templates-dir=docs/templates/asciidoctor/
+	@${GOPATH}/bin/crd-ref-docs --source-path=./pkg/apis/sts.min.io/v1beta1  --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/policybinding_crd.adoc --templates-dir=docs/templates/asciidoctor/
 
 plugin: regen-crd
 	@echo "Building 'kubectl-minio' binary"
