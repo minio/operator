@@ -32,4 +32,4 @@ The following example configures a warp container to run in the same pod as the 
 
 **Note:** the MinIO Service for the tenant won't expose the ports added in the sidecar. It's up to the user to expose these ports with their own services.
 
-A complete list of values is available [here](crd.adoc##sidecars) in the API reference.
+A complete list of values is available [here](tenat_crd.adoc##sidecars) in the API reference.
