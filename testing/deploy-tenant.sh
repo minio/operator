@@ -31,7 +31,18 @@ function main() {
 
     check_tenant_status tenant-lite storage-lite
 
-    destroy_kind
+    # To allow the execution without killing the cluster at the end of the test
+    # Use below statement to automatically test and kill cluster at the end:
+    # `unset OPERATOR_ENABLE_MANUAL_TESTING`
+    # Use below statement to test and keep cluster alive at the end!:
+    # `export OPERATOR_ENABLE_MANUAL_TESTING="ON"`
+    if [[ -z "${OPERATOR_ENABLE_MANUAL_TESTING}" ]]; then
+        # OPERATOR_ENABLE_MANUAL_TESTING is not defined, hence destroy_kind
+        echo "Cluster will be destroyed for automated testing"
+        destroy_kind
+    else
+        echo "Cluster will remain alive for manual testing"
+    fi
 }
 
 main "$@"
