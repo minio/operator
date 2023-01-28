@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu
+  namespace: tenant-certmanager
+  labels:
+    app: ubuntu
+spec:
+  volumes:
+    - name: socket
+      hostPath:
+        path: /run/containerd/containerd.sock
+  containers:
+  - volumeMounts:
+      - mountPath: /run/containerd/containerd.sock
+        name: socket
+        readOnly: false
+    image: ubuntu
+    command:
+      - "sleep"
+      - "604800"
+    imagePullPolicy: IfNotPresent
+    name: ubuntu
+  restartPolicy: Always

@@ -15,3 +15,5 @@ logsearchapi-bin
 .vscode
 minio.yaml
 nancy
+examples/.DS_Store
+
