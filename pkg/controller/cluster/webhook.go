@@ -80,11 +80,6 @@ func configureWebhookServer(c *Controller) *http.Server {
 		PathPrefix(miniov2.WebhookAPIUpdate).
 		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
 
-	// CRD Conversion
-	router.Methods(http.MethodPost).
-		Path(miniov2.WebhookCRDConversaion).
-		HandlerFunc(c.CRDConversionHandler)
-
 	router.NotFoundHandler = http.NotFoundHandler()
 
 	s := &http.Server{

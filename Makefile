@@ -7,7 +7,6 @@ VERSIONV ?= $(shell git describe --tags | sed 's,v,,g')
 endif
 TAG ?= "minio/operator:$(VERSION)"
 LDFLAGS ?= "-s -w -X main.Version=$(VERSION)"
-TMPFILE := $(shell mktemp)
 GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
@@ -67,8 +66,6 @@ clean:
 regen-crd:
 	@go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.11.1
 	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
-	@kustomize build resources/patch-crd > $(TMPFILE)
-	@mv -f $(TMPFILE) resources/base/crds/minio.min.io_tenants.yaml
 	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/minio.min.io_tenants.yaml > $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
 
 regen-crd-docs:
