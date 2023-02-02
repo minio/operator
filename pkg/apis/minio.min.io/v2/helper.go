@@ -1141,22 +1141,36 @@ func (t *Tenant) HasConsoleDomains() bool {
 func (t *Tenant) ValidateDomains() error {
 	if t.HasMinIODomains() {
 		domains := t.Spec.Features.Domains.Minio
+		var globalDomains []string
 		if len(domains) != 0 {
-			for _, domainName := range domains {
-				_, err := url.Parse(domainName)
+			for _, domain := range domains {
+				// Infer schema from tenant TLS, if not explicit
+				if !strings.HasPrefix(domain, "http") {
+					useSchema := "http"
+					if t.TLS() {
+						useSchema = "https"
+					}
+					domain = fmt.Sprintf("%s://%s", useSchema, domain)
+				}
+
+				u, err := url.Parse(domain)
 				if err != nil {
 					return err
 				}
 
-				if _, ok := dns.IsDomainName(domainName); !ok {
-					return fmt.Errorf("invalid domain `%s`", domainName)
+				if _, ok := dns.IsDomainName(domain); !ok {
+					return fmt.Errorf("invalid domain `%s`", domain)
 				}
+
+				// Remove ports if any
+				domain := strings.Split(u.Host, ":")[0]
+				globalDomains = append(globalDomains, domain)
 			}
-			sort.Strings(domains)
-			lcpSuf := lcpSuffix(domains)
-			for _, domainName := range domains {
-				if domainName == lcpSuf && len(domains) > 1 {
-					return fmt.Errorf("overlapping domains `%s` not allowed", domainName)
+			sort.Strings(globalDomains)
+			lcpSuf := lcpSuffix(globalDomains)
+			for _, domain := range globalDomains {
+				if domain == lcpSuf && len(globalDomains) > 1 {
+					return fmt.Errorf("overlapping domains `%s` not allowed", domain)
 				}
 			}
 		}
@@ -1169,14 +1183,28 @@ func (t *Tenant) GetDomainHosts() []string {
 	if t.HasMinIODomains() {
 		domains := t.Spec.Features.Domains.Minio
 		var hosts []string
-		for _, d := range domains {
-			u, err := url.Parse(d)
+		for _, domain := range domains {
+			// Infer schema from tenant TLS, if not explicit
+			if !strings.HasPrefix(domain, "http") {
+				useSchema := "http"
+				if t.TLS() {
+					useSchema = "https"
+				}
+				domain = fmt.Sprintf("%s://%s", useSchema, domain)
+			}
+
+			if _, ok := dns.IsDomainName(domain); !ok {
+				continue
+			}
+
+			u, err := url.Parse(domain)
 			if err != nil {
 				continue
 			}
-			// remove ports if any
-			hostParts := strings.Split(u.Host, ":")
-			hosts = append(hosts, hostParts[0])
+
+			// Remove ports if any
+			host := strings.Split(u.Host, ":")[0]
+			hosts = append(hosts, host)
 		}
 		return hosts
 	}

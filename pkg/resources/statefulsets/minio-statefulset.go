@@ -141,7 +141,14 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	// provided we will use the first domain.
 	serverURL := t.MinIOServerEndpoint()
 	if t.HasMinIODomains() {
-		serverURL = t.Spec.Features.Domains.Minio[0]
+		// Infer schema from tenant TLS, if not explicit
+		if !strings.HasPrefix(t.Spec.Features.Domains.Minio[0], "http") {
+			useSchema := "http"
+			if t.TLS() {
+				useSchema = "https"
+			}
+			serverURL = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Minio[0])
+		}
 	}
 	envVarsMap[miniov2.MinIOServerURL] = corev1.EnvVar{
 		Name:  miniov2.MinIOServerURL,
@@ -151,12 +158,13 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	// Set the redirect url for console
 	if t.HasConsoleDomains() {
 		consoleDomain := t.Spec.Features.Domains.Console
+		// Infer schema from tenant TLS, if not explicit
 		if !strings.HasPrefix(consoleDomain, "http") {
 			useSchema := "http"
 			if t.TLS() {
 				useSchema = "https"
 			}
-			consoleDomain = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Console)
+			consoleDomain = fmt.Sprintf("%s://%s", useSchema, consoleDomain)
 		}
 		envVarsMap[miniov2.MinIOBrowserRedirectURL] = corev1.EnvVar{
 			Name:  miniov2.MinIOBrowserRedirectURL,
