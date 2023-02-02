@@ -40,7 +40,7 @@ jobs:
           GO111MODULE: on
           GOOS: linux
         run: |
-          make verify
+          make operator-check plugin-check logsearchapi-check
 
   vulnerable-dependencies-checks:
     name: "Check for vulnerable dependencies"

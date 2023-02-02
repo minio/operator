@@ -6,7 +6,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
   cancel-in-progress: true
 jobs:
-  getdeps:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -17,128 +17,36 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-      - name: Get Dependedencies
+      - name: Build operator, plugin and logsearchapi
         run: |
-          make getdeps
-  lint:
-    runs-on: ${{ matrix.os }}
-    needs:
-      - getdeps
-    strategy:
-      matrix:
-        go-version: [ 1.20.x ]
-        os: [ ubuntu-latest ]
+          make
 
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: Lint
-        run: |
-          make lint
-  govet:
-    runs-on: ${{ matrix.os }}
-    needs:
-      - getdeps
-    strategy:
-      matrix:
-        go-version: [ 1.20.x ]
-        os: [ ubuntu-latest ]
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: govet
-        run: |
-          make govet
-  gotest:
-    runs-on: ${{ matrix.os }}
-    needs:
-      - getdeps
-    strategy:
-      matrix:
-        go-version: [ 1.20.x ]
-        os: [ ubuntu-latest ]
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: Go Test
-        run: |
-          make gotest
-  logsearch:
-    runs-on: ${{ matrix.os }}
-    needs:
-      - getdeps
-    strategy:
-      matrix:
-        go-version: [ 1.20.x ]
-        os: [ ubuntu-latest ]
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: Logsearch Binary
-        run: |
-          make logsearchapi
-  operator:
-    runs-on: ${{ matrix.os }}
-    needs:
-      - getdeps
-    strategy:
-      matrix:
-        go-version: [ 1.20.x ]
-        os: [ ubuntu-latest ]
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: Operator Binary
-        run: |
-          make operator
   docker:
     runs-on: ${{ matrix.os }}
     needs:
-      - logsearch
-      - operator
+      - build
     strategy:
       matrix:
         go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
-
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-      - name: Docker Container
+      - name: Docker build
         run: |
-          make docker
-
+          make docker-build
 
   test-tenant:
     runs-on: ${{ matrix.os }}
     needs:
-      - logsearch
-      - operator
-      - lint
-      - gotest
-      - getdeps
-      - govet
+      - build
+      - docker
     strategy:
       matrix:
         go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
-
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -147,20 +55,16 @@ jobs:
       - name: Prometheus test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/deploy-tenant.sh"
+
   test-tenant-upgrade:
     runs-on: ${{ matrix.os }}
     needs:
-      - logsearch
-      - operator
-      - lint
-      - gotest
-      - getdeps
-      - govet
+      - build
+      - docker
     strategy:
       matrix:
         go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
-
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -169,26 +73,21 @@ jobs:
       - name: Tenant upgrade test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/deploy-tenant-upgrade.sh"
+
   test-prometheus:
     runs-on: ${{ matrix.os }}
     needs:
-      - logsearch
-      - operator
-      - lint
-      - gotest
-      - getdeps
-      - govet
+      - build
+      - docker
     strategy:
       matrix:
         go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
-
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-
       - name: Prometheus test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/check-prometheus.sh"
@@ -196,23 +95,17 @@ jobs:
   test-logs:
     runs-on: ${{ matrix.os }}
     needs:
-      - logsearch
-      - operator
-      - lint
-      - gotest
-      - getdeps
-      - govet
+      - build
+      - docker
     strategy:
       matrix:
         go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
-
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-
       - name: Prometheus test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/check-logs.sh"
@@ -220,23 +113,17 @@ jobs:
   test-kes:
     runs-on: ${{ matrix.os }}
     needs:
-      - logsearch
-      - operator
-      - lint
-      - gotest
-      - getdeps
-      - govet
+      - build
+      - docker
     strategy:
       matrix:
         go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
-
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-
       - name: Tenant KES
         run: |
           "${GITHUB_WORKSPACE}/testing/console-tenant+kes.sh"
@@ -244,12 +131,8 @@ jobs:
   test-policy-binding:
     runs-on: ${{ matrix.os }}
     needs:
-      - logsearch
-      - operator
-      - lint
-      - gotest
-      - getdeps
-      - govet
+      - build
+      - docker
     strategy:
       matrix:
         go-version: [ 1.20.x ]
