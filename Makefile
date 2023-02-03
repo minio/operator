@@ -25,7 +25,7 @@ LOGSEARCHAPI=logsearchapi
 all: build
 
 getdeps:
-	@echo "Checking dependencies"
+	@echo "Check dependencies"
 	@mkdir -p ${GOPATH}/bin
 	@echo "Installing golangci-lint" && \
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.49.0 && \
