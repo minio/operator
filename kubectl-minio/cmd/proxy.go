@@ -22,6 +22,7 @@ import (
 	"io"
 	"log"
 	"os/exec"
+	"strings"
 	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,7 +65,6 @@ func newProxyCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 			return nil
 		},
 	}
-	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
 	f.StringVarP(&o.operatorOpts.Namespace, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 
@@ -89,9 +89,27 @@ func (o *operatorProxyCmd) run() error {
 		return err
 	}
 
-	secretName := "console-sa-secret"
-	if len(sa.Secrets) > 0 {
-		secretName = sa.Secrets[0].Name
+	secretName := ""
+
+	// Openshift doesn't create the token with the name "console-sa-secret" instead it creates a "console-sa-token-{random id}" secret
+	// This section is to  find that token and get the actual secret containing the JWT token to use and authenticate
+	secrets, err := client.CoreV1().Secrets(o.operatorOpts.Namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	for _, secret := range secrets.Items {
+		if strings.HasPrefix(secret.Name, "console-sa-token") {
+			secretName = secret.Name
+		}
+	}
+
+	// If no secret was found previously, is a more vanilla kubernetes setup, here we try to find the secret containing the sa token
+	if secretName == "" {
+		secretName = "console-sa-secret"
+		if len(sa.Secrets) > 0 {
+			secretName = sa.Secrets[0].Name
+		}
 	}
 
 	secret, err := client.CoreV1().Secrets(o.operatorOpts.Namespace).Get(ctx, secretName, metav1.GetOptions{})
