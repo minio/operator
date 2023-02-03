@@ -27,7 +27,7 @@ import (
 // Adds required log-search-api environment variables
 func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	var diskCapacityGB int
-	if t.Spec.Log.Audit.DiskCapacityGB != nil {
+	if t.Spec.Log != nil && t.Spec.Log.Audit != nil && t.Spec.Log.Audit.DiskCapacityGB != nil {
 		diskCapacityGB = *t.Spec.Log.Audit.DiskCapacityGB
 	}
 	var envVars []corev1.EnvVar
