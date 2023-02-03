@@ -27,7 +27,7 @@ import (
 // Adds required log-search-api environment variables
 func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 	var diskCapacityGB int
-	if t.Spec.Log.Audit.DiskCapacityGB != nil {
+	if t.Spec.Log != nil && t.Spec.Log.Audit != nil && t.Spec.Log.Audit.DiskCapacityGB != nil {
 		diskCapacityGB = *t.Spec.Log.Audit.DiskCapacityGB
 	}
 	var envVars []corev1.EnvVar
@@ -88,7 +88,7 @@ func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 
 func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
 	logSearchAPIImage := miniov2.DefaultLogSearchAPIImage
-	if t.Spec.Log.Image != "" {
+	if t.Spec.Log != nil && t.Spec.Log.Image != "" {
 		logSearchAPIImage = t.Spec.Log.Image
 	}
 	container := corev1.Container{
@@ -104,7 +104,9 @@ func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		Env:             logSearchAPIEnvVars(t),
-		Resources:       t.Spec.Log.Resources,
+	}
+	if t.Spec.Log != nil {
+		container.Resources = t.Spec.Log.Resources
 	}
 
 	return container
@@ -112,6 +114,9 @@ func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
 
 func logSearchAPIMeta(t *miniov2.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
+	if t.Spec.Log == nil {
+		return meta
+	}
 	meta.Labels = make(map[string]string)
 	for k, v := range t.LogSearchAPIPodLabels() {
 		meta.Labels[k] = v

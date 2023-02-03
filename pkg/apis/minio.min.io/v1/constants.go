@@ -14,20 +14,6 @@
 
 package v1
 
-// MinIO Related Constants
-
-// TenantLabel is applied to all components of a Tenant cluster
-const TenantLabel = "v1.min.io/tenant"
-
-// ZoneLabel is applied to all components in a Zone of a Tenant cluster
+// ZoneLabel is applied to all components in a Zone of a Tenant cluster.
+// This is for legacy compatibility as pools used to be called zones.
 const ZoneLabel = "v1.min.io/zone"
-
-// Console Related Constants
-
-// ConsoleTenantLabel is applied to the Console pods of a Tenant cluster
-const ConsoleTenantLabel = "v1.min.io/console"
-
-// KES Related Constants
-
-// KESInstanceLabel is applied to the KES pods of a Tenant cluster
-const KESInstanceLabel = "v1.min.io/kes"
