@@ -88,7 +88,7 @@ func logSearchAPIEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
 
 func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
 	logSearchAPIImage := miniov2.DefaultLogSearchAPIImage
-	if t.Spec.Log.Image != "" {
+	if t.Spec.Log != nil && t.Spec.Log.Image != "" {
 		logSearchAPIImage = t.Spec.Log.Image
 	}
 	container := corev1.Container{
@@ -104,7 +104,9 @@ func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
 		},
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		Env:             logSearchAPIEnvVars(t),
-		Resources:       t.Spec.Log.Resources,
+	}
+	if t.Spec.Log != nil {
+		container.Resources = t.Spec.Log.Resources
 	}
 
 	return container
