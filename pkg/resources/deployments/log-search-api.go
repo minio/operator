@@ -114,6 +114,9 @@ func logSearchAPIContainer(t *miniov2.Tenant) corev1.Container {
 
 func logSearchAPIMeta(t *miniov2.Tenant) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
+	if t.Spec.Log == nil {
+		return meta
+	}
 	meta.Labels = make(map[string]string)
 	for k, v := range t.LogSearchAPIPodLabels() {
 		meta.Labels[k] = v
