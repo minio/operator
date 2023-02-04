@@ -49,9 +49,9 @@ function install_binaries() {
   tar -xJf $TMP_BIN_DIR/crc-$OS-$ARCH.tar.xz -C $TMP_BIN_DIR/ --strip-components=1
   chmod +x $TMP_BIN_DIR/crc
 
-  echo "operator-sdk"
-  curl -#L "https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk_${OS}_${ARCH}" -o ${TMP_BIN_DIR}/operator-sdk
-  chmod +x $TMP_BIN_DIR/operator-sdk
+  #echo "operator-sdk"
+  #curl -#L "https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk_${OS}_${ARCH}" -o ${TMP_BIN_DIR}/operator-sdk
+  #chmod +x $TMP_BIN_DIR/operator-sdk
 }
 
 function setup_path(){
@@ -96,42 +96,45 @@ function destoy_crc() {
 }
 
 function create_marketplace_catalog(){
-
+  # https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/openshift-deployment
+  # https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory
   echo -e "\e[34mCreate Marketplace catalog\e[0m"
+  setup_path
   # To compile current branch
   echo "Compiling Current Branch Operator"
-  (cd "${SCRIPT_DIR}/.." && make operator && make logsearchapi && podman build --no-cache -t quay.io/minio/operator:noop .)
- echo "Compiling operator bundle"
-  # Compile bundle image https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory
-  podman build --no-cache -t quay.io/minio/operator-bundle:noop -f openshift/bundle.Dockerfile .
+  (cd "${SCRIPT_DIR}/.." && make operator && make logsearchapi && podman build --quiet --no-cache -t quay.io/minio/operator:noop .)
+  echo "Compiling operator bundle"
+  (cd "${SCRIPT_DIR}/.." && podman build --quiet --no-cache -t quay.io/minio/operator-bundle:noop -f bundle.Dockerfile .)
 
-  echo "Installing Current Operator"
-  # https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/openshift-deployment
-
-  #login in crc registry
+  echo "login in crc registry"
   podman login -u `oc whoami` -p `oc whoami --show-token` default-route-openshift-image-registry.apps-crc.testing --tls-verify=false
   
-  # create and push test marketplace listing to crc registry
+  echo "push bundle to crc registry"
   podman tag quay.io/minio/operator-index:noop default-route-openshift-image-registry.apps-crc.testing/openshift-marketplace/operator-bundle:noop
   podman push default-route-openshift-image-registry.apps-crc.testing/openshift-marketplace/operator-bundle:noop --tls-verify=false
-  oc set image-lookup operator-bundle -n openshift-marketplace
+  oc get is -n openshift-marketplace operator-bundle
+  oc set image-lookup -n openshift-marketplace  operator-bundle
+  
+  echo "push operator image to crc registry"
+  podman login -u `oc whoami` -p `oc whoami --show-token` default-route-openshift-image-registry.apps-crc.testing/openshift-operators --tls-verify=false
+  podman tag quay.io/minio/operator:noop default-route-openshift-image-registry.apps-crc.testing/openshift-operators/operator:noop
+  podman push default-route-openshift-image-registry.apps-crc.testing/openshift-operators/operator:noop --tls-verify=false
+  oc get is -n openshift-operators operator
+  oc set image-lookup operator -n openshift-operators
+  
+  echo "create marketplace index"
   opm index add --bundles default-route-openshift-image-registry.apps-crc.testing/openshift-marketplace/operator-bundle:noop \
     --tag default-route-openshift-image-registry.apps-crc.testing/openshift-marketplace/minio-operator-index:latest \
     --skip-tls-verify=true
   podman push default-route-openshift-image-registry.apps-crc.testing/openshift-marketplace/minio-operator-index:latest --tls-verify=false
   oc set image-lookup minio-operator-index -n openshift-marketplace
   
-  #push operator image to crc registry
-  podman tag quay.io/minio/operator:noop default-route-openshift-image-registry.apps-crc.testing/openshift-operators/operator:noop
-  podman push default-route-openshift-image-registry.apps-crc.testing/openshift-operators/operator:noop --tls-verify=false
-  oc get is -n openshift-operators
-  oc set image-lookup operator -n openshift-operators
   #oc registry login --insecure=true
   #oc image mirror quay.io/minio/operator-index:latest=default-route-openshift-image-registry.apps-crc.testing/openshift-operators/minio/operator-index:latest --insecure=true
 
-  #create local marketplace listing
-  oc apply -f ./openshift/test-operator-catalogsource.yaml
-  # oc -n openshift-marketplace get catalogsource minio-test-operators
+  echo "create local marketplace catalog"
+  oc apply -f ${SCRIPT_DIR}/openshift/test-operator-catalogsource.yaml
+  oc -n openshift-marketplace get catalogsource minio-test-operators
   # oc -n openshift-marketplace get pods
   # oc get packagemanifests | grep "Test Minio Operators"
   ## Create a operator group is not needed here because the openshift-operators namespace already have one
@@ -141,8 +144,9 @@ function create_marketplace_catalog(){
 
 function install_operator() {
   echo -e "\e[34mInstalling Operator from bundle\e[0m"
+  setup_path
 
-  oc apply -f ./openshift/test-subscription.yaml
+  oc apply -f ${SCRIPT_DIR}/openshift/test-subscription.yaml
   oc get sub -n openshift-operators
   oc get installplan -n openshift-operators
   oc get csv -n openshift-operators
