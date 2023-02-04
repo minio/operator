@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License, version 3,
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package main
+package controller
 
 import (
 	"flag"
@@ -23,10 +23,10 @@ import (
 	"syscall"
 	"time"
 
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/minio/minio-go/v7/pkg/set"
+	"k8s.io/client-go/rest"
 
 	"k8s.io/klog/v2"
 
@@ -67,7 +67,8 @@ func init() {
 	flag.BoolVar(&checkVersion, "version", false, "print version")
 }
 
-func main() {
+// StartOperator starts the MinIO Operator controller
+func StartOperator() {
 	klog.Info("Starting MinIO Operator")
 	// set up signals, so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()

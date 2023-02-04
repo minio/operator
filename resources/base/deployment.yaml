@@ -23,6 +23,8 @@ spec:
         - name: minio-operator
           image: minio/operator:v4.5.8
           imagePullPolicy: IfNotPresent
+          args:
+            - controller
           resources:
             requests:
               cpu: 200m

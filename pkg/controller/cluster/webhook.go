@@ -66,11 +66,6 @@ func configureHTTPUpgradeServer(c *Controller) *http.Server {
 func configureWebhookServer(c *Controller) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
-	router.Methods(http.MethodGet).
-		Path(miniov2.WebhookAPIGetenv + "/{namespace}/{name:.+}").
-		HandlerFunc(c.GetenvHandler).
-		Queries(restQueries("key")...)
-
 	router.Methods(http.MethodPost).
 		Path(miniov2.WebhookAPIBucketService + "/{namespace}/{name:.+}").
 		HandlerFunc(c.BucketSrvHandler).

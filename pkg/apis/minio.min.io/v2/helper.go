@@ -411,6 +411,10 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 			}
 		}
 	}
+	// ServiceAccount
+	if t.Spec.ServiceAccountName == "" {
+		t.Spec.ServiceAccountName = fmt.Sprintf("%s-sa", t.Name)
+	}
 
 	return t
 }
@@ -1337,4 +1341,14 @@ func GetPgImage() string {
 		}
 	})
 	return pgDefaultImage
+}
+
+// GetRoleName returns the role name we will use for the tenant
+func (t *Tenant) GetRoleName() string {
+	return fmt.Sprintf("%s-role", t.Name)
+}
+
+// GetBindingName returns the binding name we will use for the tenant
+func (t *Tenant) GetBindingName() string {
+	return fmt.Sprintf("%s-binding", t.Name)
 }

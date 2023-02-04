@@ -19,16 +19,19 @@ export CI
 ARCH=`{ case "$(uname -m)" in "x86_64") echo -n "amd64";; "aarch64") echo -n "arm64";; *) echo -n "$(uname -m)";; esac; }`
 OS=$(uname | awk '{print tolower($0)}')
 
-## Make sure to install things if not present already
-sudo curl -#L "https://dl.k8s.io/release/v1.23.1/bin/$OS/$ARCH/kubectl" -o /usr/local/bin/kubectl
-sudo chmod +x /usr/local/bin/kubectl
+# Set OPERATOR_DEV_TEST to skip downloading these dependencies
+if [[ -z "${OPERATOR_DEV_TEST}" ]]; then
+  ## Make sure to install things if not present already
+  sudo curl -#L "https://dl.k8s.io/release/v1.23.1/bin/$OS/$ARCH/kubectl" -o /usr/local/bin/kubectl
+  sudo chmod +x /usr/local/bin/kubectl
 
-sudo curl -#L "https://dl.min.io/client/mc/release/${OS}-${ARCH}/mc" -o /usr/local/bin/mc
-sudo chmod +x /usr/local/bin/mc
+  sudo curl -#L "https://dl.min.io/client/mc/release/${OS}-${ARCH}/mc" -o /usr/local/bin/mc
+  sudo chmod +x /usr/local/bin/mc
 
-## Install yq
-sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_${OS}_${ARCH}
-sudo chmod a+x /usr/local/bin/yq
+  ## Install yq
+  sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_${OS}_${ARCH}
+  sudo chmod a+x /usr/local/bin/yq
+fi
 
 yell() { echo "$0: $*" >&2; }
 
@@ -107,13 +110,15 @@ function install_operator() {
 function install_operator_version() {
   # Obtain release
   version="$1"
-  if [ -z "$version" ]
-  then
+  if [ -z "$version" ]; then
     version=$(curl https://api.github.com/repos/minio/operator/releases/latest | jq --raw-output '.tag_name | "\(.[1:])"')
   fi
   echo "Target operator release: $version"
-  sudo curl -#L "https://github.com/minio/operator/releases/download/v${version}/kubectl-minio_${version}_${OS}_${ARCH}" -o /usr/local/bin/kubectl-minio
-  sudo chmod +x /usr/local/bin/kubectl-minio
+  # Set OPERATOR_DEV_TEST to skip downloading these dependencies
+  if [[ -z "${OPERATOR_DEV_TEST}" ]]; then
+    sudo curl -#L "https://github.com/minio/operator/releases/download/v${version}/kubectl-minio_${version}_${OS}_${ARCH}" -o /usr/local/bin/kubectl-minio
+    sudo chmod +x /usr/local/bin/kubectl-minio
+  fi
 
   # Initialize the MinIO Kubernetes Operator
   kubectl minio init
@@ -153,7 +158,16 @@ function install_operator_version() {
 }
 
 function destroy_kind() {
-  kind delete cluster
+  # To allow the execution without killing the cluster at the end of the test
+  # Use below statement to automatically test and kill cluster at the end:
+  # `unset OPERATOR_DEV_TEST`
+  # Use below statement to test and keep cluster alive at the end!:
+  # `export OPERATOR_DEV_TEST="ON"`
+  if [[ -z "${OPERATOR_DEV_TEST}" ]]; then
+    echo "Cluster not destroyed due to manual testing"
+  else
+    kind delete cluster
+  fi
 }
 
 function wait_for_resource() {
@@ -227,10 +241,9 @@ function check_tenant_status() {
 
 # Install tenant function is being used by deploy-tenant and check-prometheus
 function install_tenant() {
-
-  echo "Check if helm will install the Tenant"
+  # Check if we are going to install helm, lastest in this branch or a particular version
   if [ "$1" = "helm" ]; then
-
+    echo "Installing tenant from Helm"
     echo "This test is intended for helm only not for KES, there is another kes test, so let's remove KES here"
     yq -i eval 'del(.tenant.kes)' "${SCRIPT_DIR}/../helm/tenant/values.yaml"
 
@@ -241,13 +254,27 @@ function install_tenant() {
     value=minio
     try helm install --namespace $namespace \
       --create-namespace tenant ./helm/tenant
+  elif [ "$1" = "logs" ]; then
+    namespace=tenant-lite
+    key=v1.min.io/tenant
+    value=storage-lite
+    echo "Installing lite tenant from current branch"
+
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-logs"
+  elif [ -e $1 ]; then
+    namespace=tenant-lite
+    key=v1.min.io/tenant
+    value=storage-lite
+    echo "Installing lite tenant from current branch"
+
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant"
   else
     namespace=tenant-lite
     key=v1.min.io/tenant
     value=storage-lite
-    echo "Installing lite tenant"
+    echo "Installing lite tenant for version $1"
 
-    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant"
+    try kubectl apply -k "github.com/minio/operator/testing/tenant\?ref\=$1"
   fi
 
   echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"

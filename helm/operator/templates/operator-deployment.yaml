@@ -44,6 +44,8 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          args:
+            - controller
           {{- with .Values.operator.env }}
           env:
           {{ toYaml . | nindent 10 }}
@@ -59,6 +61,6 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end}}
       {{- with .Values.operator.runtimeClassName }}
-      runtimeClassName: 
+      runtimeClassName:
       {{- toYaml . | nindent 8 }}
   {{- end }}

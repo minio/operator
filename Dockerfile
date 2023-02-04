@@ -20,4 +20,4 @@ RUN \
 COPY minio-operator /minio-operator
 COPY logsearchapi-bin /logsearchapi
 
-CMD ["/minio-operator"]
+ENTRYPOINT ["/minio-operator"]

@@ -57,7 +57,7 @@ function port_forward() {
   echo 'Validating tenant pods are ready to serve'
   for pod in `kubectl --namespace $namespace --selector=v1.min.io/tenant=$tenant get pod -o json |  jq '.items[] | select(.metadata.name|contains("'$tenant'"))| .metadata.name' | sed 's/"//g'`; do
     while true; do
-      if kubectl --namespace $namespace logs pod/$pod | grep --quiet 'All MinIO sub-systems initialized successfully'; then
+      if kubectl --namespace $namespace -c minio logs pod/$pod | grep --quiet 'All MinIO sub-systems initialized successfully'; then
         echo "$pod is ready to serve" && break
       fi
       sleep 5
@@ -135,7 +135,7 @@ function main() {
 
   setup_kind
 
-  error=$( {
+  output=$( {
     if [ -n "$lower_version" ]
     then
       # Test specific version of operator
@@ -146,13 +146,10 @@ function main() {
     fi
   } 2>&1 )
   
-  echo "$error"
-  if [ -n "$error" ]
-  then
-    install_operator
-  fi
+  echo "$output"
 
-  install_tenant
+  echo "Installing tenant: $lower_version"
+  install_tenant $lower_version
 
   bootstrap_tenant
 
