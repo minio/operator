@@ -1,0 +1,13 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: minio-test-operators
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  image: default-route-openshift-image-registry.apps-crc.testing/openshift-marketplace/minio-operator-index:latest
+  displayName: Test Minio Operators
+  publisher: MinIO
+  updateStrategy:
+    registryPoll:
+      interval: 5m
