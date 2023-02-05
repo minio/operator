@@ -32,7 +32,7 @@ function main() {
     # install_tenant
     # check_tenant_status tenant-lite storage-lite
     
-    destoy_crc
+    destroy_crc
 }
 
 main "$@"

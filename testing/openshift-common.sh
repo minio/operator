@@ -23,13 +23,13 @@ function install_binaries() {
 
   echo -e "\e[34mInstalling temporal binaries in $TMP_BIN_DIR\e[0m"
   
-  echo "kubectl"
-  curl -#L "https://dl.k8s.io/release/v1.23.1/bin/$OS/$ARCH/kubectl" -o $TMP_BIN_DIR/kubectl
-  chmod +x $TMP_BIN_DIR/kubectl
+  #echo "kubectl"
+  #curl -#L "https://dl.k8s.io/release/v1.23.1/bin/$OS/$ARCH/kubectl" -o $TMP_BIN_DIR/kubectl
+  #chmod +x $TMP_BIN_DIR/kubectl
 
-  echo "mc"
-  curl -#L "https://dl.min.io/client/mc/release/${OS}-${ARCH}/mc" -o $TMP_BIN_DIR/mc
-  chmod +x $TMP_BIN_DIR/mc
+  #echo "mc"
+  #curl -#L "https://dl.min.io/client/mc/release/${OS}-${ARCH}/mc" -o $TMP_BIN_DIR/mc
+  #chmod +x $TMP_BIN_DIR/mc
 
   echo "yq"
   curl -#L "https://github.com/mikefarah/yq/releases/latest/download/yq_${OS}_${ARCH}" -o $TMP_BIN_DIR/yq
@@ -79,6 +79,7 @@ function setup_crc() {
   crc config set skip-check-root-user true
   crc config set kubeadmin-password "crclocal"
   crc setup
+  crc start -c 12 -m 20480
   eval $(crc oc-env)
   eval $(crc podman-env)
   # this creates a symlink "podman" from the "podman-remote", as a hack to solve the a issue with opm: 
@@ -86,13 +87,13 @@ function setup_crc() {
   # https://github.com/operator-framework/operator-registry/blob/67e6777b5f5f9d337b94da98b8c550c231a8b47c/pkg/containertools/factory_podman.go#L32 
   ocpath=$(dirname $(which podman-remote))
   ln -sf $ocpath/podman-remote $ocpath/podman
-  crc start -c 8 -m 20480
   try crc version
+  echo "Waiting for podman vm come online (5m timeout)"
+  try timeout 600 bash -c -- 'while ! podman image ls 2> /dev/null; do sleep 1 && printf ".";done'
 }
 
-function destoy_crc() {
+function destroy_crc() {
   echo -e "\e[34mdestroy_crc\e[0m"
-  setup_path
 
   # To allow the execution without killing the cluster at the end of the test
   # Use below statement to automatically test and kill cluster at the end:
@@ -102,8 +103,8 @@ function destoy_crc() {
   if [[ -z "${OPERATOR_ENABLE_MANUAL_TESTING}" ]]; then
       # OPERATOR_ENABLE_MANUAL_TESTING is not defined, hence destroy_kind
       echo "Cluster will be destroyed for automated testing"
-      #crc stop
-      #crc delete -f
+      crc stop
+      crc delete -f
       remove_temp_binaries
   else
       echo -e "\e[33mCluster will remain alive for manual testing\e[0m"
@@ -116,9 +117,6 @@ function create_marketplace_catalog(){
   # https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory
   # https://operatorhub.io/preview
   echo "Create Marketplace for catalog '$catalog'"
-  setup_path
-  eval $(crc oc-env)
-  eval $(crc podman-env)
 
   # Obtain catalog
   catalog="$1"
@@ -139,38 +137,40 @@ function create_marketplace_catalog(){
     package=minio-operator-rhmp
   fi
 
-  # To compile current branch
+  echo "Compiling operator in current branch"
   (cd "${SCRIPT_DIR}/.." && make operator && make logsearchapi && podman build --quiet --no-cache -t $operatorContainerImage .)
   echo "push operator image to crc registry"
   podman login -u `oc whoami` -p `oc whoami --show-token` $registry/$operatorNamespace --tls-verify=false
   podman push $operatorContainerImage --tls-verify=false
-  try oc get is -n $operatorNamespace operator
+  echo "Image Stream for operator:"
+  oc get is -n $operatorNamespace operator
   oc set image-lookup operator -n $operatorNamespace
 
   echo "Compiling operator bundle for $catalog"
   cp -r "${SCRIPT_DIR}/../$catalog/." ${SCRIPT_DIR}/openshift/bundle
   yq -i ".metadata.annotations.containerImage |= (\"${operatorContainerImage}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
   (cd "${SCRIPT_DIR}/.." && podman build --quiet --no-cache -t $bundleContainerImage -f ${SCRIPT_DIR}/openshift/bundle.Dockerfile ${SCRIPT_DIR}/openshift)
-
-  echo "login in crc registry"
   podman login -u `oc whoami` -p `oc whoami --show-token` $registry --tls-verify=false
-  
-  echo "push bundle to crc registry"
+  echo "push operator-bundle to crc registry"
   podman push $bundleContainerImage --tls-verify=false
-  try oc get is -n $marketplaceNamespace operator-bundle
+  echo "Image Stream for operator-bundle"
+  oc get is -n $marketplaceNamespace operator-bundle
   oc set image-lookup -n $marketplaceNamespace  operator-bundle
   
-  echo "create marketplace index"
+  echo "Compiling marketplace index"
   opm index add --bundles $bundleContainerImage --tag $indexContainerImage --skip-tls-verify=true
+  echo "push minio-operator-index to crc registry"
   podman push $indexContainerImage --tls-verify=false
-  try oc get is -n $marketplaceNamespace minio-operator-index
-  oc set image-lookup -n $marketplaceNamespace minio-operator-index 
-  
-  echo "create local marketplace catalog"
-  oc apply -f ${SCRIPT_DIR}/openshift/test-operator-catalogsource.yaml
-  try oc get catalogsource -n $marketplaceNamespace minio-test-operators
+  echo "Image Stream for minio-operator-index"
+  oc get is -n $marketplaceNamespace minio-operator-index
+  oc set image-lookup -n $marketplaceNamespace minio-operator-index
+  oc set image-lookup -n openshift-marketplace minio-operator-index
 
-  echo "Waiting for marketplace index pod to come online (5m timeout)"
+  echo "Create 'Test Minio Operators' marketplace catalog source"
+  try oc create -f ${SCRIPT_DIR}/openshift/test-operator-catalogsource.yaml
+  oc get catalogsource -n $marketplaceNamespace minio-test-operators
+
+  echo "Waiting for catalog source pod to come online (5m timeout)"
   try oc wait -n $marketplaceNamespace \
     --for=condition=Ready pod \
     -l olm.catalogSource=minio-test-operators \
@@ -186,9 +186,6 @@ function create_marketplace_catalog(){
 function install_operator() {
 
   echo -e "\e[34mInstalling Operator from catalog '$catalog'\e[0m"
-  setup_path
-  eval $(crc oc-env)
-  eval $(crc podman-env)
 
   # Obtain catalog
   catalog="$1"
@@ -198,17 +195,20 @@ function install_operator() {
   fi
 
   create_marketplace_catalog $catalog
-
-  oc apply -f ${SCRIPT_DIR}/openshift/test-subscription.yaml
+  try oc create -f ${SCRIPT_DIR}/openshift/test-subscription.yaml
+  
   echo "Subscription:"
   try oc get sub -n openshift-operators
+  
   echo "Wait subscription to be ready (10m timeout)"
-  oc wait -n openshift-operators \
+  try oc wait -n openshift-operators \
     --for=jsonpath='{.status.state}'=AtLatestKnown subscription\
     --field-selector metadata.name=$(oc get subscription -n openshift-operators -o json | jq -r '.items[0] | .metadata.name') \
     --timeout=600s
+  
   echo "Install plan:"
   try oc get installplan -n openshift-operators
+  
   echo "Waiting for install plan to be completed (10m timeout)"
   oc wait -n openshift-operators \
     --for=jsonpath='{.status.phase}'=Complete installplan \
@@ -218,8 +218,11 @@ function install_operator() {
   #echo "clusterserviceversion:"
   #try oc get csv -n openshift-operators minio-operator.noop
 
+  echo "Waiting deployment 10 seconds"
+  sleep 10
+
   echo "Deployment:"
-  try oc -n openshift-operators get deployment minio-operator
+  oc -n openshift-operators get deployment minio-operator
 
   echo "Waiting for Operator Pods to come online (5m timeout)"
   try oc wait -n openshift-operators \
