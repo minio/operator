@@ -5,7 +5,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   sourceType: grpc
-  image: default-route-openshift-image-registry.apps-crc.testing/openshift-marketplace/minio-operator-index:latest
+  image: default-route-openshift-image-registry.apps-crc.testing/openshift-marketplace/minio-operator-index:noop
   displayName: Test Minio Operators
   publisher: MinIO
   updateStrategy:

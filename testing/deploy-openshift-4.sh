@@ -26,26 +26,13 @@ function main() {
 
     setup_crc
 
-    create_marketplace_catalog
-
-    install_operator
+    install_operator "certified-operators" # "community-operators", "redhat-marketplace"
 
     # install_operator
     # install_tenant
     # check_tenant_status tenant-lite storage-lite
-
-    # To allow the execution without killing the cluster at the end of the test
-    # Use below statement to automatically test and kill cluster at the end:
-    # `unset OPERATOR_ENABLE_MANUAL_TESTING`
-    # Use below statement to test and keep cluster alive at the end!:
-    # `export OPERATOR_ENABLE_MANUAL_TESTING="ON"`
-    if [[ -z "${OPERATOR_ENABLE_MANUAL_TESTING}" ]]; then
-        # OPERATOR_ENABLE_MANUAL_TESTING is not defined, hence destroy_kind
-        echo "Cluster will be destroyed for automated testing"
-        destoy_crc
-    else
-        echo -e "\e[33mCluster will remain alive for manual testing\e[0m"
-    fi
+    
+    destoy_crc
 }
 
 main "$@"
