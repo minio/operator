@@ -140,9 +140,11 @@ function create_marketplace_catalog(){
 
   echo "Compiling operator in current branch"
   (cd "${SCRIPT_DIR}/.." && make operator && make logsearchapi && podman build --quiet --no-cache -t $operatorContainerImage .)
+
   echo "push operator image to crc registry"
   podman login -u `oc whoami` -p `oc whoami --show-token` $registry/$operatorNamespace --tls-verify=false
   podman push $operatorContainerImage --tls-verify=false
+
   echo "Image Stream for operator:"
   oc get is -n $operatorNamespace operator
   try oc set image-lookup operator -n $operatorNamespace
@@ -153,18 +155,22 @@ function create_marketplace_catalog(){
   yq -i ".annotations.\"operators.operatorframework.io.bundle.package.v1\" |= (\"${package}-noop\")" ${SCRIPT_DIR}/openshift/bundle/metadata/annotations.yaml
   (cd "${SCRIPT_DIR}/.." && podman build --quiet --no-cache -t $bundleContainerImage -f ${SCRIPT_DIR}/openshift/bundle.Dockerfile ${SCRIPT_DIR}/openshift)
   podman login -u `oc whoami` -p `oc whoami --show-token` $registry --tls-verify=false
+
   echo "push operator-bundle to crc registry"
   podman push $bundleContainerImage --tls-verify=false
+
   echo "Image Stream for operator-bundle"
   oc get is -n $marketplaceNamespace operator-bundle
   try oc set image-lookup -n $marketplaceNamespace  operator-bundle
   
   echo "Compiling marketplace index"
   opm index add --bundles $bundleContainerImage --tag $indexContainerImage --skip-tls-verify=true
+
   echo "push minio-operator-index to crc registry"
   podman push $indexContainerImage --tls-verify=false
   echo "Image Stream for minio-operator-index"
   try oc set image-lookup -n $marketplaceNamespace minio-operator-index
+
   echo "Wait for ImageStream minio-operator-index to be local available"
   try oc wait -n $marketplaceNamespace is \
     --for=jsonpath='{.spec.lookupPolicy.local}'=true \
@@ -172,9 +178,17 @@ function create_marketplace_catalog(){
     --timeout=300s
 
   echo "Create 'Test Minio Operators' marketplace catalog source"
-  oc get catalogsource -n $marketplaceNamespace minio-test-operators
   oc create -f ${SCRIPT_DIR}/openshift/test-operator-catalogsource.yaml
-  echo "Catalog Source"
+  sleep 5
+  echo "Catalog Source:"
+  oc get catalogsource -n $marketplaceNamespace minio-test-operators
+
+  catalogSourcePod=$(oc get pods -n $marketplaceNamespace -ojson| jq -r '.items[] | select(.metadata.name | startswith("minio-test-operators")) | .metadata.name')
+
+  # Hack, for some reason the original catalgosource pod cannot pull the image.
+  # deleting the pod forces to create a new pod and the newly scheduled pod does have the grants to access the image registry
+  echo "deleting pod $catalogSourcePod" -n $marketplaceNamespace
+  oc delete pod $catalogSourcePod -n $marketplaceNamespace
 
   echo "Waiting for Package manifest to be ready (5m timeout)"
   try timeout 300 bash -c -- 'while ! oc get packagemanifests -n '"$marketplaceNamespace"' | grep "Test Minio Operators" 2> /dev/null; do sleep 1 && printf ".";done'

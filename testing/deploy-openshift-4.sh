@@ -37,4 +37,4 @@ function main() {
     destroy_crc
 }
 
-main "$@"
+time main "$@"
