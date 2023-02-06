@@ -54,10 +54,6 @@ function install_binaries() {
   #chmod +x $TMP_BIN_DIR/operator-sdk
 }
 
-function setup_path(){
-  export PATH="$TMP_BIN_DIR:$PATH"
-}
-
 function remove_temp_binaries() {
   echo -e "\e[34mRemoving temporary binaries in: $TMP_BIN_DIR\e[0m"
   rm -rf $TMP_BIN_DIR
@@ -74,7 +70,7 @@ try() { "$@" || die "cannot $*"; }
 
 function setup_crc() {
   echo -e "\e[34mConfiguring crc\e[0m"
-  setup_path
+  export PATH="$TMP_BIN_DIR:$PATH"
   crc config set consent-telemetry no
   crc config set skip-check-root-user true
   crc config set kubeadmin-password "crclocal"
@@ -108,7 +104,10 @@ function destroy_crc() {
       remove_temp_binaries
   else
       echo -e "\e[33mCluster will remain alive for manual testing\e[0m"
-      echo "PATH=$PATH"
+      echo "Use the following env varianbles setup"
+      echo "export PATH=$TMP_BIN_DIR:\$PATH"
+      echo "eval \$(crc oc-env)"
+      echo "eval \$(crc podman-env)"
   fi
 }
 
@@ -116,7 +115,7 @@ function create_marketplace_catalog(){
   # https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/openshift-deployment
   # https://redhat-connect.gitbook.io/certified-operator-guide/ocp-deployment/operator-metadata/bundle-directory
   # https://operatorhub.io/preview
-  echo "Create Marketplace for catalog '$catalog'"
+  
 
   # Obtain catalog
   catalog="$1"
@@ -124,7 +123,9 @@ function create_marketplace_catalog(){
   then
     die "missing catalog to install"
   fi
-
+  
+  echo "Create Marketplace for catalog '$catalog'"
+  
   registry="default-route-openshift-image-registry.apps-crc.testing"
   operatorNamespace="openshift-operators"
   marketplaceNamespace="openshift-marketplace"
@@ -144,48 +145,42 @@ function create_marketplace_catalog(){
   podman push $operatorContainerImage --tls-verify=false
   echo "Image Stream for operator:"
   oc get is -n $operatorNamespace operator
-  oc set image-lookup operator -n $operatorNamespace
+  try oc set image-lookup operator -n $operatorNamespace
 
   echo "Compiling operator bundle for $catalog"
   cp -r "${SCRIPT_DIR}/../$catalog/." ${SCRIPT_DIR}/openshift/bundle
   yq -i ".metadata.annotations.containerImage |= (\"${operatorContainerImage}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
+  yq -i ".annotations.\"operators.operatorframework.io.bundle.package.v1\" |= (\"${package}-noop\")" ${SCRIPT_DIR}/openshift/bundle/metadata/annotations.yaml
   (cd "${SCRIPT_DIR}/.." && podman build --quiet --no-cache -t $bundleContainerImage -f ${SCRIPT_DIR}/openshift/bundle.Dockerfile ${SCRIPT_DIR}/openshift)
   podman login -u `oc whoami` -p `oc whoami --show-token` $registry --tls-verify=false
   echo "push operator-bundle to crc registry"
   podman push $bundleContainerImage --tls-verify=false
   echo "Image Stream for operator-bundle"
   oc get is -n $marketplaceNamespace operator-bundle
-  oc set image-lookup -n $marketplaceNamespace  operator-bundle
+  try oc set image-lookup -n $marketplaceNamespace  operator-bundle
   
   echo "Compiling marketplace index"
   opm index add --bundles $bundleContainerImage --tag $indexContainerImage --skip-tls-verify=true
   echo "push minio-operator-index to crc registry"
   podman push $indexContainerImage --tls-verify=false
   echo "Image Stream for minio-operator-index"
-  oc get is -n $marketplaceNamespace minio-operator-index
-  oc set image-lookup -n $marketplaceNamespace minio-operator-index
-  oc set image-lookup -n openshift-marketplace minio-operator-index
+  try oc set image-lookup -n $marketplaceNamespace minio-operator-index
+  echo "Wait for ImageStream minio-operator-index to be local available"
+  try oc wait -n $marketplaceNamespace is \
+    --for=jsonpath='{.spec.lookupPolicy.local}'=true \
+    --field-selector metadata.name=minio-operator-index \
+    --timeout=300s
 
   echo "Create 'Test Minio Operators' marketplace catalog source"
-  try oc create -f ${SCRIPT_DIR}/openshift/test-operator-catalogsource.yaml
   oc get catalogsource -n $marketplaceNamespace minio-test-operators
+  oc create -f ${SCRIPT_DIR}/openshift/test-operator-catalogsource.yaml
+  echo "Catalog Source"
 
-  echo "Waiting for catalog source pod to come online (5m timeout)"
-  try oc wait -n $marketplaceNamespace \
-    --for=condition=Ready pod \
-    -l olm.catalogSource=minio-test-operators \
-    --timeout=300s
-  
-  # oc -n openshift-marketplace get pods
-  # oc get packagemanifests | grep "Test Minio Operators"
-  ## Create a operator group is not needed here because the openshift-operators namespace already have one
-  # oc create -f ./openshift/test-operatorgroup.yaml
-  # oc get og -n openshift-operators
+  echo "Waiting for Package manifest to be ready (5m timeout)"
+  try timeout 300 bash -c -- 'while ! oc get packagemanifests -n '"$marketplaceNamespace"' | grep "Test Minio Operators" 2> /dev/null; do sleep 1 && printf ".";done'
 }
 
 function install_operator() {
-
-  echo -e "\e[34mInstalling Operator from catalog '$catalog'\e[0m"
 
   # Obtain catalog
   catalog="$1"
@@ -194,12 +189,15 @@ function install_operator() {
     catalog="certified-operators"
   fi
 
-  create_marketplace_catalog $catalog
+  echo -e "\e[34mInstalling Operator from catalog '$catalog'\e[0m"
+
   try oc create -f ${SCRIPT_DIR}/openshift/test-subscription.yaml
   
   echo "Subscription:"
-  try oc get sub -n openshift-operators
-  
+  try oc get sub -n openshift-operators test-subscription
+  #we wait a moment for the resource to get a status field
+  sleep 10s
+
   echo "Wait subscription to be ready (10m timeout)"
   try oc wait -n openshift-operators \
     --for=jsonpath='{.status.state}'=AtLatestKnown subscription\
@@ -214,24 +212,19 @@ function install_operator() {
     --for=jsonpath='{.status.phase}'=Complete installplan \
     --field-selector metadata.name=$(oc get installplan -n openshift-operators -o json | jq -r '.items[0] | .metadata.name') \
     --timeout=600s
-#    --for=condition=Installed installplan \
-  #echo "clusterserviceversion:"
-  #try oc get csv -n openshift-operators minio-operator.noop
-
-  echo "Waiting deployment 10 seconds"
-  sleep 10
 
   echo "Deployment:"
   oc -n openshift-operators get deployment minio-operator
 
-  echo "Waiting for Operator Pods to come online (5m timeout)"
-  try oc wait -n openshift-operators \
-    --for=condition=ready pod \
-    --selector name=minio-operator \
+  echo "Waiting for Operator Deployment to come online (5m timeout)"
+  try oc wait -n openshift-operators deployment \
+    --for=condition=Available \
+    --field-selector metadata.name=minio-operator \
     --timeout=300s
 
   echo "start - get data to verify proper image is being used"
+  echo "Pods:"
   oc get pods --namespace openshift-operators
+  echo "Images:"
   oc describe pods -n openshift-operators | grep Image
-  echo "end - get data to verify proper image is being used"
 }

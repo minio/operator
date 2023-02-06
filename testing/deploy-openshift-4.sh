@@ -26,6 +26,8 @@ function main() {
 
     setup_crc
 
+    create_marketplace_catalog "certified-operators"
+
     install_operator "certified-operators" # "community-operators", "redhat-marketplace"
 
     # install_operator

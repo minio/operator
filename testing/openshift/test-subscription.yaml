@@ -6,6 +6,6 @@ metadata:
 spec:
   channel: stable
   installPlanApproval: Automatic
-  name: minio-operator
+  name: minio-operator-noop
   source: minio-test-operators
   sourceNamespace: openshift-marketplace
