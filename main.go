@@ -15,7 +15,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -29,17 +28,12 @@ import (
 
 	"github.com/minio/minio-go/v7/pkg/set"
 
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/klog/v2"
 
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
 	"github.com/minio/operator/pkg/controller/cluster"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
-	apiextension "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 )
@@ -75,7 +69,7 @@ func init() {
 
 func main() {
 	klog.Info("Starting MinIO Operator")
-	// set up signals so we handle the first shutdown signal gracefully
+	// set up signals, so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
 
 	flag.Parse()
@@ -106,11 +100,6 @@ func main() {
 		klog.Fatalf("Error building MinIO clientset: %s", err.Error())
 	}
 
-	extClient, err := apiextension.NewForConfig(cfg)
-	if err != nil {
-		klog.Errorf("Error building certificate clientset: %v", err.Error())
-	}
-
 	promClient, err := promclientset.NewForConfig(cfg)
 	if err != nil {
 		klog.Errorf("Error building Prometheus clientset: %v", err.Error())
@@ -128,55 +117,6 @@ func main() {
 			}
 		}
 		klog.Infof("Watching only namespaces: %s", strings.Join(namespaces.ToSlice(), ","))
-	}
-
-	ctx := context.Background()
-
-	// Default kubernetes CA certificate
-	caContent := miniov2.GetPodCAFromFile()
-
-	// If ca.crt exists in operator-tls secret load that too, ie: if the cert was issued by cert-manager=
-	operatorTLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), cluster.OperatorTLSSecretName, metav1.GetOptions{})
-	if err == nil && operatorTLSCert != nil {
-		if val, ok := operatorTLSCert.Data["public.crt"]; ok {
-			caContent = append(caContent, val...)
-		}
-		if val, ok := operatorTLSCert.Data["tls.crt"]; ok {
-			caContent = append(caContent, val...)
-		}
-		if val, ok := operatorTLSCert.Data["ca.crt"]; ok {
-			caContent = append(caContent, val...)
-		}
-	}
-
-	// custom ca certificate to be used by operator
-	operatorCATLSCert, err := kubeClient.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, cluster.OperatorCATLSSecretName, metav1.GetOptions{})
-	if err == nil && operatorCATLSCert != nil {
-		if val, ok := operatorCATLSCert.Data["public.crt"]; ok {
-			caContent = append(caContent, val...)
-		}
-		if val, ok := operatorCATLSCert.Data["tls.crt"]; ok {
-			caContent = append(caContent, val...)
-		}
-		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			caContent = append(caContent, val...)
-		}
-	}
-	if len(caContent) > 0 {
-		crd, err := extClient.ApiextensionsV1().CustomResourceDefinitions().Get(context.Background(), "tenants.minio.min.io", metav1.GetOptions{})
-		if err != nil {
-			klog.Errorf("Error getting CRD for adding caBundle: %v", err.Error())
-		} else {
-			crd.Spec.Conversion.Webhook.ClientConfig.CABundle = caContent
-			crd.Spec.Conversion.Webhook.ClientConfig.Service.Namespace = miniov2.GetNSFromFile()
-			_, err := extClient.ApiextensionsV1().CustomResourceDefinitions().Update(context.Background(), crd, metav1.UpdateOptions{})
-			if err != nil {
-				klog.Errorf("Error updating CRD with caBundle: %v", err.Error())
-			}
-			klog.Info("caBundle on CRD updated")
-		}
-	} else {
-		klog.Info("WARNING: Could not read ca.crt from the pod")
 	}
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
