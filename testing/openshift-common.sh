@@ -13,10 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License, version 3,
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-OPERATOR_SDK_VERSION=v1.22.2
+#OPERATOR_SDK_VERSION=v1.22.2
 ARCH=`{ case "$(uname -m)" in "x86_64") echo -n "amd64";; "aarch64") echo -n "arm64";; *) echo -n "$(uname -m)";; esac; }`
 MACHINE="$(uname -m)"
 OS=$(uname | awk '{print tolower($0)}')
+# shellcheck disable=SC2155
 export TMP_BIN_DIR="$(mktemp -d)"
 
 function install_binaries() {
