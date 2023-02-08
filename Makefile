@@ -7,8 +7,6 @@ VERSIONV ?= $(shell git describe --tags | sed 's,v,,g')
 endif
 TAG ?= "minio/operator:$(VERSION)"
 LDFLAGS ?= "-s -w -X main.Version=$(VERSION)"
-TMP_TENANT_CRD_FILE := $(shell mktemp)
-TMP_PB_CRD_FILE := $(shell mktemp)
 GOPATH := $(shell go env GOPATH)
 GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
@@ -70,11 +68,7 @@ regen-crd:
 	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@mv $(KUSTOMIZE_CRDS)/minio.min.io_tenants.yaml $(KUSTOMIZE_CRDS)/tenant
 	@mv $(KUSTOMIZE_CRDS)/sts.min.io_policybindings.yaml $(KUSTOMIZE_CRDS)/policybinding
-	@kustomize build resources/base/crds/tenant > $(TMP_TENANT_CRD_FILE)
-	@mv -f $(TMP_TENANT_CRD_FILE) resources/base/crds/tenant/minio.min.io_tenants.yaml
 	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/tenant/minio.min.io_tenants.yaml > $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
-	@kustomize build resources/base/crds/policybinding > $(TMP_PB_CRD_FILE)
-	@mv -f $(TMP_PB_CRD_FILE) resources/base/crds/policybinding/sts.min.io_policybindings.yaml	
 	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/policybinding/sts.min.io_policybindings.yaml > $(HELM_TEMPLATES)/sts.min.io_policybindings.yaml
 
 regen-crd-docs:

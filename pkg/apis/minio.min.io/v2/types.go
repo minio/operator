@@ -426,6 +426,9 @@ type CertificateStatus struct {
 	// AutoCertEnabled registers whether we know if the tenant has autocert enabled
 	// +nullable
 	AutoCertEnabled *bool `json:"autoCertEnabled,omitempty"`
+	// Provides the output of the `client`, `minio`, and`minioCAs` custom TLS certificates manually added to the Operator.
+	// +nullable
+	CustomCertificates *CustomCertificates `json:"customCertificates,omitempty"`
 }
 
 // PoolState represents the state of a pool
@@ -539,7 +542,8 @@ type TenantStatus struct {
 	// Health Message regarding the State of the tenant
 	// ProvisionedUsers keeps track for telling if operator already created initial users for the tenant
 	ProvisionedUsers bool `json:"provisionedUsers,omitempty"`
-
+	// *Optional* +
+	//
 	// Health Message regarding the State of the tenant
 	// ProvisionedBuckets keeps track for telling if operator already created initial buckets for the tenant
 	ProvisionedBuckets bool `json:"provisionedBuckets,omitempty"`
@@ -559,6 +563,46 @@ type CertificateConfig struct {
 	//
 	// Specify one or more x.509 Subject Alternative Names (SAN) to associate to automatically generated TLS certificates. MinIO Server pods use SNI to determine which certificate to respond with based on the requested hostname.
 	DNSNames []string `json:"dnsNames,omitempty"`
+}
+
+// CustomCertificates (`customCertificates`) provides groupings of the TLS certificates manually added to the Operator as part of tenant creation. These fields contain no data if there are no custom TLS certificates.
+type CustomCertificates struct {
+	// *Optional* +
+	//
+	// Client
+	Client []*CustomCertificateConfig `json:"client,omitempty"`
+	// *Optional* +
+	//
+	// Minio
+	Minio []*CustomCertificateConfig `json:"minio,omitempty"`
+	// *Optional* +
+	//
+	// Certificate Authorities
+	MinioCAs []*CustomCertificateConfig `json:"minioCAs,omitempty"`
+}
+
+// CustomCertificateConfig (`customCertificateConfig`) provides attributes associated of the TLS certificates manually added to the Operator as part of tenant creation. These fields contain no data if there are no custom TLS certificates.
+type CustomCertificateConfig struct {
+	// *Optional* +
+	//
+	// Output one or more `CertName` attributes associated with the manually provided TLS certificates. +
+	CertName string `json:"certName,omitempty"`
+	// *Optional* +
+	//
+	// Output one or more `Domains` attributes associated with the manually provided TLS certificates. +
+	Domains []string `json:"domains,omitempty"`
+	// *Optional* +
+	//
+	// Output one or more `Expiry` attributes associated with the manually provided TLS certificates. +
+	Expiry string `json:"expiry,omitempty"`
+	// *Optional* +
+	//
+	// Output one or more `ExpiresIn` attributes associated with the manually provided TLS certificates. +
+	ExpiresIn string `json:"expiresIn,omitempty"`
+	// *Optional* +
+	//
+	// Output one or more `SerialNo` attributes associated with the manually provided TLS certificates. +
+	SerialNo string `json:"serialNo,omitempty"`
 }
 
 // Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a set of MinIO server pods which "pool" their storage resources for supporting object storage and retrieval requests. Each server pool is independent of all others and supports horizontal scaling of available storage resources in the MinIO Tenant. +

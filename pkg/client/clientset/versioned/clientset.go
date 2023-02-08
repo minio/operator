@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"net/http"
 
-	miniov1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v1"
 	miniov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2"
 	stsv1beta1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1beta1"
 	discovery "k8s.io/client-go/discovery"
@@ -32,7 +31,6 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	MinioV1() miniov1.MinioV1Interface
 	MinioV2() miniov2.MinioV2Interface
 	StsV1beta1() stsv1beta1.StsV1beta1Interface
 }
@@ -41,14 +39,7 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	minioV1    *miniov1.MinioV1Client
-	minioV2    *miniov2.MinioV2Client
-	stsV1beta1 *stsv1beta1.StsV1beta1Client
-}
-
-// MinioV1 retrieves the MinioV1Client
-func (c *Clientset) MinioV1() miniov1.MinioV1Interface {
-	return c.minioV1
+	minioV2 *miniov2.MinioV2Client
 }
 
 // MinioV2 retrieves the MinioV2Client
@@ -105,15 +96,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.minioV1, err = miniov1.NewForConfigAndClient(&configShallowCopy, httpClient)
-	if err != nil {
-		return nil, err
-	}
 	cs.minioV2, err = miniov2.NewForConfigAndClient(&configShallowCopy, httpClient)
-	if err != nil {
-		return nil, err
-	}
-	cs.stsV1beta1, err = stsv1beta1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +121,6 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.minioV1 = miniov1.New(c)
 	cs.minioV2 = miniov2.New(c)
 	cs.stsV1beta1 = stsv1beta1.New(c)
 

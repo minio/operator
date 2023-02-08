@@ -19,7 +19,6 @@
 package fake
 
 import (
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	stsv1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +32,6 @@ var scheme = runtime.NewScheme()
 var codecs = serializer.NewCodecFactory(scheme)
 
 var localSchemeBuilder = runtime.SchemeBuilder{
-	miniov1.AddToScheme,
 	miniov2.AddToScheme,
 	stsv1beta1.AddToScheme,
 }

@@ -229,7 +229,7 @@ tenant:
   ## Prometheus setup for MinIO Tenant.
   prometheus:
     # When set to true disables the creation of prometheus deployment
-    disabled: false
+    disabled: true
     image: "" # defaults to quay.io/prometheus/prometheus:latest
     env: [ ]
     sidecarimage: "" # defaults to alpine
@@ -254,7 +254,7 @@ tenant:
   ## LogSearch API setup for MinIO Tenant.
   log:
     # When set to true disables the creation of logsearch api deployment
-    disabled: false
+    disabled: true
     image: "" # defaults to minio/operator:v4.4.17
     env: [ ]
     resources: { }

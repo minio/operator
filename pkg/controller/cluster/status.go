@@ -162,6 +162,27 @@ func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *mi
 	return t, nil
 }
 
+func (c *Controller) updateCustomCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, customCertificates *miniov2.CustomCertificates) (*miniov2.Tenant, error) {
+	// NEVER modify objects from the store. It's a read-only, local cache.
+	// You can use DeepCopy() to make a deep copy of original object and modify this copy
+	// Or create a copy manually for better performance
+	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Status.Certificates.CustomCertificates = customCertificates
+
+	// If the CustomResourceSubresources feature gate is not enabled,
+	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
+	// UpdateStatus will not allow changes to the Spec of the resource,
+	// which is ideal for ensuring nothing other than resource status has been updated.
+	opts := metav1.UpdateOptions{}
+	t, err := c.minioClientSet.MinioV2().Tenants(tenant.Namespace).UpdateStatus(ctx, tenantCopy, opts)
+	t.EnsureDefaults()
+
+	if err != nil {
+		return t, err
+	}
+	return t, nil
+}
+
 func (c *Controller) updateProvisionedUsersStatus(ctx context.Context, tenant *miniov2.Tenant, provisionedUsers bool) (*miniov2.Tenant, error) {
 	return c.updateProvisionedUsersWithRetry(ctx, tenant, provisionedUsers, true)
 }
