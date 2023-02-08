@@ -41,8 +41,6 @@ const (
 
 type contextKeyType string
 
-//go:generate stringer -type=STSErrorCode -trimprefix=Err $GOFILE
-
 // Error codes, non exhaustive list - http://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithSAML.html
 const (
 	ErrSTSNone STSErrorCode = iota

@@ -39,7 +39,8 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	minioV2 *miniov2.MinioV2Client
+	minioV2    *miniov2.MinioV2Client
+	stsV1beta1 *stsv1beta1.StsV1beta1Client
 }
 
 // MinioV2 retrieves the MinioV2Client
@@ -97,6 +98,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	var cs Clientset
 	var err error
 	cs.minioV2, err = miniov2.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
+	cs.stsV1beta1, err = stsv1beta1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
