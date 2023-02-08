@@ -725,6 +725,15 @@ func (c *Controller) syncHandler(key string) error {
 		}
 	}
 
+	// Custom certificates
+	if customCertificates, err := c.getCustomCertificates(ctx, tenant); err == nil {
+		if tenant, err = c.updateCustomCertificatesStatus(ctx, tenant, customCertificates); err != nil {
+			klog.V(2).Infof(err.Error())
+		}
+	} else {
+		klog.V(2).Infof(err.Error())
+	}
+
 	secret, err := c.applyOperatorWebhookSecret(ctx, tenant)
 	if err != nil {
 		return err

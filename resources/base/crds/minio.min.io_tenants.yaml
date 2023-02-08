@@ -5359,6 +5359,61 @@ spec:
                   autoCertEnabled:
                     nullable: true
                     type: boolean
+                  customCertificates:
+                    nullable: true
+                    properties:
+                      client:
+                        items:
+                          properties:
+                            certName:
+                              type: string
+                            domains:
+                              items:
+                                type: string
+                              type: array
+                            expiresIn:
+                              type: string
+                            expiry:
+                              type: string
+                            serialNo:
+                              type: string
+                          type: object
+                        type: array
+                      minio:
+                        items:
+                          properties:
+                            certName:
+                              type: string
+                            domains:
+                              items:
+                                type: string
+                              type: array
+                            expiresIn:
+                              type: string
+                            expiry:
+                              type: string
+                            serialNo:
+                              type: string
+                          type: object
+                        type: array
+                      minioCAs:
+                        items:
+                          properties:
+                            certName:
+                              type: string
+                            domains:
+                              items:
+                                type: string
+                              type: array
+                            expiresIn:
+                              type: string
+                            expiry:
+                              type: string
+                            serialNo:
+                              type: string
+                          type: object
+                        type: array
+                    type: object
                 type: object
               currentState:
                 type: string
