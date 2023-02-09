@@ -51,46 +51,10 @@ function announce_test() {
   echo "## Testing upgrade of Operator from $lower_text to $upper_text ##"
 }
 
-# Port forward
-function port_forward() {
-  totalwait=0
-  echo 'Validating tenant pods are ready to serve'
-  for pod in `kubectl --namespace $namespace --selector=v1.min.io/tenant=$tenant get pod -o json |  jq '.items[] | select(.metadata.name|contains("'$tenant'"))| .metadata.name' | sed 's/"//g'`; do
-    while true; do
-      if kubectl --namespace $namespace -c minio logs pod/$pod | grep --quiet 'All MinIO sub-systems initialized successfully'; then
-        echo "$pod is ready to serve" && break
-      fi
-      sleep 5
-      totalwait=$((totalwait + 5))
-      if [ "$totalwait" -gt 305 ]; then
-        echo "Unable to validate pod $pod after 5 minutes, exiting."
-        try false
-      fi
-    done
-  done
-
-  echo "Killing any current port-forward"
-  for pid in $(lsof -i :$localport | awk '{print $2}' | uniq | grep -o '[0-9]*')
-  do
-    if [ -n "$pid" ] 
-    then
-      kill -9 $pid
-      echo "Killed previous port-forward process using port $localport: $pid"
-    fi
-  done
-
-  echo "Establishing port-forward"
-  kubectl port-forward service/$tenant-hl -n $namespace $localport &
-
-  echo 'start - wait for port-forward to be completed'
-  sleep 15
-  echo 'end - wait for port-forward to be completed'
-}
-
 # Preparing tenant for bucket manipulation
 # shellcheck disable=SC2317
 function bootstrap_tenant() {
-  port_forward
+  port_forward $namespace $tenant minio $localport
 
   # Obtain root credentials
   TENANT_CONFIG_SECRET=$(kubectl -n $namespace get tenants $tenant -o jsonpath="{.spec.configuration.name}")
@@ -106,7 +70,7 @@ function bootstrap_tenant() {
 
 # Upload dummy data to tenant bucket
 function upload_dummy_data() {
-  port_forward
+  port_forward $namespace $tenant minio $localport
 
   echo "Uploading dummy data to tenant bucket"
   cp ${SCRIPT_DIR}/deploy-tenant-upgrade.sh ${SCRIPT_DIR}/$dummy
@@ -115,7 +79,7 @@ function upload_dummy_data() {
 
 # Download dummy data from tenant bucket
 function download_dummy_data() {
-  port_forward
+  port_forward $namespace $tenant minio $localport
 
   echo "Download dummy data from tenant bucket"
   mc cp $alias/$bucket/$dummy ${SCRIPT_DIR}/$dummy --insecure

@@ -57,28 +57,10 @@ function main() {
   wait_on_prometheus_pods
   echo 'end - wait for prometheus to appear'
 
-  echo 'Wait for pod to be ready for port forward'
-  try kubectl wait --namespace tenant-lite \
-    --for=condition=ready pod \
-    --selector=statefulset.kubernetes.io/pod-name=storage-lite-pool-0-0 \
-    --timeout=120s
+  echo "make sure there's no rolling restart going"
+  kubectl -n tenant-lite rollout status sts/storage-lite-pool-0
 
-  echo 'port forward without the hop, directly from the tenant/pod'
-  kubectl port-forward storage-lite-pool-0-0 9443 --namespace tenant-lite &
-
-  echo 'start - wait for port-forward to be completed'
-  sleep 15
-  echo 'end - wait for port-forward to be completed'
-
-  echo 'To display port connections'
-  sudo netstat -tunlp # want to see if 9443 is LISTEN state to proceed
-
-  echo 'start - open and allow port connection'
-  sudo apt install ufw
-  sudo ufw allow http
-  sudo ufw allow https
-  sudo ufw allow 9443/tcp
-  echo 'end - open and allow port connection'
+  port_forward tenant-lite storage-lite storage-lite-console 9443
 
   echo 'Get token from MinIO Console'
   COOKIE=$(
@@ -86,7 +68,7 @@ function main() {
       -H 'content-type: application/json' \
       --data-raw '{"accessKey":"minio","secretKey":"minio123"}' --insecure 2>&1 |
       grep "set-cookie: token=" | sed -e "s/< set-cookie: token=//g" |
-      awk -F ';' '{print $1}'
+      awk -F ';' '{print $  1}'
   )
   echo $COOKIE
 

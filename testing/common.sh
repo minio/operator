@@ -230,6 +230,9 @@ function check_tenant_status() {
     --selector=$key=$2 \
     --timeout=300s
 
+  # make sure no rollout is happening
+  try kubectl -n $1 rollout status sts/$2-pool-0
+
   echo "Tenant is created successfully, proceeding to validate 'mc admin info minio/'"
 
   try kubectl get pods --namespace $1
@@ -306,4 +309,45 @@ function install_tenant() {
 
   echo "Build passes basic tenant creation"
 
+}
+
+# Port forward
+function port_forward() {
+  namespace=$1
+  tenant=$2
+  svc=$3
+  localport=$4
+
+  totalwait=0
+  echo 'Validating tenant pods are ready to serve'
+  for pod in `kubectl --namespace $namespace --selector=v1.min.io/tenant=$tenant get pod -o json |  jq '.items[] | select(.metadata.name|contains("'$tenant'"))| .metadata.name' | sed 's/"//g'`; do
+    while true; do
+      if kubectl --namespace $namespace -c minio logs pod/$pod | grep --quiet 'All MinIO sub-systems initialized successfully'; then
+        echo "$pod is ready to serve" && break
+      fi
+      sleep 5
+      totalwait=$((totalwait + 5))
+      if [ "$totalwait" -gt 305 ]; then
+        echo "Unable to validate pod $pod after 5 minutes, exiting."
+        try false
+      fi
+    done
+  done
+
+  echo "Killing any current port-forward"
+  for pid in $(lsof -i :$localport | awk '{print $2}' | uniq | grep -o '[0-9]*')
+  do
+    if [ -n "$pid" ]
+    then
+      kill -9 $pid
+      echo "Killed previous port-forward process using port $localport: $pid"
+    fi
+  done
+
+  echo "Establishing port-forward"
+  kubectl port-forward service/$svc -n $namespace $localport &
+
+  echo 'start - wait for port-forward to be completed'
+  sleep 15
+  echo 'end - wait for port-forward to be completed'
 }
