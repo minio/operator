@@ -63,7 +63,7 @@ function port_forward() {
       sleep 5
       totalwait=$((totalwait + 5))
       if [ "$totalwait" -gt 305 ]; then
-        echo "Unable to validate pods after 5 minutes, exiting."
+        echo "Unable to validate pod $pod after 5 minutes, exiting."
         try false
       fi
     done

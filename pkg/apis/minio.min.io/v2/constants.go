@@ -51,6 +51,9 @@ const TmpPath = "/tmp"
 // CfgPath is the location of the MinIO Configuration File
 const CfgPath = "/tmp/minio/"
 
+// CfgFile is the Configuration File for MinIO
+const CfgFile = CfgPath + "config.env"
+
 // TenantLabel is applied to all components of a Tenant cluster
 const TenantLabel = "v1.min.io/tenant"
 

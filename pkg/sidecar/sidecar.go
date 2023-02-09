@@ -192,7 +192,7 @@ func (c Controller) regenCfgWithCfg(tenantName string, namespace string, fileCon
 
 	fileContents = fileContents + fmt.Sprintf("export MINIO_ARGS=\"%s\"\n", args)
 
-	err = os.WriteFile(v2.CfgPath+"config.env", []byte(fileContents), 0o644)
+	err = os.WriteFile(v2.CfgFile, []byte(fileContents), 0o644)
 	if err != nil {
 		log.Println(err)
 	}

@@ -72,7 +72,7 @@ func Validate(tenantName string) {
 		os.Exit(1)
 	}
 
-	err = os.WriteFile(miniov2.CfgPath+"config.env", []byte(fileContents), 0o644)
+	err = os.WriteFile(miniov2.CfgFile, []byte(fileContents), 0o644)
 	if err != nil {
 		log.Println(err)
 	}

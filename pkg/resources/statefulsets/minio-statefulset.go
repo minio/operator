@@ -187,7 +187,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	if t.HasConfigurationSecret() {
 		envVarsMap["MINIO_CONFIG_ENV_FILE"] = corev1.EnvVar{
 			Name:  "MINIO_CONFIG_ENV_FILE",
-			Value: miniov2.CfgPath,
+			Value: miniov2.CfgFile,
 		}
 	}
 
