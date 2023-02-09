@@ -19,8 +19,10 @@ export CI
 ARCH=`{ case "$(uname -m)" in "x86_64") echo -n "amd64";; "aarch64") echo -n "arm64";; *) echo -n "$(uname -m)";; esac; }`
 OS=$(uname | awk '{print tolower($0)}')
 
+DEV_TEST=$OPERATOR_DEV_TEST
+
 # Set OPERATOR_DEV_TEST to skip downloading these dependencies
-if [[ -z "${OPERATOR_DEV_TEST}" ]]; then
+if [[ -z "${DEV_TEST}" ]]; then
   ## Make sure to install things if not present already
   sudo curl -#L "https://dl.k8s.io/release/v1.23.1/bin/$OS/$ARCH/kubectl" -o /usr/local/bin/kubectl
   sudo chmod +x /usr/local/bin/kubectl
@@ -118,7 +120,7 @@ function install_operator_version() {
   fi
   echo "Target operator release: $version"
   # Set OPERATOR_DEV_TEST to skip downloading these dependencies
-  if [[ -z "${OPERATOR_DEV_TEST}" ]]; then
+  if [[ -z "${DEV_TEST}" ]]; then
     sudo curl -#L "https://github.com/minio/operator/releases/download/v${version}/kubectl-minio_${version}_${OS}_${ARCH}" -o /usr/local/bin/kubectl-minio
     sudo chmod +x /usr/local/bin/kubectl-minio
   fi
@@ -169,7 +171,7 @@ function destroy_kind() {
   # `unset OPERATOR_DEV_TEST`
   # Use below statement to test and keep cluster alive at the end!:
   # `export OPERATOR_DEV_TEST="ON"`
-  if [[ -z "${OPERATOR_DEV_TEST}" ]]; then
+  if [[ -z "${DEV_TEST}" ]]; then
     echo "Cluster not destroyed due to manual testing"
   else
     kind delete cluster
@@ -267,6 +269,13 @@ function install_tenant() {
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-logs"
+  elif [ "$1" = "prometheus" ]; then
+    namespace=tenant-lite
+    key=v1.min.io/tenant
+    value=storage-lite
+    echo "Installing lite tenant from current branch"
+
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-prometheus"
   elif [ -e $1 ]; then
     namespace=tenant-lite
     key=v1.min.io/tenant

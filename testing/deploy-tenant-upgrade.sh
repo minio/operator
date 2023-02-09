@@ -163,6 +163,10 @@ function main() {
     # Test current branch
     install_operator
   fi
+
+  # After opreator upgrade, there's a rolling restart
+  echo "Waiting for rolling restart to complete"
+  kubectl -n tenant-lite rollout status sts/storage-lite-pool-0
   
   check_tenant_status tenant-lite storage-lite
 

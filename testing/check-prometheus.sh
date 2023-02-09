@@ -47,7 +47,7 @@ function main() {
 
   install_operator
 
-  install_tenant
+  install_tenant "prometheus"
 
   check_tenant_status tenant-lite storage-lite
 
