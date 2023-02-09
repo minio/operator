@@ -230,8 +230,13 @@ function check_tenant_status() {
     --selector=$key=$2 \
     --timeout=300s
 
-  # make sure no rollout is happening
-  try kubectl -n $1 rollout status sts/$2-pool-0
+  if [ $# -ge 4 ]; then
+    # make sure no rollout is happening
+    try kubectl -n $1 rollout status sts/minio1-pool-0
+  else
+    # make sure no rollout is happening
+    try kubectl -n $1 rollout status sts/$2-pool-0
+  fi
 
   echo "Tenant is created successfully, proceeding to validate 'mc admin info minio/'"
 
