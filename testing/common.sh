@@ -266,28 +266,28 @@ function install_tenant() {
     try helm install --namespace $namespace \
       --create-namespace tenant ./helm/tenant
   elif [ "$1" = "logs" ]; then
-    namespace=tenant-lite
+    namespace="tenant-lite"
     key=v1.min.io/tenant
     value=storage-lite
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-logs"
   elif [ "$1" = "prometheus" ]; then
-    namespace=tenant-lite
+    namespace="tenant-lite"
     key=v1.min.io/tenant
     value=storage-lite
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-prometheus"
   elif [ -e $1 ]; then
-    namespace=tenant-lite
+    namespace="tenant-lite"
     key=v1.min.io/tenant
     value=storage-lite
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant"
   else
-    namespace=tenant-lite
+    namespace="tenant-lite"
     key=v1.min.io/tenant
     value=storage-lite
     echo "Installing lite tenant for version $1"
