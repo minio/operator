@@ -34,7 +34,7 @@ metadata:
   name: setup-bucket
   namespace: minio-tenant-1
 spec:
-  backoffLimit: 1
+  backoffLimit: 5
   template:
     spec:
       restartPolicy: OnFailure

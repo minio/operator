@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: gosdk
+  name: client
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: gosdk
-  name: goapp
+  namespace: client
+  name: sdkclient-sa
 ---
 apiVersion: sts.min.io/v1beta1
 kind: PolicyBinding
@@ -16,22 +16,33 @@ metadata:
   namespace: minio-tenant-1
 spec:
   application:
-    namespace: gosdk
-    serviceaccount: goapp
+    namespace: client
+    serviceaccount: sdkclient-sa
   policies:
     - test-bucket-rw
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: go-example
-  namespace: gosdk
+  name: miniosdk-example
+  namespace: client
 spec:
   backoffLimit: 5
   template:
     spec:
       restartPolicy: OnFailure
-      serviceAccountName: goapp
+      serviceAccountName: sdkclient-sa
+      serviceAccount: sdkclient-sa
       containers:
-        - name: go-sdk
-          image: pjuarezd/minio-operator-sts-example:go
+        - name: miniosdk-sts-example
+          image: mino/operator-sts-example:local
+      env:
+        - name: MINIO_HOST
+          value: https://minio.minio-tenant-1.svc.cluster.local
+        - name: STS_HOST
+          value: https://operator@minio.minio-operator.svc.cluster.local
+        - name: BUCKET
+          value: test-bucket
+        - name: USE_SSL
+          value: "true"
+
