@@ -1,4 +1,4 @@
-// Copyright (C) 2020, MinIO, Inc.
+// Copyright (C) 2020-2023 MinIO, Inc.
 //
 // This code is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License, version 3,
@@ -1029,7 +1029,17 @@ func (c *Controller) syncHandler(key string) error {
 
 	// In loop above we compared all the versions in all pools.
 	// So comparing tenant.Spec.Image (version to update to) against one value from images slice is fine.
-	if tenant.Spec.Image != images[0] && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
+	ssImages := strings.Split(images[0], ":")
+	specImages := strings.Split(tenant.Spec.Image, ":")
+	var ssImage string
+	var specImage string
+	if len(specImages) > 1 {
+		specImage = specImages[1]
+	}
+	if len(ssImages) > 1 {
+		ssImage = ssImages[1]
+	}
+	if specImage != ssImage && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
 		if !tenant.MinIOHealthCheck(c.getTransport()) {
 			klog.Infof("%s is not running can't update image online", key)
 			return ErrMinIONotReady
