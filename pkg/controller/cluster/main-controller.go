@@ -430,25 +430,46 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			go wait.Until(c.runWorker, time.Second, stopCh)
 		}
 
-		// I want to get the csr-signer secret to mount the certificate in Operator Pod to trust the tenant in OpenShift!
-		// oc get secret csr-signer -n openshift-kube-controller-manager-operator -o template='{{ index .data "tls.crt"}}' | base64 -d
-		klog.Info("Checking if this is OpenShift Environment...")
-		//secrets, _ := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").List(ctx, metav1.ListOptions{})
-
-		// Trying to get just the csr-signer secret not the entire list from openshift-kube-controller-manager-operator namespace
-		secret, _ := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
+		// Create Secret in OpenShift to trust Tenant's TLS Certificate.
+		// $ oc get secret csr-signer -n openshift-kube-controller-manager-operator \
+		// -o template='{{ index .data "tls.crt"}}' | base64 -d
+		secret, err := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
 			ctx, "csr-signer", metav1.GetOptions{})
-
-		var cpData = *&secret.Data
-		for k, v := range cpData {
-			fmt.Println("cpData k:", k, "v:", v)
+		klog.Info("Checking if this is OpenShift Environment...")
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				// Do nothing special, because this is maybe k8s vanilla
+				klog.Info("This is NOT OpenShift because csr-signer secret was NOT found")
+			}
+		} else {
+			// Do something special, create the secret to trust the tenant spec.
+			klog.Info("This is OpenShift because csr-signer secret was found")
+			var cpData = *&secret.Data
+			var tlsCrt []byte
+			for k, v := range cpData {
+				if (k == "tls.crt"){
+					tlsCrt = v
+				}
+			}
+			// To get minio-operator namespace without hardcoding the value in case
+			// it comes from OperatorHub I think...
+			namespace := miniov2.GetNSFromFile()
+			newSecret := &corev1.Secret{
+				Type: "Opaque",
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "minio-operator-openshift-signer",
+					Namespace: namespace,
+				},
+				Data: map[string][]byte{
+					"tls.crt": tlsCrt,
+				},
+			}
+			_, err := c.kubeClientSet.CoreV1().Secrets(namespace).Create(
+				ctx, newSecret, metav1.CreateOptions{})
+			if err != nil {
+				klog.Errorf("failed to create secret: %#v", err)
+			}
 		}
-
-		klog.Infof("secret: %s", secret)
-
-		// Expected:
-		// NAME         TYPE                DATA   AGE
-		// csr-signer   kubernetes.io/tls   2      28d
 
 		// Launch a single worker for Health Check reacting to Pod Changes
 		go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
