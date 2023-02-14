@@ -433,8 +433,22 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		// I want to get the csr-signer secret to mount the certificate in Operator Pod to trust the tenant in OpenShift!
 		// oc get secret csr-signer -n openshift-kube-controller-manager-operator -o template='{{ index .data "tls.crt"}}' | base64 -d
 		klog.Info("Checking if this is OpenShift Environment...")
-		var myKubeSecret = kubernetes.V1().Secrets("openshift-kube-controller-manager-operator").Find("csr-signer")
-		klog.Infof("myKubeSecret: %s", myKubeSecret)
+		//secrets, _ := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").List(ctx, metav1.ListOptions{})
+
+		// Trying to get just the csr-signer secret not the entire list from openshift-kube-controller-manager-operator namespace
+		secret, _ := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
+			ctx, "csr-signer", metav1.GetOptions{})
+
+		var cpData = *&secret.Data
+		for k, v := range cpData {
+			fmt.Println("cpData k:", k, "v:", v)
+		}
+
+		klog.Infof("secret: %s", secret)
+
+		// Expected:
+		// NAME         TYPE                DATA   AGE
+		// csr-signer   kubernetes.io/tls   2      28d
 
 		// Launch a single worker for Health Check reacting to Pod Changes
 		go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
