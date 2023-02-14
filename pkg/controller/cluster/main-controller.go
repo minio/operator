@@ -430,6 +430,12 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			go wait.Until(c.runWorker, time.Second, stopCh)
 		}
 
+		// I want to get the csr-signer secret to mount the certificate in Operator Pod to trust the tenant in OpenShift!
+		// oc get secret csr-signer -n openshift-kube-controller-manager-operator -o template='{{ index .data "tls.crt"}}' | base64 -d
+		klog.Info("Checking if this is OpenShift Environment...")
+		var myKubeSecret = kubernetes.V1().Secrets("openshift-kube-controller-manager-operator").Find("csr-signer")
+		klog.Infof("myKubeSecret: %s", myKubeSecret)
+
 		// Launch a single worker for Health Check reacting to Pod Changes
 		go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
 
