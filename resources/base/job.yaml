@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openshift-secret
+  namespace: minio-operator
+spec:
+  selector: {}
+  template:
+    metadata:
+      name: openshift-secret
+    spec:
+      containers:
+        - name: openshift-secret
+          image: quay.io/cniackz4/operator-job:v4.5.9
+          imagePullPolicy: Always
+      restartPolicy: Never
