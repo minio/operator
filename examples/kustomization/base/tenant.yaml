@@ -203,27 +203,27 @@ spec:
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
   requestAutoCert: true
   ## Prometheus setup for MinIO Tenant.
-  prometheus:
-    image: "" # defaults to quay.io/prometheus/prometheus:latest
-    env: [ ]
-    sidecarimage: "" # defaults to alpine
-    initimage: "" # defaults to busybox:1.33.1
-    diskCapacityGB: 1
-    storageClassName: standard
-    annotations: { }
-    labels: { }
-    nodeSelector: { }
-    affinity:
-      nodeAffinity: { }
-      podAffinity: { }
-      podAntiAffinity: { }
-    resources: { }
-    serviceAccountName: ""
-    securityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      runAsNonRoot: true
-      fsGroup: 1000
+  #  prometheus:
+  #    image: "" # defaults to quay.io/prometheus/prometheus:latest
+  #    env: [ ]
+  #    sidecarimage: "" # defaults to alpine
+  #    initimage: "" # defaults to busybox:1.33.1
+  #    diskCapacityGB: 1
+  #    storageClassName: standard
+  #    annotations: { }
+  #    labels: { }
+  #    nodeSelector: { }
+  #    affinity:
+  #      nodeAffinity: { }
+  #      podAffinity: { }
+  #      podAntiAffinity: { }
+  #    resources: { }
+  #    serviceAccountName: ""
+  #    securityContext:
+  #      runAsUser: 1000
+  #      runAsGroup: 1000
+  #      runAsNonRoot: true
+  #      fsGroup: 1000
   ## Prometheus Operator's Service Monitor for MinIO Tenant Pods.
   # prometheusOperator:
   #   labels:

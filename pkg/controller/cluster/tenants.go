@@ -25,6 +25,9 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
+// ErrEmptyRootCredentials is the error returned when we detect missing root credentials
+var ErrEmptyRootCredentials = errors.New("empty tenant credentials")
+
 func (c *Controller) getTenantConfiguration(ctx context.Context, tenant *miniov2.Tenant) (map[string][]byte, error) {
 	tenantConfiguration := map[string][]byte{}
 	// Load tenant configuration from file
@@ -74,7 +77,7 @@ func (c *Controller) getTenantCredentials(ctx context.Context, tenant *miniov2.T
 	}
 
 	if accessKey == "" || secretKey == "" {
-		return tenantConfiguration, errors.New("empty tenant credentials")
+		return tenantConfiguration, ErrEmptyRootCredentials
 	}
 
 	return tenantConfiguration, nil

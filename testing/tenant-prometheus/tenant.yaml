@@ -1,0 +1,27 @@
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: storage
+  namespace: minio-tenant
+spec:
+  prometheus:
+    image: "" # defaults to quay.io/prometheus/prometheus:latest
+    env: [ ]
+    sidecarimage: "" # defaults to alpine
+    initimage: "" # defaults to busybox:1.33.1
+    diskCapacityGB: 1
+    storageClassName: standard
+    annotations: { }
+    labels: { }
+    nodeSelector: { }
+    affinity:
+      nodeAffinity: { }
+      podAffinity: { }
+      podAntiAffinity: { }
+    resources: { }
+    serviceAccountName: ""
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      fsGroup: 1000

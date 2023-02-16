@@ -17,13 +17,10 @@
 package cluster
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/minio/operator/pkg/resources/statefulsets"
 
 	"github.com/gorilla/mux"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -118,79 +115,4 @@ func validateBucketName(bucket string) (bool, error) {
 		return false, fmt.Errorf("invalid bucket name: . in bucket name: %s", bucket)
 	}
 	return true, nil
-}
-
-// GetenvHandler - GET /webhook/v1/getenv/{namespace}/{name}?key={env}
-func (c *Controller) GetenvHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	namespace := vars["namespace"]
-	name := vars["name"]
-	key := vars["key"]
-
-	secret, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(r.Context(),
-		miniov2.WebhookSecret, metav1.GetOptions{})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
-	}
-
-	if err = c.validateRequest(r, secret); err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
-	}
-
-	// Get the Tenant resource with this namespace/name
-	tenant, err := c.minioClientSet.MinioV2().Tenants(namespace).Get(context.Background(), name, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			// The Tenant resource may no longer exist, in which case we stop processing.
-			http.Error(w, fmt.Sprintf("Tenant '%s' in work queue no longer exists", key), http.StatusNotFound)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
-	}
-
-	tenant.EnsureDefaults()
-
-	// Validate the MinIO Tenant
-	if err = tenant.Validate(); err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
-	}
-	// correct all statefulset names by loading them, this will fix their name on the tenant pool names
-	_, err = c.getAllSSForTenant(tenant)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
-	}
-
-	switch key {
-	case envMinIOArgs:
-		args := strings.Join(statefulsets.GetContainerArgs(tenant, c.hostsTemplate), " ")
-		klog.Infof("%s value is %s", key, args)
-
-		_, _ = w.Write([]byte(args))
-		w.(http.Flusher).Flush()
-	case envMinIOServiceTarget:
-		schema := "https"
-		if !isOperatorTLS() {
-			schema = "http"
-		}
-		target := fmt.Sprintf("%s://%s:%s%s/%s/%s",
-			schema,
-			fmt.Sprintf("operator.%s.svc.%s",
-				miniov2.GetNSFromFile(),
-				miniov2.GetClusterDomain()),
-			miniov2.WebhookDefaultPort,
-			miniov2.WebhookAPIBucketService,
-			tenant.Namespace,
-			tenant.Name)
-		klog.Infof("%s value is %s", key, target)
-
-		_, _ = w.Write([]byte(target))
-	default:
-		http.Error(w, fmt.Sprintf("%s env key is not supported yet", key), http.StatusBadRequest)
-		return
-	}
 }
