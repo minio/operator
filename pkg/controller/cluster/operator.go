@@ -183,6 +183,38 @@ func (c *Controller) getTransport() *http.Transport {
 		}
 	}
 
+	// These chunk of code is intended for OpenShift ONLY and it will help us trust the signer to solve issue:
+	// https://github.com/minio/operator/issues/1412
+	openShiftCATLSCert, err := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
+		context.Background(), "csr-signer", metav1.GetOptions{})
+	klog.Info("Checking if this is OpenShift Environment to append the certificates...")
+	if err != nil {
+		if k8serrors.IsNotFound(err) {
+			// Do nothing special, because this is maybe k8s vanilla
+			klog.Info("csr-signer secret wasn't found, very likely this is not OpenShift but k8s Vanilla or other...")
+		} else {
+			// Lack of permissions to read the secret
+			klog.Errorf("csr-signer secret was found but we failed to get openShiftCATLSCert: %#v", err)
+		}
+	} else if err == nil && openShiftCATLSCert != nil {
+		// When secret was obtained with no errors
+		if val, ok := openShiftCATLSCert.Data["tls.crt"]; ok {
+			// OpenShift csr-signer secret has tls.crt certificates that we need to append in order
+			// to trust the signer. If we append the val, Operator will be able to provisioning the
+			// initial users and get Tenant Health, so tenant can be properly initialized and in
+			// green status, otherwise if we don't append it, it will get stuck and expose this
+			// issue in the log:
+			// Failed to get cluster health: Get "https://minio.tenant-lite.svc.cluster.local/minio/health/cluster":
+			// x509: certificate signed by unknown authority
+			klog.Info("Appending OpenShift csr-signer to trust the Signer")
+			rootCAs.AppendCertsFromPEM(val)
+		}
+	} else {
+		// Strange case where secret was found but is empty
+		// If cert is signed, it might be new signer somewhere in the different projects of OpenShift.
+		klog.Error("Your OpenShift csr-signer secret is empty, MinIO Operator can't trust signer")
+	}
+
 	c.transport = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
