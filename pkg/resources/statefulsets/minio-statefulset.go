@@ -420,28 +420,41 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 
 // Builds the security context for containers in a Pool
 func poolContainerSecurityContext(pool *miniov2.Pool) *v1.SecurityContext {
+	// Default values:
+	// By default, values should be totally empty if not provided
+	// This is specially needed in OpenShift where Security Context Constraints restrict them
+	// if let empty then OCP can pick the values from the constraints defined.
+	containerSecurityContext := corev1.SecurityContext{}
 	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
-	// Default to Pod values
+	poolSCSet := false
+
+	// Values from pool.SecurityContext ONLY if provided
 	if pool.SecurityContext != nil {
 		if pool.SecurityContext.RunAsNonRoot != nil {
 			runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
+			poolSCSet = true
 		}
 		if pool.SecurityContext.RunAsUser != nil {
 			runAsUser = *pool.SecurityContext.RunAsUser
+			poolSCSet = true
 		}
 		if pool.SecurityContext.RunAsGroup != nil {
 			runAsGroup = *pool.SecurityContext.RunAsGroup
+			poolSCSet = true
+		}
+		if poolSCSet {
+			// Only set values if one of above is set otherwise let it empty
+			containerSecurityContext = corev1.SecurityContext{
+				RunAsNonRoot: &runAsNonRoot,
+				RunAsUser:    &runAsUser,
+				RunAsGroup:   &runAsGroup,
+			}
 		}
 	}
 
-	containerSecurityContext := corev1.SecurityContext{
-		RunAsNonRoot: &runAsNonRoot,
-		RunAsUser:    &runAsUser,
-		RunAsGroup:   &runAsGroup,
-	}
-
+	// Values from pool.ContainerSecurityContext if provided
 	if pool != nil && pool.ContainerSecurityContext != nil {
 		containerSecurityContext = *pool.ContainerSecurityContext
 	}
