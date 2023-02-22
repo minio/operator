@@ -28,6 +28,7 @@ builds:
       - s390x
     env:
       - CGO_ENABLED=0
+    main: ./cmd/operator/
     ldflags:
       - -s -w -X main.version={{.Tag}}
     flags:

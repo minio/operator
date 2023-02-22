@@ -79,17 +79,6 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 			Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
 			Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
 		},
-		miniov2.WebhookMinIOArgs: {
-			Name: miniov2.WebhookMinIOArgs,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: miniov2.WebhookSecret,
-					},
-					Key: miniov2.WebhookMinIOArgs,
-				},
-			},
-		},
 		"MINIO_OPERATOR_VERSION": {
 			Name:  "MINIO_OPERATOR_VERSION",
 			Value: opVersion,
@@ -198,7 +187,7 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	if t.HasConfigurationSecret() {
 		envVarsMap["MINIO_CONFIG_ENV_FILE"] = corev1.EnvVar{
 			Name:  "MINIO_CONFIG_ENV_FILE",
-			Value: miniov2.TmpPath + "/minio-config/config.env",
+			Value: miniov2.CfgFile,
 		}
 	}
 
@@ -279,14 +268,28 @@ func ContainerMatchLabels(t *miniov2.Tenant, pool *miniov2.Pool) *metav1.LabelSe
 	}
 }
 
+// CfgVolumeMount is the volume mount used by `minio`, `sidecar` and `validate-arguments` containers
+var CfgVolumeMount = corev1.VolumeMount{
+	Name:      CfgVol,
+	MountPath: miniov2.CfgPath,
+}
+
+// TmpCfgVolumeMount is the temporary location
+var TmpCfgVolumeMount = corev1.VolumeMount{
+	Name:      "configuration",
+	MountPath: miniov2.TmpPath + "/minio-config",
+}
+
 // Builds the volume mounts for MinIO container.
 func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool, certVolumeSources []v1.VolumeProjection) (mounts []v1.VolumeMount) {
-	// This is the case where user didn't provide a pool and we deploy a EmptyDir based
-	// single node single drive (FS) MinIO deployment
+	// Default volume name, unless another one was provided
 	name := miniov2.MinIOVolumeName
 	if pool.VolumeClaimTemplate != nil {
 		name = pool.VolumeClaimTemplate.Name
 	}
+
+	// shared configuration Volume
+	mounts = append(mounts, CfgVolumeMount)
 
 	if pool.VolumesPerServer == 1 {
 		mounts = append(mounts, corev1.VolumeMount{
@@ -308,13 +311,6 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool, certV
 		mounts = append(mounts, corev1.VolumeMount{
 			Name:      t.MinIOTLSSecretName(),
 			MountPath: miniov2.MinIOCertPath,
-		})
-	}
-
-	if t.HasConfigurationSecret() {
-		mounts = append(mounts, corev1.VolumeMount{
-			Name:      "configuration",
-			MountPath: miniov2.TmpPath + "/minio-config",
 		})
 	}
 
@@ -452,8 +448,38 @@ func poolContainerSecurityContext(pool *miniov2.Pool) *v1.SecurityContext {
 	return &containerSecurityContext
 }
 
+// CfgVol is the name of the configuration volume we will use
+const CfgVol = "cfg-vol"
+
+// NewPoolArgs arguments used to create a new pool
+type NewPoolArgs struct {
+	Tenant          *miniov2.Tenant
+	WsSecret        *v1.Secret
+	SkipEnvVars     map[string][]byte
+	Pool            *miniov2.Pool
+	PoolStatus      *miniov2.PoolStatus
+	ServiceName     string
+	HostsTemplate   string
+	OperatorVersion string
+	OperatorTLS     bool
+	OperatorCATLS   bool
+	OperatorImage   string
+}
+
 // NewPool creates a new StatefulSet for the given Cluster.
-func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]byte, pool *miniov2.Pool, poolStatus *miniov2.PoolStatus, serviceName, hostsTemplate, operatorVersion string, operatorTLS bool, operatorCATLS bool) *appsv1.StatefulSet {
+func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
+	t := args.Tenant
+	wsSecret := args.WsSecret
+	skipEnvVars := args.SkipEnvVars
+	pool := args.Pool
+	poolStatus := args.PoolStatus
+	serviceName := args.ServiceName
+	hostsTemplate := args.HostsTemplate
+	operatorVersion := args.OperatorVersion
+	operatorTLS := args.OperatorTLS
+	operatorCATLS := args.OperatorCATLS
+	operatorImage := args.OperatorImage
+
 	var podVolumes []corev1.Volume
 	replicas := pool.Servers
 	var certVolumeSources []corev1.VolumeProjection
@@ -467,6 +493,15 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 	KESCertPath := []corev1.KeyToPath{
 		{Key: "public.crt", Path: "CAs/kes.crt"},
 	}
+
+	// Create an empty dir volume to share the configuration between the main container and side-car
+
+	podVolumes = append(podVolumes, corev1.Volume{
+		Name: CfgVol,
+		VolumeSource: v1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
 
 	// Multiple certificates will be mounted using the following folder structure:
 	//
@@ -791,6 +826,7 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, wsSecret, skipEnvVars, pool, hostsTemplate, operatorVersion, operatorTLS, certVolumeSources),
+		getSideCarContainer(t, operatorImage),
 	}
 
 	// attach any sidecar containers and volumes
@@ -811,6 +847,8 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 		unavailable = intstr.FromInt(2)
 	}
 
+	initContainer := getInitContainer(t, operatorImage)
+
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: ssMeta,
 		Spec: appsv1.StatefulSetSpec{
@@ -827,6 +865,9 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: PodMetadata(t, pool),
 				Spec: corev1.PodSpec{
+					InitContainers: []corev1.Container{
+						initContainer,
+					},
 					Containers:                containers,
 					Volumes:                   podVolumes,
 					RestartPolicy:             corev1.RestartPolicyAlways,
@@ -867,4 +908,44 @@ func NewPool(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]by
 	}
 
 	return ss
+}
+
+func getInitContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
+	initContainer := corev1.Container{
+		Name:  "validate-arguments",
+		Image: operatorImage,
+		Args: []string{
+			"validate",
+			"--tenant",
+			t.Name,
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			CfgVolumeMount,
+		},
+	}
+	if t.HasConfigurationSecret() {
+		initContainer.VolumeMounts = append(initContainer.VolumeMounts, TmpCfgVolumeMount)
+	}
+	return initContainer
+}
+
+func getSideCarContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
+	sidecarContainer := corev1.Container{
+		Name:  "sidecar",
+		Image: operatorImage,
+		Args: []string{
+			"sidecar",
+			"--tenant",
+			t.Name,
+			"--config-name",
+			t.Spec.Configuration.Name,
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			CfgVolumeMount,
+		},
+	}
+	if t.HasConfigurationSecret() {
+		sidecarContainer.VolumeMounts = append(sidecarContainer.VolumeMounts, TmpCfgVolumeMount)
+	}
+	return sidecarContainer
 }

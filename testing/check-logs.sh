@@ -73,7 +73,7 @@ function main() {
 
     install_operator
 
-    install_tenant
+    install_tenant "logs"
 
 	perform_attempts_to_get_log_api_response
 	if [ $FINAL_RESULT = 1 ]; then

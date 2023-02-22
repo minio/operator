@@ -165,7 +165,7 @@ As an alternative to `krew`, you can download the `kubectl-minio` plugin from th
 For example, the following code downloads the latest stable version of the MinIO Kubernetes Plugin and installs it to the system ``$PATH``. The example assumes a Linux operating system:
 
 ```sh
-wget -qO- https://github.com/minio/operator/releases/latest/download/kubectl-minio_linux_amd64.zip | sudo bsdtar -xvf- -C /usr/local/bin
+wget -qO- https://github.com/minio/operator/releases/latest/download/kubectl-minio_linux_amd64_v1.zip | sudo bsdtar -xvf- -C /usr/local/bin
 sudo chmod +x /usr/local/bin/kubectl-minio
 ```
 

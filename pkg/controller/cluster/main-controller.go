@@ -1,4 +1,4 @@
-// Copyright (C) 2020, MinIO, Inc.
+// Copyright (C) 2020-2023 MinIO, Inc.
 //
 // This code is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License, version 3,
@@ -206,6 +206,8 @@ type Controller struct {
 	// time, and makes it easy to ensure we are never processing the same item
 	// simultaneously in two different workers.
 	healthCheckQueue queue.RateLimitingInterface
+	// image being used in the operator deployment
+	operatorImage string
 
 	// queue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
@@ -231,6 +233,24 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClientSet.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
+	// get operator deployment name
+	ns := miniov2.GetNSFromFile()
+	ctx := context.Background()
+	oprImg := DefaultOperatorImage
+	oprDep, err := kubeClientSet.AppsV1().Deployments(ns).Get(ctx, DefaultDeploymentName, metav1.GetOptions{})
+	if err == nil && oprDep != nil {
+		// assume we are the first container, just in case they changed the default name
+		if len(oprDep.Spec.Template.Spec.Containers) > 0 {
+			oprImg = oprDep.Spec.Template.Spec.Containers[0].Image
+		}
+		// attempt to iterate in case there's multiple containers
+		for _, c := range oprDep.Spec.Template.Spec.Containers {
+			if c.Name == "minio-operator" || c.Name == "operator" {
+				oprImg = c.Image
+			}
+		}
+	}
+
 	controller := &Controller{
 		podName:                   podName,
 		namespacesToWatch:         namespacesToWatch,
@@ -252,6 +272,7 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		operatorVersion:           operatorVersion,
 		policyBindingQueue:        queue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "PolicyBindings"),
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
+		operatorImage:             oprImg,
 	}
 
 	// Initialize operator webhook handlers
@@ -745,6 +766,13 @@ func (c *Controller) syncHandler(key string) error {
 	// get combined configurations (tenant.env, tenant.credsSecret and tenant.Configuration) for tenant
 	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
 	if err != nil {
+		if errors.Is(err, ErrEmptyRootCredentials) {
+			if _, err2 := c.updateTenantStatus(ctx, tenant, err.Error(), 0); err2 != nil {
+				klog.V(2).Infof(err2.Error())
+			}
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "MissingCreds", "Tenant is missing root credentials")
+			return nil
+		}
 		return err
 	}
 	// get existing configuration from config.env
@@ -878,6 +906,11 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		}
 	}
+	// Create Tenant Services Accoutns for Tenant
+	err = c.checkAndCreateServiceAccount(ctx, tenant)
+	if err != nil {
+		return err
+	}
 
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
@@ -982,7 +1015,19 @@ func (c *Controller) syncHandler(key string) error {
 			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningStatefulSet, 0); err != nil {
 				return err
 			}
-			ss = statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
+			ss = statefulsets.NewPool(&statefulsets.NewPoolArgs{
+				Tenant:          tenant,
+				WsSecret:        secret,
+				SkipEnvVars:     skipEnvVars,
+				Pool:            &pool,
+				PoolStatus:      &tenant.Status.Pools[i],
+				ServiceName:     hlSvc.Name,
+				HostsTemplate:   c.hostsTemplate,
+				OperatorVersion: c.operatorVersion,
+				OperatorTLS:     isOperatorTLS(),
+				OperatorCATLS:   operatorCATLSExists,
+				OperatorImage:   c.operatorImage,
+			})
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
 				return err
@@ -1104,7 +1149,17 @@ func (c *Controller) syncHandler(key string) error {
 
 	// In loop above we compared all the versions in all pools.
 	// So comparing tenant.Spec.Image (version to update to) against one value from images slice is fine.
-	if tenant.Spec.Image != images[0] && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
+	ssImages := strings.Split(images[0], ":")
+	specImages := strings.Split(tenant.Spec.Image, ":")
+	var ssImage string
+	var specImage string
+	if len(specImages) > 1 {
+		specImage = specImages[1]
+	}
+	if len(ssImages) > 1 {
+		ssImage = ssImages[1]
+	}
+	if specImage != ssImage && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
 		if !tenant.MinIOHealthCheck(c.getTransport()) {
 			klog.Infof("%s is not running can't update image online", key)
 			return ErrMinIONotReady
@@ -1197,7 +1252,19 @@ func (c *Controller) syncHandler(key string) error {
 
 		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
+			ss := statefulsets.NewPool(&statefulsets.NewPoolArgs{
+				Tenant:          tenant,
+				WsSecret:        secret,
+				SkipEnvVars:     skipEnvVars,
+				Pool:            &pool,
+				PoolStatus:      &tenant.Status.Pools[i],
+				ServiceName:     hlSvc.Name,
+				HostsTemplate:   c.hostsTemplate,
+				OperatorVersion: c.operatorVersion,
+				OperatorTLS:     isOperatorTLS(),
+				OperatorCATLS:   operatorCATLSExists,
+				OperatorImage:   c.operatorImage,
+			})
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
@@ -1237,7 +1304,19 @@ func (c *Controller) syncHandler(key string) error {
 			}
 		}
 		// generated the expected StatefulSet based on the new tenant configuration
-		expectedStatefulSet := statefulsets.NewPool(tenant, secret, skipEnvVars, &pool, &tenant.Status.Pools[i], hlSvc.Name, c.hostsTemplate, c.operatorVersion, isOperatorTLS(), operatorCATLSExists)
+		expectedStatefulSet := statefulsets.NewPool(&statefulsets.NewPoolArgs{
+			Tenant:          tenant,
+			WsSecret:        secret,
+			SkipEnvVars:     skipEnvVars,
+			Pool:            &pool,
+			PoolStatus:      &tenant.Status.Pools[i],
+			ServiceName:     hlSvc.Name,
+			HostsTemplate:   c.hostsTemplate,
+			OperatorVersion: c.operatorVersion,
+			OperatorTLS:     isOperatorTLS(),
+			OperatorCATLS:   operatorCATLSExists,
+			OperatorImage:   c.operatorImage,
+		})
 		// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
 		poolMatchesSS, err := poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet)
 		if err != nil {

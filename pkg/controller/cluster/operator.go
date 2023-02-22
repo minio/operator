@@ -51,6 +51,8 @@ const (
 	OperatorTLSSecretName = "operator-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
+	// DefaultOperatorImage is the version fo the operator being used
+	DefaultOperatorImage = "minio/operator:v4.5.8"
 )
 
 var serverCertsManager *xcerts.Manager
