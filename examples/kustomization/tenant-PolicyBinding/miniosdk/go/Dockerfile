@@ -11,4 +11,4 @@ RUN \
     apt-get update && \
     apt-get install -y curl ca-certificates golang-go
 
-CMD ["./app/start.sh"]
+CMD ["./app/client"]

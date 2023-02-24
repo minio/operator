@@ -34,15 +34,21 @@ spec:
       serviceAccountName: sdkclient-sa
       serviceAccount: sdkclient-sa
       containers:
-        - name: miniosdk-sts-example
-          image: mino/operator-sts-example:local
-      env:
-        - name: MINIO_HOST
-          value: https://minio.minio-tenant-1.svc.cluster.local
-        - name: STS_HOST
-          value: https://operator@minio.minio-operator.svc.cluster.local
-        - name: BUCKET
-          value: test-bucket
-        - name: USE_SSL
-          value: "true"
+        - name: miniosdk-sts-go
+          image: mino/operator-sts:go
+          env:
+            - name: MINIO_ENPOINT
+              value: https://minio.minio-tenant-1.svc.cluster.local:9443
+            - name: STS_ENDPOINT
+              value: https://sts.minio-operator.svc.cluster.local:4223
+            - name: TENANT_NAMESPACE
+              value: minio-tenant-1
+            - name: BUCKET
+              value: test-bucket
+            - name: AWS_WEB_IDENTITY_TOKEN_FILE
+              value: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+            - name: STS_POLICY
+              value: "/var/run/secrets/sts.min.io/policy.json"
+            - name: STS_CA_PATH
+              value: "/var/run/secrets/sts.min.io/ca.crt"
 

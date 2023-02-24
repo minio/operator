@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: myapplication
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: myapplication
+  name: app
+---
+apiVersion: sts.min.io/v1beta1
+kind: PolicyBinding
+metadata:
+  namespace: minio-tenant-1
+spec:
+  application:
+    namespace: myapplication
+    serviceaccount: app
+  policies:
+    - kafka-rw
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: python-example
+  namespace: myapplication
+spec:
+  serviceAccountName: app
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: python-sdk
+          image: pjuarezd/minio-operator-sts-example-python
+          # env:
+          #   - name: AWS_WEB_IDENTITY_TOKEN_FILE
+          #     value: /var/run/secrets/kubernetes.io/serviceaccount/token
