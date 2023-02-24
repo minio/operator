@@ -16,9 +16,13 @@
 
 package cluster
 
+//lint:file-ignore ST1005 Incorrectly formatted error string
+
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -130,7 +134,7 @@ func validateBucketName(bucket string) (bool, error) {
 // Authenticates a Kubernetes Service accounts using a JWT Token
 // Evalues a PolicyBinding CRD as Mapping of the Minio Policies that the ServiceAccount can assume on a minio tenant
 // Eg:-
-// $ curl -k -X POST https://operator:9443/sts/{tenantNamespace} -d "Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>" -H "Content-Type: application/x-www-form-urlencoded"
+// $ curl -k -X POST https://operator:9443/sts/{tenantNamespace} -d "Version=2011-06-15&Action=AssumeRoleWithWebIdentity&WebIdentityToken=<jwt>" -H "Content-Type: application/x-www-form-urlencoded"
 func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *http.Request) {
 	routerVars := mux.Vars(r)
 	tenantNamespace := ""
@@ -179,92 +183,139 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		return
 	}
 
-	// roleArn is ignored
-	// roleArn := strings.TrimSpace(r.Form.Get(stsRoleArn))
-
 	// VALIDATE JWT
 	accessToken := r.Form.Get(stsWebIdentityToken)
-
 	saAuthResult, err := c.ValidateServiceAccountJWT(&ctx, accessToken)
 	if err != nil {
 		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidIdentityToken, err)
 		return
 	}
-
 	if !saAuthResult.Status.Authenticated {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("access denied: Invalid Token"))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token"))
 		return
 	}
-	pbs, err := c.minioClientSet.StsV1beta1().PolicyBindings(tenantNamespace).List(ctx, metav1.ListOptions{})
-	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("error obtaining PolicyBindings: %s", err))
-		return
-	}
-
 	chunks := strings.Split(strings.Replace(saAuthResult.Status.User.Username, "system:serviceaccount:", "", -1), ":")
 	// saNamespace Service account Namespace
 	saNamespace := chunks[0]
 	// saName service account username
 	saName := chunks[1]
+
 	// Authorized PolicyBindings for the Service Account
-	// Need to optimize it with a Cache (probably)
 	policyBindings := []v1beta1.PolicyBinding{}
+	pbs, err := c.minioClientSet.StsV1beta1().PolicyBindings(tenantNamespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Error obtaining PolicyBindings: %s", err))
+		return
+	}
+
 	for _, pb := range pbs.Items {
 		if pb.Spec.Application.Namespace == saNamespace && pb.Spec.Application.ServiceAccount == saName {
 			policyBindings = append(policyBindings, pb)
 		}
 	}
-
 	if len(policyBindings) == 0 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("service Account '%s' is not granted to AssumeRole in any Tenant", saAuthResult.Status.User.Username))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("Service account '%s' has no PolicyBindings in namespace '%s'", saAuthResult.Status.User.Username, tenantNamespace))
 		return
 	}
 
 	tenants, err := c.minioClientSet.MinioV2().Tenants(tenantNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil || len(tenants.Items) == 0 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("no Tenants available in the namespace '%s'", tenantNamespace))
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("No Tenants available in the namespace '%s'", tenantNamespace))
 		return
 	}
 
 	// Only one tenant is allowed in a single namespace, gathering the first tenant in the list
 	tenant := tenants.Items[0]
 
-	// Session Policy
-	sessionPolicyStr := r.Form.Get(stsPolicy)
-	// The plain text that you use for both inline and managed session
-	// policies shouldn't exceed 2048 characters.
-	if len(sessionPolicyStr) > 2048 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("session policy should not exceed 2048 characters"))
+	tenantConfiguration, err := c.getTenantCredentials(ctx, &tenant)
+	if err != nil {
+		if errors.Is(err, ErrEmptyRootCredentials) {
+			writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Tenant '%s' is missing root credentials", tenant.Name))
+			return
+		}
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Error getting tenant '%s' root credentials: %s", tenant.Name, err))
+		return
+	}
+	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Error communicating with tenant '%s': %s", tenant.Name, err))
 		return
 	}
 
+	// Session Policy
+	sessionPolicyStr := r.Form.Get(stsPolicy)
+	var compactedSessionPolicy string
+	var sessionPolicy *iampolicy.Policy
 	if len(sessionPolicyStr) > 0 {
-		sessionPolicy, err := iampolicy.ParseConfig(bytes.NewReader([]byte(sessionPolicyStr)))
+		compactedSessionPolicy, err = miniov2.CompactJSONString(sessionPolicyStr)
 		if err != nil {
 			writeSTSErrorResponse(ctx, w, true, ErrSTSMalformedPolicyDocument, err)
 			return
 		}
-
-		// Version in policy must not be empty
-		if sessionPolicy.Version == "" {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid session policy version"))
+		sessionPolicy, err = iampolicy.ParseConfig(bytes.NewReader([]byte(compactedSessionPolicy)))
+		if err != nil {
+			writeSTSErrorResponse(ctx, w, true, ErrSTSMalformedPolicyDocument, err)
 			return
 		}
+		// Version in policy must not be empty
+		if sessionPolicy.Version == "" {
+			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid session policy version"))
+			return
+		}
+		// The plain text that you use for both inline and managed session
+		// policies shouldn't exceed 2048 characters.
+		if len(compactedSessionPolicy) > 2048 {
+			writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("Session policy should not exceed 2048 characters"))
+			return
+		}
+	}
+
+	var bfPolicy iampolicy.Policy
+	for _, pb := range policyBindings {
+		if sessionPolicy != nil {
+			bfPolicy = bfPolicy.Merge(*sessionPolicy)
+		}
+		for _, policyName := range pb.Spec.Policies {
+			policy, err := GetPolicy(ctx, adminClient, policyName)
+			if err != nil {
+				klog.Error(fmt.Errorf("Invalid policy %s, ignoring: %s", policyName, err))
+				continue
+			}
+			parsedPolicy, err := iampolicy.ParseConfig(bytes.NewReader([]byte(policy.Policy)))
+			if err != nil {
+				klog.Error(fmt.Errorf("Invalid policy, not parseable %s, ignoring: %s", policyName, err))
+				continue
+			}
+			bfPolicy = bfPolicy.Merge(*parsedPolicy)
+		}
+	}
+	bfJSONPolicy, _ := json.Marshal(bfPolicy)
+	bfCompact, err := miniov2.CompactJSONString(string(bfJSONPolicy))
+	if err != nil {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSMalformedPolicyDocument, err)
+		return
+	}
+	if len(bfCompact) > 2048 {
+		writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("PolicyBinding resulting policy is too long, Policy should not exceed 2048 characters"))
+		return
 	}
 
 	durationStr := r.Form.Get(stsDurationSeconds)
 	duration, err := strconv.Atoi(durationStr)
 	if err != nil {
 		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry"))
+		return
 	}
 
 	if duration < 900 || duration > 31536000 {
 		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry: min 900s, max 31536000s"))
+		return
 	}
 
-	stsCredentials, err := AssumeRole(ctx, c, &tenant, sessionPolicyStr, duration)
+	stsCredentials, err := AssumeRole(ctx, c, &tenant, bfCompact, duration)
 	if err != nil {
 		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, err)
+		return
 	}
 
 	assumeRoleResponse := &AssumeRoleWithWebIdentityResponse{

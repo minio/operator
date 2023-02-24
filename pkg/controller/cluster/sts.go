@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/minio/madmin-go"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xhttp "github.com/minio/operator/pkg/internal"
@@ -298,6 +299,12 @@ func (e stsErrorCodeMap) ToSTSErr(errCode STSErrorCode) APIError {
 		return e[ErrSTSInternalError]
 	}
 	return apiErr
+}
+
+// GetPolicy returns a tenant Policy by Name
+func GetPolicy(ctx context.Context, adminClient *madmin.AdminClient, policyName string) (*madmin.PolicyInfo, error) {
+	policy, err := adminClient.InfoCannedPolicyV2(ctx, policyName)
+	return policy, err
 }
 
 // AssumeRole invokes the AssumeRole method in the Minio Tenant

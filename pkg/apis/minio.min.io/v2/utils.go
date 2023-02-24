@@ -15,7 +15,9 @@
 package v2
 
 import (
+	"bytes"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -88,4 +90,14 @@ func GenerateTenantConfigurationFile(configuration map[string]string) string {
 		rawConfiguration.WriteString(fmt.Sprintf(`export %s="%s"`, key, val) + "\n")
 	}
 	return rawConfiguration.String()
+}
+
+// CompactJSONString removes white spaces, tabs and line return
+func CompactJSONString(jsonObject string) (string, error) {
+	objectByte := []byte(jsonObject)
+	buffer := new(bytes.Buffer)
+	if err := json.Compact(buffer, objectByte); err != nil {
+		return jsonObject, err
+	}
+	return buffer.String(), nil
 }
