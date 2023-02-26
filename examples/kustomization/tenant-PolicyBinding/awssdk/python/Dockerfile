@@ -3,6 +3,7 @@ FROM ubuntu:latest
 RUN \
     apt-get update && \
     apt-get install -y curl ca-certificates python3 python3-pip
+
 RUN mkdir app
 WORKDIR /app
 COPY main.py /app/main.py

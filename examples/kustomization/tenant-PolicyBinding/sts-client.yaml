@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: client
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: client
+  name: stsclient-sa
+---
+apiVersion: sts.min.io/v1beta1
+kind: PolicyBinding
+metadata:
+  name: binding-1
+  namespace: minio-tenant-1
+spec:
+  application:
+    namespace: client
+    serviceaccount: stsclient-sa
+  policies:
+    - test-bucket-rw
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: 
+  name: sts-policy
+  namespace: client
+data:
+  policy.json: |
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ListAllMyBuckets"
+                ],
+                "Resource": [
+                    "*"
+                ]
+            }
+        ]
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sts-example-job
+  namespace: client
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: stsclient-sa
+      serviceAccount: stsclient-sa
+      containers:
+        - name: sts-client
+          image: minio/operator-sts-example:minio-go
+          env:
+            - name: MINIO_ENPOINT
+              value: https://minio.minio-tenant-1.svc.cluster.local:9443
+            - name: STS_ENDPOINT
+              value: https://sts.minio-operator.svc.cluster.local:4223
+            - name: TENANT_NAMESPACE
+              value: minio-tenant-1
+            - name: BUCKET
+              value: test-bucket
+            - name: AWS_WEB_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/kubernetes.io/serviceaccount/token
+            - name: STS_POLICY
+              value: /var/run/secrets/sts.min.io/policy.json
+            - name: STS_CA_PATH
+              value: /var/run/secrets/sts.min.io/ca.crt
+          volumeMounts:
+            - name: sts-policy
+              mountPath: /var/run/secrets/sts.min.io/policy.json
+              subPath: policy.json
+      volumes:
+        - name: sts-policy
+          configMap:
+            name: sts-policy
+            defaultMode: 0744

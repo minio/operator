@@ -1,14 +1,8 @@
 
-FROM ubuntu:latest
+FROM openjdk:11
 
 RUN mkdir /app
 WORKDIR /app
-COPY client /app/
-COPY start.sh /app/
-RUN chmod +x /app/start.sh
+COPY target/operator-sts-0.1.0.jar /app/app.jar
 
-RUN \
-    apt-get update && \
-    apt-get install -y curl ca-certificates golang-go
-
-CMD ["./app/client"]
+CMD ["java", "-jar", "./app/app.jar"]
