@@ -35,6 +35,7 @@ func main() {
 	stsEndpoint := os.Getenv("STS_ENDPOINT")
 	tenantNamespace := os.Getenv("TENANT_NAMESPACE")
 	bucketName := os.Getenv("BUCKET")
+	kubeRootCApath := os.Getenv("KUBERNETES_CA_PATH")
 
 	token, err := getToken()
 	if err != nil {
@@ -74,7 +75,7 @@ func main() {
 		panic(1)
 	}
 
-	caCertificate, err := getKubernetesCACertificates()
+	caCertificate, err := getFile(kubeRootCApath)
 	if err != nil {
 		log.Fatalf("Error loading CA Certifiate : %s", err)
 		panic(1)
@@ -125,7 +126,6 @@ func getToken() (string, error) {
 	return string(fileContent), nil
 }
 
-func getKubernetesCACertificates() ([]byte, error) {
-	kubeRootCApath := "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-	return ioutil.ReadFile(kubeRootCApath)
+func getFile(path string) ([]byte, error) {
+	return ioutil.ReadFile(path)
 }

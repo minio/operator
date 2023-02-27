@@ -284,6 +284,20 @@ function install_tenant() {
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-prometheus"
+  elif [ "$1" = "policyBinding" ]; then
+    namespace="minio-tenant-1"
+    key=v1.min.io/tenant
+    value=storage-policyBinding
+    echo "Installing policyBinding tenant from current branch"
+
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/tenant"
+  elif [ "$1" = "policyBinding-cm" ]; then
+    namespace="minio-tenant-1"
+    key=v1.min.io/tenant
+    value=storage-policyBinding
+    echo "Installing policyBinding tenant with cert manager from current branch"
+
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/tenant-certmanager"
   elif [ -e $1 ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
@@ -313,6 +327,34 @@ function install_tenant() {
     --timeout=300s
 
   echo "Build passes basic tenant creation"
+
+}
+
+function setup_sts_bucket() {
+  try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/setup-bucket"
+  # TODO wait for job to end
+}
+
+function install_sts_client() {
+
+  client_namespace = "$1"
+  key=batch/v1
+  value=sts-example-job
+
+  if [ $# -ge 2 ]; then
+    tenant_namespace = "$2"
+    echo "Second argument provided"
+    if [ "$3" = "cm" ]; then
+      # When certmanager issues the certificates, we copy the certificate to a secret in the client namespace
+      try kubectl get secrets -n $tenant_namespace tenant-certmanager-tls -o=jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+      try kubectl create secret generic tenant-certmanager-tls --from-file=ca.crt -n $client_namespace
+    fi
+  else
+    echo "No third argument provided"
+  fi
+
+  try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/sts-client"
+  # TODO wait for job to end
 
 }
 

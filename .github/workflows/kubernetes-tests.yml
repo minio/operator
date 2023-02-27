@@ -240,4 +240,47 @@ jobs:
       - name: Tenant KES
         run: |
           "${GITHUB_WORKSPACE}/testing/console-tenant+kes.sh"
-          
+
+  test-policy-binding:
+    runs-on: ${{ matrix.os }}
+    needs:
+      - logsearch
+      - operator
+      - lint
+      - gotest
+      - getdeps
+      - govet
+    strategy:
+      matrix:
+        go-version: [ 1.19.x ]
+        os: [ ubuntu-latest ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Test PolicyBinding CRD and sts call on kind
+        run: |
+          "${GITHUB_WORKSPACE}/testing/test-policy-binding.sh"
+
+  test-policy-binding:
+    runs-on: ${{ matrix.os }}
+    needs:
+      - logsearch
+      - operator
+      - lint
+      - gotest
+      - getdeps
+      - govet
+    strategy:
+      matrix:
+        go-version: [ 1.19.x ]
+        os: [ ubuntu-latest ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Test PolicyBinding CRD and sts call on kind with certmanager
+        run: |
+          "${GITHUB_WORKSPACE}/testing/test-policy-binding+certmanager.sh"

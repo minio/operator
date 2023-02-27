@@ -2,14 +2,12 @@ apiVersion: v1
 kind: ConfigMap
 metadata: 
   name: start-config-script
-  namespace: minio-tenant-1
 data:
   setup.sh: |
     #!/bin/bash
     mc mb local/test-bucket
+    mc mb local/other-bucket
     mc admin policy add local test-bucket-rw /start-config/bucket-policy.json
-    mc admin user add local bucket-user bucket-user
-    mc admin policy set local test-bucket-rw user=bucket-user
   bucket-policy.json: |
     {
         "Version": "2012-10-17",
@@ -26,13 +24,11 @@ data:
             }
         ]
     }
-
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: setup-bucket
-  namespace: minio-tenant-1
 spec:
   backoffLimit: 5
   template:

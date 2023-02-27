@@ -1,25 +1,13 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: client
+  name: sts-client
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  namespace: client
+  namespace: sts-client
   name: stsclient-sa
----
-apiVersion: sts.min.io/v1beta1
-kind: PolicyBinding
-metadata:
-  name: binding-1
-  namespace: minio-tenant-1
-spec:
-  application:
-    namespace: client
-    serviceaccount: stsclient-sa
-  policies:
-    - test-bucket-rw
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -47,7 +35,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: sts-example-job
-  namespace: client
+  namespace: sts-client
 spec:
   backoffLimit: 5
   template:
@@ -70,15 +58,28 @@ spec:
             - name: AWS_WEB_IDENTITY_TOKEN_FILE
               value: /var/run/secrets/kubernetes.io/serviceaccount/token
             - name: STS_POLICY
-              value: /var/run/secrets/sts.min.io/policy.json
-            - name: STS_CA_PATH
+              value: /tmp/policy.json
+            - name: STS_CA_PATH # When Certmanager is used will load the ca in this file
               value: /var/run/secrets/sts.min.io/ca.crt
+            - name: KUBERNETES_CA_PATH
+              value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
           volumeMounts:
             - name: sts-policy
-              mountPath: /var/run/secrets/sts.min.io/policy.json
+              mountPath: /tmp/policy.json
               subPath: policy.json
+            - name: tenant-certmanager-tls
+              mountPath: /var/run/secrets/sts.min.io/
       volumes:
         - name: sts-policy
           configMap:
             name: sts-policy
             defaultMode: 0744
+        - name: tenant-certmanager-tls
+          projected:
+            sources:
+              - secret:
+                name: tenant-certmanager-tls
+                optional: true
+                items:
+                  - key: ca.crt
+                    path: ca.crt
