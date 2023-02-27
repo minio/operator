@@ -337,12 +337,12 @@ function setup_sts_bucket() {
 
 function install_sts_client() {
 
-  client_namespace = "$1"
+  client_namespace="$1"
   key=batch/v1
   value=sts-example-job
 
   if [ $# -ge 2 ]; then
-    tenant_namespace = "$2"
+    tenant_namespace="$2"
     echo "Second argument provided"
     if [ "$3" = "cm" ]; then
       # When certmanager issues the certificates, we copy the certificate to a secret in the client namespace
