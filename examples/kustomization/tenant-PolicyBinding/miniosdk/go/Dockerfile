@@ -7,6 +7,6 @@ RUN \
 
 RUN mkdir /app
 WORKDIR /app
-COPY client /app/
+COPY client /app/client
 
-CMD ["./app/client"]
+CMD ["/app/client"]

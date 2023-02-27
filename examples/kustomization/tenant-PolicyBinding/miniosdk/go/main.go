@@ -36,6 +36,7 @@ func main() {
 	tenantNamespace := os.Getenv("TENANT_NAMESPACE")
 	bucketName := os.Getenv("BUCKET")
 	kubeRootCApath := os.Getenv("KUBERNETES_CA_PATH")
+	// certManagerCAPath := os.Getenv("STS_CA_PATH")
 
 	token, err := getToken()
 	if err != nil {
@@ -81,7 +82,7 @@ func main() {
 		panic(1)
 	}
 
-	transport, err := minio.DefaultTransport(tenantEndpointURL.Scheme == "https")
+	transport, err := minio.DefaultTransport(true)
 	if err != nil {
 		log.Fatalf("Error creating default transport : %s", err)
 		panic(1)
@@ -94,7 +95,7 @@ func main() {
 
 	minioClient, err := minio.New(tenantEndpointURL.Host, &minio.Options{
 		Creds:     sts,
-		Secure:    tenantEndpointURL.Scheme == "https",
+		Secure:    true,
 		Transport: transport,
 	})
 

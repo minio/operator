@@ -10,10 +10,19 @@ metadata:
   name: stsclient-sa
 ---
 apiVersion: v1
+kind: Secret
+metadata:
+  name: sts-client-secret
+  namespace: sts-client
+  annotations:
+    kubernetes.io/service-account.name: stsclient-sa
+type: kubernetes.io/service-account-token
+---
+apiVersion: v1
 kind: ConfigMap
 metadata: 
   name: sts-policy
-  namespace: client
+  namespace: sts-client
 data:
   policy.json: |
     {
@@ -78,8 +87,8 @@ spec:
           projected:
             sources:
               - secret:
-                name: tenant-certmanager-tls
-                optional: true
-                items:
-                  - key: ca.crt
-                    path: ca.crt
+                  name: tenant-certmanager-tls
+                  optional: true
+                  items:
+                    - key: ca.crt
+                      path: ca.crt

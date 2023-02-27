@@ -331,31 +331,33 @@ function install_tenant() {
 }
 
 function setup_sts_bucket() {
-  try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/setup-bucket"
+  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-policyBinding/iam-setup-bucket.yaml"
   # TODO wait for job to end
 }
 
 function install_sts_client() {
-
-  client_namespace="$1"
+  clien="$1"
   key=batch/v1
   value=sts-example-job
 
+  # Build and load client images
+  (cd "${SCRIPT_DIR}/../examples/kustomization/tenant-PolicyBinding" && make)
+  try kind load docker-image "minio/operator-sts-example:${client}"
+
+  client_namespace="sts-client"
+  tenant_namespace="minio-tenant-1"
+
   if [ $# -ge 2 ]; then
-    tenant_namespace="$2"
-    echo "Second argument provided"
-    if [ "$3" = "cm" ]; then
+    if [ "$2" = "cm" ]; then
+      echo "Setting up certmanager CA secret"
       # When certmanager issues the certificates, we copy the certificate to a secret in the client namespace
       try kubectl get secrets -n $tenant_namespace tenant-certmanager-tls -o=jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
       try kubectl create secret generic tenant-certmanager-tls --from-file=ca.crt -n $client_namespace
     fi
-  else
-    echo "No third argument provided"
   fi
 
   try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/sts-client"
   # TODO wait for job to end
-
 }
 
 # Port forward
