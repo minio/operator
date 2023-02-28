@@ -109,29 +109,23 @@ function test_kes_tenant() {
       return 1
     fi
 
-    COOKIE=$(curl 'http://localhost:9090/api/v1/login/operator' -X POST \
-		  -H 'Content-Type: application/json' \
-		  --data-raw '{"jwt":"'$SA_TOKEN'"}' -i | grep "Set-Cookie: token=" | sed -e "s/Set-Cookie: token=//g" | awk -F ';' '{print $1}')
-    echo "COOKIE: ${COOKIE}"
+	echo "Creating Tenant"
+	sed -i -e 's/ROLE_ID/'"$ROLE_ID"'/g' "${SCRIPT_DIR}/kes-config.yaml"
+	sed -i -e 's/SECRET_ID/'"$SECRET_ID"'/g' "${SCRIPT_DIR}/kes-config.yaml"
+	cp "${SCRIPT_DIR}/kes-config.yaml" "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption/kes-configuration-secret.yaml"
+	yq e -i '.spec.kes.image = "minio/kes:v0.22.3"' "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption/tenant.yaml"
+	kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption"
 
-    echo "Creating Tenant"
-    CREDENTIALS=$(curl 'http://localhost:9090/api/v1/tenants' \
-		       -X POST \
-		       -H 'Content-Type: application/json' \
-		       -H 'Cookie: token='$COOKIE'' \
-		       --data-raw '{"name":"kes-tenant","namespace":"default","access_key":"","secret_key":"","access_keys":[],"secret_keys":[],"enable_tls":true,"enable_console":true,"enable_prometheus":true,"service_name":"","image":"","expose_minio":true,"expose_console":true,"pools":[{"name":"pool-0","servers":4,"volumes_per_server":1,"volume_configuration":{"size":26843545600,"storage_class_name":"standard"},"securityContext":null,"affinity":{"podAntiAffinity":{"requiredDuringSchedulingIgnoredDuringExecution":[{"labelSelector":{"matchExpressions":[{"key":"v1.min.io/tenant","operator":"In","values":["kes-tenant"]},{"key":"v1.min.io/pool","operator":"In","values":["pool-0"]}]},"topologyKey":"kubernetes.io/hostname"}]}}}],"erasureCodingParity":2,"logSearchConfiguration":{"image":"minio/operator:dev","postgres_image":"","postgres_init_image":""},"prometheusConfiguration":{"image":"","sidecar_image":"","init_image":""},"tls":{"minio":[],"ca_certificates":[],"console_ca_certificates":[]},"encryption":{"replicas":"1","securityContext":{"runAsUser":"1000","runAsGroup":"1000","fsGroup":"1000","runAsNonRoot":true},"image":"","vault":{"endpoint":"http://vault.default.svc.cluster.local:8200","engine":"","namespace":"","prefix":"my-minio","approle":{"engine":"","id":"'$ROLE_ID'","secret":"'$SECRET_ID'","retry":0},"tls":{},"status":{"ping":0}}},"idp":{"keys":[{"access_key":"console","secret_key":"console123"}]}}')
-    echo "CREDENTIALS: ${CREDENTIALS}"
-
-    echo "Check Tenant Status in default name space for kes-tenant:"
-    check_tenant_status default kes-tenant
+    echo "Check Tenant Status in tenant-kms-encrypted name space for storage-kms-encrypted:"
+    check_tenant_status tenant-kms-encrypted storage-kms-encrypted
 
     echo "Port Forwarding tenant"
-    try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=kes-tenant | grep -v NAME | awk '{print $1}' | head -1) 9000 &
+    try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=storage-kms-encrypted -n tenant-kms-encrypted | grep -v NAME | awk '{print $1}' | head -1) 9000 -n tenant-kms-encrypted &
 
-    TENANT_CONFIG_SECRET=$(kubectl -n default get tenants.minio.min.io kes-tenant -o jsonpath="{.spec.configuration.name}")
-    USER=$(kubectl -n default get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
-    PASSWORD=$(kubectl -n default get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
-
+    TENANT_CONFIG_SECRET=$(kubectl -n tenant-kms-encrypted get tenants.minio.min.io storage-kms-encrypted -o jsonpath="{.spec.configuration.name}")
+    # kes-tenant-env-configuration
+    USER=$(kubectl -n tenant-kms-encrypted get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
+    PASSWORD=$(kubectl -n tenant-kms-encrypted get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
 
     totalwait=0
     until (mc config host add kestest https://localhost:9000 $USER $PASSWORD --insecure); do

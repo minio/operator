@@ -10,11 +10,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: Get Dependedencies
@@ -26,12 +26,12 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: Lint
@@ -43,12 +43,12 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: govet
@@ -60,12 +60,12 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: Go Test
@@ -77,12 +77,12 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: Logsearch Binary
@@ -94,12 +94,12 @@ jobs:
       - getdeps
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: Operator Binary
@@ -112,12 +112,12 @@ jobs:
       - operator
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: Docker Container
@@ -136,12 +136,12 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: Prometheus test on Kind
@@ -158,12 +158,12 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
       - name: Tenant upgrade test on Kind
@@ -180,12 +180,12 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -204,12 +204,12 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -228,12 +228,12 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
 

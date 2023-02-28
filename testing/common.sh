@@ -88,9 +88,6 @@ function install_operator() {
     value=minio-operator
   fi
 
-  echo "Scaling down MinIO Operator Deployment"
-  try kubectl -n minio-operator scale deployment minio-operator --replicas=1
-
   # Reusing the wait for both, Kustomize and Helm
   echo "Waiting for k8s api"
   sleep 10
@@ -127,9 +124,6 @@ function install_operator_version() {
 
   # Initialize the MinIO Kubernetes Operator
   kubectl minio init
-
-  echo "Scaling down MinIO Operator Deployment"
-  try kubectl -n minio-operator scale deployment minio-operator --replicas=1
 
   # Verify installation of the plugin
   echo "Installed operator release: $(kubectl minio version)"
