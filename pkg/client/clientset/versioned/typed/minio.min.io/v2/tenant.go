@@ -20,9 +20,12 @@ package v2
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 	"time"
 
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	miniominiov2 "github.com/minio/operator/pkg/client/applyconfiguration/minio.min.io/v2"
 	scheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -47,6 +50,8 @@ type TenantInterface interface {
 	List(ctx context.Context, opts v1.ListOptions) (*v2.TenantList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v2.Tenant, err error)
+	Apply(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error)
+	ApplyStatus(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error)
 	TenantExpansion
 }
 
@@ -188,6 +193,62 @@ func (c *tenants) Patch(ctx context.Context, name string, pt types.PatchType, da
 		Name(name).
 		SubResource(subresources...).
 		VersionedParams(&opts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied tenant.
+func (c *tenants) Apply(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error) {
+	if tenant == nil {
+		return nil, fmt.Errorf("tenant provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(tenant)
+	if err != nil {
+		return nil, err
+	}
+	name := tenant.Name
+	if name == nil {
+		return nil, fmt.Errorf("tenant.Name must be provided to Apply")
+	}
+	result = &v2.Tenant{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("tenants").
+		Name(*name).
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
+		Body(data).
+		Do(ctx).
+		Into(result)
+	return
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *tenants) ApplyStatus(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error) {
+	if tenant == nil {
+		return nil, fmt.Errorf("tenant provided to Apply must not be nil")
+	}
+	patchOpts := opts.ToPatchOptions()
+	data, err := json.Marshal(tenant)
+	if err != nil {
+		return nil, err
+	}
+
+	name := tenant.Name
+	if name == nil {
+		return nil, fmt.Errorf("tenant.Name must be provided to Apply")
+	}
+
+	result = &v2.Tenant{}
+	err = c.client.Patch(types.ApplyPatchType).
+		Namespace(c.ns).
+		Resource("tenants").
+		Name(*name).
+		SubResource("status").
+		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
 		Into(result)
