@@ -11,7 +11,7 @@ require (
 	github.com/hashicorp/go-version v1.6.0
 	github.com/miekg/dns v1.1.50
 	github.com/minio/cli v1.24.2
-	github.com/minio/madmin-go v1.7.5
+	github.com/minio/madmin-go/v2 v2.0.1
 	github.com/minio/mc v0.0.0-20221224152138-176072dee43d
 	github.com/minio/minio-go/v7 v7.0.45
 	github.com/minio/pkg v1.5.8
@@ -103,7 +103,6 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
 	github.com/minio/colorjson v1.0.4 // indirect
 	github.com/minio/filepath v1.0.0 // indirect
-	github.com/minio/madmin-go/v2 v2.0.1 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/selfupdate v0.5.0 // indirect
 	github.com/minio/sha256-simd v1.0.0 // indirect
