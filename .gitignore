@@ -16,4 +16,4 @@ logsearchapi-bin
 minio.yaml
 nancy
 examples/.DS_Store
-
+testing/openshift/bundle/*
