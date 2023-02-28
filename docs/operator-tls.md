@@ -3,7 +3,7 @@
 To configure MinIO Operator to trust custom certificates, create a secret with the certificate.
 
 ```shell
-kubectl create secret generic my-custom-tls --from-file=path/to/public.crt
+kubectl create secret generic my-custom-tls -n minio-operator --from-file=path/to/public.crt
 ```
 
 then add the following volume to the `minio-operator` deployment under .spec.template.spec
