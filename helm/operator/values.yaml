@@ -28,6 +28,7 @@ operator:
     runAsGroup: 1000
     runAsNonRoot: true
   nodeSelector: { }
+  priorityClassName: ""
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
