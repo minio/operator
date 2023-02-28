@@ -6,7 +6,7 @@ To configure MinIO Operator to trust custom certificates, create a secret with t
 kubectl create secret generic my-custom-tls -n minio-operator --from-file=path/to/public.crt
 ```
 
-then add the following volume to the `minio-operator` deployment under .spec.template.spec
+Then, add the following volume to the `minio-operator` deployment under `.spec.template.spec`,
 
 ```yaml
       volumes:
@@ -21,7 +21,7 @@ then add the following volume to the `minio-operator` deployment under .spec.tem
                   name: my-custom-tls
 ```
 
-and for the `.spec.temaplte.spec.container[0]`
+and the following under `.spec.template.spec.container[0]`
 
 ```yaml
         volumeMounts:
