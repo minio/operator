@@ -310,12 +310,12 @@ spec:
     spec:
       containers:
         - args:
-            - server
+            - ui
             - --certs-dir=/tmp/certs
           env:
             - name: CONSOLE_OPERATOR_MODE
               value: "on"
-          image: minio/console:v0.22.5
+          image: minio/operator:v4.5.8
           imagePullPolicy: IfNotPresent
           name: console
           securityContext:

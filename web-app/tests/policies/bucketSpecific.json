@@ -1,0 +1,43 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:*"],
+      "Resource": [
+        "arn:aws:s3:::specific-bucket-1/*",
+        "arn:aws:s3:::specific-bucket-2/*",
+        "arn:aws:s3:::specific-bucket-3/*",
+        "arn:aws:s3:::specific-bucket-4/*",
+        "arn:aws:s3:::specific-bucket-5/*",
+        "arn:aws:s3:::specific-bucket-6/*",
+        "arn:aws:s3:::specific-bucket-7/*",
+        "arn:aws:s3:::specific-bucket-8/*",
+        "arn:aws:s3:::specific-bucket-9/*",
+        "arn:aws:s3:::specific-bucket-10/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetBucketLocation", "s3:ListAllMyBuckets"],
+      "Resource": ["arn:aws:s3:::specific-bucket-11/*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:CreateBucket"],
+      "Resource": [
+        "arn:aws:s3:::specific-bucket-1",
+        "arn:aws:s3:::specific-bucket-2",
+        "arn:aws:s3:::specific-bucket-3",
+        "arn:aws:s3:::specific-bucket-4",
+        "arn:aws:s3:::specific-bucket-5",
+        "arn:aws:s3:::specific-bucket-6",
+        "arn:aws:s3:::specific-bucket-7",
+        "arn:aws:s3:::specific-bucket-8",
+        "arn:aws:s3:::specific-bucket-9",
+        "arn:aws:s3:::specific-bucket-10",
+        "arn:aws:s3:::specific-bucket-11"
+      ]
+    }
+  ]
+}
