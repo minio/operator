@@ -330,7 +330,7 @@ func (b *TenantSpecApplyConfiguration) WithUsers(values ...*v1.LocalObjectRefere
 		if values[i] == nil {
 			panic("nil value passed to WithUsers")
 		}
-		b.Users = append(b.Users, *values[i])
+		b.Users = append(b.Users, values[i])
 	}
 	return b
 }
