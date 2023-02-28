@@ -20,11 +20,13 @@ package fake
 
 import (
 	"context"
+	json "encoding/json"
+	"fmt"
 
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	miniominiov2 "github.com/minio/operator/pkg/client/applyconfiguration/minio.min.io/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	testing "k8s.io/client-go/testing"
@@ -36,9 +38,9 @@ type FakeTenants struct {
 	ns   string
 }
 
-var tenantsResource = schema.GroupVersionResource{Group: "minio.min.io", Version: "v2", Resource: "tenants"}
+var tenantsResource = v2.SchemeGroupVersion.WithResource("tenants")
 
-var tenantsKind = schema.GroupVersionKind{Group: "minio.min.io", Version: "v2", Kind: "Tenant"}
+var tenantsKind = v2.SchemeGroupVersion.WithKind("Tenant")
 
 // Get takes name of the tenant, and returns the corresponding tenant object, and an error if there is any.
 func (c *FakeTenants) Get(ctx context.Context, name string, options v1.GetOptions) (result *v2.Tenant, err error) {
@@ -134,6 +136,51 @@ func (c *FakeTenants) DeleteCollection(ctx context.Context, opts v1.DeleteOption
 func (c *FakeTenants) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v2.Tenant, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(tenantsResource, c.ns, name, pt, data, subresources...), &v2.Tenant{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v2.Tenant), err
+}
+
+// Apply takes the given apply declarative configuration, applies it and returns the applied tenant.
+func (c *FakeTenants) Apply(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error) {
+	if tenant == nil {
+		return nil, fmt.Errorf("tenant provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(tenant)
+	if err != nil {
+		return nil, err
+	}
+	name := tenant.Name
+	if name == nil {
+		return nil, fmt.Errorf("tenant.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(tenantsResource, c.ns, *name, types.ApplyPatchType, data), &v2.Tenant{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v2.Tenant), err
+}
+
+// ApplyStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
+func (c *FakeTenants) ApplyStatus(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error) {
+	if tenant == nil {
+		return nil, fmt.Errorf("tenant provided to Apply must not be nil")
+	}
+	data, err := json.Marshal(tenant)
+	if err != nil {
+		return nil, err
+	}
+	name := tenant.Name
+	if name == nil {
+		return nil, fmt.Errorf("tenant.Name must be provided to Apply")
+	}
+	obj, err := c.Fake.
+		Invokes(testing.NewPatchSubresourceAction(tenantsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v2.Tenant{})
 
 	if obj == nil {
 		return nil, err
