@@ -1,6 +1,6 @@
 module github.com/minio/operator/logsearchapi
 
-go 1.19
+go 1.20
 
 require (
 	github.com/georgysavva/scany v1.2.1
