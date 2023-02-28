@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": ["admin:*"],
+      "Effect": "Deny",
+      "Sid": "Deny_Admin_Actions"
+    },
+    {
+      "Action": ["s3:*"],
+      "Effect": "Allow",
+      "Resource": ["arn:aws:s3:::*"],
+      "Sid": "Allow_S3_Actions"
+    }
+  ]
+}
