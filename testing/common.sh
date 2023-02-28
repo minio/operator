@@ -336,7 +336,7 @@ function setup_sts_bucket() {
 }
 
 function install_sts_client() {
-  clien="$1"
+  client="$1"
   key=batch/v1
   value=sts-example-job
 
