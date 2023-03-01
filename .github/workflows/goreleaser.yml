@@ -11,6 +11,14 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
+
+
+      - uses: actions/checkout@v3
+        with:
+          repository: go-swagger/go-swagger
+          path: 'go-swagger'
+
+
       -
         name: Set up Go
         uses: actions/setup-go@v3
@@ -23,10 +31,20 @@ jobs:
         uses: docker/setup-qemu-action@v2
       -
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2          
+        uses: docker/setup-buildx-action@v2
+
+      - name: Install Tools
+        run: |
+          go install golang.org/x/tools/cmd/...@latest
+          go install gotest.tools/gotestsum@latest
+          cd $GITHUB_WORKSPACE/go-swagger;
+          go install ./cmd/swagger
+
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
           args: release --skip-publish --rm-dist --snapshot
+
+
