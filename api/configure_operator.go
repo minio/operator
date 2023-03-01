@@ -51,7 +51,7 @@ import (
 	"github.com/minio/operator/models"
 )
 
-//go:generate swagger generate server --target ../../console --name Operator --spec ../swagger.yml --server-package api --principal models.Principal --exclude-main
+//go:generate swagger generate server --target ../operator --name Operator --spec ../swagger.yml --server-package api --principal models.Principal --exclude-main
 
 var additionalServerFlags = struct {
 	CertsDir string `long:"certs-dir" description:"path to certs directory" env:"CONSOLE_CERTS_DIR"`
