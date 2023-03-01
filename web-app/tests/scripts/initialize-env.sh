@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This file is part of MinIO Console Server
 # Copyright (c) 2022 MinIO, Inc.
 # # This program is free software: you can redistribute it and/or modify
@@ -16,10 +18,13 @@ export SCRIPT_DIR
 source "${SCRIPT_DIR}/common.sh"
 
 __init__() {
-  export TIMESTAMP=$(date "+%s")
+  TIMESTAMP=$(date "+%s")
+  export TIMESTAMP
   echo $TIMESTAMP > web-app/tests/constants/timestamp.txt
-  export GOPATH=/tmp/gopath
-  export PATH=${PATH}:${GOPATH}/bin
+  GOPATH=/tmp/gopath
+  export GOPATH
+  PATH=${PATH}:${GOPATH}/bin
+  export PATH
 
   ARCH="`uname -m`"
   case $ARCH in

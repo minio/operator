@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This file is part of MinIO Console Server
 # Copyright (c) 2022 MinIO, Inc.
 # # This program is free software: you can redistribute it and/or modify
@@ -28,10 +30,13 @@ sudo curl -#L "https://dl.min.io/client/mc/release/linux-amd64/mc" -o /usr/local
 sudo chmod +x /usr/local/bin/mc
 
 __init__() {
-	export TIMESTAMP=$(date "+%s")
+	TIMESTAMP=$(date "+%s")
+	export TIMESTAMP
  	echo $TIMESTAMP > web-app/tests/constants/timestamp.txt
-	export GOPATH=/tmp/gopath
-	export PATH=${PATH}:${GOPATH}/bin
+	GOPATH=/tmp/gopath
+	export GOPATH
+	PATH=${PATH}:${GOPATH}/bin
+	export PATH
 	destroy_kind
 	setup_kind
 	install_operator
