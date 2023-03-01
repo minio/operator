@@ -54,7 +54,7 @@ spec:
       serviceAccount: stsclient-sa
       containers:
         - name: sts-client
-          image: minio/operator-sts-example:minio-go
+          image: minio/operator-sts-example:miniosdk-go
           env:
             - name: MINIO_ENPOINT
               value: https://minio.minio-tenant-1.svc.cluster.local:9443

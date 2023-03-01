@@ -3,7 +3,7 @@ kind: Kustomization
 
 resources:
   - ../../../examples/kustomization/tenant-certmanager
-namespace: tenant-policyBinding
+namespace: minio-tenant-1
 patchesJson6902:
   - target:
       group: minio.min.io

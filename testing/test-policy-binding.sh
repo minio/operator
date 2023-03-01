@@ -27,23 +27,23 @@ function main() {
 
     install_operator
 
-    install_tenant "policyBinding"
+    install_tenant "policy-binding"
 
-    check_tenant_status tenant-policyBinding storage-policyBinding
+    check_tenant_status minio-tenant-1 storage-policy-binding
 
     setup_sts_bucket
 
-    # install_sts_client "minio-dotnet"
+    # install_sts_client "miniosdk-dotnet"
 
-    install_sts_client "minio-go"
+    install_sts_client "miniosdk-go"
 
-    install_sts_client "minio-java"
+    #install_sts_client "miniosdk-java"
 
-    # install_sts_client "minio-javascript"
+    # install_sts_client "miniosdk-javascript"
 
-    install_sts_client "minio-python"
+    #install_sts_client "miniosdk-python"
 
-    install_sts_client "aws-python"
+    #install_sts_client "awssdk-python"
 
     destroy_kind
 }

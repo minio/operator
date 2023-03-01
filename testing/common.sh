@@ -278,17 +278,17 @@ function install_tenant() {
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-prometheus"
-  elif [ "$1" = "policyBinding" ]; then
+  elif [ "$1" = "policy-binding" ]; then
     namespace="minio-tenant-1"
     key=v1.min.io/tenant
-    value=storage-policyBinding
+    value=storage-policy-binding
     echo "Installing policyBinding tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/tenant"
-  elif [ "$1" = "policyBinding-cm" ]; then
+  elif [ "$1" = "policy-binding-cm" ]; then
     namespace="minio-tenant-1"
     key=v1.min.io/tenant
-    value=storage-policyBinding
+    value=storage-policy-binding
     echo "Installing policyBinding tenant with cert manager from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/tenant-certmanager"
@@ -325,17 +325,22 @@ function install_tenant() {
 }
 
 function setup_sts_bucket() {
-  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-policyBinding/iam-setup-bucket.yaml"
+  try kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/setup-bucket"
   # TODO wait for job to end
 }
 
 function install_sts_client() {
-  client="$1"
+  # Definition of the sdk and client to test
+  client=$1
+  IFS="-";declare -a CLIENTARR=($client)
+  sdk="${CLIENTARR[0]}"
+  lang="${CLIENTARR[1]}"
+
   key=batch/v1
   value=sts-example-job
 
   # Build and load client images
-  (cd "${SCRIPT_DIR}/../examples/kustomization/tenant-PolicyBinding" && make)
+  (cd "${SCRIPT_DIR}/../examples/kustomization/tenant-PolicyBinding" && make "${sdk}${lang}")
   try kind load docker-image "minio/operator-sts-example:${client}"
 
   client_namespace="sts-client"
@@ -350,7 +355,7 @@ function install_sts_client() {
     fi
   fi
 
-  try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/sts-client"
+  try kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
   # TODO wait for job to end
 }
 

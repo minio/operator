@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata: 
   name: start-config-script
+  namespace: minio-tenant-1
 data:
   setup.sh: |
     #!/bin/bash
@@ -50,12 +51,12 @@ spec:
             - name: ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-tenant-1-user-0
+                  name: storage-user
                   key: CONSOLE_ACCESS_KEY
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: minio-tenant-1-user-0
+                  name: storage-user
                   key: CONSOLE_SECRET_KEY
             - name: MC_HOST_local
               value: https://$(ACCESS_KEY):$(SECRET_KEY)@minio.minio-tenant-1.svc.cluster.local
