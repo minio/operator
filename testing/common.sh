@@ -332,7 +332,7 @@ function setup_sts_bucket() {
 function install_sts_client() {
   # Definition of the sdk and client to test
   client=$1
-  IFS="-";declare -a CLIENTARR=($client)
+  IFS="-";declare -a CLIENTARR=("$client")
   sdk="${CLIENTARR[0]}"
   lang="${CLIENTARR[1]}"
 
