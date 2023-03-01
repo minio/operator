@@ -441,30 +441,6 @@ jobs:
           path: gocovmerge
 
       - uses: actions/cache@v3
-        id: coverage-cache
-        name: Coverage Cache
-        with:
-          path: |
-            ./integration/coverage/
-          key: ${{ runner.os }}-coverage-2-${{ github.run_id }}
-
-      - uses: actions/cache@v3
-        id: coverage-cache-sso
-        name: Coverage Cache SSO
-        with:
-          path: |
-            ./sso-integration/coverage/
-          key: ${{ runner.os }}-sso-coverage-2-${{ github.run_id }}
-
-      - uses: actions/cache@v3
-        id: coverage-cache-replication
-        name: Coverage Cache Replication
-        with:
-          path: |
-            ./replication/coverage/
-          key: ${{ runner.os }}-replication-coverage-2-${{ github.run_id }}
-
-      - uses: actions/cache@v3
         id: coverage-cache-operator
         name: Coverage Cache Operator
         with:
@@ -473,28 +449,12 @@ jobs:
           key: ${{ runner.os }}-coverage-2-operator-${{ github.run_id }}
 
       - uses: actions/cache@v3
-        id: coverage-cache-restapi
-        name: Coverage Cache RestAPI
-        with:
-          path: |
-            ./restapi/coverage/
-          key: ${{ runner.os }}-coverage-restapi-2-${{ github.run_id }}
-
-      - uses: actions/cache@v3
         id: coverage-cache-unittest-operatorapi
         name: Coverage Cache unit test operatorAPI
         with:
           path: |
             ./api/coverage/
           key: ${{ runner.os }}-coverage-unittest-operatorapi-2-${{ github.run_id }}
-
-      - uses: actions/cache@v3
-        id: coverage-cache-pkg
-        name: Coverage Cache Pkg
-        with:
-          path: |
-            ./pkg/coverage/
-          key: ${{ runner.os }}-coverage-pkg-2-${{ github.run_id }}
 
       # Get the replication.out file from the artifact since this is working for self host runner.
       - uses: actions/download-artifact@v3
@@ -513,7 +473,7 @@ jobs:
           echo "go build gocoverage.go"
           go build gocovmerge.go
           echo "put together the outs for final coverage resolution"
-          ./gocovmerge ../integration/coverage/system.out ../replication/coverage/replication.out ../sso-integration/coverage/sso-system.out ../restapi/coverage/coverage.out ../pkg/coverage/coverage-pkg.out ../operator-integration/coverage/operator-api.out ../api/coverage/coverage-unit-test-operatorapi.out > all.out
+          ./gocovmerge ../operator-integration/coverage/operator-api.out ../api/coverage/coverage-unit-test-operatorapi.out > all.out
           echo "Download mc for Ubuntu"
           wget -q https://dl.min.io/client/mc/release/linux-amd64/mc
           echo "Change the permissions to execute mc command"

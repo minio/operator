@@ -25,8 +25,6 @@ import (
 
 	"github.com/minio/operator/api/operations/operator_api"
 
-	"github.com/minio/operator/cluster"
-
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/models"
@@ -176,7 +174,7 @@ func min(x, y int64) int64 {
 }
 
 func getMaxAllocatableMemoryResponse(ctx context.Context, session *models.Principal, numNodes int32) (*models.MaxAllocatableMemResponse, *models.Error) {
-	client, err := cluster.K8sClient(session.STSSessionToken)
+	client, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -216,7 +214,7 @@ func getNodeLabels(ctx context.Context, clientset v1.CoreV1Interface) (*models.N
 }
 
 func getNodeLabelsResponse(ctx context.Context, session *models.Principal) (*models.NodeLabels, *models.Error) {
-	client, err := cluster.K8sClient(session.STSSessionToken)
+	client, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -360,7 +358,7 @@ OUTER:
 func getAllocatableResourcesResponse(session *models.Principal, params operator_api.GetAllocatableResourcesParams) (*models.AllocatableResourcesResponse, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	client, err := cluster.K8sClient(session.STSSessionToken)
+	client, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}

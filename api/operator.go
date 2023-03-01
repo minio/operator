@@ -21,7 +21,6 @@ import (
 	"log"
 
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/operator/cluster"
 )
 
 // operatorCredentialsProvider is an struct to hold the JWT (service account token)
@@ -67,7 +66,7 @@ func checkServiceAccountTokenValid(ctx context.Context, operatorClient OperatorC
 func GetConsoleCredentialsForOperator(jwt string) (*credentials.Credentials, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	opClientClientSet, err := cluster.OperatorClient(jwt)
+	opClientClientSet, err := GetOperatorClient(jwt)
 	if err != nil {
 		log.Println(err)
 		return nil, err

@@ -22,8 +22,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
-	"github.com/minio/operator/cluster"
-
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
@@ -95,7 +93,7 @@ func getResourceQuota(ctx context.Context, client K8sClientI, namespace, resourc
 func getResourceQuotaResponse(session *models.Principal, params operator_api.GetResourceQuotaParams) (*models.ResourceQuota, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	client, err := cluster.K8sClient(session.STSSessionToken)
+	client, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}

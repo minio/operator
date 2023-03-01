@@ -35,10 +35,15 @@ const (
 	KESImageVersion = "minio/kes:v0.17.6"
 
 	// Constants for common configuration
-	MinIOServer        = "OPERATOR_MINIO_SERVER"
+	MinioImage         = "OPERATOR_MINIO_IMAGE"
 	OperatorUIHostname = "OPERATOR_HOSTNAME"
 	OperatorUIPort     = "OPERATOR_PORT"
 	OperatorUITLSPort  = "OPERATOR_TLS_PORT"
+
+	// K8sAPIServer address of the K8s API
+	K8sAPIServer = "OPERATOR_K8S_API_SERVER"
+	// K8SAPIServerTLSRootCA location of the root CA
+	K8SAPIServerTLSRootCA = "OPERATOR_K8S_API_SERVER_TLS_ROOT_CA"
 
 	// Constants for Secure middleware
 	SecureAllowedHosts                    = "OPERATOR_SECURE_ALLOWED_HOSTS"

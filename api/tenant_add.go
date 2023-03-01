@@ -28,7 +28,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/go-openapi/swag"
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/models"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -39,7 +38,7 @@ func getTenantCreatedResponse(session *models.Principal, params operator_api.Cre
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 	// get Kubernetes Client
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	k8sClient := &k8sClient{
 		client: clientSet,
 	}
@@ -315,7 +314,7 @@ func createTenant(ctx context.Context, params operator_api.CreateTenantParams, c
 		minInst.Spec.Features = &features
 	}
 
-	opClient, err := cluster.OperatorClient(session.STSSessionToken)
+	opClient, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -349,7 +348,7 @@ func createTenant(ctx context.Context, params operator_api.CreateTenantParams, c
 
 func getTenantMinIOImage(minioImage string) string {
 	if minioImage == "" {
-		minImg, err := cluster.GetMinioImage()
+		minImg, err := GetMinioImage()
 		// we can live without figuring out the latest version of MinIO, Operator will use a hardcoded value
 		if err == nil {
 			minioImage = *minImg

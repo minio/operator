@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -14,20 +14,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package cluster
+package api
 
 import (
-	"io/ioutil"
 	"net"
 	"strings"
-	"time"
 
-	xhttp "github.com/minio/console/pkg/http"
-	"github.com/minio/console/restapi"
-
-	"github.com/minio/console/pkg/utils"
-
+	operator "github.com/minio/operator/pkg/client/clientset/versioned"
 	"github.com/minio/pkg/env"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	certutil "k8s.io/client-go/util/cert"
 )
 
 // GetK8sAPIServer returns the URL to use for the k8s api
@@ -51,34 +48,44 @@ func getK8sAPIServerTLSRootCA() string {
 	return strings.TrimSpace(env.Get(K8SAPIServerTLSRootCA, ""))
 }
 
-// GetNsFromFile assumes console is running inside a k8s pod and extract the current namespace from the
-// /var/run/secrets/kubernetes.io/serviceaccount/namespace file
-func GetNsFromFile() string {
-	dat, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
-	if err != nil {
-		return "default"
+// getTLSClientConfig will return the right TLS configuration for the K8S client based on the configured TLS certificate
+func getTLSClientConfig() rest.TLSClientConfig {
+	defaultRootCAFile := "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	customRootCAFile := getK8sAPIServerTLSRootCA()
+	tlsClientConfig := rest.TLSClientConfig{}
+	// if console is running inside k8s by default he will have access to the CA Cert from the k8s local authority
+	if _, err := certutil.NewPool(defaultRootCAFile); err == nil {
+		tlsClientConfig.CAFile = defaultRootCAFile
 	}
-	return string(dat)
+	// if the user explicitly define a custom CA certificate, instead, we will use that
+	if customRootCAFile != "" {
+		if _, err := certutil.NewPool(customRootCAFile); err == nil {
+			tlsClientConfig.CAFile = customRootCAFile
+		}
+	}
+	return tlsClientConfig
 }
 
-// GetMinioImage returns the image URL to be used when deploying a MinIO instance, if there is
-// a preferred image to be used (configured via ENVIRONMENT VARIABLES) GetMinioImage will return that
-// if not, GetMinioImage will try to obtain the image URL for the latest version of MinIO and return that
-func GetMinioImage() (*string, error) {
-	image := strings.TrimSpace(env.Get(MinioImage, ""))
-	// if there is a preferred image configured by the user we'll always return that
-	if image != "" {
-		return &image, nil
-	}
-	client := restapi.GetConsoleHTTPClient("")
-	client.Timeout = 5 * time.Second
-	latestMinIOImage, errLatestMinIOImage := utils.GetLatestMinIOImage(
-		&xhttp.Client{
-			Client: client,
-		})
+// This operation will run only once at console startup
+var tlsClientConfig = getTLSClientConfig()
 
-	if errLatestMinIOImage != nil {
-		return nil, errLatestMinIOImage
+// GetK8sConfig returns the config for k8s api
+func GetK8sConfig(token string) *rest.Config {
+	config := &rest.Config{
+		Host:            GetK8sAPIServer(),
+		TLSClientConfig: tlsClientConfig,
+		APIPath:         "/",
+		BearerToken:     token,
 	}
-	return latestMinIOImage, nil
+	return config
+}
+
+// GetOperatorClient returns an operator client using GetK8sConfig for its config
+func GetOperatorClient(token string) (*operator.Clientset, error) {
+	return operator.NewForConfig(GetK8sConfig(token))
+}
+
+// K8sClient returns kubernetes client using GetK8sConfig for its config
+func K8sClient(token string) (*kubernetes.Clientset, error) {
+	return kubernetes.NewForConfig(GetK8sConfig(token))
 }

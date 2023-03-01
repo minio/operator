@@ -11,7 +11,6 @@ import (
 	"github.com/go-openapi/swag"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/models"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -58,7 +57,7 @@ func getTenantLogsResponse(session *models.Principal, params operator_api.GetTen
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err, ErrUnableToGetTenantLogs)
 	}
@@ -167,7 +166,7 @@ func getTenantLogsInfo(minTenant *miniov2.Tenant) *models.TenantLogs {
 func setTenantLogsResponse(session *models.Principal, params operator_api.SetTenantLogsParams) (bool, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return false, ErrorWithContext(ctx, err, ErrUnableToGetTenantUsage)
 	}
@@ -376,7 +375,7 @@ func enableTenantLoggingResponse(session *models.Principal, params operator_api.
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return false, ErrorWithContext(ctx, err, ErrUnableToGetTenantUsage)
 	}
@@ -439,7 +438,7 @@ func disableTenantLoggingResponse(session *models.Principal, params operator_api
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return false, ErrorWithContext(ctx, err, ErrUnableToGetTenantUsage)
 	}

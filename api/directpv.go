@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strings"
 
+	directpvclient "github.com/minio/directpv/pkg/client"
 	"github.com/minio/directpv/pkg/utils"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -29,7 +30,6 @@ import (
 	"github.com/minio/directpv/pkg/sys"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -145,7 +145,7 @@ func getDirectPVDriveList(ctx context.Context, driveInterface DirectPVDrivesClie
 func getDirectPVDrivesListResponse(session *models.Principal) (*models.GetDirectPVDriveListResponse, *models.Error) {
 	ctx := context.Background()
 
-	driveInterface, err := cluster.DirectPVDriveInterface(session.STSSessionToken)
+	driveInterface, err := DirectPVDriveInterface(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -201,7 +201,7 @@ func getDirectPVVolumesList(ctx context.Context, volumeInterface DirectPVVolumes
 func getDirectPVVolumesListResponse(session *models.Principal) (*models.GetDirectPVVolumeListResponse, *models.Error) {
 	ctx := context.Background()
 
-	volumeInterface, err := cluster.DirectPVVolumeInterface(session.STSSessionToken)
+	volumeInterface, err := DirectPVVolumeInterface(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -311,7 +311,7 @@ func formatDrives(ctx context.Context, driveInterface DirectPVDrivesClientI, dri
 func formatVolumesResponse(session *models.Principal, params operator_api.DirectPVFormatDriveParams) (*models.FormatDirectPVDrivesResponse, *models.Error) {
 	ctx := context.Background()
 
-	driveInterface, err := cluster.DirectPVDriveInterface(session.STSSessionToken)
+	driveInterface, err := DirectPVDriveInterface(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -325,4 +325,16 @@ func formatVolumesResponse(session *models.Principal, params operator_api.Direct
 		return nil, ErrorWithContext(ctx, errFormat)
 	}
 	return formatResult, nil
+}
+
+// DirectPV interfaces  required to fetch information
+
+// DirectPVDriveInterface returns a directpv client
+func DirectPVDriveInterface(token string) (*directpvclient.DirectCSIDriveInterface, error) {
+	return directpvclient.DirectCSIDriveInterfaceForConfig(GetK8sConfig(token))
+}
+
+// DirectPVVolumeInterface returns a volume client
+func DirectPVVolumeInterface(token string) (*directpvclient.DirectCSIVolumeInterface, error) {
+	return directpvclient.DirectCSIVolumeInterfaceForConfig(GetK8sConfig(token))
 }

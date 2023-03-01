@@ -25,7 +25,6 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/models"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xhttp "github.com/minio/operator/pkg/http"
@@ -127,7 +126,7 @@ func getOperatorSubnetAPIKeyResponse(session *models.Principal, params operator_
 func getOperatorSubnetRegisterAPIKeyResponse(session *models.Principal, params operator_api.OperatorSubnetRegisterAPIKeyParams) (*models.OperatorSubnetRegisterAPIKeyResponse, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -140,7 +139,7 @@ func getOperatorSubnetRegisterAPIKeyResponse(session *models.Principal, params o
 }
 
 func getTenantsToRegister(ctx context.Context, session *models.Principal) (*v2.TenantList, error) {
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +207,7 @@ func createSubnetAPIKeySecret(ctx context.Context, apiKey string, k8sClient K8sC
 func getOperatorSubnetAPIKeyInfoResponse(session *models.Principal, params operator_api.OperatorSubnetAPIKeyInfoParams) (*models.OperatorSubnetRegisterAPIKeyResponse, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}

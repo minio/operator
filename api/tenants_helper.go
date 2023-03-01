@@ -30,7 +30,6 @@ import (
 
 	"github.com/minio/operator/api/operations/operator_api"
 
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/models"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/kes"
@@ -114,14 +113,14 @@ func getTenantUpdateCertificatesResponse(session *models.Principal, params opera
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 	// get Kubernetes Client
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return ErrorWithContext(ctx, err, ErrUnableToUpdateTenantCertificates)
 	}
 	k8sClient := k8sClient{
 		client: clientSet,
 	}
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return ErrorWithContext(ctx, err, ErrUnableToUpdateTenantCertificates)
 	}
@@ -241,7 +240,7 @@ func tenantUpdateEncryption(ctx context.Context, operatorClient OperatorClientI,
 func getTenantDeleteEncryptionResponse(session *models.Principal, params operator_api.TenantDeleteEncryptionParams) *models.Error {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return ErrorWithContext(ctx, err, ErrDeletingEncryptionConfig)
 	}
@@ -259,14 +258,14 @@ func getTenantUpdateEncryptionResponse(session *models.Principal, params operato
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 	// get Kubernetes Client
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return ErrorWithContext(ctx, err, ErrUpdatingEncryptionConfig)
 	}
 	k8sClient := k8sClient{
 		client: clientSet,
 	}
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return ErrorWithContext(ctx, err, ErrUpdatingEncryptionConfig)
 	}
@@ -457,14 +456,14 @@ func getTenantEncryptionInfoResponse(session *models.Principal, params operator_
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 	// get Kubernetes Client
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err, ErrEncryptionConfigNotFound)
 	}
 	k8sClient := k8sClient{
 		client: clientSet,
 	}
-	opClientClientSet, err := cluster.OperatorClient(session.STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err, ErrEncryptionConfigNotFound)
 	}

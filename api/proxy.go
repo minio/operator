@@ -36,7 +36,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/pkg/auth"
 )
 
@@ -70,7 +69,7 @@ func serveProxy(responseWriter http.ResponseWriter, req *http.Request) {
 
 	STSSessionToken := claims.STSSessionToken
 
-	opClientClientSet, err := cluster.OperatorClient(STSSessionToken)
+	opClientClientSet, err := GetOperatorClient(STSSessionToken)
 	if err != nil {
 		log.Println(err)
 		responseWriter.WriteHeader(404)
@@ -109,7 +108,7 @@ func serveProxy(responseWriter http.ResponseWriter, req *http.Request) {
 		loginURL := fmt.Sprintf("%s/api/v1/login", tenantURL)
 
 		// get the tenant credentials
-		clientSet, err := cluster.K8sClient(STSSessionToken)
+		clientSet, err := K8sClient(STSSessionToken)
 		if err != nil {
 			log.Println(err)
 			responseWriter.WriteHeader(500)

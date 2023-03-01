@@ -21,7 +21,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/minio/operator/cluster"
 	operatorClientset "github.com/minio/operator/pkg/client/clientset/versioned"
 )
 
@@ -49,7 +48,7 @@ func Test_checkServiceAccountTokenValid(t *testing.T) {
 		}
 	}
 
-	opClientClientSet, _ := cluster.OperatorClient("")
+	opClientClientSet, _ := GetOperatorClient("")
 
 	opClient := &operatorClientTest{
 		client: opClientClientSet,

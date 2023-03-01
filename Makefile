@@ -136,4 +136,4 @@ test-operator-integration:
 	@(cd operator-integration && go test -coverpkg=../api -c -tags testrunmain . && mkdir -p coverage && ./operator-integration.test -test.v -test.run "^Test*" -test.coverprofile=coverage/operator-api.out)
 
 test-operator:
-	@(env bash $(PWD)/portal-ui/tests/scripts/operator.sh)
+	@(env bash $(PWD)/web-app/tests/scripts/operator.sh)

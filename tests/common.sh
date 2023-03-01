@@ -24,14 +24,19 @@ try() { "$@" || die "cannot $*"; }
 
 function setup_kind() {
 	# TODO once feature is added: https://github.com/kubernetes-sigs/kind/issues/1300
-	echo "kind: Cluster" > kind-config.yaml
-	echo "apiVersion: kind.x-k8s.io/v1alpha4" >> kind-config.yaml
-	echo "nodes:" >> kind-config.yaml
-	echo "  - role: control-plane" >> kind-config.yaml
-	echo "  - role: worker" >> kind-config.yaml
-	echo "  - role: worker" >> kind-config.yaml
-	echo "  - role: worker" >> kind-config.yaml
-	echo "  - role: worker" >> kind-config.yaml
+	{
+	  printf "kind: Cluster\n"
+	  printf "apiVersion: kind.x-k8s.io/v1alpha4\n"
+	  printf "nodes:\n"
+	  printf "  - role: control-plane\n"
+	  printf "  - role: worker\n"
+	  printf "  - role: worker\n"
+	  printf "  - role: worker\n"
+	  printf "  - role: worker\n"
+	} >> kind-config.yaml
+	echo "---"
+	cat kind-config.yaml
+	echo "----"
 	try kind create cluster --config kind-config.yaml
 	echo "Kind is ready"
 	try kubectl get nodes
@@ -47,7 +52,7 @@ function install_operator() {
 
   OPR_LATEST=$(get_latest_release minio/operator)
     echo "  Load minio/operator image ($OPR_LATEST) to the cluster"
-	try kubectl apply -k github.com/minio/operator/\?ref\=$OPR_LATEST
+	try kubectl apply -k "github.com/minio/operator/?ref=$OPR_LATEST"
     echo "Waiting for k8s api"
     sleep 10
     echo "Waiting for Operator Pods to come online (2m timeout)"

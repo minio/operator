@@ -29,7 +29,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/models"
 	"github.com/minio/operator/pkg"
 	"github.com/minio/pkg/env"
@@ -67,7 +66,7 @@ func registerMarketplaceHandlers(api *operations.OperatorAPI) {
 }
 
 func getMPIntegrationResponse(session *models.Principal, params operator_api.GetMPIntegrationParams) (*operator_api.GetMPIntegrationOKBody, *models.Error) {
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 	if err != nil {
@@ -91,7 +90,7 @@ func getMPEmail(ctx context.Context, clientSet K8sClientI) (bool, error) {
 }
 
 func postMPIntegrationResponse(session *models.Principal, params operator_api.PostMPIntegrationParams) *models.Error {
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 	if err != nil {

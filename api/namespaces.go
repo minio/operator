@@ -23,7 +23,6 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/models"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,7 +44,7 @@ func registerNamespaceHandlers(api *operations.OperatorAPI) {
 func getNamespaceCreatedResponse(session *models.Principal, params operator_api.CreateNamespaceParams) *models.Error {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	clientset, err := cluster.K8sClient(session.STSSessionToken)
+	clientset, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return ErrorWithContext(ctx, err)
 	}

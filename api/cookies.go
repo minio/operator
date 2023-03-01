@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"time"
 
-	xjwt "github.com/minio/console/pkg/auth/token"
+	xjwt "github.com/minio/operator/pkg/auth/token"
 )
 
 // NewSessionCookieForConsole creates a cookie for a token

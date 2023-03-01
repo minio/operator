@@ -26,7 +26,6 @@ import (
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
-	"github.com/minio/operator/cluster"
 	"github.com/minio/operator/models"
 	v1 "k8s.io/api/certificates/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,7 +88,7 @@ func registerVolumesHandlers(api *operations.OperatorAPI) {
 func getPVCsResponse(session *models.Principal, params operator_api.ListPVCsParams) (*models.ListPVCsResponse, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	clientset, err := cluster.K8sClient(session.STSSessionToken)
+	clientset, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -136,7 +135,7 @@ func getPVCsResponse(session *models.Principal, params operator_api.ListPVCsPara
 func getPVCsForTenantResponse(session *models.Principal, params operator_api.ListPVCsForTenantParams) (*models.ListPVCsResponse, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	clientset, err := cluster.K8sClient(session.STSSessionToken)
+	clientset, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -184,7 +183,7 @@ func getDeletePVCResponse(session *models.Principal, params operator_api.DeleteP
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 	// get Kubernetes Client
-	clientset, err := cluster.K8sClient(session.STSSessionToken)
+	clientset, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return ErrorWithContext(ctx, err)
 	}
@@ -201,7 +200,7 @@ func getDeletePVCResponse(session *models.Principal, params operator_api.DeleteP
 func getPVCEventsResponse(session *models.Principal, params operator_api.GetPVCEventsParams) (models.EventListWrapper, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	clientset, err := cluster.K8sClient(session.STSSessionToken)
+	clientset, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -232,7 +231,7 @@ func getPVCEventsResponse(session *models.Principal, params operator_api.GetPVCE
 func getTenantCSResponse(session *models.Principal, params operator_api.ListTenantCertificateSigningRequestParams) (*models.CsrElements, *models.Error) {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
-	clientset, err := cluster.K8sClient(session.STSSessionToken)
+	clientset, err := K8sClient(session.STSSessionToken)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
@@ -293,7 +292,7 @@ func getTenantCSResponse(session *models.Principal, params operator_api.ListTena
 }
 
 func getPVCDescribeResponse(session *models.Principal, params operator_api.GetPVCDescribeParams) (*models.DescribePVCWrapper, *models.Error) {
-	clientSet, err := cluster.K8sClient(session.STSSessionToken)
+	clientSet, err := K8sClient(session.STSSessionToken)
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
 	if err != nil {
