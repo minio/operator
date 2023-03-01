@@ -1,7 +1,12 @@
 import boto3
 import os
 import sys
+import logging
 from urllib.parse import urlparse
+
+logging.basicConfig(format='%(message)s', level=logging.DEBUG)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 sts_endpoint = os.getenv("STS_ENDPOINT")
 tenant_endpoint = os.getenv("MINIO_ENDPOINT")
@@ -10,27 +15,29 @@ token_path = os.getenv("AWS_WEB_IDENTITY_TOKEN_FILE")
 bucket = os.getenv("BUCKET")
 policy_path = os.getenv("STS_POLICY")
 
+role_arn = "arn:aws:iam::111111111:dummyroot"
+role_session_name = "optional-session-name"
+os.environ.setdefault('AWS_ROLE_ARN', role_arn) #In AWS SDK RoleArn parameter is mandatory
+
 policy = None
 
 if policy_path is not None:
     with open(policy_path, "r") as f:
         policy = f.read()
 
-stsUrl = urlparse(tenant_endpoint)
-stsUrl.path = stsUrl.path + f"/{tenant_namespace}"
-
-sts = boto3.client('sts', endpoint_url=stsUrl.geturl(), verify=False)
-
 with open(token_path, "r") as f:
     sa_jwt = f.read()
 
-if sa_jwt is "" or sa_jwt is None:
+if sa_jwt == "" or sa_jwt == None:
     print("Token is empty")
     sys.exit(1)
 
+stsUrl = urlparse(f"{sts_endpoint}/{tenant_namespace}")
+
+sts = boto3.client('sts', endpoint_url=stsUrl.geturl(), verify=False)
 assumed_role_object = sts.assume_role_with_web_identity(
-    RoleArn='arn:aws:iam::111111111:root', #In AWS SDK RoleArn parameter is mandatory
-    RoleSessionName='optional-session-name',
+    RoleArn=role_arn,
+    RoleSessionName=role_session_name,
     Policy=policy,
     DurationSeconds=25536,
     WebIdentityToken=sa_jwt

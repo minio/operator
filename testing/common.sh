@@ -78,6 +78,12 @@ function install_operator() {
     echo "key, value for pod selector in helm test"
     key=app.kubernetes.io/name
     value=operator
+  elif [ "$1" = "sts" ]; then
+    echo "Installing Current Operator with sts enabled"
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-PolicyBinding/operator"
+    echo "key, value for pod selector in kustomize test"
+    key=name
+    value=minio-operator
   else
     echo "Installing Current Operator"
     # Created an overlay to use that image version from dev folder
@@ -192,6 +198,36 @@ function wait_for_resource() {
       try false
     fi
   done
+}
+
+function wait_for_resource_field_selector() {
+  # example 1 job:
+  # namespace="minio-tenant-1"
+  # codition="condition=Complete"
+  # selector="metadata.name=setup-bucket"
+  # wait_for_resource_field_selector $namespace job $condition $selector
+  #
+  # example 2 tenant:
+  # wait_for_resource_field_selector $namespace job $condition $selector
+  # condition=jsonpath='{.status.currentState}'=Initialized
+  # selector="metadata.name=storage-policy-binding"
+  # wait_for_resource_field_selector $namespace tenant $condition $selector 900s
+
+  namespace=$1
+  resourcetype=$2
+  condition=$3
+  fieldselector=$4
+  if [ $# -ge 5 ]; then
+    timeout="$5"
+  else
+    timeout="600s"
+  fi
+
+  echo "Waiting for $resourcetype \"$fieldselector\" for \"$condition\" ($timeout timeout)"
+  kubectl wait -n "$namespace" "$resourcetype" \
+    --for=$condition \
+    --field-selector $fieldselector \
+    --timeout="$timeout"
 }
 
 function check_tenant_status() {
@@ -326,22 +362,25 @@ function install_tenant() {
 
 function setup_sts_bucket() {
   try kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/setup-bucket"
-  # TODO wait for job to end
+  namespace="minio-tenant-1"
+  condition="condition=Complete"
+  selector="metadata.name=setup-bucket"
+  try wait_for_resource_field_selector $namespace job $condition $selector
 }
 
 function install_sts_client() {
   # Definition of the sdk and client to test
-  client=$1
-  IFS="-";declare -a CLIENTARR=("$client")
+
+  OLDIFS=$IFS
+  # shellcheck disable=SC2206
+  IFS="-"; declare -a CLIENTARR=($1)
   sdk="${CLIENTARR[0]}"
   lang="${CLIENTARR[1]}"
-
-  key=batch/v1
-  value=sts-example-job
+  IFS=$OLDIFS
 
   # Build and load client images
   (cd "${SCRIPT_DIR}/../examples/kustomization/tenant-PolicyBinding" && make "${sdk}${lang}")
-  try kind load docker-image "minio/operator-sts-example:${client}"
+  try kind load docker-image "minio/operator-sts-example:$1"
 
   client_namespace="sts-client"
   tenant_namespace="minio-tenant-1"
@@ -355,8 +394,14 @@ function install_sts_client() {
     fi
   fi
 
-  try kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
-  # TODO wait for job to end
+  echo "install sts client job for $1"
+  yq -i ".spec.template.spec.containers[0].image |= (\"minio/operator-sts-example:$1\")" "${SCRIPT_DIR}/tenant-policyBinding/sts-client/job.yaml"
+  kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
+  condition="condition=Complete"
+  selector="metadata.name=sts-example-job"
+  wait_for_resource_field_selector $client_namespace job $condition $selector 30s
+  echo "removing client $1"
+  kubectl delete -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
 }
 
 # Port forward

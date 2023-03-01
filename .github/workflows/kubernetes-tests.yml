@@ -263,7 +263,7 @@ jobs:
         run: |
           "${GITHUB_WORKSPACE}/testing/test-policy-binding.sh"
 
-  test-policy-binding-cm:
+  test-policy-binding-certmanager:
     runs-on: ${{ matrix.os }}
     needs:
       - logsearch

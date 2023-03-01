@@ -31,11 +31,10 @@ data:
             {
                 "Effect": "Allow",
                 "Action": [
+                    "s3:GetBucketLocation",
                     "s3:ListAllMyBuckets"
                 ],
-                "Resource": [
-                    "*"
-                ]
+                "Resource": "arn:aws:s3:::*"
             }
         ]
     }
@@ -56,10 +55,10 @@ spec:
         - name: sts-client
           image: minio/operator-sts-example:miniosdk-go
           env:
-            - name: MINIO_ENPOINT
+            - name: MINIO_ENDPOINT
               value: https://minio.minio-tenant-1.svc.cluster.local:9443
             - name: STS_ENDPOINT
-              value: https://sts.minio-operator.svc.cluster.local:4223
+              value: https://sts.minio-operator.svc.cluster.local:4223/sts
             - name: TENANT_NAMESPACE
               value: minio-tenant-1
             - name: BUCKET

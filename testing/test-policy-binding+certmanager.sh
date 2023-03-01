@@ -25,7 +25,7 @@ function main() {
 
     setup_kind
 
-    install_operator
+    install_operator "sts"
 
     install_tenant "policy-binding-cm"
 
@@ -33,17 +33,17 @@ function main() {
 
     setup_sts_bucket
 
-    # install_sts_client "miniosdk-dotnet"
+    #install_sts_client "miniosdk-dotnet"
 
     install_sts_client "miniosdk-go"
 
-    # install_sts_client "miniosdk-java"
+    #install_sts_client "miniosdk-java"
 
     # install_sts_client "miniosdk-javascript"
 
-    # install_sts_client "miniosdk-python"
+    #install_sts_client "miniosdk-python"
 
-    # install_sts_client "awssdk-python"
+    install_sts_client "awssdk-python"
 
     destroy_kind
 }

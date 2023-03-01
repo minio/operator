@@ -1,0 +1,11 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sts-example-job
+  namespace: sts-client
+spec:
+  template:
+    spec:
+      containers:
+        - name: sts-client
+          image: minio/operator-sts-example:awssdk-python
