@@ -1,27 +1,28 @@
-/*
- * MinIO Go Library for Amazon S3 Compatible Cloud Storage
- * Copyright 2015-2023 MinIO, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// This file is part of MinIO Operator
+// Copyright (c) 2021 MinIO, Inc.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -36,7 +37,6 @@ func main() {
 	tenantNamespace := os.Getenv("TENANT_NAMESPACE")
 	bucketName := os.Getenv("BUCKET")
 	kubeRootCApath := os.Getenv("KUBERNETES_CA_PATH")
-	// certManagerCAPath := os.Getenv("STS_CA_PATH")
 
 	token, err := getToken()
 	if err != nil {
@@ -48,27 +48,34 @@ func main() {
 		panic(1)
 	}
 
+	httpsTransport, err := getHttpsTransportWithCACert(kubeRootCApath)
+	if err != nil {
+		log.Fatalf("Error Creating https transport: %s", err)
+		panic(1)
+	}
+
 	stsEndpointURL, err := url.Parse(stsEndpoint)
 	stsEndpointURL.Path = path.Join(stsEndpointURL.Path, tenantNamespace)
 	if err != nil {
 		log.Fatalf("Error parsing sts endpoint: %v", err)
-	}
-	sts := credentials.NewIAM(stsEndpointURL.String())
-
-	if err != nil {
-		log.Fatalf("Error initializing STS Identity: %v", err)
 		panic(1)
 	}
-	// This might fail for https with self-signed certificates,
-	// need to find a way  to set trust CA certificate to credentials.Credentials.Get()
-	// retrievedCredentials, err := sts.Get()
-	// if err != nil {
-	// 	log.Fatalf("Error retrieving STS credentials: %v", err)
-	// 	panic(1)
-	// }
-	// fmt.Println("AccessKeyID:", retrievedCredentials.AccessKeyID)
-	// fmt.Println("SecretAccessKey:", retrievedCredentials.SecretAccessKey)
-	// fmt.Println("SessionToken:", retrievedCredentials.SessionToken)
+
+	sts := credentials.New(&credentials.IAM{
+		Client: &http.Client{
+			Transport: httpsTransport,
+		},
+		Endpoint: stsEndpointURL.String(),
+	})
+
+	retrievedCredentials, err := sts.Get()
+	if err != nil {
+		log.Fatalf("Error retrieving STS credentials: %v", err)
+		panic(1)
+	}
+	fmt.Println("AccessKeyID:", retrievedCredentials.AccessKeyID)
+	fmt.Println("SecretAccessKey:", retrievedCredentials.SecretAccessKey)
+	fmt.Println("SessionToken:", retrievedCredentials.SessionToken)
 
 	tenantEndpointURL, err := url.Parse(tenantEndpoint)
 	if err != nil {
@@ -76,38 +83,31 @@ func main() {
 		panic(1)
 	}
 
-	caCertificate, err := getFile(kubeRootCApath)
-	if err != nil {
-		log.Fatalf("Error loading CA Certifiate : %s", err)
-		panic(1)
-	}
-
-	transport, err := minio.DefaultTransport(true)
-	if err != nil {
-		log.Fatalf("Error creating default transport : %s", err)
-		panic(1)
-	}
-
-	if ok := transport.TLSClientConfig.RootCAs.AppendCertsFromPEM(caCertificate); !ok {
-		log.Fatalf("Error parsing CA Certifiate : %s", err)
-		panic(1)
-	}
-
 	minioClient, err := minio.New(tenantEndpointURL.Host, &minio.Options{
 		Creds:     sts,
-		Secure:    true,
-		Transport: transport,
+		Secure:    tenantEndpointURL.Scheme == "https",
+		Transport: httpsTransport,
 	})
 
 	if err != nil {
 		log.Fatalf("Error initializing client: %v", err)
+		panic(1)
 	}
 
+	fmt.Print("List Buckets:")
+	buckets, err := minioClient.ListBuckets(context.Background())
+	if err != nil {
+		log.Fatalln(err)
+	}
+	for _, bucket := range buckets {
+		log.Println(bucket)
+	}
+
+	fmt.Printf("List Objects in bucket %s", bucketName)
 	opts := minio.ListObjectsOptions{
 		Prefix:    "/",
 		Recursive: true,
 	}
-
 	for object := range minioClient.ListObjects(context.Background(), bucketName, opts) {
 		if object.Err != nil {
 			fmt.Println(object.Err)
@@ -129,4 +129,31 @@ func getToken() (string, error) {
 
 func getFile(path string) ([]byte, error) {
 	return ioutil.ReadFile(path)
+}
+
+func getHttpsTransportWithCACert(cacertpath string) (*http.Transport, error) {
+	caCertificate, err := getFile(cacertpath)
+	if err != nil {
+		return nil, fmt.Errorf("Error loading CA Certifiate : %s", err)
+	}
+
+	transport, err := minio.DefaultTransport(true)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating default transport : %s", err)
+	}
+
+	if transport.TLSClientConfig.RootCAs == nil {
+		pool, err := x509.SystemCertPool()
+		if err != nil {
+			log.Fatalf("Error initializing TLS Pool: %s", err)
+			transport.TLSClientConfig.RootCAs = x509.NewCertPool()
+		} else {
+			transport.TLSClientConfig.RootCAs = pool
+		}
+	}
+
+	if ok := transport.TLSClientConfig.RootCAs.AppendCertsFromPEM(caCertificate); !ok {
+		return nil, fmt.Errorf("Error parsing CA Certifiate : %s", err)
+	}
+	return transport, nil
 }

@@ -157,7 +157,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 
 	// Parse the incoming form data.
 	if err := xhttp.ParseForm(r); err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, err)
+		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Error parsing request: %s", err))
 		return
 	}
 
@@ -301,18 +301,22 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	}
 
 	durationStr := r.Form.Get(stsDurationSeconds)
-	duration, err := strconv.Atoi(durationStr)
-	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry"))
-		return
+	var durationInSeconds int
+	if durationStr != "" {
+		duration, err := strconv.Atoi(durationStr)
+		if err != nil {
+			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry"))
+			return
+		}
+
+		if duration < 900 || duration > 31536000 {
+			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry: min 900s, max 31536000s"))
+			return
+		}
+		durationInSeconds = duration
 	}
 
-	if duration < 900 || duration > 31536000 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry: min 900s, max 31536000s"))
-		return
-	}
-
-	stsCredentials, err := AssumeRole(ctx, c, &tenant, bfCompact, duration)
+	stsCredentials, err := AssumeRole(ctx, c, &tenant, bfCompact, durationInSeconds)
 	if err != nil {
 		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, err)
 		return

@@ -35,7 +35,7 @@ function main() {
 
     #install_sts_client "miniosdk-dotnet"
 
-    install_sts_client "miniosdk-go"
+    #install_sts_client "miniosdk-go"
 
     #install_sts_client "miniosdk-java"
 

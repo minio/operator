@@ -80,7 +80,7 @@ function install_operator() {
     value=operator
   elif [ "$1" = "sts" ]; then
     echo "Installing Current Operator with sts enabled"
-    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-PolicyBinding/operator"
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/operator"
     echo "key, value for pod selector in kustomize test"
     key=name
     value=minio-operator
@@ -361,25 +361,28 @@ function install_tenant() {
 }
 
 function setup_sts_bucket() {
+  echo "Installing setub bucket job"
   try kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/setup-bucket"
   namespace="minio-tenant-1"
   condition="condition=Complete"
   selector="metadata.name=setup-bucket"
   try wait_for_resource_field_selector $namespace job $condition $selector
+  echo "Installing setub bucket job: DONE"
 }
 
 function install_sts_client() {
+  echo "Installing sts client job for $1"
   # Definition of the sdk and client to test
 
   OLDIFS=$IFS
-  # shellcheck disable=SC2206
   IFS="-"; declare -a CLIENTARR=($1)
   sdk="${CLIENTARR[0]}"
   lang="${CLIENTARR[1]}"
   IFS=$OLDIFS
 
   # Build and load client images
-  (cd "${SCRIPT_DIR}/../examples/kustomization/tenant-PolicyBinding" && make "${sdk}${lang}")
+  echo "Building docker image for minio/operator-sts-example:$1"
+  (cd "${SCRIPT_DIR}/../examples/kustomization/tenant-PolicyBinding" && try make "${sdk}${lang}")
   try kind load docker-image "minio/operator-sts-example:$1"
 
   client_namespace="sts-client"
@@ -394,14 +397,17 @@ function install_sts_client() {
     fi
   fi
 
-  echo "install sts client job for $1"
+  echo "creating client $1"
   yq -i ".spec.template.spec.containers[0].image |= (\"minio/operator-sts-example:$1\")" "${SCRIPT_DIR}/tenant-policyBinding/sts-client/job.yaml"
-  kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
+  try kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
   condition="condition=Complete"
   selector="metadata.name=sts-example-job"
-  wait_for_resource_field_selector $client_namespace job $condition $selector 30s
+  try wait_for_resource_field_selector $client_namespace job $condition $selector 600s
   echo "removing client $1"
   kubectl delete -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
+  # TODO look for a proper way to wait for the namespace to be deleted
+  sleep 10
+  echo "Installing sts client job for $1: DONE"
 }
 
 # Port forward

@@ -8,4 +8,4 @@ spec:
     spec:
       containers:
         - name: sts-client
-          image: minio/operator-sts-example:awssdk-python
+          image: minio/operator-sts-example:tag

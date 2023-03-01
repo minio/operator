@@ -45,7 +45,7 @@ function main() {
 
     install_sts_client "awssdk-python"
 
-    #destroy_kind
+    destroy_kind
 }
 
 main "$@"

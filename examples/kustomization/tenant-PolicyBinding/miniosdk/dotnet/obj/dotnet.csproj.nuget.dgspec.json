@@ -1,0 +1,67 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/pedro/github.com/minio/operator/examples/kustomization/tenant-PolicyBinding/miniosdk/dotnet/dotnet.csproj": {}
+  },
+  "projects": {
+    "/Users/pedro/github.com/minio/operator/examples/kustomization/tenant-PolicyBinding/miniosdk/dotnet/dotnet.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/pedro/github.com/minio/operator/examples/kustomization/tenant-PolicyBinding/miniosdk/dotnet/dotnet.csproj",
+        "projectName": "dotnet",
+        "projectPath": "/Users/pedro/github.com/minio/operator/examples/kustomization/tenant-PolicyBinding/miniosdk/dotnet/dotnet.csproj",
+        "packagesPath": "/Users/pedro/.nuget/packages/",
+        "outputPath": "/Users/pedro/github.com/minio/operator/examples/kustomization/tenant-PolicyBinding/miniosdk/dotnet/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/pedro/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net7.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net7.0": {
+            "targetAlias": "net7.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net7.0": {
+          "targetAlias": "net7.0",
+          "dependencies": {
+            "Minio": {
+              "target": "Package",
+              "version": "[4.0.7, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.201/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

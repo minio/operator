@@ -45,7 +45,7 @@ metadata:
   name: sts-example-job
   namespace: sts-client
 spec:
-  backoffLimit: 5
+  backoffLimit: 10
   template:
     spec:
       restartPolicy: OnFailure
@@ -56,7 +56,7 @@ spec:
           image: minio/operator-sts-example:miniosdk-go
           env:
             - name: MINIO_ENDPOINT
-              value: https://minio.minio-tenant-1.svc.cluster.local:9443
+              value: https://minio.minio-tenant-1.svc.cluster.local:443
             - name: STS_ENDPOINT
               value: https://sts.minio-operator.svc.cluster.local:4223/sts
             - name: TENANT_NAMESPACE
