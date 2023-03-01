@@ -1,3 +1,5 @@
+#!/bin/bash
+
 add_alias() {
     for i in $(seq 1 4); do
         echo "... attempting to add alias $i"
@@ -50,16 +52,19 @@ remove_policies() {
   mc admin policy remove minio users-$TIMESTAMP
   mc admin policy remove minio watch-$TIMESTAMP
   mc admin policy remove minio inspect-allowed-$TIMESTAMP
-  mc admin policy remove minio inspect-not-allowed-$TIMESTAMPmc
+  mc admin policy remove minio inspect-not-allowed-$TIMESTAMP
   mc admin policy remove minio fix-prefix-policy-ui-crash-$TIMESTAMP
   mc admin policy remove minio conditions-policy-$TIMESTAMP
   mc admin policy remove minio conditions-policy-2-$TIMESTAMP
 }
 
 __init__() {
-  export TIMESTAMP="$(cat web-app/tests/constants/timestamp.txt)"
-  export GOPATH=/tmp/gopath
-  export PATH=${PATH}:${GOPATH}/bin
+  TIMESTAMP="$(cat web-app/tests/constants/timestamp.txt)"
+  export TIMESTAMP
+  GOPATH=/tmp/gopath
+  export GOPATH
+  PATH=${PATH}:${GOPATH}/bin
+  export PATH
 
   wget https://dl.min.io/client/mc/release/linux-amd64/mc
   chmod +x mc
