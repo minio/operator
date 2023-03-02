@@ -456,12 +456,6 @@ jobs:
             ./api/coverage/
           key: ${{ runner.os }}-coverage-unittest-operatorapi-2-${{ github.run_id }}
 
-      # Get the replication.out file from the artifact since this is working for self host runner.
-      - uses: actions/download-artifact@v3
-        with:
-          name: replication-artifact
-          path: replication/coverage
-
       - name: Get coverage
         run: |
           echo "change directory to gocovmerge"

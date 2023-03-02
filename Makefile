@@ -90,11 +90,6 @@ logsearchapi: getdeps
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
 		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o ../logsearchapi-bin )
 
-getconsoleuiyaml:
-	@echo "Getting the latest Console UI"
-	@kustomize build github.com/minio/console/k8s/operator-console/base > resources/base/console-ui.yaml
-	@echo "Done"
-
 generate-code:
 	@./k8s/update-codegen.sh
 
