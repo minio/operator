@@ -147,9 +147,6 @@ function install_tenant() {
 	--selector $key=$value \
 	--timeout=300s
 
-	echo "Wait for Prometheus PVC to be bound"
-	while [[ $(kubectl get pvc storage-lite-prometheus-storage-lite-prometheus-0 -n tenant-lite -o 'jsonpath={..status.phase}') != "Bound" ]]; do echo "waiting for PVC status" && sleep 1 && kubectl get pvc -A; done
-
 	echo "Build passes basic tenant creation"
 
 }
