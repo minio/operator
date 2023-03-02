@@ -43,10 +43,16 @@ __init__() {
 	install_tenant
 	echo "kubectl proxy"
 	kubectl proxy &
+
+	echo "node version"
+	node --version
+
 	echo "yarn start in web-app directoy where package.json is located"
 	(cd "${GITHUB_WORKSPACE}/web-app"; yarn start &) # <----------------------------- error Command "start" not found.
+
 	echo "minio-operator compiled binary to run the ui mode"
 	(cd "${GITHUB_WORKSPACE}/"; ./minio-operator ui &) # <--------------------- ./console: No such file or directory
+
 	echo "DONE with kind, yarn and console, next is testcafe"
 	exit 0
 }
