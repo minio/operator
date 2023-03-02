@@ -16,14 +16,14 @@
 
 import {Selector, t} from "testcafe";
 import {
-  createTenant,
-  createTenantWithoutAuditLog,
-  deleteTenant,
-  goToPodInTenant,
-  goToPodSection,
-  goToPvcInTenant,
-  goToPvcSection,
-  loginToOperator,
+    createTenant,
+    createTenantWithoutAuditLog,
+    deleteTenant,
+    goToPodInTenant,
+    goToPodSection,
+    goToPvcInTenant,
+    goToPvcSection,
+    loginToOperator,
 } from "../../utils";
 
 fixture("For user with default permissions").page("http://localhost:9090");
