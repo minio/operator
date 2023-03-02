@@ -46,7 +46,7 @@ __init__() {
 	echo "yarn start"
 	yarn start &
 	echo "console operator"
-	./console operator &
+	./operator ui &
 	echo "DONE with kind, yarn and console, next is testcafe"
 	exit 0
 }
