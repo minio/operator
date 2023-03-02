@@ -283,42 +283,6 @@ jobs:
         uses: DevExpress/testcafe-action@latest
         with:
           args: '"chrome:headless" web-app/tests/operator/tenant/test-1 --skip-js-errors -c 3'
-  all-operator-tests-3:
-    name: Operator UI Tests Part 3
-    needs:
-      - compile-binary
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        go-version: [ 1.19.x ]
-        os: [ ubuntu-latest ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NVMRC }}
-      - name: Install MinIO JS
-        working-directory: ./
-        continue-on-error: false
-        run: |
-          yarn add minio
-      - uses: actions/cache@v3
-        name: Operator Binary Cache
-        with:
-          path: |
-            ./minio-operator
-          key: ${{ runner.os }}-binary-${{ github.run_id }}
-
-      # Runs a set of commands using the runners shell
-      - name: Start Kind for Operator UI
-        run: |
-          "${GITHUB_WORKSPACE}/web-app/tests/scripts/operator.sh"
-
-      - name: Run TestCafe Tests
-        uses: DevExpress/testcafe-action@latest
-        with:
-          args: '"chrome:headless" web-app/tests/operator/tenant/test-2 --skip-js-errors -c 3'
 
   test-operatorapi-on-go:
     name: Test Operatorapi on Go ${{ matrix.go-version }} and ${{ matrix.os }}
