@@ -24,8 +24,8 @@ function install_tenants() {
 	echo "Installing tenants"
 
 	# Install lite & kes tenants
-	try kubectl apply -k "${SCRIPT_DIR}/../web-app/tests/scripts/tenant-lite"
-	try kubectl apply -k "${SCRIPT_DIR}/../web-app/tests/scripts/tenant-kes-encryption"
+	try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-lite"
+	try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption"
 
 	echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"
 	waitdone=0
