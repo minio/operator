@@ -76,6 +76,6 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.operator.runtimeClassName }}
-      runtimeClassName: 
+      runtimeClassName:
       {{- toYaml . | nindent 8 }}
   {{- end}}

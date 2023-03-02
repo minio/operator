@@ -1,0 +1,100 @@
+{
+  "name": "web-app",
+  "version": "0.1.0",
+  "homepage": ".",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
+    "@mui/icons-material": "^5.11.0",
+    "@mui/lab": "^5.0.0-alpha.117",
+    "@mui/material": "^5.11.6",
+    "@mui/styles": "^5.11.2",
+    "@mui/x-date-pickers": "^5.0.15",
+    "@reduxjs/toolkit": "^1.9.1",
+    "@uiw/react-textarea-code-editor": "^2.0.6",
+    "kbar": "^0.1.0-beta.39",
+    "local-storage-fallback": "^4.1.1",
+    "lodash": "^4.17.21",
+    "luxon": "^3.2.1",
+    "mds": "https://github.com/minio/mds.git#v0.2.5",
+    "minio": "^7.0.32",
+    "react": "^18.1.0",
+    "react-component-export-image": "^1.0.6",
+    "react-copy-to-clipboard": "^5.0.2",
+    "react-dom": "^18.1.0",
+    "react-dropzone": "^14.2.3",
+    "react-grid-layout": "^1.2.0",
+    "react-redux": "^8.0.5",
+    "react-router-dom": "6.7.0",
+    "react-virtualized": "^9.22.3",
+    "react-window": "^1.8.8",
+    "react-window-infinite-loader": "^1.0.7",
+    "recharts": "^2.2.0",
+    "superagent": "^8.0.8",
+    "tinycolor2": "^1.5.2",
+    "websocket": "^1.0.31"
+  },
+  "scripts": {
+    "start": "PORT=5050 react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app",
+    "rules": {
+      "react/jsx-no-target-blank": "off"
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:9090/",
+  "devDependencies": {
+    "@types/luxon": "^3.2.0",
+    "@types/react-window": "^1.8.5",
+    "@types/react-window-infinite-loader": "^1.0.6",
+    "@types/recharts": "^1.8.24",
+    "@types/lodash": "^4.14.191",
+    "@types/minio": "^7.0.15",
+    "@types/node": "18.11.18",
+    "@types/react": "18.0.27",
+    "@types/react-copy-to-clipboard": "^5.0.2",
+    "@types/react-dom": "18.0.10",
+    "@types/react-grid-layout": "^1.1.1",
+    "@types/react-redux": "^7.1.25",
+    "@types/react-virtualized": "^9.21.21",
+    "@types/superagent": "^4.1.16",
+    "@types/webpack-env": "^1.14.1",
+    "@types/websocket": "^1.0.0",
+    "prettier": "2.8.3",
+    "react-scripts": "5.0.1",
+    "testcafe": "^2.3.0",
+    "typescript": "^4.4.3"
+  },
+  "resolutions": {
+    "nth-check": "^2.0.1",
+    "postcss": "^8.2.13",
+    "react-scripts/**/node-forge": "^1.3.0",
+    "react-scripts/**/async": "^2.6.4",
+    "react-scripts/workbox-webpack-plugin/workbox-build/@surma/rollup-plugin-off-main-thread/ejs/jake/async": "^2.6.4",
+    "react-scripts/webpack-dev-server/portfinder/async": "^2.6.4",
+    "react-scripts/**/glob-parent": "^6.0.1",
+    "react-scripts/**/minimatch": "^3.0.5",
+    "react-scripts/**/loader-utils": "^2.0.4",
+    "react-scripts/**/json5": "^2.2.2",
+    "react-scripts/**/debug": "^3.1.0",
+    "recharts/**/d3-color": "^3.1.0",
+    "websocket/debug": "^3.1.0"
+  }
+}

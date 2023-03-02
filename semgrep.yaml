@@ -1,0 +1,78 @@
+rules:
+  - id: js-func-encode-uri-Component
+    patterns:
+      - pattern: encodeURIComponent($X)
+      - pattern-not-inside: |
+          export const encodeURLString = (...) => {
+            ...
+          };
+    message: Use encodeURLString() instead of encodeURIComponent()
+    languages:
+      - typescript
+      - javascript
+    severity: WARNING
+    fix: encodeURLString($X)
+  - id: js-func-encode-uri
+    patterns:
+      - pattern: encodeURI($X)
+    message: Use encodeURLString() instead of encodeURI()
+    languages:
+      - typescript
+      - javascript
+    severity: WARNING
+    fix: encodeURLString($X)
+  - id: js-dangerous-func-document-write
+    patterns:
+      - pattern: document.write(...)
+    message: Don't render html directly into the page, use React components instead
+    languages:
+      - typescript
+      - javascript
+    severity: WARNING
+  - id: js-dangerous-func-assign-document-write
+    patterns:
+      - pattern: |
+          $X1 = document
+          ...
+          $X1.write(...)
+    message: Don't render html directly into the page, use React components instead
+    languages:
+      - typescript
+      - javascript
+    severity: WARNING
+  - id: js-dangerous-func-document-writeln
+    patterns:
+      - pattern: document.writeln(...)
+    message: Don't render html directly into the page, use React components instead
+    languages:
+      - typescript
+      - javascript
+    severity: WARNING
+  - id: js-dangerous-func-assign-document-writeln
+    patterns:
+      - pattern: |
+          $X1 = document
+          ...
+          $X1.writeln(...)
+    message: Don't render html directly into the page, use React components instead
+    languages:
+      - typescript
+      - javascript
+    severity: WARNING
+  - id: react-dangerouslysetinnerhtml
+    languages:
+      - typescript
+      - javascript
+    message: "Setting HTML from code is risky because it’s easy to inadvertently expose your  users to a cross-site scripting (XSS) attack."
+    pattern-either:
+      - pattern: |
+          <$X dangerouslySetInnerHTML=... />
+      - pattern: |
+          {dangerouslySetInnerHTML: ...}
+      - pattern: |
+          $X1.innerHTML=...
+      - pattern: |
+          $X1.outerHTML=...
+      - pattern: |
+          $X1.insertAdjacentHTML=...
+    severity: WARNING
