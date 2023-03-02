@@ -167,10 +167,10 @@ jobs:
           cache: true
         id: go
       - uses: actions/cache@v3
-        name: Console Binary Cache
+        name: Operator Binary Cache
         with:
           path: |
-            ./operator
+            ./minio-operator
           key: ${{ runner.os }}-binary-${{ github.run_id }}
       - uses: actions/cache@v3
         id: assets-cache
@@ -184,7 +184,7 @@ jobs:
           GO111MODULE: on
           GOOS: linux
         run: |
-          make operator
+          make binary
   
   
   
@@ -232,10 +232,10 @@ jobs:
         run: |
           yarn add minio
       - uses: actions/cache@v3
-        name: Console Binary Cache
+        name: Operator Binary Cache
         with:
           path: |
-            ./operator
+            ./minio-operator
           key: ${{ runner.os }}-binary-${{ github.run_id }}
 
       # Runs a set of commands using the runners shell
@@ -268,10 +268,10 @@ jobs:
         run: |
           yarn add minio
       - uses: actions/cache@v3
-        name: Console Binary Cache
+        name: Operator Binary Cache
         with:
           path: |
-            ./operator
+            ./minio-operator
           key: ${{ runner.os }}-binary-${{ github.run_id }}
 
       # Runs a set of commands using the runners shell
@@ -304,10 +304,10 @@ jobs:
         run: |
           yarn add minio
       - uses: actions/cache@v3
-        name: Console Binary Cache
+        name: Operator Binary Cache
         with:
           path: |
-            ./operator
+            ./minio-operator
           key: ${{ runner.os }}-binary-${{ github.run_id }}
 
       # Runs a set of commands using the runners shell

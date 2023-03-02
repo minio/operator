@@ -33,8 +33,10 @@ getdeps:
 
 verify: getdeps govet lint
 
-operator: assets verify
+binary:
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator ./cmd/operator
+
+operator: assets verify binary
 
 docker: operator logsearchapi
 	@docker build --no-cache -t $(TAG) .
