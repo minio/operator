@@ -463,7 +463,7 @@ jobs:
           echo "download golang x tools"
           go mod download golang.org/x/tools
           echo "go mod tidy compat mode"
-          go mod tidy -compat=1.19
+          go mod tidy
           echo "go build gocoverage.go"
           go build gocovmerge.go
           echo "put together the outs for final coverage resolution"
