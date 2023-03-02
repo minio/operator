@@ -18,7 +18,6 @@ package audit
 
 import (
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -106,12 +105,10 @@ func ToEntry(w http.ResponseWriter, r *http.Request, reqClaims map[string]interf
 
 	if val := r.Context().Value(utils.ContextRequestUserID); val != nil {
 		sessionID := val.(string)
-		if os.Getenv("CONSOLE_OPERATOR_MODE") != "" && os.Getenv("CONSOLE_OPERATOR_MODE") == "on" {
-			claims := jwt.MapClaims{}
-			_, _ = jwt.ParseWithClaims(sessionID, claims, nil)
-			if sub, ok := claims["sub"]; ok {
-				sessionID = sub.(string)
-			}
+		claims := jwt.MapClaims{}
+		_, _ = jwt.ParseWithClaims(sessionID, claims, nil)
+		if sub, ok := claims["sub"]; ok {
+			sessionID = sub.(string)
 		}
 		entry.SessionID = sessionID
 	}

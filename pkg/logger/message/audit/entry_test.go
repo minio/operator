@@ -20,7 +20,6 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -78,19 +77,11 @@ func TestToEntry(t *testing.T) {
 		deploymentID string
 	}
 	tests := []struct {
-		name     string
-		args     args
-		want     Entry
-		preFunc  func()
-		postFunc func()
+		name string
+		args args
+		want Entry
 	}{
 		{
-			preFunc: func() {
-				os.Setenv("CONSOLE_OPERATOR_MODE", "on")
-			},
-			postFunc: func() {
-				os.Unsetenv("CONSOLE_OPERATOR_MODE")
-			},
 			name: "constructs an audit entry from a http request",
 			args: args{
 				w:            w,
@@ -110,14 +101,8 @@ func TestToEntry(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.preFunc != nil {
-				tt.preFunc()
-			}
 			if got := ToEntry(tt.args.w, tt.args.r, tt.args.reqClaims, tt.args.deploymentID); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ToEntry() = %v, want %v", got, tt.want)
-			}
-			if tt.postFunc != nil {
-				tt.postFunc()
 			}
 		})
 	}
