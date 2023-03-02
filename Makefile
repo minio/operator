@@ -27,14 +27,16 @@ getdeps:
 	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
 	@echo "Installing golangci-lint" && \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2 && \
 		echo "Installing govulncheck" && \
 		go install golang.org/x/vuln/cmd/govulncheck@latest
 
-verify: getdeps govet gotest lint
+verify: getdeps govet lint
 
-operator: verify
+binary:
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator ./cmd/operator
+
+operator: assets verify binary
 
 docker: operator logsearchapi
 	@docker build --no-cache -t $(TAG) .
@@ -90,11 +92,6 @@ logsearchapi: getdeps
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
 		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o ../logsearchapi-bin )
 
-getconsoleuiyaml:
-	@echo "Getting the latest Console UI"
-	@kustomize build github.com/minio/console/k8s/operator-console/base > resources/base/console-ui.yaml
-	@echo "Done"
-
 generate-code:
 	@./k8s/update-codegen.sh
 
@@ -103,3 +100,37 @@ generate-openshift-manifests:
 
 release: generate-openshift-manifests
 	@./release.sh
+
+
+apply-gofmt:
+	@echo "Applying gofmt to all generated an existing files"
+	@GO111MODULE=on gofmt -w .
+
+clean-swagger:
+	@echo "cleaning"
+	@rm -rf models
+	@rm -rf api/operations
+
+swagger-operator:
+	@echo "Generating swagger server code from yaml"
+	@swagger generate server -A operator --main-package=operator --server-package=api --exclude-main -P models.Principal -f ./swagger.yml -r NOTICE
+
+
+swagger-gen: clean-swagger swagger-operator apply-gofmt
+	@echo "Done Generating swagger server code from yaml"
+
+assets:
+	@(if [ -f "${NVM_DIR}/nvm.sh" ]; then \. "${NVM_DIR}/nvm.sh" && nvm install && nvm use && npm install -g yarn ; fi &&\
+	  cd web-app; yarn install --prefer-offline; make build-static; yarn prettier --write . --loglevel warn; cd ..)
+
+test-unit-test-operator:
+	@echo "execute unit test and get coverage for api"
+	@(cd api && mkdir coverage && GO111MODULE=on go test -test.v -coverprofile=coverage/coverage-unit-test-operatorapi.out)
+
+test-operator-integration:
+	@(echo "Start cd operator-integration && go test:")
+	@(pwd)
+	@(cd operator-integration && go test -coverpkg=../api -c -tags testrunmain . && mkdir -p coverage && ./operator-integration.test -test.v -test.run "^Test*" -test.coverprofile=coverage/operator-api.out)
+
+test-operator:
+	@(env bash $(PWD)/web-app/tests/scripts/operator.sh)

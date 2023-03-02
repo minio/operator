@@ -123,9 +123,6 @@ const ConsoleTLSPort = 9443
 // ConsoleServiceTLSPortName specifies the default Console Service's port name.
 const ConsoleServiceTLSPortName = "https-console"
 
-// ConsoleServiceNameSuffix specifies the suffix added to Tenant service name to create a service for console
-const ConsoleServiceNameSuffix = "-ui"
-
 // ConsoleName specifies the default container name for Console
 const ConsoleName = "-console"
 
@@ -300,9 +297,6 @@ const DefaultMonitoringInterval = 3
 
 // PrometheusNamespace is the namespace of the prometheus
 const PrometheusNamespace = "PROMETHEUS_NAMESPACE"
-
-// PrometheusName is the name of the prometheus
-const PrometheusName = "PROMETHEUS_NAME"
 
 // DefaultPrometheusNamespace is the default namespace for prometheus
 const DefaultPrometheusNamespace = "default"

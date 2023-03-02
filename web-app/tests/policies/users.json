@@ -1,0 +1,25 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "admin:ListUsers",
+        "admin:CreateUser",
+        "admin:DeleteUser",
+        "admin:GetUser",
+        "admin:EnableUser",
+        "admin:DisableUser",
+        "admin:ListUserPolicies",
+        "admin:ListGroups",
+        "admin:GetPolicy",
+        "admin:AttachUserOrGroupPolicy",
+        "admin:AddUserToGroup",
+        "admin:RemoveUserFromGroup",
+        "admin:GetGroup"
+      ],
+      "Effect": "Allow",
+      "Resource": ["arn:aws:s3:::*"],
+      "Sid": ""
+    }
+  ]
+}

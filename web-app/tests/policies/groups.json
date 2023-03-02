@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "admin:ListGroups",
+        "admin:AddUserToGroup",
+        "admin:EnableGroup",
+        "admin:DisableGroup",
+        "admin:RemoveUserFromGroup",
+        "admin:GetGroup",
+        "admin:ListUsers"
+      ],
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}

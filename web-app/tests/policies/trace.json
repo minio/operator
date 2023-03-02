@@ -1,0 +1,10 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": ["admin:ServerTrace"],
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}

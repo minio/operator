@@ -1,0 +1,17 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "s3:AbortMultipartUpload",
+        "s3:CreateBucket",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:DeleteBucket"
+      ],
+      "Effect": "Allow",
+      "Resource": ["arn:aws:s3:::*"],
+      "Sid": ""
+    }
+  ]
+}

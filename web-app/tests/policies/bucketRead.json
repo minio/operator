@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "s3:ListMultipartUploadParts",
+        "s3:ListBucketMultipartUploads",
+        "s3:ListBucket",
+        "s3:HeadBucket",
+        "s3:GetObject",
+        "s3:GetBucketLocation"
+      ],
+      "Effect": "Allow",
+      "Resource": ["arn:aws:s3:::*"],
+      "Sid": ""
+    }
+  ]
+}

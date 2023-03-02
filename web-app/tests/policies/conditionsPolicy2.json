@@ -1,0 +1,28 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "read-only",
+      "Effect": "Allow",
+      "Action": ["s3:GetBucketLocation"],
+      "Resource": ["arn:aws:s3:::testcondition"]
+    },
+    {
+      "Sid": "read",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": ["arn:aws:s3:::testcondition/firstlevel/*"]
+    },
+    {
+      "Sid": "statement2",
+      "Effect": "Allow",
+      "Action": ["s3:ListBucket"],
+      "Resource": ["arn:aws:s3:::testcondition"],
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": ["firstlevel/secondlevel/thirdlevel/*"]
+        }
+      }
+    }
+  ]
+}
