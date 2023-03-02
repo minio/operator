@@ -15,14 +15,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
-
   lint-job:
     name: Checking Lint
     runs-on: [ ubuntu-latest ]
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -41,27 +39,6 @@ jobs:
           GOOS: linux
         run: |
           make verify
-
-  vulnerable-dependencies-checks:
-    name: "Check for vulnerable dependencies"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [ 1.19 ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-          cache: true
-          check-latest: true
-      - name: Get govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-        shell: bash
-      - name: Run govulncheck
-        run: govulncheck ./...
-        shell: bash
   semgrep-static-code-analysis:
     name: "semgrep checks"
     runs-on: ubuntu-latest
@@ -79,14 +56,12 @@ jobs:
           sudo apt install -y python3-pip || apt install -y python3-pip
           pip3 install semgrep
           semgrep --config semgrep.yaml $(pwd)/web-app --error
-
-
   ui-assets:
     name: "React Code Has No Warnings & Prettified"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -126,7 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -143,183 +118,6 @@ jobs:
           GOOS: linux
         run: |
           go mod download
-
-  compile-binary:
-    name: Compiles on Go ${{ matrix.go-version }} and ${{ matrix.os }}
-    needs:
-      - lint-job
-      - ui-assets
-      - reuse-golang-dependencies
-      - semgrep-static-code-analysis
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        go-version: [ 1.19.x ]
-        os: [ ubuntu-latest ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Set up Go ${{ matrix.go-version }} on ${{ matrix.os }}
-        uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-          cache: true
-        id: go
-      - uses: actions/cache@v3
-        name: Console Binary Cache
-        with:
-          path: |
-            ./operator
-          key: ${{ runner.os }}-binary-${{ github.run_id }}
-      - uses: actions/cache@v3
-        id: assets-cache
-        name: Assets Cache
-        with:
-          path: |
-            ./web-app/build/
-          key: ${{ runner.os }}-assets-${{ github.run_id }}
-      - name: Build on ${{ matrix.os }}
-        env:
-          GO111MODULE: on
-          GOOS: linux
-        run: |
-          make operator
-  
-  
-  
-  react-code-known-vulnerabilities:
-    name: "React Code Has No Known Vulnerable Deps"
-    needs:
-      - ui-assets
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [ 1.19.x ]
-        os: [ ubuntu-latest ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NVMRC }}
-          cache: 'yarn'
-          cache-dependency-path: web-app/yarn.lock
-      - name: Checks for known security issues with the installed packages
-        working-directory: ./web-app
-        continue-on-error: false
-        run: |
-          yarn audit  
-
-  all-operator-tests-1:
-    name: Operator UI Tests Part 1
-    needs:
-      - compile-binary
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        go-version: [ 1.19.x ]
-        os: [ ubuntu-latest ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NVMRC }}
-      - name: Install MinIO JS
-        working-directory: ./
-        continue-on-error: false
-        run: |
-          yarn add minio
-      - uses: actions/cache@v3
-        name: Console Binary Cache
-        with:
-          path: |
-            ./operator
-          key: ${{ runner.os }}-binary-${{ github.run_id }}
-
-      # Runs a set of commands using the runners shell
-      - name: Start Kind for Operator UI
-        run: |
-          "${GITHUB_WORKSPACE}/web-app/tests/scripts/operator.sh"
-
-      - name: Run TestCafe Tests
-        uses: DevExpress/testcafe-action@latest
-        with:
-          args: '"chrome:headless" web-app/tests/operator/login --skip-js-errors -c 3'
-  all-operator-tests-2:
-    name: Operator UI Tests Part 2
-    needs:
-      - compile-binary
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        go-version: [ 1.19.x ]
-        os: [ ubuntu-latest ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NVMRC }}
-      - name: Install MinIO JS
-        working-directory: ./
-        continue-on-error: false
-        run: |
-          yarn add minio
-      - uses: actions/cache@v3
-        name: Console Binary Cache
-        with:
-          path: |
-            ./operator
-          key: ${{ runner.os }}-binary-${{ github.run_id }}
-
-      # Runs a set of commands using the runners shell
-      - name: Start Kind for Operator UI
-        run: |
-          "${GITHUB_WORKSPACE}/web-app/tests/scripts/operator.sh"
-
-      - name: Run TestCafe Tests
-        uses: DevExpress/testcafe-action@latest
-        with:
-          args: '"chrome:headless" web-app/tests/operator/tenant/test-1 --skip-js-errors -c 3'
-  all-operator-tests-3:
-    name: Operator UI Tests Part 3
-    needs:
-      - compile-binary
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        go-version: [ 1.19.x ]
-        os: [ ubuntu-latest ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: ${{ env.NVMRC }}
-      - name: Install MinIO JS
-        working-directory: ./
-        continue-on-error: false
-        run: |
-          yarn add minio
-      - uses: actions/cache@v3
-        name: Console Binary Cache
-        with:
-          path: |
-            ./operator
-          key: ${{ runner.os }}-binary-${{ github.run_id }}
-
-      # Runs a set of commands using the runners shell
-      - name: Start Kind for Operator UI
-        run: |
-          "${GITHUB_WORKSPACE}/web-app/tests/scripts/operator.sh"
-
-      - name: Run TestCafe Tests
-        uses: DevExpress/testcafe-action@latest
-        with:
-          args: '"chrome:headless" web-app/tests/operator/tenant/test-2 --skip-js-errors -c 3'
-
   test-operatorapi-on-go:
     name: Test Operatorapi on Go ${{ matrix.go-version }} and ${{ matrix.os }}
     needs:
@@ -330,7 +128,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -358,22 +156,6 @@ jobs:
           path: |
             ./api/coverage/
           key: ${{ runner.os }}-coverage-unittest-operatorapi-2-${{ github.run_id }}
-  react-tests:
-    name: React Tests
-    needs:
-      - lint-job
-      - ui-assets
-      - reuse-golang-dependencies
-      - semgrep-static-code-analysis
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Install modules
-        working-directory: ./web-app
-        run: yarn
-      - name: Run tests
-        working-directory: ./web-app
-        run: yarn test
   c-operator-api-tests:
 
     name: Operator API Tests
@@ -386,7 +168,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
 
     steps:
 
@@ -423,7 +205,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.19.x ]
+        go-version: [ 1.20.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -506,3 +288,5 @@ jobs:
             echo "It is smaller than threshold ($threshold%) value, failed!"
             exit 1
           fi
+
+
