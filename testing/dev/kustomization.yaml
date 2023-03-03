@@ -5,4 +5,5 @@ bases:
   - ../../resources
 
 patchesStrategicMerge:
+  - console-deployment.yaml
   - deployment.yaml
