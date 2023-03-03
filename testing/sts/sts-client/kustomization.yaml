@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../examples/kustomization/sts-example/sts-app
+
+images:
+  - name: minio/operator-sts-example
+    newTag: newTag
+    newName: pjuarez/operators

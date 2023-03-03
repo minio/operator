@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: start-config-script
+  namespace: minio-tenant-1
+data:
+  setup.sh: |
+    #!/bin/bash
+    mc mb local/test-bucket
+    mc mb local/other-bucket
+    mc admin policy add local test-bucket-rw /start-config/bucket-policy.json
+  bucket-policy.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:*"
+          ],
+          "Resource": [
+            "arn:aws:s3:::test-bucket",
+            "arn:aws:s3:::test-bucket/*"
+          ]
+        }
+      ]
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-bucket
+  namespace: minio-tenant-1
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: start-config
+          configMap:
+            name: start-config-script
+            defaultMode: 0744
+      containers:
+        - name: mc
+          image: minio/mc
+          command: [ "/start-config/setup.sh" ]
+          volumeMounts:
+            - name: start-config
+              mountPath: /start-config/
+          env:
+            - name: ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: storage-user
+                  key: CONSOLE_ACCESS_KEY
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: storage-user
+                  key: CONSOLE_SECRET_KEY
+            - name: MC_HOST_local
+              value: https://$(ACCESS_KEY):$(SECRET_KEY)@minio.minio-tenant-1.svc.cluster.local
