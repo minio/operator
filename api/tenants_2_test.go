@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/minio/madmin-go/v2"
 	"github.com/minio/operator/api/operations"
@@ -35,7 +36,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 type TenantTestSuite struct {
@@ -845,6 +848,14 @@ func (suite *TenantTestSuite) initGetTenantYAMLRequest() (params operator_api.Ge
 	return params, api
 }
 
+func (suite *TenantTestSuite) initTenantLogReportRequest() (params operator_api.GetTenantLogReportParams, api operations.OperatorAPI) {
+	registerTenantHandlers(&api)
+	params.HTTPRequest = &http.Request{}
+	params.Namespace = "mock-namespace"
+	params.Tenant = "mock-tenant"
+	return params, api
+}
+
 func (suite *TenantTestSuite) TestPutTenantYAMLHandlerWithError() {
 	params, api := suite.initPutTenantYAMLRequest()
 	response := api.OperatorAPIPutTenantYAMLHandler.Handle(params, &models.Principal{})
@@ -904,4 +915,60 @@ func (suite *TenantTestSuite) createTenantPodSecurityContext() *corev1.PodSecuri
 		FSGroup:             &fsGroup,
 		FSGroupChangePolicy: &fscp,
 	}
+}
+
+func (suite *TenantTestSuite) TestGetTenantLogReportWithError() {
+	objs := []runtime.Object{}
+
+	kubeClient := fake.NewSimpleClientset(objs...)
+
+	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
+		return nil, nil
+	}
+
+	fakeTenant, _ := opClientTenantGetMock(context.Background(), "", "", metav1.GetOptions{})
+	_, err := generateTenantLogReport(context.Background(), kubeClient.CoreV1(), "", "", fakeTenant)
+
+	suite.assert.NotNil(err)
+}
+
+func (suite *TenantTestSuite) TestGetTenantLogReportWithoutError() {
+	// fakePods := []v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1"}}, {ObjectMeta: metav1.ObjectMeta{Name: "pod2"}}, {ObjectMeta: metav1.ObjectMeta{Name: "pod3"}}}
+	objs := []runtime.Object{
+		&v1.PodList{Items: []v1.Pod{
+			{
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{{}},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              "Pod1",
+					DeletionTimestamp: &metav1.Time{Time: time.Now()},
+				},
+			},
+		}},
+		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "mock-namespace"}},
+	}
+
+	kubeClient := fake.NewSimpleClientset(objs...)
+
+	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
+		return &miniov2.Tenant{
+			Spec: miniov2.TenantSpec{},
+		}, nil
+	}
+
+	params, _ := suite.initGetLogReportRequest()
+	fakeTenant, _ := opClientTenantGetMock(context.Background(), params.Namespace, params.Tenant, metav1.GetOptions{})
+	_, err := generateTenantLogReport(context.Background(), kubeClient.CoreV1(), params.Tenant, params.Namespace, fakeTenant)
+
+	suite.assert.Nil(err)
+}
+
+func (suite *TenantTestSuite) initGetLogReportRequest() (params operator_api.GetTenantLogReportParams, api operations.OperatorAPI) {
+	registerTenantHandlers(&api)
+	params.HTTPRequest = &http.Request{}
+	params.Namespace = "mock-namespace"
+	params.Tenant = "mock-tenant"
+
+	return params, api
 }
