@@ -382,9 +382,9 @@ function install_sts_client() {
   IFS=$OLDIFS
 
   # Build and load client images
-  echo "Building docker image for minio/operator-sts-example:$1"
+  echo "Building docker image for miniodev/operator-sts-example:$1"
   (cd "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-clients" && try make "${makefiletarget}")
-  try kind load docker-image "minio/operator-sts-example:$1"
+  try kind load docker-image "miniodev/operator-sts-example:$1"
 
   client_namespace="sts-client"
   tenant_namespace="minio-tenant-1"
