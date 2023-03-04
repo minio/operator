@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License, version 3,
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package v1beta1
+package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -58,11 +58,6 @@ type PolicyBindingUsage struct {
 }
 
 // PolicyBindingSpec (`spec`) defines the configuration of a MinIO PolicyBinding object. +
-//
-// The following parameters are specific to the `sts.min.io/v1beta1` MinIO Policy Binding CRD API `spec` definition added as part of the MinIO Operator v5.0.0. +
-//
-// PolicyBinding is a Auhtorization mechanism managed by the Minio Operator using Kubernetes ServiceAccount native object, the Binding allow to an ServiceAccount to assume policies inside a tenant.
-// For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation].
 type PolicyBindingSpec struct {
 	// *Required* +
 	//
@@ -72,7 +67,7 @@ type PolicyBindingSpec struct {
 	Policies []string `json:"policies"`
 }
 
-// Application defines the `Namespace` and  `ServiceAccount`
+// Application defines the `Namespace` and `ServiceAccount` to authorize the usage of the policies listed
 type Application struct {
 	// *Required* +
 	Namespace string `json:"namespace"`

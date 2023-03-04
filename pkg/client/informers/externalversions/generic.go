@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	v1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
+	v1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -57,9 +57,9 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	case v2.SchemeGroupVersion.WithResource("tenants"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Minio().V2().Tenants().Informer()}, nil
 
-		// Group=sts.min.io, Version=v1beta1
-	case v1beta1.SchemeGroupVersion.WithResource("policybindings"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Sts().V1beta1().PolicyBindings().Informer()}, nil
+		// Group=sts.min.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("policybindings"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Sts().V1alpha1().PolicyBindings().Informer()}, nil
 
 	}
 

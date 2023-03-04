@@ -18,7 +18,7 @@ spec:
         version: v2
       - kind: PolicyBinding
         name: policybindings.sts.min.io
-        version: v1beta1
+        version: v1alpha1
   keywords:
     - S3
     - MinIO

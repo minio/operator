@@ -1,4 +1,4 @@
-apiVersion: sts.min.io/v1beta1
+apiVersion: sts.min.io/v1alpha1
 kind: PolicyBinding
 metadata:
   name: binding-1

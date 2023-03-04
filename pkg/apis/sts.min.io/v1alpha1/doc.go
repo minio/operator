@@ -15,7 +15,10 @@
 // +k8s:deepcopy-gen=package,register
 // go:generate controller-gen crd:trivialVersions=true paths=. output:dir=.
 
-// Package v1beta1 is the v1beta1 version of the API.
+// Package v1alpha1 -The following parameters are specific to the `sts.min.io/v1alpha1` MinIO Policy Binding CRD API
+// PolicyBinding is a Auhtorization mechanism managed by the Minio Operator using Kubernetes ServiceAccount JSON Web Tokens, the binding allow to an ServiceAccount to assume temporary credentials to access a tenant objects.
+// For more complete documentation on this object, see the https://docs.min.io/minio/k8s/reference/minio-operator-reference.html#minio-operator-yaml-reference[MinIO Kubernetes Documentation].
+// PolicyBinding is added as part of the MinIO Operator v5.0.0. +
 // +groupName=sts.min.io
-// +versionName=v1beta1
-package v1beta1
+// +versionName=v1alpha1
+package v1alpha1

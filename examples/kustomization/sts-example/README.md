@@ -58,7 +58,7 @@ namespace `minio-tenant-1` by installing a `PolicyBinding` on the `minio-tenant-
 Example policy binding
 
 ```yaml
-apiVersion: sts.min.io/v1beta1
+apiVersion: sts.min.io/v1alpha1
 kind: PolicyBinding
 metadata:
   name: binding-1

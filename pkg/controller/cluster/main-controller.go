@@ -71,11 +71,11 @@ import (
 	queue "k8s.io/client-go/util/workqueue"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	stsv1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
+	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
-	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1beta1"
+	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
@@ -303,8 +303,8 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	policyBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueuePB,
 		UpdateFunc: func(old, new interface{}) {
-			oldPB := old.(*stsv1beta1.PolicyBinding)
-			newPB := new.(*stsv1beta1.PolicyBinding)
+			oldPB := old.(*stsv1alpha1.PolicyBinding)
+			newPB := new.(*stsv1alpha1.PolicyBinding)
 			if newPB.ResourceVersion == oldPB.ResourceVersion {
 				return
 			}

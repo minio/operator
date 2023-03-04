@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License, version 3,
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package v1beta1
+package v1alpha1
 
 import (
 	operator "github.com/minio/operator/pkg/apis/sts.min.io"
@@ -22,7 +22,7 @@ import (
 )
 
 // Version specifies the API Version
-const Version = "v1beta1"
+const Version = "v1alpha1"
 
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{Group: operator.GroupName, Version: Version}
