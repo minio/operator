@@ -21,7 +21,15 @@ user `cert-manager` or bring your own certificates.
 To install the example, you need an existing tenant, optionally, you can install the `tenant-lite` example, or
 the `tenant-certmanager` example
 
-# 0. Install Tenant (Optional)
+# 0. Enable STS Functionality
+
+If you haven't done so, enable the STS feature on operator by turning setting the feature flag `OPERATOR_STS_ENABLED=on`
+
+```shell
+kubectl -n minio-operator set env deployment/minio-operator OPERATOR_STS_ENABLED=on
+```
+
+# 1. Install Tenant (Optional)
 
 ```shell
 kubectl apply -k examples/kustomization/sts-example/tenant
@@ -33,7 +41,7 @@ For an example with Cert Manager
 kubectl apply -k examples/kustomization/sts-example/tenant-certmanager
 ```
 
-# 1. Create a bucket and a policy (Optional)
+# 2. Create a bucket and a policy (Optional)
 
 We will set up some sample buckets to access from our sample application
 
@@ -41,7 +49,7 @@ We will set up some sample buckets to access from our sample application
 kubectl apply -k examples/kustomization/sts-example/sample-data
 ```
 
-# 2. Install sample application
+# 3. Install sample application
 
 The sample application will install to `sts-client` namespace and grant access to the job called `sts-example-job` to
 access `tenant` with the MinIO Policy called `test-bucket-rw` that we created on the previous step on
