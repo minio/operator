@@ -6,6 +6,4 @@ WORKDIR /app
 
 RUN mvn pacakge
 
-COPY target/operator-sts-0.1.0.jar /app/app.jar
-
-CMD ["java", "-jar", "./app/app.jar"]
+ENTRYPOINT ["java", "-jar", "./app/target/operator-sts-0.1.0.jar"]

@@ -399,7 +399,7 @@ function install_sts_client() {
   fi
 
   echo "creating client $1"
-  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-clients/$sdk-$lang"
+  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-clients/$sdk/$lang"
   condition="condition=Complete"
   selector="metadata.name=sts-client-example-$sdk-$lang-job"
   try wait_for_resource_field_selector $client_namespace job $condition $selector 600s

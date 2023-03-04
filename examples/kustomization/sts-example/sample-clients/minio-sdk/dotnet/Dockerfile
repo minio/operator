@@ -15,4 +15,4 @@ COPY obj /app
 COPY dotnet.csproj /app
 COPY Program.cs /app
 RUN dotnet publish
-CMD ["/app/bin/Debug/net7.0/dotnet"]
+ENTRYPOINT ["/app/bin/Debug/net7.0/dotnet"]
