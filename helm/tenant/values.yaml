@@ -95,7 +95,7 @@ tenant:
     ## not provided. DNS name format is *.minio.default.svc.cluster.local
     certConfig: {}
   ## MinIO features to enable or disable in the MinIO Tenant
-  ## https://github.com/minio/operator/blob/master/docs/crd.adoc#features
+  ## https://github.com/minio/operator/blob/master/docs/tenant_crd.adoc#features
   features:
     bucketDNS: false
     domains: {}

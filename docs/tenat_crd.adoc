@@ -19,6 +19,9 @@ Package v2 - This page provides a quick automatically generated reference for th
 The `minio.min.io/v2` API was released with the v4.0.0 MinIO Operator. The MinIO Operator automatically converts existing tenants using the `/v1` API to `/v2`. +
 
 
+.Resource Types
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenant[$$Tenant$$]
+
 
 
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-auditconfig"]
@@ -113,6 +116,50 @@ CertificateStatus keeps track of all the certificates managed by the operator
 
 |*`autoCertEnabled`* __boolean__ 
 |AutoCertEnabled registers whether we know if the tenant has autocert enabled
+
+|*`customCertificates`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificates[$$CustomCertificates$$]__ 
+|Provides the output of the `client`, `minio`, and`minioCAs` custom TLS certificates manually added to the Operator.
+
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificateconfig"]
+==== CustomCertificateConfig 
+
+CustomCertificateConfig (`customCertificateConfig`) provides attributes associated of the TLS certificates manually added to the Operator as part of tenant creation. These fields contain no data if there are no custom TLS certificates.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificates[$$CustomCertificates$$]
+****
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificates"]
+==== CustomCertificates 
+
+CustomCertificates (`customCertificates`) provides groupings of the TLS certificates manually added to the Operator as part of tenant creation. These fields contain no data if there are no custom TLS certificates.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-certificatestatus[$$CertificateStatus$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`client`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificateconfig[$$CustomCertificateConfig$$] array__ 
+|*Optional* + 
+ Client
+
+|*`minio`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificateconfig[$$CustomCertificateConfig$$] array__ 
+|*Optional* + 
+ Minio
+
+|*`minioCAs`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificateconfig[$$CustomCertificateConfig$$] array__ 
+|*Optional* + 
+ Certificate Authorities
 
 |===
 
@@ -797,6 +844,12 @@ Tenant is a https://kubernetes.io/docs/concepts/overview/working-with-objects/ku
 [cols="25a,75a", options="header"]
 |===
 | Field | Description
+
+|*`apiVersion`* __string__ 
+|`minio.min.io/v2`
+
+|*`kind`* __string__ 
+|`Tenant`
 
 |*`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#objectmeta-v1-meta[$$ObjectMeta$$]__ 
 |Refer to Kubernetes API documentation for fields of `metadata`.
