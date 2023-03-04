@@ -6,8 +6,8 @@ metadata:
 data:
   setup.sh: |
     #!/bin/bash
-    mc mb local/test-bucket
-    mc mb local/other-bucket
+    mc mb local/test-bucket && \
+    mc mb local/other-bucket && \
     mc admin policy add local test-bucket-rw /start-config/bucket-policy.json
   bucket-policy.json: |
     {

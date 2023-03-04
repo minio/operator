@@ -377,8 +377,8 @@ function install_sts_client() {
   OLDIFS=$IFS
   IFS="-"; declare -a CLIENTARR=($1)
   sdk="${CLIENTARR[0]}-${CLIENTARR[1]}"
-  makefiletarget="${CLIENTARR[0]}${CLIENTARR[1]}"
   lang="${CLIENTARR[2]}"
+  makefiletarget="${CLIENTARR[0]}${CLIENTARR[1]}-lang"
   IFS=$OLDIFS
 
   # Build and load client images
