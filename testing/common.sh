@@ -80,7 +80,7 @@ function install_operator() {
     value=operator
   elif [ "$1" = "sts" ]; then
     echo "Installing Current Operator with sts enabled"
-    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/operator"
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/sts/operator"
     echo "key, value for pod selector in kustomize test"
     key=name
     value=minio-operator
@@ -320,14 +320,14 @@ function install_tenant() {
     value=storage-policy-binding
     echo "Installing policyBinding tenant from current branch"
 
-    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/tenant"
+    try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/tenant"
   elif [ "$1" = "policy-binding-cm" ]; then
     namespace="minio-tenant-1"
     key=v1.min.io/tenant
     value=storage-policy-binding
     echo "Installing policyBinding tenant with cert manager from current branch"
 
-    try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-policyBinding/tenant-certmanager"
+    try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/tenant-certmanager"
   elif [ -e $1 ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
@@ -362,7 +362,7 @@ function install_tenant() {
 
 function setup_sts_bucket() {
   echo "Installing setub bucket job"
-  try kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/setup-bucket"
+  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-data"
   namespace="minio-tenant-1"
   condition="condition=Complete"
   selector="metadata.name=setup-bucket"
@@ -376,13 +376,14 @@ function install_sts_client() {
 
   OLDIFS=$IFS
   IFS="-"; declare -a CLIENTARR=($1)
-  sdk="${CLIENTARR[0]}"
-  lang="${CLIENTARR[1]}"
+  sdk="${CLIENTARR[0]}-${CLIENTARR[1]}"
+  makefiletarget="${CLIENTARR[0]}${CLIENTARR[1]}"
+  lang="${CLIENTARR[2]}"
   IFS=$OLDIFS
 
   # Build and load client images
   echo "Building docker image for minio/operator-sts-example:$1"
-  (cd "${SCRIPT_DIR}/../examples/kustomization/tenant-PolicyBinding" && try make "${sdk}${lang}")
+  (cd "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-clients" && try make "${makefiletarget}")
   try kind load docker-image "minio/operator-sts-example:$1"
 
   client_namespace="sts-client"
@@ -398,15 +399,11 @@ function install_sts_client() {
   fi
 
   echo "creating client $1"
-  yq -i ".spec.template.spec.containers[0].image |= (\"minio/operator-sts-example:$1\")" "${SCRIPT_DIR}/tenant-policyBinding/sts-client/job.yaml"
-  try kubectl apply -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
+  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-clients/$sdk-$lang"
   condition="condition=Complete"
-  selector="metadata.name=sts-example-job"
+  selector="metadata.name=sts-client-example-$sdk-$lang-job"
   try wait_for_resource_field_selector $client_namespace job $condition $selector 600s
   echo "removing client $1"
-  kubectl delete -k "${SCRIPT_DIR}/tenant-policyBinding/sts-client"
-  # TODO look for a proper way to wait for the namespace to be deleted
-  sleep 10
   echo "Installing sts client job for $1: DONE"
 }
 
