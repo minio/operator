@@ -55,7 +55,7 @@ The sample application will install to `sts-client` namespace and grant access t
 access `tenant` with the MinIO Policy called `test-bucket-rw` that we created on the previous step on
 namespace `minio-tenant-1` by installing a `PolicyBinding` on the `minio-tenant-1` namespace.
 
-Example policy binding
+Example policy binding (see CRD documentation in [policybinding_crd.adoc](../../../docs/policybinding_crd.adoc) )
 
 ```yaml
 apiVersion: sts.min.io/v1alpha1
