@@ -17,4 +17,4 @@ patchesJson6902:
     patch: |
       - op: replace
         path: /metadata/name
-        value: sts-client-example-aws-python-job
+        value: sts-client-example-aws-sdk-python-job
