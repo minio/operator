@@ -321,13 +321,6 @@ function install_tenant() {
     echo "Installing policyBinding tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/tenant"
-  elif [ "$1" = "policy-binding-cm" ]; then
-    namespace="minio-tenant-1"
-    key=v1.min.io/tenant
-    value=storage-policy-binding
-    echo "Installing policyBinding tenant with cert manager from current branch"
-
-    try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/tenant-certmanager"
   elif [ -e $1 ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
