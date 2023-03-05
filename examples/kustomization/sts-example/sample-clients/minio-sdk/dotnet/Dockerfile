@@ -8,11 +8,10 @@ RUN curl https://packages.microsoft.com/config/ubuntu/22.10/packages-microsoft-p
     dpkg -i packages-microsoft-prod.deb && \
     rm packages-microsoft-prod.deb
 
-
 RUN mkdir app
 WORKDIR /app
-COPY obj /app
 COPY dotnet.csproj /app
 COPY Program.cs /app
 RUN dotnet publish
+
 ENTRYPOINT ["/app/bin/Debug/net7.0/dotnet"]

@@ -403,7 +403,6 @@ function install_sts_client() {
   condition="condition=Complete"
   selector="metadata.name=sts-client-example-$sdk-$lang-job"
   try wait_for_resource_field_selector $client_namespace job $condition $selector 600s
-  echo "removing client $1"
   echo "Installing sts client job for $1: DONE"
 }
 

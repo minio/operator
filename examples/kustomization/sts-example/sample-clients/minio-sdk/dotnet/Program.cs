@@ -16,10 +16,9 @@
 
 using System;
 using Minio;
-using Minio.Exceptions;
-using Minio.DataModel;
 using System.Threading.Tasks;
-using System.IO;
+using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 
 namespace sts
 {
@@ -34,7 +33,10 @@ namespace sts
             var kubeRootCAPath = Environment.GetEnvironmentVariable("KUBERNETES_CA_PATH");
             var stsCAPath = Environment.GetEnvironmentVariable("STS_CA_PATH");
 
-            string caFile;
+            Environment.SetEnvironmentVariable("AWS_ROLE_ARN","arn:aws:iam::111111111:dummyroot");
+            Environment.SetEnvironmentVariable("AWS_ROLE_SESSION_NAME","optional-session-name");
+
+            string? caFile = "";
 
             if (FileExists(stsCAPath))
             {
@@ -42,46 +44,99 @@ namespace sts
             }
             else
             {
-                caFile = kubeRootCAPath;
+                if (FileExists(kubeRootCAPath))
+                {
+                    caFile = kubeRootCAPath;
+                }
             }
 
-            try {
-                HttpClient client = new HttpClient();
-                client.
+            try
+            {
+                var tenantEndpointUrl = new Uri(tenantEndpoint);
+                var credentialsProvider = new Minio.Credentials.IAMAWSProvider();
+                using var minioClient = new MinioClient()
+                    .WithEndpoint(tenantEndpointUrl.Host, tenantEndpointUrl.Port)
+                    .WithSSL()
+                    .WithCredentialsProvider(credentialsProvider)
+                    .WithHttpClient(GetHttpTransport(caFile))
+                    .Build();
 
-                Minio.Credentials.ClientProvider credentialsProvider = new Minio.Credentials.WebIdentityProvider();
+                var url = new Uri($"{stsEndpoint}/{tenantNamespace}");
+                credentialsProvider = credentialsProvider
+                    .WithEndpoint(url.ToString)
+                    .WithMinioClient(minioClient);
+
+                credentialsProvider.Validate();
+                 
                 var credentials = credentialsProvider.GetCredentials();
                 System.Console.WriteLine($"AccessKey: ${credentials.AccessKey}");
                 System.Console.WriteLine($"AccessKey: ${credentials.SecretKey}");
                 System.Console.WriteLine($"AccessKey: ${credentials.SessionToken}");
 
-                var minio = new MinioClient().WithCredentialsProvider(credentialsProvider)
-                                    .WithEndpoint(tenantEndpoint)
-                                    .WithHttpClient()
-                                    .WithSSL()
-                                    .Build();
-                FileUpload.Run(minio).Wait();
+                ListBuckets(minioClient).GetAwaiter().GetResult();
+                ListObjects(minioClient, bucketName).GetAwaiter().GetResult();
+            }
+            catch (UriFormatException uer)
+            {
+                Console.WriteLine($"STS endpoint malformed: {uer.Message}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
+                Environment.Exit(111);
             }
-            Console.ReadLine();
-
-
         }
 
-
-        private byte[] GetFile(string? path)
+        public static async Task ListBuckets(IMinioClient minio)
         {
-            if (!FileExists(path))
+            try
             {
-                throw new Exception($"File {path} not found");
+                Console.WriteLine("Running example for API: ListBucketsAsync");
+                var list = await minio.ListBucketsAsync().ConfigureAwait(false);
+                foreach (var bucket in list.Buckets) Console.WriteLine($"{bucket.Name} {bucket.CreationDateDateTime}");
+                Console.WriteLine();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"[Bucket]  Exception: {e}");
+            }
+        }
+
+        public static async Task ListObjects(IMinioClient minio, string bucketName)
+        {
+            try
+            {
+                var listArgs = new ListObjectsArgs()
+                    .WithBucket(bucketName)
+                    .WithRecursive(true);
+                var observable = minio.ListObjectsAsync(listArgs);
+                var subscription = observable.Subscribe(
+                    item => Console.WriteLine($"Object: {item.Key}"),
+                    ex => Console.WriteLine($"OnError: {ex}"),
+                    () => Console.WriteLine($"Listed all objects in bucket {bucketName}\n"));
+            }
+            catch (System.Exception e)
+            {
+                Console.WriteLine($"[Object]  Exception: {e}");
+            }
+        }
+
+        private static HttpClient GetHttpTransport(string caPath)
+        {
+            var handler = new HttpClientHandler();
+            if (!string.IsNullOrEmpty(caPath))
+            {
+                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) =>
+                {
+                    chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+                    chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2(caPath));
+                    return chain.Build(cert);
+                };
             }
 
-
-
-
+            var httpClient = new HttpClient(handler);
+            return httpClient;
         }
 
         private static bool FileExists(string? path)

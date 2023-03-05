@@ -17,4 +17,4 @@ patchesJson6902:
     patch: |
       - op: replace
         path: /metadata/name
-        value: sts-client-example-minio-dotnet-job
+        value: sts-client-example-minio-sdk-dotnet-job
