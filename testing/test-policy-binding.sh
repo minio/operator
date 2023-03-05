@@ -21,31 +21,31 @@ export SCRIPT_DIR
 source "${SCRIPT_DIR}/common.sh"
 
 function main() {
-    #destroy_kind
+    destroy_kind
 
-    #setup_kind
+    setup_kind
 
-    #install_operator "sts"
+    install_operator "sts"
 
-    #install_tenant "policy-binding"
+    install_tenant "policy-binding"
 
-    #check_tenant_status minio-tenant-1 storage-policy-binding
+    check_tenant_status minio-tenant-1 storage-policy-binding
 
-    #setup_sts_bucket
+    setup_sts_bucket
 
-    install_sts_client "minio-sdk-dotnet"
+    #install_sts_client "minio-sdk-dotnet"
 
-    #install_sts_client "minio-sdk-go"
+    install_sts_client "minio-sdk-go"
 
     #install_sts_client "minio-sdk-java"
 
     # install_sts_client "minio-sdk-javascript"
 
-    #install_sts_client "minio-sdk-python"
+    install_sts_client "minio-sdk-python"
 
-    #install_sts_client "aws-sdk-python"
+    install_sts_client "aws-sdk-python"
 
-    #destroy_kind
+    destroy_kind
 }
 
 main "$@"
