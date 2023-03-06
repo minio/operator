@@ -58,10 +58,10 @@ function install_operator() {
 
   # To compile current branch
   echo "Compiling Current Branch Operator"
-  (cd "${SCRIPT_DIR}/.." && TAG=minio/operator:noop make docker) # will not change your shell's current directory
+  (cd "${SCRIPT_DIR}/.." && TAG=minio/operator:noop try make docker) # will not change your shell's current directory
 
   echo 'start - load compiled image so we can use it later on'
-  kind load docker-image minio/operator:noop
+  try kind load docker-image minio/operator:noop
   echo 'end - load compiled image so we can use it later on'
 
   if [ "$1" = "helm" ]; then
