@@ -45,4 +45,4 @@ MinIO Operator creates native Kubernetes resources within the cluster. If the Te
 | spec.pools.volumesPerServer      | Set the number of volume mounts per MinIO node. For example if you set `spec.pools[0].Servers = 4`, `spec.pools[1].Servers = 8` and `spec.volumesPerServer = 4`, then you'll have total 12 MinIO Pods, with 4 volume mounts on each Pod. Note that `volumesPerServer` is static per cluster and that expanding a cluster will add new nodes.                                              |
 | spec.pools.tolerations           | Define a toleration for the Tenant pod to match a taint. Refer [this document](https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/) for details.                                                                                                                                                                                                                      |
 
-A complete list of values is available [here](tenat_crd.adoc) in the API reference.
+A complete list of values is available [here](tenant_crd.adoc) in the API reference.

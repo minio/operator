@@ -14,7 +14,7 @@ the `minio-operator` deployment.
 ## TLS
 
 The STS functionality works only with TLS configured. We can request certificates automatically, but additional you can
-user `cert-manager` or bring your own certificates.
+use `cert-manager` or bring your own certificates.
 
 # Installation
 
@@ -52,7 +52,7 @@ kubectl apply -k examples/kustomization/sts-example/sample-data
 # 3. Install sample application
 
 The sample application will install to `sts-client` namespace and grant access to the job called `sts-example-job` to
-access `tenant` with the MinIO Policy called `test-bucket-rw` that we created on the previous step on
+access `tenant` with the MinIO Policy called `test-bucket-rw` that we created in the previous step on
 namespace `minio-tenant-1` by installing a `PolicyBinding` on the `minio-tenant-1` namespace.
 
 Example policy binding (see CRD documentation in [policybinding_crd.adoc](../../../docs/policybinding_crd.adoc) )
