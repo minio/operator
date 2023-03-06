@@ -67,11 +67,9 @@ import (
 
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/workqueue"
 	queue "k8s.io/client-go/util/workqueue"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
@@ -209,13 +207,6 @@ type Controller struct {
 	// image being used in the operator deployment
 	operatorImage string
 
-	// queue is a rate limited work queue. This is used to queue work to be
-	// processed instead of performing it as soon as a change happens. This
-	// means we can ensure we only process a fixed amount of resources at a
-	// time, and makes it easy to ensure we are never processing the same item
-	// simultaneously in two different workers.
-	policyBindingQueue queue.RateLimitingInterface
-
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
@@ -270,7 +261,6 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		recorder:                  recorder,
 		hostsTemplate:             hostsTemplate,
 		operatorVersion:           operatorVersion,
-		policyBindingQueue:        queue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "PolicyBindings"),
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
 	}
@@ -299,18 +289,7 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 			controller.enqueueTenant(new)
 		},
 	})
-	// Event handler for PolicyBinding resources changes
-	policyBindingInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueuePB,
-		UpdateFunc: func(old, new interface{}) {
-			oldPB := old.(*stsv1alpha1.PolicyBinding)
-			newPB := new.(*stsv1alpha1.PolicyBinding)
-			if newPB.ResourceVersion == oldPB.ResourceVersion {
-				return
-			}
-			controller.enqueuePB(new)
-		},
-	})
+
 	// Set up an event handler for when StatefulSet resources change. This
 	// handler will lookup the owner of the given StatefulSet, and if it is
 	// owned by a Tenant resource will enqueue that Tenant resource for
@@ -641,7 +620,6 @@ func (c *Controller) Stop() {
 	klog.Info("Stopping the minio controller")
 	c.workqueue.ShutDown()
 	c.healthCheckQueue.ShutDown()
-	c.policyBindingQueue.ShutDown()
 }
 
 // runWorker is a long-running function that will continually call the
@@ -1482,30 +1460,6 @@ func (c *Controller) enqueueTenant(obj interface{}) {
 	}
 
 	c.workqueue.AddRateLimited(key)
-}
-
-// enqueuePolicyBinding takes a PolicyBinding resource and converts it into a namespance/name string
-// This key is put into the workqueue.
-// It will ignore any PolicyBinding not in the namespaces that the Operator watches.
-// Only PolicyBindings in the watched namespaces where Operator manage tenants are Honored.
-func (c *Controller) enqueuePB(obj interface{}) {
-	key, err := cache.MetaNamespaceKeyFunc(obj)
-	if err != nil {
-		runtime.HandleError(err)
-		return
-	}
-	if !c.namespacesToWatch.IsEmpty() {
-		meta, err := meta.Accessor(obj)
-		if err != nil {
-			runtime.HandleError(err)
-			return
-		}
-		if !c.namespacesToWatch.Contains(meta.GetNamespace()) {
-			klog.Infof("Ignoring PolicyBindig `%s` in namespace that is not watched by this controller.", key)
-			return
-		}
-	}
-	c.policyBindingQueue.AddRateLimited(key)
 }
 
 // handleObject will take any resource implementing metav1.Object and attempt
