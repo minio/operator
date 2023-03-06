@@ -139,6 +139,10 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	routerVars := mux.Vars(r)
 	tenantNamespace := ""
 	tenantNamespace, err := xhttp.UnescapeQueryPath(routerVars["tenantNamespace"])
+	if err != nil {
+		writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Unable to unescape tenant namespace: %s", err))
+		return
+	}
 
 	reqInfo := ReqInfo{
 		RequestID:       w.Header().Get(AmzRequestID),
@@ -152,18 +156,19 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	ctx := context.WithValue(r.Context(), contextLogKey, &reqInfo)
 
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("tenant namespace is missing"))
+		writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Tenant namespace is missing:, %s", err))
+		return
 	}
 
 	// Parse the incoming form data.
 	if err := xhttp.ParseForm(r); err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Error parsing request: %s", err))
+		writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Error parsing request: %s", err))
 		return
 	}
 
 	if r.Form.Get(stsVersion) != stsAPIVersion {
 		err := fmt.Errorf("invalid STS API version %s, expecting %s", r.Form.Get("Version"), stsAPIVersion)
-		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, err)
+		writeSTSErrorResponse(w, true, ErrSTSMissingParameter, err)
 		return
 	}
 
@@ -172,14 +177,14 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	// For now we only do WebIdentity, leaving it in case we want to implement certificate authentication
 	case webIdentity:
 	default:
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("unsupported action %s", action))
+		writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Unsupported action %s", action))
 		return
 	}
 
 	token := strings.TrimSpace(r.Form.Get(stsWebIdentityToken))
 
 	if token == "" {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSMissingParameter, fmt.Errorf("missing %s", stsWebIdentityToken))
+		writeSTSErrorResponse(w, true, ErrSTSMissingParameter, fmt.Errorf("Missing parameter '%s'", stsWebIdentityToken))
 		return
 	}
 
@@ -187,14 +192,20 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	accessToken := r.Form.Get(stsWebIdentityToken)
 	saAuthResult, err := c.ValidateServiceAccountJWT(&ctx, accessToken)
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidIdentityToken, err)
+		writeSTSErrorResponse(w, true, ErrSTSInvalidIdentityToken, err)
 		return
 	}
+
 	if !saAuthResult.Status.Authenticated {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token"))
+		writeSTSErrorResponse(w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token"))
 		return
 	}
 	chunks := strings.Split(strings.Replace(saAuthResult.Status.User.Username, "system:serviceaccount:", "", -1), ":")
+
+	if len(chunks) < 2 {
+		writeSTSErrorResponse(w, true, ErrSTSInvalidIdentityToken, fmt.Errorf("Error parsing service account name and namespace"))
+		return
+	}
 	// saNamespace Service account Namespace
 	saNamespace := chunks[0]
 	// saName service account username
@@ -204,7 +215,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	policyBindings := []v1alpha1.PolicyBinding{}
 	pbs, err := c.minioClientSet.StsV1alpha1().PolicyBindings(tenantNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Error obtaining PolicyBindings: %s", err))
+		writeSTSErrorResponse(w, true, ErrSTSInternalError, fmt.Errorf("Error obtaining PolicyBindings: %s", err))
 		return
 	}
 
@@ -214,13 +225,18 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		}
 	}
 	if len(policyBindings) == 0 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSAccessDenied, fmt.Errorf("Service account '%s' has no PolicyBindings in namespace '%s'", saAuthResult.Status.User.Username, tenantNamespace))
+		writeSTSErrorResponse(w, true, ErrSTSAccessDenied, fmt.Errorf("Service account '%s' has no PolicyBindings in namespace '%s'", saAuthResult.Status.User.Username, tenantNamespace))
 		return
 	}
 
 	tenants, err := c.minioClientSet.MinioV2().Tenants(tenantNamespace).List(ctx, metav1.ListOptions{})
+
 	if err != nil || len(tenants.Items) == 0 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("No Tenants available in the namespace '%s'", tenantNamespace))
+		if k8serrors.IsNotFound(err) {
+			writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("No tenant found in namespace '%s'", tenantNamespace))
+			return
+		}
+		writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Error getting tenant in namespace '%s'", tenantNamespace))
 		return
 	}
 
@@ -230,15 +246,15 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	tenantConfiguration, err := c.getTenantCredentials(ctx, &tenant)
 	if err != nil {
 		if errors.Is(err, ErrEmptyRootCredentials) {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Tenant '%s' is missing root credentials", tenant.Name))
+			writeSTSErrorResponse(w, true, ErrSTSInternalError, fmt.Errorf("Tenant '%s' is missing root credentials", tenant.Name))
 			return
 		}
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Error getting tenant '%s' root credentials: %s", tenant.Name, err))
+		writeSTSErrorResponse(w, true, ErrSTSInternalError, fmt.Errorf("Error getting tenant '%s' root credentials: %s", tenant.Name, err))
 		return
 	}
 	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, fmt.Errorf("Error communicating with tenant '%s': %s", tenant.Name, err))
+		writeSTSErrorResponse(w, true, ErrSTSInternalError, fmt.Errorf("Error communicating with tenant '%s': %s", tenant.Name, err))
 		return
 	}
 
@@ -249,23 +265,23 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	if len(sessionPolicyStr) > 0 {
 		compactedSessionPolicy, err = miniov2.CompactJSONString(sessionPolicyStr)
 		if err != nil {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSMalformedPolicyDocument, err)
+			writeSTSErrorResponse(w, true, ErrSTSMalformedPolicyDocument, err)
 			return
 		}
 		sessionPolicy, err = iampolicy.ParseConfig(bytes.NewReader([]byte(compactedSessionPolicy)))
 		if err != nil {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSMalformedPolicyDocument, err)
+			writeSTSErrorResponse(w, true, ErrSTSMalformedPolicyDocument, err)
 			return
 		}
 		// Version in policy must not be empty
 		if sessionPolicy.Version == "" {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid session policy version"))
+			writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid session policy version"))
 			return
 		}
 		// The plain text that you use for both inline and managed session
 		// policies shouldn't exceed 2048 characters.
 		if len(compactedSessionPolicy) > 2048 {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("Session policy should not exceed 2048 characters"))
+			writeSTSErrorResponse(w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("Session policy should not exceed 2048 characters"))
 			return
 		}
 	}
@@ -283,7 +299,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 			}
 			parsedPolicy, err := iampolicy.ParseConfig(bytes.NewReader([]byte(policy.Policy)))
 			if err != nil {
-				klog.Error(fmt.Errorf("Invalid policy, not parseable %s, ignoring: %s", policyName, err))
+				klog.Error(fmt.Errorf("Invalid policy, '%s' isnot parseable ignoring: %s", policyName, err))
 				continue
 			}
 			bfPolicy = bfPolicy.Merge(*parsedPolicy)
@@ -292,11 +308,11 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	bfJSONPolicy, _ := json.Marshal(bfPolicy)
 	bfCompact, err := miniov2.CompactJSONString(string(bfJSONPolicy))
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSMalformedPolicyDocument, err)
+		writeSTSErrorResponse(w, true, ErrSTSMalformedPolicyDocument, err)
 		return
 	}
 	if len(bfCompact) > 2048 {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("PolicyBinding resulting policy is too long, Policy should not exceed 2048 characters"))
+		writeSTSErrorResponse(w, true, ErrSTSPackedPolicyTooLarge, fmt.Errorf("PolicyBinding resulting policy is too long, Policy should not exceed 2048 characters, length %d", len(bfCompact)))
 		return
 	}
 
@@ -305,12 +321,12 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	if durationStr != "" {
 		duration, err := strconv.Atoi(durationStr)
 		if err != nil {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry"))
+			writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid token expiry"))
 			return
 		}
 
 		if duration < 900 || duration > 31536000 {
-			writeSTSErrorResponse(ctx, w, true, ErrSTSInvalidParameterValue, fmt.Errorf("invalid token expiry: min 900s, max 31536000s"))
+			writeSTSErrorResponse(w, true, ErrSTSInvalidParameterValue, fmt.Errorf("Invalid token expiry: min 900s, max 31536000s"))
 			return
 		}
 		durationInSeconds = duration
@@ -318,7 +334,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 
 	stsCredentials, err := AssumeRole(ctx, c, &tenant, bfCompact, durationInSeconds)
 	if err != nil {
-		writeSTSErrorResponse(ctx, w, true, ErrSTSInternalError, err)
+		writeSTSErrorResponse(w, true, ErrSTSInternalError, err)
 		return
 	}
 

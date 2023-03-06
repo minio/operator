@@ -268,7 +268,7 @@ func configureSTSServer(c *Controller) *http.Server {
 }
 
 // writeSTSErrorRespone writes error headers
-func writeSTSErrorResponse(ctx context.Context, w http.ResponseWriter, isErrCodeSTS bool, errCode STSErrorCode, errCtxt error) {
+func writeSTSErrorResponse(w http.ResponseWriter, isErrCodeSTS bool, errCode STSErrorCode, errCtxt error) {
 	var err APIError
 	if isErrCodeSTS {
 		err = stsErrCodes.ToSTSErr(errCode)
