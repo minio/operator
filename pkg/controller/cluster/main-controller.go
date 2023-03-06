@@ -398,19 +398,15 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		var wg sync.WaitGroup
 
 		// 1) we need to make sure the API server is ready before starting operator
-		// 2) wait for STS API to be ready before starting operator
-		// 3) we need to make sure the HTTP Upgrade server is ready before starting operator
-		// 4) pausing the process until console has it's TLS certificate (if enabled)
-		wg.Add(3)
+		// 2) we need to make sure the HTTP Upgrade server is ready before starting operator
+		wg.Add(2)
 		klog.Info("Waiting for API to start")
 		klog.Info("Waiting for Upgrade Server to start")
-		klog.Info("Waiting for Console TLS")
 
 		go func() {
 			// Request kubernetes version from Kube ApiServer
 			apiCsrVersion := certificates.GetCertificatesAPIVersion(c.kubeClientSet)
 			klog.Infof("Using Kubernetes CSR Version: %s", apiCsrVersion)
-
 			if isOperatorTLS() {
 				publicCertPath, publicKeyPath := c.generateOperatorTLSCert()
 				klog.Infof("Starting HTTPS API server")
@@ -422,6 +418,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				}
 				serverCertsManager = certsManager
 				c.ws.TLSConfig = c.createTLSConfig(serverCertsManager)
+
 				if err := c.ws.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
 					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
 					panic(err)
@@ -446,11 +443,14 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			}
 		}()
 
-		go func() {
-			if isOperatorConsoleTLS() {
+		if isOperatorConsoleTLS() {
+			// we need to make sure has console TLS certificate (if enabled)
+			klog.Info("Waiting for Console TLS")
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
 				klog.Infof("Console TLS enabled, starting console TLS certificate setup")
 				err := c.recreateOperatorConsoleCertsIfRequired(ctx)
-				wg.Done()
 				if err != nil {
 					panic(err)
 				}
@@ -459,18 +459,18 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				if err != nil {
 					klog.Errorf("Console deployment didn't restart: %s", err)
 				}
-			} else {
-				klog.Infof("Console TLS is not enabled")
-				wg.Done()
-			}
-		}()
+			}()
+		} else {
+			klog.Infof("Console TLS is not enabled")
+		}
 
 		if IsSTSEnabled() {
+			// Wait for STS API to be ready before starting operator
 			wg.Add(1)
 			go func() {
+				defer wg.Done()
 				klog.Infof("STS is enabled, starting STS API certificate setup")
 				c.generateSTSTLSCert()
-				wg.Done()
 			}()
 		}
 
@@ -501,7 +501,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	// runSTS starts the STS API even if the pod is not the leader
-	runSTS := func(ctx context.Context) {
+	runSTS := func(ctx context.Context) <-chan interface{} {
 		// stsServerWillStart is a channel for the STS Server API
 		stsServerWillStart := make(chan interface{})
 
@@ -522,10 +522,7 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			}
 		}()
 
-		klog.Info("Waiting for STS API to start")
-		<-stsServerWillStart
-
-		select {}
+		return stsServerWillStart
 	}
 
 	// use a Go context so we can tell the leaderelection code when we
@@ -561,7 +558,9 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	if IsSTSEnabled() {
-		go runSTS(ctx)
+		klog.Info("Waiting for STS API to start")
+		started := runSTS(ctx)
+		<-started
 	} else {
 		klog.Info("STS Api server is not enabled, not starting")
 	}
