@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sts-client
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: sts-client
+  name: stsclient-sa
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sts-client-secret
+  namespace: sts-client
+  annotations:
+    kubernetes.io/service-account.name: stsclient-sa
+type: kubernetes.io/service-account-token
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sts-policy
+  namespace: sts-client
+data:
+  policy.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:GetBucketLocation",
+            "s3:ListAllMyBuckets"
+          ],
+          "Resource": "arn:aws:s3:::*"
+        }
+      ]
+    }
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sts-example-job
+  namespace: sts-client
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: stsclient-sa
+      serviceAccount: stsclient-sa
+      containers:
+        - name: sts-client
+          image: miniodev/operator-sts-example:minio-go
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MINIO_ENDPOINT
+              value: https://minio.minio-tenant-1.svc.cluster.local:443
+            - name: STS_ENDPOINT
+              value: https://sts.minio-operator.svc.cluster.local:4223/sts
+            - name: TENANT_NAMESPACE
+              value: minio-tenant-1
+            - name: BUCKET
+              value: test-bucket
+            - name: AWS_WEB_IDENTITY_TOKEN_FILE
+              value: /var/run/secrets/kubernetes.io/serviceaccount/token
+            - name: STS_POLICY
+              value: /tmp/policy.json
+            - name: STS_CA_PATH # When Certmanager is used will load the ca in this file
+              value: /var/run/secrets/sts.min.io/ca.crt
+            - name: KUBERNETES_CA_PATH
+              value: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          volumeMounts:
+            - name: sts-policy
+              mountPath: /tmp/policy.json
+              subPath: policy.json
+            - name: tenant-certmanager-tls
+              mountPath: /var/run/secrets/sts.min.io/
+      volumes:
+        - name: sts-policy
+          configMap:
+            name: sts-policy
+            defaultMode: 0744
+        - name: tenant-certmanager-tls
+          projected:
+            sources:
+              - secret:
+                  name: tenant-certmanager-tls
+                  optional: true
+                  items:
+                    - key: ca.crt
+                      path: ca.crt

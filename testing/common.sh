@@ -58,10 +58,10 @@ function install_operator() {
 
   # To compile current branch
   echo "Compiling Current Branch Operator"
-  (cd "${SCRIPT_DIR}/.." && TAG=minio/operator:noop make docker) # will not change your shell's current directory
+  (cd "${SCRIPT_DIR}/.." && TAG=minio/operator:noop try make docker) # will not change your shell's current directory
 
   echo 'start - load compiled image so we can use it later on'
-  kind load docker-image minio/operator:noop
+  try kind load docker-image minio/operator:noop
   echo 'end - load compiled image so we can use it later on'
 
   if [ "$1" = "helm" ]; then
@@ -78,6 +78,12 @@ function install_operator() {
     echo "key, value for pod selector in helm test"
     key=app.kubernetes.io/name
     value=operator
+  elif [ "$1" = "sts" ]; then
+    echo "Installing Current Operator with sts enabled"
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/sts/operator"
+    echo "key, value for pod selector in kustomize test"
+    key=name
+    value=minio-operator
   else
     echo "Installing Current Operator"
     # Created an overlay to use that image version from dev folder
@@ -194,6 +200,36 @@ function wait_for_resource() {
   done
 }
 
+function wait_for_resource_field_selector() {
+  # example 1 job:
+  # namespace="minio-tenant-1"
+  # codition="condition=Complete"
+  # selector="metadata.name=setup-bucket"
+  # wait_for_resource_field_selector $namespace job $condition $selector
+  #
+  # example 2 tenant:
+  # wait_for_resource_field_selector $namespace job $condition $selector
+  # condition=jsonpath='{.status.currentState}'=Initialized
+  # selector="metadata.name=storage-policy-binding"
+  # wait_for_resource_field_selector $namespace tenant $condition $selector 900s
+
+  namespace=$1
+  resourcetype=$2
+  condition=$3
+  fieldselector=$4
+  if [ $# -ge 5 ]; then
+    timeout="$5"
+  else
+    timeout="600s"
+  fi
+
+  echo "Waiting for $resourcetype \"$fieldselector\" for \"$condition\" ($timeout timeout)"
+  kubectl wait -n "$namespace" "$resourcetype" \
+    --for=$condition \
+    --field-selector $fieldselector \
+    --timeout="$timeout"
+}
+
 function check_tenant_status() {
   # Check MinIO is accessible
   key=v1.min.io/tenant
@@ -278,6 +314,13 @@ function install_tenant() {
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-prometheus"
+  elif [ "$1" = "policy-binding" ]; then
+    namespace="minio-tenant-1"
+    key=v1.min.io/tenant
+    value=storage-policy-binding
+    echo "Installing policyBinding tenant from current branch"
+
+    try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/tenant"
   elif [ -e $1 ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
@@ -308,6 +351,52 @@ function install_tenant() {
 
   echo "Build passes basic tenant creation"
 
+}
+
+function setup_sts_bucket() {
+  echo "Installing setub bucket job"
+  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-data"
+  namespace="minio-tenant-1"
+  condition="condition=Complete"
+  selector="metadata.name=setup-bucket"
+  try wait_for_resource_field_selector $namespace job $condition $selector
+  echo "Installing setub bucket job: DONE"
+}
+
+function install_sts_client() {
+  echo "Installing sts client job for $1"
+  # Definition of the sdk and client to test
+
+  OLDIFS=$IFS
+  IFS="-"; declare -a CLIENTARR=($1)
+  sdk="${CLIENTARR[0]}-${CLIENTARR[1]}"
+  lang="${CLIENTARR[2]}"
+  makefiletarget="${CLIENTARR[0]}${CLIENTARR[1]}$lang"
+  IFS=$OLDIFS
+
+  # Build and load client images
+  echo "Building docker image for miniodev/operator-sts-example:$1"
+  (cd "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-clients" && try make "${makefiletarget}")
+  try kind load docker-image "miniodev/operator-sts-example:$1"
+
+  client_namespace="sts-client"
+  tenant_namespace="minio-tenant-1"
+
+  if [ $# -ge 2 ]; then
+    if [ "$2" = "cm" ]; then
+      echo "Setting up certmanager CA secret"
+      # When certmanager issues the certificates, we copy the certificate to a secret in the client namespace
+      try kubectl get secrets -n $tenant_namespace tenant-certmanager-tls -o=jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+      try kubectl create secret generic tenant-certmanager-tls --from-file=ca.crt -n $client_namespace
+    fi
+  fi
+
+  echo "creating client $1"
+  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-clients/$sdk/$lang"
+  condition="condition=Complete"
+  selector="metadata.name=sts-client-example-$sdk-$lang-job"
+  try wait_for_resource_field_selector $client_namespace job $condition $selector 600s
+  echo "Installing sts client job for $1: DONE"
 }
 
 # Port forward

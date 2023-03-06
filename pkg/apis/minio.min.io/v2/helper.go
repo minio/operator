@@ -93,6 +93,12 @@ const (
 	WebhookCRDConversaion   = WebhookAPIVersion + "/crd-conversion"
 )
 
+// STS API constants
+const (
+	STSDefaultPort = "4223"
+	STSEndpoint    = "/sts"
+)
+
 type hostsTemplateValues struct {
 	StatefulSet string
 	CIService   string

@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-operator
+  namespace: minio-operator
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      name: minio-operator
+  template:
+    metadata:
+      labels:
+        name: minio-operator
+    spec:
+      serviceAccountName: minio-operator
+      containers:
+        - name: minio-operator
+          image: minio/operator:noop
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MINIO_CONSOLE_TLS_ENABLE
+              value: "off"
+            - name: OPERATOR_STS_ENABLED
+              value: "on"
+          securityContext:
+            runAsNonRoot: true
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: name
+                    operator: In
+                    values:
+                      - minio-operator
+              topologyKey: kubernetes.io/hostname

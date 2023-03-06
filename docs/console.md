@@ -20,4 +20,4 @@ kubectl create -f https://raw.githubusercontent.com/minio/operator/master/exampl
 kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns --console-secret console-secret
 ```
 
-A complete list of values is available [here](crd.adoc##consoleconfiguration) in the API reference.
+A complete list of values is available [here](tenant_crd.adoc##consoleconfiguration) in the API reference.

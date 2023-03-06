@@ -138,6 +138,7 @@ func StartOperator() {
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Core().V1().Pods(),
 		minioInformerFactory.Minio().V2().Tenants(),
+		minioInformerFactory.Sts().V1alpha1().PolicyBindings(),
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,
 		version,

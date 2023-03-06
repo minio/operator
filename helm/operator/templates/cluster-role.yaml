@@ -131,6 +131,12 @@ rules:
       - approve
       - sign
   - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
       - minio.min.io
     resources:
       - "*"
@@ -138,6 +144,7 @@ rules:
       - "*"
   - apiGroups:
       - min.io
+      - sts.min.io
     resources:
       - "*"
     verbs:

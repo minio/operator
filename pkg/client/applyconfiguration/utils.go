@@ -20,7 +20,9 @@ package applyconfiguration
 
 import (
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	v1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	miniominiov2 "github.com/minio/operator/pkg/client/applyconfiguration/minio.min.io/v2"
+	stsminiov1alpha1 "github.com/minio/operator/pkg/client/applyconfiguration/sts.min.io/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -81,6 +83,18 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &miniominiov2.TenantUsageApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("TierUsage"):
 		return &miniominiov2.TierUsageApplyConfiguration{}
+
+		// Group=sts.min.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithKind("Application"):
+		return &stsminiov1alpha1.ApplicationApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PolicyBinding"):
+		return &stsminiov1alpha1.PolicyBindingApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PolicyBindingSpec"):
+		return &stsminiov1alpha1.PolicyBindingSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PolicyBindingStatus"):
+		return &stsminiov1alpha1.PolicyBindingStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("PolicyBindingUsage"):
+		return &stsminiov1alpha1.PolicyBindingUsageApplyConfiguration{}
 
 	}
 	return nil

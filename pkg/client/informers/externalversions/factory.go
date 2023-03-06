@@ -26,6 +26,7 @@ import (
 	versioned "github.com/minio/operator/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/minio/operator/pkg/client/informers/externalversions/internalinterfaces"
 	miniominio "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io"
+	stsminio "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -244,8 +245,13 @@ type SharedInformerFactory interface {
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
 	Minio() miniominio.Interface
+	Sts() stsminio.Interface
 }
 
 func (f *sharedInformerFactory) Minio() miniominio.Interface {
 	return miniominio.New(f, f.namespace, f.tweakListOptions)
+}
+
+func (f *sharedInformerFactory) Sts() stsminio.Interface {
+	return stsminio.New(f, f.namespace, f.tweakListOptions)
 }

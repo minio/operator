@@ -16,6 +16,9 @@ spec:
       - kind: Tenant
         name: tenants.minio.min.io
         version: v2
+      - kind: PolicyBinding
+        name: policybindings.sts.min.io
+        version: v1alpha1
   keywords:
     - S3
     - MinIO

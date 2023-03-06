@@ -1,0 +1,11 @@
+apiVersion: sts.min.io/v1alpha1
+kind: PolicyBinding
+metadata:
+  name: binding-1
+  namespace: minio-tenant-1
+spec:
+  application:
+    namespace: sts-client
+    serviceaccount: stsclient-sa
+  policies:
+    - test-bucket-rw
