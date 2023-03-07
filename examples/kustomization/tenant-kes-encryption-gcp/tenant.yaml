@@ -7,12 +7,14 @@ spec:
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   kes:
-    image: "" # minio/kes:2023-02-15T14-54-37Z
+    image: "" # minio/kes:v0.22.3
     env: [ ]
     replicas: 2
     kesSecret:
       name: kes-configuration
     imagePullPolicy: "IfNotPresent"
+    gcpCredentialSecretName: gcp-default-creds
+    gcpWorkloadIdentityPool: <WORKLOAD_IDENTITY_POOL>
     ## Use this field to provide external certificates for the KES server. TLS for KES pods will be configured
     ## by mounting a Kubernetes secret under /tmp/kes folder, supported types:
     ## Opaque | kubernetes.io/tls | cert-manager.io/v1alpha2 | cert-manager.io/v1
@@ -41,6 +43,7 @@ spec:
     clientCertSecret: null
     ## Key name to be created on the KMS, default is "my-minio-key"
     keyName: ""
+    
     resources: { }
     nodeSelector: { }
     affinity:
@@ -50,7 +53,10 @@ spec:
     tolerations: [ ]
     annotations: { }
     labels: { }
-    serviceAccountName: ""
+    # This should be the service account which was created in `kes-service-account.yaml`
+    # Please refer https://cloud.google.com/anthos/fleet-management/docs/use-workload-identity#impersonate_a_service_account to know how
+    # this service account is authorized to use GCP workload identity
+    serviceAccountName: "<SERVICE_ACCOUNT>"
     securityContext:
       runAsUser: 1000
       runAsGroup: 1000

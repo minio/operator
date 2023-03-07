@@ -756,6 +756,18 @@ type KESConfig struct {
 	ClientCertSecret *LocalCertificateReference `json:"clientCertSecret,omitempty"`
 	// *Optional* +
 	//
+	//  Specify the GCP default credentials to be used for KES to authenticate to GCP key store
+	//
+	// +optional
+	GCPCredentialSecretName string `json:"gcpCredentialSecretName,omitempty"`
+	// *Optional* +
+	//
+	//  Specify the name of the workload identity pool (This is required for generating service account token)
+	//
+	// +optional
+	GCPWorkloadIdentityPool string `json:"gcpWorkloadIdentityPool,omitempty"`
+	// *Optional* +
+	//
 	// If provided, use these annotations for KES Object Meta annotations
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`

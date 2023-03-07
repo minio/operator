@@ -23,6 +23,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	gcpCredentialVolumeMountName = "gcp-ksa"
+	gcpCredentialVolumeMountPath = "/var/run/secrets/tokens/gcp-ksa"
+	serviceAccountTokenPath      = "token"
+	gcpAppCredentialsPath        = "google-application-credentials.json"
+)
+
+var (
+	defaultServiceAccountTokenExpiryInSecs int64 = 172800 // 48 hrs
+	// gcpCredentialVolumeMount represents the volume mount for GCP creds and service token
+	gcpCredentialVolumeMount = corev1.VolumeMount{
+		Name:      gcpCredentialVolumeMountName,
+		ReadOnly:  true,
+		MountPath: gcpCredentialVolumeMountPath,
+	}
+)
+
 // KESMetadata Returns the KES pods metadata set in configuration.
 // If a user specifies metadata in the spec we return that
 // metadata.
@@ -48,13 +65,17 @@ func KESSelector(t *miniov2.Tenant) *metav1.LabelSelector {
 }
 
 // KESVolumeMounts builds the volume mounts for MinIO container.
-func KESVolumeMounts(t *miniov2.Tenant) []corev1.VolumeMount {
-	return []corev1.VolumeMount{
+func KESVolumeMounts(t *miniov2.Tenant) (volumeMounts []corev1.VolumeMount) {
+	volumeMounts = []corev1.VolumeMount{
 		{
 			Name:      t.KESVolMountName(),
 			MountPath: miniov2.KESConfigMountPath,
 		},
 	}
+	if t.HasGCPCredentialSecretForKES() {
+		volumeMounts = append(volumeMounts, gcpCredentialVolumeMount)
+	}
+	return
 }
 
 // KESEnvironmentVars returns the KES environment variables set in configuration.
@@ -195,6 +216,39 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 				},
 			},
 		},
+	}
+
+	if t.HasGCPCredentialSecretForKES() {
+		var gcpVolumeDefaultMode int32 = 420
+		var isOptional bool
+		podVolumes = append(podVolumes, corev1.Volume{
+			Name: gcpCredentialVolumeMountName,
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					DefaultMode: &gcpVolumeDefaultMode,
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: t.Spec.KES.GCPCredentialSecretName,
+								},
+								Items: []corev1.KeyToPath{
+									{Key: "config", Path: gcpAppCredentialsPath},
+								},
+								Optional: &isOptional,
+							},
+						},
+						{
+							ServiceAccountToken: &corev1.ServiceAccountTokenProjection{
+								Audience:          t.Spec.KES.GCPWorkloadIdentityPool,
+								ExpirationSeconds: &defaultServiceAccountTokenExpiryInSecs,
+								Path:              serviceAccountTokenPath,
+							},
+						},
+					},
+				},
+			},
+		})
 	}
 
 	containers := []corev1.Container{KESServerContainer(t)}

@@ -129,7 +129,7 @@ const ConsoleAdminPolicyName = "consoleAdmin"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:v0.18.0"
+const DefaultKESImage = "minio/kes:2023-02-15T14-54-37Z"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"
