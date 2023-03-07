@@ -152,7 +152,7 @@ const Images = ({ classes }: IImagesProps) => {
           value: prometheusVolumeSize,
           customValidation:
             prometheusVolumeSize === "" || parseInt(prometheusVolumeSize) <= 0,
-          customValidationMessage: `Volume size must be present and be greatter than 0`,
+          customValidationMessage: `Volume size must be present and be greater than 0`,
         },
       ];
     }
@@ -172,7 +172,7 @@ const Images = ({ classes }: IImagesProps) => {
           value: logSearchVolumeSize,
           customValidation:
             logSearchVolumeSize === "" || parseInt(logSearchVolumeSize) <= 0,
-          customValidationMessage: `Volume size must be present and be greatter than 0`,
+          customValidationMessage: `Volume size must be present and be greater than 0`,
         },
       ];
     }
@@ -308,7 +308,7 @@ const Images = ({ classes }: IImagesProps) => {
       <div className={classes.headerElement}>
         <H3Section>Container Images</H3Section>
         <span className={classes.descriptionText}>
-          Specify the container images used by the Tenant and it's features.
+          Specify the container images used by the Tenant and its features.
         </span>
       </div>
 
