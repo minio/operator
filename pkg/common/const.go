@@ -19,6 +19,7 @@ package common
 // Constants for the webhook endpoints
 const (
 	WebhookAPIVersion       = "/webhook/v1"
+	UpgradeServerPort       = "4221"
 	WebhookDefaultPort      = "4222"
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
 )

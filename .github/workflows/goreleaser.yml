@@ -26,8 +26,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
       - name: Set up swagger
         run: |
-          download_url=$(curl -s https://api.github.com/repos/go-swagger/go-swagger/releases/latest | \
-            jq -r '.assets[] | select(.name | contains("'"$(uname | tr '[:upper:]' '[:lower:]')"'_amd64")) | .browser_download_url')
+          download_url="https://github.com/go-swagger/go-swagger/releases/download/v0.30.4/swagger_linux_amd64"
           curl -o /usr/local/bin/swagger -L'#' "$download_url"
           chmod +x /usr/local/bin/swagger
       - name: Run GoReleaser

@@ -23,7 +23,6 @@ import (
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 
@@ -183,9 +182,6 @@ type Controller struct {
 	// currently running operator version
 	operatorVersion string
 
-	// Webhook server instance
-	ws *http.Server
-
 	// HTTP Upgrade server instance
 	us *http.Server
 
@@ -210,6 +206,23 @@ type Controller struct {
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
+}
+
+// EventType is Event type to handle
+type EventType int
+
+// Possible values of EventType
+const (
+	STSServerNotification EventType = iota
+	LeaderElection
+)
+
+// EventNotification - structure to send messages trough a channel regarding a error event to be handled
+type EventNotification struct {
+	// Err the error to handle if any, null when is just a message
+	Err error
+	// Type the event type to handle
+	Type EventType
 }
 
 // NewController returns a new sample controller
@@ -264,9 +277,6 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
 	}
-
-	// Initialize operator webhook handlers
-	controller.ws = configureWebhookServer()
 
 	// Initialize operator HTTP upgrade server handlers
 	controller.us = configureHTTPUpgradeServer()
@@ -344,143 +354,120 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	return controller
 }
 
+// startUpgradeServer Starts the Upgrade tenant API server and notifies the start and stop via notificationChannel returned
+func (c *Controller) startUpgradeServer(ctx context.Context) <-chan error {
+	notificationChannel := make(chan error)
+	go func() {
+		defer close(notificationChannel)
+		klog.Infof("Starting HTTP Upgrade Tenant Image server")
+		if err := c.us.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			// only notify on server failure, on http.ErrServerClosed the channel should be already closed
+			notificationChannel <- err
+		}
+	}()
+	return notificationChannel
+}
+
+// startUpgradeServer Starts the Upgrade tenant API server and notifies the start and stop via notificationChannel
+func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel chan<- *EventNotification) {
+	klog.Infof("Starting STS API server")
+	publicCertPath, publicKeyPath := c.waitSTSTLSCert()
+	certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
+	if err != nil {
+		klog.Errorf("HTTPS STS API server failed to load CA certificate: %v", err)
+		notificationChannel <- &EventNotification{
+			Type: STSServerNotification,
+			Err:  err,
+		}
+	}
+	serverCertsManager = certsManager
+	c.sts.TLSConfig = c.createTLSConfig(serverCertsManager)
+	if err := c.sts.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
+		// only notify on server failure, on http.ErrServerClosed the channel should be already closed
+		notificationChannel <- &EventNotification{
+			Type: STSServerNotification,
+			Err:  err,
+		}
+	}
+}
+
+// leaderRun start the Controller and the API's
+// When a new leader is elected this function is ran in the pod
+func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-chan struct{}) {
+	// we declate the channel to communicate on servers errors
+	var upgradeServerChannel <-chan error
+
+	klog.Info("Waiting for Upgrade Server to start")
+	upgradeServerChannel = c.startUpgradeServer(ctx)
+
+	// Start the informer factories to begin populating the informer caches
+	klog.Info("Starting Tenant controller")
+
+	// Wait for the caches to be synced before starting workers
+	klog.Info("Waiting for informer caches to sync")
+	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
+		panic("failed to wait for caches to sync")
+	}
+
+	klog.Info("Starting workers")
+	// Launch two workers to process Tenant resources
+	for i := 0; i < threadiness; i++ {
+		go wait.Until(c.runWorker, time.Second, stopCh)
+	}
+
+	// Launch a single worker for Health Check reacting to Pod Changes
+	go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
+
+	// Launch a goroutine to monitor all Tenants
+	go c.recurrentTenantStatusMonitor(stopCh)
+
+	// 1) we need to make sure we have console TLS certificates (if enabled)
+	if isOperatorConsoleTLS() {
+		klog.Info("Waiting for Console TLS")
+		go func() {
+			klog.Infof("Console TLS is enabled, starting console TLS certificate setup")
+			err := c.recreateOperatorConsoleCertsIfRequired(ctx)
+			if err != nil {
+				panic(err)
+			}
+			klog.Infof("Restarting Console pods")
+			err = c.rolloutRestartDeployment(getConsoleDeploymentName())
+			if err != nil {
+				klog.Errorf("Console deployment didn't restart: %s", err)
+			}
+		}()
+	} else {
+		klog.Infof("Console TLS is not enabled")
+	}
+
+	// 2) we need to make sure we have STS API certificates (if enabled)
+	if IsSTSEnabled() {
+		go func() {
+			klog.Infof("STS is enabled, starting STS API certificate setup")
+			c.generateSTSTLSCert()
+		}()
+	}
+
+	for {
+		select {
+		case err := <-upgradeServerChannel:
+			if err != http.ErrServerClosed {
+				klog.Errorf("Upgrade Server stopped: %v, going to restart", err)
+				upgradeServerChannel = c.startUpgradeServer(ctx)
+			}
+			// webswerver was instructed to stop, do not attempt to restart
+			continue
+		case <-stopCh:
+			return
+		}
+	}
+}
+
 // Start will set up the event handlers for types we are interested in, as well
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
-	// Start the API and the Controller, but only if this pod is the leader
-	run := func(ctx context.Context) {
-		var wg sync.WaitGroup
-
-		// 1) we need to make sure the API server is ready before starting operator
-		// 2) we need to make sure the HTTP Upgrade server is ready before starting operator
-		wg.Add(2)
-		klog.Info("Waiting for API to start")
-		klog.Info("Waiting for Upgrade Server to start")
-
-		go func() {
-			// Request kubernetes version from Kube ApiServer
-			apiCsrVersion := certificates.GetCertificatesAPIVersion(c.kubeClientSet)
-			klog.Infof("Using Kubernetes CSR Version: %s", apiCsrVersion)
-			if isOperatorTLS() {
-				publicCertPath, publicKeyPath := c.generateOperatorTLSCert()
-				klog.Infof("Starting HTTPS API server")
-				wg.Done()
-				certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
-				if err != nil {
-					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
-					panic(err)
-				}
-				serverCertsManager = certsManager
-				c.ws.TLSConfig = c.createTLSConfig(serverCertsManager)
-
-				if err := c.ws.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
-					klog.Infof("HTTPS server ListenAndServeTLS failed: %v", err)
-					panic(err)
-				}
-			} else {
-				klog.Infof("Starting HTTP API server")
-				wg.Done()
-				// start server without TLS
-				if err := c.ws.ListenAndServe(); err != http.ErrServerClosed {
-					klog.Infof("HTTP server ListenAndServe failed: %v", err)
-					panic(err)
-				}
-			}
-		}()
-
-		go func() {
-			klog.Infof("Starting HTTP Upgrade Tenant Image server")
-			wg.Done()
-			if err := c.us.ListenAndServe(); err != http.ErrServerClosed {
-				klog.Infof("HTTP Upgrade Tenant Image server ListenAndServe failed: %v", err)
-				panic(err)
-			}
-		}()
-
-		if isOperatorConsoleTLS() {
-			// we need to make sure has console TLS certificate (if enabled)
-			klog.Info("Waiting for Console TLS")
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				klog.Infof("Console TLS enabled, starting console TLS certificate setup")
-				err := c.recreateOperatorConsoleCertsIfRequired(ctx)
-				if err != nil {
-					panic(err)
-				}
-				klog.Infof("Restarting Console pods")
-				err = c.rolloutRestartDeployment(getConsoleDeploymentName())
-				if err != nil {
-					klog.Errorf("Console deployment didn't restart: %s", err)
-				}
-			}()
-		} else {
-			klog.Infof("Console TLS is not enabled")
-		}
-
-		if IsSTSEnabled() {
-			// Wait for STS API to be ready before starting operator
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				klog.Infof("STS is enabled, starting STS API certificate setup")
-				c.generateSTSTLSCert()
-			}()
-		}
-
-		wg.Wait()
-
-		// Start the informer factories to begin populating the informer caches
-		klog.Info("Starting Tenant controller")
-
-		// Wait for the caches to be synced before starting workers
-		klog.Info("Waiting for informer caches to sync")
-		if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
-			panic("failed to wait for caches to sync")
-		}
-
-		klog.Info("Starting workers")
-		// Launch two workers to process Tenant resources
-		for i := 0; i < threadiness; i++ {
-			go wait.Until(c.runWorker, time.Second, stopCh)
-		}
-
-		// Launch a single worker for Health Check reacting to Pod Changes
-		go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
-
-		// Launch a goroutine to monitor all Tenants
-		go c.recurrentTenantStatusMonitor(stopCh)
-
-		select {}
-	}
-
-	// runSTS starts the STS API even if the pod is not the leader
-	runSTS := func(ctx context.Context) <-chan interface{} {
-		// stsServerWillStart is a channel for the STS Server API
-		stsServerWillStart := make(chan interface{})
-
-		go func() {
-			klog.Infof("Starting STS API server")
-			close(stsServerWillStart)
-			publicCertPath, publicKeyPath := c.waitSTSTLSCert()
-			certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
-			if err != nil {
-				klog.Infof("STS HTTPS server ListenAndServeTLS failed: %v", err)
-				panic(err)
-			}
-			serverCertsManager = certsManager
-			c.sts.TLSConfig = c.createTLSConfig(serverCertsManager)
-			if err := c.sts.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
-				klog.Infof("STS  HTTPS server ListenAndServeTLS failed: %v", err)
-				panic(err)
-			}
-		}()
-
-		return stsServerWillStart
-	}
-
 	// use a Go context so we can tell the leaderelection code when we
 	// want to step down
 	ctx, cancel := context.WithCancel(context.Background())
@@ -500,6 +487,14 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	leaseLockName := "minio-operator-lock"
 	leaseLockNamespace := miniov2.GetNSFromFile()
 
+	// notificationChannel is a channel to notify errors or events
+	notificationChannel := make(chan *EventNotification)
+	defer close(notificationChannel)
+
+	// Request kubernetes version from Kube ApiServer
+	apiCsrVersion := certificates.GetCertificatesAPIVersion(c.kubeClientSet)
+	klog.Infof("Using Kubernetes CSR Version: %s", apiCsrVersion)
+
 	// we use the Lease lock type since edits to Leases are less common
 	// and fewer objects in the cluster watch "all Leases".
 	lock := &resourcelock.LeaseLock{
@@ -514,84 +509,102 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	if IsSTSEnabled() {
+		// runSTS starts the STS API even if the pod is not the leader
 		klog.Info("Waiting for STS API to start")
-		started := runSTS(ctx)
-		<-started
+		go c.startSTSAPIServer(ctx, notificationChannel)
 	} else {
 		klog.Info("STS Api server is not enabled, not starting")
 	}
 
-	// start the leader election code loop
-	leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
-		Lock: lock,
-		// IMPORTANT: you MUST ensure that any code you have that
-		// is protected by the lease must terminate **before**
-		// you call cancel. Otherwise, you could have a background
-		// loop still running and another process could
-		// get elected before your background loop finished, violating
-		// the stated goal of the lease.
-		ReleaseOnCancel: true,
-		LeaseDuration:   60 * time.Second,
-		RenewDeadline:   15 * time.Second,
-		RetryPeriod:     5 * time.Second,
-		Callbacks: leaderelection.LeaderCallbacks{
-			OnStartedLeading: func(ctx context.Context) {
-				// start the controller + API code
-				run(ctx)
-			},
-			OnStoppedLeading: func() {
-				// we can do cleanup here
-				klog.Infof("leader lost: %s", c.podName)
-				os.Exit(0)
-			},
-			OnNewLeader: func(identity string) {
-				// we're notified when new leader elected
-				if identity == c.podName {
-					klog.Infof("%s: I am the leader, applying leader labels on myself", c.podName)
-					// Patch this pod so the main service uses it
-					p := []patchAnnotation{{
-						Op:    "add",
-						Path:  "/metadata/labels/operator",
-						Value: "leader",
-					}}
+	go func() {
+		// start the leader election code loop
+		leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
+			Lock: lock,
+			// IMPORTANT: you MUST ensure that any code you have that
+			// is protected by the lease must terminate **before**
+			// you call cancel. Otherwise, you could have a background
+			// loop still running and another process could
+			// get elected before your background loop finished, violating
+			// the stated goal of the lease.
+			ReleaseOnCancel: true,
+			LeaseDuration:   60 * time.Second,
+			RenewDeadline:   15 * time.Second,
+			RetryPeriod:     5 * time.Second,
+			Callbacks: leaderelection.LeaderCallbacks{
+				OnStartedLeading: func(ctx context.Context) {
+					// start the controller + API code
+					leaderRun(ctx, c, threadiness, stopCh)
+				},
+				OnStoppedLeading: func() {
+					// we can do cleanup here
+					klog.Infof("leader lost: %s", c.podName)
+				},
+				OnNewLeader: func(identity string) {
+					// we're notified when new leader elected
+					if identity == c.podName {
+						klog.Infof("%s: I am the leader, applying leader labels on myself", c.podName)
+						// Patch this pod so the main service uses it
+						p := []patchAnnotation{{
+							Op:    "add",
+							Path:  "/metadata/labels/operator",
+							Value: "leader",
+						}}
 
-					payloadBytes, err := json.Marshal(p)
-					if err != nil {
-						klog.Errorf("failed to marshal patch: %#v", err)
-					} else {
-						_, err = c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+						payloadBytes, err := json.Marshal(p)
 						if err != nil {
-							klog.Errorf("failed to patch operator leader pod: %+v", err)
+							klog.Errorf("failed to marshal patch: %#v", err)
+						} else {
+							_, err = c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+							if err != nil {
+								klog.Errorf("failed to patch operator leader pod: %+v", err)
+							}
+						}
+					} else {
+						klog.Infof("%s: is the leader, removing any leader labels that I '%s' might have", identity, c.podName)
+						// Patch this pod so the main service uses it
+						p := []patchAnnotation{{
+							Op:   "remove",
+							Path: "/metadata/labels/operator",
+						}}
+
+						payloadBytes, err := json.Marshal(p)
+						if err != nil {
+							klog.Errorf("failed to marshal patch: %#v", err)
+						} else {
+							c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
 						}
 					}
-				} else {
-					klog.Infof("%s: is the leader, removing any leader labels that I '%s' might have", identity, c.podName)
-					// Patch this pod so the main service uses it
-					p := []patchAnnotation{{
-						Op:   "remove",
-						Path: "/metadata/labels/operator",
-					}}
-
-					payloadBytes, err := json.Marshal(p)
-					if err != nil {
-						klog.Errorf("failed to marshal patch: %#v", err)
-					} else {
-						c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
-					}
-				}
+				},
 			},
-		},
-	})
+		})
 
+		notificationChannel <- &EventNotification{
+			Type: LeaderElection,
+			Err:  nil,
+		}
+	}()
+
+	for oerr := range notificationChannel {
+		switch oerr.Type {
+		case STSServerNotification:
+			if !errors.Is(oerr.Err, http.ErrServerClosed) {
+				klog.Errorf("STS API Server stopped: %v, going to restart", oerr.Err)
+				go c.startSTSAPIServer(ctx, notificationChannel)
+			}
+		case LeaderElection:
+			return nil
+		}
+	}
 	return nil
 }
 
 // Stop is called to shutdown the controller
 func (c *Controller) Stop() {
-	klog.Info("Stopping the minio controller webhook")
+	klog.Info("Stopping the minio controller webservers")
 	// Wait upto 5 secs and terminate all connections.
 	tctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	_ = c.ws.Shutdown(tctx)
+	_ = c.us.Shutdown(tctx)
+	_ = c.sts.Shutdown(tctx)
 	cancel()
 
 	klog.Info("Stopping the minio controller")
@@ -1128,15 +1141,12 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 			return err
 		}
-		protocol := "http"
-		// check operator is deployed with TLS enabled and also the MinIO pods has the certificate mounted in ~/.minio/certs/CAs/operator.crt
-		if isOperatorTLS() && operatorTLSCertIsMounted {
-			protocol = "https"
-		}
-		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("%s://operator.%s.svc.%s:%s%s",
-			protocol,
-			miniov2.GetNSFromFile(), miniov2.GetClusterDomain(),
-			common.WebhookDefaultPort, miniov2.WebhookAPIUpdate,
+
+		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
+			miniov2.GetNSFromFile(),
+			miniov2.GetClusterDomain(),
+			common.UpgradeServerPort,
+			miniov2.WebhookAPIUpdate,
 		))
 		if err != nil {
 			_ = c.removeArtifacts()

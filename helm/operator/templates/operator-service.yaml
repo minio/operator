@@ -8,8 +8,8 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - port: 4222
-      name: https
+    - port: 4221
+      name: http
   selector:
     operator: leader
     {{- include "minio-operator.selectorLabels" . | nindent 4 }}
@@ -22,7 +22,7 @@ metadata:
   labels:
     {{- include "minio-operator.labels" . | nindent 4 }}
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 4223
       name: https
