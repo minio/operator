@@ -89,7 +89,6 @@ func main() {
 		Secure:    tenantEndpointURL.Scheme == "https",
 		Transport: httpsTransport,
 	})
-
 	if err != nil {
 		log.Fatalf("Error initializing client: %v", err)
 		panic(1)

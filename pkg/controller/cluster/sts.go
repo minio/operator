@@ -32,6 +32,12 @@ const (
 	// stsRoleArn          = "RoleArn"
 )
 
+// STS API constants
+const (
+	STSDefaultPort = "4223"
+	STSEndpoint    = "/sts"
+)
+
 const (
 	// STSEnabled Env variable name to turn on and off the STS Service is enabled, disabled by default
 	STSEnabled = "OPERATOR_STS_ENABLED"
@@ -251,13 +257,13 @@ func configureSTSServer(c *Controller) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
 	router.Methods(http.MethodPost).
-		Path(miniov2.STSEndpoint + "/{tenantNamespace}").
+		Path(STSEndpoint + "/{tenantNamespace}").
 		HandlerFunc(c.AssumeRoleWithWebIdentityHandler)
 
 	router.NotFoundHandler = http.NotFoundHandler()
 
 	s := &http.Server{
-		Addr:           ":" + miniov2.STSDefaultPort,
+		Addr:           ":" + STSDefaultPort,
 		Handler:        router,
 		ReadTimeout:    time.Minute,
 		WriteTimeout:   time.Minute,

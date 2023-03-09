@@ -72,16 +72,6 @@ type TenantDomains struct {
 	Console string `json:"console,omitempty"`
 }
 
-// S3Features (`s3`) - Object describing which MinIO features to enable/disable in the MinIO Tenant. +
-// *Deprecated in Operator v4.3.2* +
-type S3Features struct {
-	// *Optional* +
-	//
-	// Specify `true` to allow clients to access buckets using the DNS path `<bucket>.minio.default.svc.cluster.local`. Defaults to `false`.
-	//
-	BucketDNS bool `json:"bucketDNS,omitempty"`
-}
-
 // Features (`features`) - Object describing which MinIO features to enable/disable in the MinIO Tenant. +
 type Features struct {
 	// *Optional* +
@@ -250,12 +240,6 @@ type TenantSpec struct {
 	// Startup Probe allows to configure a max grace period for a pod to start before getting traffic routed to it.
 	// +optional
 	Startup *corev1.Probe `json:"startup,omitempty"`
-
-	// *Optional* +
-	// *Deprecated in Operator v4.3.2* +
-	//
-	// S3 related features can be disabled or enabled such as `bucketDNS` etc.
-	S3 *S3Features `json:"s3,omitempty"`
 
 	// S3 related features can be disabled or enabled such as `bucketDNS` etc.
 	Features *Features `json:"features,omitempty"`

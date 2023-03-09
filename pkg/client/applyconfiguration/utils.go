@@ -63,8 +63,6 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &miniominiov2.PoolStatusApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("PrometheusConfig"):
 		return &miniominiov2.PrometheusConfigApplyConfiguration{}
-	case v2.SchemeGroupVersion.WithKind("S3Features"):
-		return &miniominiov2.S3FeaturesApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("ServiceMetadata"):
 		return &miniominiov2.ServiceMetadataApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("SideCars"):

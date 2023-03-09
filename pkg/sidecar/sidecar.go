@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -42,7 +43,7 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
-// StartSideCar instantiates kube clients and starts the side car controller
+// StartSideCar instantiates kube clients and starts the side-car controller
 func StartSideCar(tenantName string, secretName string) {
 	log.Println("Starting Sidecar")
 	cfg, err := rest.InClusterConfig()
@@ -65,14 +66,25 @@ func StartSideCar(tenantName string, secretName string) {
 	}
 
 	controller := NewSideCarController(kubeClient, controllerClient, tenantName, secretName)
+	controller.ws = configureWebhookServer(controller)
 
-	stop := make(chan struct{})
-	defer close(stop)
-	err = controller.Run(stop)
+	stopControllerCh := make(chan struct{})
+
+	defer close(stopControllerCh)
+	err = controller.Run(stopControllerCh)
 	if err != nil {
 		klog.Fatal(err)
 	}
-	select {}
+
+	go func() {
+		if err = controller.ws.ListenAndServe(); err != nil {
+			// if the web server exits,
+			klog.Error(err)
+			close(stopControllerCh)
+		}
+	}()
+
+	<-stopControllerCh
 }
 
 // Controller is the controller holding the informers used to monitor args and tenant structure
@@ -86,6 +98,7 @@ type Controller struct {
 	tenantInformer     v22.TenantInformer
 	namespace          string
 	informerFactory    informers.SharedInformerFactory
+	ws                 *http.Server
 }
 
 // NewSideCarController returns an instance of Controller with the provided clients

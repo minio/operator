@@ -3845,11 +3845,6 @@ spec:
                 type: object
               requestAutoCert:
                 type: boolean
-              s3:
-                properties:
-                  bucketDNS:
-                    type: boolean
-                type: object
               serviceAccountName:
                 type: string
               serviceMetadata:

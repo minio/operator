@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License, version 3,
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package cluster
+package sidecar
 
 import (
 	"net/http"
@@ -21,40 +21,30 @@ import (
 	"github.com/minio/operator/pkg/common"
 
 	"github.com/gorilla/mux"
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
-func configureHTTPUpgradeServer() *http.Server {
-	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
-
-	router.Methods(http.MethodGet).
-		PathPrefix(miniov2.WebhookAPIUpdate).
-		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
-
-	router.NotFoundHandler = http.NotFoundHandler()
-
-	s := &http.Server{
-		Addr:           ":4221",
-		Handler:        router,
-		ReadTimeout:    time.Minute,
-		WriteTimeout:   time.Minute,
-		MaxHeaderBytes: 1 << 20,
+// Used for registering with rest handlers (have a look at registerStorageRESTHandlers for usage example)
+// If it is passed ["aaaa", "bbbb"], it returns ["aaaa", "{aaaa:.*}", "bbbb", "{bbbb:.*}"]
+func restQueries(keys ...string) []string {
+	var accumulator []string
+	for _, key := range keys {
+		accumulator = append(accumulator, key, "{"+key+":.*}")
 	}
-
-	return s
+	return accumulator
 }
 
-func configureWebhookServer() *http.Server {
+func configureWebhookServer(c *Controller) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
-	router.Methods(http.MethodGet).
-		PathPrefix(miniov2.WebhookAPIUpdate).
-		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
+	router.Methods(http.MethodPost).
+		Path(common.WebhookAPIBucketService + "/{namespace}/{name:.+}").
+		HandlerFunc(c.BucketSrvHandler).
+		Queries(restQueries("bucket")...)
 
 	router.NotFoundHandler = http.NotFoundHandler()
 
 	s := &http.Server{
-		Addr:           ":" + common.WebhookDefaultPort,
+		Addr:           "127.0.0.1:" + common.WebhookDefaultPort,
 		Handler:        router,
 		ReadTimeout:    time.Minute,
 		WriteTimeout:   time.Minute,
