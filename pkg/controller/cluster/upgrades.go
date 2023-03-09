@@ -19,7 +19,6 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"regexp"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -37,10 +36,14 @@ import (
 const (
 	version420 = "v4.2.0"
 	version424 = "v4.2.4"
-	version428 = "v4.2.8"
 	version429 = "v4.2.9"
 	version430 = "v4.3.0"
 	version45  = "v4.5"
+)
+
+// Legacy const
+const (
+	WebhookSecret = "operator-webhook-secret"
 )
 
 type upgradeFunction func(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error)
@@ -51,7 +54,6 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 	upgrades := map[string]upgradeFunction{
 		version420: c.upgrade420,
 		version424: c.upgrade424,
-		version428: c.upgrade428,
 		version429: c.upgrade429,
 		version430: c.upgrade430,
 		version45:  c.upgrade45,
@@ -61,7 +63,6 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 	if tenant.Status.SyncVersion == "" {
 		upgradesToDo = append(upgradesToDo, version420)
 		upgradesToDo = append(upgradesToDo, version424)
-		upgradesToDo = append(upgradesToDo, version428)
 		upgradesToDo = append(upgradesToDo, version429)
 		upgradesToDo = append(upgradesToDo, version430)
 		upgradesToDo = append(upgradesToDo, version45)
@@ -74,7 +75,6 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		versionsThatNeedUpgrades := []string{
 			version420,
 			version424,
-			version428,
 			version429,
 			version430,
 			version45,
@@ -133,7 +133,7 @@ func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*m
 	}
 	// delete the previous operator secrets, they may be in a bad state
 	err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx,
-		miniov2.WebhookSecret, metav1.DeleteOptions{})
+		WebhookSecret, metav1.DeleteOptions{})
 	if err != nil {
 		klog.Errorf("Error deleting operator webhook secret, manual deletion is needed: %v", err)
 	}
@@ -188,54 +188,6 @@ func versionCompare(version1 string, version2 string) int {
 		return -1
 	}
 	return vs1.Compare(vs2)
-}
-
-// Upgrades the sync version to v4.2.8
-// we needed to clean `operator-webhook-secrets` with non-alphanumerical characters
-func (c *Controller) upgrade428(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
-	secret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, miniov2.WebhookSecret, metav1.GetOptions{})
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return tenant, err
-	}
-	// this secret not found, means it's a fresh tenant
-	if err == nil {
-
-		unsupportedChars := false
-		re := regexp.MustCompile(`(?m)^[a-zA-Z0-9]+$`)
-
-		// if any of the keys contains non alphanumerical characters,
-		accessKey := string(secret.Data[miniov2.WebhookOperatorUsername])
-		if !re.MatchString(accessKey) {
-			unsupportedChars = true
-		}
-		secretKey := string(secret.Data[miniov2.WebhookOperatorUsername])
-		if !re.MatchString(secretKey) {
-			unsupportedChars = true
-		}
-
-		if unsupportedChars {
-			// delete the secret
-			err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, miniov2.WebhookSecret, metav1.DeleteOptions{})
-			if err != nil && !k8serrors.IsNotFound(err) {
-				return tenant, err
-			}
-			if err == nil {
-				// regen the secret
-				_, err = c.applyOperatorWebhookSecret(ctx, tenant)
-				if err != nil {
-					return tenant, err
-				}
-				// update the revision of the tenant to force a rolling restart across all statefulsets of the tenant
-				tenant, err = c.increaseTenantRevision(ctx, tenant)
-				if err != nil {
-					return tenant, err
-				}
-			}
-
-		}
-	}
-
-	return c.updateTenantSyncVersion(ctx, tenant, version428)
 }
 
 // Upgrades the sync version to v4.2.9

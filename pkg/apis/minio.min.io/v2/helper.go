@@ -37,6 +37,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/minio/operator/pkg/common"
+
 	"github.com/miekg/dns"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -54,22 +56,9 @@ import (
 
 // Webhook API constants
 const (
-	WebhookAPIVersion       = "/webhook/v1"
-	WebhookDefaultPort      = "4222"
-	WebhookSecret           = "operator-webhook-secret"
-	WebhookOperatorUsername = "webhookUsername"
-	WebhookOperatorPassword = "webhookPassword"
-
-	// Webhook environment variable constants
-	WebhookMinIOArgs   = "MINIO_ARGS"
-	WebhookMinIOBucket = "MINIO_DNS_WEBHOOK_ENDPOINT"
-
 	MinIOServerURL          = "MINIO_SERVER_URL"
 	MinIODomain             = "MINIO_DOMAIN"
 	MinIOBrowserRedirectURL = "MINIO_BROWSER_REDIRECT_URL"
-
-	MinIORootUser     = "MINIO_ROOT_USER"
-	MinIORootPassword = "MINIO_ROOT_PASSWORD"
 
 	defaultPrometheusJWTExpiry = 100 * 365 * 24 * time.Hour
 )
@@ -87,16 +76,7 @@ func envGet(key, defaultValue string) string {
 
 // List of webhook APIs
 const (
-	WebhookAPIGetenv        = WebhookAPIVersion + "/getenv"
-	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
-	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
-	WebhookCRDConversaion   = WebhookAPIVersion + "/crd-conversion"
-)
-
-// STS API constants
-const (
-	STSDefaultPort = "4223"
-	STSEndpoint    = "/sts"
+	WebhookAPIUpdate = common.WebhookAPIVersion + "/update"
 )
 
 type hostsTemplateValues struct {
@@ -560,8 +540,7 @@ func (t *Tenant) KESServiceHost() string {
 
 // BucketDNS indicates if Bucket DNS feature is enabled.
 func (t *Tenant) BucketDNS() bool {
-	// we've deprecated .spec.s3 and will top working in future releases of operator
-	return (t.Spec.Features != nil && t.Spec.Features.BucketDNS) || (t.Spec.S3 != nil && t.Spec.S3.BucketDNS)
+	return (t.Spec.Features != nil && t.Spec.Features.BucketDNS)
 }
 
 // HasKESEnabled checks if kes configuration is provided by user

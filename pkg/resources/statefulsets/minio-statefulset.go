@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/minio/operator/pkg/common"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +29,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
+)
+
+const (
+	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
 )
 
 // Adds required Console environment variables
@@ -103,16 +109,14 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 	// Enable Bucket DNS only if asked for by default turned off
 	if t.BucketDNS() {
 		domains = append(domains, t.MinIOBucketBaseDomain())
-		envVarsMap[miniov2.WebhookMinIOBucket] = corev1.EnvVar{
-			Name: miniov2.WebhookMinIOBucket,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: miniov2.WebhookSecret,
-					},
-					Key: miniov2.WebhookMinIOArgs,
-				},
-			},
+		sidecarBucketURL := fmt.Sprintf("http://127.0.0.1:%s%s/%s/%s",
+			common.WebhookDefaultPort,
+			common.WebhookAPIBucketService,
+			t.Namespace,
+			t.Name)
+		envVarsMap[bucketDNSEnv] = corev1.EnvVar{
+			Name:  bucketDNSEnv,
+			Value: sidecarBucketURL,
 		}
 	}
 	// Check if any domains are configured
@@ -318,7 +322,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, operatorTLS bool, certV
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov2.Tenant, wsSecret *v1.Secret, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool, certVolumeSources []v1.VolumeProjection) v1.Container {
+func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, operatorTLS bool, certVolumeSources []v1.VolumeProjection) v1.Container {
 	consolePort := miniov2.ConsolePort
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
@@ -454,7 +458,6 @@ const CfgVol = "cfg-vol"
 // NewPoolArgs arguments used to create a new pool
 type NewPoolArgs struct {
 	Tenant          *miniov2.Tenant
-	WsSecret        *v1.Secret
 	SkipEnvVars     map[string][]byte
 	Pool            *miniov2.Pool
 	PoolStatus      *miniov2.PoolStatus
@@ -469,7 +472,6 @@ type NewPoolArgs struct {
 // NewPool creates a new StatefulSet for the given Cluster.
 func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	t := args.Tenant
-	wsSecret := args.WsSecret
 	skipEnvVars := args.SkipEnvVars
 	pool := args.Pool
 	poolStatus := args.PoolStatus
@@ -825,7 +827,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	}
 
 	containers := []corev1.Container{
-		poolMinioServerContainer(t, wsSecret, skipEnvVars, pool, hostsTemplate, operatorVersion, operatorTLS, certVolumeSources),
+		poolMinioServerContainer(t, skipEnvVars, pool, hostsTemplate, operatorVersion, operatorTLS, certVolumeSources),
 		getSideCarContainer(t, operatorImage),
 	}
 

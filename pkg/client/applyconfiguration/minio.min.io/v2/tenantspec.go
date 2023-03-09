@@ -43,7 +43,6 @@ type TenantSpecApplyConfiguration struct {
 	Liveness                  *v1.Probe                                    `json:"liveness,omitempty"`
 	Readiness                 *v1.Probe                                    `json:"readiness,omitempty"`
 	Startup                   *v1.Probe                                    `json:"startup,omitempty"`
-	S3                        *S3FeaturesApplyConfiguration                `json:"s3,omitempty"`
 	Features                  *FeaturesApplyConfiguration                  `json:"features,omitempty"`
 	CertConfig                *CertificateConfigApplyConfiguration         `json:"certConfig,omitempty"`
 	KES                       *KESConfigApplyConfiguration                 `json:"kes,omitempty"`
@@ -215,14 +214,6 @@ func (b *TenantSpecApplyConfiguration) WithReadiness(value v1.Probe) *TenantSpec
 // If called multiple times, the Startup field is set to the value of the last call.
 func (b *TenantSpecApplyConfiguration) WithStartup(value v1.Probe) *TenantSpecApplyConfiguration {
 	b.Startup = &value
-	return b
-}
-
-// WithS3 sets the S3 field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the S3 field is set to the value of the last call.
-func (b *TenantSpecApplyConfiguration) WithS3(value *S3FeaturesApplyConfiguration) *TenantSpecApplyConfiguration {
-	b.S3 = value
 	return b
 }
 

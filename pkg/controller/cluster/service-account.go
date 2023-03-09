@@ -123,6 +123,19 @@ func getTenantRole(tenant *miniov2.Tenant) *rbacv1.Role {
 			},
 			{
 				APIGroups: []string{
+					"",
+				},
+				Resources: []string{
+					"services",
+				},
+				Verbs: []string{
+					"create",
+					"delete",
+					"get",
+				},
+			},
+			{
+				APIGroups: []string{
 					"minio.min.io",
 				},
 				Resources: []string{

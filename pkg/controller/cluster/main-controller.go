@@ -27,6 +27,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/common"
+
 	xcerts "github.com/minio/pkg/certs"
 
 	"github.com/minio/operator/pkg/controller/cluster/certificates"
@@ -48,10 +50,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -266,10 +266,10 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	}
 
 	// Initialize operator webhook handlers
-	controller.ws = configureWebhookServer(controller)
+	controller.ws = configureWebhookServer()
 
 	// Initialize operator HTTP upgrade server handlers
-	controller.us = configureHTTPUpgradeServer(controller)
+	controller.us = configureHTTPUpgradeServer()
 
 	// Initialize STS API server handlers
 	controller.sts = configureSTSServer(controller)
@@ -342,29 +342,6 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	})
 
 	return controller
-}
-
-func getSecretForTenant(tenant *miniov2.Tenant, accessKey, secretKey string) *v1.Secret {
-	secret := &corev1.Secret{
-		Type: "Opaque",
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      miniov2.WebhookSecret,
-			Namespace: tenant.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-					Group:   miniov2.SchemeGroupVersion.Group,
-					Version: miniov2.SchemeGroupVersion.Version,
-					Kind:    miniov2.MinIOCRDResourceKind,
-				}),
-			},
-		},
-		Data: map[string][]byte{
-			miniov2.WebhookOperatorUsername: []byte(accessKey),
-			miniov2.WebhookOperatorPassword: []byte(secretKey),
-			miniov2.WebhookMinIOArgs:        secretData(tenant, accessKey, secretKey),
-		},
-	}
-	return secret
 }
 
 // Start will set up the event handlers for types we are interested in, as well
@@ -814,11 +791,6 @@ func (c *Controller) syncHandler(key string) error {
 		klog.V(2).Infof(err.Error())
 	}
 
-	secret, err := c.applyOperatorWebhookSecret(ctx, tenant)
-	if err != nil {
-		return err
-	}
-
 	// In case the operator certificate is removed or expired, re-create them
 	if err := c.recreateOperatorCertsIfRequired(ctx); err != nil {
 		return err
@@ -994,7 +966,6 @@ func (c *Controller) syncHandler(key string) error {
 			}
 			ss = statefulsets.NewPool(&statefulsets.NewPoolArgs{
 				Tenant:          tenant,
-				WsSecret:        secret,
 				SkipEnvVars:     skipEnvVars,
 				Pool:            &pool,
 				PoolStatus:      &tenant.Status.Pools[i],
@@ -1165,7 +1136,7 @@ func (c *Controller) syncHandler(key string) error {
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("%s://operator.%s.svc.%s:%s%s",
 			protocol,
 			miniov2.GetNSFromFile(), miniov2.GetClusterDomain(),
-			miniov2.WebhookDefaultPort, miniov2.WebhookAPIUpdate,
+			common.WebhookDefaultPort, miniov2.WebhookAPIUpdate,
 		))
 		if err != nil {
 			_ = c.removeArtifacts()
@@ -1231,7 +1202,6 @@ func (c *Controller) syncHandler(key string) error {
 			// Now proceed to make the yaml changes for the tenant statefulset.
 			ss := statefulsets.NewPool(&statefulsets.NewPoolArgs{
 				Tenant:          tenant,
-				WsSecret:        secret,
 				SkipEnvVars:     skipEnvVars,
 				Pool:            &pool,
 				PoolStatus:      &tenant.Status.Pools[i],
@@ -1283,7 +1253,6 @@ func (c *Controller) syncHandler(key string) error {
 		// generated the expected StatefulSet based on the new tenant configuration
 		expectedStatefulSet := statefulsets.NewPool(&statefulsets.NewPoolArgs{
 			Tenant:          tenant,
-			WsSecret:        secret,
 			SkipEnvVars:     skipEnvVars,
 			Pool:            &pool,
 			PoolStatus:      &tenant.Status.Pools[i],
