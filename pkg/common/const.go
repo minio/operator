@@ -22,4 +22,5 @@ const (
 	UpgradeServerPort       = "4221"
 	WebhookDefaultPort      = "4222"
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
+	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
 )

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package cluster
+package controller
 
 //lint:file-ignore ST1005 Incorrectly formatted error string
 
@@ -27,6 +27,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/minio/operator/pkg/common"
 
 	"github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	iampolicy "github.com/minio/pkg/iam/policy"
@@ -42,7 +44,7 @@ import (
 
 // Supported remote envs
 const (
-	updatePath = "/tmp" + miniov2.WebhookAPIUpdate + slashSeparator
+	updatePath = "/tmp" + common.WebhookAPIUpdate + slashSeparator
 )
 
 const contextLogKey = contextKeyType("operatorlog")

@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License, version 3,
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package cluster
+package controller
 
 import (
 	"bytes"
@@ -31,7 +31,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/minio/operator/pkg/controller/cluster/certificates"
+	"github.com/minio/operator/pkg/controller/certificates"
 
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

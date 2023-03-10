@@ -23,6 +23,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg"
+
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/minio/minio-go/v7/pkg/set"
@@ -32,7 +34,6 @@ import (
 
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
-	"github.com/minio/operator/pkg/controller/cluster"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -44,9 +45,6 @@ const (
 	// HostnameEnv Host name env variable
 	HostnameEnv = "HOSTNAME"
 )
-
-// version provides the version of this operator
-var version = "DEVELOPMENT.GOGET"
 
 var (
 	masterURL     string
@@ -76,7 +74,7 @@ func StartOperator() {
 	flag.Parse()
 
 	if checkVersion {
-		fmt.Println(version)
+		fmt.Println(pkg.Version)
 		return
 	}
 
@@ -128,7 +126,7 @@ func StartOperator() {
 		podName = "operator-pod"
 	}
 
-	mainController := cluster.NewController(
+	mainController := NewController(
 		podName,
 		namespaces,
 		kubeClient,
@@ -141,7 +139,7 @@ func StartOperator() {
 		minioInformerFactory.Sts().V1alpha1().PolicyBindings(),
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,
-		version,
+		pkg.Version,
 	)
 
 	go kubeInformerFactory.Start(stopCh)
