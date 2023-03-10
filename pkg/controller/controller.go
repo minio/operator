@@ -17,12 +17,13 @@ package controller
 import (
 	"flag"
 	"fmt"
-	"github.com/minio/operator/pkg"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/minio/operator/pkg"
 
 	"k8s.io/client-go/tools/clientcmd"
 

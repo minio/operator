@@ -28,6 +28,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/minio/operator/pkg/common"
+
 	"github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	iampolicy "github.com/minio/pkg/iam/policy"
 
@@ -42,7 +44,7 @@ import (
 
 // Supported remote envs
 const (
-	updatePath = "/tmp" + miniov2.WebhookAPIUpdate + slashSeparator
+	updatePath = "/tmp" + common.WebhookAPIUpdate + slashSeparator
 )
 
 const contextLogKey = contextKeyType("operatorlog")

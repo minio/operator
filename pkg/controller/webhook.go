@@ -21,15 +21,14 @@ import (
 	"github.com/minio/operator/pkg/common"
 
 	"github.com/gorilla/mux"
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
 func configureHTTPUpgradeServer() *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
 	router.Methods(http.MethodGet).
-		PathPrefix(miniov2.WebhookAPIUpdate).
-		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
+		PathPrefix(common.WebhookAPIUpdate).
+		Handler(http.StripPrefix(common.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
 
 	router.NotFoundHandler = http.NotFoundHandler()
 

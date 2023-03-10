@@ -37,8 +37,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/minio/operator/pkg/common"
-
 	"github.com/miekg/dns"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -73,11 +71,6 @@ func envGet(key, defaultValue string) string {
 	}
 	return defaultValue
 }
-
-// List of webhook APIs
-const (
-	WebhookAPIUpdate = common.WebhookAPIVersion + "/update"
-)
 
 type hostsTemplateValues struct {
 	StatefulSet string

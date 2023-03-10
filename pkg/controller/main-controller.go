@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/common"
+
 	xcerts "github.com/minio/pkg/certs"
 
 	"github.com/minio/operator/pkg/controller/certificates"
@@ -1144,7 +1146,7 @@ func (c *Controller) syncHandler(key string) error {
 			miniov2.GetNSFromFile(),
 			miniov2.GetClusterDomain(),
 			common.UpgradeServerPort,
-			miniov2.WebhookAPIUpdate,
+			common.WebhookAPIUpdate,
 		))
 		if err != nil {
 			_ = c.removeArtifacts()
