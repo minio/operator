@@ -34,27 +34,7 @@ func configureHTTPUpgradeServer() *http.Server {
 	router.NotFoundHandler = http.NotFoundHandler()
 
 	s := &http.Server{
-		Addr:           ":4221",
-		Handler:        router,
-		ReadTimeout:    time.Minute,
-		WriteTimeout:   time.Minute,
-		MaxHeaderBytes: 1 << 20,
-	}
-
-	return s
-}
-
-func configureWebhookServer() *http.Server {
-	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
-
-	router.Methods(http.MethodGet).
-		PathPrefix(miniov2.WebhookAPIUpdate).
-		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
-
-	router.NotFoundHandler = http.NotFoundHandler()
-
-	s := &http.Server{
-		Addr:           ":" + common.WebhookDefaultPort,
+		Addr:           ":" + common.UpgradeServerPort,
 		Handler:        router,
 		ReadTimeout:    time.Minute,
 		WriteTimeout:   time.Minute,
