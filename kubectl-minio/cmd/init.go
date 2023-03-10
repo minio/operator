@@ -81,6 +81,7 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&o.operatorOpts.ImagePullSecret, "image-pull-secret", "", "image pull secret to be used for pulling MinIO Operator")
 	f.StringVar(&o.operatorOpts.ConsoleImage, "console-image", "", "console image")
 	f.BoolVar(&o.operatorOpts.ConsoleTLS, "console-tls", false, "enable tls for Operator console")
+	f.BoolVar(&o.operatorOpts.STS, "sts", false, "enable Operator sts (v1alpha1)")
 	f.StringVar(&o.operatorOpts.TenantMinIOImage, "default-minio-image", "", "default tenant MinIO image")
 	f.StringVar(&o.operatorOpts.TenantConsoleImage, "default-console-image", "", "default tenant Console image")
 	f.StringVar(&o.operatorOpts.TenantKesImage, "default-kes-image", "", "default tenant KES image")
@@ -239,6 +240,16 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			Op:    "replace",
 			Path:  "/spec/template/spec/containers/0/image",
 			Value: o.operatorOpts.ConsoleImage,
+		})
+	}
+	if o.operatorOpts.STS {
+		operatorDepPatches = append(operatorDepPatches, opInterface{
+			Op:   "add",
+			Path: "/spec/template/spec/containers/0/env/0",
+			Value: corev1.EnvVar{
+				Name:  "OPERATOR_STS_ENABLED",
+				Value: "on",
+			},
 		})
 	}
 	// attach the patches to the kustomization file
