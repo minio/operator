@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License, version 3,
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package cluster
+package controller
 
 import (
 	"context"
@@ -26,11 +26,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/minio/operator/pkg/common"
-
 	xcerts "github.com/minio/pkg/certs"
 
-	"github.com/minio/operator/pkg/controller/cluster/certificates"
+	"github.com/minio/operator/pkg/controller/certificates"
 
 	"k8s.io/klog/v2"
 

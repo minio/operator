@@ -1,4 +1,4 @@
-// Copyright (C) 2022, MinIO, Inc.
+// Copyright (C) 2020, MinIO, Inc.
 //
 // This code is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License, version 3,
@@ -12,15 +12,34 @@
 // You should have received a copy of the GNU Affero General Public License, version 3,
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package cluster
+package controller
 
 import (
-	"context"
+	"net/http"
+	"time"
 
+	"github.com/minio/operator/pkg/common"
+
+	"github.com/gorilla/mux"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
-// RegisterEvent creates an event for a given tenant
-func (c *Controller) RegisterEvent(ctx context.Context, tenant *miniov2.Tenant, eventType, reason, message string) {
-	c.recorder.Event(tenant, eventType, reason, message)
+func configureHTTPUpgradeServer() *http.Server {
+	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
+
+	router.Methods(http.MethodGet).
+		PathPrefix(miniov2.WebhookAPIUpdate).
+		Handler(http.StripPrefix(miniov2.WebhookAPIUpdate, http.FileServer(http.Dir(updatePath))))
+
+	router.NotFoundHandler = http.NotFoundHandler()
+
+	s := &http.Server{
+		Addr:           ":" + common.UpgradeServerPort,
+		Handler:        router,
+		ReadTimeout:    time.Minute,
+		WriteTimeout:   time.Minute,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	return s
 }
