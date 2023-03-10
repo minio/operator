@@ -1,7 +1,7 @@
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
-  name: storage
+  name: myminio
   namespace: minio-tenant
 spec:
   ## Disable default tls certificates.
@@ -17,10 +17,10 @@ spec:
     image: minio/kes:v0.17.6
     imagePullPolicy: IfNotPresent
     kesSecret:
-      name: storage-certmanager-secret-kes-configuration
+      name: kes-configuration
     keyName: my-minio-key
     replicas: 1
-    resources: {}
+    resources: { }
     securityContext:
       fsGroup: 1000
       fsGroupChangePolicy: Always

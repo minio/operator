@@ -5,11 +5,3 @@ namespace: minio-tenant-1
 
 resources:
   - ../../tenant-certmanager
-
-patchesJson6902:
-  - target:
-      group: minio.min.io
-      version: v2
-      kind: Tenant
-      name: storage-certmanager
-    path: tenantNamePatch.yaml

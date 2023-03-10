@@ -24,7 +24,7 @@ source "${SCRIPT_DIR}/common.sh"
 lower_version="$1"
 upper_version="$2"
 namespace="tenant-lite"
-tenant="storage-lite"
+tenant="myminio"
 bucket="data"
 dummy="dummy.data"
 localport="9000"
@@ -130,9 +130,9 @@ function main() {
 
   # After opreator upgrade, there's a rolling restart
   echo "Waiting for rolling restart to complete"
-  kubectl -n tenant-lite rollout status sts/storage-lite-pool-0
+  kubectl -n tenant-lite rollout status sts/myminio-pool-0
   
-  check_tenant_status tenant-lite storage-lite
+  check_tenant_status tenant-lite myminio
 
   download_dummy_data
 

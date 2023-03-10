@@ -21,14 +21,14 @@ export SCRIPT_DIR
 source "${SCRIPT_DIR}/common.sh"
 
 function wait_on_prometheus_pods() {
-  echo "waiting for storage-lite-prometheus-0"
+  echo "waiting for myminio-prometheus-0"
   i=0
-  while [[ $(kubectl get pods -n tenant-lite --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do
+  while [[ $(kubectl get pods -n tenant-lite --selector=statefulset.kubernetes.io/pod-name=myminio-prometheus-0 -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do
     ((i++))
 
     mod=$((i % 12))
     if [[ $mod -eq 0 ]]; then
-      echo "waiting for storage-lite-prometheus-0"
+      echo "waiting for myminio-prometheus-0"
     fi
     sleep 1
     if [[ $i -eq 300 ]]; then
@@ -49,7 +49,7 @@ function main() {
 
   install_tenant "prometheus"
 
-  check_tenant_status tenant-lite storage-lite
+  check_tenant_status tenant-lite myminio
 
   try kubectl get pods --namespace tenant-lite
 
@@ -58,9 +58,9 @@ function main() {
   echo 'end - wait for prometheus to appear'
 
   echo "make sure there's no rolling restart going"
-  kubectl -n tenant-lite rollout status sts/storage-lite-pool-0
+  kubectl -n tenant-lite rollout status sts/myminio-pool-0
 
-  port_forward tenant-lite storage-lite storage-lite-console 9443
+  port_forward tenant-lite myminio myminio-console 9443
 
   echo 'Get token from MinIO Console'
   COOKIE=$(
@@ -78,7 +78,7 @@ function main() {
 
   try kubectl wait --namespace tenant-lite \
     --for=condition=ready pod \
-    --selector=statefulset.kubernetes.io/pod-name=storage-lite-prometheus-0 \
+    --selector=statefulset.kubernetes.io/pod-name=myminio-prometheus-0 \
     --timeout=300s
   echo 'end - wait for prometheus to be ready'
 

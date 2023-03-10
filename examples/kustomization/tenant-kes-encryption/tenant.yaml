@@ -1,7 +1,7 @@
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
-  name: storage
+  name: myminio
   namespace: minio-tenant
 spec:
   ## Define configuration for KES (stateless and distributed key-management system)

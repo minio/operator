@@ -1,4 +1,0 @@
-- op: replace
-  path: /metadata/name
-  value: storage-certmanager
-

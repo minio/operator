@@ -1,6 +1,8 @@
 # Tenant deployment examples with kustomize
 
-This document explains various yaml files listed in the [examples directory](https://github.com/minio/operator/tree/master/examples/kustomization) used to deploy a Tenant using MinIO Operator.
+This document explains various yaml files listed in
+the [examples directory](https://github.com/minio/operator/tree/master/examples/kustomization) used to deploy a Tenant
+using MinIO Operator.
 
 ### Prerequisites
 
@@ -8,7 +10,8 @@ This document explains various yaml files listed in the [examples directory](htt
 
 ## MinIO Tenant with AutoCert TLS
 
-MinIO Operator can automatically generate TLS secrets and mount these secrets to the MinIO, Console, and/or KES pods (enabled by default). To disable this, set the `requestAutoCert` field to `false`.
+MinIO Operator can automatically generate TLS secrets and mount these secrets to the MinIO, Console, and/or KES pods (
+enabled by default). To disable this, set the `requestAutoCert` field to `false`.
 
 You can deploy the pre-configured example by running the following command:
 
@@ -35,14 +38,16 @@ This example will deploy a MinIO tenant with Server Side Encryption using KES an
 - Enable role auth: `vault auth enable approle`
 - Enable secrets k/v: `vault secrets enable kv`
 - Create a new `KES` policy: `vault policy write kes-policy examples/vault/kes-policy.hcl`
-- Create a new `KES` role based on the `KES` policy: `vault write auth/approle/role/kes-role token_num_uses=0 secret_id_num_uses=0 period=5m policies=kes-policy`
+- Create a new `KES` role based on the `KES`
+  policy: `vault write auth/approle/role/kes-role token_num_uses=0 secret_id_num_uses=0 period=5m policies=kes-policy`
 - Get the `app-role-id` and write it down: `vault read auth/approle/role/kes-role/role-id`
 - Get the `app-role-secret-id` and write it down: `vault write -f auth/approle/role/kes-role/secret-id`
 
 ### Getting Started
 
 - Open `examples/kustomization/tenant-kes-encryption/kes-configuration-secret.yaml`
-- In the  `Vault` configuration replace `<YOUR APPROLE ID HERE>` for your `app-role-id`, `<YOUR APPROLE SECRET ID HERE>` for your `app-role-secret-id`.
+- In the  `Vault` configuration replace `<YOUR APPROLE ID HERE>` for your `app-role-id`, `<YOUR APPROLE SECRET ID HERE>`
+  for your `app-role-secret-id`.
 
 You can deploy a preconfigured example by running the following command:
 
@@ -67,24 +72,27 @@ This example will deploy a MinIO tenant with TLS using certificates provided by 
 
 ### Prerequisites
 
-- You can generate certificates using `Vault CA`, `Openssl` or `Mkcert`, for this example we will use https://github.com/FiloSottile/mkcert
-- Assuming your Tenant name is `storage` and your namespace is `minio-tenant` you should generate the following certificate keypairs:
+- You can generate certificates using `Vault CA`, `Openssl` or `Mkcert`, for this example we will
+  use https://github.com/FiloSottile/mkcert
+- Assuming your Tenant name is `myminio` and your namespace is `minio-tenant` you should generate the following
+  certificate keypairs:
 
   ```sh
     mkcert "*.minio-tenant.svc.cluster.local"
-    mkcert "*.storage.minio-tenant.svc.cluster.local"
-    mkcert "*.storage-hl.minio-tenant.svc.cluster.local"
+    mkcert "*.myminio.minio-tenant.svc.cluster.local"
+    mkcert "*.myminio-hl.minio-tenant.svc.cluster.local"
   ```
-  
-`MinIO` will use `*.minio-tenant.svc.cluster.local`, `*.storage.minio-tenant.svc.cluster.local` and `*.storage-hl.minio-tenant.svc.cluster.local` certificates for
+
+`MinIO` will use `*.minio-tenant.svc.cluster.local`, `*.myminio.minio-tenant.svc.cluster.local`
+and `*.myminio-hl.minio-tenant.svc.cluster.local` certificates for
 inter-node communication.
 
 Create `kubernetes secrets`  based on the previous certificates
 
 ```$xslt
 kubectl create secret tls minio-tls-cert --key="_wildcard.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.minio-tenant.svc.cluster.local.pem" -n minio-tenant
-kubectl create secret tls minio-buckets-cert --key="_wildcard.storage.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.storage.minio-tenant.svc.cluster.local.pem" -n minio-tenant
-kubectl create secret tls minio-hl-cert --key="_wildcard.storage-hl.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.storage-hl.minio-tenant.svc.cluster.local.pem" -n minio-tenant
+kubectl create secret tls minio-buckets-cert --key="_wildcard.myminio.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.myminio.minio-tenant.svc.cluster.local.pem" -n minio-tenant
+kubectl create secret tls minio-hl-cert --key="_wildcard.myminio-hl.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.myminio-hl.minio-tenant.svc.cluster.local.pem" -n minio-tenant
 ```
 
 You need to provide those `kubernetes secrets` in your Tenant `YAML` overlay using the `externalCertSecret` fields, ie:
@@ -104,25 +112,32 @@ You can deploy a preconfigured example by running the following command:
 ```$xslt
 kustomize build examples/kustomization/base | kubectl apply -f -
 ```
-You can include all the certificates that you want in your Tenant and `MinIO` will serve them to its client via [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication) 
+
+You can include all the certificates that you want in your Tenant and `MinIO` will serve them to its client
+via [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication)
 
 ## MinIO Tenant with TLS via customer provided certificates and Encryption enabled via Vault KMS
 
-This example will deploy a minio tenant using mTLS certificates (authentication between `MinIO` and `KES`) provided by the user, the data will be encrypted at rest
+This example will deploy a minio tenant using mTLS certificates (authentication between `MinIO` and `KES`) provided by
+the user, the data will be encrypted at rest
 
 ### Prerequisites
 
 - Configure `Vault` the same way as in the first example
 - Set the `app-role-id`, the `app-role-secret-id` and `key-prefix` in your KES configuration `YAML` file
-- Assuming your Tenant name is `storage-kms-encrypted` and namespace is `tenant-kms-encrypted` create all the certificates and secrets as in the previous step
-- Generate new `KES` identity keypair (https://github.com/minio/kes), this is needed it for the authentication, `mTLS` between `MinIO` and `KES`:
+- Assuming your Tenant name is `myminio` and namespace is `tenant-kms-encrypted` create all the certificates and
+  secrets as in the previous step
+- Generate new `KES` identity keypair (https://github.com/minio/kes), this is needed it for the authentication, `mTLS`
+  between `MinIO` and `KES`:
 
   ```sh
     kes tool identity new --key="./app.key" --cert="app.cert" app
   ```
 
-- Using the generated `app.key` and `app.cert` create a new kubernetes secret: `kubectl create secret tls minio-kes-mtls --key="app.key" --cert="app.cert"` -n tenant-kms-encrypted
-  and provide that secret in the `externalClientCertSecret` field of your tenant `YAML` overlay (if the field doesn't exist add it)
+- Using the generated `app.key` and `app.cert` create a new kubernetes
+  secret: `kubectl create secret tls minio-kes-mtls --key="app.key" --cert="app.cert"` -n tenant-kms-encrypted
+  and provide that secret in the `externalClientCertSecret` field of your tenant `YAML` overlay (if the field doesn't
+  exist add it)
 
   ```$xslt
   spec:
@@ -133,7 +148,8 @@ This example will deploy a minio tenant using mTLS certificates (authentication 
   ```
 
 - Calculate the `app.cert` identity using `KES`: `kes tool identity of app.cert`, copy the resulting hash and open your
-  KES configuration `YAML` (`kes-configuration-secret.yaml`) file and replace `${MINIO_KES_IDENTITY}` for the `bda5d8b6531d2f3bcd64e5ec73841bcb23ecb57b19c5f814e491ea2b2088995c` string, you can
+  KES configuration `YAML` (`kes-configuration-secret.yaml`) file and replace `${MINIO_KES_IDENTITY}` for
+  the `bda5d8b6531d2f3bcd64e5ec73841bcb23ecb57b19c5f814e491ea2b2088995c` string, you can
   add additional identities using this array, ie:
 
   ```$xslt
@@ -146,7 +162,7 @@ This example will deploy a minio tenant using mTLS certificates (authentication 
         identities:
         - bda5d8b6531d2f3bcd64e5ec73841bcb23ecb57b19c5f814e491ea2b2088995c
   ```
-  
+
 ### Getting Started
 
 You can deploy a pre-configured example by running the following command:
@@ -158,8 +174,10 @@ kustomize build examples/kustomization/tenant-kes-encryption | kubectl apply -f 
 ## MinIO Tenant with Services expose through NodePort
 
 MinIO Operator can automatically generate `LoadBalancer` and `ClusterIP` type services when deploying tenants, however
-there is one more way to expose your services in case you don't want to deal with `load balancers` or `ingress` configurations and
-that is `NodePort`. NodePort type services will be accessible by opening a port on each Kubernetes cluster node, read more about [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport).
+there is one more way to expose your services in case you don't want to deal with `load balancers` or `ingress`
+configurations and
+that is `NodePort`. NodePort type services will be accessible by opening a port on each Kubernetes cluster node, read
+more about [NodePort](https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport).
 
 ```$xslt
 kustomize build examples/kustomization/tenant-nodeport  | kubectl apply -f -
@@ -167,4 +185,7 @@ kustomize build examples/kustomization/tenant-nodeport  | kubectl apply -f -
 
 ### Additional Examples
 
-For additional examples on how to deploy a tenant with [LDAP](https://min.io/docs/minio/kubernetes/upstream/operations/external-iam/configure-ad-ldap-external-identity-management.html) or [OIDC](https://min.io/docs/minio/kubernetes/upstream/operations/external-iam/configure-openid-external-identity-management.html) you can look at the [examples directory](https://github.com/minio/operator/tree/master/examples/kustomization)
+For additional examples on how to deploy a tenant
+with [LDAP](https://min.io/docs/minio/kubernetes/upstream/operations/external-iam/configure-ad-ldap-external-identity-management.html)
+or [OIDC](https://min.io/docs/minio/kubernetes/upstream/operations/external-iam/configure-openid-external-identity-management.html)
+you can look at the [examples directory](https://github.com/minio/operator/tree/master/examples/kustomization)

@@ -1,7 +1,7 @@
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
-  name: storage
+  name: myminio
   namespace: minio-tenant
 spec:
   ## Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)

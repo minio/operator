@@ -31,7 +31,7 @@ function install_tenants() {
 	waitdone=0
 	totalwait=0
 	while true; do
-	waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=storage-lite --no-headers | wc -l)
+	waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=myminio --no-headers | wc -l)
 	if [ "$waitdone" -ne 0 ]; then
 	    echo "Found $waitdone pods"
 	    break
@@ -47,7 +47,7 @@ function install_tenants() {
 	echo "Waiting for tenant pods to come online (5m timeout)"
 	try kubectl wait --namespace tenant-lite \
 	--for=condition=ready pod \
-	--selector="v1.min.io/tenant=storage-lite" \
+	--selector="v1.min.io/tenant=myminio" \
 	--timeout=300s
 
 	echo "Build passes basic tenant creation"
@@ -59,7 +59,7 @@ function main() {
 	setup_kind
 	install_operator
 	install_tenants
-	check_tenant_status tenant-lite storage-lite
+	check_tenant_status tenant-lite myminio
 	kubectl proxy &
 	# Beginning  Kubernetes 1.24 ----> Service Account Token Secrets are not 
 	# automatically generated, to generate them manually, users must manually
