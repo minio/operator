@@ -30,4 +30,5 @@ type OperatorOptions struct {
 	TenantKesImage      string
 	PrometheusNamespace string
 	PrometheusName      string
+	STS                 bool
 }
