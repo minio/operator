@@ -30,6 +30,6 @@ spec:
             path: "/"
             backend:
               service:
-                name: storage-letsencrypt-console
+                name: myminio-console
                 port:
                   number: 9090

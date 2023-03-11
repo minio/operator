@@ -246,8 +246,8 @@ function check_tenant_status() {
 
   if [ $# -ge 4 ]; then
     echo "Fourth argument provided, then get secrets from helm"
-    USER=$(kubectl get secret minio1-secret -o jsonpath="{.data.accesskey}" | base64 --decode)
-    PASSWORD=$(kubectl get secret minio1-secret -o jsonpath="{.data.secretkey}" | base64 --decode)
+    USER=$(kubectl get secret myminio-secret -o jsonpath="{.data.accesskey}" | base64 --decode)
+    PASSWORD=$(kubectl get secret myminio-secret -o jsonpath="{.data.secretkey}" | base64 --decode)
   else
     echo "No fourth argument provided, using default USER and PASSWORD"
     TENANT_CONFIG_SECRET=$(kubectl -n $1 get tenants.minio.min.io $2 -o jsonpath="{.spec.configuration.name}")
@@ -262,7 +262,7 @@ function check_tenant_status() {
 
   if [ $# -ge 4 ]; then
     # make sure no rollout is happening
-    try kubectl -n $1 rollout status sts/minio1-pool-0
+    try kubectl -n $1 rollout status sts/myminio-pool-0
   else
     # make sure no rollout is happening
     try kubectl -n $1 rollout status sts/$2-pool-0
@@ -296,42 +296,42 @@ function install_tenant() {
     try helm lint "${SCRIPT_DIR}/../helm/tenant" --quiet
 
     namespace=default
-    key=app
-    value=minio
+    key=v1.min.io/tenant
+    value=myminio
     try helm install --namespace $namespace \
       --create-namespace tenant ./helm/tenant
   elif [ "$1" = "logs" ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
-    value=storage-lite
+    value=myminio
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-logs"
   elif [ "$1" = "prometheus" ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
-    value=storage-lite
+    value=myminio
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant-prometheus"
   elif [ "$1" = "policy-binding" ]; then
     namespace="minio-tenant-1"
     key=v1.min.io/tenant
-    value=storage-policy-binding
+    value=myminio
     echo "Installing policyBinding tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/tenant"
   elif [ -e $1 ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
-    value=storage-lite
+    value=myminio
     echo "Installing lite tenant from current branch"
 
     try kubectl apply -k "${SCRIPT_DIR}/../testing/tenant"
   else
     namespace="tenant-lite"
     key=v1.min.io/tenant
-    value=storage-lite
+    value=myminio
     echo "Installing lite tenant for version $1"
 
     try kubectl apply -k "github.com/minio/operator/testing/tenant\?ref\=$1"

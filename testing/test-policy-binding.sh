@@ -29,7 +29,7 @@ function main() {
 
     install_tenant "policy-binding"
 
-    check_tenant_status minio-tenant-1 storage-policy-binding
+    check_tenant_status minio-tenant-1 myminio
 
     setup_sts_bucket
 

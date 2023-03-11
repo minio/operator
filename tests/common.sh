@@ -130,7 +130,7 @@ function install_tenant() {
 
 	namespace=tenant-lite
 	key=v1.min.io/tenant
-	value=storage-lite
+	value=myminio
 	echo "Installing lite tenant"
 
 	try kubectl apply -k "${GITHUB_WORKSPACE}/examples/kustomization/tenant-lite"

@@ -1012,7 +1012,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 				operatorClient: opClient,
 				httpCl:         httpClientM,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantPatch: func(ctx context.Context, namespace string, tenantName string, pt types.PatchType, data []byte, options metav1.PatchOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},
@@ -1037,7 +1037,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 				operatorClient: opClient,
 				httpCl:         httpClientM,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantPatch: func(ctx context.Context, namespace string, tenantName string, pt types.PatchType, data []byte, options metav1.PatchOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},
@@ -1062,7 +1062,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 				operatorClient: opClient,
 				httpCl:         httpClientM,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantPatch: func(ctx context.Context, namespace string, tenantName string, pt types.PatchType, data []byte, options metav1.PatchOptions) (*miniov2.Tenant, error) {
 					return nil, errors.New("error-get")
 				},
@@ -1073,7 +1073,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 					return &http.Response{}, nil
 				},
 				params: operator_api.UpdateTenantParams{
-					Tenant: "minio-tenant",
+					Tenant: "myminio",
 					Body: &models.UpdateTenantRequest{
 						Image: "minio/minio:RELEASE.2023-01-06T18-11-18Z",
 					},
@@ -1088,7 +1088,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 				operatorClient: opClient,
 				httpCl:         httpClientM,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantPatch: func(ctx context.Context, namespace string, tenantName string, pt types.PatchType, data []byte, options metav1.PatchOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},
@@ -1102,7 +1102,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 					}, nil
 				},
 				params: operator_api.UpdateTenantParams{
-					Tenant: "minio-tenant",
+					Tenant: "myminio",
 					Body: &models.UpdateTenantRequest{
 						Image: "",
 					},
@@ -1117,7 +1117,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 				operatorClient: opClient,
 				httpCl:         httpClientM,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantPatch: func(ctx context.Context, namespace string, tenantName string, pt types.PatchType, data []byte, options metav1.PatchOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},
@@ -1128,7 +1128,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 					return nil, errors.New("error")
 				},
 				params: operator_api.UpdateTenantParams{
-					Tenant: "minio-tenant",
+					Tenant: "myminio",
 					Body: &models.UpdateTenantRequest{
 						Image: "",
 					},
@@ -1143,7 +1143,7 @@ func Test_UpdateTenantAction(t *testing.T) {
 				operatorClient: opClient,
 				httpCl:         httpClientM,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantPatch: func(ctx context.Context, namespace string, tenantName string, pt types.PatchType, data []byte, options metav1.PatchOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},
@@ -1199,7 +1199,7 @@ func Test_UpdateDomainsResponse(t *testing.T) {
 				ctx:            context.Background(),
 				operatorClient: opClient,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantUpdate: func(ctx context.Context, tenant *miniov2.Tenant, options metav1.UpdateOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},
@@ -1219,7 +1219,7 @@ func Test_UpdateDomainsResponse(t *testing.T) {
 				ctx:            context.Background(),
 				operatorClient: opClient,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantUpdate: func(ctx context.Context, tenant *miniov2.Tenant, options metav1.UpdateOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},
@@ -1239,7 +1239,7 @@ func Test_UpdateDomainsResponse(t *testing.T) {
 				ctx:            context.Background(),
 				operatorClient: opClient,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantUpdate: func(ctx context.Context, tenant *miniov2.Tenant, options metav1.UpdateOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},
@@ -1273,7 +1273,7 @@ func Test_UpdateDomainsResponse(t *testing.T) {
 				ctx:            context.Background(),
 				operatorClient: opClient,
 				nameSpace:      "default",
-				tenantName:     "minio-tenant",
+				tenantName:     "myminio",
 				mockTenantUpdate: func(ctx context.Context, tenant *miniov2.Tenant, options metav1.UpdateOptions) (*miniov2.Tenant, error) {
 					return &miniov2.Tenant{}, nil
 				},

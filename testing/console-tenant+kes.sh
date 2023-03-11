@@ -116,13 +116,13 @@ function test_kes_tenant() {
 	yq e -i '.spec.kes.image = "minio/kes:v0.22.3"' "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption/tenant.yaml"
 	kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption"
 
-    echo "Check Tenant Status in tenant-kms-encrypted name space for storage-kms-encrypted:"
-    check_tenant_status tenant-kms-encrypted storage-kms-encrypted
+    echo "Check Tenant Status in tenant-kms-encrypted namespace for myminio:"
+    check_tenant_status tenant-kms-encrypted myminio
 
     echo "Port Forwarding tenant"
-    try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=storage-kms-encrypted -n tenant-kms-encrypted | grep -v NAME | awk '{print $1}' | head -1) 9000 -n tenant-kms-encrypted &
+    try kubectl port-forward $(kubectl get pods -l v1.min.io/tenant=myminio -n tenant-kms-encrypted | grep -v NAME | awk '{print $1}' | head -1) 9000 -n tenant-kms-encrypted &
 
-    TENANT_CONFIG_SECRET=$(kubectl -n tenant-kms-encrypted get tenants.minio.min.io storage-kms-encrypted -o jsonpath="{.spec.configuration.name}")
+    TENANT_CONFIG_SECRET=$(kubectl -n tenant-kms-encrypted get tenants.minio.min.io myminio -o jsonpath="{.spec.configuration.name}")
     # kes-tenant-env-configuration
     USER=$(kubectl -n tenant-kms-encrypted get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
     PASSWORD=$(kubectl -n tenant-kms-encrypted get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')

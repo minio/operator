@@ -46,7 +46,7 @@ test("Create Tenant Without Audit Log", async (t) => {
 
 // Test 3
 test("Test describe section for PODs in new tenant", async (t) => {
-  const tenantName = "storage-lite";
+  const tenantName = "myminio";
   await loginToOperator();
   await testPODDescribe(tenantName);
 });
@@ -77,7 +77,7 @@ const checkPodDescribeHasSections = async () => {
 
 // Test 4
 test("Test describe section for PVCs in new tenant", async (t) => {
-  const tenantName = `storage-lite`;
+  const tenantName = `myminio`;
   await loginToOperator();
   await testPvcDescribe(tenantName);
 });

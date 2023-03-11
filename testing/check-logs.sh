@@ -28,7 +28,7 @@ function perform_attempts_to_get_log_api_response() {
 		repeat 10 echo ""
 		echo "kubectl get pods -n tenant-lite"
 		kubectl get pods -n tenant-lite
-		kubectl port-forward storage-lite-pool-0-0 9443 --namespace tenant-lite &
+		kubectl port-forward myminio-pool-0-0 9443 --namespace tenant-lite &
 		process_id=$!
 		echo "process_id: ${process_id}"
 		echo 'Get token from MinIO Console'

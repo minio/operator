@@ -244,7 +244,7 @@ func TestListTenants(t *testing.T) {
 	}
 	TenantName := &result.Tenants[0].Name // The array has to be empty, no index accessible
 	fmt.Println(*TenantName)
-	assert.Equal("storage-kms-encrypted", *TenantName, *TenantName)
+	assert.Equal("myminio", *TenantName, *TenantName)
 	printEndFunc("TestListTenants")
 }
 
@@ -706,8 +706,8 @@ func GetPodEvents(nameSpace string, tenant string, podName string) (*http.Respon
 func TestGetPodEvents(t *testing.T) {
 	assert := assert.New(t)
 	namespace := "tenant-lite"
-	tenant := "storage-lite"
-	podName := "storage-lite-pool-0-0"
+	tenant := "myminio"
+	podName := "myminio-pool-0-0"
 	resp, err := GetPodEvents(namespace, tenant, podName)
 	assert.Nil(err)
 	if err != nil {
@@ -746,8 +746,8 @@ func GetPodDescribe(nameSpace string, tenant string, podName string) (*http.Resp
 func TestGetPodDescribe(t *testing.T) {
 	assert := assert.New(t)
 	namespace := "tenant-lite"
-	tenant := "storage-lite"
-	podName := "storage-lite-pool-0-0"
+	tenant := "myminio"
+	podName := "myminio-pool-0-0"
 	resp, err := GetPodDescribe(namespace, tenant, podName)
 	assert.Nil(err)
 	if err != nil {
@@ -788,7 +788,7 @@ func GetCSR(nameSpace string, tenant string) (*http.Response, error) {
 func TestGetCSR(t *testing.T) {
 	assert := assert.New(t)
 	namespace := "tenant-lite"
-	tenant := "storage-lite"
+	tenant := "myminio"
 	resp, err := GetCSR(namespace, tenant)
 	assert.Nil(err)
 	if err != nil {
@@ -807,16 +807,16 @@ func TestGetMultipleCSRs(t *testing.T) {
 	/*
 		We can have multiple CSRs per tenant, the idea is to support them in our API and test them here, making sure we
 		can retrieve them all, as an example I found this tenant:
-		storage-kms-encrypted  -client  -tenant-kms-encrypted-csr
-		storage-kms-encrypted  -kes     -tenant-kms-encrypted-csr
-		storage-kms-encrypted           -tenant-kms-encrypted-csr
+		myminio  -client  -tenant-kms-encrypted-csr
+		myminio  -kes     -tenant-kms-encrypted-csr
+		myminio           -tenant-kms-encrypted-csr
 		Notice the nomenclature of it:
 		<tenant-name>-<*>-<namespace>-csr
 		where * is anything either nothing or something, anything.
 	*/
 	assert := assert.New(t)
 	namespace := "tenant-kms-encrypted"
-	tenant := "storage-kms-encrypted"
+	tenant := "myminio"
 	resp, err := GetCSR(namespace, tenant)
 	assert.Nil(err)
 	if err != nil {
@@ -829,8 +829,8 @@ func TestGetMultipleCSRs(t *testing.T) {
 			200, resp.StatusCode, finalResponse)
 	}
 	var expectedMessages [3]string
-	expectedMessages[0] = "storage-kms-encrypted-tenant-kms-encrypted-csr"
-	expectedMessages[1] = "storage-kms-encrypted-kes-tenant-kms-encrypted-csr"
+	expectedMessages[0] = "myminio-tenant-kms-encrypted-csr"
+	expectedMessages[1] = "myminio-kes-tenant-kms-encrypted-csr"
 	expectedMessages[2] = "Automatically approved by MinIO Operator"
 	for _, element := range expectedMessages {
 		assert.Equal(strings.Contains(finalResponse, element), true)
@@ -862,7 +862,7 @@ func TestListPVCsForTenant(t *testing.T) {
 	*/
 	assert := assert.New(t)
 	namespace := "tenant-lite"
-	tenant := "storage-lite"
+	tenant := "myminio"
 	resp, err := ListPVCsForTenant(namespace, tenant)
 	bodyResponse := resp.Body
 	assert.Nil(err)
@@ -882,10 +882,10 @@ func TestListPVCsForTenant(t *testing.T) {
 		assert.Nil(err)
 	}
 	var pvcArray [4]string
-	pvcArray[0] = "data0-storage-lite-pool-0-0"
-	pvcArray[1] = "data0-storage-lite-pool-0-1"
-	pvcArray[2] = "data0-storage-lite-pool-0-2"
-	pvcArray[3] = "data0-storage-lite-pool-0-3"
+	pvcArray[0] = "data0-myminio-pool-0-0"
+	pvcArray[1] = "data0-myminio-pool-0-1"
+	pvcArray[2] = "data0-myminio-pool-0-2"
+	pvcArray[3] = "data0-myminio-pool-0-3"
 	for i := 0; i < len(pvcArray); i++ {
 		assert.Equal(strings.Contains(listObjs.Pvcs[i].Name, pvcArray[i]), true)
 	}
@@ -1098,7 +1098,7 @@ func TestEnableTenantLogging(t *testing.T) {
 	// Vars
 	assert := assert.New(t)
 	namespace := "tenant-lite"
-	tenant := "storage-lite"
+	tenant := "myminio"
 
 	// Enable tenant logging
 	resp, err := EnableTenantLogging(namespace, tenant)
@@ -1119,7 +1119,7 @@ func TestDisableTenantLogging(t *testing.T) {
 	// Vars
 	assert := assert.New(t)
 	namespace := "tenant-lite"
-	tenant := "storage-lite"
+	tenant := "myminio"
 
 	// Disable tenant logging
 	resp, err := DisableTenantLogging(namespace, tenant)
@@ -1201,7 +1201,7 @@ func TestGetTenantLogs(t *testing.T) {
 	// Vars
 	assert := assert.New(t)
 	namespace := "tenant-lite"
-	tenant := "storage-lite"
+	tenant := "myminio"
 
 	// Get Log Settings
 	resp, err := GetTenantLogs(namespace, tenant)
@@ -1222,7 +1222,7 @@ func TestSetTenantLogs(t *testing.T) {
 	// Vars
 	assert := assert.New(t)
 	nameSpace := "tenant-lite"
-	tenant := "storage-lite"
+	tenant := "myminio"
 	var nodeSelector []string
 	var labels []string
 	var annotations []string
@@ -1292,7 +1292,7 @@ func TestTenantDetails(t *testing.T) {
 	// Vars
 	assert := assert.New(t)
 	nameSpace := "tenant-lite"
-	tenant := "storage-lite"
+	tenant := "myminio"
 	resp, err := TenantDetails(nameSpace, tenant)
 	if err != nil {
 		log.Println(err)
