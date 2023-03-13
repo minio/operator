@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - github.com/minio/operator/resources/base?ref=v4.5.8
+
+patchesJson6902:
+- path: ct-patch.yaml
+  target:
+    group: apiextensions.k8s.io
+    version: v1
+    kind: CustomResourceDefinition
+    name: tenants.minio.min.io
