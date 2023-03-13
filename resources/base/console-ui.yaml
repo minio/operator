@@ -289,7 +289,7 @@ spec:
         - args:
             - ui
             - --certs-dir=/tmp/certs
-          image: jill/operator:test
+          image: minio/operator:v4.5.8
           imagePullPolicy: IfNotPresent
           name: console
           securityContext:
