@@ -24,6 +24,7 @@ import LabelValuePair from "../../../../Common/UsageBarWrapper/LabelValuePair";
 import { niceBytesInt } from "../../../../../../common/utils";
 import StackRow from "../../../../Common/UsageBarWrapper/StackRow";
 import { Button, EditTenantIcon } from "mds";
+import { NodeSelectorTerm } from "../../../../../../api/operatorApi";
 
 const stylingLayout = {
   border: "#EAEAEA 1px solid",
@@ -47,9 +48,12 @@ const PoolDetails = () => {
   const selectedPool = useSelector(
     (state: AppState) => state.tenants.selectedPool
   );
+  if (tenant === null) {
+    return <Fragment />;
+  }
 
   const poolInformation =
-    tenant?.pools.find((pool) => pool.name === selectedPool) || null;
+    tenant.pools?.find((pool) => pool.name === selectedPool) || null;
 
   if (poolInformation === null) {
     return null;
@@ -79,8 +83,6 @@ const PoolDetails = () => {
     );
   };
 
-  console.log(poolInformation);
-
   return (
     <Fragment>
       <Grid item xs={12} sx={{ ...stylingLayout }}>
@@ -103,13 +105,20 @@ const PoolDetails = () => {
           <LabelValuePair label={"Pool Name"} value={poolInformation.name} />
           <LabelValuePair
             label={"Total Volumes"}
-            value={poolInformation.volumes}
+            value={poolInformation.volumes_per_server}
           />
           <LabelValuePair
             label={"Volumes per server"}
             value={poolInformation.volumes_per_server}
           />
-          <LabelValuePair label={"Capacity"} value={poolInformation.capacity} />
+          <LabelValuePair
+            label={"Capacity"}
+            value={niceBytesInt(
+              poolInformation.volumes_per_server *
+                poolInformation.servers *
+                poolInformation.volume_configuration.size
+            )}
+          />
           <LabelValuePair
             label={"Runtime Class Name"}
             value={poolInformation.runtimeClassName}
@@ -121,11 +130,13 @@ const PoolDetails = () => {
             <Fragment>
               <LabelValuePair
                 label={"CPU"}
-                value={poolInformation.resources.requests.cpu}
+                value={poolInformation.resources?.requests?.cpu}
               />
               <LabelValuePair
                 label={"Memory"}
-                value={niceBytesInt(poolInformation.resources.requests.memory)}
+                value={niceBytesInt(
+                  poolInformation.resources?.requests?.memory!
+                )}
               />
             </Fragment>
           )}
@@ -205,12 +216,12 @@ const PoolDetails = () => {
             <Fragment>
               <HeaderSection title={"Labels"} />
               <ul>
-                {poolInformation.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.map(
-                  (term) => {
-                    return term.matchExpressions.map((trm) => {
+                {poolInformation.affinity?.nodeAffinity?.requiredDuringSchedulingIgnoredDuringExecution?.nodeSelectorTerms.map(
+                  (term: NodeSelectorTerm) => {
+                    return term.matchExpressions?.map((trm) => {
                       return (
                         <li>
-                          {trm.key} - {trm.values.join(", ")}
+                          {trm.key} - {trm.values?.join(", ")}
                         </li>
                       );
                     });

@@ -179,7 +179,7 @@ const TenantMonitoring = ({ classes }: ITenantMonitoring) => {
     dispatch(setRunAsGroup(res.securityContext.runAsGroup));
     dispatch(setRunAsUser(res.securityContext.runAsUser));
     dispatch(setRunAsNonRoot(res.securityContext.runAsNonRoot));
-    dispatch(setFSGroup(res.securityContext.fsGroup));
+    dispatch(setFSGroup(res.securityContext.fsGroup!));
   };
 
   const trim = (x: IKeyValue[]): IKeyValue[] => {

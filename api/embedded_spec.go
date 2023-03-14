@@ -4735,6 +4735,12 @@ func init() {
         "subnet_license": {
           "$ref": "#/definitions/license"
         },
+        "tiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tenantTierElement"
+          }
+        },
         "total_size": {
           "type": "integer",
           "format": "int64"
@@ -10730,6 +10736,12 @@ func init() {
         },
         "subnet_license": {
           "$ref": "#/definitions/license"
+        },
+        "tiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/tenantTierElement"
+          }
         },
         "total_size": {
           "type": "integer",

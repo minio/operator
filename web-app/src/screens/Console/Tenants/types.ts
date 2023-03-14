@@ -21,9 +21,10 @@ import {
   IGCPConfig,
   IGemaltoCredentials,
 } from "../../../common/types";
-import { IResourcesSize, ITenant } from "./ListTenants/types";
+import { IResourcesSize } from "./ListTenants/types";
 import { KeyPair, Opts } from "./ListTenants/utils";
 import { IntegrationConfiguration } from "./AddTenant/Steps/TenantResources/utils";
+import { SecurityContext } from "../../../api/operatorApi";
 
 export interface ICertificateInfo {
   name: string;
@@ -52,7 +53,7 @@ export interface ITenantConfigurationRequest {
 export interface ITenantSecurityResponse {
   autoCert: boolean;
   customCertificates: ICustomCertificates;
-  securityContext: ISecurityContext;
+  securityContext: SecurityContext;
 }
 
 export interface IVaultAppRole {
@@ -88,7 +89,7 @@ export interface ITenantEncryptionResponse {
   raw: string;
   image: string;
   replicas: string;
-  securityContext: ISecurityContext;
+  securityContext: SecurityContext;
   server_tls: ICertificateInfo;
   minio_mtls: ICertificateInfo;
   kms_mtls: {
@@ -136,14 +137,6 @@ export interface LabelKeyPair {
 
 export type fsGroupChangePolicyType = "Always" | "OnRootMismatch";
 
-export interface ISecurityContext {
-  runAsUser: string;
-  runAsGroup: string;
-  runAsNonRoot: boolean;
-  fsGroup: string;
-  fsGroupChangePolicy: fsGroupChangePolicyType;
-}
-
 export interface IConfigureFields {
   customImage: boolean;
   imageName: string;
@@ -175,10 +168,10 @@ export interface IConfigureFields {
   setDomains: boolean;
   consoleDomain: string;
   minioDomains: string[];
-  tenantSecurityContext: ISecurityContext;
-  logSearchSecurityContext: ISecurityContext;
-  logSearchPostgresSecurityContext: ISecurityContext;
-  prometheusSecurityContext: ISecurityContext;
+  tenantSecurityContext: SecurityContext;
+  logSearchSecurityContext: SecurityContext;
+  logSearchPostgresSecurityContext: SecurityContext;
+  prometheusSecurityContext: SecurityContext;
 }
 
 export interface IIdentityProviderFields {
@@ -247,7 +240,7 @@ export interface IEncryptionFields {
   gcpPrivateKey: string;
   enableCustomCertsForKES: boolean;
   replicas: string;
-  kesSecurityContext: ISecurityContext;
+  kesSecurityContext: SecurityContext;
 }
 
 export interface ITenantSizeFields {
@@ -289,16 +282,6 @@ export interface ITenantAffinity {
   withPodAntiAffinity: boolean;
 }
 
-export interface ITenantState {
-  currentTenant: string;
-  currentNamespace: string;
-  loadingTenant: boolean;
-  tenantInfo: ITenant | null;
-  currentTab: string;
-  poolDetailsOpen: boolean;
-  selectedPool: string | null;
-}
-
 export interface ILabelKeyPair {
   labelKey: string;
   labelValue: string;
@@ -325,7 +308,7 @@ export interface IAddPoolSetup {
 
 export interface IPoolConfiguration {
   securityContextEnabled: boolean;
-  securityContext: ISecurityContext;
+  securityContext: SecurityContext;
   customRuntime: boolean;
   runtimeClassName: string;
 }

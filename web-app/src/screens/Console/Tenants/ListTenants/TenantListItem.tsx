@@ -18,96 +18,91 @@ import React, { Fragment } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { Theme } from "@mui/material/styles";
-import { CapacityValues, ITenant, ValueUnit } from "./types";
+import { CapacityValues, ValueUnit } from "./types";
 import { setTenantName } from "../tenantsSlice";
 import { getTenantAsync } from "../thunks/tenantDetailsAsync";
 import { DrivesIcon } from "mds";
 import { niceBytes, niceBytesInt } from "../../../../common/utils";
 import Grid from "@mui/material/Grid";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
 import InformationItem from "./InformationItem";
 import TenantCapacity from "./TenantCapacity";
 import { useAppDispatch } from "../../../../store";
+import makeStyles from "@mui/styles/makeStyles";
+import { TenantList } from "../../../../api/operatorApi";
 
-const styles = (theme: Theme) =>
-  createStyles({
-    redState: {
-      color: theme.palette.error.main,
-      "& .min-icon": {
-        width: 16,
-        height: 16,
-        float: "left",
-        marginRight: 4,
-      },
+const useStyles = makeStyles((theme: Theme) => ({
+  redState: {
+    color: theme.palette.error.main,
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      float: "left",
+      marginRight: 4,
     },
-    yellowState: {
-      color: theme.palette.warning.main,
-      "& .min-icon": {
-        width: 16,
-        height: 16,
-        float: "left",
-        marginRight: 4,
-      },
+  },
+  yellowState: {
+    color: theme.palette.warning.main,
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      float: "left",
+      marginRight: 4,
     },
-    greenState: {
-      color: theme.palette.success.main,
-      "& .min-icon": {
-        width: 16,
-        height: 16,
-        float: "left",
-        marginRight: 4,
-      },
+  },
+  greenState: {
+    color: theme.palette.success.main,
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      float: "left",
+      marginRight: 4,
     },
-    greyState: {
-      color: "grey",
-      "& .min-icon": {
-        width: 16,
-        height: 16,
-        float: "left",
-        marginRight: 4,
-      },
+  },
+  greyState: {
+    color: "grey",
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      float: "left",
+      marginRight: 4,
     },
-    tenantItem: {
-      border: "1px solid #EAEAEA",
-      marginBottom: 16,
-      padding: "15px 30px",
-      "&:hover": {
-        backgroundColor: "#FAFAFA",
-        cursor: "pointer",
-      },
+  },
+  tenantItem: {
+    border: "1px solid #EAEAEA",
+    marginBottom: 16,
+    padding: "15px 30px",
+    "&:hover": {
+      backgroundColor: "#FAFAFA",
+      cursor: "pointer",
     },
-    titleContainer: {
-      display: "flex",
-      justifyContent: "space-between",
-      width: "100%",
-    },
-    title: {
-      fontSize: 18,
-      fontWeight: "bold",
-    },
-    namespaceLabel: {
-      display: "inline-flex",
-      backgroundColor: "#EAEDEF",
-      borderRadius: 2,
-      padding: "4px 8px",
-      fontSize: 10,
-      marginRight: 20,
-    },
-    status: {
-      fontSize: 12,
-      color: "#8F9090",
-    },
-  });
+  },
+  titleContainer: {
+    display: "flex",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  namespaceLabel: {
+    display: "inline-flex",
+    backgroundColor: "#EAEDEF",
+    borderRadius: 2,
+    padding: "4px 8px",
+    fontSize: 10,
+    marginRight: 20,
+  },
+  status: {
+    fontSize: 12,
+    color: "#8F9090",
+  },
+}));
 
-interface ITenantListItem {
-  tenant: ITenant;
-  classes: any;
-}
-
-const TenantListItem = ({ tenant, classes }: ITenantListItem) => {
+const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const classes = useStyles();
 
   const healthStatusToClass = (health_status: string) => {
     switch (health_status) {
@@ -153,19 +148,19 @@ const TenantListItem = ({ tenant, classes }: ITenantListItem) => {
       { value: tenant.capacity_usage || 0, variant: "STANDARD" },
     ];
   } else {
-    spaceVariants = tenant.tiers.map((itemTenant) => {
-      return { value: itemTenant.size, variant: itemTenant.name };
+    spaceVariants = tenant.tiers?.map((itemTenant) => {
+      return { value: itemTenant.size!, variant: itemTenant.name! };
     });
     let internalUsage = tenant.tiers
-      .filter((itemTenant) => {
+      ?.filter((itemTenant) => {
         return itemTenant.type === "internal";
       })
-      .reduce((sum, itemTenant) => sum + itemTenant.size, 0);
+      .reduce((sum, itemTenant) => sum + itemTenant.size!, 0);
     let tieredUsage = tenant.tiers
       .filter((itemTenant) => {
         return itemTenant.type !== "internal";
       })
-      .reduce((sum, itemTenant) => sum + itemTenant.size, 0);
+      .reduce((sum, itemTenant) => sum + itemTenant.size!, 0);
 
     const t = niceBytesInt(tieredUsage, true);
     const parts = t.split(" ");
@@ -181,8 +176,8 @@ const TenantListItem = ({ tenant, classes }: ITenantListItem) => {
   const openTenantDetails = () => {
     dispatch(
       setTenantName({
-        name: tenant.name,
-        namespace: tenant.namespace,
+        name: tenant.name!,
+        namespace: tenant.namespace!,
       })
     );
     dispatch(getTenantAsync());
@@ -213,7 +208,7 @@ const TenantListItem = ({ tenant, classes }: ITenantListItem) => {
                 <TenantCapacity
                   totalCapacity={tenant.capacity || 0}
                   usedSpaceVariants={spaceVariants}
-                  statusClass={healthStatusToClass(tenant.health_status)}
+                  statusClass={healthStatusToClass(tenant.health_status!)}
                 />
               </Grid>
               <Grid item xs>
@@ -239,7 +234,7 @@ const TenantListItem = ({ tenant, classes }: ITenantListItem) => {
                   />
                   <InformationItem
                     label={"Pools"}
-                    value={tenant.pool_count.toString()}
+                    value={`${tenant.pool_count}`}
                     variant={"faded"}
                   />
                 </Grid>
@@ -342,4 +337,4 @@ const TenantListItem = ({ tenant, classes }: ITenantListItem) => {
   );
 };
 
-export default withStyles(styles)(TenantListItem);
+export default TenantListItem;

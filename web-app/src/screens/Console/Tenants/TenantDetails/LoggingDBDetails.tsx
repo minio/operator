@@ -322,8 +322,10 @@ const LoggingDBDetails = ({
             classes={classes}
             runAsGroup={dbRunAsGroup}
             runAsUser={dbRunAsUser}
-            fsGroup={dbFSGroup}
-            fsGroupChangePolicy={dbFSGroupChangePolicy}
+            fsGroup={dbFSGroup!}
+            fsGroupChangePolicy={
+              dbFSGroupChangePolicy as fsGroupChangePolicyType
+            }
             runAsNonRoot={dbRunAsNonRoot}
             setFSGroup={(value: string) => dispatch(setDBFSGroup(value))}
             setRunAsUser={(value: string) => dispatch(setDBRunAsUser(value))}

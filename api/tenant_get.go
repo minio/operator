@@ -151,5 +151,18 @@ func getTenantDetailsResponse(session *models.Principal, params operator_api.Ten
 
 	info.Domains = &domains
 
+	var tiers []*models.TenantTierElement
+
+	for _, tier := range minTenant.Status.Usage.Tiers {
+		tierItem := &models.TenantTierElement{
+			Name: tier.Name,
+			Type: tier.Type,
+			Size: tier.TotalSize,
+		}
+
+		tiers = append(tiers, tierItem)
+	}
+	info.Tiers = tiers
+
 	return info, nil
 }

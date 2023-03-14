@@ -41,7 +41,7 @@ operator: assets binary
 docker: operator logsearchapi
 	@docker build --no-cache -t $(TAG) .
 
-build: regen-crd verify plugin logsearchapi operator docker
+build: regen-crd plugin logsearchapi operator docker
 
 install: all
 
@@ -116,6 +116,8 @@ clean-swagger:
 swagger-operator:
 	@echo "Generating swagger server code from yaml"
 	@swagger generate server -A operator --main-package=operator --server-package=api --exclude-main -P models.Principal -f ./swagger.yml -r NOTICE
+	@echo "Generating typescript api"
+	@npx swagger-typescript-api -p ./swagger.yml -o ./web-app/src/api -n operatorApi.ts
 
 
 swagger-gen: clean-swagger swagger-operator apply-gofmt

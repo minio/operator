@@ -143,18 +143,17 @@ const ConfigLogSearch = ({ classes }: IConfigureProps) => {
 
     if (logSearchEnabled) {
       customAccountValidation = [
-        ...customAccountValidation,
         {
           fieldKey: "log_search_storage_class",
           required: true,
-          value: logSearchSelectedStorageClass,
+          value: logSearchSelectedStorageClass!,
           customValidation: logSearchSelectedStorageClass === "",
           customValidationMessage: "Field cannot be empty",
         },
         {
           fieldKey: "log_search_volume_size",
           required: true,
-          value: logSearchVolumeSize,
+          value: `${logSearchVolumeSize}`,
           customValidation:
             logSearchVolumeSize === "" || parseInt(logSearchVolumeSize) <= 0,
           customValidationMessage: `Volume size must be present and be greatter than 0`,
@@ -180,10 +179,10 @@ const ConfigLogSearch = ({ classes }: IConfigureProps) => {
         {
           fieldKey: "logSearch_securityContext_fsGroup",
           required: true,
-          value: logSearchSecurityContext.fsGroup,
+          value: logSearchSecurityContext.fsGroup!,
           customValidation:
             logSearchSecurityContext.fsGroup === "" ||
-            parseInt(logSearchSecurityContext.fsGroup) < 0,
+            parseInt(logSearchSecurityContext.fsGroup!) < 0,
           customValidationMessage: `fsGroup must be present and be 0 or more`,
         },
         {
@@ -207,10 +206,10 @@ const ConfigLogSearch = ({ classes }: IConfigureProps) => {
         {
           fieldKey: "postgres_securityContext_fsGroup",
           required: true,
-          value: logSearchPostgresSecurityContext.fsGroup,
+          value: logSearchPostgresSecurityContext.fsGroup!,
           customValidation:
             logSearchPostgresSecurityContext.fsGroup === "" ||
-            parseInt(logSearchPostgresSecurityContext.fsGroup) < 0,
+            parseInt(logSearchPostgresSecurityContext.fsGroup!) < 0,
           customValidationMessage: `fsGroup must be present and be 0 or more`,
         },
       ];
@@ -415,7 +414,7 @@ const ConfigLogSearch = ({ classes }: IConfigureProps) => {
                         cleanValidation("logSearch_securityContext_fsGroup");
                       }}
                       label="FsGroup"
-                      value={logSearchSecurityContext.fsGroup}
+                      value={logSearchSecurityContext.fsGroup!}
                       required
                       error={
                         validationErrors["logSearch_securityContext_fsGroup"] ||
@@ -429,7 +428,7 @@ const ConfigLogSearch = ({ classes }: IConfigureProps) => {
                       label="FsGroupChangePolicy"
                       id="securityContext_fsGroupChangePolicy"
                       name="securityContext_fsGroupChangePolicy"
-                      value={logSearchSecurityContext.fsGroupChangePolicy}
+                      value={logSearchSecurityContext.fsGroupChangePolicy!}
                       onChange={(e: SelectChangeEvent<string>) => {
                         updateField("logSearchSecurityContext", {
                           ...logSearchSecurityContext,
@@ -546,7 +545,7 @@ const ConfigLogSearch = ({ classes }: IConfigureProps) => {
                         cleanValidation("postgres_securityContext_fsGroup");
                       }}
                       label="FsGroup"
-                      value={logSearchPostgresSecurityContext.fsGroup}
+                      value={logSearchPostgresSecurityContext.fsGroup!}
                       required
                       error={
                         validationErrors["postgres_securityContext_fsGroup"] ||
@@ -561,7 +560,7 @@ const ConfigLogSearch = ({ classes }: IConfigureProps) => {
                       id="securityContext_fsGroupChangePolicy"
                       name="securityContext_fsGroupChangePolicy"
                       value={
-                        logSearchPostgresSecurityContext.fsGroupChangePolicy
+                        logSearchPostgresSecurityContext.fsGroupChangePolicy!
                       }
                       onChange={(e: SelectChangeEvent<string>) => {
                         updateField("logSearchPostgresSecurityContext", {

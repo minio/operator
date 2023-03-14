@@ -126,7 +126,7 @@ const LoggingScreen = ({ classes }: ILoggingScreenProps) => {
       if (res.dbSecurityContext) {
         dispatch(setDBRunAsGroup(res.dbSecurityContext.runAsGroup));
         dispatch(setDBRunAsUser(res.dbSecurityContext.runAsUser));
-        dispatch(setDBFSGroup(res.dbSecurityContext.fsGroup));
+        dispatch(setDBFSGroup(res.dbSecurityContext.fsGroup!));
         dispatch(setDBRunAsNonRoot(res.dbSecurityContext.runAsNonRoot));
       }
       res.image != null && dispatch(setImage(res.image));
@@ -143,7 +143,7 @@ const LoggingScreen = ({ classes }: ILoggingScreenProps) => {
       if (res.securityContext) {
         dispatch(setRunAsGroup(res.securityContext.runAsGroup));
         dispatch(setRunAsUser(res.securityContext.runAsUser));
-        dispatch(setFSGroup(res.securityContext.fsGroup));
+        dispatch(setFSGroup(res.securityContext.fsGroup!));
         dispatch(setRunAsNonRoot(res.securityContext.runAsNonRoot));
       }
 

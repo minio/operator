@@ -195,7 +195,6 @@ const Configure = ({ classes }: IConfigureProps) => {
     let customAccountValidation: IValidation[] = [];
     if (tenantCustom) {
       customAccountValidation = [
-        ...customAccountValidation,
         {
           fieldKey: "tenant_securityContext_runAsUser",
           required: true,
@@ -217,10 +216,10 @@ const Configure = ({ classes }: IConfigureProps) => {
         {
           fieldKey: "tenant_securityContext_fsGroup",
           required: true,
-          value: tenantSecurityContext.fsGroup,
+          value: tenantSecurityContext.fsGroup!,
           customValidation:
             tenantSecurityContext.fsGroup === "" ||
-            parseInt(tenantSecurityContext.fsGroup) < 0,
+            parseInt(tenantSecurityContext.fsGroup!) < 0,
           customValidationMessage: `fsGroup must be present and be 0 or more`,
         },
       ];
@@ -509,7 +508,7 @@ const Configure = ({ classes }: IConfigureProps) => {
                       cleanValidation("tenant_securityContext_fsGroup");
                     }}
                     label="FsGroup"
-                    value={tenantSecurityContext.fsGroup}
+                    value={tenantSecurityContext.fsGroup!}
                     required
                     error={
                       validationErrors["tenant_securityContext_fsGroup"] || ""
@@ -523,7 +522,7 @@ const Configure = ({ classes }: IConfigureProps) => {
                       label="FsGroupChangePolicy"
                       id="securityContext_fsGroupChangePolicy"
                       name="securityContext_fsGroupChangePolicy"
-                      value={tenantSecurityContext.fsGroupChangePolicy}
+                      value={tenantSecurityContext.fsGroupChangePolicy!}
                       onChange={(e: SelectChangeEvent<string>) => {
                         updateField("tenantSecurityContext", {
                           ...tenantSecurityContext,

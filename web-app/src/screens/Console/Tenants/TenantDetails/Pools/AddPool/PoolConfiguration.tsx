@@ -115,7 +115,6 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
     let customAccountValidation: IValidation[] = [];
     if (securityContextEnabled) {
       customAccountValidation = [
-        ...customAccountValidation,
         {
           fieldKey: "pool_securityContext_runAsUser",
           required: true,
@@ -137,10 +136,10 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
         {
           fieldKey: "pool_securityContext_fsGroup",
           required: true,
-          value: securityContext.fsGroup,
+          value: securityContext.fsGroup!,
           customValidation:
             securityContext.fsGroup === "" ||
-            parseInt(securityContext.fsGroup) < 0,
+            parseInt(securityContext.fsGroup!) < 0,
           customValidationMessage: `fsGroup must be present and be 0 or more`,
         },
       ];
@@ -250,7 +249,7 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
                       cleanValidation("pool_securityContext_fsGroup");
                     }}
                     label="FsGroup"
-                    value={securityContext.fsGroup}
+                    value={securityContext.fsGroup!}
                     required
                     error={
                       validationErrors["pool_securityContext_fsGroup"] || ""

@@ -49,14 +49,14 @@ export const addPoolAsync = createAsyncThunk(
       return;
     }
 
-    const poolName = generatePoolName(tenant.pools);
+    const poolName = generatePoolName(tenant.pools!);
 
     let affinityObject = {};
 
     switch (affinityType) {
       case "default":
         affinityObject = {
-          affinity: getDefaultAffinity(tenant.name, poolName),
+          affinity: getDefaultAffinity(tenant.name!, poolName),
         };
         break;
       case "nodeSelector":
@@ -64,7 +64,7 @@ export const addPoolAsync = createAsyncThunk(
           affinity: getNodeSelector(
             nodeSelectorLabels,
             withPodAntiAffinity,
-            tenant.name,
+            tenant.name!,
             poolName
           ),
         };

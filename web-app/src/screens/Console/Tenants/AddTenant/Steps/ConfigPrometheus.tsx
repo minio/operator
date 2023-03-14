@@ -139,7 +139,6 @@ const ConfigPrometheus = ({ classes }: IConfigureProps) => {
 
     if (prometheusEnabled) {
       customAccountValidation = [
-        ...customAccountValidation,
         {
           fieldKey: "prometheus_storage_class",
           required: true,
@@ -176,10 +175,10 @@ const ConfigPrometheus = ({ classes }: IConfigureProps) => {
         {
           fieldKey: "prometheus_securityContext_fsGroup",
           required: true,
-          value: prometheusSecurityContext.fsGroup,
+          value: prometheusSecurityContext.fsGroup!,
           customValidation:
             prometheusSecurityContext.fsGroup === "" ||
-            parseInt(prometheusSecurityContext.fsGroup) < 0,
+            parseInt(prometheusSecurityContext.fsGroup!) < 0,
           customValidationMessage: `fsGroup must be present and be 0 or more`,
         },
       ];
@@ -383,7 +382,7 @@ const ConfigPrometheus = ({ classes }: IConfigureProps) => {
                         cleanValidation("prometheus_securityContext_fsGroup");
                       }}
                       label="FsGroup"
-                      value={prometheusSecurityContext.fsGroup}
+                      value={prometheusSecurityContext.fsGroup!}
                       required
                       error={
                         validationErrors[
@@ -398,7 +397,7 @@ const ConfigPrometheus = ({ classes }: IConfigureProps) => {
                       label="FsGroupChangePolicy"
                       id="securityContext_fsGroupChangePolicy"
                       name="securityContext_fsGroupChangePolicy"
-                      value={prometheusSecurityContext.fsGroupChangePolicy}
+                      value={prometheusSecurityContext.fsGroupChangePolicy!}
                       onChange={(e: SelectChangeEvent<string>) => {
                         updateField("prometheusSecurityContext", {
                           ...prometheusSecurityContext,
