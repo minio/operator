@@ -91,6 +91,12 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
+      - uses: actions/cache@v3
+        name: Logsearch API Binary Cache
+        with:
+          path: |
+            ./logsearchapi-bin
+          key: ${{ runner.os }}-logsearchbinary-${{ github.run_id }}
       - name: Logsearch Binary
         run: |
           make logsearchapi
@@ -110,6 +116,12 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
+      - uses: actions/cache@v3
+        name: Operator Binary Cache
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-binary-${{ github.run_id }}
       - name: Operator Binary
         run: |
           make operator
@@ -128,6 +140,18 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
+      - uses: actions/cache@v3
+        name: Operator Binary Cache
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-binary-${{ github.run_id }}
+      - uses: actions/cache@v3
+        name: Logsearch API Binary Cache
+        with:
+          path: |
+            ./logsearchapi-bin
+          key: ${{ runner.os }}-logsearchbinary-${{ github.run_id }}
       - name: Prometheus test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/deploy-tenant.sh"
@@ -146,6 +170,18 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
+      - uses: actions/cache@v3
+        name: Operator Binary Cache
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-binary-${{ github.run_id }}
+      - uses: actions/cache@v3
+        name: Logsearch API Binary Cache
+        with:
+          path: |
+            ./logsearchapi-bin
+          key: ${{ runner.os }}-logsearchbinary-${{ github.run_id }}
       - name: Tenant upgrade test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/deploy-tenant-upgrade.sh"
@@ -164,7 +200,18 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-
+      - uses: actions/cache@v3
+        name: Operator Binary Cache
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-binary-${{ github.run_id }}
+      - uses: actions/cache@v3
+        name: Logsearch API Binary Cache
+        with:
+          path: |
+            ./logsearchapi-bin
+          key: ${{ runner.os }}-logsearchbinary-${{ github.run_id }}
       - name: Prometheus test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/check-prometheus.sh"
@@ -184,7 +231,18 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-
+      - uses: actions/cache@v3
+        name: Operator Binary Cache
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-binary-${{ github.run_id }}
+      - uses: actions/cache@v3
+        name: Logsearch API Binary Cache
+        with:
+          path: |
+            ./logsearchapi-bin
+          key: ${{ runner.os }}-logsearchbinary-${{ github.run_id }}
       - name: Prometheus test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/check-logs.sh"
@@ -204,7 +262,18 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-
+      - uses: actions/cache@v3
+        name: Operator Binary Cache
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-binary-${{ github.run_id }}
+      - uses: actions/cache@v3
+        name: Logsearch API Binary Cache
+        with:
+          path: |
+            ./logsearchapi-bin
+          key: ${{ runner.os }}-logsearchbinary-${{ github.run_id }}
       - name: Tenant KES
         run: |
           "${GITHUB_WORKSPACE}/testing/console-tenant+kes.sh"
@@ -223,6 +292,18 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
+      - uses: actions/cache@v3
+        name: Operator Binary Cache
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-binary-${{ github.run_id }}
+      - uses: actions/cache@v3
+        name: Logsearch API Binary Cache
+        with:
+          path: |
+            ./logsearchapi-bin
+          key: ${{ runner.os }}-logsearchbinary-${{ github.run_id }}
       - name: Test PolicyBinding CRD and sts call on kind
         run: |
           "${GITHUB_WORKSPACE}/testing/test-policy-binding.sh"
