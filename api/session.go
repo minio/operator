@@ -50,7 +50,6 @@ func getSessionResponse(session *models.Principal, params authApi.SessionCheckPa
 		Operator:    true,
 		Permissions: map[string][]string{},
 		Features:    getListOfOperatorFeatures(),
-		DirectPV:    getDirectPVEnabled(),
 	}
 	return sessionResp, nil
 }

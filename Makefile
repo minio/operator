@@ -107,6 +107,7 @@ swagger-operator:
 	@swagger generate server -A operator --main-package=operator --server-package=api --exclude-main -P models.Principal -f ./swagger.yml -r NOTICE
 	@echo "Generating typescript api"
 	@npx swagger-typescript-api -p ./swagger.yml -o ./web-app/src/api -n operatorApi.ts
+	@(cd web-app &&  prettier -w .)
 
 
 swagger-gen: clean-swagger swagger-operator apply-gofmt

@@ -295,7 +295,6 @@ const Login = () => {
   );
   const navigateTo = useSelector((state: AppState) => state.login.navigateTo);
 
-  const isDirectPV = useSelector((state: AppState) => state.login.isDirectPV);
   const isK8S = useSelector((state: AppState) => state.login.isK8S);
 
   const isOperator =
@@ -487,9 +486,7 @@ const Login = () => {
     "console";
   const logoVar = getLogoVar();
 
-  if (isDirectPV) {
-    modeLogo = "directpv";
-  } else if (isOperator) {
+  if (isOperator) {
     modeLogo = "operator";
   }
 

@@ -63,9 +63,6 @@ type Tenant struct {
 	// image
 	Image string `json:"image,omitempty"`
 
-	// log enabled
-	LogEnabled bool `json:"logEnabled,omitempty"`
-
 	// minio TLS
 	MinioTLS bool `json:"minioTLS,omitempty"`
 

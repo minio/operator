@@ -24,7 +24,6 @@ import createTenantReducer from "./screens/Console/Tenants/AddTenant/createTenan
 import addPoolReducer from "./screens/Console/Tenants/TenantDetails/Pools/AddPool/addPoolSlice";
 import editPoolReducer from "./screens/Console/Tenants/TenantDetails/Pools/EditPool/editPoolSlice";
 import editTenantSecurityContextReducer from "./screens/Console/Tenants/tenantSecurityContextSlice";
-import directPVReducer from "./screens/Console/DirectPV/directPVSlice";
 import licenseReducer from "./screens/Console/License/licenseSlice";
 import registerReducer from "./screens/Console/Support/registerSlice";
 
@@ -39,7 +38,6 @@ const rootReducer = combineReducers({
   addPool: addPoolReducer,
   editPool: editPoolReducer,
   editTenantSecurityContext: editTenantSecurityContextReducer,
-  directPV: directPVReducer,
   license: licenseReducer,
 });
 

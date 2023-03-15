@@ -97,13 +97,13 @@ default `StorageClass` may use the `Immediate` setting, which can cause complica
 strongly recommends creating a custom `StorageClass` for use by `PV` supporting a MinIO Tenant.
 
 The following `StorageClass` object contains the appropriate fields for supporting a MinIO Tenant using
-[MinIO DirectCSI-managed drives](https://github.com/minio/direct-csi):
+[MinIO DirectPV-managed drives](https://github.com/minio/directpv):
 
 ```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: direct-csi-min-io
+  name: directpv-min-io
 provisioner: kubernetes.io/no-provisioner
 volumeBindingMode: WaitForFirstConsumer
 ```
@@ -116,10 +116,10 @@ sufficient [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/pers
 requirements of each PVC for the tenant to start correctly. For example, deploying a Tenant with 16 volumes requires
 18 (16 + 2). If each PVC requests 1TB capacity, then each PV must also provide *at least* 1TB of capacity.
 
-MinIO recommends using the [MinIO DirectCSI Driver](https://github.com/minio/direct-csi) to automatically provision
+MinIO recommends using the [MinIO DirectPV Driver](https://github.com/minio/directpv) to automatically provision
 Persistent Volumes from locally attached drives. This procedure assumes MinIO DirectCSI is installed and configured.
 
-For clusters which cannot deploy MinIO DirectCSI,
+For clusters which cannot deploy MinIO DirectPV,
 use [Local Persistent Volumes](https://kubernetes.io/docs/concepts/storage/volumes/#local). The following example YAML
 describes a local persistent volume:
 
@@ -158,7 +158,7 @@ drives per node. For example, a 4-node Tenant with 4 drives per node requires 16
 MinIO *strongly recommends* using the following CSI drivers for creating local PV to ensure best object storage
 performance:
 
-- [MinIO DirectCSI](https://github.com/minio/direct-csi)
+- [MinIO DirectPV](https://github.com/minio/directpv)
 - [Local Persistent Volume](https://kubernetes.io/docs/concepts/storage/volumes/#local)
 
 ## Procedure

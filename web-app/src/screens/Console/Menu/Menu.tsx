@@ -26,7 +26,7 @@ import { AppState, useAppDispatch } from "../../../store";
 import MenuToggle from "./MenuToggle";
 import ConsoleMenuList from "./ConsoleMenuList";
 import { validRoutes } from "../valid-routes";
-import { menuOpen, selDirectPVMode, selOpMode } from "../../../systemSlice";
+import { menuOpen, selOpMode } from "../../../systemSlice";
 import { selFeatures } from "../consoleSlice";
 
 const drawerWidth = 250;
@@ -90,9 +90,8 @@ const Menu = ({ classes }: IMenuProps) => {
     (state: AppState) => state.system.sidebarOpen
   );
   const operatorMode = useSelector(selOpMode);
-  const directPVMode = useSelector(selDirectPVMode);
 
-  const allowedMenuItems = validRoutes(features, operatorMode, directPVMode);
+  const allowedMenuItems = validRoutes(features, operatorMode);
 
   return (
     <Drawer
@@ -119,7 +118,7 @@ const Menu = ({ classes }: IMenuProps) => {
       <ConsoleMenuList
         menuItems={allowedMenuItems}
         isOpen={sidebarOpen}
-        displayHeaders={!operatorMode && !directPVMode}
+        displayHeaders={!operatorMode}
       />
     </Drawer>
   );
