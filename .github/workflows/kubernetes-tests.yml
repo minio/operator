@@ -6,24 +6,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
   cancel-in-progress: true
 jobs:
-  getdeps:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        go-version: [ 1.20.x ]
-        os: [ ubuntu-latest ]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: Get Dependedencies
-        run: |
-          make getdeps
   lint:
     runs-on: ${{ matrix.os }}
-    needs:
-      - getdeps
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -39,8 +23,6 @@ jobs:
           make lint
   govet:
     runs-on: ${{ matrix.os }}
-    needs:
-      - getdeps
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -54,10 +36,31 @@ jobs:
       - name: govet
         run: |
           make govet
+  vulnerable-dependencies-checks:
+    name: "Check for vulnerable dependencies"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ 1.19 ]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+          check-latest: true
+      - name: Get govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        shell: bash
+      - name: Run govulncheck
+        run: govulncheck ./...
+        shell: bash
   gotest:
     runs-on: ${{ matrix.os }}
     needs:
-      - getdeps
+      - lint
+      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -74,7 +77,8 @@ jobs:
   logsearch:
     runs-on: ${{ matrix.os }}
     needs:
-      - getdeps
+      - lint
+      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -91,7 +95,8 @@ jobs:
   operator:
     runs-on: ${{ matrix.os }}
     needs:
-      - getdeps
+      - lint
+      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -105,35 +110,14 @@ jobs:
       - name: Operator Binary
         run: |
           make operator
-  docker:
-    runs-on: ${{ matrix.os }}
-    needs:
-      - logsearch
-      - operator
-    strategy:
-      matrix:
-        go-version: [ 1.20.x ]
-        os: [ ubuntu-latest ]
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-      - name: Docker Container
-        run: |
-          make docker
-
-
   test-tenant:
     runs-on: ${{ matrix.os }}
     needs:
       - logsearch
       - operator
       - lint
-      - gotest
-      - getdeps
       - govet
+      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -153,9 +137,8 @@ jobs:
       - logsearch
       - operator
       - lint
-      - gotest
-      - getdeps
       - govet
+      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -175,9 +158,8 @@ jobs:
       - logsearch
       - operator
       - lint
-      - gotest
-      - getdeps
       - govet
+      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -199,8 +181,6 @@ jobs:
       - logsearch
       - operator
       - lint
-      - gotest
-      - getdeps
       - govet
     strategy:
       matrix:
@@ -223,9 +203,8 @@ jobs:
       - logsearch
       - operator
       - lint
-      - gotest
-      - getdeps
       - govet
+      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -247,9 +226,8 @@ jobs:
       - logsearch
       - operator
       - lint
-      - gotest
-      - getdeps
       - govet
+      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
