@@ -1,12 +1,9 @@
 name: goreleaser
 
 on:
-  pull_request:
+  workflow_run:
     branches:
-      - master
-  push:
-    branches:
-      - master
+      - 'release**'
 
 jobs:
   goreleaser:
