@@ -39,6 +39,7 @@ func (c *Controller) updateTenantStatusWithRetry(ctx context.Context, tenant *mi
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Spec = miniov2.TenantSpec{}
 	tenantCopy.Status.AvailableReplicas = availableReplicas
 	tenantCopy.Status.CurrentState = currentState
 	// If the CustomResourceSubresources feature gate is not enabled,
@@ -72,6 +73,7 @@ func (c *Controller) updatePoolStatusWithRetry(ctx context.Context, tenant *mini
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Spec = miniov2.TenantSpec{}
 	tenantCopy.Status = *tenant.Status.DeepCopy()
 	tenantCopy.Status.Pools = tenant.Status.Pools
 	// If the CustomResourceSubresources feature gate is not enabled,
@@ -105,6 +107,7 @@ func (c *Controller) updateCertificatesWithRetry(ctx context.Context, tenant *mi
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Spec = miniov2.TenantSpec{}
 	tenantCopy.Status = *tenant.Status.DeepCopy()
 	tenantCopy.Status.Certificates.AutoCertEnabled = &autoCertEnabled
 	// If the CustomResourceSubresources feature gate is not enabled,
@@ -134,6 +137,7 @@ func (c *Controller) updateCustomCertificatesStatus(ctx context.Context, tenant 
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Spec = miniov2.TenantSpec{}
 	tenantCopy.Status.Certificates.CustomCertificates = customCertificates
 
 	// If the CustomResourceSubresources feature gate is not enabled,
@@ -156,6 +160,7 @@ func (c *Controller) updateProvisionedUsersStatus(ctx context.Context, tenant *m
 
 func (c *Controller) updateProvisionedUsersWithRetry(ctx context.Context, tenant *miniov2.Tenant, provisionedUsers bool, retry bool) (*miniov2.Tenant, error) {
 	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Spec = miniov2.TenantSpec{}
 	tenantCopy.Status = *tenant.Status.DeepCopy()
 	tenantCopy.Status.ProvisionedUsers = provisionedUsers
 	opts := metav1.UpdateOptions{}
@@ -181,6 +186,7 @@ func (c *Controller) updateProvisionedBucketStatus(ctx context.Context, tenant *
 
 func (c *Controller) updateProvisionedBucketsWithRetry(ctx context.Context, tenant *miniov2.Tenant, provisionedBuckets bool, retry bool) (*miniov2.Tenant, error) {
 	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Spec = miniov2.TenantSpec{}
 	tenantCopy.Status = *tenant.Status.DeepCopy()
 	tenantCopy.Status.ProvisionedBuckets = provisionedBuckets
 	opts := metav1.UpdateOptions{}
@@ -214,6 +220,7 @@ func (c *Controller) updateTenantSyncVersionWithRetry(ctx context.Context, tenan
 	// You can use DeepCopy() to make a deep copy of original object and modify this copy
 	// Or create a copy manually for better performance
 	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Spec = miniov2.TenantSpec{}
 	tenantCopy.Status.SyncVersion = syncVersion
 	// If the CustomResourceSubresources feature gate is not enabled,
 	// we must use Update instead of UpdateStatus to update the Status block of the Tenant resource.
