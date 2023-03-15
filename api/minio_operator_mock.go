@@ -22,10 +22,8 @@ import (
 )
 
 type (
-	opClientMock       struct{}
-	httpClientMock     struct{}
-	directPVDriveMock  struct{}
-	directPVVolumeMock struct{}
+	opClientMock   struct{}
+	httpClientMock struct{}
 )
 
 func createMockPVC(pvcMockName, pvcMockNamespace string) *v1.PersistentVolumeClaim {

@@ -23,24 +23,20 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/minio/madmin-go/v2"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
 	"github.com/minio/operator/models"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"github.com/minio/operator/pkg/kes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
 )
 
 type TenantTestSuite struct {
@@ -73,7 +69,7 @@ func (suite *TenantTestSuite) TearDownTest() {
 func (suite *TenantTestSuite) TestRegisterTenantLogsHandlers() {
 	api := &operations.OperatorAPI{}
 	suite.assertHandlersAreNil(api)
-	registerTenantHandlers(api)
+	registerTenantLogsHandlers(api)
 	suite.assertHandlersAreNotNil(api)
 }
 
@@ -443,7 +439,7 @@ func (suite *TenantTestSuite) TestTenantConfigurationHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initTenantConfigurationRequest() (params operator_api.TenantConfigurationParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerConfigurationHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -472,7 +468,7 @@ func (suite *TenantTestSuite) TestUpdateTenantConfigurationHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initUpdateTenantConfigurationRequest() (params operator_api.UpdateTenantConfigurationParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerConfigurationHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -487,7 +483,7 @@ func (suite *TenantTestSuite) TestTenantSecurityHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initTenantSecurityRequest() (params operator_api.TenantSecurityParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerCertificateHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -674,7 +670,7 @@ func (suite *TenantTestSuite) TestUpdateTenantSecurityWithoutError() {
 }
 
 func (suite *TenantTestSuite) initUpdateTenantSecurityRequest() (params operator_api.UpdateTenantSecurityParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerCertificateHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -748,7 +744,7 @@ func (suite *TenantTestSuite) TestSetTenantAdministratorsWithoutError() {
 }
 
 func (suite *TenantTestSuite) initSetTenantAdministratorsRequest() (params operator_api.SetTenantAdministratorsParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerUsersHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -764,7 +760,7 @@ func (suite *TenantTestSuite) TestTenantIdentityProviderHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initTenantIdentityProviderRequest() (params operator_api.TenantIdentityProviderParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerIDPHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -822,104 +818,6 @@ func (suite *TenantTestSuite) TestGetTenantIdentityProviderWithLDAPConfig() {
 	suite.assert.Nil(err)
 }
 
-func (suite *TenantTestSuite) TestUpdateTenantIdentityProviderHandlerWithError() {
-	params, api := suite.initUpdateTenantIdentityProviderRequest()
-	response := api.OperatorAPIUpdateTenantIdentityProviderHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.UpdateTenantIdentityProviderDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initUpdateTenantIdentityProviderRequest() (params operator_api.UpdateTenantIdentityProviderParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	params.Body = &models.IdpConfiguration{}
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestUpdateTenantIdentityProviderWithTenantError() {
-	ctx := context.Background()
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return nil, errors.New("mock")
-	}
-	params, _ := suite.initUpdateTenantIdentityProviderRequest()
-	err := updateTenantIdentityProvider(ctx, suite.opClient, suite.k8sclient, "mock-namespace", params)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestUpdateTenantIdentityProviderWithTenantConfigurationError() {
-	ctx := context.Background()
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				CredsSecret: &corev1.LocalObjectReference{
-					Name: "mock",
-				},
-			},
-		}, nil
-	}
-	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {
-		return nil, errors.New("mock-get-error")
-	}
-	params, _ := suite.initUpdateTenantIdentityProviderRequest()
-	err := updateTenantIdentityProvider(ctx, suite.opClient, suite.k8sclient, "mock-namespace", params)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestUpdateTenantIdentityProviderWithSecretCreationError() {
-	ctx := context.Background()
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				Env: []corev1.EnvVar{
-					{Name: "mock", Value: "mock"},
-				},
-			},
-		}, nil
-	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
-		return nil, errors.New("mock-create-error")
-	}
-	params, _ := suite.initUpdateTenantIdentityProviderRequest()
-	err := updateTenantIdentityProvider(ctx, suite.opClient, suite.k8sclient, "mock-namespace", params)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestUpdateTenantIdentityProviderWithoutError() {
-	ctx := context.Background()
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{}, nil
-	}
-	opClientTenantUpdateMock = func(ctx context.Context, tenant *miniov2.Tenant, opts metav1.UpdateOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{}, nil
-	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
-		return nil, nil
-	}
-	params, _ := suite.initUpdateTenantIdentityProviderRequest()
-	params.Body.ActiveDirectory = &models.IdpConfigurationActiveDirectory{}
-	configURL := "mock"
-	clientID := "mock"
-	clientSecret := "mock"
-	claimName := "mock"
-	params.Body.Oidc = &models.IdpConfigurationOidc{
-		ConfigurationURL: &configURL,
-		ClientID:         &clientID,
-		SecretID:         &clientSecret,
-		ClaimName:        &claimName,
-	}
-	params.Body.ActiveDirectory = &models.IdpConfigurationActiveDirectory{
-		URL:                 &configURL,
-		LookupBindDn:        &claimName,
-		SkipTLSVerification: true,
-		ServerInsecure:      true,
-		ServerStartTLS:      true,
-	}
-	err := updateTenantIdentityProvider(ctx, suite.opClient, suite.k8sclient, "mock-namespace", params)
-	suite.assert.Nil(err)
-}
-
 func (suite *TenantTestSuite) TestDeleteTenantHandlerWithError() {
 	params, api := suite.initDeleteTenantRequest()
 	response := api.OperatorAPIDeleteTenantHandler.Handle(params, &models.Principal{})
@@ -932,22 +830,6 @@ func (suite *TenantTestSuite) initDeleteTenantRequest() (params operator_api.Del
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestDeletePodHandlerWithoutError() {
-	params, api := suite.initDeletePodRequest()
-	response := api.OperatorAPIDeletePodHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.DeletePodDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initDeletePodRequest() (params operator_api.DeletePodParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	params.PodName = "mock-tenantmock-pod"
 	return params, api
 }
 
@@ -966,21 +848,6 @@ func (suite *TenantTestSuite) initUpdateTenantRequest() (params operator_api.Upd
 	params.Body = &models.UpdateTenantRequest{
 		Image: "mock-image",
 	}
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestTenantAddPoolHandlerWithError() {
-	params, api := suite.initTenantAddPoolRequest()
-	response := api.OperatorAPITenantAddPoolHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.TenantAddPoolDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initTenantAddPoolRequest() (params operator_api.TenantAddPoolParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
 	return params, api
 }
 
@@ -1024,85 +891,6 @@ func (suite *TenantTestSuite) TestGetTenantUsageWithNoError() {
 	suite.assert.Nil(err)
 }
 
-func (suite *TenantTestSuite) TestGetTenantPodsHandlerWithError() {
-	params, api := suite.initGetTenantPodsRequest()
-	response := api.OperatorAPIGetTenantPodsHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.GetTenantPodsDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initGetTenantPodsRequest() (params operator_api.GetTenantPodsParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestGetTenantPodsWithoutError() {
-	pods := getTenantPods(&corev1.PodList{
-		Items: []corev1.Pod{
-			{
-				Status: corev1.PodStatus{
-					ContainerStatuses: []corev1.ContainerStatus{{}},
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					DeletionTimestamp: &metav1.Time{Time: time.Now()},
-				},
-			},
-		},
-	})
-	suite.assert.Equal(1, len(pods))
-}
-
-func (suite *TenantTestSuite) TestGetPodLogsHandlerWithError() {
-	params, api := suite.initGetPodLogsRequest()
-	response := api.OperatorAPIGetPodLogsHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.GetPodLogsDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initGetPodLogsRequest() (params operator_api.GetPodLogsParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	params.PodName = "mokc-pod"
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestGetPodEventsHandlerWithError() {
-	params, api := suite.initGetPodEventsRequest()
-	response := api.OperatorAPIGetPodEventsHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.GetPodEventsDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initGetPodEventsRequest() (params operator_api.GetPodEventsParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	params.PodName = "mock-pod"
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestDescribePodHandlerWithError() {
-	params, api := suite.initDescribePodRequest()
-	response := api.OperatorAPIDescribePodHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.DescribePodDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initDescribePodRequest() (params operator_api.DescribePodParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	params.PodName = "mock-pod"
-	return params, api
-}
-
 func (suite *TenantTestSuite) TestGetTenantMonitoringHandlerWithError() {
 	params, api := suite.initGetTenantMonitoringRequest()
 	response := api.OperatorAPIGetTenantMonitoringHandler.Handle(params, &models.Principal{})
@@ -1111,7 +899,7 @@ func (suite *TenantTestSuite) TestGetTenantMonitoringHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initGetTenantMonitoringRequest() (params operator_api.GetTenantMonitoringParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerMonitoringHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -1246,222 +1034,11 @@ func (suite *TenantTestSuite) TestSetTenantMonitoringWithoutError() {
 }
 
 func (suite *TenantTestSuite) initSetTenantMonitoringRequest() (params operator_api.SetTenantMonitoringParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerMonitoringHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
 	return params, api
-}
-
-func (suite *TenantTestSuite) TestTenantUpdatePoolsHandlerWithError() {
-	params, api := suite.initTenantUpdatePoolsRequest()
-	response := api.OperatorAPITenantUpdatePoolsHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.TenantUpdatePoolsDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initTenantUpdatePoolsRequest() (params operator_api.TenantUpdatePoolsParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	params.Body = &models.PoolUpdateRequest{
-		Pools: []*models.Pool{},
-	}
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestUpdateTenantPoolsWithPoolError() {
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{}, nil
-	}
-	_, err := updateTenantPools(context.Background(), suite.opClient, "mock-namespace", "mock-tenant", []*models.Pool{{}})
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestUpdateTenantPoolsWithPatchError() {
-	size := int64(1024)
-	seconds := int64(5)
-	weight := int32(1024)
-	servers := int64(4)
-	volumes := int32(4)
-	mockString := "mock-string"
-	pools := []*models.Pool{{
-		VolumeConfiguration: &models.PoolVolumeConfiguration{
-			Size: &size,
-		},
-		Servers:          &servers,
-		VolumesPerServer: &volumes,
-		Resources: &models.PoolResources{
-			Requests: map[string]int64{
-				"cpu": 1,
-			},
-			Limits: map[string]int64{
-				"memory": 1,
-			},
-		},
-		Tolerations: models.PoolTolerations{{
-			TolerationSeconds: &models.PoolTolerationSeconds{
-				Seconds: &seconds,
-			},
-		}},
-		Affinity: &models.PoolAffinity{
-			NodeAffinity: &models.PoolAffinityNodeAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: &models.PoolAffinityNodeAffinityRequiredDuringSchedulingIgnoredDuringExecution{
-					NodeSelectorTerms: []*models.NodeSelectorTerm{{
-						MatchExpressions: []*models.NodeSelectorTermMatchExpressionsItems0{{
-							Key:      &mockString,
-							Operator: &mockString,
-						}},
-					}},
-				},
-				PreferredDuringSchedulingIgnoredDuringExecution: []*models.PoolAffinityNodeAffinityPreferredDuringSchedulingIgnoredDuringExecutionItems0{{
-					Weight: &weight,
-					Preference: &models.NodeSelectorTerm{
-						MatchFields: []*models.NodeSelectorTermMatchFieldsItems0{{
-							Key:      &mockString,
-							Operator: &mockString,
-						}},
-					},
-				}},
-			},
-			PodAffinity: &models.PoolAffinityPodAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []*models.PodAffinityTerm{{
-					LabelSelector: &models.PodAffinityTermLabelSelector{
-						MatchExpressions: []*models.PodAffinityTermLabelSelectorMatchExpressionsItems0{{
-							Key:      &mockString,
-							Operator: &mockString,
-						}},
-					},
-					TopologyKey: &mockString,
-				}},
-				PreferredDuringSchedulingIgnoredDuringExecution: []*models.PoolAffinityPodAffinityPreferredDuringSchedulingIgnoredDuringExecutionItems0{{
-					PodAffinityTerm: &models.PodAffinityTerm{
-						LabelSelector: &models.PodAffinityTermLabelSelector{
-							MatchExpressions: []*models.PodAffinityTermLabelSelectorMatchExpressionsItems0{{
-								Key:      &mockString,
-								Operator: &mockString,
-							}},
-						},
-						TopologyKey: &mockString,
-					},
-					Weight: &weight,
-				}},
-			},
-			PodAntiAffinity: &models.PoolAffinityPodAntiAffinity{
-				RequiredDuringSchedulingIgnoredDuringExecution: []*models.PodAffinityTerm{{
-					LabelSelector: &models.PodAffinityTermLabelSelector{
-						MatchExpressions: []*models.PodAffinityTermLabelSelectorMatchExpressionsItems0{{
-							Key:      &mockString,
-							Operator: &mockString,
-						}},
-					},
-					TopologyKey: &mockString,
-				}},
-				PreferredDuringSchedulingIgnoredDuringExecution: []*models.PoolAffinityPodAntiAffinityPreferredDuringSchedulingIgnoredDuringExecutionItems0{{
-					PodAffinityTerm: &models.PodAffinityTerm{
-						LabelSelector: &models.PodAffinityTermLabelSelector{
-							MatchExpressions: []*models.PodAffinityTermLabelSelectorMatchExpressionsItems0{{
-								Key:      &mockString,
-								Operator: &mockString,
-							}},
-						},
-						TopologyKey: &mockString,
-					},
-					Weight: &weight,
-				}},
-			},
-		},
-	}}
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{}, nil
-	}
-	opClientTenantPatchMock = func(ctx context.Context, namespace string, tenantName string, pt types.PatchType, data []byte, options metav1.PatchOptions) (*miniov2.Tenant, error) {
-		return nil, errors.New("mock-patch-error")
-	}
-	_, err := updateTenantPools(context.Background(), suite.opClient, "mock-namespace", "mock-tenant", pools)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestUpdateTenantPoolsWithoutError() {
-	seconds := int64(10)
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{}, nil
-	}
-	opClientTenantPatchMock = func(ctx context.Context, namespace string, tenantName string, pt types.PatchType, data []byte, options metav1.PatchOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				Pools: []miniov2.Pool{{
-					VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
-						Spec: corev1.PersistentVolumeClaimSpec{
-							Resources: corev1.ResourceRequirements{
-								Requests: corev1.ResourceList{
-									corev1.ResourceStorage: resource.MustParse("1Gi"),
-								},
-							},
-						},
-					},
-					SecurityContext: suite.createTenantPodSecurityContext(),
-					Tolerations: []corev1.Toleration{{
-						TolerationSeconds: &seconds,
-					}},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceCPU:    resource.MustParse("1"),
-							corev1.ResourceMemory: resource.MustParse("1Gi"),
-						},
-						Limits: corev1.ResourceList{
-							corev1.ResourceLimitsMemory: resource.MustParse("1"),
-						},
-					},
-					Affinity: &corev1.Affinity{
-						NodeAffinity: &corev1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-								NodeSelectorTerms: []corev1.NodeSelectorTerm{{
-									MatchExpressions: []corev1.NodeSelectorRequirement{{}},
-								}},
-							},
-							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{{
-								Preference: corev1.NodeSelectorTerm{
-									MatchFields: []corev1.NodeSelectorRequirement{{}},
-								},
-							}},
-						},
-						PodAffinity: &corev1.PodAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
-								LabelSelector: &metav1.LabelSelector{
-									MatchExpressions: []metav1.LabelSelectorRequirement{{}},
-								},
-							}},
-							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{{
-								PodAffinityTerm: corev1.PodAffinityTerm{
-									LabelSelector: &metav1.LabelSelector{
-										MatchExpressions: []metav1.LabelSelectorRequirement{{}},
-									},
-								},
-							}},
-						},
-						PodAntiAffinity: &corev1.PodAntiAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{{
-								LabelSelector: &metav1.LabelSelector{
-									MatchExpressions: []metav1.LabelSelectorRequirement{{}},
-								},
-							}},
-							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{{
-								PodAffinityTerm: corev1.PodAffinityTerm{
-									LabelSelector: &metav1.LabelSelector{
-										MatchExpressions: []metav1.LabelSelectorRequirement{{}},
-									},
-								},
-							}},
-						},
-					},
-				}},
-			},
-		}, nil
-	}
-	_, err := updateTenantPools(context.Background(), suite.opClient, "mock-namespace", "mock-tenant", []*models.Pool{})
-	suite.assert.Nil(err)
 }
 
 func (suite *TenantTestSuite) TestTenantUpdateCertificateHandlerWithError() {
@@ -1472,458 +1049,7 @@ func (suite *TenantTestSuite) TestTenantUpdateCertificateHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initTenantUpdateCertificateRequest() (params operator_api.TenantUpdateCertificateParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestTenantUpdateEncryptionHandlerWithError() {
-	params, api := suite.initTenantUpdateEncryptionRequest()
-	response := api.OperatorAPITenantUpdateEncryptionHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.TenantUpdateEncryptionDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) TestTenantUpdateEncryptionWithExternalCertError() {
-	params, _ := suite.initTenantUpdateEncryptionRequest()
-	params.Body = &models.EncryptionConfiguration{
-		ServerTLS: &models.KeyPairConfiguration{},
-	}
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				KES: &miniov2.KESConfig{
-					ExternalCertSecret: &miniov2.LocalCertificateReference{
-						Name: "mock-crt",
-					},
-				},
-			},
-		}, nil
-	}
-	err := tenantUpdateEncryption(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantUpdateEncryptionWithExternalClientCertError() {
-	params, _ := suite.initTenantUpdateEncryptionRequest()
-	params.Body = &models.EncryptionConfiguration{
-		MinioMtls: &models.KeyPairConfiguration{},
-	}
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				ExternalClientCertSecret: &miniov2.LocalCertificateReference{
-					Name: "mock-crt",
-				},
-			},
-		}, nil
-	}
-	err := tenantUpdateEncryption(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantUpdateEncryptionAWSWithoutError() {
-	params, _ := suite.initTenantUpdateEncryptionRequest()
-	endpoint := "mock-endpoint"
-	region := "mock-region"
-	ak := "mock-accesskey"
-	sk := "mock-secretkey"
-	params.Body = &models.EncryptionConfiguration{
-		Replicas:           "1",
-		SecurityContext:    suite.createMockModelsSecurityContext(),
-		SecretsToBeDeleted: []string{"mock-crt"},
-		Aws: &models.AwsConfiguration{
-			Secretsmanager: &models.AwsConfigurationSecretsmanager{
-				Endpoint: &endpoint,
-				Region:   &region,
-				Kmskey:   "mock-kmskey",
-				Credentials: &models.AwsConfigurationSecretsmanagerCredentials{
-					Accesskey: &ak,
-					Secretkey: &sk,
-				},
-			},
-		},
-	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
-		return nil, nil
-	}
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				ExternalClientCertSecret: &miniov2.LocalCertificateReference{
-					Name: "mock-crt",
-				},
-				KES: &miniov2.KESConfig{
-					ExternalCertSecret: &miniov2.LocalCertificateReference{
-						Name: "mock-crt",
-					},
-				},
-			},
-		}, nil
-	}
-	opClientTenantUpdateMock = func(ctx context.Context, tenant *miniov2.Tenant, opts metav1.UpdateOptions) (*miniov2.Tenant, error) {
-		return nil, nil
-	}
-	err := tenantUpdateEncryption(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantUpdateEncryptionGemaltoWithoutError() {
-	params, _ := suite.initTenantUpdateEncryptionRequest()
-	endpoint := "mock-endpoint"
-	token := "mock-token"
-	domain := "mock-domain"
-	params.Body = &models.EncryptionConfiguration{
-		Replicas:        "1",
-		SecurityContext: suite.createMockModelsSecurityContext(),
-		Gemalto: &models.GemaltoConfiguration{
-			Keysecure: &models.GemaltoConfigurationKeysecure{
-				Endpoint: &endpoint,
-				Credentials: &models.GemaltoConfigurationKeysecureCredentials{
-					Token:  &token,
-					Domain: &domain,
-				},
-			},
-		},
-		KmsMtls: &models.EncryptionConfigurationAO1KmsMtls{
-			Ca: "bW9jaw==",
-		},
-	}
-	suite.prepareEncryptionUpdateMocksNoError()
-	err := tenantUpdateEncryption(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantUpdateEncryptionGCPWithoutError() {
-	params, _ := suite.initTenantUpdateEncryptionRequest()
-	project := "mock-project"
-	params.Body = &models.EncryptionConfiguration{
-		Replicas:        "1",
-		SecurityContext: suite.createMockModelsSecurityContext(),
-		Gcp: &models.GcpConfiguration{
-			Secretmanager: &models.GcpConfigurationSecretmanager{
-				ProjectID: &project,
-				Endpoint:  "mock-endpoint",
-				Credentials: &models.GcpConfigurationSecretmanagerCredentials{
-					ClientEmail:  "mock",
-					ClientID:     "mock",
-					PrivateKey:   "mock",
-					PrivateKeyID: "mock",
-				},
-			},
-		},
-	}
-	suite.prepareEncryptionUpdateMocksNoError()
-	err := tenantUpdateEncryption(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantUpdateEncryptionAzureWithoutError() {
-	params, _ := suite.initTenantUpdateEncryptionRequest()
-	endpoint := "mock-endpoint"
-	tenant := "mock-tenant"
-	clientID := "mock-client-id"
-	clientSecret := "mock-client-secret"
-	params.Body = &models.EncryptionConfiguration{
-		Replicas:        "1",
-		SecurityContext: suite.createMockModelsSecurityContext(),
-		Azure: &models.AzureConfiguration{
-			Keyvault: &models.AzureConfigurationKeyvault{
-				Endpoint: &endpoint,
-				Credentials: &models.AzureConfigurationKeyvaultCredentials{
-					TenantID:     &tenant,
-					ClientID:     &clientID,
-					ClientSecret: &clientSecret,
-				},
-			},
-		},
-	}
-	suite.prepareEncryptionUpdateMocksNoError()
-	err := tenantUpdateEncryption(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(err)
-}
-
-func (suite *TenantTestSuite) prepareEncryptionUpdateMocksNoError() {
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
-		return nil, nil
-	}
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{Spec: miniov2.TenantSpec{}}, nil
-	}
-	opClientTenantUpdateMock = func(ctx context.Context, tenant *miniov2.Tenant, opts metav1.UpdateOptions) (*miniov2.Tenant, error) {
-		return nil, nil
-	}
-}
-
-func (suite *TenantTestSuite) initTenantUpdateEncryptionRequest() (params operator_api.TenantUpdateEncryptionParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestTenantDeleteEncryptionHandlerWithError() {
-	params, api := suite.initTenantDeleteEncryptionRequest()
-	response := api.OperatorAPITenantDeleteEncryptionHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.TenantDeleteEncryptionDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initTenantDeleteEncryptionRequest() (params operator_api.TenantDeleteEncryptionParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestTenantEncryptionInfoHandlerWithError() {
-	params, api := suite.initTenantEncryptionInfoRequest()
-	response := api.OperatorAPITenantEncryptionInfoHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.TenantEncryptionInfoDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) TestTenantEncryptionInfoWitNoKesError() {
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{Spec: miniov2.TenantSpec{}}, nil
-	}
-	params, _ := suite.initTenantEncryptionInfoRequest()
-	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(res)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantEncryptionInfoWithExtCertError() {
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				KES: &miniov2.KESConfig{
-					ExternalCertSecret: &miniov2.LocalCertificateReference{
-						Name: "mock-crt",
-					},
-					SecurityContext: suite.createTenantPodSecurityContext(),
-				},
-			},
-		}, nil
-	}
-	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {
-		return nil, errors.New("mock-get-error")
-	}
-	params, _ := suite.initTenantEncryptionInfoRequest()
-	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(res)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantEncryptionInfoWithClientCertError() {
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				KES: &miniov2.KESConfig{},
-				ExternalClientCertSecret: &miniov2.LocalCertificateReference{
-					Name: "mock-crt",
-				},
-			},
-		}, nil
-	}
-	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {
-		return nil, errors.New("mock-get-error")
-	}
-	params, _ := suite.initTenantEncryptionInfoRequest()
-	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(res)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCertError() {
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				KES: &miniov2.KESConfig{
-					ClientCertSecret: &miniov2.LocalCertificateReference{
-						Name: "mock-kes-crt",
-					},
-					Configuration: &corev1.LocalObjectReference{
-						Name: "mock-kes-config",
-					},
-				},
-			},
-		}, nil
-	}
-	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {
-		if secretName == "mock-kes-config" {
-			return &corev1.Secret{
-				Data: map[string][]byte{
-					"server-config.yaml": suite.getKesYamlMock(false),
-				},
-			}, nil
-		}
-		if secretName == "mock-kes-crt" {
-			return &corev1.Secret{
-				Data: map[string][]byte{
-					"client.crt": []byte("mock-client-crt"),
-				},
-			}, nil
-		}
-		return nil, errors.New("mock-get-error")
-	}
-	params, _ := suite.initTenantEncryptionInfoRequest()
-	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(res)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCACertError() {
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				KES: &miniov2.KESConfig{
-					ClientCertSecret: &miniov2.LocalCertificateReference{
-						Name: "mock-kes-crt",
-					},
-					Configuration: &corev1.LocalObjectReference{
-						Name: "mock-kes-config",
-					},
-				},
-			},
-		}, nil
-	}
-	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {
-		if secretName == "mock-kes-config" {
-			return &corev1.Secret{
-				Data: map[string][]byte{
-					"server-config.yaml": suite.getKesYamlMock(false),
-				},
-			}, nil
-		}
-		if secretName == "mock-kes-crt" {
-			return &corev1.Secret{
-				Data: map[string][]byte{
-					"ca.crt": []byte("mock-client-crt"),
-				},
-			}, nil
-		}
-		return nil, errors.New("mock-get-error")
-	}
-	params, _ := suite.initTenantEncryptionInfoRequest()
-	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(res)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantEncryptionInfoWithGemaltoError() {
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				KES: &miniov2.KESConfig{
-					ClientCertSecret: &miniov2.LocalCertificateReference{
-						Name: "mock-kes-crt",
-					},
-					Configuration: &corev1.LocalObjectReference{
-						Name: "mock-kes-config",
-					},
-				},
-			},
-		}, nil
-	}
-	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {
-		if secretName == "mock-kes-config" {
-			return &corev1.Secret{
-				Data: map[string][]byte{
-					"server-config.yaml": suite.getKesYamlMock(true),
-				},
-			}, nil
-		}
-		if secretName == "mock-kes-crt" {
-			return &corev1.Secret{
-				Data: map[string][]byte{
-					"ca.crt": []byte("mock-client-crt"),
-				},
-			}, nil
-		}
-		return nil, errors.New("mock-get-error")
-	}
-	params, _ := suite.initTenantEncryptionInfoRequest()
-	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.Nil(res)
-	suite.assert.NotNil(err)
-}
-
-func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutError() {
-	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
-		return &miniov2.Tenant{
-			Spec: miniov2.TenantSpec{
-				KES: &miniov2.KESConfig{
-					Configuration: &corev1.LocalObjectReference{
-						Name: "mock-kes-config",
-					},
-				},
-			},
-		}, nil
-	}
-	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {
-		if secretName == "mock-kes-config" {
-			return &corev1.Secret{
-				Data: map[string][]byte{
-					"server-config.yaml": suite.getKesYamlMock(false),
-				},
-			}, nil
-		}
-		return nil, errors.New("mock-get-error")
-	}
-	params, _ := suite.initTenantEncryptionInfoRequest()
-	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
-	suite.assert.NotNil(res)
-	suite.assert.Nil(err)
-}
-
-func (suite *TenantTestSuite) getKesYamlMock(noVault bool) []byte {
-	kesConfig := &kes.ServerConfig{
-		Keys: kes.Keys{
-			Vault: &kes.Vault{
-				Prefix:     "mock-prefix",
-				Namespace:  "mock-namespace",
-				EnginePath: "mock-engine-path",
-				Endpoint:   "mock-endpoint",
-				Status: &kes.VaultStatus{
-					Ping: 5 * time.Second,
-				},
-				AppRole: &kes.AppRole{
-					EnginePath: "mock-engine-path",
-					ID:         "mock-id",
-					Retry:      5 * time.Second,
-					Secret:     "mock-secret",
-				},
-			},
-			Aws: &kes.Aws{},
-			Gcp: &kes.Gcp{},
-			Gemalto: &kes.Gemalto{
-				KeySecure: &kes.GemaltoKeySecure{
-					Endpoint: "mock-endpoint",
-					Credentials: &kes.GemaltoCredentials{
-						Domain: "mock-domain",
-						Retry:  5 * time.Second,
-						Token:  "mock-token",
-					},
-					TLS: &kes.GemaltoTLS{},
-				},
-			},
-			Azure: &kes.Azure{},
-		},
-	}
-	if noVault {
-		kesConfig.Keys.Vault = nil
-	}
-	kesConfigBytes, _ := yaml.Marshal(kesConfig)
-	return kesConfigBytes
-}
-
-func (suite *TenantTestSuite) initTenantEncryptionInfoRequest() (params operator_api.TenantEncryptionInfoParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerCertificateHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -1938,7 +1064,7 @@ func (suite *TenantTestSuite) TestGetTenantYAMLHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initGetTenantYAMLRequest() (params operator_api.GetTenantYAMLParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerYAMLHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -1953,7 +1079,7 @@ func (suite *TenantTestSuite) TestPutTenantYAMLHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initPutTenantYAMLRequest() (params operator_api.PutTenantYAMLParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerYAMLHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
@@ -1971,28 +1097,10 @@ func (suite *TenantTestSuite) TestGetTenantEventsHandlerWithError() {
 }
 
 func (suite *TenantTestSuite) initGetTenantEventsRequest() (params operator_api.GetTenantEventsParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
+	registerEventHandlers(&api)
 	params.HTTPRequest = &http.Request{}
 	params.Namespace = "mock-namespace"
 	params.Tenant = "mock-tenant"
-	return params, api
-}
-
-func (suite *TenantTestSuite) TestUpdateTenantDomainsHandlerWithError() {
-	params, api := suite.initUpdateTenantDomainsRequest()
-	response := api.OperatorAPIUpdateTenantDomainsHandler.Handle(params, &models.Principal{})
-	_, ok := response.(*operator_api.UpdateTenantDomainsDefault)
-	suite.assert.True(ok)
-}
-
-func (suite *TenantTestSuite) initUpdateTenantDomainsRequest() (params operator_api.UpdateTenantDomainsParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace-domain"
-	params.Tenant = "mock-tenant-domain"
-	params.Body = &models.UpdateDomainsRequest{
-		Domains: &models.DomainsConfiguration{},
-	}
 	return params, api
 }
 
