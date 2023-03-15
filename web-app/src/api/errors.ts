@@ -1,5 +1,5 @@
-// This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// This file is part of MinIO Console Server
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -14,17 +14,22 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Close codes for websockets defined in RFC 6455
-export const WSCloseNormalClosure = 1000;
-export const WSCloseCloseGoingAway = 1001;
-export const WSCloseAbnormalClosure = 1006;
-export const WSClosePolicyViolation = 1008;
-export const WSCloseInternalServerErr = 1011;
+import { ErrorResponseHandler } from "../common/types";
+import { Error } from "./operatorApi";
 
-export const wsProtocol = (protocol: string): string => {
-  let wsProtocol = "ws";
-  if (protocol === "https:") {
-    wsProtocol = "wss";
+// errorToHandler translates a swagger error to a ErrorResponseHandler which
+// is legacy, when all API calls are using the swagger API, we can remove this.
+export const errorToHandler = (e: Error): ErrorResponseHandler => {
+  if (!e) {
+    return {
+      statusCode: 0,
+      errorMessage: "",
+      detailedError: "",
+    };
   }
-  return wsProtocol;
+  return {
+    statusCode: e.code,
+    errorMessage: e.message,
+    detailedError: e.detailedMessage,
+  };
 };

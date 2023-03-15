@@ -20,12 +20,12 @@ import {
   ITolerationModel,
   ITolerationOperator,
 } from "../../../../../../common/types";
-import { IPool } from "../../../ListTenants/types";
-import { LabelKeyPair } from "../../../types";
+import { fsGroupChangePolicyType, LabelKeyPair } from "../../../types";
 import { has } from "lodash";
 import get from "lodash/get";
 import { Opts } from "../../../ListTenants/utils";
 import { editPoolAsync } from "./thunks/editPoolAsync";
+import { Pool } from "../../../../../../api/operatorApi";
 
 const initialState: IEditPool = {
   editPoolLoading: false,
@@ -75,7 +75,7 @@ export const editPoolSlice = createSlice({
   name: "editPool",
   initialState,
   reducers: {
-    setInitialPoolDetails: (state, action: PayloadAction<IPool>) => {
+    setInitialPoolDetails: (state, action: PayloadAction<Pool>) => {
       let podAffinity: "default" | "nodeSelector" | "none" = "none";
       let withPodAntiAffinity = false;
       let nodeSelectorLabels = "";
@@ -103,13 +103,13 @@ export const editPoolSlice = createSlice({
         let labelItems: string[] = [];
         nodeSelectorPairs = [];
 
-        action.payload.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms.forEach(
+        action.payload.affinity?.nodeAffinity?.requiredDuringSchedulingIgnoredDuringExecution?.nodeSelectorTerms.forEach(
           (labels) => {
-            labels.matchExpressions.forEach((exp) => {
-              labelItems.push(`${exp.key}=${exp.values.join(",")}`);
+            labels.matchExpressions?.forEach((exp) => {
+              labelItems.push(`${exp.key}=${exp.values?.join(",")}`);
               nodeSelectorPairs.push({
                 key: exp.key,
-                value: exp.values.join(", "),
+                value: exp.values?.join(", ")!,
               });
             });
           }
@@ -129,11 +129,11 @@ export const editPoolSlice = createSlice({
       if (action.payload.tolerations) {
         tolerations = action.payload.tolerations?.map((toleration) => {
           const tolerationItem: ITolerationModel = {
-            key: toleration.key,
+            key: toleration.key!,
             tolerationSeconds: toleration.tolerationSeconds,
             value: toleration.value,
-            effect: toleration.effect,
-            operator: toleration.operator,
+            effect: toleration.effect as ITolerationEffect,
+            operator: toleration.operator! as ITolerationOperator,
           };
           return tolerationItem;
         });
@@ -144,7 +144,7 @@ export const editPoolSlice = createSlice({
       const newPoolInfoFields: IEditPoolFields = {
         setup: {
           numberOfNodes: action.payload.servers,
-          storageClass: action.payload.volume_configuration.storage_class_name,
+          storageClass: action.payload.volume_configuration.storage_class_name!,
           volumeSize: volSizeVars,
           volumesPerServer: action.payload.volumes_per_server,
         },
@@ -155,11 +155,12 @@ export const editPoolSlice = createSlice({
             runAsGroup: action.payload.securityContext?.runAsGroup || "",
             fsGroup: action.payload.securityContext?.fsGroup || "",
             fsGroupChangePolicy:
-              action.payload.securityContext?.fsGroupChangePolicy || "Always",
+              (action.payload.securityContext
+                ?.fsGroupChangePolicy as fsGroupChangePolicyType) || "Always",
             runAsNonRoot: !!action.payload.securityContext?.runAsNonRoot,
           },
           customRuntime: !!action.payload.runtimeClassName,
-          runtimeClassName: action.payload.runtimeClassName,
+          runtimeClassName: action.payload.runtimeClassName!,
         },
         affinity: {
           podAffinity,

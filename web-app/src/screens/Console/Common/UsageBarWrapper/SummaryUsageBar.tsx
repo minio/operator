@@ -1,56 +1,24 @@
 import React, { Fragment } from "react";
-import { Theme } from "@mui/material/styles";
-import { LinearProgress, Stack } from "@mui/material";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
+import { Stack } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import {
-  CapacityValues,
-  ITenant,
-  ValueUnit,
-} from "../../Tenants/ListTenants/types";
+import { CapacityValues, ValueUnit } from "../../Tenants/ListTenants/types";
 import { CircleIcon, Loader } from "mds";
 import { niceBytes, niceBytesInt } from "../../../../common/utils";
 import TenantCapacity from "../../Tenants/ListTenants/TenantCapacity";
 import ErrorBlock from "../../../shared/ErrorBlock";
 import LabelValuePair from "./LabelValuePair";
+import { Tenant } from "../../../../api/operatorApi";
 
 interface ISummaryUsageBar {
-  tenant: ITenant;
+  tenant: Tenant;
   label: string;
   error: string;
   loading: boolean;
-  classes: any;
   labels?: boolean;
   healthStatus?: string;
 }
 
-const styles = (theme: Theme) =>
-  createStyles({
-    centerItem: {
-      textAlign: "center",
-    },
-  });
-
-export const BorderLinearProgress = withStyles((theme) => ({
-  root: {
-    height: 10,
-    borderRadius: 5,
-  },
-  colorPrimary: {
-    backgroundColor: "#F4F4F4",
-  },
-  bar: {
-    borderRadius: 5,
-    backgroundColor: "#081C42",
-  },
-  padChart: {
-    padding: "5px",
-  },
-}))(LinearProgress);
-
 const SummaryUsageBar = ({
-  classes,
   tenant,
   healthStatus,
   loading,
@@ -88,18 +56,18 @@ const SummaryUsageBar = ({
     ];
   } else {
     spaceVariants = tenant.tiers.map((itemTenant) => {
-      return { value: itemTenant.size, variant: itemTenant.name };
+      return { value: itemTenant.size!, variant: itemTenant.name! };
     });
     let internalUsage = tenant.tiers
       .filter((itemTenant) => {
         return itemTenant.type === "internal";
       })
-      .reduce((sum, itemTenant) => sum + itemTenant.size, 0);
+      .reduce((sum, itemTenant) => sum + itemTenant.size!, 0);
     let tieredUsage = tenant.tiers
       .filter((itemTenant) => {
         return itemTenant.type !== "internal";
       })
-      .reduce((sum, itemTenant) => sum + itemTenant.size, 0);
+      .reduce((sum, itemTenant) => sum + itemTenant.size!, 0);
 
     const t = niceBytesInt(tieredUsage, true);
     const parts = t.split(" ");
@@ -175,8 +143,14 @@ const SummaryUsageBar = ({
   return (
     <React.Fragment>
       {loading && (
-        <div className={classes.padChart}>
-          <Grid item xs={12} className={classes.centerItem}>
+        <div style={{ padding: 5 }}>
+          <Grid
+            item
+            xs={12}
+            style={{
+              textAlign: "center",
+            }}
+          >
             <Loader style={{ width: 40, height: 40 }} />
           </Grid>
         </div>
@@ -186,4 +160,4 @@ const SummaryUsageBar = ({
   );
 };
 
-export default withStyles(styles)(SummaryUsageBar);
+export default SummaryUsageBar;

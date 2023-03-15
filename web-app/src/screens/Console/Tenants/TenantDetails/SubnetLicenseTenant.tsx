@@ -25,14 +25,14 @@ import { niceBytes } from "../../../../common/utils";
 import { DateTime } from "luxon";
 import { Link } from "react-router-dom";
 import Paper from "@mui/material/Paper";
-import { ITenant } from "../ListTenants/types";
 import { Button } from "mds";
 import { SubnetInfo } from "../../License/types";
 import TooltipWrapper from "../../Common/TooltipWrapper/TooltipWrapper";
+import { Tenant } from "../../../../api/operatorApi";
 
 interface ISubnetLicenseTenant {
   classes: any;
-  tenant: ITenant | null;
+  tenant: Tenant | null;
   loadingActivateProduct: any;
   loadingLicenseInfo: boolean;
   licenseInfo: SubnetInfo | undefined;
@@ -100,7 +100,7 @@ const SubnetLicenseTenant = ({
   activateProduct,
 }: ISubnetLicenseTenant) => {
   const expiryTime = tenant?.subnet_license
-    ? DateTime.fromISO(tenant.subnet_license.expires_at)
+    ? DateTime.fromISO(tenant.subnet_license?.expires_at!)
     : DateTime.now();
 
   return (
@@ -160,7 +160,10 @@ const SubnetLicenseTenant = ({
                 className={classes.licenseInfoValue}
               >
                 {niceBytes(
-                  (tenant.subnet_license.storage_capacity * 1099511627776) // 1 Terabyte = 1099511627776 Bytes
+                  (
+                    (tenant.subnet_license?.storage_capacity || 0) *
+                    1099511627776
+                  ) // 1 Terabyte = 1099511627776 Bytes
                     .toString(10)
                 )}
               </Typography>

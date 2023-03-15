@@ -14,44 +14,39 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import api from "../../../../common/api";
 import get from "lodash/get";
 import { NewServiceAccount } from "../../Common/CredentialsPrompt/types";
-import { ErrorResponseHandler, ITenantCreator } from "../../../../common/types";
+import { ErrorResponseHandler } from "../../../../common/types";
+import { api } from "../../../../api";
+import {
+  CreateTenantRequest,
+  CreateTenantResponse,
+  Error,
+  HttpResponse,
+} from "../../../../api/operatorApi";
 
-export const createTenantCall = (dataSend: ITenantCreator) => {
+export const createTenantCall = (dataSend: CreateTenantRequest) => {
   return new Promise<NewServiceAccount>((resolve, reject) => {
-    api
-      .invoke("POST", `/api/v1/tenants`, dataSend)
-      .then((res) => {
-        const consoleSAList = get(res, "console", []);
+    api.tenants
+      .createTenant(dataSend)
+      .then((res: HttpResponse<CreateTenantResponse, Error>) => {
+        const consoleSAList = res.data.console ?? [];
 
         let newSrvAcc: NewServiceAccount = {
           idp: get(res, "externalIDP", false),
           console: [],
         };
 
-        if (consoleSAList) {
-          if (Array.isArray(consoleSAList)) {
-            newSrvAcc.console = consoleSAList.map((consoleKey) => {
-              return {
-                accessKey: consoleKey.access_key,
-                secretKey: consoleKey.secret_key,
-                api: "s3v4",
-                path: "auto",
-                url: consoleKey.url,
-              };
-            });
-          } else {
-            newSrvAcc = {
-              console: {
-                accessKey: res.console.access_key,
-                secretKey: res.console.secret_key,
-                url: res.console.url,
-              },
-            };
-          }
-        }
+        newSrvAcc.console = consoleSAList.map((consoleKey) => {
+          return {
+            accessKey: consoleKey.access_key!,
+            secretKey: consoleKey.secret_key!,
+            api: "s3v4",
+            path: "auto",
+            url: consoleKey.url!,
+          };
+        });
+
         resolve(newSrvAcc);
       })
       .catch((err: ErrorResponseHandler) => {

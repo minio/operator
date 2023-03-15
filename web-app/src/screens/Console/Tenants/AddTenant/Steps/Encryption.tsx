@@ -191,7 +191,6 @@ const Encryption = ({ classes }: IEncryptionProps) => {
 
     if (enableEncryption) {
       encryptionValidation = [
-        ...encryptionValidation,
         {
           fieldKey: "rawConfiguration",
           required: encryptionTab > 0,
@@ -225,10 +224,10 @@ const Encryption = ({ classes }: IEncryptionProps) => {
         {
           fieldKey: "kes_securityContext_fsGroup",
           required: true,
-          value: kesSecurityContext.fsGroup,
+          value: kesSecurityContext.fsGroup!,
           customValidation:
             kesSecurityContext.fsGroup === "" ||
-            parseInt(kesSecurityContext.fsGroup) < 0,
+            parseInt(kesSecurityContext.fsGroup!) < 0,
           customValidationMessage: `fsGroup must be present and be 0 or more`,
         },
       ];
@@ -665,7 +664,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                           cleanValidation("kes_securityContext_fsGroup");
                         }}
                         label="FsGroup"
-                        value={kesSecurityContext.fsGroup}
+                        value={kesSecurityContext.fsGroup!}
                         required
                         error={
                           validationErrors["kes_securityContext_fsGroup"] || ""
@@ -680,7 +679,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                         label="FsGroupChangePolicy"
                         id="securityContext_fsGroupChangePolicy"
                         name="securityContext_fsGroupChangePolicy"
-                        value={kesSecurityContext.fsGroupChangePolicy}
+                        value={kesSecurityContext.fsGroupChangePolicy!}
                         onChange={(e: SelectChangeEvent<string>) => {
                           updateField("kesSecurityContext", {
                             ...kesSecurityContext,

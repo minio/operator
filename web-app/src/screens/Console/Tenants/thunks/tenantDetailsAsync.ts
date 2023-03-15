@@ -16,11 +16,10 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AppState } from "../../../../store";
-import { niceBytes } from "../../../../common/utils";
-import { ITenant } from "../ListTenants/types";
-import api from "../../../../common/api";
 import { ErrorResponseHandler } from "../../../../common/types";
 import { setErrorSnackMessage } from "../../../../systemSlice";
+import { api } from "../../../../api";
+import { Error, HttpResponse, Tenant } from "../../../../api/operatorApi";
 
 export const getTenantAsync = createAsyncThunk(
   "tenantDetails/getTenantAsync",
@@ -29,38 +28,10 @@ export const getTenantAsync = createAsyncThunk(
 
     const currentNamespace = state.tenants.currentNamespace;
     const currentTenant = state.tenants.currentTenant;
-
-    return api
-      .invoke(
-        "GET",
-        `/api/v1/namespaces/${currentNamespace}/tenants/${currentTenant}`
-      )
-      .then((res: ITenant) => {
-        // add computed fields
-        const resPools = !res.pools ? [] : res.pools;
-
-        let totalInstances = 0;
-        let totalVolumes = 0;
-        let poolNamedIndex = 0;
-        for (let pool of resPools) {
-          const cap =
-            pool.volumes_per_server *
-            pool.servers *
-            pool.volume_configuration.size;
-          pool.label = `pool-${poolNamedIndex}`;
-          if (pool.name === undefined || pool.name === "") {
-            pool.name = pool.label;
-          }
-          pool.capacity = niceBytes(cap + "");
-          pool.volumes = pool.servers * pool.volumes_per_server;
-          totalInstances += pool.servers;
-          totalVolumes += pool.volumes;
-          poolNamedIndex += 1;
-        }
-        res.total_instances = totalInstances;
-        res.total_volumes = totalVolumes;
-
-        return res;
+    return api.namespaces
+      .tenantDetails(currentNamespace, currentTenant)
+      .then((res: HttpResponse<Tenant, Error>) => {
+        return res.data;
       })
       .catch((err: ErrorResponseHandler) => {
         dispatch(setErrorSnackMessage(err));

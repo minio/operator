@@ -93,7 +93,7 @@ const EditPool = () => {
 
   useEffect(() => {
     if (selectedPool) {
-      const poolDetails = tenant?.pools.find(
+      const poolDetails = tenant?.pools?.find(
         (pool) => pool.name === selectedPool
       );
 

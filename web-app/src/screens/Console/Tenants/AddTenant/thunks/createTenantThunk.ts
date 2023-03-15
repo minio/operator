@@ -18,10 +18,10 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AppState } from "../../../../../store";
 import { generatePoolName, getBytes } from "../../../../../common/utils";
 import { getDefaultAffinity, getNodeSelector } from "../../TenantDetails/utils";
-import { ITenantCreator } from "../../../../../common/types";
 import { KeyPair } from "../../ListTenants/utils";
 import { createTenantCall } from "../createTenantAPI";
 import { setErrorSnackMessage } from "../../../../../systemSlice";
+import { CreateTenantRequest } from "../../../../../api/operatorApi";
 
 export const createTenantAsync = createAsyncThunk(
   "createTenant/createTenantAsync",
@@ -181,17 +181,14 @@ export const createTenantAsync = createAsyncThunk(
       };
     }
 
-    let dataSend: ITenantCreator = {
+    let dataSend: CreateTenantRequest = {
       name: tenantName,
       namespace: namespace,
       access_key: "",
       secret_key: "",
-      access_keys: [],
-      secret_keys: [],
       enable_tls: enableTLS && enableAutoCert,
       enable_console: true,
       enable_prometheus: true,
-      service_name: "",
       image: imageName,
       expose_minio: exposeMinIO,
       expose_console: exposeConsole,
@@ -204,7 +201,7 @@ export const createTenantAsync = createAsyncThunk(
             size: distribution.pvSize,
             storage_class_name: selectedStorageClass,
           },
-          securityContext: tenantCustom ? tenantSecurityContext : null,
+          securityContext: tenantCustom ? tenantSecurityContext : undefined,
           tolerations: tolerationValues,
           ...affinityObject,
           ...runtimeClass,

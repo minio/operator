@@ -22,13 +22,13 @@ import {
   IStorageDistribution,
   IStorageFactors,
 } from "./types";
-import { IPool } from "../screens/Console/Tenants/ListTenants/types";
 import {
   IMkEnvs,
   IntegrationConfiguration,
   mkPanelConfigurations,
 } from "../screens/Console/Tenants/AddTenant/Steps/TenantResources/utils";
 import get from "lodash/get";
+import { Pool } from "../api/operatorApi";
 
 const minStReq = 1073741824; // Minimal Space required for MinIO
 const minMemReq = 2147483648; // Minimal Memory required for MinIO in bytes
@@ -488,9 +488,8 @@ export const erasureCodeCalc = (
 };
 
 // Pool Name Generator
-export const generatePoolName = (pools: IPool[]) => {
+export const generatePoolName = (pools: Pool[]) => {
   const poolCounter = pools.length;
-
   return `pool-${poolCounter}`;
 };
 
@@ -677,7 +676,7 @@ export const representationNumber = (number: number | undefined) => {
   return `${returnValue}${unit}`;
 };
 
-export const encodeURLString = (name: string | null) => {
+export const encodeURLString = (name: string | number | null) => {
   if (!name) {
     return "";
   }

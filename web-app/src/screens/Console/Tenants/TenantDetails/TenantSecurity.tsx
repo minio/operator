@@ -225,10 +225,12 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
         setMinioTLSCaCertificateSecrets(res.customCertificates.minioCAs || []);
         dispatch(setRunAsGroup(res.securityContext.runAsGroup));
         dispatch(setRunAsUser(res.securityContext.runAsUser));
-        dispatch(setFSGroup(res.securityContext.fsGroup));
+        dispatch(setFSGroup(res.securityContext.fsGroup!));
         dispatch(setRunAsNonRoot(res.securityContext.runAsNonRoot));
         dispatch(
-          setFSGroupChangePolicy(res.securityContext.fsGroupChangePolicy)
+          setFSGroupChangePolicy(
+            res.securityContext.fsGroupChangePolicy as fsGroupChangePolicyType
+          )
         );
       })
       .catch((err: ErrorResponseHandler) => {

@@ -1891,6 +1891,10 @@ definitions:
         type: boolean
       domains:
         $ref: "#/definitions/domainsConfiguration"
+      tiers:
+        type: array
+        items:
+          $ref: "#/definitions/tenantTierElement"
 
   tenantUsage:
     type: object

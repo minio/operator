@@ -322,7 +322,7 @@ const TenantAuditLogging = ({
               classes={classes}
               runAsGroup={runAsGroup}
               runAsUser={runAsUser}
-              fsGroup={fsGroup}
+              fsGroup={fsGroup!}
               runAsNonRoot={runAsNonRoot}
               fsGroupChangePolicy={fsGroupChangePolicy}
               setFSGroup={(value: string) => dispatch(setFSGroup(value))}

@@ -15,9 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ITenantState } from "./types";
-import { ITenant } from "./ListTenants/types";
 import { getTenantAsync } from "./thunks/tenantDetailsAsync";
+import { Tenant } from "../../../api/operatorApi";
 
 export interface FileValue {
   fileName: string;
@@ -35,6 +34,16 @@ export interface CertificateFile {
   key: string;
   fileName: string;
   value: string;
+}
+
+export interface ITenantState {
+  currentTenant: string;
+  currentNamespace: string;
+  loadingTenant: boolean;
+  tenantInfo: Tenant | null;
+  currentTab: string;
+  poolDetailsOpen: boolean;
+  selectedPool: string | null;
 }
 
 const initialState: ITenantState = {
@@ -64,7 +73,7 @@ export const tenantSlice = createSlice({
       state.currentTenant = action.payload.name;
       state.currentNamespace = action.payload.namespace;
     },
-    setTenantInfo: (state, action: PayloadAction<ITenant | null>) => {
+    setTenantInfo: (state, action: PayloadAction<Tenant | null>) => {
       if (action.payload) {
         state.tenantInfo = action.payload;
       }

@@ -16,14 +16,18 @@
 
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { AppState } from "../../../../../../../store";
-import api from "../../../../../../../common/api";
 import { ErrorResponseHandler } from "../../../../../../../common/types";
 import { setErrorSnackMessage } from "../../../../../../../systemSlice";
 import { generatePoolName } from "../../../../../../../common/utils";
 import { getDefaultAffinity, getNodeSelector } from "../../../utils";
-import { IEditPoolItem, IEditPoolRequest } from "../../../../ListTenants/types";
 import { resetEditPoolForm } from "../editPoolSlice";
 import { getTenantAsync } from "../../../../thunks/tenantDetailsAsync";
+import { api } from "../../../../../../../api";
+import {
+  Pool,
+  PoolUpdateRequest,
+  SecurityContext,
+} from "../../../../../../../api/operatorApi";
 
 export const editPoolAsync = createAsyncThunk(
   "editPool/editPoolAsync",
@@ -53,14 +57,14 @@ export const editPoolAsync = createAsyncThunk(
       return;
     }
 
-    const poolName = generatePoolName(tenant!.pools);
+    const poolName = generatePoolName(tenant!.pools!);
 
     let affinityObject = {};
 
     switch (affinityType) {
       case "default":
         affinityObject = {
-          affinity: getDefaultAffinity(tenant.name, poolName),
+          affinity: getDefaultAffinity(tenant.name!, poolName),
         };
         break;
       case "nodeSelector":
@@ -68,7 +72,7 @@ export const editPoolAsync = createAsyncThunk(
           affinity: getNodeSelector(
             nodeSelectorLabels,
             withPodAntiAffinity,
-            tenant.name,
+            tenant.name!,
             poolName
           ),
         };
@@ -79,10 +83,10 @@ export const editPoolAsync = createAsyncThunk(
       (toleration) => toleration.key.trim() !== ""
     );
 
-    const cleanPools = tenant.pools
-      .filter((pool) => pool.name !== selectedPool)
+    const cleanPools = tenant?.pools
+      ?.filter((pool) => pool.name !== selectedPool)
       .map((pool) => {
-        let securityContextOption = null;
+        let securityContextOption: SecurityContext | null = null;
 
         if (pool.securityContext) {
           if (
@@ -94,13 +98,13 @@ export const editPoolAsync = createAsyncThunk(
           }
         }
 
-        const request: IEditPoolItem = {
-          ...pool,
-          securityContext: securityContextOption,
-        };
+        const request = pool;
+        if (securityContextOption) {
+          request.securityContext = securityContextOption!;
+        }
 
         return request;
-      });
+      }) as Pool[];
 
     let runtimeClass = {};
 
@@ -110,35 +114,31 @@ export const editPoolAsync = createAsyncThunk(
       };
     }
 
-    const data: IEditPoolRequest = {
-      pools: [
-        ...cleanPools,
-        {
-          name: selectedPool || poolName,
-          servers: numberOfNodes,
-          volumes_per_server: volumesPerServer,
-          volume_configuration: {
-            size: volumeSize * 1073741824,
-            storage_class_name: selectedStorageClass,
-            labels: null,
-          },
-          tolerations: tolerationValues,
-          securityContext: securityContextEnabled ? securityContext : null,
-          ...affinityObject,
-          ...runtimeClass,
-        },
-      ],
+    cleanPools.push({
+      name: selectedPool || poolName,
+      servers: numberOfNodes,
+      volumes_per_server: volumesPerServer,
+      volume_configuration: {
+        size: volumeSize * 1073741824,
+        storage_class_name: selectedStorageClass,
+        labels: undefined,
+      },
+      tolerations: tolerationValues,
+      securityContext: securityContextEnabled ? securityContext : undefined,
+      ...affinityObject,
+      ...runtimeClass,
+    });
+
+    const data: PoolUpdateRequest = {
+      pools: cleanPools,
     };
     const poolsURL: string = `/namespaces/${tenant?.namespace || ""}/tenants/${
       tenant?.name || ""
     }/pools`;
 
-    return api
-      .invoke(
-        "PUT",
-        `/api/v1/namespaces/${tenant.namespace}/tenants/${tenant.name}/pools`,
-        data
-      )
+    return api.namespaces
+      .tenantUpdatePools(tenant.namespace!, tenant.name!, data)
+
       .then(() => {
         dispatch(resetEditPoolForm());
         dispatch(getTenantAsync());

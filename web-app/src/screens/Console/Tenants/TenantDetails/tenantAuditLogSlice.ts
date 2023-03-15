@@ -15,7 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { IKeyValue } from "../ListTenants/types";
-import { fsGroupChangePolicyType, ISecurityContext } from "../types";
+import { fsGroupChangePolicyType } from "../types";
+import { SecurityContext } from "../../../../api/operatorApi";
 
 export interface IEditTenantAuditLogging {
   auditLoggingEnabled: boolean;
@@ -35,8 +36,8 @@ export interface IEditTenantAuditLogging {
   memRequest: string;
   dbCPURequest: string;
   dbMemRequest: string;
-  securityContext: ISecurityContext;
-  dbSecurityContext: ISecurityContext;
+  securityContext: SecurityContext;
+  dbSecurityContext: SecurityContext;
   refreshLoggingInfo: boolean;
 }
 

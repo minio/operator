@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import get from "lodash/get";
-import { ITenant } from "./types";
 
 export interface Opts {
   label: string;
@@ -78,25 +77,4 @@ export const getLimitSizes = (resourceQuotas: IQuotas) => {
   });
 
   return returnQuotas;
-};
-
-export const tenantIsOnline = (tenant: ITenant): boolean => {
-  if (tenant.currentState === "") {
-    return false;
-  }
-  if (
-    !tenant.status &&
-    tenant.health_status !== "green" &&
-    tenant.health_status !== "yellow"
-  ) {
-    return false;
-  }
-  if (
-    tenant.status &&
-    tenant.status.health_status !== "green" &&
-    tenant.status.health_status !== "yellow"
-  ) {
-    return false;
-  }
-  return true;
 };

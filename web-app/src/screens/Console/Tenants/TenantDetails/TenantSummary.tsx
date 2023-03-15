@@ -30,13 +30,12 @@ import { AppState, useAppDispatch } from "../../../../store";
 import AButton from "../../Common/AButton/AButton";
 import SummaryUsageBar from "../../Common/UsageBarWrapper/SummaryUsageBar";
 import LabelValuePair from "../../Common/UsageBarWrapper/LabelValuePair";
-import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
 import SectionTitle from "../../Common/SectionTitle";
-import { Button, EditIcon } from "mds";
+import { Button, DisableIcon, EditIcon, TierOnlineIcon } from "mds";
 import EditDomains from "./EditDomains";
-import { ITenant } from "../ListTenants/types";
 import { useParams } from "react-router-dom";
 import { getTenantAsync } from "../thunks/tenantDetailsAsync";
+import { Tenant } from "../../../../api/operatorApi";
 
 interface ITenantsSummary {
   classes: any;
@@ -101,7 +100,7 @@ const StorageSummary = ({
   tenant,
   classes,
 }: {
-  tenant: ITenant | null;
+  tenant: Tenant | null;
   classes: any;
 }) => {
   if (!tenant) {
@@ -120,17 +119,10 @@ const StorageSummary = ({
 };
 
 const getToggle = (toggleValue: boolean, idPrefix = "") => {
-  return (
-    <FormSwitchWrapper
-      indicatorLabels={["Enabled", "Disabled"]}
-      checked={toggleValue}
-      value={toggleValue}
-      id={`${idPrefix}-status`}
-      name={`${idPrefix}-status`}
-      onChange={() => {}}
-      switchOnly
-    />
-  );
+  if (toggleValue) {
+    return <TierOnlineIcon />;
+  }
+  return <DisableIcon style={{ color: "grey" }} />;
 };
 
 const featureRowStyle = {
@@ -193,9 +185,14 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
 
   useEffect(() => {
     if (tenant) {
-      setPoolCount(tenant.pools.length);
-      setVolumes(tenant.total_volumes || 0);
-      setInstances(tenant.total_instances || 0);
+      setPoolCount(tenant?.pools?.length || 0);
+      setVolumes(
+        tenant.pools?.reduce(
+          (sum, p) => sum + p.volumes_per_server * p.servers,
+          0
+        ) || 0
+      );
+      setInstances(tenant.pools?.reduce((sum, p) => sum + p.servers, 0) || 0);
     }
   }, [tenant]);
 

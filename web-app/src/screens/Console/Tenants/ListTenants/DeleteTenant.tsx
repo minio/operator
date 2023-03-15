@@ -16,7 +16,6 @@
 
 import React, { useState } from "react";
 import { DialogContentText } from "@mui/material";
-import { ITenant } from "./types";
 
 import { ErrorResponseHandler } from "../../../../common/types";
 import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
@@ -28,10 +27,11 @@ import WarningMessage from "../../Common/WarningMessage/WarningMessage";
 import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import { useAppDispatch } from "../../../../store";
+import { Tenant } from "../../../../api/operatorApi";
 
 interface IDeleteTenant {
   deleteOpen: boolean;
-  selectedTenant: ITenant;
+  selectedTenant: Tenant;
   closeDeleteModalAndRefresh: (refreshList: boolean) => any;
 }
 

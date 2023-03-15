@@ -19,18 +19,12 @@ import { AddIcon, Button, HelpBox, RefreshIcon, TenantsIcon } from "mds";
 import Grid from "@mui/material/Grid";
 import { LinearProgress, SelectChangeEvent } from "@mui/material";
 import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { ITenant, ITenantsResponse } from "./types";
-import { niceBytes } from "../../../../common/utils";
 import { NewServiceAccount } from "../../Common/CredentialsPrompt/types";
 import {
   actionsTray,
   containerForHeader,
   searchField,
 } from "../../Common/FormComponents/common/styleLibrary";
-import { ErrorResponseHandler } from "../../../../common/types";
-import api from "../../../../common/api";
 import TenantListItem from "./TenantListItem";
 import AButton from "../../Common/AButton/AButton";
 
@@ -44,51 +38,55 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../../../store";
 import TooltipWrapper from "../../Common/TooltipWrapper/TooltipWrapper";
 import PageHeaderWrapper from "../../Common/PageHeaderWrapper/PageHeaderWrapper";
+import makeStyles from "@mui/styles/makeStyles";
+import { api } from "../../../../api";
+import {
+  Error,
+  HttpResponse,
+  ListTenantsResponse,
+  TenantList,
+} from "../../../../api/operatorApi";
 
 const CredentialsPrompt = withSuspense(
   React.lazy(() => import("../../Common/CredentialsPrompt/CredentialsPrompt"))
 );
 
-interface ITenantsList {
-  classes: any;
-}
+const useStyles = makeStyles((theme: Theme) => ({
+  ...actionsTray,
+  ...searchField,
+  ...containerForHeader,
+  tenantsList: {
+    height: "calc(100vh - 195px)",
+  },
+  sortByContainer: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginBottom: 10,
+  },
+  innerSort: {
+    maxWidth: 200,
+    width: "95%",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sortByLabel: {
+    whiteSpace: "nowrap",
+    fontSize: 14,
+    color: "#838383",
+    fontWeight: "bold",
+    marginRight: 10,
+  },
+}));
 
-const styles = (theme: Theme) =>
-  createStyles({
-    ...actionsTray,
-    ...searchField,
-    ...containerForHeader,
-    tenantsList: {
-      height: "calc(100vh - 195px)",
-    },
-    sortByContainer: {
-      display: "flex",
-      justifyContent: "flex-end",
-      marginBottom: 10,
-    },
-    innerSort: {
-      maxWidth: 200,
-      width: "95%",
-      display: "flex",
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    sortByLabel: {
-      whiteSpace: "nowrap",
-      fontSize: 14,
-      color: "#838383",
-      fontWeight: "bold",
-      marginRight: 10,
-    },
-  });
-
-const ListTenants = ({ classes }: ITenantsList) => {
+const ListTenants = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const classes = useStyles();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [filterTenants, setFilterTenants] = useState<string>("");
-  const [records, setRecords] = useState<ITenant[]>([]);
+  const [records, setRecords] = useState<TenantList[]>([]);
   const [showNewCredentials, setShowNewCredentials] = useState<boolean>(false);
   const [createdAccount, setCreatedAccount] =
     useState<NewServiceAccount | null>(null);
@@ -162,10 +160,10 @@ const ListTenants = ({ classes }: ITenantsList) => {
 
         return 0;
       default:
-        if (a.name > b.name) {
+        if (a.name! > b.name!) {
           return 1;
         }
-        if (a.name < b.name) {
+        if (a.name! < b.name!) {
           return -1;
         }
         return 0;
@@ -175,28 +173,20 @@ const ListTenants = ({ classes }: ITenantsList) => {
   useEffect(() => {
     if (isLoading) {
       const fetchRecords = () => {
-        api
-          .invoke("GET", `/api/v1/tenants`)
-          .then((res: ITenantsResponse) => {
-            if (res === null) {
+        api.tenants
+          .listAllTenants()
+          .then((res: HttpResponse<ListTenantsResponse, Error>) => {
+            if (!res.data) {
               setIsLoading(false);
               return;
             }
-            let resTenants: ITenant[] = [];
-            if (res.tenants !== null) {
-              resTenants = res.tenants;
-            }
-
-            for (let i = 0; i < resTenants.length; i++) {
-              resTenants[i].total_capacity = niceBytes(
-                resTenants[i].total_size + ""
-              );
-            }
+            let resTenants: TenantList[] =
+              (res.data.tenants as TenantList[]) ?? [];
 
             setRecords(resTenants);
             setIsLoading(false);
           })
-          .catch((err: ErrorResponseHandler) => {
+          .catch((err) => {
             dispatch(setErrorSnackMessage(err));
             setIsLoading(false);
           });
@@ -359,4 +349,4 @@ const ListTenants = ({ classes }: ITenantsList) => {
   );
 };
 
-export default withStyles(styles)(ListTenants);
+export default ListTenants;

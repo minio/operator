@@ -15,18 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import withStyles from "@mui/styles/withStyles";
 import { AppState, useAppDispatch } from "../../../../../../store";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { IPool } from "../../../ListTenants/types";
 import Grid from "@mui/material/Grid";
 import { TextField } from "@mui/material";
 import InputAdornment from "@mui/material/InputAdornment";
 import { AddIcon, Button, SearchIcon } from "mds";
 import TableWrapper from "../../../../Common/TableWrapper/TableWrapper";
 import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
 import {
   actionsTray,
   containerForHeader,
@@ -35,30 +32,35 @@ import {
 } from "../../../../Common/FormComponents/common/styleLibrary";
 import { setSelectedPool } from "../../../tenantsSlice";
 import TooltipWrapper from "../../../../Common/TooltipWrapper/TooltipWrapper";
+import { Pool } from "../../../../../../api/operatorApi";
+import makeStyles from "@mui/styles/makeStyles";
+import createStyles from "@mui/styles/createStyles";
+import { niceBytesInt } from "../../../../../../common/utils";
 
 interface IPoolsSummary {
-  classes: any;
   setPoolDetailsView: () => void;
 }
 
-const styles = (theme: Theme) =>
+const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     ...tenantDetailsStyles,
     ...actionsTray,
     ...tableStyles,
     ...containerForHeader,
-  });
+  })
+);
 
-const PoolsListing = ({ classes, setPoolDetailsView }: IPoolsSummary) => {
+const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const classes = useStyles();
 
   const loadingTenant = useSelector(
     (state: AppState) => state.tenants.loadingTenant
   );
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
 
-  const [pools, setPools] = useState<IPool[]>([]);
+  const [pools, setPools] = useState<Pool[]>([]);
   const [filter, setFilter] = useState<string>("");
 
   useEffect(() => {
@@ -69,7 +71,7 @@ const PoolsListing = ({ classes, setPoolDetailsView }: IPoolsSummary) => {
   }, [tenant]);
 
   const filteredPools = pools.filter((pool) => {
-    if (pool.name.toLowerCase().includes(filter.toLowerCase())) {
+    if (pool.name?.toLowerCase().includes(filter.toLowerCase())) {
       return true;
     }
 
@@ -79,8 +81,8 @@ const PoolsListing = ({ classes, setPoolDetailsView }: IPoolsSummary) => {
   const listActions = [
     {
       type: "view",
-      onClick: (selectedValue: IPool) => {
-        dispatch(setSelectedPool(selectedValue.name));
+      onClick: (selectedValue: Pool) => {
+        dispatch(setSelectedPool(selectedValue.name!));
         setPoolDetailsView();
       },
     },
@@ -129,9 +131,17 @@ const PoolsListing = ({ classes, setPoolDetailsView }: IPoolsSummary) => {
           itemActions={listActions}
           columns={[
             { label: "Name", elementKey: "name" },
-            { label: "Capacity", elementKey: "capacity" },
-            { label: "# of Instances", elementKey: "servers" },
-            { label: "# of Drives", elementKey: "volumes" },
+            {
+              label: "Total Capacity",
+              elementKey: "capacity",
+              renderFullObject: true,
+              renderFunction: (x: Pool) =>
+                niceBytesInt(
+                  x.volumes_per_server * x.servers * x.volume_configuration.size
+                ),
+            },
+            { label: "Servers", elementKey: "servers" },
+            { label: "Volumes/Server", elementKey: "volumes_per_server" },
           ]}
           isLoading={loadingTenant}
           records={filteredPools}
@@ -144,4 +154,4 @@ const PoolsListing = ({ classes, setPoolDetailsView }: IPoolsSummary) => {
   );
 };
 
-export default withStyles(styles)(PoolsListing);
+export default PoolsListing;

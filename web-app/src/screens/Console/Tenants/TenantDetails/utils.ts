@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import { IAffinityModel } from "../../../../common/types";
+import { Tenant } from "../../../../api/operatorApi";
 
 export const getDefaultAffinity = (tenantName: string, poolName: string) => {
   const defaultAffinity: IAffinityModel = {
@@ -79,4 +80,15 @@ export const getNodeSelector = (
     nodeSelector.podAntiAffinity = def.podAntiAffinity;
   }
   return nodeSelector;
+};
+
+export const tenantIsOnline = (tenant: Tenant): boolean => {
+  if (tenant.currentState === "") {
+    return false;
+  }
+  return !(
+    tenant.status &&
+    tenant.status.health_status !== "green" &&
+    tenant.status.health_status !== "yellow"
+  );
 };

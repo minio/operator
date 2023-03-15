@@ -14,11 +14,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import {
-  ICertificateInfo,
-  ISecurityContext,
-  ITenantEncryptionResponse,
-} from "../types";
+import { ICertificateInfo, ITenantEncryptionResponse } from "../types";
 import { Theme } from "@mui/material/styles";
 import { Button } from "mds";
 import createStyles from "@mui/styles/createStyles";
@@ -60,6 +56,7 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import CodeMirrorWrapper from "../../Common/FormComponents/CodeMirrorWrapper/CodeMirrorWrapper";
 import FormHr from "../../Common/FormHr";
+import { SecurityContext } from "../../../../api/operatorApi";
 
 interface ITenantEncryption {
   classes: any;
@@ -89,7 +86,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
   const [image, setImage] = useState<string>("");
   const [refreshEncryptionInfo, setRefreshEncryptionInfo] =
     useState<boolean>(false);
-  const [securityContext, setSecurityContext] = useState<ISecurityContext>({
+  const [securityContext, setSecurityContext] = useState<SecurityContext>({
     fsGroup: "1000",
     fsGroupChangePolicy: "Always",
     runAsGroup: "1000",
@@ -141,7 +138,6 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
 
     if (encryptionEnabled) {
       encryptionValidation = [
-        ...encryptionValidation,
         {
           fieldKey: "replicas",
           required: true,
@@ -170,10 +166,10 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
         {
           fieldKey: "kes_securityContext_fsGroup",
           required: true,
-          value: securityContext.fsGroup,
+          value: securityContext.fsGroup!,
           customValidation:
             securityContext.fsGroup === "" ||
-            parseInt(securityContext.fsGroup) < 0,
+            parseInt(securityContext.fsGroup!) < 0,
           customValidationMessage: `fsGroup must be present and be 0 or more`,
         },
       ];
@@ -1689,7 +1685,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                       });
                     }}
                     label="FsGroup"
-                    value={securityContext.fsGroup}
+                    value={securityContext.fsGroup!}
                     required
                     error={
                       validationErrors["kes_securityContext_fsGroup"] || ""

@@ -52,13 +52,13 @@ import PageLayout from "../../Common/Layout/PageLayout";
 import VerticalTabs from "../../Common/VerticalTabs/VerticalTabs";
 import withSuspense from "../../Common/Components/withSuspense";
 import { IAM_PAGES } from "../../../../common/SecureComponent/permissions";
-import { tenantIsOnline } from "../ListTenants/utils";
 import { setSnackBarMessage } from "../../../../systemSlice";
 import { setTenantName } from "../tenantsSlice";
 import { getTenantAsync } from "../thunks/tenantDetailsAsync";
 import { LinearProgress } from "@mui/material";
 import TooltipWrapper from "../../Common/TooltipWrapper/TooltipWrapper";
 import PageHeaderWrapper from "../../Common/PageHeaderWrapper/PageHeaderWrapper";
+import { tenantIsOnline } from "./utils";
 
 const TenantYAML = withSuspense(React.lazy(() => import("./TenantYAML")));
 const TenantSummary = withSuspense(React.lazy(() => import("./TenantSummary")));
@@ -275,7 +275,7 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                   {tenantInfo && tenantInfo.status && (
                     <span
                       className={healthStatusToClass(
-                        tenantInfo.status.health_status
+                        tenantInfo.status?.health_status!
                       )}
                     >
                       <CircleIcon />
@@ -302,13 +302,11 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                       confirmDeleteTenant();
                     }}
                     color="secondary"
-                    label={"Delete"}
                     icon={<TrashIcon />}
                   />
                 </TooltipWrapper>
                 <TooltipWrapper tooltip={"Edit YAML"}>
                   <Button
-                    label={"YAML"}
                     icon={<EditIcon />}
                     id={"yaml_button"}
                     variant="regular"
@@ -328,7 +326,6 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                     }}
                     disabled={!tenantInfo || !tenantIsOnline(tenantInfo)}
                     variant={"regular"}
-                    label={"Console"}
                     icon={<MinIOTierIconXs style={{ height: 16 }} />}
                   />
                 </TooltipWrapper>
@@ -340,7 +337,6 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                     onClick={() => {
                       dispatch(getTenantAsync());
                     }}
-                    label={"Refresh"}
                     icon={<RefreshIcon />}
                   />
                 </TooltipWrapper>
