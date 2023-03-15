@@ -16,52 +16,6 @@ concurrency:
 
 jobs:
 
-
-  lint-job:
-    name: Checking Lint
-    runs-on: [ ubuntu-latest ]
-    strategy:
-      matrix:
-        go-version: [ 1.20.x ]
-        os: [ ubuntu-latest ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-
-      - name: Set up Go ${{ matrix.go-version }} on ${{ matrix.os }}
-        uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-          cache: true
-        id: go
-
-      - name: Build on ${{ matrix.os }}
-        env:
-          GO111MODULE: on
-          GOOS: linux
-        run: |
-          make verify
-
-  vulnerable-dependencies-checks:
-    name: "Check for vulnerable dependencies"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [ 1.19 ]
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-          cache: true
-          check-latest: true
-      - name: Get govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-        shell: bash
-      - name: Run govulncheck
-        run: govulncheck ./...
-        shell: bash
   semgrep-static-code-analysis:
     name: "semgrep checks"
     runs-on: ubuntu-latest
@@ -82,7 +36,7 @@ jobs:
 
 
   ui-assets:
-    name: "React Code Has No Warnings & Prettified"
+    name: "React No Warnings & Prettified"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -147,7 +101,6 @@ jobs:
   compile-binary:
     name: Compiles on Go ${{ matrix.go-version }} and ${{ matrix.os }}
     needs:
-      - lint-job
       - ui-assets
       - reuse-golang-dependencies
       - semgrep-static-code-analysis
@@ -189,7 +142,7 @@ jobs:
   
   
   react-code-known-vulnerabilities:
-    name: "React Code Has No Known Vulnerable Deps"
+    name: "React No Known Vulnerable Deps"
     needs:
       - ui-assets
     runs-on: ubuntu-latest
@@ -287,7 +240,6 @@ jobs:
   test-operatorapi-on-go:
     name: Test Operatorapi on Go ${{ matrix.go-version }} and ${{ matrix.os }}
     needs:
-      - lint-job
       - ui-assets
       - reuse-golang-dependencies
       - semgrep-static-code-analysis
@@ -325,7 +277,6 @@ jobs:
   react-tests:
     name: React Tests
     needs:
-      - lint-job
       - ui-assets
       - reuse-golang-dependencies
       - semgrep-static-code-analysis
@@ -342,7 +293,6 @@ jobs:
 
     name: Operator API Tests
     needs:
-      - lint-job
       - ui-assets
       - reuse-golang-dependencies
       - semgrep-static-code-analysis

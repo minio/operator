@@ -3,10 +3,7 @@ name: goreleaser
 on:
   pull_request:
     branches:
-      - master
-  push:
-    branches:
-      - master
+      - 'release**'
 
 jobs:
   goreleaser:
