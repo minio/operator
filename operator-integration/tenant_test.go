@@ -1119,7 +1119,7 @@ func TestTenantLogReport(t *testing.T) {
 	// Vars
 	assert := assert.New(t)
 	nameSpace := "tenant-lite"
-	tenant := "storage-lite"
+	tenant := "myminio"
 	resp, err := GetTenantLogs(nameSpace, tenant)
 	if err != nil {
 		log.Println(err)
