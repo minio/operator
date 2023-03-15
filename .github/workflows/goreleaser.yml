@@ -1,9 +1,7 @@
 name: goreleaser
 
 on:
-  workflow_run:
-    workflows: [ "goreleaser" ]
-    types: [ requested ]
+  pull_request:
     branches:
       - 'release**'
 
