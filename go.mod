@@ -52,8 +52,8 @@ require (
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1
-	k8s.io/code-generator v0.27.0-alpha.2
-	k8s.io/klog/v2 v2.80.1
+	k8s.io/code-generator v0.27.0-alpha.3
+	k8s.io/klog/v2 v2.90.1
 	k8s.io/kubectl v0.25.4
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3

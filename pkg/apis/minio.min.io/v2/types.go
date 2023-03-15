@@ -42,7 +42,7 @@ type Tenant struct {
 	Spec TenantSpec `json:"spec"`
 	// Status provides details of the state of the Tenant
 	// +optional
-	Status TenantStatus `json:"status"`
+	Status TenantStatus `json:"status,omitempty"`
 }
 
 // TenantScheduler (`scheduler`) - Object describing Kubernetes Scheduler to use for deploying the MinIO Tenant.
@@ -436,7 +436,7 @@ type PoolStatus struct {
 	// we introduced the default securityContext as non-root, thus we should keep running this Pool without a
 	// Security Context
 	// +optional
-	LegacySecurityContext bool `json:"legacySecurityContext"`
+	LegacySecurityContext bool `json:"legacySecurityContext,omitempty"`
 }
 
 // HealthStatus represents whether the tenant is healthy, with decreased service or offline
@@ -481,17 +481,20 @@ type TenantUsage struct {
 }
 
 // TenantStatus is the status for a Tenant resource
+// +k8s:deepcopy-gen=true
 type TenantStatus struct {
 	CurrentState      string `json:"currentState"`
-	AvailableReplicas int32  `json:"availableReplicas"`
-	Revision          int32  `json:"revision"`
-	SyncVersion       string `json:"syncVersion"`
+	AvailableReplicas int32  `json:"availableReplicas,omitempty"`
+	Revision          int32  `json:"revision,omitempty"`
+	SyncVersion       string `json:"syncVersion,omitempty"`
 	// Keeps track of all the TLS certificates managed by the operator
 	// +nullable
-	Certificates CertificateStatus `json:"certificates"`
+	Certificates CertificateStatus `json:"certificates,omitempty"`
 	// All the pools get an individual status
 	// +nullable
-	Pools []PoolStatus `json:"pools"`
+	// +patchMergeKey=ssName
+	// +patchStrategy=merge
+	Pools []PoolStatus `json:"pools,omitempty" patchStrategy:"merge" patchMergeKey:"ssName"`
 	// *Optional* +
 	//
 	// Minimum number of disks that need to be online

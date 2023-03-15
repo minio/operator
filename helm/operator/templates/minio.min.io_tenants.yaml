@@ -5610,12 +5610,7 @@ spec:
                 format: int32
                 type: integer
             required:
-            - availableReplicas
-            - certificates
             - currentState
-            - pools
-            - revision
-            - syncVersion
             type: object
         required:
         - spec

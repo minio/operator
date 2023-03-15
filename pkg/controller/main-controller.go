@@ -75,6 +75,7 @@ import (
 	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
+	// appsacv1 "k8s.io/client-go/applyconfigurations/apps/v1"
 )
 
 const (
@@ -702,6 +703,7 @@ func (c *Controller) syncHandler(key string) error {
 	ctx := context.Background()
 	cOpts := metav1.CreateOptions{}
 	uOpts := metav1.UpdateOptions{}
+	//	fieldMgr := "minio-operator"
 
 	// Convert the namespace/name string into a distinct namespace and name
 	if key == "" {
@@ -993,6 +995,16 @@ func (c *Controller) syncHandler(key string) error {
 			if err != nil {
 				return err
 			}
+			// statefulsetApplyConfig, err := appsacv1.ExtractStatefulSet(ss, fieldMgr)
+			// if err != nil {
+			// 	klog.Error("error here")
+			// 	return err
+			// }
+
+			// ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Apply(ctx, statefulsetApplyConfig, metav1.ApplyOptions{FieldManager: fieldMgr})
+			// if err != nil {
+			// 	return err
+			// }
 			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
 			// Report the pool is properly created
 			tenant.Status.Pools[i].State = miniov2.PoolCreated
@@ -1222,6 +1234,15 @@ func (c *Controller) syncHandler(key string) error {
 				OperatorCATLS:   operatorCATLSExists,
 				OperatorImage:   c.operatorImage,
 			})
+			// statefulsetApplyConfig, err := appsacv1.ExtractStatefulSet(ss, fieldMgr)
+			// if err != nil {
+			// 	return err
+			// }
+
+			// _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Apply(ctx, statefulsetApplyConfig, metav1.ApplyOptions{FieldManager: fieldMgr})
+			// if err != nil {
+			// 	return err
+			// }
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return err
 			}
@@ -1298,6 +1319,15 @@ func (c *Controller) syncHandler(key string) error {
 				newStatefulSet.Spec.Template.ObjectMeta.Labels[k] = v
 			}
 
+			// statefulsetApplyConfig, err := appsacv1.ExtractStatefulSet(newStatefulSet, fieldMgr)
+			// if err != nil {
+			// 	return err
+			// }
+
+			// existingStatefulSet, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Apply(ctx, statefulsetApplyConfig, metav1.ApplyOptions{FieldManager: fieldMgr})
+			// if err != nil {
+			// 	return err
+			// }
 			if existingStatefulSet, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, newStatefulSet, uOpts); err != nil {
 				return err
 			}

@@ -39,12 +39,12 @@ func CustomCertificates() *CustomCertificatesApplyConfiguration {
 // WithClient adds the given value to the Client field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Client field.
-func (b *CustomCertificatesApplyConfiguration) WithClient(values ...**v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
+func (b *CustomCertificatesApplyConfiguration) WithClient(values ...*v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithClient")
 		}
-		b.Client = append(b.Client, *values[i])
+		b.Client = append(b.Client, values[i])
 	}
 	return b
 }
@@ -52,12 +52,12 @@ func (b *CustomCertificatesApplyConfiguration) WithClient(values ...**v2.CustomC
 // WithMinio adds the given value to the Minio field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Minio field.
-func (b *CustomCertificatesApplyConfiguration) WithMinio(values ...**v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
+func (b *CustomCertificatesApplyConfiguration) WithMinio(values ...*v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithMinio")
 		}
-		b.Minio = append(b.Minio, *values[i])
+		b.Minio = append(b.Minio, values[i])
 	}
 	return b
 }
@@ -65,12 +65,12 @@ func (b *CustomCertificatesApplyConfiguration) WithMinio(values ...**v2.CustomCe
 // WithMinioCAs adds the given value to the MinioCAs field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the MinioCAs field.
-func (b *CustomCertificatesApplyConfiguration) WithMinioCAs(values ...**v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
+func (b *CustomCertificatesApplyConfiguration) WithMinioCAs(values ...*v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithMinioCAs")
 		}
-		b.MinioCAs = append(b.MinioCAs, *values[i])
+		b.MinioCAs = append(b.MinioCAs, values[i])
 	}
 	return b
 }
