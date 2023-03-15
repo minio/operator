@@ -41,7 +41,7 @@ operator: assets binary
 docker: operator logsearchapi
 	@docker build --no-cache -t $(TAG) .
 
-build: regen-crd plugin logsearchapi operator docker
+build: regen-crd verify plugin logsearchapi operator docker
 
 install: all
 
