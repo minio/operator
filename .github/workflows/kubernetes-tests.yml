@@ -61,6 +61,7 @@ jobs:
     needs:
       - lint
       - vulnerable-dependencies-checks
+      - govet
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -79,6 +80,7 @@ jobs:
     needs:
       - lint
       - vulnerable-dependencies-checks
+      - govet
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -97,6 +99,7 @@ jobs:
     needs:
       - lint
       - vulnerable-dependencies-checks
+      - govet
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -115,9 +118,6 @@ jobs:
     needs:
       - logsearch
       - operator
-      - lint
-      - govet
-      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -136,9 +136,6 @@ jobs:
     needs:
       - logsearch
       - operator
-      - lint
-      - govet
-      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -157,9 +154,6 @@ jobs:
     needs:
       - logsearch
       - operator
-      - lint
-      - govet
-      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -180,8 +174,6 @@ jobs:
     needs:
       - logsearch
       - operator
-      - lint
-      - govet
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -202,9 +194,6 @@ jobs:
     needs:
       - logsearch
       - operator
-      - lint
-      - govet
-      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
@@ -225,9 +214,6 @@ jobs:
     needs:
       - logsearch
       - operator
-      - lint
-      - govet
-      - vulnerable-dependencies-checks
     strategy:
       matrix:
         go-version: [ 1.20.x ]
