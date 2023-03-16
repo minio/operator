@@ -18,7 +18,6 @@ package resources
 import (
 	"errors"
 
-	"github.com/dustin/go-humanize"
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	operator "github.com/minio/operator/pkg/apis/minio.min.io"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -43,21 +42,10 @@ type TenantOptions struct {
 	DisableTLS              bool
 	ImagePullSecret         string
 	DisableAntiAffinity     bool
-	EnableAuditLogs         bool
 	ExposeMinioService      bool
 	ExposeConsoleService    bool
-	AuditLogsDiskSpace      int32
-	AuditLogsImage          string
-	AuditLogsPGImage        string
-	AuditLogsPGInitImage    string
-	AuditLogsStorageClass   string
-	EnablePrometheus        bool
-	PrometheusDiskSpace     int
-	PrometheusStorageClass  string
-	PrometheusImage         string
-	PrometheusSidecarImage  string
-	PrometheusInitImage     string
-	Interactive             bool
+
+	Interactive bool
 }
 
 // Validate Tenant Options
@@ -155,13 +143,6 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 		t.Spec.CertConfig = getAutoCertConfig(opts)
 	}
 
-	if opts.EnableAuditLogs {
-		t.Spec.Log = getAuditLogConfig(opts)
-	}
-	if opts.EnablePrometheus {
-		t.Spec.Prometheus = getPrometheusConfig(opts)
-	}
-
 	t.EnsureDefaults()
 
 	return t, t.Validate()
@@ -173,73 +154,4 @@ func getAutoCertConfig(opts *TenantOptions) *miniov2.CertificateConfig {
 		OrganizationName: []string{},
 		DNSNames:         []string{},
 	}
-}
-
-func getAuditLogConfig(opts *TenantOptions) *miniov2.LogConfig {
-	diskSpace := int64(opts.AuditLogsDiskSpace) * humanize.GiByte
-	var logSearchStorageClass *string
-	if opts.AuditLogsStorageClass != "" {
-		logSearchStorageClass = &opts.AuditLogsStorageClass
-	}
-	// the audit max cap cannot be larger than disk size on the DB, else it won't trim the data
-	auditMaxCap := 10
-	if (diskSpace / humanize.GiByte) < int64(auditMaxCap) {
-		auditMaxCap = int(diskSpace / humanize.GiByte)
-	}
-	logConfig := createLogConfig(diskSpace, auditMaxCap, opts.Name, logSearchStorageClass)
-	if opts.AuditLogsImage != "" {
-		logConfig.Image = opts.AuditLogsImage
-	}
-	if opts.AuditLogsPGImage != "" {
-		logConfig.Db.Image = opts.AuditLogsPGImage
-	}
-	if opts.AuditLogsPGInitImage != "" {
-		logConfig.Db.InitImage = opts.AuditLogsPGInitImage
-	}
-	return logConfig
-}
-
-func createLogConfig(diskSpace int64, auditMaxCap int, name string, storage *string) *miniov2.LogConfig {
-	return &miniov2.LogConfig{
-		Audit: &miniov2.AuditConfig{DiskCapacityGB: &auditMaxCap},
-		Db: &miniov2.LogDbConfig{
-			VolumeClaimTemplate: &v1.PersistentVolumeClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: name + "-log",
-				},
-				Spec: v1.PersistentVolumeClaimSpec{
-					AccessModes: []v1.PersistentVolumeAccessMode{
-						v1.ReadWriteOnce,
-					},
-					Resources: v1.ResourceRequirements{
-						Requests: v1.ResourceList{
-							v1.ResourceStorage: *resource.NewQuantity(diskSpace, resource.DecimalExponent),
-						},
-					},
-					StorageClassName: storage,
-				},
-			},
-		},
-	}
-}
-
-func getPrometheusConfig(opts *TenantOptions) *miniov2.PrometheusConfig {
-	var prometheusStorageClass *string
-	if opts.PrometheusStorageClass != "" {
-		prometheusStorageClass = &opts.PrometheusStorageClass
-	}
-	prometheusConfig := &miniov2.PrometheusConfig{
-		DiskCapacityDB:   &opts.PrometheusDiskSpace,
-		StorageClassName: prometheusStorageClass,
-	}
-	if opts.PrometheusImage != "" {
-		prometheusConfig.Image = opts.PrometheusImage
-	}
-	if opts.PrometheusSidecarImage != "" {
-		prometheusConfig.SideCarImage = opts.PrometheusSidecarImage
-	}
-	if opts.PrometheusInitImage != "" {
-		prometheusConfig.InitImage = opts.PrometheusInitImage
-	}
-	return prometheusConfig
 }

@@ -257,20 +257,6 @@ type TenantSpec struct {
 	KES *KESConfig `json:"kes,omitempty"`
 	// *Optional* +
 	//
-	// Directs the MinIO Operator to deploy and configure the MinIO Log Search API. The Operator deploys a PostgreSQL instance as part of the tenant to support storing and querying MinIO logs. +
-	//
-	// If the tenant spec includes the `log` configuration, the Operator automatically configures and enables MinIO log search via the Console UI. +
-	//+optional
-	Log *LogConfig `json:"log,omitempty"`
-	// *Optional* +
-	//
-	// Directs the MinIO Operator to deploy and configure Prometheus for collecting tenant metrics. +
-	//
-	// For example, `minio.<namespace>.svc.<cluster-domain>.<example>/minio/v2/metrics/cluster`. The specific DNS name for the service depends on your Kubernetes cluster configuration. See the Kubernetes documentation on https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/[DNS for Services and Pods] for more information.
-	//+optional
-	Prometheus *PrometheusConfig `json:"prometheus,omitempty"`
-	// *Optional* +
-	//
 	// Directs the MinIO Operator to use prometheus operator. +
 	//
 	// Tenant scrape configuration will be added to prometheus managed by the prometheus-operator.

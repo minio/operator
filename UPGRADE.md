@@ -3,6 +3,44 @@ Upgrades
 
 In this document we will try to document relevant upgrade notes for the MinIO Operator.
 
+v5.0.0
+---
+
+Automatic Tenant migrations only start from tenants previously migrated to `v4.2.0` or newer, users coming from older
+version are recommended to upgrade to `v4.5.8` before upgrading to `v5.0.0`.
+
+The `Operator UI` is now bundled on the same container as operator.
+
+The `.spec.S3` field was removed in favor of `.spec.features`.
+
+Field `.spec.credsSecret` was removed in favor of `.spec.configuration`, this secret should hold all the environment
+variables for the MinIO deployment that contain sensitive information and should not be shown on `.spec.env`.
+
+Both `Log Search API` (`.spec.log`) and `Prometheus` (`.spec.prometheus`) deployments were removed, however they will be
+left running as stand-alone
+deployments/statefulset with no connection to the Tenant CR itself, this means that if the Tenant CR is deleted, this
+will not cascade to these deployments.
+
+> ⚠️ It is recommended to create a yaml file to manage these deployments subsequently.
+
+To back up these deployments:
+
+```shell
+export TENANT_NAME=myminio
+export NAMESPACE=mynamespace
+kubectl -n $NAMESPACE get secret $TENANT_NAME-log-secret -o yaml > $TENANT_NAME-log-secret.yaml
+kubectl -n $NAMESPACE get cm $TENANT_NAME-prometheus-config-map -o yaml > $TENANT_NAME-prometheus-config-map.yaml
+kubectl -n $NAMESPACE get sts $TENANT_NAME-prometheus -o yaml > $TENANT_NAME-prometheus.yaml
+kubectl -n $NAMESPACE get sts $TENANT_NAME-log -o yaml > $TENANT_NAME-log.yaml
+kubectl -n $NAMESPACE get deployment $TENANT_NAME-log-search-api -o yaml > $TENANT_NAME-log-search-api.yaml
+kubectl -n $NAMESPACE get svc $TENANT_NAME-log-hl-svc -o yaml > $TENANT_NAME-log-hl-svc.yaml
+kubectl -n $NAMESPACE get svc $TENANT_NAME-log-search-api -o yaml > $TENANT_NAME-log-search-api.yaml
+kubectl -n $NAMESPACE get svc $TENANT_NAME-prometheus-hl-svc -o yaml > $TENANT_NAME-prometheus-hl-svc.yaml
+```
+
+After exporting these objects, we recommend you remove `.metadata.ownerReferences` for all these.
+
+
 v4.4.5
 ---
 
@@ -13,7 +51,10 @@ minio/operator image or your private registry image.
 
 v4.3.9 - v4.4.0
 ---
-Support for Prometheus ServiceMonitor is removed. Using ServiceMonitor to configure prometheus endpoints will lead to duplicate metrics. The alternate approach is to use Prometheus [AdditionalScrapeConfigs] https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/additional-scrape-config.md. This can be enabled by setting `prometheusOperator: true` on the tenant.
+Support for Prometheus ServiceMonitor is removed. Using ServiceMonitor to configure prometheus endpoints will lead to
+duplicate metrics. The alternate approach is to use
+Prometheus [AdditionalScrapeConfigs] https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/additional-scrape-config.md.
+This can be enabled by setting `prometheusOperator: true` on the tenant.
 Once this is configured, MinIO Operator will create the additional configuration for the tenant.
 If the prometheus is running on a particular namespace, `PROMETHEUS_NAMESPACE` can be set accordingly.
 

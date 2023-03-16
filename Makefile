@@ -19,8 +19,6 @@ KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/base/crds/
 
 PLUGIN_HOME=kubectl-minio
 
-LOGSEARCHAPI=logsearchapi
-
 all: build
 
 getdeps:
@@ -38,10 +36,10 @@ binary:
 
 operator: assets binary
 
-docker: operator logsearchapi
+docker: operator
 	@docker build --no-cache -t $(TAG) .
 
-build: regen-crd verify plugin logsearchapi operator docker
+build: regen-crd verify plugin operator docker
 
 install: all
 
@@ -84,15 +82,6 @@ plugin: regen-crd
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml)
 
-.PHONY: logsearchapi
-logsearchapi: getdeps
-	@echo "Building 'logsearchapi' binary"
-	@(cd $(LOGSEARCHAPI); \
-		go vet ./... && \
-		go test -race ./... && \
-		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
-		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml && \
-		CGO_ENABLED=0 GOOS=linux go build --ldflags "-s -w" -trimpath -o ../logsearchapi-bin )
 
 generate-code:
 	@./k8s/update-codegen.sh

@@ -105,7 +105,6 @@ const UpdateTenantModal = ({
 
     let payload = {
       image: minioImage,
-      enable_prometheus: true,
     };
 
     if (imageRegistry) {

@@ -60,25 +60,6 @@ builds:
     hooks:
       post: ./package.sh {{ .Path }}
 
-  - id: logsearchapi
-    dir: logsearchapi
-    binary: logsearchapi-bin
-    goos:
-      - linux
-    goarch:
-      - arm64
-      - amd64
-      - ppc64le
-      - s390x
-    env:
-      - CGO_ENABLED=0
-    ldflags:
-      - -s -w -X main.version={{.Tag}}
-    flags:
-      - -trimpath
-    hooks:
-      post: ./package.sh {{ .Path }}
-
 archives:
   - allow_different_binary_count: true
     format: binary

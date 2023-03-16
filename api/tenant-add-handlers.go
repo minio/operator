@@ -21,16 +21,13 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/dustin/go-humanize"
 	"github.com/minio/operator/api/operations/operator_api"
 	"github.com/minio/operator/pkg/auth/utils"
 
 	corev1 "k8s.io/api/core/v1"
 
-	"github.com/go-openapi/swag"
 	"github.com/minio/operator/models"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -244,29 +241,6 @@ func createTenant(ctx context.Context, params operator_api.CreateTenantParams, c
 	if imagePullSecret != "" {
 		minInst.Spec.ImagePullSecret = corev1.LocalObjectReference{
 			Name: imagePullSecret,
-		}
-	}
-
-	// prometheus annotations support
-	if tenantReq.EnablePrometheus != nil && *tenantReq.EnablePrometheus && minInst.Annotations != nil {
-		minInst.Annotations[prometheusPath] = "/minio/prometheus/metrics"
-		minInst.Annotations[prometheusPort] = fmt.Sprint(miniov2.MinIOPort)
-		minInst.Annotations[prometheusScrape] = "true"
-	}
-
-	// Is Log Search enabled? (present in the parameters) if so configure
-	if tenantReq.LogSearchConfiguration != nil {
-		minInst, err = setTenantLogSearchConfiguration(ctx, tenantReq, minInst)
-		if err != nil {
-			return nil, ErrorWithContext(ctx, err)
-		}
-	}
-
-	// Is Prometheus/Monitoring enabled? (config present in the parameters) if so configure
-	if tenantReq.PrometheusConfiguration != nil {
-		minInst, err = setTenantPrometheusConfig(ctx, tenantReq, minInst)
-		if err != nil {
-			return nil, ErrorWithContext(ctx, err)
 		}
 	}
 
@@ -516,142 +490,4 @@ func setTenantBuiltInUsers(ctx context.Context, clientSet K8sClientI, tenantReq 
 		}
 	}
 	return users, nil
-}
-
-func setTenantLogSearchConfiguration(ctx context.Context, tenantReq *models.CreateTenantRequest, minInst miniov2.Tenant) (miniov2.Tenant, error) {
-	diskSpaceFromAPI := int64(5) * humanize.GiByte // Default is 5Gi
-	logSearchImage := ""
-	logSearchPgImage := ""
-	logSearchPgInitImage := ""
-	var logSearchStorageClass *string // Nil means use default storage class
-	var logSearchSecurityContext *corev1.PodSecurityContext
-	var logSearchPgSecurityContext *corev1.PodSecurityContext
-
-	if tenantReq.LogSearchConfiguration.StorageSize != nil {
-		diskSpaceFromAPI = int64(*tenantReq.LogSearchConfiguration.StorageSize) * humanize.GiByte
-	}
-	if tenantReq.LogSearchConfiguration.StorageClass != "" {
-		logSearchStorageClass = stringPtr(tenantReq.LogSearchConfiguration.StorageClass)
-	}
-	if tenantReq.LogSearchConfiguration.Image != "" {
-		logSearchImage = tenantReq.LogSearchConfiguration.Image
-	}
-	if tenantReq.LogSearchConfiguration.PostgresImage != "" {
-		logSearchPgImage = tenantReq.LogSearchConfiguration.PostgresImage
-	}
-	if tenantReq.LogSearchConfiguration.PostgresInitImage != "" {
-		logSearchPgInitImage = tenantReq.LogSearchConfiguration.PostgresInitImage
-	}
-	// if security context for logSearch is present, configure it.
-	if tenantReq.LogSearchConfiguration.SecurityContext != nil {
-		sc, err := convertModelSCToK8sSC(tenantReq.LogSearchConfiguration.SecurityContext)
-		if err != nil {
-			return minInst, err
-		}
-		logSearchSecurityContext = sc
-	}
-	// if security context for logSearch is present, configure it.
-	if tenantReq.LogSearchConfiguration.PostgresSecurityContext != nil {
-		sc, err := convertModelSCToK8sSC(tenantReq.LogSearchConfiguration.PostgresSecurityContext)
-		if err != nil {
-			return minInst, err
-		}
-		logSearchPgSecurityContext = sc
-	}
-
-	logSearchDiskSpace := resource.NewQuantity(diskSpaceFromAPI, resource.DecimalExponent)
-
-	// the audit max cap cannot be larger than disk size on the DB, else it won't trim the data
-	auditMaxCap := 10
-	if (diskSpaceFromAPI / humanize.GiByte) < int64(auditMaxCap) {
-		auditMaxCap = int(diskSpaceFromAPI / humanize.GiByte)
-	}
-
-	// default activate lgo search and prometheus
-	minInst.Spec.Log = &miniov2.LogConfig{
-		Audit: &miniov2.AuditConfig{DiskCapacityGB: swag.Int(auditMaxCap)},
-		Db: &miniov2.LogDbConfig{
-			VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: *tenantReq.Name + "-log",
-				},
-				Spec: corev1.PersistentVolumeClaimSpec{
-					AccessModes: []corev1.PersistentVolumeAccessMode{
-						corev1.ReadWriteOnce,
-					},
-					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{
-							corev1.ResourceStorage: *logSearchDiskSpace,
-						},
-					},
-					StorageClassName: logSearchStorageClass,
-				},
-			},
-		},
-	}
-	// set log search images if any
-	if logSearchImage != "" {
-		minInst.Spec.Log.Image = logSearchImage
-	}
-	if logSearchPgImage != "" {
-		minInst.Spec.Log.Db.Image = logSearchPgImage
-	}
-	if logSearchPgInitImage != "" {
-		minInst.Spec.Log.Db.InitImage = logSearchPgInitImage
-	}
-	if logSearchSecurityContext != nil {
-		minInst.Spec.Log.SecurityContext = logSearchSecurityContext
-	}
-	if logSearchPgSecurityContext != nil {
-		minInst.Spec.Log.Db.SecurityContext = logSearchPgSecurityContext
-	}
-	return minInst, nil
-}
-
-func setTenantPrometheusConfig(ctx context.Context, tenantReq *models.CreateTenantRequest, minInst miniov2.Tenant) (miniov2.Tenant, error) {
-	prometheusDiskSpace := 5      // Default is 5 by API
-	prometheusImage := ""         // Default is ""
-	prometheusSidecardImage := "" // Default is ""
-	prometheusInitImage := ""     // Default is ""
-
-	var prometheusStorageClass *string // Nil means default storage class
-
-	if tenantReq.PrometheusConfiguration.StorageSize != nil {
-		prometheusDiskSpace = int(*tenantReq.PrometheusConfiguration.StorageSize)
-	}
-	if tenantReq.PrometheusConfiguration.StorageClass != "" {
-		prometheusStorageClass = stringPtr(tenantReq.PrometheusConfiguration.StorageClass)
-	}
-	if tenantReq.PrometheusConfiguration.Image != "" {
-		prometheusImage = tenantReq.PrometheusConfiguration.Image
-	}
-	if tenantReq.PrometheusConfiguration.SidecarImage != "" {
-		prometheusSidecardImage = tenantReq.PrometheusConfiguration.SidecarImage
-	}
-	if tenantReq.PrometheusConfiguration.InitImage != "" {
-		prometheusInitImage = tenantReq.PrometheusConfiguration.InitImage
-	}
-
-	minInst.Spec.Prometheus = &miniov2.PrometheusConfig{
-		DiskCapacityDB:   swag.Int(prometheusDiskSpace),
-		StorageClassName: prometheusStorageClass,
-	}
-	if prometheusImage != "" {
-		minInst.Spec.Prometheus.Image = prometheusImage
-	}
-	if prometheusSidecardImage != "" {
-		minInst.Spec.Prometheus.SideCarImage = prometheusSidecardImage
-	}
-	if prometheusInitImage != "" {
-		minInst.Spec.Prometheus.InitImage = prometheusInitImage
-	}
-	// if security context for prometheus is present, configure it.
-	if tenantReq.PrometheusConfiguration != nil && tenantReq.PrometheusConfiguration.SecurityContext != nil {
-		sc, err := convertModelSCToK8sSC(tenantReq.PrometheusConfiguration.SecurityContext)
-		if err != nil {
-			return minInst, err
-		}
-		minInst.Spec.Prometheus.SecurityContext = sc
-	}
-	return minInst, nil
 }

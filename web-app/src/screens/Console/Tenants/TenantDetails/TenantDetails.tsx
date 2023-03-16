@@ -65,9 +65,7 @@ const TenantSummary = withSuspense(React.lazy(() => import("./TenantSummary")));
 const TenantLicense = withSuspense(React.lazy(() => import("./TenantLicense")));
 const PoolsSummary = withSuspense(React.lazy(() => import("./PoolsSummary")));
 const PodsSummary = withSuspense(React.lazy(() => import("./PodsSummary")));
-const TenantLogging = withSuspense(
-  React.lazy(() => import("./TenantAuditLogsScreen"))
-);
+
 const TenantEvents = withSuspense(React.lazy(() => import("./TenantEvents")));
 const TenantCSR = withSuspense(React.lazy(() => import("./TenantCSR")));
 const VolumesSummary = withSuspense(
@@ -91,9 +89,7 @@ const DeleteTenant = withSuspense(
   React.lazy(() => import("../ListTenants/DeleteTenant"))
 );
 const PodDetails = withSuspense(React.lazy(() => import("./pods/PodDetails")));
-const EditTenantMonitoringScreen = withSuspense(
-  React.lazy(() => import("./EditTenantMonitoringScreen"))
-);
+
 const TenantConfiguration = withSuspense(
   React.lazy(() => import("./TenantConfiguration"))
 );
@@ -371,11 +367,6 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                 <Route path={"pvcs/:PVCName"} element={<TenantVolumes />} />
                 <Route path={"volumes"} element={<VolumesSummary />} />
                 <Route path={"license"} element={<TenantLicense />} />
-                <Route
-                  path={"monitoring"}
-                  element={<EditTenantMonitoringScreen />}
-                />
-                <Route path={"logging"} element={<TenantLogging />} />
                 <Route path={"events"} element={<TenantEvents />} />
                 <Route path={"csr"} element={<TenantCSR />} />
                 <Route
@@ -444,22 +435,6 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
               value: "pools",
               component: Link,
               to: getRoutePath("pools"),
-            },
-          }}
-          {{
-            tabConfig: {
-              label: "Monitoring",
-              value: "monitoring",
-              component: Link,
-              to: getRoutePath("monitoring"),
-            },
-          }}
-          {{
-            tabConfig: {
-              label: "Audit Log",
-              value: "logging",
-              component: Link,
-              to: getRoutePath("logging"),
             },
           }}
           {{

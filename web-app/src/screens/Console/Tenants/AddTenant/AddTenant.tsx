@@ -42,8 +42,6 @@ import Images from "./Steps/Images";
 import PageLayout from "../../Common/Layout/PageLayout";
 
 import TenantResources from "./Steps/TenantResources/TenantResources";
-import ConfigLogSearch from "./Steps/ConfigLogSearch";
-import ConfigPrometheus from "./Steps/ConfigPrometheus";
 import {
   IMkEnvs,
   resourcesConfigurations,
@@ -155,18 +153,6 @@ const AddTenant = () => {
       label: "Encryption",
       advancedOnly: true,
       componentRender: <Encryption />,
-      buttons: [cancelButton, createButton],
-    },
-    {
-      label: "Audit Log",
-      advancedOnly: false,
-      componentRender: <ConfigLogSearch />,
-      buttons: [cancelButton, createButton],
-    },
-    {
-      label: "Monitoring",
-      advancedOnly: false,
-      componentRender: <ConfigPrometheus />,
       buttons: [cancelButton, createButton],
     },
   ];

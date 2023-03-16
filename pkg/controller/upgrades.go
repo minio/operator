@@ -19,7 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
-
+	"github.com/minio/operator/pkg/controller/legacy"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/blang/semver/v4"
@@ -39,6 +39,7 @@ const (
 	version429 = "v4.2.9"
 	version430 = "v4.3.0"
 	version45  = "v4.5"
+	version500 = "v5.0.0"
 )
 
 // Legacy const
@@ -57,16 +58,11 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		version429: c.upgrade429,
 		version430: c.upgrade430,
 		version45:  c.upgrade45,
+		version500: c.upgrade500,
 	}
 
-	// if the version is empty, do all upgrades
-	if tenant.Status.SyncVersion == "" {
-		upgradesToDo = append(upgradesToDo, version420)
-		upgradesToDo = append(upgradesToDo, version424)
-		upgradesToDo = append(upgradesToDo, version429)
-		upgradesToDo = append(upgradesToDo, version430)
-		upgradesToDo = append(upgradesToDo, version45)
-	} else {
+	// if the version is not empty, this is not a new tenant, upgrade accordingly
+	if tenant.Status.SyncVersion != "" {
 		currentSyncVersion, err := version.NewVersion(tenant.Status.SyncVersion)
 		if err != nil {
 			return tenant, err
@@ -78,6 +74,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 			version429,
 			version430,
 			version45,
+			version500,
 		}
 		for _, v := range versionsThatNeedUpgrades {
 			vp, _ := version.NewVersion(v)
@@ -102,7 +99,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 // in this version we renamed a bunch of environment variables and removed the
 // stand-alone console deployment. I swear the name of the function is a coincidence.
 func (c *Controller) upgrade420(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
-	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.LogSecretName(), metav1.GetOptions{})
+	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, legacy.LogSecretName(tenant), metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
@@ -228,7 +225,7 @@ func (c *Controller) upgrade429(ctx context.Context, tenant *miniov2.Tenant) (*m
 // Upgrades the sync version to v4.3.0
 // in this version we renamed MINIO_QUERY_AUTH_TOKEN to MINIO_LOG_QUERY_AUTH_TOKEN.
 func (c *Controller) upgrade430(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
-	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.LogSecretName(), metav1.GetOptions{})
+	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, legacy.LogSecretName(tenant), metav1.GetOptions{})
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
@@ -312,4 +309,93 @@ func (c *Controller) upgrade45(ctx context.Context, tenant *miniov2.Tenant) (*mi
 		return tenant, fmt.Errorf("error updating tenant '%s/%s', could not update tenant.spec.configuration field: %v", tenant.Namespace, tenant.Name, err)
 	}
 	return c.updateTenantSyncVersion(ctx, tenant, version45)
+}
+
+// Upgrades the sync version to v5.0.0
+// in this version we finally deprecated tenant.spec.credsSecret field.
+func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
+	// log search deployment
+	logSearchDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(legacy.LogSearchAPIDeploymentName(tenant))
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return tenant, err
+	}
+	// we can still get nil due to not found
+	if logSearchDeployment != nil {
+		logSearchDeployment.ObjectMeta.OwnerReferences = nil
+		if _, err := c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Update(ctx, logSearchDeployment, metav1.UpdateOptions{}); err != nil {
+			return tenant, err
+		}
+	}
+	// log search secret
+	logSearchSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, legacy.LogSecretName(tenant), metav1.GetOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return tenant, err
+	}
+	if logSearchSecret != nil {
+		logSearchSecret.ObjectMeta.OwnerReferences = nil
+		if _, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, logSearchSecret, metav1.UpdateOptions{}); err != nil {
+			return tenant, err
+		}
+	}
+	// log search api service
+	logSearchApiSvc, err := c.serviceLister.Services(tenant.Namespace).Get(legacy.LogSearchAPIServiceName(tenant))
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return tenant, err
+	}
+	if logSearchApiSvc != nil {
+		logSearchApiSvc.ObjectMeta.OwnerReferences = nil
+		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, logSearchApiSvc, metav1.UpdateOptions{}); err != nil {
+			return tenant, err
+		}
+	}
+	// log search sts
+	logPgSS, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(legacy.LogStatefulsetName(tenant))
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return tenant, err
+	}
+	if logPgSS != nil {
+		logPgSS.ObjectMeta.OwnerReferences = nil
+		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, logPgSS, metav1.UpdateOptions{}); err != nil {
+			return tenant, err
+		}
+	}
+	// log hl svc
+	logHlSvc, err := c.serviceLister.Services(tenant.Namespace).Get(legacy.LogHLServiceName(tenant))
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return tenant, err
+	}
+	if logHlSvc != nil {
+		logHlSvc.ObjectMeta.OwnerReferences = nil
+		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, logHlSvc, metav1.UpdateOptions{}); err != nil {
+			return tenant, err
+		}
+	}
+	// prometheus cm
+	promCM, err := c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Get(ctx, tenant.PrometheusConfigMapName(), metav1.GetOptions{})
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return tenant, err
+	}
+	if promCM != nil {
+		promCM.ObjectMeta.OwnerReferences = nil
+		if _, err = c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Update(ctx, promCM, metav1.UpdateOptions{}); err != nil {
+			return tenant, err
+		}
+	}
+	// prometheus hl svc
+	promHlSvc, err := c.serviceLister.Services(tenant.Namespace).Get(legacy.PrometheusHLServiceName(tenant))
+	if promHlSvc != nil {
+		promHlSvc.ObjectMeta.OwnerReferences = nil
+		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, promHlSvc, metav1.UpdateOptions{}); err != nil {
+			return tenant, err
+		}
+	}
+	// prometheus sts
+	prometheusStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(legacy.PrometheusStatefulsetName(tenant))
+	if prometheusStatefulSet != nil {
+		prometheusStatefulSet.ObjectMeta.OwnerReferences = nil
+		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, prometheusStatefulSet, metav1.UpdateOptions{}); err != nil {
+			return tenant, err
+		}
+	}
+	return c.updateTenantSyncVersion(ctx, tenant, version500)
 }

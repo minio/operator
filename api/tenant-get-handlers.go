@@ -68,8 +68,6 @@ func getTenantDetailsResponse(session *models.Principal, params operator_api.Ten
 
 	// detect if encryption is enabled
 	info.EncryptionEnabled = minTenant.HasKESEnabled() || tenantConfiguration["MINIO_KMS_SECRET_KEY"] != ""
-	info.LogEnabled = minTenant.HasLogSearchAPIEnabled()
-	info.MonitoringEnabled = minTenant.HasPrometheusEnabled()
 	info.IdpAdEnabled = ldapEnabled
 	info.IdpOidcEnabled = oidcEnabled
 	info.MinioTLS = minTenant.TLS()

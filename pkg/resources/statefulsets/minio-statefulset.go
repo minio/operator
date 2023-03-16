@@ -35,39 +35,6 @@ const (
 	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
 )
 
-// Adds required Console environment variables
-func consoleEnvVars(t *miniov2.Tenant) []corev1.EnvVar {
-	var envVars []corev1.EnvVar
-
-	if t.HasLogSearchAPIEnabled() {
-		envVars = append(envVars, corev1.EnvVar{
-			Name: miniov2.LogQueryTokenKey,
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: t.LogSecretName(),
-					},
-					Key: miniov2.LogQueryTokenKey,
-				},
-			},
-		})
-		url := fmt.Sprintf("http://%s:%d", t.LogSearchAPIServiceName(), miniov2.LogSearchAPIPort)
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "MINIO_LOG_QUERY_URL",
-			Value: url,
-		})
-	}
-	if t.HasPrometheusEnabled() {
-		url := fmt.Sprintf("http://%s:%d", t.PrometheusHLServiceName(), miniov2.PrometheusAPIPort)
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  miniov2.ConsolePrometheusURL,
-			Value: url,
-		})
-	}
-
-	return envVars
-}
-
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
@@ -195,10 +162,6 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 		}
 	}
 
-	// add console environment variables
-	for _, env := range consoleEnvVars(t) {
-		envVarsMap[env.Name] = env
-	}
 	// Add all the tenant.spec.env environment variables
 	// User defined environment variables will take precedence over default environment variables
 	for _, env := range t.GetEnvVars() {

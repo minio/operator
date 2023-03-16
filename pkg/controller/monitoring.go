@@ -17,7 +17,6 @@ package controller
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -242,30 +241,9 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		}
 	}
 
-	// get usage from Prometheus Metrics
-	accessKey, ok := tenantConfiguration["accesskey"]
-	if !ok {
-		return errors.New("MinIO server accesskey not set")
-	}
-
-	secretKey, ok := tenantConfiguration["secretkey"]
-	if !ok {
-		return errors.New("MinIO server secretkey not set")
-	}
-	bearerToken := tenant.GenBearerToken(string(accessKey), string(secretKey))
-
-	metrics, err := getPrometheusMetricsForTenant(tenant, bearerToken)
-	if err != nil {
-		klog.Infof("'%s/%s' Can't generate tenant prometheus token: %v", tenant.Namespace, tenant.Name, err)
-	} else {
-		if metrics != nil {
-			tenant.Status.Usage.Usage = metrics.Usage
-			tenant.Status.Usage.Capacity = metrics.UsableCapacity
-			if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
-				klog.Infof("'%s/%s' Can't update tenant status for usage: %v", tenant.Namespace, tenant.Name, err)
-			}
-		}
-	}
+	// TODO: add usage and usableCapacity
+	// tenant.Status.Usage.Usage = metrics.Usage
+	// tenant.Status.Usage.Capacity = metrics.UsableCapacity
 
 	return nil
 }
@@ -296,11 +274,12 @@ func getHealthCheckTransport() func() *http.Transport {
 		MinVersion:         tls.VersionTLS12,
 		InsecureSkipVerify: true, // FIXME: use trusted CA
 	}
+	dialer := &net.Dialer{
+		Timeout: 15 * time.Second,
+	}
 	tr := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout: 15 * time.Second,
-		}).DialContext,
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
 		MaxIdleConnsPerHost:   1024,
 		IdleConnTimeout:       30 * time.Second,
 		ResponseHeaderTimeout: 1 * time.Minute,

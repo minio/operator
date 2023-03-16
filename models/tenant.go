@@ -48,9 +48,6 @@ type Tenant struct {
 	// domains
 	Domains *DomainsConfiguration `json:"domains,omitempty"`
 
-	// enable prometheus
-	EnablePrometheus bool `json:"enable_prometheus,omitempty"`
-
 	// encryption enabled
 	EncryptionEnabled bool `json:"encryptionEnabled,omitempty"`
 
@@ -71,9 +68,6 @@ type Tenant struct {
 
 	// minio TLS
 	MinioTLS bool `json:"minioTLS,omitempty"`
-
-	// monitoring enabled
-	MonitoringEnabled bool `json:"monitoringEnabled,omitempty"`
 
 	// name
 	Name string `json:"name,omitempty"`

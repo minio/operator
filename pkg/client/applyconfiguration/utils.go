@@ -31,8 +31,6 @@ import (
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
 	// Group=minio.min.io, Version=v2
-	case v2.SchemeGroupVersion.WithKind("AuditConfig"):
-		return &miniominiov2.AuditConfigApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("Bucket"):
 		return &miniominiov2.BucketApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("CertificateConfig"):
@@ -51,18 +49,12 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &miniominiov2.KESConfigApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("LocalCertificateReference"):
 		return &miniominiov2.LocalCertificateReferenceApplyConfiguration{}
-	case v2.SchemeGroupVersion.WithKind("LogConfig"):
-		return &miniominiov2.LogConfigApplyConfiguration{}
-	case v2.SchemeGroupVersion.WithKind("LogDbConfig"):
-		return &miniominiov2.LogDbConfigApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("Logging"):
 		return &miniominiov2.LoggingApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("Pool"):
 		return &miniominiov2.PoolApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("PoolStatus"):
 		return &miniominiov2.PoolStatusApplyConfiguration{}
-	case v2.SchemeGroupVersion.WithKind("PrometheusConfig"):
-		return &miniominiov2.PrometheusConfigApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("ServiceMetadata"):
 		return &miniominiov2.ServiceMetadataApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("SideCars"):

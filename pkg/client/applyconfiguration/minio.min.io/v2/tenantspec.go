@@ -46,8 +46,6 @@ type TenantSpecApplyConfiguration struct {
 	Features                  *FeaturesApplyConfiguration                  `json:"features,omitempty"`
 	CertConfig                *CertificateConfigApplyConfiguration         `json:"certConfig,omitempty"`
 	KES                       *KESConfigApplyConfiguration                 `json:"kes,omitempty"`
-	Log                       *LogConfigApplyConfiguration                 `json:"log,omitempty"`
-	Prometheus                *PrometheusConfigApplyConfiguration          `json:"prometheus,omitempty"`
 	PrometheusOperator        *bool                                        `json:"prometheusOperator,omitempty"`
 	ServiceAccountName        *string                                      `json:"serviceAccountName,omitempty"`
 	PriorityClassName         *string                                      `json:"priorityClassName,omitempty"`
@@ -238,22 +236,6 @@ func (b *TenantSpecApplyConfiguration) WithCertConfig(value *CertificateConfigAp
 // If called multiple times, the KES field is set to the value of the last call.
 func (b *TenantSpecApplyConfiguration) WithKES(value *KESConfigApplyConfiguration) *TenantSpecApplyConfiguration {
 	b.KES = value
-	return b
-}
-
-// WithLog sets the Log field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Log field is set to the value of the last call.
-func (b *TenantSpecApplyConfiguration) WithLog(value *LogConfigApplyConfiguration) *TenantSpecApplyConfiguration {
-	b.Log = value
-	return b
-}
-
-// WithPrometheus sets the Prometheus field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Prometheus field is set to the value of the last call.
-func (b *TenantSpecApplyConfiguration) WithPrometheus(value *PrometheusConfigApplyConfiguration) *TenantSpecApplyConfiguration {
-	b.Prometheus = value
 	return b
 }
 

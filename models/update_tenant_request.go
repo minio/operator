@@ -36,9 +36,6 @@ import (
 // swagger:model updateTenantRequest
 type UpdateTenantRequest struct {
 
-	// enable prometheus
-	EnablePrometheus bool `json:"enable_prometheus,omitempty"`
-
 	// image
 	// Pattern: ^((.*?)/(.*?):(.+))$
 	Image string `json:"image,omitempty"`

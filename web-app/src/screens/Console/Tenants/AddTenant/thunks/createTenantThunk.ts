@@ -107,32 +107,12 @@ export const createTenantAsync = createAsyncThunk(
     const ecParity = fields.tenantSize.ecParity;
     const distribution = fields.tenantSize.distribution;
     const tenantCustom = fields.configure.tenantCustom;
-    const logSearchEnabled = fields.configure.logSearchEnabled;
-    const prometheusEnabled = fields.configure.prometheusEnabled;
-    const logSearchVolumeSize = fields.configure.logSearchVolumeSize;
-    const logSearchSelectedStorageClass =
-      fields.configure.logSearchSelectedStorageClass;
-    const logSearchImage = fields.configure.logSearchImage;
     const kesImage = fields.configure.kesImage;
-    const logSearchPostgresImage = fields.configure.logSearchPostgresImage;
-    const logSearchPostgresInitImage =
-      fields.configure.logSearchPostgresInitImage;
-    const prometheusImage = fields.configure.prometheusImage;
-    const prometheusSidecarImage = fields.configure.prometheusSidecarImage;
-    const prometheusInitImage = fields.configure.prometheusInitImage;
-    const prometheusSelectedStorageClass =
-      fields.configure.prometheusSelectedStorageClass;
-    const prometheusVolumeSize = fields.configure.prometheusVolumeSize;
     const affinityType = fields.affinity.podAffinity;
     const nodeSelectorLabels = fields.affinity.nodeSelectorLabels;
     const withPodAntiAffinity = fields.affinity.withPodAntiAffinity;
 
     const tenantSecurityContext = fields.configure.tenantSecurityContext;
-    const logSearchSecurityContext = fields.configure.logSearchSecurityContext;
-    const logSearchPostgresSecurityContext =
-      fields.configure.logSearchPostgresSecurityContext;
-    const prometheusSecurityContext =
-      fields.configure.prometheusSecurityContext;
     const kesSecurityContext = fields.encryption.kesSecurityContext;
     const kesReplicas = fields.encryption.replicas;
     const setDomains = fields.configure.setDomains;
@@ -188,7 +168,6 @@ export const createTenantAsync = createAsyncThunk(
       secret_key: "",
       enable_tls: enableTLS && enableAutoCert,
       enable_console: true,
-      enable_prometheus: true,
       image: imageName,
       expose_minio: exposeMinIO,
       expose_console: exposeConsole,
@@ -260,41 +239,6 @@ export const createTenantAsync = createAsyncThunk(
           registry: imageRegistry,
           username: imageRegistryUsername,
           password: imageRegistryPassword,
-        },
-      };
-    }
-
-    if (logSearchEnabled) {
-      dataSend = {
-        ...dataSend,
-        logSearchConfiguration: {
-          storageClass:
-            logSearchSelectedStorageClass === "default"
-              ? ""
-              : logSearchSelectedStorageClass,
-          storageSize: parseInt(logSearchVolumeSize),
-          image: logSearchImage,
-          postgres_image: logSearchPostgresImage,
-          postgres_init_image: logSearchPostgresInitImage,
-          securityContext: logSearchSecurityContext,
-          postgres_securityContext: logSearchPostgresSecurityContext,
-        },
-      };
-    }
-
-    if (prometheusEnabled) {
-      dataSend = {
-        ...dataSend,
-        prometheusConfiguration: {
-          storageClass:
-            prometheusSelectedStorageClass === "default"
-              ? ""
-              : prometheusSelectedStorageClass,
-          storageSize: parseInt(prometheusVolumeSize),
-          image: prometheusImage,
-          sidecar_image: prometheusSidecarImage,
-          init_image: prometheusInitImage,
-          securityContext: prometheusSecurityContext,
         },
       };
     }

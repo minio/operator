@@ -23,8 +23,6 @@ import tenantsReducer from "./screens/Console/Tenants/tenantsSlice";
 import createTenantReducer from "./screens/Console/Tenants/AddTenant/createTenantSlice";
 import addPoolReducer from "./screens/Console/Tenants/TenantDetails/Pools/AddPool/addPoolSlice";
 import editPoolReducer from "./screens/Console/Tenants/TenantDetails/Pools/EditPool/editPoolSlice";
-import editTenantMonitoringReducer from "./screens/Console/Tenants/TenantDetails/tenantMonitoringSlice";
-import editTenantAuditLoggingReducer from "./screens/Console/Tenants/TenantDetails/tenantAuditLogSlice";
 import editTenantSecurityContextReducer from "./screens/Console/Tenants/tenantSecurityContextSlice";
 import directPVReducer from "./screens/Console/DirectPV/directPVSlice";
 import licenseReducer from "./screens/Console/License/licenseSlice";
@@ -40,8 +38,6 @@ const rootReducer = combineReducers({
   createTenant: createTenantReducer,
   addPool: addPoolReducer,
   editPool: editPoolReducer,
-  editTenantMonitoring: editTenantMonitoringReducer,
-  editTenantLogging: editTenantAuditLoggingReducer,
   editTenantSecurityContext: editTenantSecurityContextReducer,
   directPV: directPVReducer,
   license: licenseReducer,

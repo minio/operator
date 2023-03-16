@@ -63,7 +63,7 @@ const (
 
 // envGet retrieves the value of the environment variable named
 // by the key. If the variable is present in the environment the
-// value (which may be empty) is returned. Otherwise it returns
+// value (which may be empty) is returned. Otherwise, it returns
 // the specified default value.
 func envGet(key, defaultValue string) string {
 	if v, ok := os.LookupEnv(key); ok {
@@ -81,30 +81,20 @@ type hostsTemplateValues struct {
 }
 
 var (
-	once                              sync.Once
-	tenantMinIOImageOnce              sync.Once
-	tenantKesImageOnce                sync.Once
-	monitoringIntervalOnce            sync.Once
-	k8sClusterDomain                  string
-	tenantMinIOImage                  string
-	tenantKesImage                    string
-	monitoringInterval                int
-	prometheusNamespace               string
-	prometheusName                    string
-	prometheusNamespaceOnce           sync.Once
-	prometheusNameOnce                sync.Once
-	prometheusDefaultImageOnce        sync.Once
-	prometheusDefaultImage            = PrometheusImage
-	prometheusSidecarDefaultImageOnce sync.Once
-	prometheusSicecarDefaultImage     = PrometheusSideCarImage
-	prometheusInitDefaultImageOnce    sync.Once
-	prometheusInitDefaultImage        = PrometheusInitImage
-	searchDefaultImageOnce            sync.Once
-	searchDefaultImage                = DefaultLogSearchAPIImage
-	searchInitDefaultImageOnce        sync.Once
-	searchInitDefaultImage            = InitContainerImage
-	pgDefaultImageOnce                sync.Once
-	pgDefaultImage                    = LogPgImage
+	once                       sync.Once
+	tenantMinIOImageOnce       sync.Once
+	tenantKesImageOnce         sync.Once
+	monitoringIntervalOnce     sync.Once
+	k8sClusterDomain           string
+	tenantMinIOImage           string
+	tenantKesImage             string
+	monitoringInterval         int
+	prometheusNamespace        string
+	prometheusName             string
+	prometheusNamespaceOnce    sync.Once
+	prometheusNameOnce         sync.Once
+	prometheusDefaultImageOnce sync.Once
+	searchInitDefaultImage     = InitContainerImage
 )
 
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
@@ -365,31 +355,6 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		}
 	}
 
-	if t.HasPrometheusEnabled() {
-		if t.Spec.Prometheus.Image == "" {
-			t.Spec.Prometheus.Image = GetPrometheusImage()
-		}
-		if t.Spec.Prometheus.SideCarImage == "" {
-			t.Spec.Prometheus.SideCarImage = GetPrometheusSidecarImage()
-		}
-		if t.Spec.Prometheus.InitImage == "" {
-			t.Spec.Prometheus.InitImage = GetPrometheusInitImage()
-		}
-	}
-
-	if t.HasLogSearchAPIEnabled() {
-		if t.Spec.Log.Image == "" {
-			t.Spec.Log.Image = GetSearchImage()
-		}
-		if t.Spec.Log.Db != nil {
-			if t.Spec.Log.Db.Image == "" {
-				t.Spec.Log.Db.Image = GetPgImage()
-			}
-			if t.Spec.Log.Db.InitImage == "" {
-				t.Spec.Log.Db.InitImage = GetSearchInitImage()
-			}
-		}
-	}
 	// ServiceAccount
 	if t.Spec.ServiceAccountName == "" {
 		t.Spec.ServiceAccountName = fmt.Sprintf("%s-sa", t.Name)
@@ -541,21 +506,6 @@ func (t *Tenant) HasKESEnabled() bool {
 	return t.Spec.KES != nil
 }
 
-// HasLogSearchAPIEnabled checks if Log feature has been enabled
-func (t *Tenant) HasLogSearchAPIEnabled() bool {
-	return t.Spec.Log != nil
-}
-
-// HasLogDBEnabled checks if Log DB feature has been enabled
-func (t *Tenant) HasLogDBEnabled() bool {
-	return t.Spec.Log != nil && t.Spec.Log.Db != nil
-}
-
-// HasPrometheusEnabled checks if Prometheus metrics has been enabled
-func (t *Tenant) HasPrometheusEnabled() bool {
-	return t.Spec.Prometheus != nil
-}
-
 // HasPrometheusOperatorEnabled checks if Prometheus service monitor has been enabled
 func (t *Tenant) HasPrometheusOperatorEnabled() bool {
 	return t.Spec.PrometheusOperator
@@ -564,30 +514,6 @@ func (t *Tenant) HasPrometheusOperatorEnabled() bool {
 // GetEnvVars returns the environment variables for tenant deployment.
 func (t *Tenant) GetEnvVars() (env []corev1.EnvVar) {
 	return t.Spec.Env
-}
-
-// GetLogSearchAPIEnvVars returns the environment variables for Log Search Api deployment.
-func (t *Tenant) GetLogSearchAPIEnvVars() (env []corev1.EnvVar) {
-	if !t.HasLogSearchAPIEnabled() {
-		return env
-	}
-	return t.Spec.Log.Env
-}
-
-// GetLogDBEnvVars returns the environment variables for Postgres deployment.
-func (t *Tenant) GetLogDBEnvVars() (env []corev1.EnvVar) {
-	if !t.HasLogDBEnabled() {
-		return env
-	}
-	return t.Spec.Log.Db.Env
-}
-
-// GetPrometheusEnvVars returns the environment variables for the Prometheus deployment.
-func (t *Tenant) GetPrometheusEnvVars() (env []corev1.EnvVar) {
-	if !t.HasPrometheusEnabled() {
-		return env
-	}
-	return t.Spec.Prometheus.Env
 }
 
 // GetKESEnvVars returns the environment variables for the KES deployment.
@@ -1253,72 +1179,6 @@ func lcp(strs []string, pre bool) string {
 		}
 	}
 	return xfix
-}
-
-// GetPrometheusImage returns the defaulted prometheus image
-func GetPrometheusImage() string {
-	// will make sure to read the env value just once
-	prometheusDefaultImageOnce.Do(func() {
-		if val, ok := os.LookupEnv("MINIO_PROMETHEUS_DEFAULT_IMAGE"); ok {
-			prometheusDefaultImage = val
-		}
-	})
-	return prometheusDefaultImage
-}
-
-// GetPrometheusSidecarImage returns the defaulted prometheus sidecar image
-func GetPrometheusSidecarImage() string {
-	// will make sure to read the env value just once
-	prometheusSidecarDefaultImageOnce.Do(func() {
-		if val, ok := os.LookupEnv("MINIO_PROMETHEUS_SIDECAR_DEFAULT_IMAGE"); ok {
-			prometheusSicecarDefaultImage = val
-		}
-	})
-	return prometheusSicecarDefaultImage
-}
-
-// GetPrometheusInitImage returns the defaulted prometheus init image
-func GetPrometheusInitImage() string {
-	// will make sure to read the env value just once
-	prometheusInitDefaultImageOnce.Do(func() {
-		if val, ok := os.LookupEnv("MINIO_PROMETHEUS_INIT_DEFAULT_IMAGE"); ok {
-			prometheusInitDefaultImage = val
-		}
-	})
-	return prometheusInitDefaultImage
-}
-
-// GetSearchImage returns the defaulted search image
-func GetSearchImage() string {
-	// will make sure to read the env value just once
-	searchDefaultImageOnce.Do(func() {
-		if val, ok := os.LookupEnv("MINIO_SEARCH_DEFAULT_IMAGE"); ok {
-			searchDefaultImage = val
-		}
-	})
-	return searchDefaultImage
-}
-
-// GetSearchInitImage returns the defaulted search image
-func GetSearchInitImage() string {
-	// will make sure to read the env value just once
-	searchInitDefaultImageOnce.Do(func() {
-		if val, ok := os.LookupEnv("MINIO_SEARCH_INIT_DEFAULT_IMAGE"); ok {
-			searchInitDefaultImage = val
-		}
-	})
-	return searchInitDefaultImage
-}
-
-// GetPgImage returns the defaulted search image
-func GetPgImage() string {
-	// will make sure to read the env value just once
-	pgDefaultImageOnce.Do(func() {
-		if val, ok := os.LookupEnv("MINIO_POSTGRES_DEFAULT_IMAGE"); ok {
-			pgDefaultImage = val
-		}
-	})
-	return pgDefaultImage
 }
 
 // GetRoleName returns the role name we will use for the tenant

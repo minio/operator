@@ -18,6 +18,5 @@ RUN \
     microdnf install curl ca-certificates shadow-utils --nodocs
 
 COPY minio-operator /minio-operator
-COPY logsearchapi-bin /logsearchapi
 
 ENTRYPOINT ["/minio-operator"]
