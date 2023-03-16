@@ -90,26 +90,27 @@ func configureAPI(api *operations.OperatorAPI) http.Handler {
 	registerSessionHandlers(api)
 	registerVersionHandlers(api)
 
-	// Operator Console
-	// Register tenant handlers
+	// HTTP Handlers for API
 	registerTenantHandlers(api)
-	// Register ResourceQuota handlers
+	registerPoolHandlers(api)
+	registerPodHandlers(api)
+	registerConfigurationHandlers(api)
+	registerCertificateHandlers(api)
 	registerResourceQuotaHandlers(api)
-	// Register Nodes' handlers
 	registerNodesHandlers(api)
-	// Register Parity' handlers
 	registerParityHandlers(api)
-
-	// Volumes handlers
 	registerVolumesHandlers(api)
-	// Namespaces handlers
 	registerNamespaceHandlers(api)
-	// Marketplace handlers
 	registerMarketplaceHandlers(api)
-	// Subnet handlers
 	registerOperatorSubnetHandlers(api)
-	// Direct PV handlers
-	registerDirectPVHandlers(api)
+	registerYAMLHandlers(api)
+	registerEventHandlers(api)
+	registerTenantLogsHandlers(api)
+	registerEncryptionHandlers(api)
+	registerMonitoringHandlers(api)
+	registerIDPHandlers(api)
+	registerUsersHandlers(api)
+	registerDomainHandlers(api)
 
 	api.PreServerShutdown = func() {}
 
