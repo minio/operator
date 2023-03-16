@@ -23,7 +23,6 @@ export interface LoginDetails {
     | "service-account"
     | "redirect-service-account";
   redirectRules?: RedirectRule[];
-  isDirectPV?: boolean;
   isK8S?: boolean;
 }
 
@@ -64,7 +63,6 @@ export interface OperatorSessionResponse {
   features?: string[];
   status?: "ok";
   operator?: boolean;
-  directPV?: boolean;
   permissions?: Record<string, string[]>;
 }
 
@@ -142,7 +140,6 @@ export interface Tenant {
     minio?: string;
     console?: string;
   };
-  logEnabled?: boolean;
   idpAdEnabled?: boolean;
   idpOidcEnabled?: boolean;
   encryptionEnabled?: boolean;
@@ -644,45 +641,6 @@ export interface License {
   expires_at?: string;
 }
 
-export interface GetDirectPVDriveListResponse {
-  drives?: DirectPVDriveInfo[];
-}
-
-export interface DirectPVDriveInfo {
-  drive?: string;
-  /** @format int64 */
-  capacity?: number;
-  /** @format int64 */
-  allocated?: number;
-  /** @format int64 */
-  volumes?: number;
-  node?: string;
-  status?: string;
-  message?: string;
-}
-
-export interface GetDirectPVVolumeListResponse {
-  volumes?: DirectPVVolumeInfo[];
-}
-
-export interface DirectPVVolumeInfo {
-  volume?: string;
-  /** @format int64 */
-  capacity?: number;
-  node?: string;
-  drive?: string;
-}
-
-export interface PvFormatErrorResponse {
-  node?: string;
-  drive?: string;
-  error?: string;
-}
-
-export interface FormatDirectPVDrivesResponse {
-  formatIssuesList?: PvFormatErrorResponse[];
-}
-
 export interface TenantYAML {
   yaml?: string;
 }
@@ -858,12 +816,6 @@ export interface Annotation {
 export interface NodeSelector {
   key?: string;
   value?: string;
-}
-
-export interface FormatConfiguration {
-  /** @minLength 1 */
-  drives: string[];
-  force: boolean;
 }
 
 export interface SecurityContext {
@@ -2526,80 +2478,6 @@ export class Api<
         path: `/subnet/apikey/info`,
         method: "GET",
         secure: true,
-        format: "json",
-        ...params,
-      }),
-  };
-  directpv = {
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
-     * @name GetDirectPvDriveList
-     * @summary Get directpv drives list
-     * @request GET:/directpv/drives
-     * @secure
-     */
-    getDirectPvDriveList: (
-      query?: {
-        nodes?: string;
-        drives?: string;
-      },
-      params: RequestParams = {}
-    ) =>
-      this.request<GetDirectPVDriveListResponse, Error>({
-        path: `/directpv/drives`,
-        method: "GET",
-        query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
-     * @name GetDirectPvVolumeList
-     * @summary Get directpv volumes list
-     * @request GET:/directpv/volumes
-     * @secure
-     */
-    getDirectPvVolumeList: (
-      query?: {
-        nodes?: string;
-        drives?: string;
-      },
-      params: RequestParams = {}
-    ) =>
-      this.request<GetDirectPVVolumeListResponse, Error>({
-        path: `/directpv/volumes`,
-        method: "GET",
-        query: query,
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
-     * @name DirectPvFormatDrive
-     * @summary Format directpv drives from a list
-     * @request POST:/directpv/drives/format
-     * @secure
-     */
-    directPvFormatDrive: (
-      body: FormatConfiguration,
-      params: RequestParams = {}
-    ) =>
-      this.request<FormatDirectPVDrivesResponse, Error>({
-        path: `/directpv/drives/format`,
-        method: "POST",
-        body: body,
-        secure: true,
-        type: ContentType.Json,
         format: "json",
         ...params,
       }),

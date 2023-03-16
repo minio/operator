@@ -22,11 +22,10 @@ import { IAM_PAGES } from "../../common/SecureComponent/permissions";
 export const routesAsKbarActions = (
   features: string[] | null,
   operatorMode: boolean,
-  directPVMode: boolean,
   navigate: (url: string) => void
 ) => {
   const initialActions: Action[] = [];
-  const allowedMenuItems = validRoutes(features, operatorMode, directPVMode);
+  const allowedMenuItems = validRoutes(features, operatorMode);
   for (const i of allowedMenuItems) {
     if (i.children && i.children.length > 0) {
       for (const childI of i.children) {

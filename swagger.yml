@@ -1395,78 +1395,6 @@ paths:
       tags:
         - OperatorAPI
 
-  /directpv/drives:
-    get:
-      summary: Get directpv drives list
-      operationId: GetDirectPVDriveList
-      parameters:
-        - name: nodes
-          in: query
-          required: false
-          type: string
-        - name: drives
-          in: query
-          required: false
-          type: string
-      responses:
-        200:
-          description: A successful response.
-          schema:
-            $ref: "#/definitions/getDirectPVDriveListResponse"
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
-
-  /directpv/volumes:
-    get:
-      summary: Get directpv volumes list
-      operationId: GetDirectPVVolumeList
-      parameters:
-        - name: nodes
-          in: query
-          required: false
-          type: string
-        - name: drives
-          in: query
-          required: false
-          type: string
-      responses:
-        200:
-          description: A successful response.
-          schema:
-            $ref: "#/definitions/getDirectPVVolumeListResponse"
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
-
-  /directpv/drives/format:
-    post:
-      summary: Format directpv drives from a list
-      operationId: DirectPVFormatDrive
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema:
-            $ref: "#/definitions/formatConfiguration"
-      responses:
-        200:
-          description: A successful response.
-          schema:
-            $ref: "#/definitions/formatDirectPVDrivesResponse"
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
-
 definitions:
   error:
     type: object
@@ -1491,8 +1419,6 @@ definitions:
         type: array
         items:
           $ref: "#/definitions/redirectRule"
-      isDirectPV:
-        type: boolean
       isK8S:
         type: boolean
   loginRequest:
@@ -1561,8 +1487,6 @@ definitions:
         type: string
         enum: [ ok ]
       operator:
-        type: boolean
-      directPV:
         type: boolean
       permissions:
         type: object
@@ -1721,8 +1645,6 @@ definitions:
             type: string
           console:
             type: string
-      logEnabled:
-        type: boolean
       idpAdEnabled:
         type: boolean
       idpOidcEnabled:
@@ -2913,74 +2835,6 @@ definitions:
       expires_at:
         type: string
 
-  getDirectPVDriveListResponse:
-    type: object
-    properties:
-      drives:
-        type: array
-        items:
-          $ref: "#/definitions/directPVDriveInfo"
-
-  directPVDriveInfo:
-    type: object
-    properties:
-      drive:
-        type: string
-      capacity:
-        type: number
-        format: int64
-      allocated:
-        type: number
-        format: int64
-      volumes:
-        type: number
-        format: int64
-      node:
-        type: string
-      status:
-        type: string
-      message:
-        type: string
-
-  getDirectPVVolumeListResponse:
-    type: object
-    properties:
-      volumes:
-        type: array
-        items:
-          $ref: "#/definitions/directPVVolumeInfo"
-
-  directPVVolumeInfo:
-    type: object
-    properties:
-      volume:
-        type: string
-      capacity:
-        type: number
-        format: int64
-      node:
-        type: string
-      drive:
-        type: string
-
-  pvFormatErrorResponse:
-    type: object
-    properties:
-      node:
-        type: string
-      drive:
-        type: string
-      error:
-        type: string
-
-  formatDirectPVDrivesResponse:
-    type: object
-    properties:
-      formatIssuesList:
-        type: array
-        items:
-          $ref: "#/definitions/pvFormatErrorResponse"
-
   tenantYAML:
     type: object
     properties:
@@ -3323,7 +3177,6 @@ definitions:
         type: string
       value:
         type: string
-
   nodeSelector:
     type: object
     properties:
@@ -3331,20 +3184,6 @@ definitions:
         type: string
       value:
         type: string
-
-  formatConfiguration:
-    type: object
-    required:
-      - drives
-      - force
-    properties:
-      drives:
-        type: array
-        minLength: 1
-        items:
-          type: string
-      force:
-        type: boolean
   securityContext:
     type: object
     required:

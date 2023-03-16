@@ -49,7 +49,6 @@ import EditPool from "./Tenants/TenantDetails/Pools/EditPool/EditPool";
 import ComponentsScreen from "./Common/ComponentsScreen";
 import {
   menuOpen,
-  selDirectPVMode,
   serverIsLoading,
   setServerNeedsRestart,
   setSnackBarMessage,
@@ -75,12 +74,6 @@ const Marketplace = React.lazy(() => import("./Marketplace/Marketplace"));
 const AddPool = React.lazy(
   () => import("./Tenants/TenantDetails/Pools/AddPool/AddPool")
 );
-
-const StoragePVCs = React.lazy(() => import("./Storage/StoragePVCs"));
-
-const DirectPVDrives = React.lazy(() => import("./DirectPV/DirectPVDrives"));
-
-const DirectPVVolumes = React.lazy(() => import("./DirectPV/DirectPVVolumes"));
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -127,7 +120,6 @@ const Console = ({ classes }: IConsoleProps) => {
   const open = useSelector((state: AppState) => state.system.sidebarOpen);
   const session = useSelector(selSession);
   const features = useSelector(selFeatures);
-  const directPVMode = useSelector(selDirectPVMode);
   const snackBarMessage = useSelector(
     (state: AppState) => state.system.snackBar
   );
@@ -228,34 +220,7 @@ const Console = ({ classes }: IConsoleProps) => {
     },
   ];
 
-  const directPVRoutes: IRouteRule[] = [
-    {
-      component: StoragePVCs,
-      path: IAM_PAGES.DIRECTPV_STORAGE,
-      forceDisplay: true,
-    },
-    {
-      component: DirectPVDrives,
-      path: IAM_PAGES.DIRECTPV_DRIVES,
-      forceDisplay: true,
-    },
-    {
-      component: DirectPVVolumes,
-      path: IAM_PAGES.DIRECTPV_VOLUMES,
-      forceDisplay: true,
-    },
-    {
-      component: License,
-      path: IAM_PAGES.LICENSE,
-      forceDisplay: true,
-    },
-  ];
-
   let routes = operatorConsoleRoutes;
-
-  if (directPVMode) {
-    routes = directPVRoutes;
-  }
 
   const allowedRoutes = routes.filter((route: any) =>
     obOnly

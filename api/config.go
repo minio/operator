@@ -75,12 +75,6 @@ func getMarketplace() string {
 	return env.Get(Marketplace, "")
 }
 
-// Get DirectPVMode
-func getDirectPVEnabled() bool {
-	currentMode := env.Get(DirectPVMode, "off")
-	return currentMode == "on"
-}
-
 // MinIOConfig represents application configuration passed in from the MinIO
 // server to the console.
 type MinIOConfig struct {

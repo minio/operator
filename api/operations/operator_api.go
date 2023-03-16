@@ -85,17 +85,8 @@ func NewOperatorAPI(spec *loads.Document) *OperatorAPI {
 		OperatorAPIDescribePodHandler: operator_api.DescribePodHandlerFunc(func(params operator_api.DescribePodParams, principal *models.Principal) middleware.Responder {
 			return middleware.NotImplemented("operation operator_api.DescribePod has not yet been implemented")
 		}),
-		OperatorAPIDirectPVFormatDriveHandler: operator_api.DirectPVFormatDriveHandlerFunc(func(params operator_api.DirectPVFormatDriveParams, principal *models.Principal) middleware.Responder {
-			return middleware.NotImplemented("operation operator_api.DirectPVFormatDrive has not yet been implemented")
-		}),
 		OperatorAPIGetAllocatableResourcesHandler: operator_api.GetAllocatableResourcesHandlerFunc(func(params operator_api.GetAllocatableResourcesParams, principal *models.Principal) middleware.Responder {
 			return middleware.NotImplemented("operation operator_api.GetAllocatableResources has not yet been implemented")
-		}),
-		OperatorAPIGetDirectPVDriveListHandler: operator_api.GetDirectPVDriveListHandlerFunc(func(params operator_api.GetDirectPVDriveListParams, principal *models.Principal) middleware.Responder {
-			return middleware.NotImplemented("operation operator_api.GetDirectPVDriveList has not yet been implemented")
-		}),
-		OperatorAPIGetDirectPVVolumeListHandler: operator_api.GetDirectPVVolumeListHandlerFunc(func(params operator_api.GetDirectPVVolumeListParams, principal *models.Principal) middleware.Responder {
-			return middleware.NotImplemented("operation operator_api.GetDirectPVVolumeList has not yet been implemented")
 		}),
 		OperatorAPIGetMPIntegrationHandler: operator_api.GetMPIntegrationHandlerFunc(func(params operator_api.GetMPIntegrationParams, principal *models.Principal) middleware.Responder {
 			return middleware.NotImplemented("operation operator_api.GetMPIntegration has not yet been implemented")
@@ -310,14 +301,8 @@ type OperatorAPI struct {
 	OperatorAPIDeleteTenantHandler operator_api.DeleteTenantHandler
 	// OperatorAPIDescribePodHandler sets the operation handler for the describe pod operation
 	OperatorAPIDescribePodHandler operator_api.DescribePodHandler
-	// OperatorAPIDirectPVFormatDriveHandler sets the operation handler for the direct p v format drive operation
-	OperatorAPIDirectPVFormatDriveHandler operator_api.DirectPVFormatDriveHandler
 	// OperatorAPIGetAllocatableResourcesHandler sets the operation handler for the get allocatable resources operation
 	OperatorAPIGetAllocatableResourcesHandler operator_api.GetAllocatableResourcesHandler
-	// OperatorAPIGetDirectPVDriveListHandler sets the operation handler for the get direct p v drive list operation
-	OperatorAPIGetDirectPVDriveListHandler operator_api.GetDirectPVDriveListHandler
-	// OperatorAPIGetDirectPVVolumeListHandler sets the operation handler for the get direct p v volume list operation
-	OperatorAPIGetDirectPVVolumeListHandler operator_api.GetDirectPVVolumeListHandler
 	// OperatorAPIGetMPIntegrationHandler sets the operation handler for the get m p integration operation
 	OperatorAPIGetMPIntegrationHandler operator_api.GetMPIntegrationHandler
 	// OperatorAPIGetMaxAllocatableMemHandler sets the operation handler for the get max allocatable mem operation
@@ -520,17 +505,8 @@ func (o *OperatorAPI) Validate() error {
 	if o.OperatorAPIDescribePodHandler == nil {
 		unregistered = append(unregistered, "operator_api.DescribePodHandler")
 	}
-	if o.OperatorAPIDirectPVFormatDriveHandler == nil {
-		unregistered = append(unregistered, "operator_api.DirectPVFormatDriveHandler")
-	}
 	if o.OperatorAPIGetAllocatableResourcesHandler == nil {
 		unregistered = append(unregistered, "operator_api.GetAllocatableResourcesHandler")
-	}
-	if o.OperatorAPIGetDirectPVDriveListHandler == nil {
-		unregistered = append(unregistered, "operator_api.GetDirectPVDriveListHandler")
-	}
-	if o.OperatorAPIGetDirectPVVolumeListHandler == nil {
-		unregistered = append(unregistered, "operator_api.GetDirectPVVolumeListHandler")
 	}
 	if o.OperatorAPIGetMPIntegrationHandler == nil {
 		unregistered = append(unregistered, "operator_api.GetMPIntegrationHandler")
@@ -808,22 +784,10 @@ func (o *OperatorAPI) initHandlerCache() {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/namespaces/{namespace}/tenants/{tenant}/pods/{podName}/describe"] = operator_api.NewDescribePod(o.context, o.OperatorAPIDescribePodHandler)
-	if o.handlers["POST"] == nil {
-		o.handlers["POST"] = make(map[string]http.Handler)
-	}
-	o.handlers["POST"]["/directpv/drives/format"] = operator_api.NewDirectPVFormatDrive(o.context, o.OperatorAPIDirectPVFormatDriveHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/cluster/allocatable-resources"] = operator_api.NewGetAllocatableResources(o.context, o.OperatorAPIGetAllocatableResourcesHandler)
-	if o.handlers["GET"] == nil {
-		o.handlers["GET"] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/directpv/drives"] = operator_api.NewGetDirectPVDriveList(o.context, o.OperatorAPIGetDirectPVDriveListHandler)
-	if o.handlers["GET"] == nil {
-		o.handlers["GET"] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/directpv/volumes"] = operator_api.NewGetDirectPVVolumeList(o.context, o.OperatorAPIGetDirectPVVolumeListHandler)
 	if o.handlers["GET"] == nil {
 		o.handlers["GET"] = make(map[string]http.Handler)
 	}

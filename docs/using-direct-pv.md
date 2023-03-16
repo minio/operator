@@ -1,8 +1,8 @@
-# Using Direct CSI Driver [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io) 
+# Using Direct-PV Driver
 
-## Install Direct CSI Driver
+## Install Direct-PV Driver
 
-[here](https://github.com/minio/direct-csi#quickstart)
+Follow the instructions to install DirectPV [here](https://github.com/minio/directpv)
 
 ### Utilize the CSI with MinIO operator
 
@@ -19,5 +19,5 @@
       resources:
         requests:
           storage: 1Ti
-      storageClassName: direct.csi.min.io # This field references the existing StorageClass
+      storageClassName: directpv-min-io # This field references the existing StorageClass
 ```

@@ -158,12 +158,6 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
   const { tenantName, tenantNamespace } = useParams();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
-  const logEnabled = useSelector((state: AppState) =>
-    get(state.tenants.tenantInfo, "logEnabled", false)
-  );
-  const monitoringEnabled = useSelector((state: AppState) =>
-    get(state.tenants.tenantInfo, "monitoringEnabled", false)
-  );
   const encryptionEnabled = useSelector((state: AppState) =>
     get(state.tenants.tenantInfo, "encryptionEnabled", false)
   );
@@ -429,11 +423,10 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
       <Box sx={{ ...featureRowStyle }}>
         <LabelValuePair
           orientation="row"
-          label="Logs:"
-          value={getToggle(logEnabled, "tenant-log")}
+          label="MinIO TLS:"
+          value={getToggle(minioTLS, "tenant-tls")}
           {...featureItemStyleProps}
         />
-
         <LabelValuePair
           orientation="row"
           label={"AD/LDAP:"}
@@ -448,19 +441,6 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
         />
       </Box>
       <Box sx={{ ...featureRowStyle }}>
-        <LabelValuePair
-          orientation="row"
-          label="MinIO TLS:"
-          value={getToggle(minioTLS, "tenant-tls")}
-          {...featureItemStyleProps}
-        />
-
-        <LabelValuePair
-          orientation="row"
-          label={"Monitoring:"}
-          value={getToggle(monitoringEnabled, "tenant-monitor")}
-          {...featureItemStyleProps}
-        />
         <LabelValuePair
           orientation="row"
           label={"OpenID:"}

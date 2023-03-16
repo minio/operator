@@ -24,7 +24,6 @@ require (
 	github.com/klauspost/compress v1.15.15
 	github.com/miekg/dns v1.1.50
 	github.com/minio/cli v1.24.2
-	github.com/minio/directpv v1.4.4-0.20220805090942-948ca4731651
 	github.com/minio/highwayhash v1.0.2
 	github.com/minio/kes v0.22.3
 	github.com/minio/madmin-go/v2 v2.0.14
@@ -83,7 +82,6 @@ require (
 	github.com/emicklei/go-restful/v3 v3.10.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gdamore/tcell/v2 v2.5.4 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -101,7 +99,6 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.4.4 // indirect
@@ -117,7 +114,6 @@ require (
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20230110061619-bbe2e5e100de // indirect
-	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-ieproxy v0.0.1 // indirect
@@ -125,7 +121,6 @@ require (
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
-	github.com/mb0/glob v0.0.0-20160210091149-1eb79d2de6c4 // indirect
 	github.com/minio/colorjson v1.0.4 // indirect
 	github.com/minio/filepath v1.0.0 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
@@ -143,7 +138,6 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
-	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/xattr v0.4.9 // indirect
@@ -161,12 +155,7 @@ require (
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/spf13/afero v1.6.0 // indirect
-	github.com/spf13/cast v1.4.1 // indirect
-	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.10.0 // indirect
-	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tinylib/msgp v1.1.8 // indirect

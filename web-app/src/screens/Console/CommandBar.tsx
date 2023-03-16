@@ -37,7 +37,7 @@ import { Box } from "@mui/material";
 import { MenuExpandedIcon } from "mds";
 import { useSelector } from "react-redux";
 import { selFeatures } from "./consoleSlice";
-import { selDirectPVMode, selOpMode } from "../../systemSlice";
+import { selOpMode } from "../../systemSlice";
 
 const useStyles = makeStyles((theme: Theme) => ({
   resultItem: {
@@ -126,14 +126,12 @@ const KBarStateChangeMonitor = ({
 
 const CommandBar = () => {
   const operatorMode = useSelector(selOpMode);
-  const directPVMode = useSelector(selDirectPVMode);
   const features = useSelector(selFeatures);
   const navigate = useNavigate();
 
   const initialActions: Action[] = routesAsKbarActions(
     features,
     operatorMode,
-    directPVMode,
     navigate
   );
 

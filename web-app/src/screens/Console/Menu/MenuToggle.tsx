@@ -19,7 +19,7 @@ import { ApplicationLogo, VersionIcon } from "mds";
 import { Box, IconButton } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useSelector } from "react-redux";
-import { selDirectPVMode, selOpMode } from "../../../systemSlice";
+import { selOpMode } from "../../../systemSlice";
 import TooltipWrapper from "../Common/TooltipWrapper/TooltipWrapper";
 import { getLogoVar } from "../../../config";
 
@@ -31,7 +31,6 @@ const MenuToggle = ({ isOpen, onToggle }: MenuToggleProps) => {
   const stateClsName = isOpen ? "wide" : "mini";
 
   const operatorMode = useSelector(selOpMode);
-  const directPVMode = useSelector(selDirectPVMode);
 
   let logoPlan = getLogoVar();
 
@@ -107,7 +106,7 @@ const MenuToggle = ({ isOpen, onToggle }: MenuToggleProps) => {
             placement={"right"}
           >
             <div className={`logo ${stateClsName}`}>
-              {!operatorMode && !directPVMode ? (
+              {!operatorMode ? (
                 <Fragment>
                   <ApplicationLogo
                     applicationName={"console"}
@@ -117,11 +116,7 @@ const MenuToggle = ({ isOpen, onToggle }: MenuToggleProps) => {
                 </Fragment>
               ) : (
                 <Fragment>
-                  {directPVMode ? (
-                    <ApplicationLogo applicationName={"directpv"} inverse />
-                  ) : (
-                    <ApplicationLogo applicationName={"operator"} inverse />
-                  )}
+                  <ApplicationLogo applicationName={"operator"} inverse />
                 </Fragment>
               )}
             </div>
