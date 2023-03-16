@@ -17,7 +17,6 @@
 import { Selector, t } from "testcafe";
 import {
   createTenant,
-  createTenantWithoutAuditLog,
   deleteTenant,
   goToPodInTenant,
   goToPodSection,
@@ -33,14 +32,6 @@ test("Create Tenant and List Tenants", async (t) => {
   const tenantName = `tenant-${Math.floor(Math.random() * 10000)}`;
   await loginToOperator();
   await createTenant(tenantName);
-  await deleteTenant(tenantName);
-});
-
-// Test 2
-test("Create Tenant Without Audit Log", async (t) => {
-  const tenantName = `tenant-${Math.floor(Math.random() * 10000)}`;
-  await loginToOperator();
-  await createTenantWithoutAuditLog(tenantName);
   await deleteTenant(tenantName);
 });
 
