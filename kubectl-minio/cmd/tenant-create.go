@@ -87,19 +87,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVarP(&c.tenantOpts.ImagePullSecret, "image-pull-secret", "", "", "image pull secret to be used for pulling MinIO")
 	f.BoolVar(&c.tenantOpts.DisableAntiAffinity, "enable-host-sharing", false, "[TESTING-ONLY] disable anti-affinity to allow pods to be co-located on a single node (unsupported in production environment)")
 	f.StringVar(&c.tenantOpts.KmsSecret, "kes-config", "", "name of secret for KES KMS setup, refer https://github.com/minio/operator/blob/master/examples/kes-secret.yaml")
-	f.BoolVar(&c.tenantOpts.EnableAuditLogs, "enable-audit-logs", false, "Enable/Disable audit logs")
 	f.BoolVar(&c.tenantOpts.DisableTLS, "disable-tls", false, "Disable TLS")
-	f.Int32Var(&c.tenantOpts.AuditLogsDiskSpace, "audit-logs-disk-space", 5, "(Only used when enable-audit-logs is on) Disk space for audit logs")
-	f.StringVar(&c.tenantOpts.AuditLogsImage, "audit-logs-image", "", "(Only used when enable-audit-logs is on) The Docker image to use for audit logs")
-	f.StringVar(&c.tenantOpts.AuditLogsPGImage, "audit-logs-pg-image", "", "(Only used when enable-audit-logs is on) The PostgreSQL Docker image to use for audit logs")
-	f.StringVar(&c.tenantOpts.AuditLogsPGInitImage, "audit-logs-pg-init-image", "", "(Only used when enable-audit-logs is on) Defines the Docker image to use as the init container for running the postgres server in audit logs")
-	f.StringVar(&c.tenantOpts.AuditLogsStorageClass, "audit-logs-storage-class", "", "(Only used when enable-audit-logs is on) Storage class for audit logs")
-	f.BoolVar(&c.tenantOpts.EnablePrometheus, "enable-prometheus", false, "Enable/Disable prometheus")
-	f.IntVar(&c.tenantOpts.PrometheusDiskSpace, "prometheus-disk-space", 5, "(Only used when enable-prometheus is on) Disk space for prometheus")
-	f.StringVar(&c.tenantOpts.PrometheusImage, "prometheus-image", "", "(Only used when enable-prometheus is on) The Docker image to use for prometheus")
-	f.StringVar(&c.tenantOpts.PrometheusSidecarImage, "prometheus-sidecar-image", "", "(Only used when enable-prometheus is on) The Docker image to use for prometheus sidecar")
-	f.StringVar(&c.tenantOpts.PrometheusInitImage, "prometheus-init-image", "", "(Only used when enable-prometheus is on) Defines the Docker image to use as the init container for running prometheus")
-	f.StringVar(&c.tenantOpts.PrometheusStorageClass, "prometheus-storage-class", "", "(Only used when enable-prometheus is on) Storage class for prometheus")
 	f.BoolVarP(&c.output, "output", "o", false, "generate tenant yaml for 'kubectl apply -f tenant.yaml'")
 	f.BoolVar(&c.tenantOpts.Interactive, "interactive", false, "Create tenant in interactive mode")
 	f.BoolVar(&c.tenantOpts.ExposeMinioService, "expose-minio-service", false, "Enable/Disable expose the Minio Service")
@@ -199,37 +187,9 @@ func (c *createCmd) populateInteractiveTenant() error {
 		return err
 	}
 	c.tenantOpts.DisableTLS = helpers.Ask("Disable TLS")
-	c.tenantOpts.EnableAuditLogs = !helpers.Ask("Disable audit logs")
-	if c.tenantOpts.EnableAuditLogs {
-		c.populateAuditConfig()
-	}
-	c.tenantOpts.EnablePrometheus = !helpers.Ask("Disable prometheus")
-	if c.tenantOpts.EnablePrometheus {
-		c.populatePrometheus()
-	}
 	c.tenantOpts.ExposeMinioService = helpers.Ask("Expose Minio Service")
 	c.tenantOpts.ExposeConsoleService = helpers.Ask("Expose Console Service")
 	return nil
-}
-
-func (c *createCmd) populateAuditConfig() {
-	if helpers.Ask("Would you like to customize configuration for audit logs?") {
-		c.tenantOpts.AuditLogsDiskSpace = int32(helpers.AskNumber("Disk space", greaterThanZero))
-		c.tenantOpts.AuditLogsImage = helpers.AskQuestion("Logs image", validateEmptyInput)
-		c.tenantOpts.AuditLogsPGImage = helpers.AskQuestion("Postgres image", validateEmptyInput)
-		c.tenantOpts.AuditLogsPGInitImage = helpers.AskQuestion("Postgres initContainer image", validateEmptyInput)
-		c.tenantOpts.AuditLogsStorageClass = helpers.AskQuestion("Logs Storage class", validateEmptyInput)
-	}
-}
-
-func (c *createCmd) populatePrometheus() {
-	if helpers.Ask("Would you like to customize configuration for prometheus?") {
-		c.tenantOpts.PrometheusDiskSpace = helpers.AskNumber("Disk space", greaterThanZero)
-		c.tenantOpts.PrometheusImage = helpers.AskQuestion("Prometheus image", validateEmptyInput)
-		c.tenantOpts.PrometheusSidecarImage = helpers.AskQuestion("Prometheus sidecar image", validateEmptyInput)
-		c.tenantOpts.PrometheusInitImage = helpers.AskQuestion("Prometheus initContainer image", validateEmptyInput)
-		c.tenantOpts.PrometheusStorageClass = helpers.AskQuestion("Prometheus Storage class", validateEmptyInput)
-	}
 }
 
 func validateEmptyInput(value string) error {

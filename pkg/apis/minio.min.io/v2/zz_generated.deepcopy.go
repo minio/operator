@@ -939,16 +939,6 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(KESConfig)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.Log != nil {
-		in, out := &in.Log, &out.Log
-		*out = new(LogConfig)
-		(*in).DeepCopyInto(*out)
-	}
-	if in.Prometheus != nil {
-		in, out := &in.Prometheus, &out.Prometheus
-		*out = new(PrometheusConfig)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.SideCars != nil {
 		in, out := &in.SideCars, &out.SideCars
 		*out = new(SideCars)

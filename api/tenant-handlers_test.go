@@ -437,113 +437,8 @@ func Test_TenantInfo(t *testing.T) {
 						},
 					},
 				},
-				Namespace:        "minio-ns",
-				Image:            "minio/minio:RELEASE.2020-06-14T18-32-17Z",
-				EnablePrometheus: false,
-			},
-		},
-		{
-			// Description if DeletionTimeStamp is present, value should be returned as string
-			// If Prometheus annotations are present, EnablePrometheus should be returned as true
-			// All three annotations should be defined to consider Prometheus enabled
-			name: "Get tenant Info w DeletionTimeStamp and Prometheus",
-			args: args{
-				minioTenant: &miniov2.Tenant{
-					ObjectMeta: metav1.ObjectMeta{
-						CreationTimestamp: testTimeStamp,
-						Name:              "tenant1",
-						Namespace:         "minio-ns",
-						DeletionTimestamp: &testTimeStamp,
-						Annotations: map[string]string{
-							prometheusPath:   "some/path",
-							prometheusPort:   "other/path",
-							prometheusScrape: "other/path",
-						},
-					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{
-							{
-								Name:             "pool1",
-								Servers:          int32(2),
-								VolumesPerServer: 4,
-								VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
-									Spec: corev1.PersistentVolumeClaimSpec{
-										Resources: corev1.ResourceRequirements{
-											Requests: map[corev1.ResourceName]resource.Quantity{
-												corev1.ResourceStorage: resource.MustParse("1Mi"),
-											},
-										},
-										StorageClassName: swag.String("standard"),
-									},
-								},
-								RuntimeClassName: swag.String(""),
-							},
-						},
-						Image: "minio/minio:RELEASE.2020-06-14T18-32-17Z",
-					},
-					Status: miniov2.TenantStatus{
-						CurrentState: "ready",
-					},
-				},
-			},
-			want: &models.Tenant{
-				CreationDate: testTimeStamp.Format(time.RFC3339),
-				DeletionDate: testTimeStamp.Format(time.RFC3339),
-				Name:         "tenant1",
-				TotalSize:    int64(8388608),
-				CurrentState: "ready",
-				Pools: []*models.Pool{
-					{
-						Name: "pool1",
-						SecurityContext: &models.SecurityContext{
-							RunAsGroup:   nil,
-							RunAsNonRoot: nil,
-							RunAsUser:    nil,
-						},
-						Servers:          swag.Int64(int64(2)),
-						VolumesPerServer: swag.Int32(4),
-						VolumeConfiguration: &models.PoolVolumeConfiguration{
-							StorageClassName: "standard",
-							Size:             swag.Int64(1024 * 1024),
-						},
-					},
-				},
-				Namespace:        "minio-ns",
-				Image:            "minio/minio:RELEASE.2020-06-14T18-32-17Z",
-				EnablePrometheus: true,
-			},
-		},
-		{
-			// If Prometheus annotations are present, EnablePrometheus should be returned as true
-			// All three annotations should be defined to consider Prometheus enabled
-			name: "Get tenant Info, not all Prometheus annotations",
-			args: args{
-				minioTenant: &miniov2.Tenant{
-					ObjectMeta: metav1.ObjectMeta{
-						CreationTimestamp: testTimeStamp,
-						Name:              "tenant1",
-						Namespace:         "minio-ns",
-						Annotations: map[string]string{
-							prometheusPath:   "some/path",
-							prometheusScrape: "other/path",
-						},
-					},
-					Spec: miniov2.TenantSpec{
-						Pools: []miniov2.Pool{},
-						Image: "minio/minio:RELEASE.2020-06-14T18-32-17Z",
-					},
-					Status: miniov2.TenantStatus{
-						CurrentState: "ready",
-					},
-				},
-			},
-			want: &models.Tenant{
-				CreationDate:     testTimeStamp.Format(time.RFC3339),
-				Name:             "tenant1",
-				CurrentState:     "ready",
-				Namespace:        "minio-ns",
-				Image:            "minio/minio:RELEASE.2020-06-14T18-32-17Z",
-				EnablePrometheus: false,
+				Namespace: "minio-ns",
+				Image:     "minio/minio:RELEASE.2020-06-14T18-32-17Z",
 			},
 		},
 		{
@@ -570,12 +465,11 @@ func Test_TenantInfo(t *testing.T) {
 				},
 			},
 			want: &models.Tenant{
-				CreationDate:     testTimeStamp.Format(time.RFC3339),
-				Name:             "tenant1",
-				CurrentState:     "ready",
-				Namespace:        "minio-ns",
-				Image:            "minio/minio:RELEASE.2020-06-14T18-32-17Z",
-				EnablePrometheus: false,
+				CreationDate: testTimeStamp.Format(time.RFC3339),
+				Name:         "tenant1",
+				CurrentState: "ready",
+				Namespace:    "minio-ns",
+				Image:        "minio/minio:RELEASE.2020-06-14T18-32-17Z",
 			},
 		},
 	}

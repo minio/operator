@@ -22,27 +22,8 @@ import (
 // MinIOServerName specifies the default container name for Tenant
 const MinIOServerName = "minio"
 
-// MinIODNSInitContainer Init Container for DNS
-const MinIODNSInitContainer = "minio-dns-wait"
-
-// MinIOVolumeInitContainer Init Container for DNS
-const MinIOVolumeInitContainer = "minio-vol-wait"
-
 // KESContainerName specifies the default container name for KES
 const KESContainerName = "kes"
-
-// ConsoleContainerName specifies the default container name for Console
-const ConsoleContainerName = "console"
-
-// LogPgContainerName is the default name for the Log (PostgreSQL) server
-// container
-const LogPgContainerName = "log-search-pg"
-
-// LogSearchAPIContainerName is the name for the log search API server container
-const LogSearchAPIContainerName = "log-search-api"
-
-// PrometheusContainerName is the name of the prometheus server container
-const PrometheusContainerName = "prometheus"
 
 // InitContainerImage name for init container.
 const InitContainerImage = "busybox:1.33.1"
@@ -213,61 +194,9 @@ func (t *Tenant) ConsoleCSRName() string {
 	return t.ConsoleDeploymentName() + "-" + t.Namespace + CSRNameSuffix
 }
 
-// LogStatefulsetName returns name of statefulsets meant for Log feature
-func (t *Tenant) LogStatefulsetName() string {
-	return fmt.Sprintf("%s-%s", t.Name, "log")
-}
-
-// LogHLServiceName returns name of Headless service for the Log statefulsets
-func (t *Tenant) LogHLServiceName() string {
-	return t.Name + LogHLSvcNameSuffix
-}
-
 // ConfigurationSecretName returns name of secret used to store the tenant configuration
 func (t *Tenant) ConfigurationSecretName() string {
 	return fmt.Sprintf("%s%s", t.Name, TenantConfigurationSecretSuffix)
-}
-
-// LogSecretName returns name of secret shared by Log PG server and log-search-api server
-func (t *Tenant) LogSecretName() string {
-	return fmt.Sprintf("%s-%s", t.Name, "log-secret")
-}
-
-// LogSearchAPIDeploymentName returns name of Log Search API server deployment
-func (t *Tenant) LogSearchAPIDeploymentName() string {
-	return fmt.Sprintf("%s-%s", t.Name, LogSearchAPIContainerName)
-}
-
-// LogSearchAPIServiceName returns name of Log Search API service name
-func (t *Tenant) LogSearchAPIServiceName() string {
-	return fmt.Sprintf("%s-%s", t.Name, LogSearchAPIContainerName)
-}
-
-// PrometheusStatefulsetName returns name of statefulset meant for Prometheus
-// metrics.
-func (t *Tenant) PrometheusStatefulsetName() string {
-	return fmt.Sprintf("%s-%s", t.Name, "prometheus")
-}
-
-// PrometheusConfigMapName returns name of the config map for Prometheus.
-func (t *Tenant) PrometheusConfigMapName() string {
-	return fmt.Sprintf("%s-%s", t.Name, "prometheus-config-map")
-}
-
-// PrometheusConfigVolMountName returns name of the prometheus config volume.
-func (t *Tenant) PrometheusConfigVolMountName() string {
-	return fmt.Sprintf("%s-prometheus-config-volmount", t.Name)
-}
-
-// PrometheusServiceName returns name of the Prometheus service
-func (t *Tenant) PrometheusServiceName() string {
-	return fmt.Sprintf("%s-%s", t.Name, PrometheusContainerName)
-}
-
-// PrometheusHLServiceName returns name of Headless service for the Log
-// statefulsets
-func (t *Tenant) PrometheusHLServiceName() string {
-	return t.Name + PrometheusHLSvcNameSuffix
 }
 
 // PrometheusConfigJobName returns the name of the prometheus job
@@ -282,4 +211,9 @@ func (t *Tenant) PrometheusConfigJobName() string {
 // when prometheus operator is enabled
 func (t *Tenant) PrometheusOperatorAddlConfigJobName() string {
 	return fmt.Sprintf("%s-minio-job", t.Name)
+}
+
+// PrometheusConfigMapName returns name of the config map for Prometheus.
+func (t *Tenant) PrometheusConfigMapName() string {
+	return fmt.Sprintf("%s-%s", t.Name, "prometheus-config-map")
 }

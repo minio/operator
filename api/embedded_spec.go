@@ -856,43 +856,6 @@ func init() {
         }
       }
     },
-    "/namespaces/{namespace}/tenants/{tenant}/disable-logging": {
-      "post": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Disable Tenant Logging",
-        "operationId": "DisableTenantLogging",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
     "/namespaces/{namespace}/tenants/{tenant}/domains": {
       "put": {
         "tags": [
@@ -925,43 +888,6 @@ func init() {
         "responses": {
           "204": {
             "description": "A successful response."
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/namespaces/{namespace}/tenants/{tenant}/enable-logging": {
-      "post": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Enable Tenant Logging",
-        "operationId": "EnableTenantLogging",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "boolean"
-            }
           },
           "default": {
             "description": "Generic error response.",
@@ -1184,163 +1110,6 @@ func init() {
         ],
         "responses": {
           "204": {
-            "description": "A successful response."
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/namespaces/{namespace}/tenants/{tenant}/log": {
-      "get": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Get Tenant Logs",
-        "operationId": "GetTenantLogs",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tenantLogs"
-            }
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Set Tenant Logs",
-        "operationId": "SetTenantLogs",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "data",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/tenantLogs"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/namespaces/{namespace}/tenants/{tenant}/monitoring": {
-      "get": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Get Prometheus Monitoring config info For The Tenant",
-        "operationId": "GetTenantMonitoring",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tenantMonitoringInfo"
-            }
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Set Prometheus monitoring fields for tenant",
-        "operationId": "SetTenantMonitoring",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "data",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/tenantMonitoringInfo"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
             "description": "A successful response."
           },
           "default": {
@@ -2607,14 +2376,6 @@ func init() {
         }
       }
     },
-    "configureTenantRequest": {
-      "type": "object",
-      "properties": {
-        "prometheusEnabled": {
-          "type": "boolean"
-        }
-      }
-    },
     "container": {
       "type": "object",
       "properties": {
@@ -2699,10 +2460,6 @@ func init() {
           "type": "boolean",
           "default": true
         },
-        "enable_prometheus": {
-          "type": "boolean",
-          "default": false
-        },
         "enable_tls": {
           "type": "boolean",
           "default": true
@@ -2745,9 +2502,6 @@ func init() {
             "type": "string"
           }
         },
-        "logSearchConfiguration": {
-          "$ref": "#/definitions/logSearchConfiguration"
-        },
         "mount_path": {
           "type": "string"
         },
@@ -2763,9 +2517,6 @@ func init() {
           "items": {
             "$ref": "#/definitions/pool"
           }
-        },
-        "prometheusConfiguration": {
-          "$ref": "#/definitions/prometheusConfiguration"
         },
         "secret_key": {
           "type": "string"
@@ -3604,36 +3355,6 @@ func init() {
         }
       }
     },
-    "logSearchConfiguration": {
-      "type": "object",
-      "properties": {
-        "image": {
-          "type": "string"
-        },
-        "postgres_image": {
-          "type": "string"
-        },
-        "postgres_init_image": {
-          "type": "string"
-        },
-        "postgres_securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "storageClass": {
-          "type": "string",
-          "default": ""
-        },
-        "storageSize": {
-          "type": "number",
-          "default": 5
-        }
-      }
-    },
     "loginDetails": {
       "type": "object",
       "properties": {
@@ -4375,32 +4096,6 @@ func init() {
         }
       }
     },
-    "prometheusConfiguration": {
-      "type": "object",
-      "properties": {
-        "image": {
-          "type": "string"
-        },
-        "init_image": {
-          "type": "string"
-        },
-        "securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "sidecar_image": {
-          "type": "string"
-        },
-        "storageClass": {
-          "type": "string",
-          "default": ""
-        },
-        "storageSize": {
-          "type": "number",
-          "default": 5
-        }
-      }
-    },
     "pvFormatErrorResponse": {
       "type": "object",
       "properties": {
@@ -4682,9 +4377,6 @@ func init() {
         "domains": {
           "$ref": "#/definitions/domainsConfiguration"
         },
-        "enable_prometheus": {
-          "type": "boolean"
-        },
         "encryptionEnabled": {
           "type": "boolean"
         },
@@ -4712,9 +4404,6 @@ func init() {
           "type": "boolean"
         },
         "minioTLS": {
-          "type": "boolean"
-        },
-        "monitoringEnabled": {
           "type": "boolean"
         },
         "name": {
@@ -4816,145 +4505,6 @@ func init() {
         },
         "volume_count": {
           "type": "integer"
-        }
-      }
-    },
-    "tenantLogs": {
-      "type": "object",
-      "properties": {
-        "annotations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/annotation"
-          }
-        },
-        "dbAnnotations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/annotation"
-          }
-        },
-        "dbImage": {
-          "type": "string"
-        },
-        "dbInitImage": {
-          "type": "string"
-        },
-        "dbLabels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/label"
-          }
-        },
-        "dbNodeSelector": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/nodeSelector"
-          }
-        },
-        "dbSecurityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "dbServiceAccountName": {
-          "type": "string"
-        },
-        "disabled": {
-          "type": "boolean"
-        },
-        "diskCapacityGB": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "labels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/label"
-          }
-        },
-        "logCPURequest": {
-          "type": "string"
-        },
-        "logDBCPURequest": {
-          "type": "string"
-        },
-        "logDBMemRequest": {
-          "type": "string"
-        },
-        "logMemRequest": {
-          "type": "string"
-        },
-        "nodeSelector": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/nodeSelector"
-          }
-        },
-        "securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "serviceAccountName": {
-          "type": "string"
-        }
-      }
-    },
-    "tenantMonitoringInfo": {
-      "type": "object",
-      "properties": {
-        "annotations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/annotation"
-          }
-        },
-        "diskCapacityGB": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "initImage": {
-          "type": "string"
-        },
-        "labels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/label"
-          }
-        },
-        "monitoringCPURequest": {
-          "type": "string"
-        },
-        "monitoringMemRequest": {
-          "type": "string"
-        },
-        "nodeSelector": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/nodeSelector"
-          }
-        },
-        "prometheusEnabled": {
-          "type": "boolean"
-        },
-        "securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "serviceAccountName": {
-          "type": "string"
-        },
-        "sidecarImage": {
-          "type": "string"
-        },
-        "storageClassName": {
-          "type": "string"
-        },
-        "toggle": {
-          "type": "boolean"
         }
       }
     },
@@ -5185,9 +4735,6 @@ func init() {
     "updateTenantRequest": {
       "type": "object",
       "properties": {
-        "enable_prometheus": {
-          "type": "boolean"
-        },
         "image": {
           "type": "string",
           "pattern": "^((.*?)/(.*?):(.+))$"
@@ -6196,43 +5743,6 @@ func init() {
         }
       }
     },
-    "/namespaces/{namespace}/tenants/{tenant}/disable-logging": {
-      "post": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Disable Tenant Logging",
-        "operationId": "DisableTenantLogging",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
     "/namespaces/{namespace}/tenants/{tenant}/domains": {
       "put": {
         "tags": [
@@ -6265,43 +5775,6 @@ func init() {
         "responses": {
           "204": {
             "description": "A successful response."
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/namespaces/{namespace}/tenants/{tenant}/enable-logging": {
-      "post": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Enable Tenant Logging",
-        "operationId": "EnableTenantLogging",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "boolean"
-            }
           },
           "default": {
             "description": "Generic error response.",
@@ -6524,163 +5997,6 @@ func init() {
         ],
         "responses": {
           "204": {
-            "description": "A successful response."
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/namespaces/{namespace}/tenants/{tenant}/log": {
-      "get": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Get Tenant Logs",
-        "operationId": "GetTenantLogs",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tenantLogs"
-            }
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Set Tenant Logs",
-        "operationId": "SetTenantLogs",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "data",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/tenantLogs"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "type": "boolean"
-            }
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      }
-    },
-    "/namespaces/{namespace}/tenants/{tenant}/monitoring": {
-      "get": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Get Prometheus Monitoring config info For The Tenant",
-        "operationId": "GetTenantMonitoring",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/tenantMonitoringInfo"
-            }
-          },
-          "default": {
-            "description": "Generic error response.",
-            "schema": {
-              "$ref": "#/definitions/error"
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "OperatorAPI"
-        ],
-        "summary": "Set Prometheus monitoring fields for tenant",
-        "operationId": "SetTenantMonitoring",
-        "parameters": [
-          {
-            "type": "string",
-            "name": "namespace",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "name": "tenant",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "data",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/tenantMonitoringInfo"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
             "description": "A successful response."
           },
           "default": {
@@ -8756,14 +8072,6 @@ func init() {
         }
       }
     },
-    "configureTenantRequest": {
-      "type": "object",
-      "properties": {
-        "prometheusEnabled": {
-          "type": "boolean"
-        }
-      }
-    },
     "container": {
       "type": "object",
       "properties": {
@@ -8848,10 +8156,6 @@ func init() {
           "type": "boolean",
           "default": true
         },
-        "enable_prometheus": {
-          "type": "boolean",
-          "default": false
-        },
         "enable_tls": {
           "type": "boolean",
           "default": true
@@ -8894,9 +8198,6 @@ func init() {
             "type": "string"
           }
         },
-        "logSearchConfiguration": {
-          "$ref": "#/definitions/logSearchConfiguration"
-        },
         "mount_path": {
           "type": "string"
         },
@@ -8912,9 +8213,6 @@ func init() {
           "items": {
             "$ref": "#/definitions/pool"
           }
-        },
-        "prometheusConfiguration": {
-          "$ref": "#/definitions/prometheusConfiguration"
         },
         "secret_key": {
           "type": "string"
@@ -9741,36 +9039,6 @@ func init() {
         }
       }
     },
-    "logSearchConfiguration": {
-      "type": "object",
-      "properties": {
-        "image": {
-          "type": "string"
-        },
-        "postgres_image": {
-          "type": "string"
-        },
-        "postgres_init_image": {
-          "type": "string"
-        },
-        "postgres_securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "storageClass": {
-          "type": "string",
-          "default": ""
-        },
-        "storageSize": {
-          "type": "number",
-          "default": 5
-        }
-      }
-    },
     "loginDetails": {
       "type": "object",
       "properties": {
@@ -10377,32 +9645,6 @@ func init() {
         }
       }
     },
-    "prometheusConfiguration": {
-      "type": "object",
-      "properties": {
-        "image": {
-          "type": "string"
-        },
-        "init_image": {
-          "type": "string"
-        },
-        "securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "sidecar_image": {
-          "type": "string"
-        },
-        "storageClass": {
-          "type": "string",
-          "default": ""
-        },
-        "storageSize": {
-          "type": "number",
-          "default": 5
-        }
-      }
-    },
     "pvFormatErrorResponse": {
       "type": "object",
       "properties": {
@@ -10684,9 +9926,6 @@ func init() {
         "domains": {
           "$ref": "#/definitions/domainsConfiguration"
         },
-        "enable_prometheus": {
-          "type": "boolean"
-        },
         "encryptionEnabled": {
           "type": "boolean"
         },
@@ -10714,9 +9953,6 @@ func init() {
           "type": "boolean"
         },
         "minioTLS": {
-          "type": "boolean"
-        },
-        "monitoringEnabled": {
           "type": "boolean"
         },
         "name": {
@@ -10818,145 +10054,6 @@ func init() {
         },
         "volume_count": {
           "type": "integer"
-        }
-      }
-    },
-    "tenantLogs": {
-      "type": "object",
-      "properties": {
-        "annotations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/annotation"
-          }
-        },
-        "dbAnnotations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/annotation"
-          }
-        },
-        "dbImage": {
-          "type": "string"
-        },
-        "dbInitImage": {
-          "type": "string"
-        },
-        "dbLabels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/label"
-          }
-        },
-        "dbNodeSelector": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/nodeSelector"
-          }
-        },
-        "dbSecurityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "dbServiceAccountName": {
-          "type": "string"
-        },
-        "disabled": {
-          "type": "boolean"
-        },
-        "diskCapacityGB": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "labels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/label"
-          }
-        },
-        "logCPURequest": {
-          "type": "string"
-        },
-        "logDBCPURequest": {
-          "type": "string"
-        },
-        "logDBMemRequest": {
-          "type": "string"
-        },
-        "logMemRequest": {
-          "type": "string"
-        },
-        "nodeSelector": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/nodeSelector"
-          }
-        },
-        "securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "serviceAccountName": {
-          "type": "string"
-        }
-      }
-    },
-    "tenantMonitoringInfo": {
-      "type": "object",
-      "properties": {
-        "annotations": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/annotation"
-          }
-        },
-        "diskCapacityGB": {
-          "type": "string"
-        },
-        "image": {
-          "type": "string"
-        },
-        "initImage": {
-          "type": "string"
-        },
-        "labels": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/label"
-          }
-        },
-        "monitoringCPURequest": {
-          "type": "string"
-        },
-        "monitoringMemRequest": {
-          "type": "string"
-        },
-        "nodeSelector": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/nodeSelector"
-          }
-        },
-        "prometheusEnabled": {
-          "type": "boolean"
-        },
-        "securityContext": {
-          "type": "object",
-          "$ref": "#/definitions/securityContext"
-        },
-        "serviceAccountName": {
-          "type": "string"
-        },
-        "sidecarImage": {
-          "type": "string"
-        },
-        "storageClassName": {
-          "type": "string"
-        },
-        "toggle": {
-          "type": "boolean"
         }
       }
     },
@@ -11187,9 +10284,6 @@ func init() {
     "updateTenantRequest": {
       "type": "object",
       "properties": {
-        "enable_prometheus": {
-          "type": "boolean"
-        },
         "image": {
           "type": "string",
           "pattern": "^((.*?)/(.*?):(.+))$"

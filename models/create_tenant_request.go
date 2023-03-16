@@ -49,9 +49,6 @@ type CreateTenantRequest struct {
 	// enable console
 	EnableConsole *bool `json:"enable_console,omitempty"`
 
-	// enable prometheus
-	EnablePrometheus *bool `json:"enable_prometheus,omitempty"`
-
 	// enable tls
 	EnableTLS *bool `json:"enable_tls,omitempty"`
 
@@ -85,9 +82,6 @@ type CreateTenantRequest struct {
 	// labels
 	Labels map[string]string `json:"labels,omitempty"`
 
-	// log search configuration
-	LogSearchConfiguration *LogSearchConfiguration `json:"logSearchConfiguration,omitempty"`
-
 	// mount path
 	MountPath string `json:"mount_path,omitempty"`
 
@@ -103,9 +97,6 @@ type CreateTenantRequest struct {
 	// pools
 	// Required: true
 	Pools []*Pool `json:"pools"`
-
-	// prometheus configuration
-	PrometheusConfiguration *PrometheusConfiguration `json:"prometheusConfiguration,omitempty"`
 
 	// secret key
 	SecretKey string `json:"secret_key,omitempty"`
@@ -138,10 +129,6 @@ func (m *CreateTenantRequest) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateLogSearchConfiguration(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
 	}
@@ -151,10 +138,6 @@ func (m *CreateTenantRequest) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validatePools(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validatePrometheusConfiguration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -270,25 +253,6 @@ func (m *CreateTenantRequest) validateImageRegistry(formats strfmt.Registry) err
 	return nil
 }
 
-func (m *CreateTenantRequest) validateLogSearchConfiguration(formats strfmt.Registry) error {
-	if swag.IsZero(m.LogSearchConfiguration) { // not required
-		return nil
-	}
-
-	if m.LogSearchConfiguration != nil {
-		if err := m.LogSearchConfiguration.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("logSearchConfiguration")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("logSearchConfiguration")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *CreateTenantRequest) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
@@ -338,25 +302,6 @@ func (m *CreateTenantRequest) validatePools(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *CreateTenantRequest) validatePrometheusConfiguration(formats strfmt.Registry) error {
-	if swag.IsZero(m.PrometheusConfiguration) { // not required
-		return nil
-	}
-
-	if m.PrometheusConfiguration != nil {
-		if err := m.PrometheusConfiguration.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("prometheusConfiguration")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("prometheusConfiguration")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *CreateTenantRequest) validateTLS(formats strfmt.Registry) error {
 	if swag.IsZero(m.TLS) { // not required
 		return nil
@@ -400,15 +345,7 @@ func (m *CreateTenantRequest) ContextValidate(ctx context.Context, formats strfm
 		res = append(res, err)
 	}
 
-	if err := m.contextValidateLogSearchConfiguration(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidatePools(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidatePrometheusConfiguration(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -506,22 +443,6 @@ func (m *CreateTenantRequest) contextValidateImageRegistry(ctx context.Context, 
 	return nil
 }
 
-func (m *CreateTenantRequest) contextValidateLogSearchConfiguration(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.LogSearchConfiguration != nil {
-		if err := m.LogSearchConfiguration.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("logSearchConfiguration")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("logSearchConfiguration")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *CreateTenantRequest) contextValidatePools(ctx context.Context, formats strfmt.Registry) error {
 
 	for i := 0; i < len(m.Pools); i++ {
@@ -537,22 +458,6 @@ func (m *CreateTenantRequest) contextValidatePools(ctx context.Context, formats 
 			}
 		}
 
-	}
-
-	return nil
-}
-
-func (m *CreateTenantRequest) contextValidatePrometheusConfiguration(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.PrometheusConfiguration != nil {
-		if err := m.PrometheusConfiguration.ContextValidate(ctx, formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("prometheusConfiguration")
-			} else if ce, ok := err.(*errors.CompositeError); ok {
-				return ce.ValidateName("prometheusConfiguration")
-			}
-			return err
-		}
 	}
 
 	return nil

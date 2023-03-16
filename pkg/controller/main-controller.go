@@ -89,35 +89,25 @@ const (
 
 // Standard Status messages for Tenant
 const (
-	StatusInitialized                        = "Initialized"
-	StatusProvisioningCIService              = "Provisioning MinIO Cluster IP Service"
-	StatusProvisioningHLService              = "Provisioning MinIO Headless Service"
-	StatusProvisioningStatefulSet            = "Provisioning MinIO Statefulset"
-	StatusProvisioningConsoleService         = "Provisioning Console Service"
-	StatusProvisioningKESStatefulSet         = "Provisioning KES StatefulSet"
-	StatusProvisioningLogPGStatefulSet       = "Provisioning Postgres server"
-	StatusProvisioningLogSearchAPIDeployment = "Provisioning Log Search API server"
-	StatusProvisioningPrometheusStatefulSet  = "Provisioning Prometheus server"
-	StatusProvisioningInitialUsers           = "Provisioning initial users"
-	StatusProvisioningDefaultBuckets         = "Provisioning default buckets"
-	StatusWaitingForReadyState               = "Waiting for Pods to be ready"
-	StatusWaitingForLogSearchReadyState      = "Waiting for Log Search Pods to be ready"
-	StatusWaitingMinIOCert                   = "Waiting for MinIO TLS Certificate"
-	StatusWaitingMinIOClientCert             = "Waiting for MinIO TLS Client Certificate"
-	StatusWaitingKESCert                     = "Waiting for KES TLS Certificate"
-	StatusUpdatingMinIOVersion               = "Updating MinIO Version"
-	StatusUpdatingKES                        = "Updating KES"
-	StatusUpdatingPrometheus                 = "Updating Prometheus"
-	StatusUpdatingLogPGStatefulSet           = "Updating Postgres server"
-	StatusUpdatingLogSearchAPIServer         = "Updating Log Search API server"
-	StatusUpdatingResourceRequirements       = "Updating Resource Requirements"
-	StatusUpdatingAffinity                   = "Updating Pod Affinity"
-	StatusNotOwned                           = "Statefulset not controlled by operator"
-	StatusFailedAlreadyExists                = "Another MinIO Tenant already exists in the namespace"
-	StatusTenantCredentialsNotSet            = "Tenant credentials are not set properly"
-	StatusInconsistentMinIOVersions          = "Different versions across MinIO Pools"
-	StatusRestartingMinIO                    = "Restarting MinIO"
-	StatusDecommissioningNotAllowed          = "Pool Decommissioning Not Allowed"
+	StatusInitialized                = "Initialized"
+	StatusProvisioningCIService      = "Provisioning MinIO Cluster IP Service"
+	StatusProvisioningHLService      = "Provisioning MinIO Headless Service"
+	StatusProvisioningStatefulSet    = "Provisioning MinIO Statefulset"
+	StatusProvisioningConsoleService = "Provisioning Console Service"
+	StatusProvisioningKESStatefulSet = "Provisioning KES StatefulSet"
+	StatusProvisioningInitialUsers   = "Provisioning initial users"
+	StatusProvisioningDefaultBuckets = "Provisioning default buckets"
+	StatusWaitingMinIOCert           = "Waiting for MinIO TLS Certificate"
+	StatusWaitingMinIOClientCert     = "Waiting for MinIO TLS Client Certificate"
+	StatusWaitingKESCert             = "Waiting for KES TLS Certificate"
+	StatusUpdatingMinIOVersion       = "Updating MinIO Version"
+	StatusUpdatingKES                = "Updating KES"
+	StatusNotOwned                   = "Statefulset not controlled by operator"
+	StatusFailedAlreadyExists        = "Another MinIO Tenant already exists in the namespace"
+	StatusTenantCredentialsNotSet    = "Tenant credentials are not set properly"
+	StatusInconsistentMinIOVersions  = "Different versions across MinIO Pools"
+	StatusRestartingMinIO            = "Restarting MinIO"
+	StatusDecommissioningNotAllowed  = "Pool Decommissioning Not Allowed"
 )
 
 // ErrMinIONotReady is the error returned when MinIO is not Ready
@@ -905,14 +895,6 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// Create logSecret before deploying any StatefulSet
-	if tenant.HasLogSearchAPIEnabled() {
-		_, err = c.checkAndCreateLogSecret(ctx, tenant)
-		if err != nil {
-			return err
-		}
-	}
-
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
 	// this status value is zero only for new tenants or legacy tenants
 	if len(tenant.Status.Pools) == 0 {
@@ -1314,69 +1296,6 @@ func (c *Controller) syncHandler(key string) error {
 			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
 			return nil
 		}
-	}
-
-	if tenant.HasLogSearchAPIEnabled() {
-		var logSecret *corev1.Secret
-		logSecret, err = c.checkAndCreateLogSecret(ctx, tenant)
-		if err != nil {
-			return err
-		}
-
-		searchSvc, err := c.checkAndCreateLogHeadless(ctx, tenant)
-		if err != nil {
-			return err
-		}
-
-		err = c.checkAndCreateLogStatefulSet(ctx, tenant, searchSvc.Name)
-		if err != nil {
-			return err
-		}
-
-		err = c.checkAndCreateLogSearchAPIDeployment(ctx, tenant)
-		if err != nil {
-			return err
-		}
-
-		err = c.checkAndCreateLogSearchAPIService(ctx, tenant)
-		if err != nil {
-			return err
-		}
-		// Make sure that MinIO is up and running to enable Log Search.
-		if !tenant.MinIOHealthCheck(c.getTransport()) {
-			if _, err = c.updateTenantStatus(ctx, tenant, StatusWaitingForReadyState, totalReplicas); err != nil {
-				return err
-			}
-			klog.Infof("Can't reach minio for log config")
-			return ErrMinIONotReady
-		}
-		err = c.checkAndConfigureLogSearchAPI(ctx, tenant, logSecret, adminClnt)
-		if err != nil {
-			return err
-		}
-	} else {
-		err := c.deleteLogHeadlessService(ctx, tenant, adminClnt)
-		if err != nil {
-			return err
-		}
-		err = c.deleteLogStatefulSet(ctx, tenant)
-		if err != nil {
-			return err
-		}
-		err = c.deleteLogSearchAPIDeployment(ctx, tenant)
-		if err != nil {
-			return err
-		}
-		err = c.deleteLogSearchAPIService(ctx, tenant)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = c.checkPrometheusStatus(ctx, tenant, tenantConfiguration, totalReplicas, cOpts, uOpts, nsName)
-	if err != nil {
-		klog.V(2).Infof("Error checking Prometheus state %v", err)
-		return err
 	}
 
 	if tenant.HasPrometheusOperatorEnabled() {

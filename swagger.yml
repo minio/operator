@@ -516,108 +516,6 @@ paths:
       tags:
         - OperatorAPI
 
-  /namespaces/{namespace}/tenants/{tenant}/log:
-    get:
-      summary: Get Tenant Logs
-      operationId: GetTenantLogs
-      parameters:
-        - name: namespace
-          in: path
-          required: true
-          type: string
-        - name: tenant
-          in: path
-          required: true
-          type: string
-      responses:
-        200:
-          description: A successful response.
-          schema:
-            $ref: "#/definitions/tenantLogs"
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
-    put:
-      summary: Set Tenant Logs
-      operationId: SetTenantLogs
-      parameters:
-        - name: namespace
-          in: path
-          required: true
-          type: string
-        - name: tenant
-          in: path
-          required: true
-          type: string
-        - name: data
-          in: body
-          required: true
-          schema:
-            $ref: "#/definitions/tenantLogs"
-      responses:
-        200:
-          description: A successful response.
-          schema:
-            type: boolean
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
-
-  /namespaces/{namespace}/tenants/{tenant}/enable-logging:
-    post:
-      summary: Enable Tenant Logging
-      operationId: EnableTenantLogging
-      parameters:
-        - name: namespace
-          in: path
-          required: true
-          type: string
-        - name: tenant
-          in: path
-          required: true
-          type: string
-      responses:
-        200:
-          description: A successful response.
-          schema:
-            type: boolean
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
-
-  /namespaces/{namespace}/tenants/{tenant}/disable-logging:
-    post:
-      summary: Disable Tenant Logging
-      operationId: DisableTenantLogging
-      parameters:
-        - name: namespace
-          in: path
-          required: true
-          type: string
-        - name: tenant
-          in: path
-          required: true
-          type: string
-      responses:
-        200:
-          description: A successful response.
-          schema:
-            type: boolean
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
 
   /namespaces/{namespace}/tenants/{tenant}:
     get:
@@ -966,56 +864,6 @@ paths:
       tags:
         - OperatorAPI
 
-  /namespaces/{namespace}/tenants/{tenant}/monitoring:
-    get:
-      summary: Get Prometheus Monitoring config info For The Tenant
-      operationId: GetTenantMonitoring
-      parameters:
-        - name: namespace
-          in: path
-          required: true
-          type: string
-        - name: tenant
-          in: path
-          required: true
-          type: string
-      responses:
-        200:
-          description: A successful response.
-          schema:
-            $ref: "#/definitions/tenantMonitoringInfo"
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
-    put:
-      summary: Set Prometheus monitoring fields for tenant
-      operationId: SetTenantMonitoring
-      parameters:
-        - name: namespace
-          in: path
-          required: true
-          type: string
-        - name: tenant
-          in: path
-          required: true
-          type: string
-        - name: data
-          in: body
-          required: true
-          schema:
-            $ref: "#/definitions/tenantMonitoringInfo"
-      responses:
-        201:
-          description: A successful response.
-        default:
-          description: Generic error response.
-          schema:
-            $ref: "#/definitions/error"
-      tags:
-        - OperatorAPI
 
   /namespaces/{namespace}/tenants/{tenant}/certificates:
     put:
@@ -1864,8 +1712,6 @@ definitions:
       total_size:
         type: integer
         format: int64
-      enable_prometheus:
-        type: boolean
       subnet_license:
         $ref: "#/definitions/license"
       endpoints:
@@ -1876,8 +1722,6 @@ definitions:
           console:
             type: string
       logEnabled:
-        type: boolean
-      monitoringEnabled:
         type: boolean
       idpAdEnabled:
         type: boolean
@@ -1972,8 +1816,6 @@ definitions:
         $ref: "#/definitions/imageRegistry"
       image_pull_secret:
         type: string
-      enable_prometheus:
-        type: boolean
 
   imageRegistry:
     type: object
@@ -2049,9 +1891,6 @@ definitions:
       enable_tls:
         type: boolean
         default: true
-      enable_prometheus:
-        type: boolean
-        default: false
       namespace:
         type: string
       erasureCodingParity:
@@ -2064,10 +1903,6 @@ definitions:
         type: object
         additionalProperties:
           type: string
-      logSearchConfiguration:
-        $ref: "#/definitions/logSearchConfiguration"
-      prometheusConfiguration:
-        $ref: "#/definitions/prometheusConfiguration"
       image_registry:
         $ref: "#/definitions/imageRegistry"
       image_pull_secret:
@@ -2136,45 +1971,6 @@ definitions:
         items:
           type: string
 
-  logSearchConfiguration:
-    type: object
-    properties:
-      storageClass:
-        type: string
-        default: ""
-      storageSize:
-        type: number
-        default: 5
-      image:
-        type: string
-      securityContext:
-        type: object
-        $ref: "#/definitions/securityContext"
-      postgres_securityContext:
-        type: object
-        $ref: "#/definitions/securityContext"
-      postgres_image:
-        type: string
-      postgres_init_image:
-        type: string
-  prometheusConfiguration:
-    type: object
-    properties:
-      storageClass:
-        type: string
-        default: ""
-      storageSize:
-        type: number
-        default: 5
-      image:
-        type: string
-      sidecar_image:
-        type: string
-      init_image:
-        type: string
-      securityContext:
-        type: object
-        $ref: "#/definitions/securityContext"
 
   setAdministratorsRequest:
     type: object
@@ -3191,61 +2987,6 @@ definitions:
       yaml:
         type: string
 
-  tenantLogs:
-    type: object
-    properties:
-      image:
-        type: string
-      labels:
-        type: array
-        items:
-          $ref: "#/definitions/label"
-      annotations:
-        type: array
-        items:
-          $ref: "#/definitions/annotation"
-      diskCapacityGB:
-        type: string
-      nodeSelector:
-        type: array
-        items:
-          $ref: "#/definitions/nodeSelector"
-      serviceAccountName:
-        type: string
-      dbImage:
-        type: string
-      dbInitImage:
-        type: string
-      dbLabels:
-        type: array
-        items:
-          $ref: "#/definitions/label"
-      dbAnnotations:
-        type: array
-        items:
-          $ref: "#/definitions/annotation"
-      dbNodeSelector:
-        type: array
-        items:
-          $ref: "#/definitions/nodeSelector"
-      dbServiceAccountName:
-        type: string
-      disabled:
-        type: boolean
-      logCPURequest:
-        type: string
-      logMemRequest:
-        type: string
-      logDBCPURequest:
-        type: string
-      logDBMemRequest:
-        type: string
-      securityContext:
-        type: object
-        $ref: "#/definitions/securityContext"
-      dbSecurityContext:
-        type: object
-        $ref: "#/definitions/securityContext"
 
   listPVCsResponse:
     type: object
@@ -3566,44 +3307,6 @@ definitions:
       operator:
         type: string
 
-  tenantMonitoringInfo:
-    type: object
-    properties:
-      prometheusEnabled:
-        type: boolean
-      toggle:
-        type: boolean
-      image:
-        type: string
-      sidecarImage:
-        type: string
-      initImage:
-        type: string
-      labels:
-        type: array
-        items:
-          $ref: "#/definitions/label"
-      annotations:
-        type: array
-        items:
-          $ref: "#/definitions/annotation"
-      diskCapacityGB:
-        type: string
-      nodeSelector:
-        type: array
-        items:
-          $ref: "#/definitions/nodeSelector"
-      serviceAccountName:
-        type: string
-      storageClassName:
-        type: string
-      monitoringCPURequest:
-        type: string
-      monitoringMemRequest:
-        type: string
-      securityContext:
-        type: object
-        $ref: "#/definitions/securityContext"
 
   label:
     type: object
@@ -3628,12 +3331,6 @@ definitions:
         type: string
       value:
         type: string
-
-  configureTenantRequest:
-    type: object
-    properties:
-      prometheusEnabled:
-        type: boolean
 
   formatConfiguration:
     type: object

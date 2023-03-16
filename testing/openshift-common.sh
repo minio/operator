@@ -140,7 +140,7 @@ function create_marketplace_catalog(){
   fi
 
   echo "Compiling operator in current branch"
-  (cd "${SCRIPT_DIR}/.." && make operator && make logsearchapi && podman build --quiet --no-cache -t $operatorContainerImage .)
+  (cd "${SCRIPT_DIR}/.." && make operator && podman build --quiet --no-cache -t $operatorContainerImage .)
 
   echo "push operator image to crc registry"
   podman login -u `oc whoami` -p `oc whoami --show-token` $registry/$operatorNamespace --tls-verify=false

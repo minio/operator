@@ -15,8 +15,6 @@
 package services
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -189,75 +187,4 @@ func NewHeadlessForKES(t *miniov2.Tenant) *corev1.Service {
 	}
 
 	return svc
-}
-
-// NewHeadlessForLog returns a k8s Headless service object for Log
-func NewHeadlessForLog(t *miniov2.Tenant) *corev1.Service {
-	searchPort := corev1.ServicePort{Port: miniov2.LogPgPort, Name: miniov2.LogPgPortName}
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:          t.LogPgPodLabels(),
-			Name:            t.LogHLServiceName(),
-			Namespace:       t.Namespace,
-			OwnerReferences: t.OwnerRef(),
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{searchPort},
-			Selector:  t.LogPgPodLabels(),
-			Type:      corev1.ServiceTypeClusterIP,
-			ClusterIP: corev1.ClusterIPNone,
-		},
-	}
-
-	return svc
-}
-
-// NewHeadlessForPrometheus returns a k8s Headless service object for the
-// Prometheus StatefulSet.
-func NewHeadlessForPrometheus(t *miniov2.Tenant) *corev1.Service {
-	promPort := corev1.ServicePort{Port: miniov2.PrometheusPort, Name: miniov2.PrometheusPortName}
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:          t.PrometheusPodLabels(),
-			Name:            t.PrometheusHLServiceName(),
-			Namespace:       t.Namespace,
-			OwnerReferences: t.OwnerRef(),
-		},
-		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{promPort},
-			Selector:  t.PrometheusPodLabels(),
-			Type:      corev1.ServiceTypeClusterIP,
-			ClusterIP: corev1.ClusterIPNone,
-		},
-	}
-}
-
-// NewClusterIPForLogSearchAPI will return a new cluster IP service object for log-search-api deployment
-func NewClusterIPForLogSearchAPI(t *miniov2.Tenant) *corev1.Service {
-	logSearchAPIPort := corev1.ServicePort{Port: miniov2.LogSearchAPIPort, Name: miniov2.LogSearchAPIPortName}
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels:          t.LogSearchAPIPodLabels(),
-			Name:            t.LogSearchAPIServiceName(),
-			Namespace:       t.Namespace,
-			OwnerReferences: t.OwnerRef(),
-		},
-		Spec: corev1.ServiceSpec{
-			Ports: []corev1.ServicePort{
-				logSearchAPIPort,
-			},
-			Selector: t.LogSearchAPIPodLabels(),
-			Type:     corev1.ServiceTypeClusterIP,
-		},
-	}
-}
-
-// GetLogSearchDBAddr returns the tenant's Postgres DB server address
-func GetLogSearchDBAddr(t *miniov2.Tenant) string {
-	return fmt.Sprintf("%s.%s.svc.%s:%d", t.LogHLServiceName(), t.Namespace, miniov2.GetClusterDomain(), miniov2.LogPgPort)
-}
-
-// GetLogSearchAPIAddr returns the tenant's log-search-api server address
-func GetLogSearchAPIAddr(t *miniov2.Tenant) string {
-	return fmt.Sprintf("http://%s.%s.svc.%s:%d", t.LogSearchAPIServiceName(), t.Namespace, miniov2.GetClusterDomain(), miniov2.LogSearchAPIPort)
 }

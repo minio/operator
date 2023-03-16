@@ -16,13 +16,8 @@ package controller
 
 import (
 	"context"
-	"crypto/tls"
-	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net"
-	"net/http"
 	"time"
 
 	"github.com/minio/madmin-go/v2"
@@ -242,30 +237,9 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		}
 	}
 
-	// get usage from Prometheus Metrics
-	accessKey, ok := tenantConfiguration["accesskey"]
-	if !ok {
-		return errors.New("MinIO server accesskey not set")
-	}
-
-	secretKey, ok := tenantConfiguration["secretkey"]
-	if !ok {
-		return errors.New("MinIO server secretkey not set")
-	}
-	bearerToken := tenant.GenBearerToken(string(accessKey), string(secretKey))
-
-	metrics, err := getPrometheusMetricsForTenant(tenant, bearerToken)
-	if err != nil {
-		klog.Infof("'%s/%s' Can't generate tenant prometheus token: %v", tenant.Namespace, tenant.Name, err)
-	} else {
-		if metrics != nil {
-			tenant.Status.Usage.Usage = metrics.Usage
-			tenant.Status.Usage.Capacity = metrics.UsableCapacity
-			if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
-				klog.Infof("'%s/%s' Can't update tenant status for usage: %v", tenant.Namespace, tenant.Name, err)
-			}
-		}
-	}
+	// TODO: add usage and usableCapacity
+	// tenant.Status.Usage.Usage = metrics.Usage
+	// tenant.Status.Usage.Capacity = metrics.UsableCapacity
 
 	return nil
 }
@@ -286,56 +260,6 @@ const (
 	// RegularMode query type for when we want to ask MinIO the current state of healing/health
 	RegularMode = "RegularMode"
 )
-
-func getHealthCheckTransport() func() *http.Transport {
-	// Keep TLS config.
-	tlsConfig := &tls.Config{
-		// Can't use SSLv3 because of POODLE and BEAST
-		// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
-		// Can't use TLSv1.1 because of RC4 cipher usage
-		MinVersion:         tls.VersionTLS12,
-		InsecureSkipVerify: true, // FIXME: use trusted CA
-	}
-	tr := &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
-		DialContext: (&net.Dialer{
-			Timeout: 15 * time.Second,
-		}).DialContext,
-		MaxIdleConnsPerHost:   1024,
-		IdleConnTimeout:       30 * time.Second,
-		ResponseHeaderTimeout: 1 * time.Minute,
-		TLSHandshakeTimeout:   5 * time.Second,
-		ExpectContinueTimeout: 5 * time.Second,
-		TLSClientConfig:       tlsConfig,
-		// Go net/http automatically unzip if content-type is
-		// gzip disable this feature, as we are always interested
-		// in raw stream.
-		DisableCompression: true,
-	}
-	return func() *http.Transport {
-		return tr
-	}
-}
-
-// drainBody close non nil response with any response Body.
-// convenient wrapper to drain any remaining data on response body.
-//
-// Subsequently this allows golang http RoundTripper
-// to re-use the same connection for future requests.
-func drainBody(respBody io.ReadCloser) {
-	// Callers should close resp.Body when done reading from it.
-	// If resp.Body is not closed, the Client's underlying RoundTripper
-	// (typically Transport) may not be able to re-use a persistent TCP
-	// connection to the server for a subsequent "keep-alive" request.
-	if respBody != nil {
-		// Drain any remaining Body and then close the connection.
-		// Without this closing connection would disallow re-using
-		// the same connection for future uses.
-		//  - http://stackoverflow.com/a/17961593/4465767
-		defer respBody.Close()
-		io.Copy(io.Discard, respBody)
-	}
-}
 
 // processNextHealthCheckItem will read a single work item off the workqueue and
 // attempt to process it, by calling the syncHandler.

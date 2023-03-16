@@ -19,13 +19,11 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/minio/operator/pkg/http"
 
 	"github.com/minio/operator/api/operations/operator_api"
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	utils2 "github.com/minio/operator/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -56,38 +54,9 @@ func updateTenantAction(ctx context.Context, operatorClient OperatorClientI, cli
 		minInst.Spec.Image = imageToUpdate
 	} else {
 		im, err := utils2.GetLatestMinIOImage(httpCl)
-		// if we can't get the MinIO image, we won' auto-update it unless it's explicit by name
+		// if we can't get the MinIO image, we won't auto-update it unless it's explicit by name
 		if err == nil {
 			minInst.Spec.Image = *im
-		}
-	}
-
-	// Prometheus Annotations
-	currentAnnotations := minInst.Annotations
-	prometheusAnnotations := map[string]string{
-		prometheusPath:   "/minio/prometheus/metrics",
-		prometheusPort:   fmt.Sprint(miniov2.MinIOPort),
-		prometheusScrape: "true",
-	}
-	if params.Body.EnablePrometheus && currentAnnotations != nil {
-		// add prometheus annotations to the tenant
-		minInst.Annotations = addAnnotations(currentAnnotations, prometheusAnnotations)
-		// add prometheus annotations to the each pool
-		if minInst.Spec.Pools != nil {
-			for _, pool := range minInst.Spec.Pools {
-				poolAnnotations := pool.VolumeClaimTemplate.GetObjectMeta().GetAnnotations()
-				pool.VolumeClaimTemplate.GetObjectMeta().SetAnnotations(addAnnotations(poolAnnotations, prometheusAnnotations))
-			}
-		}
-	} else {
-		// remove prometheus annotations to the tenant
-		minInst.Annotations = removeAnnotations(currentAnnotations, prometheusAnnotations)
-		// add prometheus annotations from each pool
-		if minInst.Spec.Pools != nil {
-			for _, pool := range minInst.Spec.Pools {
-				poolAnnotations := pool.VolumeClaimTemplate.GetObjectMeta().GetAnnotations()
-				pool.VolumeClaimTemplate.GetObjectMeta().SetAnnotations(removeAnnotations(poolAnnotations, prometheusAnnotations))
-			}
 		}
 	}
 

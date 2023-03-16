@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// MinIOCRDResourceKind is the Kind of a Cluster.
+// MinIOCRDResourceKind is the Kind of Cluster.
 const MinIOCRDResourceKind = "Tenant"
 
 // DefaultPodManagementPolicy specifies default pod management policy as expllained here
@@ -62,9 +62,6 @@ const PoolLabel = "v1.min.io/pool"
 
 // ZoneLabel is used for compatibility with tenants deployed prior to operator 4.0.0
 const ZoneLabel = "v1.min.io/zone"
-
-// LogDbLabel is applied to all log db components of a Tenant cluster
-const LogDbLabel = "v1.min.io/logdb"
 
 // Revision is applied to all statefulsets
 const Revision = "min.io/revision"
@@ -129,95 +126,6 @@ const ConsoleName = "-console"
 // ConsoleAdminPolicyName denotes the policy name for Console user
 const ConsoleAdminPolicyName = "consoleAdmin"
 
-// Prometheus related constants
-
-// PrometheusImage specifies the container image for prometheus server
-const PrometheusImage = "quay.io/prometheus/prometheus:latest"
-
-// PrometheusSideCarImage specifies the container image for prometheus sidecar
-const PrometheusSideCarImage = "alpine"
-
-// PrometheusInitImage specifies the init container image for prometheus server
-const PrometheusInitImage = "busybox:1.33.1"
-
-// PrometheusInstanceLabel is applied to the prometheus server pod
-const PrometheusInstanceLabel = "v1.min.io/prometheus"
-
-// PrometheusPort specifies the default prometheus port number
-const PrometheusPort = 9090
-
-// PrometheusPortName specifies the default prometheus port's name.
-const PrometheusPortName = "http-prometheus"
-
-// PrometheusHLSvcNameSuffix specifies the suffix added to Tenant name to create
-// a headless service for Prometheus.
-const PrometheusHLSvcNameSuffix = "-prometheus-hl-svc"
-
-// Log related constants
-
-// DefaultLogSearchAPIImage specifies the latest logsearchapi container image
-const DefaultLogSearchAPIImage = "minio/operator:v4.5.8"
-
-// LogPgImage specifies the latest Postgres container image
-const LogPgImage = "library/postgres:13"
-
-// LogDBInstanceLabel is applied to the Log (Postgres server) pods
-const LogDBInstanceLabel = "v1.min.io/log-pg"
-
-// LogSearchAPIInstanceLabel is applied to the Log Search API server pods
-const LogSearchAPIInstanceLabel = "v1.min.io/logsearchapi"
-
-// LogPgPort specifies the default Log Service's port number.
-const LogPgPort = 5432
-
-// LogSearchAPIPort specifies the default Log Search API Service's port number.
-const LogSearchAPIPort = 8080
-
-// LogPgPortName specifies the default Log Service Postgres server's port name.
-const LogPgPortName = "tcp-log-pg"
-
-// LogSearchAPIPortName specifies the default Log Search API server's port name.
-const LogSearchAPIPortName = "http-logsearchapi"
-
-// LogHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service for Log
-const LogHLSvcNameSuffix = "-log-hl-svc"
-
-// LogPgUserKey is the k8s secret/environment variable key name referring to postgres user
-const LogPgUserKey = "POSTGRES_USER"
-
-// LogPgPassKey is the k8s secret/environment variable key name referring to postgress password
-const LogPgPassKey = "POSTGRES_PASSWORD"
-
-// LogAuditDBKey is the k8s secret/environment variable key name referring to postgress default database.
-const LogAuditDBKey = "POSTGRES_DB"
-
-// LogPgConnStr is the k8s env var key name referring to the postgres connection string; used in logsearchapi deployment
-const LogPgConnStr = "LOGSEARCH_PG_CONN_STR"
-
-// LogPgUser is the POSTGRES_USER used for Log feature
-const LogPgUser = "postgres"
-
-// LogAuditDB holds the name of the DB used to store MinIO audit events
-const LogAuditDB = "minio_logs"
-
-// LogAuditTokenKey is the k8s secret/environment variable key name referring to
-// the token used to authenticate audit log ingestion from tenant's MinIO
-const LogAuditTokenKey = "LOGSEARCH_AUDIT_AUTH_TOKEN"
-
-// LogQueryTokenKey is the k8s secret/environment variable key name referring to
-// the token used to perform search query on audit logs persisted.
-const LogQueryTokenKey = "MINIO_LOG_QUERY_AUTH_TOKEN"
-
-// ConsolePrometheusURL is the url to the prometheus the console should use to pull metrics from.
-const ConsolePrometheusURL = "MINIO_PROMETHEUS_URL"
-
-// PrometheusAPIPort specifies the default Prometheus API Service's port number.
-const PrometheusAPIPort = 9090
-
-// LogSearchDiskCapacityGB is the k8s secret/environment variable key name
-// referring to disk capacity required to store tenant's audit logs
-const LogSearchDiskCapacityGB = "LOGSEARCH_DISK_CAPACITY_GB"
-
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
@@ -235,9 +143,6 @@ const KESServicePortName = "http-kes"
 // KESMinIOKey is the name of key that KES creates on the KMS backend
 const KESMinIOKey = "my-minio-key"
 
-// KESJobRestartPolicy specifies the restart policy for the job created for key creation
-const KESJobRestartPolicy = corev1.RestartPolicyOnFailure
-
 // KESHLSvcNameSuffix specifies the suffix added to Tenant name to create a headless service for KES
 const KESHLSvcNameSuffix = "-kes-hl-svc"
 
@@ -245,7 +150,7 @@ const KESHLSvcNameSuffix = "-kes-hl-svc"
 const KESName = "-kes"
 
 // KESConfigMountPath specifies the path where KES config file and all secrets are mounted
-// We keep this to /tmp so it doesn't require any special permissions
+// We keep this to /tmp, so it doesn't require any special permissions
 const KESConfigMountPath = "/tmp/kes"
 
 // DefaultKESReplicas specifies the default number of KES pods to be created if not specified
@@ -282,9 +187,6 @@ const MinIOPrometheusPathCluster = "/minio/v2/metrics/cluster"
 
 // MinIOPrometheusScrapeInterval defines how frequently to scrape targets.
 const MinIOPrometheusScrapeInterval = 30 * time.Second
-
-// MinIOPrometheusScrapeTimeout defines the timeout for scrape requests
-const MinIOPrometheusScrapeTimeout = 2 * time.Second
 
 const tenantMinIOImageEnv = "TENANT_MINIO_IMAGE"
 

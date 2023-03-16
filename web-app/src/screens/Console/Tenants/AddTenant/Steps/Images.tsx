@@ -69,55 +69,12 @@ const Images = ({ classes }: IImagesProps) => {
       state.createTenant.fields.configure.imageRegistryPassword
   );
 
-  const prometheusCustom = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.prometheusEnabled
-  );
   const tenantCustom = useSelector(
     (state: AppState) => state.createTenant.fields.configure.tenantCustom
   );
-  const logSearchCustom = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.logSearchEnabled
-  );
-  const logSearchVolumeSize = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.logSearchVolumeSize
-  );
 
-  const prometheusVolumeSize = useSelector(
-    (state: AppState) =>
-      state.createTenant.fields.configure.prometheusVolumeSize
-  );
-
-  const logSearchSelectedStorageClass = useSelector(
-    (state: AppState) =>
-      state.createTenant.fields.configure.logSearchSelectedStorageClass
-  );
-  const logSearchImage = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.logSearchImage
-  );
   const kesImage = useSelector(
     (state: AppState) => state.createTenant.fields.configure.kesImage
-  );
-  const logSearchPostgresImage = useSelector(
-    (state: AppState) =>
-      state.createTenant.fields.configure.logSearchPostgresImage
-  );
-  const logSearchPostgresInitImage = useSelector(
-    (state: AppState) =>
-      state.createTenant.fields.configure.logSearchPostgresInitImage
-  );
-  const prometheusSelectedStorageClass = useSelector(
-    (state: AppState) =>
-      state.createTenant.fields.configure.prometheusSelectedStorageClass
-  );
-  const prometheusImage = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.prometheusImage
-  );
-  const prometheusSidecarImage = useSelector(
-    (state: AppState) =>
-      state.createTenant.fields.configure.prometheusSidecarImage
-  );
-  const prometheusInitImage = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.prometheusInitImage
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -136,47 +93,6 @@ const Images = ({ classes }: IImagesProps) => {
   useEffect(() => {
     let customAccountValidation: IValidation[] = [];
 
-    if (prometheusCustom) {
-      customAccountValidation = [
-        ...customAccountValidation,
-        {
-          fieldKey: "prometheus_storage_class",
-          required: true,
-          value: prometheusSelectedStorageClass,
-          customValidation: prometheusSelectedStorageClass === "",
-          customValidationMessage: "Field cannot be empty",
-        },
-        {
-          fieldKey: "prometheus_volume_size",
-          required: true,
-          value: prometheusVolumeSize,
-          customValidation:
-            prometheusVolumeSize === "" || parseInt(prometheusVolumeSize) <= 0,
-          customValidationMessage: `Volume size must be present and be greater than 0`,
-        },
-      ];
-    }
-    if (logSearchCustom) {
-      customAccountValidation = [
-        ...customAccountValidation,
-        {
-          fieldKey: "log_search_storage_class",
-          required: true,
-          value: logSearchSelectedStorageClass,
-          customValidation: logSearchSelectedStorageClass === "",
-          customValidationMessage: "Field cannot be empty",
-        },
-        {
-          fieldKey: "log_search_volume_size",
-          required: true,
-          value: logSearchVolumeSize,
-          customValidation:
-            logSearchVolumeSize === "" || parseInt(logSearchVolumeSize) <= 0,
-          customValidationMessage: `Volume size must be present and be greater than 0`,
-        },
-      ];
-    }
-
     if (customImage) {
       customAccountValidation = [
         ...customAccountValidation,
@@ -188,59 +104,11 @@ const Images = ({ classes }: IImagesProps) => {
           customPatternMessage: "Format must be of form: 'minio/minio:VERSION'",
         },
         {
-          fieldKey: "logSearchImage",
-          required: false,
-          value: logSearchImage,
-          pattern: /^((.*?)\/(.*?):(.+))$/,
-          customPatternMessage:
-            "Format must be of form: 'minio/operator:VERSION'",
-        },
-        {
           fieldKey: "kesImage",
           required: false,
           value: kesImage,
           pattern: /^((.*?)\/(.*?):(.+))$/,
           customPatternMessage: "Format must be of form: 'minio/kes:VERSION'",
-        },
-        {
-          fieldKey: "logSearchPostgresImage",
-          required: false,
-          value: logSearchPostgresImage,
-          pattern: /^((.*?)\/(.*?):(.+))$/,
-          customPatternMessage:
-            "Format must be of form: 'library/postgres:VERSION'",
-        },
-        {
-          fieldKey: "logSearchPostgresInitImage",
-          required: false,
-          value: logSearchPostgresInitImage,
-          pattern: /^((.*?)\/(.*?):(.+))$/,
-          customPatternMessage:
-            "Format must be of form: 'library/busybox:VERSION'",
-        },
-        {
-          fieldKey: "prometheusImage",
-          required: false,
-          value: prometheusImage,
-          pattern: /^((.*?)\/(.*?):(.+))$/,
-          customPatternMessage:
-            "Format must be of form: 'minio/prometheus:VERSION'",
-        },
-        {
-          fieldKey: "prometheusSidecarImage",
-          required: false,
-          value: prometheusSidecarImage,
-          pattern: /^((.*?)\/(.*?):(.+))$/,
-          customPatternMessage:
-            "Format must be of form: 'project/container:VERSION'",
-        },
-        {
-          fieldKey: "prometheusInitImage",
-          required: false,
-          value: prometheusInitImage,
-          pattern: /^((.*?)\/(.*?):(.+))$/,
-          customPatternMessage:
-            "Format must be of form: 'library/busybox:VERSION'",
         },
       ];
       if (customDockerhub) {
@@ -278,25 +146,13 @@ const Images = ({ classes }: IImagesProps) => {
   }, [
     customImage,
     imageName,
-    logSearchImage,
     kesImage,
-    logSearchPostgresImage,
-    logSearchPostgresInitImage,
-    prometheusImage,
-    prometheusSidecarImage,
-    prometheusInitImage,
     customDockerhub,
     imageRegistry,
     imageRegistryUsername,
     imageRegistryPassword,
     dispatch,
-    prometheusCustom,
     tenantCustom,
-    logSearchCustom,
-    prometheusSelectedStorageClass,
-    prometheusVolumeSize,
-    logSearchSelectedStorageClass,
-    logSearchVolumeSize,
   ]);
 
   const cleanValidation = (fieldName: string) => {
@@ -340,96 +196,6 @@ const Images = ({ classes }: IImagesProps) => {
             value={kesImage}
             error={validationErrors["kesImage"] || ""}
             placeholder="minio/kes:v0.17.6"
-          />
-        </Grid>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <h4>Log Search</h4>
-        </Grid>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <InputBoxWrapper
-            id="logSearchImage"
-            name="logSearchImage"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("logSearchImage", e.target.value);
-              cleanValidation("logSearchImage");
-            }}
-            label="API"
-            value={logSearchImage}
-            error={validationErrors["logSearchImage"] || ""}
-            placeholder="minio/operator:v4.4.22"
-          />
-        </Grid>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <InputBoxWrapper
-            id="logSearchPostgresImage"
-            name="logSearchPostgresImage"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("logSearchPostgresImage", e.target.value);
-              cleanValidation("logSearchPostgresImage");
-            }}
-            label="PostgreSQL"
-            value={logSearchPostgresImage}
-            error={validationErrors["logSearchPostgresImage"] || ""}
-            placeholder="library/postgres:13"
-          />
-        </Grid>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <InputBoxWrapper
-            id="logSearchPostgresInitImage"
-            name="logSearchPostgresInitImage"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("logSearchPostgresInitImage", e.target.value);
-              cleanValidation("logSearchPostgresInitImage");
-            }}
-            label="PostgreSQL Init"
-            value={logSearchPostgresInitImage}
-            error={validationErrors["logSearchPostgresInitImage"] || ""}
-            placeholder="library/busybox:1.33.1"
-          />
-        </Grid>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <h4>Monitoring</h4>
-        </Grid>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <InputBoxWrapper
-            id="prometheusImage"
-            name="prometheusImage"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("prometheusImage", e.target.value);
-              cleanValidation("prometheusImage");
-            }}
-            label="Prometheus"
-            value={prometheusImage}
-            error={validationErrors["prometheusImage"] || ""}
-            placeholder="quay.io/prometheus/prometheus:latest"
-          />
-        </Grid>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <InputBoxWrapper
-            id="prometheusSidecarImage"
-            name="prometheusSidecarImage"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("prometheusSidecarImage", e.target.value);
-              cleanValidation("prometheusSidecarImage");
-            }}
-            label="Prometheus Sidecar"
-            value={prometheusSidecarImage}
-            error={validationErrors["prometheusSidecarImage"] || ""}
-            placeholder="library/alpine:latest"
-          />
-        </Grid>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <InputBoxWrapper
-            id="prometheusInitImage"
-            name="prometheusInitImage"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("prometheusInitImage", e.target.value);
-              cleanValidation("prometheusInitImage");
-            }}
-            label="Prometheus Init"
-            value={prometheusInitImage}
-            error={validationErrors["prometheusInitImage"] || ""}
-            placeholder="library/busybox:1.33.1"
           />
         </Grid>
       </Fragment>

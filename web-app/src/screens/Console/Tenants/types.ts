@@ -146,32 +146,15 @@ export interface IConfigureFields {
   imageRegistryPassword: string;
   exposeMinIO: boolean;
   exposeConsole: boolean;
-  prometheusEnabled: boolean;
   tenantCustom: boolean;
   customRuntime: boolean;
   runtimeClassName: string;
   envVars: LabelKeyPair[];
-  logSearchEnabled: boolean;
-  logSearchVolumeSize: string;
-  logSearchSizeFactor: string;
-  logSearchSelectedStorageClass: string;
-  logSearchImage: string;
   kesImage: string;
-  logSearchPostgresImage: string;
-  logSearchPostgresInitImage: string;
-  prometheusVolumeSize: string;
-  prometheusSizeFactor: string;
-  prometheusSelectedStorageClass: string;
-  prometheusImage: string;
-  prometheusSidecarImage: string;
-  prometheusInitImage: string;
   setDomains: boolean;
   consoleDomain: string;
   minioDomains: string[];
   tenantSecurityContext: SecurityContext;
-  logSearchSecurityContext: SecurityContext;
-  logSearchPostgresSecurityContext: SecurityContext;
-  prometheusSecurityContext: SecurityContext;
 }
 
 export interface IIdentityProviderFields {

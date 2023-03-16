@@ -181,25 +181,6 @@ func deleteTenantAction(
 		if err != nil {
 			return err
 		}
-		// delete postgres PVCs
-
-		logOpts := metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", miniov2.LogDBInstanceLabel, tenant.LogStatefulsetName()),
-		}
-		err := clientset.PersistentVolumeClaims(tenant.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, logOpts)
-		if err != nil {
-			return err
-		}
-
-		// delete prometheus PVCs
-
-		promOpts := metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", miniov2.PrometheusInstanceLabel, tenant.PrometheusStatefulsetName()),
-		}
-
-		if err := clientset.PersistentVolumeClaims(tenant.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, promOpts); err != nil {
-			return err
-		}
 
 		// delete all tenant's secrets only if deletePvcs = true
 		return clientset.Secrets(tenant.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, opts)
@@ -262,24 +243,6 @@ func getTenant(ctx context.Context, operatorClient OperatorClientI, namespace, t
 	return tenant, nil
 }
 
-func isPrometheusEnabled(annotations map[string]string) bool {
-	if annotations == nil {
-		return false
-	}
-	// if one of the following prometheus annotations are not present
-	// we consider the tenant as not integrated with prometheus
-	if _, ok := annotations[prometheusPath]; !ok {
-		return false
-	}
-	if _, ok := annotations[prometheusPort]; !ok {
-		return false
-	}
-	if _, ok := annotations[prometheusScrape]; !ok {
-		return false
-	}
-	return true
-}
-
 func getTenantInfo(tenant *miniov2.Tenant) *models.Tenant {
 	var pools []*models.Pool
 	var totalSize int64
@@ -294,15 +257,14 @@ func getTenantInfo(tenant *miniov2.Tenant) *models.Tenant {
 	}
 
 	return &models.Tenant{
-		CreationDate:     tenant.ObjectMeta.CreationTimestamp.Format(time.RFC3339),
-		DeletionDate:     deletion,
-		Name:             tenant.Name,
-		TotalSize:        totalSize,
-		CurrentState:     tenant.Status.CurrentState,
-		Pools:            pools,
-		Namespace:        tenant.ObjectMeta.Namespace,
-		Image:            tenant.Spec.Image,
-		EnablePrometheus: isPrometheusEnabled(tenant.Annotations),
+		CreationDate: tenant.ObjectMeta.CreationTimestamp.Format(time.RFC3339),
+		DeletionDate: deletion,
+		Name:         tenant.Name,
+		TotalSize:    totalSize,
+		CurrentState: tenant.Status.CurrentState,
+		Pools:        pools,
+		Namespace:    tenant.ObjectMeta.Namespace,
+		Image:        tenant.Spec.Image,
 	}
 }
 
@@ -774,28 +736,6 @@ func setImageRegistry(ctx context.Context, req *models.ImageRegistry, clientset 
 		return "", err
 	}
 	return pullSecretName, nil
-}
-
-// addAnnotations will merge two annotation maps
-func addAnnotations(annotationsOne, annotationsTwo map[string]string) map[string]string {
-	if annotationsOne == nil {
-		annotationsOne = map[string]string{}
-	}
-	for key, value := range annotationsTwo {
-		annotationsOne[key] = value
-	}
-	return annotationsOne
-}
-
-// removeAnnotations will remove keys from the first annotations map based on the second one
-func removeAnnotations(annotationsOne, annotationsTwo map[string]string) map[string]string {
-	if annotationsOne == nil {
-		annotationsOne = map[string]string{}
-	}
-	for key := range annotationsTwo {
-		delete(annotationsOne, key)
-	}
-	return annotationsOne
 }
 
 func getUpdateTenantResponse(session *models.Principal, params operator_api.UpdateTenantParams) *models.Error {

@@ -137,14 +137,12 @@ export interface Tenant {
   namespace?: string;
   /** @format int64 */
   total_size?: number;
-  enable_prometheus?: boolean;
   subnet_license?: License;
   endpoints?: {
     minio?: string;
     console?: string;
   };
   logEnabled?: boolean;
-  monitoringEnabled?: boolean;
   idpAdEnabled?: boolean;
   idpOidcEnabled?: boolean;
   encryptionEnabled?: boolean;
@@ -199,7 +197,6 @@ export interface UpdateTenantRequest {
   image?: string;
   image_registry?: ImageRegistry;
   image_pull_secret?: string;
-  enable_prometheus?: boolean;
 }
 
 export interface ImageRegistry {
@@ -237,14 +234,10 @@ export interface CreateTenantRequest {
   enable_console?: boolean;
   /** @default true */
   enable_tls?: boolean;
-  /** @default false */
-  enable_prometheus?: boolean;
   namespace: string;
   erasureCodingParity?: number;
   annotations?: Record<string, string>;
   labels?: Record<string, string>;
-  logSearchConfiguration?: LogSearchConfiguration;
-  prometheusConfiguration?: PrometheusConfiguration;
   image_registry?: ImageRegistry;
   image_pull_secret?: string;
   idp?: IdpConfiguration;
@@ -271,29 +264,6 @@ export interface TlsConfiguration {
   minioServerCertificates?: KeyPairConfiguration[];
   minioClientCertificates?: KeyPairConfiguration[];
   minioCAsCertificates?: string[];
-}
-
-export interface LogSearchConfiguration {
-  /** @default "" */
-  storageClass?: string;
-  /** @default 5 */
-  storageSize?: number;
-  image?: string;
-  securityContext?: SecurityContext;
-  postgres_securityContext?: SecurityContext;
-  postgres_image?: string;
-  postgres_init_image?: string;
-}
-
-export interface PrometheusConfiguration {
-  /** @default "" */
-  storageClass?: string;
-  /** @default 5 */
-  storageSize?: number;
-  image?: string;
-  sidecar_image?: string;
-  init_image?: string;
-  securityContext?: SecurityContext;
 }
 
 export interface SetAdministratorsRequest {
@@ -717,28 +687,6 @@ export interface TenantYAML {
   yaml?: string;
 }
 
-export interface TenantLogs {
-  image?: string;
-  labels?: Label[];
-  annotations?: Annotation[];
-  diskCapacityGB?: string;
-  nodeSelector?: NodeSelector[];
-  serviceAccountName?: string;
-  dbImage?: string;
-  dbInitImage?: string;
-  dbLabels?: Label[];
-  dbAnnotations?: Annotation[];
-  dbNodeSelector?: NodeSelector[];
-  dbServiceAccountName?: string;
-  disabled?: boolean;
-  logCPURequest?: string;
-  logMemRequest?: string;
-  logDBCPURequest?: string;
-  logDBMemRequest?: string;
-  securityContext?: SecurityContext;
-  dbSecurityContext?: SecurityContext;
-}
-
 export interface ListPVCsResponse {
   pvcs?: PvcsListResponse[];
 }
@@ -897,23 +845,6 @@ export interface Toleration {
   operator?: string;
 }
 
-export interface TenantMonitoringInfo {
-  prometheusEnabled?: boolean;
-  toggle?: boolean;
-  image?: string;
-  sidecarImage?: string;
-  initImage?: string;
-  labels?: Label[];
-  annotations?: Annotation[];
-  diskCapacityGB?: string;
-  nodeSelector?: NodeSelector[];
-  serviceAccountName?: string;
-  storageClassName?: string;
-  monitoringCPURequest?: string;
-  monitoringMemRequest?: string;
-  securityContext?: SecurityContext;
-}
-
 export interface Label {
   key?: string;
   value?: string;
@@ -927,10 +858,6 @@ export interface Annotation {
 export interface NodeSelector {
   key?: string;
   value?: string;
-}
-
-export interface ConfigureTenantRequest {
-  prometheusEnabled?: boolean;
 }
 
 export interface FormatConfiguration {
@@ -1785,97 +1712,6 @@ export class Api<
      * No description
      *
      * @tags OperatorAPI
-     * @name GetTenantLogs
-     * @summary Get Tenant Logs
-     * @request GET:/namespaces/{namespace}/tenants/{tenant}/log
-     * @secure
-     */
-    getTenantLogs: (
-      namespace: string,
-      tenant: string,
-      params: RequestParams = {}
-    ) =>
-      this.request<TenantLogs, Error>({
-        path: `/namespaces/${namespace}/tenants/${tenant}/log`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
-     * @name SetTenantLogs
-     * @summary Set Tenant Logs
-     * @request PUT:/namespaces/{namespace}/tenants/{tenant}/log
-     * @secure
-     */
-    setTenantLogs: (
-      namespace: string,
-      tenant: string,
-      data: TenantLogs,
-      params: RequestParams = {}
-    ) =>
-      this.request<boolean, Error>({
-        path: `/namespaces/${namespace}/tenants/${tenant}/log`,
-        method: "PUT",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
-     * @name EnableTenantLogging
-     * @summary Enable Tenant Logging
-     * @request POST:/namespaces/{namespace}/tenants/{tenant}/enable-logging
-     * @secure
-     */
-    enableTenantLogging: (
-      namespace: string,
-      tenant: string,
-      params: RequestParams = {}
-    ) =>
-      this.request<boolean, Error>({
-        path: `/namespaces/${namespace}/tenants/${tenant}/enable-logging`,
-        method: "POST",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
-     * @name DisableTenantLogging
-     * @summary Disable Tenant Logging
-     * @request POST:/namespaces/{namespace}/tenants/{tenant}/disable-logging
-     * @secure
-     */
-    disableTenantLogging: (
-      namespace: string,
-      tenant: string,
-      params: RequestParams = {}
-    ) =>
-      this.request<boolean, Error>({
-        path: `/namespaces/${namespace}/tenants/${tenant}/disable-logging`,
-        method: "POST",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
      * @name TenantDetails
      * @summary Tenant Details
      * @request GET:/namespaces/{namespace}/tenants/{tenant}
@@ -2167,52 +2003,6 @@ export class Api<
         method: "GET",
         secure: true,
         format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
-     * @name GetTenantMonitoring
-     * @summary Get Prometheus Monitoring config info For The Tenant
-     * @request GET:/namespaces/{namespace}/tenants/{tenant}/monitoring
-     * @secure
-     */
-    getTenantMonitoring: (
-      namespace: string,
-      tenant: string,
-      params: RequestParams = {}
-    ) =>
-      this.request<TenantMonitoringInfo, Error>({
-        path: `/namespaces/${namespace}/tenants/${tenant}/monitoring`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags OperatorAPI
-     * @name SetTenantMonitoring
-     * @summary Set Prometheus monitoring fields for tenant
-     * @request PUT:/namespaces/{namespace}/tenants/{tenant}/monitoring
-     * @secure
-     */
-    setTenantMonitoring: (
-      namespace: string,
-      tenant: string,
-      data: TenantMonitoringInfo,
-      params: RequestParams = {}
-    ) =>
-      this.request<void, Error>({
-        path: `/namespaces/${namespace}/tenants/${tenant}/monitoring`,
-        method: "PUT",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
         ...params,
       }),
 
