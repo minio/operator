@@ -220,3 +220,122 @@ func createOrReplaceExternalCertSecrets(ctx context.Context, clientSet K8sClient
 	}
 	return keyPairSecrets, nil
 }
+
+/* this is what I saved from tenants.go that will be lost in the rebase to new setup
+
+// Get tenant log report
+api.OperatorAPIGetTenantLogReportHandler = operator_api.GetTenantLogReportHandlerFunc(func(params operator_api.GetTenantLogReportParams, principal *models.Principal) middleware.Responder {
+	payload, err := getTenantLogReportResponse(principal, params)
+	if err != nil {
+		return operator_api.NewGetTenantLogReportDefault(int(err.Code)).WithPayload(err)
+	}
+	return operator_api.NewGetTenantLogReportOK().WithPayload(payload)
+})
+
+
+func getTenantLogReportResponse(session *models.Principal, params operator_api.GetTenantLogReportParams) (*models.TenantLogReport, *models.Error) {
+	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
+	defer cancel()
+
+	payload := &models.TenantLogReport{}
+
+	clientset, err := K8sClient(session.STSSessionToken)
+	if err != nil {
+		return payload, ErrorWithContext(ctx, err)
+	}
+	operatorCli, err := GetOperatorClient(session.STSSessionToken)
+	if err != nil {
+		return payload, ErrorWithContext(ctx, err)
+	}
+	opClient := &operatorClient{
+		client: operatorCli,
+	}
+	if err != nil {
+		return payload, ErrorWithContext(ctx, err)
+	}
+	minTenant, err := getTenant(ctx, opClient, params.Namespace, params.Tenant)
+	if err != nil {
+		return payload, ErrorWithContext(ctx, err)
+	}
+	reportBytes, reportError := generateTenantLogReport(ctx, clientset.CoreV1(), params.Tenant, params.Namespace, minTenant)
+	if reportError != nil {
+		return payload, ErrorWithContext(ctx, reportError)
+	}
+	payload.Filename = params.Tenant + "-report.zip"
+	sEnc := base64.StdEncoding.EncodeToString(reportBytes)
+	payload.Blob = sEnc
+
+	return payload, nil
+}
+
+func generateTenantLogReport(ctx context.Context, coreInterface v1.CoreV1Interface, tenantName string, namespace string, tenant *miniov2.Tenant) ([]byte, *models.Error) {
+	if tenantName == "" || namespace == "" {
+		return []byte{}, ErrorWithContext(ctx, errors.New("Namespace and Tenant name cannot be empty"))
+	}
+	podListOpts := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("v1.min.io/tenant=%s", tenantName),
+	}
+	pods, err := coreInterface.Pods(namespace).List(ctx, podListOpts)
+	if err != nil {
+		return []byte{}, ErrorWithContext(ctx, err)
+	}
+	events := coreInterface.Events(namespace)
+
+	var report bytes.Buffer
+
+	zipw := zip.NewWriter(&report)
+
+	tenantAsYaml, err := yaml.Marshal(tenant)
+	if err == nil {
+		f, err := zipw.Create(tenantName + ".yaml")
+
+		if err == nil {
+
+			_, err := f.Write(tenantAsYaml)
+			if err != nil {
+				return []byte{}, ErrorWithContext(ctx, err)
+			}
+		}
+	} else {
+		return []byte{}, ErrorWithContext(ctx, err)
+	}
+	for i := 0; i < len(pods.Items); i++ {
+		listOpts := &corev1.PodLogOptions{Container: "minio"}
+		request := coreInterface.Pods(namespace).GetLogs(pods.Items[i].Name, listOpts)
+		buff, err := request.DoRaw(ctx)
+		if err == nil {
+			f, err := zipw.Create(pods.Items[i].Name + ".log")
+			if err == nil {
+				f.Write(buff)
+			}
+		} else {
+			return []byte{}, ErrorWithContext(ctx, err)
+		}
+		podEvents, err := events.List(ctx, metav1.ListOptions{FieldSelector: fmt.Sprintf("involvedObject.uid=%s", pods.Items[i].UID)})
+		if err == nil {
+			podEventsJSON, err := json.Marshal(podEvents)
+			if err == nil {
+				f, err := zipw.Create(pods.Items[i].Name + "-events.txt")
+				if err == nil {
+					f.Write(podEventsJSON)
+				}
+			}
+		} else {
+			return []byte{}, ErrorWithContext(ctx, err)
+		}
+		status := pods.Items[i].Status
+		statusJSON, err := json.Marshal(status)
+		if err == nil {
+			f, err := zipw.Create(pods.Items[i].Name + "-status.txt")
+			if err == nil {
+				f.Write(statusJSON)
+			}
+		} else {
+			return []byte{}, ErrorWithContext(ctx, err)
+		}
+	}
+	zipw.Close()
+
+	return report.Bytes(), nil
+}
+*/
