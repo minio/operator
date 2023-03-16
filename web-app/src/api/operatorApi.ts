@@ -933,6 +933,11 @@ export interface BackendProperties {
   standardSCParity?: number;
 }
 
+export interface TenantLogReport {
+  filename?: string;
+  blob?: string;
+}
+
 export type QueryParamsType = Record<string | number, any>;
 export type ResponseFormat = keyof Omit<Body, "body" | "bodyUsed">;
 
@@ -1861,6 +1866,28 @@ export class Api<
     ) =>
       this.request<EventListWrapper, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/events`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags OperatorAPI
+     * @name GetTenantLogReport
+     * @summary Get Tenant Log Report
+     * @request GET:/namespaces/{namespace}/tenants/{tenant}/log-report
+     * @secure
+     */
+    getTenantLogReport: (
+      namespace: string,
+      tenant: string,
+      params: RequestParams = {}
+    ) =>
+      this.request<TenantLogReport, Error>({
+        path: `/namespaces/${namespace}/tenants/${tenant}/log-report`,
         method: "GET",
         secure: true,
         format: "json",
