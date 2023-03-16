@@ -83,7 +83,7 @@ func registerPodHandlers(api *operations.OperatorAPI) {
 		}
 		return operator_api.NewDeletePodNoContent()
 	})
-	//Tenant log report
+	// Tenant log report
 	api.OperatorAPIGetTenantLogReportHandler = operator_api.GetTenantLogReportHandlerFunc(func(params operator_api.GetTenantLogReportParams, principal *models.Principal) middleware.Responder {
 		payload, err := getTenantLogReportResponse(principal, params)
 		if err != nil {
@@ -91,7 +91,6 @@ func registerPodHandlers(api *operations.OperatorAPI) {
 		}
 		return operator_api.NewGetTenantLogReportOK().WithPayload(payload)
 	})
-
 }
 
 func getPodLogsResponse(session *models.Principal, params operator_api.GetPodLogsParams) (string, *models.Error) {

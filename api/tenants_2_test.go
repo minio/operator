@@ -848,14 +848,6 @@ func (suite *TenantTestSuite) initGetTenantYAMLRequest() (params operator_api.Ge
 	return params, api
 }
 
-func (suite *TenantTestSuite) initTenantLogReportRequest() (params operator_api.GetTenantLogReportParams, api operations.OperatorAPI) {
-	registerTenantHandlers(&api)
-	params.HTTPRequest = &http.Request{}
-	params.Namespace = "mock-namespace"
-	params.Tenant = "mock-tenant"
-	return params, api
-}
-
 func (suite *TenantTestSuite) TestPutTenantYAMLHandlerWithError() {
 	params, api := suite.initPutTenantYAMLRequest()
 	response := api.OperatorAPIPutTenantYAMLHandler.Handle(params, &models.Principal{})
