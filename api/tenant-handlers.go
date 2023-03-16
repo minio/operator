@@ -738,28 +738,6 @@ func setImageRegistry(ctx context.Context, req *models.ImageRegistry, clientset 
 	return pullSecretName, nil
 }
 
-// addAnnotations will merge two annotation maps
-func addAnnotations(annotationsOne, annotationsTwo map[string]string) map[string]string {
-	if annotationsOne == nil {
-		annotationsOne = map[string]string{}
-	}
-	for key, value := range annotationsTwo {
-		annotationsOne[key] = value
-	}
-	return annotationsOne
-}
-
-// removeAnnotations will remove keys from the first annotations map based on the second one
-func removeAnnotations(annotationsOne, annotationsTwo map[string]string) map[string]string {
-	if annotationsOne == nil {
-		annotationsOne = map[string]string{}
-	}
-	for key := range annotationsTwo {
-		delete(annotationsOne, key)
-	}
-	return annotationsOne
-}
-
 func getUpdateTenantResponse(session *models.Principal, params operator_api.UpdateTenantParams) *models.Error {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()

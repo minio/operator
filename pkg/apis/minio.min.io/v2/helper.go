@@ -81,20 +81,18 @@ type hostsTemplateValues struct {
 }
 
 var (
-	once                       sync.Once
-	tenantMinIOImageOnce       sync.Once
-	tenantKesImageOnce         sync.Once
-	monitoringIntervalOnce     sync.Once
-	k8sClusterDomain           string
-	tenantMinIOImage           string
-	tenantKesImage             string
-	monitoringInterval         int
-	prometheusNamespace        string
-	prometheusName             string
-	prometheusNamespaceOnce    sync.Once
-	prometheusNameOnce         sync.Once
-	prometheusDefaultImageOnce sync.Once
-	searchInitDefaultImage     = InitContainerImage
+	once                    sync.Once
+	tenantMinIOImageOnce    sync.Once
+	tenantKesImageOnce      sync.Once
+	monitoringIntervalOnce  sync.Once
+	k8sClusterDomain        string
+	tenantMinIOImage        string
+	tenantKesImage          string
+	monitoringInterval      int
+	prometheusNamespace     string
+	prometheusName          string
+	prometheusNamespaceOnce sync.Once
+	prometheusNameOnce      sync.Once
 )
 
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the

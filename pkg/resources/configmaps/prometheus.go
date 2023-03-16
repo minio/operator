@@ -109,7 +109,7 @@ func GetPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *Promet
 const prometheusYml = "prometheus.yml"
 
 // fromPrometheusConfigMap parses prometheus config file from the given
-// configmap and returns *prometheusConfig on success. Otherwise returns error.
+// configmap and returns *prometheusConfig on success. Otherwise, returns error.
 func fromPrometheusConfigMap(configMap *corev1.ConfigMap) (*PrometheusConfig, error) {
 	configFile := configMap.Data[prometheusYml]
 	var config PrometheusConfig

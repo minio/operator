@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+
 	"github.com/minio/operator/pkg/controller/legacy"
 	corev1 "k8s.io/api/core/v1"
 
@@ -338,13 +339,13 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 		}
 	}
 	// log search api service
-	logSearchApiSvc, err := c.serviceLister.Services(tenant.Namespace).Get(legacy.LogSearchAPIServiceName(tenant))
+	logSearchAPISvc, err := c.serviceLister.Services(tenant.Namespace).Get(legacy.LogSearchAPIServiceName(tenant))
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
-	if logSearchApiSvc != nil {
-		logSearchApiSvc.ObjectMeta.OwnerReferences = nil
-		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, logSearchApiSvc, metav1.UpdateOptions{}); err != nil {
+	if logSearchAPISvc != nil {
+		logSearchAPISvc.ObjectMeta.OwnerReferences = nil
+		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, logSearchAPISvc, metav1.UpdateOptions{}); err != nil {
 			return tenant, err
 		}
 	}
@@ -383,6 +384,9 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	}
 	// prometheus hl svc
 	promHlSvc, err := c.serviceLister.Services(tenant.Namespace).Get(legacy.PrometheusHLServiceName(tenant))
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return tenant, err
+	}
 	if promHlSvc != nil {
 		promHlSvc.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, promHlSvc, metav1.UpdateOptions{}); err != nil {
@@ -391,6 +395,9 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	}
 	// prometheus sts
 	prometheusStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(legacy.PrometheusStatefulsetName(tenant))
+	if err != nil && !k8serrors.IsNotFound(err) {
+		return tenant, err
+	}
 	if prometheusStatefulSet != nil {
 		prometheusStatefulSet.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, prometheusStatefulSet, metav1.UpdateOptions{}); err != nil {
