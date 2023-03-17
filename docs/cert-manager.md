@@ -58,7 +58,7 @@ Then it creates a new tenant including the new `tenant-certmanager-tls` secret i
 
 ### Create `operator-ca-tls` secret
 
-Copy the cert-manager ca from the tenant certficate
+Copy the cert-manager CA from the tenant certficate, this will allow Operator to trust the cert-manager CA and allow Operator to tust the Tenant certificate
 
 ```sh
 kubectl get secrets -n tenant-certmanager tenant-certmanager-tls -o=jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
