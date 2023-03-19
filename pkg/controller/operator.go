@@ -21,7 +21,6 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,12 +42,8 @@ const (
 	CertPasswordEnv = "OPERATOR_CERT_PASSWD"
 	// OperatorDeplymentNameEnv Env variable to specify a custom deployment name for Operator
 	OperatorDeplymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
-	// OperatorTLSEnv Env variable to turn on / off Operator TLS.
-	OperatorTLSEnv = "MINIO_OPERATOR_TLS_ENABLE"
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
 	OperatorCATLSSecretName = "operator-ca-tls"
-	// OperatorTLSSecretName is the name of secret created with TLS certs for Operator
-	OperatorTLSSecretName = "operator-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
 	// DefaultOperatorImage is the version fo the operator being used
@@ -80,62 +75,6 @@ func (c *Controller) rolloutRestartDeployment(deployName string) error {
 	return nil
 }
 
-// generateOperatorTLSCert Issues the Operator TLS Certificate
-func (c *Controller) generateOperatorTLSCert() (*string, *string) {
-	return c.generateTLSCert("operator", OperatorTLSSecretName, getOperatorDeploymentName())
-}
-
-// recreateOperatorCertsIfRequired - Generate Operator TLS certs if not present or if is expired
-func (c *Controller) recreateOperatorCertsIfRequired(ctx context.Context) error {
-	namespace := miniov2.GetNSFromFile()
-	operatorTLSSecret, err := c.getTLSSecret(ctx, namespace, OperatorTLSSecretName)
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			klog.V(2).Info("TLS certificate not found. Generating one.")
-			// Generate new certificate KeyPair for Operator server
-			c.generateOperatorTLSCert()
-			// reload in memory certificate for the operator server
-			if serverCertsManager != nil {
-				serverCertsManager.ReloadCerts()
-			}
-
-			return nil
-		}
-		return err
-	}
-
-	needsRenewal, err := c.certNeedsRenewal(operatorTLSSecret)
-	if err != nil {
-		return err
-	}
-
-	if !needsRenewal {
-		return nil
-	}
-
-	// Expired cert. Delete the secret + CSR and re-create the cert
-	err = c.deleteCSR(ctx, operatorCSRName())
-	if err != nil {
-		return err
-	}
-	klog.V(2).Info("Deleting the TLS secret of expired cert on operator")
-	err = c.kubeClientSet.CoreV1().Secrets(namespace).Delete(ctx, OperatorTLSSecretName, metav1.DeleteOptions{})
-	if err != nil {
-		return err
-	}
-
-	klog.V(2).Info("Generating a fresh TLS certificate for Operator")
-	// Generate new certificate KeyPair for Operator server
-	c.generateOperatorTLSCert()
-
-	// reload in memory certificate for the operator server
-	if serverCertsManager != nil {
-		serverCertsManager.ReloadCerts()
-	}
-
-	return nil
-}
-
 func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.Tenant) []*v1.Secret {
 	var userCredentials []*v1.Secret
 	for _, credential := range tenant.Spec.Users {
@@ -154,22 +93,6 @@ func (c *Controller) getTransport() *http.Transport {
 	rootCAs := miniov2.MustGetSystemCertPool()
 	// Default kubernetes CA certificate
 	rootCAs.AppendCertsFromPEM(miniov2.GetPodCAFromFile())
-
-	// If ca.crt exists in operator-tls (ie if the cert was issued by cert-manager) load the ca certificate from there
-	operatorTLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorTLSSecretName, metav1.GetOptions{})
-	if err == nil && operatorTLSCert != nil {
-		// default secret keys for Opaque k8s secret
-		caCertKey := "public.crt"
-		// if secret type is k8s tls or cert-manager use the right ca key
-		if operatorTLSCert.Type == "kubernetes.io/tls" {
-			caCertKey = "tls.crt"
-		} else if operatorTLSCert.Type == "cert-manager.io/v1alpha2" || operatorTLSCert.Type == "cert-manager.io/v1" {
-			caCertKey = "ca.crt"
-		}
-		if val, ok := operatorTLSCert.Data[caCertKey]; ok {
-			rootCAs.AppendCertsFromPEM(val)
-		}
-	}
 
 	// Custom ca certificate to be used by operator
 	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorCATLSSecretName, metav1.GetOptions{})
@@ -312,16 +235,4 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 // getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
 func getOperatorDeploymentName() string {
 	return env.Get(OperatorDeplymentNameEnv, DefaultDeploymentName)
-}
-
-// isOperatorTLS Internal func, reads MINIO_OPERATOR_TLS_ENABLE ENV to identify if Operator TLS is enabled, default "on"
-func isOperatorTLS() bool {
-	value, set := os.LookupEnv(OperatorTLSEnv)
-	// By default, Operator TLS is used.
-	return (set && value == "on") || !set
-}
-
-// operatorCSRName Internal func returns the given operator CSR name
-func operatorCSRName() string {
-	return getCSRName("operator")
 }
