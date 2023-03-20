@@ -1090,3 +1090,46 @@ func TestTenantDetails(t *testing.T) {
 		)
 	}
 }
+
+func TenantLogReport(nameSpace, tenant string) (*http.Response, error) {
+	/*
+		url: /namespaces/{namespace}/tenants/{tenant}/log-report:
+		summary: Tenant Log Report
+		operationId: GetTenantLogReport
+		HTTP Verb: GET
+	*/
+	request, err := http.NewRequest(
+		"GET",
+		"http://localhost:9090/api/v1/namespaces/"+nameSpace+"/tenants/"+tenant+"/log-report",
+		nil,
+	)
+	if err != nil {
+		log.Println(err)
+	}
+	request.Header.Add("Cookie", fmt.Sprintf("token=%s", token))
+	request.Header.Add("Content-Type", "application/json")
+	client := &http.Client{
+		Timeout: 2 * time.Second,
+	}
+	response, err := client.Do(request)
+	return response, err
+}
+
+func TestTenantLogReport(t *testing.T) {
+	// Vars
+	assert := assert.New(t)
+	nameSpace := "tenant-lite"
+	tenant := "myminio"
+	resp, err := TenantLogReport(nameSpace, tenant)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	if resp != nil {
+		assert.Equal(
+			200,
+			resp.StatusCode,
+			inspectHTTPResponse(resp),
+		)
+	}
+}

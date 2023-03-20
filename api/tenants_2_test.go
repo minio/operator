@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/minio/madmin-go/v2"
 	"github.com/minio/operator/api/operations"
@@ -35,7 +36,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/kubernetes/fake"
 )
 
 type TenantTestSuite struct {
@@ -903,5 +906,113 @@ func (suite *TenantTestSuite) createTenantPodSecurityContext() *corev1.PodSecuri
 		RunAsGroup:          &runAsGroup,
 		FSGroup:             &fsGroup,
 		FSGroupChangePolicy: &fscp,
+	}
+}
+
+func (suite *TenantTestSuite) TestGetTenantLogReportWithError() {
+	objs := []runtime.Object{}
+
+	kubeClient := fake.NewSimpleClientset(objs...)
+
+	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
+		return nil, nil
+	}
+
+	fakeTenant, _ := opClientTenantGetMock(context.Background(), "", "", metav1.GetOptions{})
+	_, err := generateTenantLogReport(context.Background(), kubeClient.CoreV1(), "", "", fakeTenant)
+
+	suite.assert.NotNil(err)
+}
+
+func (suite *TenantTestSuite) TestGetTenantLogReportWithoutError() {
+	// fakePods := []v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1"}}, {ObjectMeta: metav1.ObjectMeta{Name: "pod2"}}, {ObjectMeta: metav1.ObjectMeta{Name: "pod3"}}}
+	objs := []runtime.Object{
+		&v1.PodList{Items: []v1.Pod{
+			{
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{{}},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              "Pod1",
+					DeletionTimestamp: &metav1.Time{Time: time.Now()},
+				},
+			},
+		}},
+		&corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: "mock-namespace"}},
+	}
+
+	kubeClient := fake.NewSimpleClientset(objs...)
+
+	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
+		return &miniov2.Tenant{
+			Spec: miniov2.TenantSpec{},
+		}, nil
+	}
+
+	params, _ := suite.initGetLogReportRequest()
+	fakeTenant, _ := opClientTenantGetMock(context.Background(), params.Namespace, params.Tenant, metav1.GetOptions{})
+	_, err := generateTenantLogReport(context.Background(), kubeClient.CoreV1(), params.Tenant, params.Namespace, fakeTenant)
+
+	suite.assert.Nil(err)
+}
+
+func (suite *TenantTestSuite) initGetLogReportRequest() (params operator_api.GetTenantLogReportParams, api operations.OperatorAPI) {
+	registerTenantHandlers(&api)
+	params.HTTPRequest = &http.Request{}
+	params.Namespace = "mock-namespace"
+	params.Tenant = "mock-tenant"
+
+	return params, api
+}
+
+// This is what I got out of tenants_test.go which won't exist after rebase to new setup
+
+func Test_getTenantLogReport(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	opClient := opClientMock{}
+	type args struct {
+		ctx            context.Context
+		operatorClient OperatorClientI
+		namespace      string
+		tenantName     string
+		objs           []runtime.Object
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "no error getting tenant log report",
+			wantErr: false,
+			args: args{
+				ctx:            ctx,
+				operatorClient: opClient,
+				namespace:      "default",
+				tenantName:     "test",
+				objs: []runtime.Object{
+					&corev1.PodList{
+						Items: []corev1.Pod{},
+					},
+					&corev1.EventList{
+						Items: []corev1.Event{},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			kubeClient := fake.NewSimpleClientset()
+			fakeTenant, e := opClientTenantGetMock(ctx, tt.args.namespace, tt.args.tenantName, metav1.GetOptions{})
+			if e != nil {
+				t.Errorf("error making mock tenant generateTenantLogReport(%v, %v, %v, %v)", tt.args.ctx, tt.args.operatorClient, tt.args.namespace, tt.args.tenantName)
+			}
+			_, err := generateTenantLogReport(tt.args.ctx, kubeClient.CoreV1(), tt.args.tenantName, tt.args.namespace, fakeTenant)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("generateTenantLogReport(%v, %v, %v, %v) err %v", tt.args.ctx, tt.args.operatorClient, tt.args.namespace, tt.args.tenantName, err)
+			}
+		})
 	}
 }
