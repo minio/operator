@@ -1,6 +1,6 @@
 # Operator environment variables
 
-Operator behavior can be customized using environment variables in the `minio-operator` deployment, here is a list available environment variables to set:
+Operator behavior can be customized using environment variables in the `minio-operator` deployment. Here is a list of the available environment variables:
 
 | Variable Name | Description                                                                                                                                                                  | Possible values         | default                       |
 | --- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|-------------------------------|
