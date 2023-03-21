@@ -1,4 +1,4 @@
-# MinIO Operator TLS Configuration [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
+# MinIO TLS Configuration [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
 
 This document explains how to enable TLS on MinIO pods.
 
@@ -87,23 +87,6 @@ Finally, configure MinIO to use the newly created TLS certificate:
     - name: tls-minio
       type: kubernetes.io/tls
 ```
-
----
-
-## Rotate MinIO Operator TLS certificates
-
-In case the operator TLS certificate expired you can just delete the `operator-tls` secret in the `minio-operator` namespace and
-operator will generate a new one automatically, additionally it will copy the `public.crt` portion of the certificate into
-each tenant namespace
-
----
-
-## Using your own certificate for MinIO Operator
-
-If you wish to use your own certificate for `MinIO Operator` instead of using the auto generated one, just delete or replace the content of the
-`operator-tls` secret in the `minio-operator` namespace, `operator-tls` must contain the `public.crt` and `private.key` keys.
-
----
 
 ## Using your own CA Certificate for MinIO Operator
 

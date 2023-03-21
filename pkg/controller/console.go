@@ -144,12 +144,11 @@ func (c *Controller) recreateOperatorConsoleCertsIfRequired(ctx context.Context)
 	return nil
 }
 
-// isOperatorConsoleTLS Internal func, reads MINIO_OPERATOR_TLS_ENABLE ENV to identify if Operator Console TLS is enabled, default "off"
-// **WARNING** This will change and will be default to "on" in operator v5
+// isOperatorConsoleTLS Internal func, reads MINIO_CONSOLE_TLS_ENABLE ENV to identify if Operator Console TLS is enabled, default "off"
 func isOperatorConsoleTLS() bool {
 	value, set := os.LookupEnv(ConsoleTLSEnv)
 	// By default, Console TLS is NOT used.
-	return (set && value == "on")
+	return set && value == "on"
 }
 
 func getConsoleDeploymentName() string {

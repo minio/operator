@@ -30,12 +30,10 @@ import (
 
 	xcerts "github.com/minio/pkg/certs"
 
-	"github.com/minio/operator/pkg/controller/certificates"
-
-	"k8s.io/klog/v2"
-
 	"github.com/minio/minio-go/v7/pkg/set"
+	"github.com/minio/operator/pkg/controller/certificates"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/klog/v2"
 
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
@@ -115,9 +113,6 @@ var ErrMinIONotReady = fmt.Errorf("MinIO is not ready")
 
 // ErrMinIORestarting is the error returned when MinIO is restarting
 var ErrMinIORestarting = fmt.Errorf("MinIO is restarting")
-
-// ErrLogSearchNotReady is the error returned when Log Search is not Ready
-var ErrLogSearchNotReady = fmt.Errorf("Log Search is not ready")
 
 // Controller struct watches the Kubernetes API for changes to Tenant resources
 type Controller struct {
@@ -794,11 +789,6 @@ func (c *Controller) syncHandler(key string) error {
 		klog.V(2).Infof(err.Error())
 	}
 
-	// In case the operator certificate is removed or expired, re-create them
-	if err := c.recreateOperatorCertsIfRequired(ctx); err != nil {
-		return err
-	}
-
 	// validate the minio certificates
 	err = c.checkMinIOCertificatesStatus(ctx, tenant, nsName)
 	if err != nil {
@@ -883,12 +873,6 @@ func (c *Controller) syncHandler(key string) error {
 		return err
 	}
 
-	// check if operator-tls has to be updated or re-created in the tenant namespace
-	err = c.checkOperatorCertForTenant(ctx, tenant)
-	if err != nil {
-		return err
-	}
-
 	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
 	operatorCATLSExists, err := c.checkOperatorCaForTenant(ctx, tenant)
 	if err != nil {
@@ -934,7 +918,6 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Check if we need to create any of the pools. It's important not to update the statefulsets
 	// in this loop because we need all the pools "as they are" for the hot-update below
-	operatorTLSCertIsMounted := false
 	for i, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 
@@ -967,7 +950,6 @@ func (c *Controller) syncHandler(key string) error {
 				ServiceName:     hlSvc.Name,
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
-				OperatorTLS:     isOperatorTLS(),
 				OperatorCATLS:   operatorCATLSExists,
 				OperatorImage:   c.operatorImage,
 			})
@@ -989,20 +971,6 @@ func (c *Controller) syncHandler(key string) error {
 		// keep track of all replicas
 		totalReplicas += ss.Status.Replicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
-
-		// check if operator-tls public.crt is mounted on MinIO pods
-		if !operatorTLSCertIsMounted {
-			for _, volume := range ss.Spec.Template.Spec.Volumes {
-				if volume.Projected == nil || volume.Projected.Sources == nil {
-					continue
-				}
-				for _, vp := range volume.Projected.Sources {
-					if vp.Secret.Name == OperatorTLSSecretName {
-						operatorTLSCertIsMounted = true
-					}
-				}
-			}
-		}
 	}
 
 	var initializedPool miniov2.Pool
@@ -1200,7 +1168,6 @@ func (c *Controller) syncHandler(key string) error {
 				ServiceName:     hlSvc.Name,
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
-				OperatorTLS:     isOperatorTLS(),
 				OperatorCATLS:   operatorCATLSExists,
 				OperatorImage:   c.operatorImage,
 			})
@@ -1251,7 +1218,6 @@ func (c *Controller) syncHandler(key string) error {
 			ServiceName:     hlSvc.Name,
 			HostsTemplate:   c.hostsTemplate,
 			OperatorVersion: c.operatorVersion,
-			OperatorTLS:     isOperatorTLS(),
 			OperatorCATLS:   operatorCATLSExists,
 			OperatorImage:   c.operatorImage,
 		})
