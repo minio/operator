@@ -1,0 +1,16 @@
+# Operator environment variables
+
+Operator behavior can be customized using environment variables in the `minio-operator` deployment, here is a list available environment variables to set:
+
+| Variable Name | Description                                                                                                                                                                  | Possible values         | default                       |
+| --- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|-------------------------------|
+|MINIO_OPERATOR_CERTIFICATES_VERSION| Is the ENV var to force the certificates api version to use.                                                                                                                 | v1,v1beta1              | whatever api k8s provides     |
+|MINIO_OPERATOR_RUNTIME | Tells us which runtime we have. (EKS, Rancher, OpenShift, etc...), for example if `EKS` is set, the csr signerName to be used will be `"beta.eks.amazonaws.com/app-serving"` | EKS, Rancher, OpenShift |                               |
+|MINIO_OPERATOR_CSR_SIGNER_NAME| Is the name to use for the CSR Signer, will override the default                                                                                                             |                         | kubernetes.io/kubelet-serving |
+|SUBNET_BASE_URL| Subnet base URL                                                                                                                                                              |                         | https://subnet.min.io         |
+|OPERATOR_CERT_PASSWD| Env variable is used to decrypt the private key in the TLS certificate for operator if need it                                                                               |                         ||
+|MINIO_OPERATOR_DEPLOYMENT_NAME| Env variable to specify a custom deployment name for Operator                                                                                                                |                         | minio-operator                |
+|OPERATOR_STS_ENABLED| Env variable name to turn on and off the STS Service                                                                                                                         | on, off                 | off                           |
+|MINIO_CONSOLE_DEPLOYMENT_NAME| Is the default name of the console deployment                                                                                                                                |                  | console                       |
+|MINIO_CONSOLE_TLS_ENABLE| Env variable to turn on / off Console TLS                                                                                                                                    | on, off                 | off                           |
+|WATCHED_NAMESPACE| The namespaces which the operator watches for MinIO tenants. Defaults to "" for all namespaces.                                                                              |                         |                               |
