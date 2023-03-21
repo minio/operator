@@ -195,7 +195,7 @@ const Images = ({ classes }: IImagesProps) => {
             label="KES"
             value={kesImage}
             error={validationErrors["kesImage"] || ""}
-            placeholder="minio/kes:v0.17.6"
+            placeholder="minio/kes:v0.18.0"
           />
         </Grid>
       </Fragment>

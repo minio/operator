@@ -9,20 +9,40 @@ get_latest_release() {
 }
 
 MINIO_RELEASE=$(get_latest_release minio/minio)
-CONSOLE_RELEASE=$(get_latest_release minio/console)
-CONSOLE_RELEASE="${CONSOLE_RELEASE:1}"
+KES_RELEASE=$(get_latest_release minio/kes)
 
-# Figure out the FROM console release we are updating from
-CONSOLE_CURRENT_RELEASE=$(grep -Eo 'minio\/console:v([0-9]?[0-9].[0-9]?[0-9].[0-9]?[0-9])' resources/base/console-ui.yaml | grep -Eo '([0-9]?[0-9].[0-9]?[0-9].[0-9]?[0-9])')
+KES_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/kes\:)([v]?.*)"/\2/p' pkg/apis/minio.min.io/v2/constants.go)
 
-files=("docs/tenant_crd.adoc" "docs/policybinding_crd.adoc" "docs/templates/asciidoctor/gv_list.tpl" "examples/kustomization/base/tenant.yaml" "helm/operator/Chart.yaml" "helm/operator/values.yaml" "helm/tenant/Chart.yaml" "helm/tenant/values.yaml" "kubectl-minio/README.md" "kubectl-minio/cmd/helpers/constants.go" "kubectl-minio/cmd/tenant-upgrade.go" "pkg/apis/minio.min.io/v2/constants.go" "resources/base/deployment.yaml" "update-operator-krew.py" "resources/base/console-ui.yaml")
+files=(
+  "api/consts.go"
+  "docs/tenant_crd.adoc"
+  "docs/policybinding_crd.adoc"
+  "docs/templates/asciidoctor/gv_list.tpl"
+  "examples/kustomization/base/tenant.yaml"
+  "examples/kustomization/tenant-certmanager-kes/tenant.yaml"
+  "examples/kustomization/tenant-kes-encryption/tenant.yaml"
+  "helm/operator/Chart.yaml"
+  "helm/operator/values.yaml"
+  "helm/tenant/Chart.yaml"
+  "helm/tenant/values.yaml"
+  "kubectl-minio/README.md"
+  "kubectl-minio/cmd/helpers/constants.go"
+  "kubectl-minio/cmd/tenant-upgrade.go"
+  "pkg/apis/minio.min.io/v2/constants.go"
+  "pkg/controller/operator.go"
+  "resources/base/deployment.yaml"
+  "resources/base/console-ui.yaml"
+  "update-operator-krew.py"
+  "testing/console-tenant+kes.sh"
+  "web-app/src/screens/Console/Tenants/AddTenant/Steps/Images.tsx"
+  "web-app/src/screens/Console/Tenants/TenantDetails/TenantEncryption.tsx")
 
 CURRENT_RELEASE=$(get_latest_release minio/operator)
 CURRENT_RELEASE="${CURRENT_RELEASE:1}"
 
 echo "MinIO: $MINIO_RELEASE"
 echo "Upgrade: $CURRENT_RELEASE => $RELEASE"
-echo "Console: $CONSOLE_CURRENT_RELEASE => $CONSOLE_RELEASE"
+echo "KES: $KES_CURRENT_RELEASE => $KES_RELEASE"
 
 if [ -z "$MINIO_RELEASE" ]; then
   echo "\$MINIO_RELEASE is empty"
@@ -32,7 +52,7 @@ fi
 for file in "${files[@]}"; do
   sed -i -e "s/${CURRENT_RELEASE}/${RELEASE}/g" "$file"
   sed -i -e "s/RELEASE\.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]Z/${MINIO_RELEASE}/g" "$file"
-  sed -i -e "s/${CONSOLE_CURRENT_RELEASE}/${CONSOLE_RELEASE}/g" "$file"
+  sed -i -e "s/${KES_CURRENT_RELEASE}/${KES_RELEASE}/g" "$file"
 done
 
 echo "Re-indexing helm chart releases for $RELEASE"

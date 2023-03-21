@@ -9,9 +9,6 @@
 
 :minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-01-12T02-06-16Z]
 :kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:v0.18.0]
-:prometheus-image: https://quay.io/prometheus/prometheus:latest[prometheus/prometheus:latest]
-:logsearch-image: https://hub.docker.com/r/minio/operator/tags[minio/operator:v4.5.8]
-:postgres-image: https://github.com/docker-library/postgres[library/postgres]
 
 {{ range $groupVersions }}
 {{ template "gvDetails" . }}
