@@ -4,8 +4,8 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-01-12T02-06-16Z]
-:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:v0.18.0]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-03-24T21-41-23Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2023-02-15T14-54-37Z]
 
 
 [id="{anchor_prefix}-minio-min-io-v2"]
@@ -258,6 +258,14 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
  Specify an object containing the following fields: + 
  * - `name` - The name of the Kubernetes secret containing the Certificate Authority and x.509 Certificate. + 
  * - `type` - Specify `kubernetes.io/tls` +
+
+|*`gcpCredentialSecretName`* __string__ 
+|*Optional* + 
+  Specify the GCP default credentials to be used for KES to authenticate to GCP key store
+
+|*`gcpWorkloadIdentityPool`* __string__ 
+|*Optional* + 
+  Specify the name of the workload identity pool (This is required for generating service account token)
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 

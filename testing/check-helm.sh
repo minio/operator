@@ -27,9 +27,6 @@ function main() {
     echo "setup kind right after it has been destroyed"
     setup_kind
 
-    echo "Get helm repo for the operator"
-    helm repo add minio https://operator.min.io/
-
     echo "Install operator with helm"
     install_operator "helm"
 

@@ -10,8 +10,8 @@ operator:
   #   - name: WATCHED_NAMESPACE
   #     value: ""
   image:
-    repository: minio/operator
-    tag: v4.5.8
+    repository: quay.io/minio/operator
+    tag: v5.0.0
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]
@@ -47,8 +47,8 @@ operator:
 
 console:
   image:
-    repository: minio/console
-    tag: v0.22.5
+    repository: quay.io/minio/operator
+    tag: v5.0.0
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]

@@ -68,8 +68,10 @@ function install_operator() {
   if [ "$1" = "helm" ]; then
 
     echo "Change the version accordingly for image to be found within the cluster"
+    yq -i '.operator.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.operator.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
-
+    yq -i '.console.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
+    yq -i '.console.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     echo "Installing Current Operator via HELM"
     helm install \
       --namespace minio-operator \
@@ -260,6 +262,10 @@ function check_tenant_status() {
     --for=condition=ready pod \
     --selector=$key=$2 \
     --timeout=300s
+
+  condition=jsonpath='{.status.currentState}'=Initialized
+  selector="metadata.name=$2"
+  try wait_for_resource_field_selector "$1" tenant $condition "$selector" 300s
 
   if [ $# -ge 4 ]; then
     # make sure no rollout is happening

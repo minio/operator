@@ -6,9 +6,9 @@ metadata:
 data:
   setup.sh: |
     #!/bin/bash
-    mc mb local/test-bucket && \
-    mc mb local/other-bucket && \
-    mc admin policy add local test-bucket-rw /start-config/bucket-policy.json
+    mc mb local/test-bucket -p && \
+    mc mb local/other-bucket -p && \
+    mc admin policy create local test-bucket-rw /start-config/bucket-policy.json
   bucket-policy.json: |
     {
       "Version": "2012-10-17",
