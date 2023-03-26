@@ -93,6 +93,11 @@ var (
 	prometheusName          string
 	prometheusNamespaceOnce sync.Once
 	prometheusNameOnce      sync.Once
+	// gcpAppCredentialENV to denote the GCP APP credential path
+	gcpAppCredentialENV = corev1.EnvVar{
+		Name:  "GOOGLE_APPLICATION_CREDENTIALS",
+		Value: "/var/run/secrets/tokens/gcp-ksa/google-application-credentials.json",
+	}
 )
 
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
@@ -351,6 +356,9 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		if t.Spec.KES.KeyName == "" {
 			t.Spec.KES.KeyName = KESMinIOKey
 		}
+		if t.HasGCPCredentialSecretForKES() && t.Spec.KES.ServiceAccountName == "" {
+			t.Spec.KES.ServiceAccountName = "default"
+		}
 	}
 
 	// ServiceAccount
@@ -514,12 +522,26 @@ func (t *Tenant) GetEnvVars() (env []corev1.EnvVar) {
 	return t.Spec.Env
 }
 
+// HasGCPCredentialSecretForKES returns if GCP cred secret is set in KES for fleet workload identity support.
+func (t *Tenant) HasGCPCredentialSecretForKES() bool {
+	return t.HasKESEnabled() && t.Spec.KES.GCPCredentialSecretName != ""
+}
+
+// HasGCPWorkloadIdentityPoolForKES returns if GCP worload identity pool secret is set in KES for fleet workload identity support.
+func (t *Tenant) HasGCPWorkloadIdentityPoolForKES() bool {
+	return t.HasKESEnabled() && t.Spec.KES.GCPWorkloadIdentityPool != ""
+}
+
 // GetKESEnvVars returns the environment variables for the KES deployment.
 func (t *Tenant) GetKESEnvVars() (env []corev1.EnvVar) {
 	if !t.HasKESEnabled() {
 		return env
 	}
-	return t.Spec.KES.Env
+	env = t.Spec.KES.Env
+	if t.HasGCPCredentialSecretForKES() {
+		env = append(env, gcpAppCredentialENV)
+	}
+	return env
 }
 
 // UpdateURL returns the URL for the sha256sum location of the new binary
@@ -793,6 +815,16 @@ func (t *Tenant) Validate() error {
 
 	if !t.HasConfigurationSecret() && !t.HasCredsSecret() {
 		return errors.New("please set 'configuration' secret with credentials for Tenant")
+	}
+
+	if t.HasKESEnabled() {
+		switch {
+		case t.HasGCPCredentialSecretForKES() && !t.HasGCPWorkloadIdentityPoolForKES():
+			return errors.New("please set 'gcpWorkloadIdentityPool' to enable fleet workload identity")
+		case t.HasGCPWorkloadIdentityPoolForKES() && !t.HasGCPCredentialSecretForKES():
+			return errors.New("plese set the 'gcpCredentialSecretName' to enable fleet workload identity")
+		default:
+		}
 	}
 
 	// Every pool must contain a Volume Claim Template

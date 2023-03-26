@@ -669,6 +669,10 @@ spec:
                     required:
                     - name
                     type: object
+                  gcpCredentialSecretName:
+                    type: string
+                  gcpWorkloadIdentityPool:
+                    type: string
                   image:
                     type: string
                   imagePullPolicy:
