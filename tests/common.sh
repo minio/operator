@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU Affero General Public License, version 3,
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
+source "${GITHUB_WORKSPACE}/shared-functions/shared-code.sh" # This is common.sh for k8s tests across multiple repos.
+
 yell() { echo "$0: $*" >&2; }
 
 die() {
@@ -101,28 +103,6 @@ function check_tenant_status() {
     kubectl run admin-mc -i --tty --image minio/mc --command -- bash -c "until (mc alias set minio/ https://minio.$1.svc.cluster.local $USER $PASSWORD); do echo \"...waiting... for 5secs\" && sleep 5; done; mc admin info minio/;"
 
     echo "Done."
-}
-
-function wait_for_resource() {
-	waitdone=0
-	totalwait=0
-	echo "command to wait on:"
-	command_to_wait="kubectl -n $1 get pods -l $3=$2 --no-headers"
-	echo $command_to_wait
-
-	while true; do
-	waitdone=$($command_to_wait | wc -l)
-	if [ "$waitdone" -ne 0 ]; then
-		echo "Found $waitdone pods"
-			break
-	fi
-	sleep 5
-	totalwait=$((totalwait + 5))
-	if [ "$totalwait" -gt 305 ]; then
-			echo "Unable to get resource after 5 minutes, exiting."
-			try false
-	fi
-	done
 }
 
 # Install tenant function is being used by deploy-tenant and check-prometheus
