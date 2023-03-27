@@ -38,7 +38,23 @@ kubectl -n $NAMESPACE get svc $TENANT_NAME-log-search-api -o yaml > $TENANT_NAME
 kubectl -n $NAMESPACE get svc $TENANT_NAME-prometheus-hl-svc -o yaml > $TENANT_NAME-prometheus-hl-svc.yaml
 ```
 
-After exporting these objects, we recommend you remove `.metadata.ownerReferences` for all these.
+After exporting these objects, remove `.metadata.ownerReferences` for all these files.
+
+After upgrading, to have the MinIO Tenant keep using these services, just add the following environment variables to `.spec.env`
+
+```yaml
+- name: MINIO_LOG_QUERY_AUTH_TOKEN
+  valueFrom:
+    secretKeyRef:
+      key: MINIO_LOG_QUERY_AUTH_TOKEN
+      name: <TENANT_NAME>-log-secret
+- name: MINIO_LOG_QUERY_URL
+  value: http://<TENANT_NAME>-log-search-api:8080
+- name: MINIO_PROMETHEUS_JOB_ID
+  value: minio-job
+- name: MINIO_PROMETHEUS_URL
+  value: http://<TENANT_NAME>-prometheus-hl-svc:9090
+```
 
 
 v4.4.5
