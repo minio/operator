@@ -243,7 +243,7 @@ function check_tenant_status() {
     echo "No third argument provided, using default key"
   fi
 
-  wait_for_resource $1 $2 $key
+  wait_for_resource $1 $3 app
 
   echo "Waiting for pods to be ready. (5m timeout)"
 
@@ -294,7 +294,7 @@ function check_tenant_status() {
 
 # Install tenant function is being used by deploy-tenant and check-prometheus
 function install_tenant() {
-  # Check if we are going to install helm, lastest in this branch or a particular version
+  # Check if we are going to install helm, latest in this branch or a particular version
   if [ "$1" = "helm" ]; then
     echo "Installing tenant from Helm"
     echo "This test is intended for helm only not for KES, there is another kes test, so let's remove KES here"

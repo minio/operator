@@ -34,7 +34,7 @@ function main() {
     install_tenant "helm"
 
     echo "check tenant status"
-    check_tenant_status default minio app "helm"
+    check_tenant_status default myminio minio "helm"
 
     echo "destroy kind cluster to end with"
     destroy_kind
