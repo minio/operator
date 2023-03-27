@@ -7,9 +7,9 @@ by [cert-manager](https://cert-manager.io/).
 
 ### Prerequisites
 
-- Kubernetes version `+v1.19`. While cert-manager
+- Kubernetes version `+v1.21`. While cert-manager
   supports [earlier K8s versions](https://cert-manager.io/docs/installation/supported-releases/), the MinIO Operator
-  requires 1.19 or later.
+  requires 1.21 or later.
 - MinIO Operator installed
 - `kubectl` access to your `k8s` cluster
 - [cert-manager](https://cert-manager.io/docs/installation/) 1.7.X or later installed
@@ -58,7 +58,7 @@ Then it creates a new tenant including the new `tenant-certmanager-tls` secret i
 
 ### Create `operator-ca-tls` secret
 
-Copy the cert-manager CA from the tenant certficate, this will allow Operator to trust the cert-manager CA and allow Operator to tust the Tenant certificate
+Copy the cert-manager CA from the tenant certificate, this will allow Operator to trust the cert-manager CA and allow Operator to trust the Tenant certificate
 
 ```sh
 kubectl get secrets -n tenant-certmanager tenant-certmanager-tls -o=jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt

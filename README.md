@@ -63,10 +63,12 @@ a Kubernetes cluster.
 
 ## Prerequisites
 
-### Kubernetes 1.19 or Later
+### Kubernetes 1.21 or Later
 
-Starting with Operator v4.0.0, MinIO requires Kubernetes version 1.19.0 or later. Previous versions of the Operator
-supported Kubernetes 1.17.0 or later. You must upgrade your Kubernetes cluster to 1.19.0 or later to use Operator
+Starting with Operator v5.0.0, MinIO requires Kubernetes version 1.21.0 or later. You must upgrade your Kubernetes cluster to 1.21.0 or later to use Operator
+v5.0.0+.
+
+Starting with Operator v4.0.0, MinIO requires Kubernetes version 1.19.0 or later.  Previous versions of the Operator supported Kubernetes 1.17.0 or later. You must upgrade your Kubernetes cluster to 1.19.0 or later to use Operator
 v4.0.0+.
 
 This procedure assumes the host machine has [`kubectl`](https://kubernetes.io/docs/tasks/tools) installed and configured

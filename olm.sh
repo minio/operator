@@ -21,7 +21,7 @@ function install_binaries() {
 install_binaries
 
 # get the minio version
-minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '.spec.image' | tail -1)
+minioVersionInExample=$(kustomize build examples/kustomization/tenant-openshift | yq eval-all '.spec.image' | tail -1)
 echo "minioVersionInExample: ${minioVersionInExample}"
 
 # Get sha form of minio version
@@ -30,7 +30,7 @@ minioVersionDigest="quay.io/minio/minio@${minioVersionDigest}"
 echo "minioVersionDigest: ${minioVersionDigest}"
 
 # Generate the alm-examples
-EXAMPLE=$(kustomize build examples/kustomization/tenant-lite | yq ".spec.image = \"${minioVersionDigest}\"" | yq eval-all '. | [.]' | yq  'del( .[] | select(.kind == "Namespace") )'| yq  'del( .[] | select(.kind == "Secret") )' | yq -o json | jq -c )
+EXAMPLE=$(kustomize build examples/kustomization/tenant-openshift | yq ".spec.image = \"${minioVersionDigest}\"" | yq eval-all '. | [.]' | yq  'del( .[] | select(.kind == "Namespace") )'| yq  'del( .[] | select(.kind == "Secret") )' | yq -o json | jq -c )
 
 # There are 4 catalogs in Red Hat, we are interested in two of them:
 # https://docs.openshift.com/container-platform/4.7/operators/understanding/olm-rh-catalogs.html
@@ -106,16 +106,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   echo "containerImage: ${containerImage}"
   operatorImageDigest="quay.io/minio/operator:v${RELEASE}"
   yq -i ".metadata.annotations.containerImage |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-
-  # Console Image in Digested form: sha256:xxxx
-  consoleImage=$(yq eval-all '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
-  echo "consoleImage: ${consoleImage}"
-  consoleImageDigest=$(docker pull "quay.io/"${consoleImage} | grep Digest | awk -F ' ' '{print $2}')
-  echo "consoleImageDigest: ${consoleImageDigest}"
-  consoleImageDigest="quay.io/minio/console@${consoleImageDigest}"
-  yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${consoleImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-
-  # Operator Image in Digest mode: sha256:xxx
+  yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml resources/templates/olm-template.yaml
 

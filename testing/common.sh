@@ -68,8 +68,10 @@ function install_operator() {
   if [ "$1" = "helm" ]; then
 
     echo "Change the version accordingly for image to be found within the cluster"
+    yq -i '.operator.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.operator.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
-
+    yq -i '.console.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
+    yq -i '.console.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     echo "Installing Current Operator via HELM"
     helm install \
       --namespace minio-operator \
@@ -233,17 +235,28 @@ function wait_for_resource_field_selector() {
 
 function check_tenant_status() {
   # Check MinIO is accessible
+  # $1 namespace
+  # $2 tenant name
+  # $3 metadata.app field value (optional)
+  # $4 "helm", means it's testing helm tenant (optional)
+
   key=v1.min.io/tenant
+  value=$2
   if [ $# -ge 3 ]; then
     echo "Third argument provided, then set key value"
-    key=$3
+    key=app
+    value=$3
   else
     echo "No third argument provided, using default key"
   fi
 
-  wait_for_resource $1 $2 $key
+  wait_for_resource $1 $value $key
 
-  echo "Waiting for pods to be ready. (5m timeout)"
+  echo "Waiting for tenant to be Initialized"
+
+  condition=jsonpath='{.status.currentState}'=Initialized
+  selector="metadata.name=$2"
+  try wait_for_resource_field_selector "$1" tenant $condition "$selector" 600s
 
   if [ $# -ge 4 ]; then
     echo "Fourth argument provided, then get secrets from helm"
@@ -255,11 +268,6 @@ function check_tenant_status() {
     USER=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_USER="' | sed -e 's/export MINIO_ROOT_USER="//g' | sed -e 's/"//g')
     PASSWORD=$(kubectl -n $1 get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
   fi
-
-  try kubectl wait --namespace $1 \
-    --for=condition=ready pod \
-    --selector=$key=$2 \
-    --timeout=300s
 
   if [ $# -ge 4 ]; then
     # make sure no rollout is happening
@@ -288,7 +296,7 @@ function check_tenant_status() {
 
 # Install tenant function is being used by deploy-tenant and check-prometheus
 function install_tenant() {
-  # Check if we are going to install helm, lastest in this branch or a particular version
+  # Check if we are going to install helm, latest in this branch or a particular version
   if [ "$1" = "helm" ]; then
     echo "Installing tenant from Helm"
     echo "This test is intended for helm only not for KES, there is another kes test, so let's remove KES here"

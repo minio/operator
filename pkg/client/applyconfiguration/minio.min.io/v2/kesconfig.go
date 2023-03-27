@@ -32,6 +32,8 @@ type KESConfigApplyConfiguration struct {
 	Configuration             *v1.LocalObjectReference                     `json:"kesSecret,omitempty"`
 	ExternalCertSecret        *LocalCertificateReferenceApplyConfiguration `json:"externalCertSecret,omitempty"`
 	ClientCertSecret          *LocalCertificateReferenceApplyConfiguration `json:"clientCertSecret,omitempty"`
+	GCPCredentialSecretName   *string                                      `json:"gcpCredentialSecretName,omitempty"`
+	GCPWorkloadIdentityPool   *string                                      `json:"gcpWorkloadIdentityPool,omitempty"`
 	Annotations               map[string]string                            `json:"annotations,omitempty"`
 	Labels                    map[string]string                            `json:"labels,omitempty"`
 	Resources                 *v1.ResourceRequirements                     `json:"resources,omitempty"`
@@ -103,6 +105,22 @@ func (b *KESConfigApplyConfiguration) WithExternalCertSecret(value *LocalCertifi
 // If called multiple times, the ClientCertSecret field is set to the value of the last call.
 func (b *KESConfigApplyConfiguration) WithClientCertSecret(value *LocalCertificateReferenceApplyConfiguration) *KESConfigApplyConfiguration {
 	b.ClientCertSecret = value
+	return b
+}
+
+// WithGCPCredentialSecretName sets the GCPCredentialSecretName field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the GCPCredentialSecretName field is set to the value of the last call.
+func (b *KESConfigApplyConfiguration) WithGCPCredentialSecretName(value string) *KESConfigApplyConfiguration {
+	b.GCPCredentialSecretName = &value
+	return b
+}
+
+// WithGCPWorkloadIdentityPool sets the GCPWorkloadIdentityPool field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the GCPWorkloadIdentityPool field is set to the value of the last call.
+func (b *KESConfigApplyConfiguration) WithGCPWorkloadIdentityPool(value string) *KESConfigApplyConfiguration {
+	b.GCPWorkloadIdentityPool = &value
 	return b
 }
 

@@ -12,7 +12,7 @@ tenant:
   ## Registry location and Tag to download MinIO Server image
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-01-12T02-06-16Z
+    tag: RELEASE.2023-03-24T21-41-23Z
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported
@@ -146,7 +146,7 @@ tenant:
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   #kes:
-  #  image: "" # minio/kes:v0.18.0
+  #  image: "" # minio/kes:2023-02-15T14-54-37Z
   #  env: [ ]
   #  replicas: 2
   #  configuration: |-
@@ -225,83 +225,7 @@ tenant:
   #    runAsGroup: 1000
   #    runAsNonRoot: true
   #    fsGroup: 1000
-  ## Prometheus setup for MinIO Tenant.
-  prometheus:
-    # When set to true disables the creation of prometheus deployment
-    disabled: true
-    image: "" # defaults to quay.io/prometheus/prometheus:latest
-    env: [ ]
-    sidecarimage: "" # defaults to alpine
-    initimage: "" # defaults to busybox:1.33.1
-    diskCapacityGB: 1
-    storageClassName: standard
-    annotations: { }
-    labels: { }
-    nodeSelector: { }
-    tolerations: [ ]
-    affinity:
-      nodeAffinity: { }
-      podAffinity: { }
-      podAntiAffinity: { }
-    resources: { }
-    serviceAccountName: ""
-    securityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      runAsNonRoot: true
-      fsGroup: 1000
-  ## LogSearch API setup for MinIO Tenant.
-  log:
-    # When set to true disables the creation of logsearch api deployment
-    disabled: true
-    image: "" # defaults to minio/operator:v4.4.17
-    env: [ ]
-    resources: { }
-    nodeSelector: { }
-    affinity:
-      nodeAffinity: { }
-      podAffinity: { }
-      podAntiAffinity: { }
-    tolerations: [ ]
-    annotations: { }
-    labels: { }
-    audit:
-      diskCapacityGB: 1
-    ## Postgres setup for LogSearch API
-    db:
-      image: "" # defaults to library/postgres
-      env: [ ]
-      initimage: "" # defaults to busybox:1.33.1
-      volumeClaimTemplate:
-        metadata: { }
-        spec:
-          storageClassName: standard
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 1Gi
-      resources: { }
-      nodeSelector: { }
-      affinity:
-        nodeAffinity: { }
-        podAffinity: { }
-        podAntiAffinity: { }
-      tolerations: [ ]
-      annotations: { }
-      labels: { }
-      serviceAccountName: ""
-      securityContext:
-        runAsUser: 999
-        runAsGroup: 999
-        runAsNonRoot: true
-        fsGroup: 999
-    serviceAccountName: ""
-    securityContext:
-      runAsUser: 1000
-      runAsGroup: 1000
-      runAsNonRoot: true
-      fsGroup: 1000
+
 ingress:
   api:
     enabled: false

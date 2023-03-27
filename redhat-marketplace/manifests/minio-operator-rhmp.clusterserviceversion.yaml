@@ -2,13 +2,13 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"storage-lite","namespace":"tenant-lite"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:fc6bedc99355fbdf1982a734475b56d01f4bbc59a9ec6f9a7bc4e222f74f5326","imagePullSecret":{},"log":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"audit":{"diskCapacityGB":1},"db":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"env":[],"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":999,"runAsGroup":999,"runAsNonRoot":true,"runAsUser":999},"serviceAccountName":"","tolerations":[],"volumeClaimTemplate":{"metadata":{},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"1Gi"}},"storageClassName":"standard"}}},"env":[],"image":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","tolerations":[]},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"containerSecurityContext":{"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","prometheus":{"affinity":{"nodeAffinity":{},"podAffinity":{},"podAntiAffinity":{}},"annotations":{},"diskCapacityGB":1,"env":[],"image":"","initimage":"","labels":{},"nodeSelector":{},"resources":{},"securityContext":{"fsGroup":1000,"runAsGroup":1000,"runAsNonRoot":true,"runAsUser":1000},"serviceAccountName":"","sidecarimage":"","storageClassName":"standard"},"requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
+    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"myminio","namespace":"minio-tenant"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:02b9d0234025a31b1fb2a52697b62a18a4fbd0db03cbd83dfc09fc48773b718c","imagePullSecret":{},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
     capabilities: "Full Lifecycle"
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
-    containerImage: quay.io/minio/operator:v4.5.8
+    containerImage: quay.io/minio/operator:v5.0.0
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -16,7 +16,7 @@ metadata:
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
-  name: minio-operator-rhmp.v4.5.8
+  name: minio-operator-rhmp.v5.0.0
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -24,10 +24,10 @@ spec:
     owned:
       - kind: Tenant
         name: tenants.minio.min.io
-        version: v1
-      - kind: Tenant
-        name: tenants.minio.min.io
         version: v2
+      - kind: PolicyBinding
+        name: policybindings.sts.min.io
+        version: v1alpha1
   description: |-
     ## Overview
 
@@ -89,6 +89,7 @@ spec:
                 - list
                 - patch
                 - update
+                - delete
                 - deletecollection
             - apiGroups:
                 - ""
@@ -267,32 +268,9 @@ spec:
                 - update
                 - delete
             - apiGroups:
-                - direct.csi.min.io
-              resources:
-                - volumes
-              verbs:
-                - get
-                - list
-                - watch
-                - create
-                - update
-                - delete
-            - apiGroups:
                 - apiextensions.k8s.io
               resources:
                 - customresourcedefinitions
-              verbs:
-                - get
-                - list
-                - watch
-                - create
-                - update
-                - delete
-            - apiGroups:
-                - direct.csi.min.io
-              resources:
-                - directcsidrives
-                - directcsivolumes
               verbs:
                 - get
                 - list
@@ -364,6 +342,31 @@ spec:
                 - delete
                 - deletecollection
             - apiGroups:
+                - ""
+              resources:
+                - serviceaccounts
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+                - rolebindings
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
                 - apps
               resources:
                 - statefulsets
@@ -414,7 +417,14 @@ spec:
                 - approve
                 - sign
             - apiGroups:
+                - authentication.k8s.io
+              resources:
+                - tokenreviews
+              verbs:
+                - create
+            - apiGroups:
                 - minio.min.io
+                - sts.min.io
               resources:
                 - '*'
               verbs:
@@ -460,12 +470,9 @@ spec:
               spec:
                 containers:
                   - args:
-                      - server
+                      - ui
                       - --certs-dir=/tmp/certs
-                    env:
-                      - name: CONSOLE_OPERATOR_MODE
-                        value: "on"
-                    image: quay.io/minio/console@sha256:9827b3b7c89d5b809aa8b90233fd6802711e664aeba87288488255a012ba9d28
+                    image: quay.io/minio/operator:v5.0.0
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -528,10 +535,14 @@ spec:
                                 - minio-operator
                         topologyKey: kubernetes.io/hostname
                 containers:
-                  - env:
+                  - args:
+                      - controller
+                    env:
                       - name: MINIO_CONSOLE_TLS_ENABLE
                         value: "off"
-                    image: quay.io/minio/operator:v4.5.8
+                      - name: OPERATOR_STS_ENABLED
+                        value: "off"
+                    image: quay.io/minio/operator:v5.0.0
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -570,4 +581,4 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  version: 4.5.8
+  version: 5.0.0

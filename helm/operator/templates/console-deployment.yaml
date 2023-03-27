@@ -50,13 +50,8 @@ spec:
             - containerPort: 9443
               name: https
           args:
-            - server
-          env:
-            - name: CONSOLE_OPERATOR_MODE
-              value: "on"
-                {{- with .Values.console.env }}
-                {{ toYaml . | nindent 12 }}
-                {{- end }}
+            - ui
+            - --certs-dir=/tmp/certs
           resources:
           {{- toYaml .Values.console.resources | nindent 12 }}
           volumeMounts:

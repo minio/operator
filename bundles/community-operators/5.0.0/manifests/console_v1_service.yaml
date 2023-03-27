@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: minio-operator
+    app.kubernetes.io/name: operator
+    name: console
+  name: console
+spec:
+  ports:
+  - name: http
+    port: 9090
+    targetPort: 0
+  - name: https
+    port: 9443
+    targetPort: 0
+  selector:
+    app: console
+status:
+  loadBalancer: {}

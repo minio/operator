@@ -2,8 +2,10 @@ name: goreleaser
 
 on:
   pull_request:
+    types: [opened, reopened, synchronize]
     branches:
-      - 'release**'
+      - 'release*'
+      - 'master'
 
 jobs:
   goreleaser:
