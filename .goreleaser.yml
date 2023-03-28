@@ -14,7 +14,7 @@ release:
 before:
   hooks:
     - make clean
-    - go generate ./...
+    - make swagger-gen
     - go mod tidy -compat=1.20
     - go mod download
 
