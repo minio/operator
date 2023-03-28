@@ -89,7 +89,7 @@ generate-code:
 generate-openshift-manifests:
 	@./olm.sh
 
-release: generate-openshift-manifests
+release: assets generate-openshift-manifests
 	@./release.sh
 
 
