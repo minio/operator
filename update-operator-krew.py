@@ -21,19 +21,19 @@ spec:
   platforms:
 """
 
-main_url = "https://github.com/minio/operator/releases/download/{version}/kubectl-minio_{os}_{arch}.zip"
+main_url = "https://github.com/minio/operator/releases/download/{version}/kubectl-minio_{os}_{arch}{suffix}.zip"
 
 builds = {
     "darwin": [
-        "amd64",
-        "arm64"
+        { "arch": "amd64", "suffix": "_v1"},
+        { "arch": "arm64", "suffix": "" }
     ],
     "linux": [
-        "amd64",
-        "arm64"
+        { "arch": "amd64", "suffix": "_v1" },
+        { "arch": "arm64", "suffix": "" }
     ],
     "windows": [
-        "amd64",
+        { "arch": "amd64", "suffix": "_v1" }
     ],
 }
 
@@ -41,10 +41,10 @@ buffer = template
 
 cmd = "curl -L {url} | sha256sum"
 for os_key in builds:
-    for arch in builds[os_key]:
-        url = main_url.format(version=version, os=os_key, arch=arch)
-        ps = subprocess.Popen(('curl', '-L', url), stdout=subprocess.PIPE)
-        output = subprocess.check_output(('/usr/bin/sha256sum'), stdin=ps.stdout)
+    for arch_key in builds[os_key]:
+        url = main_url.format(version=version, os=os_key, arch=arch_key['arch'], suffix=arch_key['suffix'])
+        ps = subprocess.Popen(('curl', '-L', '--fail', url), stdout=subprocess.PIPE)
+        output = subprocess.check_output(('/usr/local/bin/sha256sum'), stdin=ps.stdout)
         ps.wait()
         hash = output.strip().decode("utf-8", "ignore").replace("  -", "")
         # print(hash)
@@ -54,8 +54,8 @@ for os_key in builds:
         buffer += f"""  - selector:
       matchLabels:
         os: {os_key}
-        arch: {arch}
-    uri: https://github.com/minio/operator/releases/download/{version}/kubectl-minio_{os_key}_{arch}.zip
+        arch: {arch_key['arch']}
+    uri: https://github.com/minio/operator/releases/download/{version}/kubectl-minio_{os_key}_{arch_key['arch']}{arch_key['suffix']}.zip
     sha256: {hash}
     bin: kubectl-minio{binaryext}
 """
