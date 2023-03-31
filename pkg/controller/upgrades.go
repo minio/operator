@@ -332,7 +332,7 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
-	if logSearchSecret != nil {
+	if err == nil && logSearchSecret != nil {
 		logSearchSecret.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, logSearchSecret, metav1.UpdateOptions{}); err != nil {
 			return tenant, err
@@ -343,7 +343,7 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
-	if logSearchAPISvc != nil {
+	if err == nil && logSearchAPISvc != nil {
 		logSearchAPISvc.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, logSearchAPISvc, metav1.UpdateOptions{}); err != nil {
 			return tenant, err
@@ -354,7 +354,7 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
-	if logPgSS != nil {
+	if err == nil && logPgSS != nil {
 		logPgSS.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, logPgSS, metav1.UpdateOptions{}); err != nil {
 			return tenant, err
@@ -365,7 +365,7 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
-	if logHlSvc != nil {
+	if err == nil && logHlSvc != nil {
 		logHlSvc.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, logHlSvc, metav1.UpdateOptions{}); err != nil {
 			return tenant, err
@@ -376,7 +376,7 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
-	if promCM != nil {
+	if err == nil && promCM != nil {
 		promCM.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.CoreV1().ConfigMaps(tenant.Namespace).Update(ctx, promCM, metav1.UpdateOptions{}); err != nil {
 			return tenant, err
@@ -387,7 +387,7 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
-	if promHlSvc != nil {
+	if err == nil && promHlSvc != nil {
 		promHlSvc.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, promHlSvc, metav1.UpdateOptions{}); err != nil {
 			return tenant, err
@@ -398,7 +398,7 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	if err != nil && !k8serrors.IsNotFound(err) {
 		return tenant, err
 	}
-	if prometheusStatefulSet != nil {
+	if err == nil && prometheusStatefulSet != nil {
 		prometheusStatefulSet.ObjectMeta.OwnerReferences = nil
 		if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, prometheusStatefulSet, metav1.UpdateOptions{}); err != nil {
 			return tenant, err
