@@ -782,8 +782,11 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Custom certificates
 	if customCertificates, err := c.getCustomCertificates(ctx, tenant); err == nil {
-		if tenant, err = c.updateCustomCertificatesStatus(ctx, tenant, customCertificates); err != nil {
+		if newTenant, err := c.updateCustomCertificatesStatus(ctx, tenant, customCertificates); err != nil {
 			klog.V(2).Infof(err.Error())
+		} else {
+			// Only change tenant if there was no error, otherwise tenant is being deleted
+			tenant = newTenant
 		}
 	} else {
 		klog.V(2).Infof(err.Error())
