@@ -16,6 +16,7 @@ package certificates
 
 import (
 	"context"
+	"github.com/minio/operator/pkg/controller"
 	"os"
 	"strings"
 	"sync"
@@ -30,8 +31,6 @@ import (
 const (
 	// OperatorCertificatesVersion is the ENV var to force the certificates api version to use.
 	OperatorCertificatesVersion = "MINIO_OPERATOR_CERTIFICATES_VERSION"
-	// OperatorRuntime tells us which runtime we have. (EKS, Rancher, OpenShift, etc...)
-	OperatorRuntime = "MINIO_OPERATOR_RUNTIME"
 	// CSRSignerName is the name to use for the CSR Signer, will override the default
 	CSRSignerName = "MINIO_OPERATOR_CSR_SIGNER_NAME"
 	// EKSCsrSignerName is the signer we should use on EKS after version 1.22
@@ -112,7 +111,7 @@ func GetCSRSignerName(clientSet kubernetes.Interface) string {
 		// get certificates using their CSRSignerName https://docs.aws.amazon.com/eks/latest/userguide/cert-signing.html
 		if GetCertificatesAPIVersion(clientSet) == CSRV1 {
 			// if the user specified the EKS runtime, no need to do the check
-			if os.Getenv(OperatorRuntime) == "EKS" {
+			if controller.GetOperatorRuntime() == controller.OperatorRuntimeEKS {
 				csrSignerName = EKSCsrSignerName
 				return
 			}
