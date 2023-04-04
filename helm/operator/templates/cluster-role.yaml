@@ -24,6 +24,7 @@ rules:
       - namespaces
       - nodes
     verbs:
+      - create
       - get
       - watch
       - list
