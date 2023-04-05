@@ -8,7 +8,7 @@ metadata:
     operators.operatorframework.io/project_layout: unknown
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
-    containerImage: quay.io/minio/operator:v5.0.2
+    containerImage: quay.io/minio/operator:v5.0.3
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -16,7 +16,7 @@ metadata:
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
-  name: minio-operator-rhmp.v5.0.2
+  name: minio-operator-rhmp.v5.0.3
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -472,7 +472,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.2
+                    image: quay.io/minio/operator:v5.0.3
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -542,7 +542,7 @@ spec:
                         value: "off"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.2
+                    image: quay.io/minio/operator:v5.0.3
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -581,4 +581,4 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  version: 5.0.2
+  version: 5.0.3

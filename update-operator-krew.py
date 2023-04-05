@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import subprocess
 
-version = "v5.0.2"
+version = "v5.0.3"
 
 template = f"""apiVersion: krew.googlecontainertools.github.com/v1alpha2
 kind: Plugin
