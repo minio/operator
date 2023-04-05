@@ -113,7 +113,7 @@ swagger-gen: clean-swagger swagger-operator apply-gofmt
 
 assets:
 	@(if [ -f "${NVM_DIR}/nvm.sh" ]; then \. "${NVM_DIR}/nvm.sh" && nvm install && nvm use && npm install -g yarn ; fi &&\
-	  cd web-app; yarn install --prefer-offline; make build-static; yarn prettier --write . --loglevel warn; cd ..)
+	  cd web-app; yarn install; make build-static; yarn prettier --write . --loglevel warn; cd ..)
 
 test-unit-test-operator:
 	@echo "execute unit test and get coverage for api"
