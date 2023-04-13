@@ -48,5 +48,16 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml resources/templates/olm-template.yaml
 
+  # https://connect.redhat.com/support/technology-partner/#/case/03206318
+  # If no securityContext is specified, the OLM will choose one that fits within
+  # the security context constraint either explicitly specified for the project under which the pod is run,
+  # or the default. If the SCC specifies a value that doesn't match the specified value in our files,
+  # the pods will not start properly and we can't be installed.
+  # Let the user select their own securityContext and don't hardcode values that can affect the ability
+  # to debug and deploy our Operator in OperatorHub.
+  echo "Removing securityContext from CSV"
+  yq -i eval 'del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+
 done
 echo " "
