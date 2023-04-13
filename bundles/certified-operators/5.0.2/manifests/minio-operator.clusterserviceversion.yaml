@@ -6,7 +6,7 @@ metadata:
     capabilities: "Full Lifecycle"
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
-    containerImage: quay.io/minio/operator:v5.0.2
+    containerImage: quay.io/minio/operator@sha256:407355dd4e403efa12b426212707aba3048071a5a3acd144f542e882be731edb
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -470,7 +470,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.2
+                    image: quay.io/minio/console@sha256:407355dd4e403efa12b426212707aba3048071a5a3acd144f542e882be731edb
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -540,7 +540,7 @@ spec:
                         value: "off"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.2
+                    image: quay.io/minio/operator@sha256:407355dd4e403efa12b426212707aba3048071a5a3acd144f542e882be731edb
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
