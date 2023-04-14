@@ -66,7 +66,7 @@ func init() {
 }
 
 // StartOperator starts the MinIO Operator controller
-func StartOperator() {
+func StartOperator(kubeconfig string) {
 	klog.Info("Starting MinIO Operator")
 	// set up signals, so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
