@@ -25,8 +25,14 @@ var controllerCmd = cli.Command{
 	Aliases: []string{"ctl"},
 	Usage:   "Start MinIO Operator Controller",
 	Action:  startController,
+	Flags: []cli.Flag{
+		cli.StringFlag{
+			Name:  "kubeconfig",
+			Usage: "Load configuration from `KUBECONFIG`",
+		},
+	},
 }
 
 func startController(ctx *cli.Context) {
-	controller.StartOperator()
+	controller.StartOperator(ctx.String("kubeconfig"))
 }
