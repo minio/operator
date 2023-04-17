@@ -8,7 +8,6 @@ metadata:
     app.kubernetes.io/name: operator
   namespace: minio-operator
   annotations:
-    service.alpha.openshift.io/serving-cert-secret-name: operator-tls # To solve "remote error: tls: bad certificate" OpenShift v3
     service.beta.openshift.io/serving-cert-secret-name: operator-tls # To solve "remote error: tls: bad certificate" OpenShift v4
 spec:
   type: ClusterIP
@@ -27,7 +26,7 @@ metadata:
     name: minio-operator
   namespace: minio-operator
   annotations:
-    service.alpha.openshift.io/serving-cert-secret-name: operator-tls # To solve "remote error: tls: bad certificate"
+    service.beta.openshift.io/serving-cert-secret-name: operator-tls # To solve "remote error: tls: bad certificate"
 spec:
   type: ClusterIP
   ports:
