@@ -133,7 +133,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # as well as the default.
   {
     echo "  # Annotations to specify OCP versions compatibility."
-    echo "  com.redhat.openshift.versions: v4.6-v4.12"
+    echo "  com.redhat.openshift.versions: v4.8-v4.12"
     echo "  # Annotation to add default bundle channel as potential is declared"
     echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
   } >> bundles/$catalog/$RELEASE/metadata/annotations.yaml
