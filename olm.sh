@@ -110,6 +110,9 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml resources/templates/olm-template.yaml
 
+  echo "One replica only for Code Ready Containers with one node"
+  yq -i e '.spec.install.spec.deployments[1].spec.replicas |= 1' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+
   # Now promote the latest release to the root of the repository
   rm -Rf manifests
   rm -Rf metadata
