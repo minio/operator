@@ -6,7 +6,8 @@ metadata:
     capabilities: "Full Lifecycle"
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
-    containerImage: quay.io/minio/operator:v5.0.3
+    olm.skipRange: '>=4.4.16 <5.0.3'
+    containerImage: quay.io/minio/operator@sha256:1a32f5143f02e22acd5f2e368d98b783c069409ee550c0ddd0972db9a386d29a
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -470,7 +471,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.3
+                    image: quay.io/minio/console@sha256:1a32f5143f02e22acd5f2e368d98b783c069409ee550c0ddd0972db9a386d29a
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -479,7 +480,6 @@ spec:
                       - containerPort: 9433
                         name: https
                     resources: {}
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/certs
                         name: tls-certificates
@@ -509,7 +509,7 @@ spec:
             app.kubernetes.io/name: operator
           name: minio-operator
           spec:
-            replicas: 2
+            replicas: 1
             selector:
               matchLabels:
                 name: minio-operator
@@ -539,7 +539,7 @@ spec:
                         value: "off"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.3
+                    image: quay.io/minio/operator@sha256:1a32f5143f02e22acd5f2e368d98b783c069409ee550c0ddd0972db9a386d29a
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -547,7 +547,6 @@ spec:
                         cpu: 200m
                         ephemeral-storage: 500Mi
                         memory: 256Mi
-                    securityContext: {}
                 serviceAccountName: minio-operator
     strategy: deployment
   installModes:
@@ -578,3 +577,45 @@ spec:
     name: MinIO Inc
     url: https://min.io
   version: 5.0.3
+  labels:
+    operatorframework.io/arch.386: supported
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.amd64p32: supported
+    operatorframework.io/arch.arm: supported
+    operatorframework.io/arch.armbe: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/arch.arm64be: supported
+    operatorframework.io/arch.loong64: supported
+    operatorframework.io/arch.mips: supported
+    operatorframework.io/arch.mipsle: supported
+    operatorframework.io/arch.mips64: supported
+    operatorframework.io/arch.mips64le: supported
+    operatorframework.io/arch.mips64p32: supported
+    operatorframework.io/arch.mips64p32le: supported
+    operatorframework.io/arch.ppc: supported
+    operatorframework.io/arch.ppc64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.riscv: supported
+    operatorframework.io/arch.riscv64: supported
+    operatorframework.io/arch.s390: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/arch.sparc: supported
+    operatorframework.io/arch.sparc64: supported
+    operatorframework.io/arch.wasm: supported
+    operatorframework.io/os.aix: supported
+    operatorframework.io/os.android: supported
+    operatorframework.io/os.darwin: supported
+    operatorframework.io/os.dragonfly: supported
+    operatorframework.io/os.freebsd: supported
+    operatorframework.io/os.hurd: supported
+    operatorframework.io/os.illumos: supported
+    operatorframework.io/os.ios: supported
+    operatorframework.io/os.js: supported
+    operatorframework.io/os.linux: supported
+    operatorframework.io/os.nacl: supported
+    operatorframework.io/os.netbsd: supported
+    operatorframework.io/os.openbsd: supported
+    operatorframework.io/os.plan9: supported
+    operatorframework.io/os.solaris: supported
+    operatorframework.io/os.windows: supported
+    operatorframework.io/os.zos: supported
