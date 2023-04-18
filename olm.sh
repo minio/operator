@@ -77,6 +77,12 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext.runAsGroup)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext.runAsUser)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
+  # To provide channel for upgrade where we tell what versions can be replaced by the new version we offer
+  # You can read the documentation at link below:
+  # https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html/operators/understanding-the-operator-lifecycle-manager-olm#olm-upgrades_olm-understanding-olm
+  echo "To provide channel for upgrading Operator..."
+  yq -i e ".metadata.annotations.\"olm.skipRange\" |= \">=4.4.16 <$RELEASE\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+
   # In order to deploy via OLM, we should let OLM to decide on the security
   # context; otherwise deploy will fail and operator update will not be possible
   # already tested this manually to prove the point:
