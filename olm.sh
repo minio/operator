@@ -77,6 +77,53 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext.runAsGroup)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext.runAsUser)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
+  # To support different architectures.
+  echo "Supporting different architectures..."
+  yq -i e '.spec.labels."operatorframework.io/arch.386" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.amd64" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.amd64p32" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.arm" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.armbe" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.arm64" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.arm64be" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.loong64" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.mips" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.mipsle" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.mips64" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.mips64le" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.mips64p32" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.mips64p32le" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.ppc" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.ppc64" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.ppc64le" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.riscv" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.riscv64" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.s390" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.s390x" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.sparc" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.sparc64" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/arch.wasm" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+
+  # To support different Operating Systems
+  echo "Supporting different Operating Systems..."
+  yq -i e '.spec.labels."operatorframework.io/os.aix" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.android" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.darwin" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.dragonfly" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.freebsd" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.hurd" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.illumos" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.ios" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.js" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.linux" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.nacl" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.netbsd" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.openbsd" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.plan9" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.solaris" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.windows" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i e '.spec.labels."operatorframework.io/os.zos" |= "supported"' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+
   # To provide channel for upgrade where we tell what versions can be replaced by the new version we offer
   # You can read the documentation at link below:
   # https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html/operators/understanding-the-operator-lifecycle-manager-olm#olm-upgrades_olm-understanding-olm
