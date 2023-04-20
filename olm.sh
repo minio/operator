@@ -65,7 +65,6 @@ for catalog in "${redhatCatalogs[@]}"; do
   # the deployment name you set is "operator", and in CSV, there are two deployments 'console' and 'minio-operator'
   # but there is no 'operator' option, without this change error is: "calculated deployment install is bad"
   yq -i 'del(.spec.webhookdefinitions)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml 
-  yq -i '.spec.conversion.webhook.clientConfig.service.name = "operator"' bundles/$catalog/$RELEASE/manifests/minio.min.io_tenants.yaml
 
   # I get the update from engineering team, typically no user/group specification is made in a container image.
   # Rather, the user spec (if there is one) is placed in the clusterserviceversion.yaml file as a RunAsUser clause.
