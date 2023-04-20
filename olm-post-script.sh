@@ -36,15 +36,8 @@ for catalog in "${redhatCatalogs[@]}"; do
   echo "operatorImageDigest: ${operatorImageDigest} @ ${digest}"
   yq -i ".metadata.annotations.containerImage |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
-  # Console Image in Digested form: sha256:xxxx
-  consoleImage=$(yq eval-all '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
-  echo "consoleImage: ${consoleImage}"
-  consoleImageDigest=$(docker pull ${consoleImage} | grep Digest | awk -F ' ' '{print $2}')
-  echo "consoleImageDigest: ${consoleImageDigest}"
-  consoleImageDigest="quay.io/minio/console@${consoleImageDigest}"
-  yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${consoleImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-
   # Operator Image in Digest mode: sha256:xxx
+  yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml resources/templates/olm-template.yaml
 
