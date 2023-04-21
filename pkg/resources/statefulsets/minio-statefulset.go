@@ -879,6 +879,12 @@ func getInitContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
 			"--tenant",
 			t.Name,
 		},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "CLUSTER_DOMAIN",
+				Value: miniov2.GetClusterDomain(),
+			},
+		},
 		VolumeMounts: []corev1.VolumeMount{
 			CfgVolumeMount,
 		},
@@ -899,6 +905,12 @@ func getSideCarContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
 			t.Name,
 			"--config-name",
 			t.Spec.Configuration.Name,
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "CLUSTER_DOMAIN",
+				Value: miniov2.GetClusterDomain(),
+			},
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			CfgVolumeMount,
