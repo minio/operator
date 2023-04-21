@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"time"
 
@@ -100,13 +101,22 @@ func getPodLogsResponse(session *models.Principal, params operator_api.GetPodLog
 	if err != nil {
 		return "", ErrorWithContext(ctx, err)
 	}
-	listOpts := &corev1.PodLogOptions{}
+	listOpts := &corev1.PodLogOptions{Container: "minio"}
 	logs := clientset.CoreV1().Pods(params.Namespace).GetLogs(params.PodName, listOpts)
-	buff, err := logs.DoRaw(ctx)
+
+	buffLogs, err := logs.Stream(ctx)
 	if err != nil {
 		return "", ErrorWithContext(ctx, err)
 	}
-	return string(buff), nil
+
+	defer buffLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, buffLogs)
+	if err != nil {
+		return "", ErrorWithContext(ctx, err)
+	}
+	return buf.String(), nil
 }
 
 func getTenantPodsResponse(session *models.Principal, params operator_api.GetTenantPodsParams) ([]*models.TenantPod, *models.Error) {
