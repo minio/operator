@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+#set -e
 
 #binary versions
 OPERATOR_SDK_VERSION=v1.22.2
@@ -50,6 +50,20 @@ for catalog in "${redhatCatalogs[@]}"; do
     package=minio-operator-rhmp
   fi
   echo "package: ${package}"
+  echo "RELEASE: ${RELEASE} ............................."
+  echo "catalog: ${catalog} ............................."
+  echo """
+  $OPERATOR_SDK_BIN generate bundle \
+    --package $package \
+    --version $RELEASE \
+    --deploy-dir resources/base \
+    --crds-dir resources/base/crds \
+    --manifests \
+    --metadata \
+    --output-dir bundles/$catalog/$RELEASE \
+    --channels stable \
+    --overwrite
+"""
   $OPERATOR_SDK_BIN generate bundle \
     --package $package \
     --version $RELEASE \
