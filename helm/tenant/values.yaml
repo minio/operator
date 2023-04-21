@@ -12,7 +12,7 @@ tenant:
   ## Registry location and Tag to download MinIO Server image
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-03-24T21-41-23Z
+    tag: RELEASE.2023-04-20T17-56-55Z
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported
@@ -146,7 +146,7 @@ tenant:
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   #kes:
-  #  image: "" # minio/kes:2023-04-03T16-41-28Z
+  #  image: "" # minio/kes:2023-04-18T19-36-09Z
   #  env: [ ]
   #  replicas: 2
   #  configuration: |-

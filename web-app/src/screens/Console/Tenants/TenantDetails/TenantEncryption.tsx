@@ -1601,7 +1601,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                   setImage(e.target.value)
                 }
                 label="Image"
-                placeholder="minio/kes:2023-04-03T16-41-28Z"
+                placeholder="minio/kes:2023-04-18T19-36-09Z"
                 value={image}
               />
             </Grid>
