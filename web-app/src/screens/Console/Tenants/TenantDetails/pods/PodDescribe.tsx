@@ -305,13 +305,15 @@ const PodDescribeTable = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {items.map((item, i) => (
-                <TableRow key={i}>
-                  {columns.map((column, j) => (
-                    <TableCell key={j}>{item[column]}</TableCell>
-                  ))}
-                </TableRow>
-              ))}
+              {items
+                .filter((item) => item !== null)
+                .map((item, i) => (
+                  <TableRow key={i}>
+                    {columns.map((column, j) => (
+                      <TableCell key={j}>{item[column]}</TableCell>
+                    ))}
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </TableContainer>
