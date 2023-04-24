@@ -79,6 +79,7 @@
   "resolutions": {
     "nth-check": "^2.0.1",
     "postcss": "^8.2.13",
+    "yaml": "^2.2.2",
     "react-scripts/**/node-forge": "^1.3.0",
     "react-scripts/**/async": "^2.6.4",
     "react-scripts/workbox-webpack-plugin/workbox-build/@surma/rollup-plugin-off-main-thread/ejs/jake/async": "^2.6.4",
