@@ -305,15 +305,15 @@ const PodDescribeTable = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {items
-                .filter((item) => item !== null)
-                .map((item, i) => (
+              {items.map((item, i) => {
+                return (
                   <TableRow key={i}>
                     {columns.map((column, j) => (
                       <TableCell key={j}>{item[column]}</TableCell>
                     ))}
                   </TableRow>
-                ))}
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
@@ -412,7 +412,8 @@ const PodDescribe = ({
           `/api/v1/namespaces/${namespace}/tenants/${tenant}/pods/${podName}/describe`
         )
         .then((res: DescribeResponse) => {
-          setDescribeInfo(res);
+          const cleanRes = cleanDescribeResponseEnvVariables(res);
+          setDescribeInfo(cleanRes);
           setLoading(false);
         })
         .catch((err: ErrorResponseHandler) => {
@@ -421,6 +422,18 @@ const PodDescribe = ({
         });
     }
   }, [loading, podName, namespace, tenant, dispatch]);
+
+  const cleanDescribeResponseEnvVariables = (
+    res: DescribeResponse
+  ): DescribeResponse => {
+    res.containers = res.containers.map((c) => {
+      c.environmentVariables = c.environmentVariables.filter(
+        (item) => item !== null
+      );
+      return c;
+    });
+    return res;
+  };
 
   const renderTabComponent = (index: number, info: DescribeResponse) => {
     switch (index) {

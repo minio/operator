@@ -277,7 +277,7 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 			retval.Containers[i].RestartCount = int64(statusMap[pod.Spec.Containers[i].Name].RestartCount)
 			retval.Containers[i].State, retval.Containers[i].LastState = describeStatus(statusMap[pod.Spec.Containers[i].Name])
 		}
-		retval.Containers[i].EnvironmentVariables = make([]*models.EnvironmentVariable, len(pod.Spec.Containers[0].Env))
+		retval.Containers[i].EnvironmentVariables = make([]*models.EnvironmentVariable, len(pod.Spec.Containers[i].Env))
 		for j := range pod.Spec.Containers[i].Env {
 			retval.Containers[i].EnvironmentVariables[j] = &models.EnvironmentVariable{
 				Key:   pod.Spec.Containers[i].Env[j].Name,
