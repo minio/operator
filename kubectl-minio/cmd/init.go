@@ -83,7 +83,6 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.BoolVar(&o.operatorOpts.ConsoleTLS, "console-tls", false, "enable tls for Operator console")
 	f.BoolVar(&o.operatorOpts.STS, "sts", false, "enable Operator sts (v1alpha1)")
 	f.StringVar(&o.operatorOpts.TenantMinIOImage, "default-minio-image", "", "default tenant MinIO image")
-	f.StringVar(&o.operatorOpts.TenantConsoleImage, "default-console-image", "", "default tenant Console image")
 	f.StringVar(&o.operatorOpts.TenantKesImage, "default-kes-image", "", "default tenant KES image")
 	f.StringVar(&o.operatorOpts.PrometheusNamespace, "prometheus-namespace", "", "namespace of the prometheus managed by prometheus-operator")
 	f.StringVar(&o.operatorOpts.PrometheusName, "prometheus-name", "", "name of the prometheus managed by prometheus-operator")
@@ -180,16 +179,6 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			Value: corev1.EnvVar{
 				Name:  "TENANT_MINIO_IMAGE",
 				Value: o.operatorOpts.TenantMinIOImage,
-			},
-		})
-	}
-	if o.operatorOpts.TenantConsoleImage != "" {
-		operatorDepPatches = append(operatorDepPatches, opInterface{
-			Op:   "add",
-			Path: "/spec/template/spec/containers/0/env/0",
-			Value: corev1.EnvVar{
-				Name:  "TENANT_CONSOLE_IMAGE",
-				Value: o.operatorOpts.TenantConsoleImage,
 			},
 		})
 	}
