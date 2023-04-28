@@ -26,6 +26,7 @@ import (
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
 	"github.com/minio/operator/models"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xhttp "github.com/minio/operator/pkg/http"
 	"github.com/minio/operator/pkg/subnet"
@@ -37,6 +38,11 @@ var (
 	apiKeySecretDefault = "operator-subnet"
 	apiKeySecretEnvVar  = "API_KEY_SECRET_NAME"
 )
+
+type tenantInterface struct {
+	tenant       miniov2.Tenant
+	mAdminClient MinioAdmin
+}
 
 func registerOperatorSubnetHandlers(api *operations.OperatorAPI) {
 	api.OperatorAPIOperatorSubnetLoginHandler = operator_api.OperatorSubnetLoginHandlerFunc(func(params operator_api.OperatorSubnetLoginParams, session *models.Principal) middleware.Responder {
@@ -130,26 +136,39 @@ func getOperatorSubnetRegisterAPIKeyResponse(session *models.Principal, params o
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
-	tenants, err := getTenantsToRegister(ctx, session)
+	k8sClient := &k8sClient{client: clientSet}
+	tenants, err := getTenantsToRegister(ctx, session, k8sClient)
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
-	k8sClient := &k8sClient{client: clientSet}
-	return registerTenants(ctx, tenants.Items, params.Body.APIKey, k8sClient)
+	return registerTenants(ctx, k8sClient, tenants, params.Body.APIKey)
 }
 
-func getTenantsToRegister(ctx context.Context, session *models.Principal) (*v2.TenantList, error) {
+func getTenantsToRegister(ctx context.Context, session *models.Principal, k8sClient K8sClientI) ([]tenantInterface, error) {
 	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return nil, err
 	}
 	opClient := &operatorClient{client: opClientClientSet}
-	return opClient.TenantList(ctx, "", metav1.ListOptions{})
+	tenantList, err := opClient.TenantList(ctx, "", metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	tenantStructs := make([]tenantInterface, len(tenantList.Items))
+	for _, tenant := range tenantList.Items {
+		svcURL := tenant.GetTenantServiceURL()
+		mAdmin, err := getTenantAdminClient(ctx, k8sClient, &tenant, svcURL)
+		if err != nil {
+			return nil, err
+		}
+		tenantStructs = append(tenantStructs, tenantInterface{tenant: tenant, mAdminClient: AdminClient{Client: mAdmin}})
+	}
+	return tenantStructs, nil
 }
 
-func registerTenants(ctx context.Context, tenants []v2.Tenant, apiKey string, k8sClient K8sClientI) (*models.OperatorSubnetRegisterAPIKeyResponse, *models.Error) {
+func registerTenants(ctx context.Context, k8sClient K8sClientI, tenants []tenantInterface, apiKey string) (*models.OperatorSubnetRegisterAPIKeyResponse, *models.Error) {
 	for _, tenant := range tenants {
-		if err := registerTenant(ctx, tenant, apiKey, k8sClient); err != nil {
+		if err := registerTenant(ctx, k8sClient, tenant.mAdminClient, tenant.tenant, apiKey); err != nil {
 			return nil, ErrorWithContext(ctx, err)
 		}
 	}
@@ -183,14 +202,8 @@ func SubnetRegisterWithAPIKey(ctx context.Context, minioClient MinioAdmin, apiKe
 	return true, nil
 }
 
-func registerTenant(ctx context.Context, tenant v2.Tenant, apiKey string, k8sClient K8sClientI) error {
-	svcURL := tenant.GetTenantServiceURL()
-	mAdmin, err := getTenantAdminClient(ctx, k8sClient, &tenant, svcURL)
-	if err != nil {
-		return err
-	}
-	adminClient := AdminClient{Client: mAdmin}
-	_, err = SubnetRegisterWithAPIKey(ctx, adminClient, apiKey)
+func registerTenant(ctx context.Context, k8sClient K8sClientI, adminClient MinioAdmin, tenant v2.Tenant, apiKey string) error {
+	_, err := SubnetRegisterWithAPIKey(ctx, adminClient, apiKey)
 	return err
 }
 

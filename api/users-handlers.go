@@ -60,12 +60,6 @@ func getSetTenantAdministratorsResponse(session *models.Principal, params operat
 	if err != nil {
 		return ErrorWithContext(ctx, err)
 	}
-	return setTenantAdministrators(ctx, minTenant, k8sClient, params)
-}
-
-func setTenantAdministrators(ctx context.Context, minTenant *miniov2.Tenant, k8sClient K8sClientI, params operator_api.SetTenantAdministratorsParams) *models.Error {
-	minTenant.EnsureDefaults()
-
 	svcURL := GetTenantServiceURL(minTenant)
 	// getTenantAdminClient will use all certificates under ~/.console/certs/CAs to trust the TLS connections with MinIO tenants
 	mAdmin, err := getTenantAdminClient(
@@ -77,9 +71,16 @@ func setTenantAdministrators(ctx context.Context, minTenant *miniov2.Tenant, k8s
 	if err != nil {
 		return ErrorWithContext(ctx, err)
 	}
+
 	// create a minioClient interface implementation
 	// defining the client to be used
 	adminClient := AdminClient{Client: mAdmin}
+	return setTenantAdministrators(ctx, minTenant, k8sClient, adminClient, params)
+}
+
+func setTenantAdministrators(ctx context.Context, minTenant *miniov2.Tenant, k8sClient K8sClientI, adminClient MinioAdmin, params operator_api.SetTenantAdministratorsParams) *models.Error {
+	minTenant.EnsureDefaults()
+
 	for _, user := range params.Body.UserDNS {
 		if err := SetPolicy(ctx, adminClient, "consoleAdmin", user, "user"); err != nil {
 			return ErrorWithContext(ctx, err)

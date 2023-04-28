@@ -617,14 +617,6 @@ func (suite *TenantTestSuite) TestSetTenantAdministratorsHandlerWithError() {
 	suite.assert.True(ok)
 }
 
-func (suite *TenantTestSuite) TestSetTenantAdministratorsWithAdminClientError() {
-	params, _ := suite.initSetTenantAdministratorsRequest()
-	tenant := &miniov2.Tenant{}
-	err := setTenantAdministrators(context.Background(), tenant, suite.k8sclient, params)
-	suite.assert.NotNil(err)
-}
-
-// TODO: Mock minio adminclient
 func (suite *TenantTestSuite) TestSetTenantAdministratorsWithUserPolicyError() {
 	params, _ := suite.initSetTenantAdministratorsRequest()
 	tenant := &miniov2.Tenant{
@@ -635,12 +627,14 @@ func (suite *TenantTestSuite) TestSetTenantAdministratorsWithUserPolicyError() {
 			},
 		},
 	}
+	minioSetPolicyMock = func(policyName, entityName string, isGroup bool) error {
+		return errors.New("error")
+	}
 	params.Body.UserDNS = []string{"mock-user"}
-	err := setTenantAdministrators(context.Background(), tenant, suite.k8sclient, params)
+	err := setTenantAdministrators(context.Background(), tenant, suite.k8sclient, suite.adminClient, params)
 	suite.assert.NotNil(err)
 }
 
-// TODO: Mock minio adminclient
 func (suite *TenantTestSuite) TestSetTenantAdministratorsWithGroupPolicyError() {
 	params, _ := suite.initSetTenantAdministratorsRequest()
 	tenant := &miniov2.Tenant{
@@ -651,12 +645,15 @@ func (suite *TenantTestSuite) TestSetTenantAdministratorsWithGroupPolicyError() 
 			},
 		},
 	}
+	minioSetPolicyMock = func(policyName, entityName string, isGroup bool) error {
+		return errors.New("error")
+	}
 	params.Body.GroupDNS = []string{"mock-user"}
-	err := setTenantAdministrators(context.Background(), tenant, suite.k8sclient, params)
+	err := setTenantAdministrators(context.Background(), tenant, suite.k8sclient, suite.adminClient, params)
 	suite.assert.NotNil(err)
 }
 
-func (suite *TenantTestSuite) TestSetTenantAdministratorsWithoutError() {
+func (suite *TenantTestSuite) TestSetTenantAdministratorsGroupAndUserDnsWithoutError() {
 	params, _ := suite.initSetTenantAdministratorsRequest()
 	tenant := &miniov2.Tenant{
 		Spec: miniov2.TenantSpec{
@@ -666,7 +663,26 @@ func (suite *TenantTestSuite) TestSetTenantAdministratorsWithoutError() {
 			},
 		},
 	}
-	err := setTenantAdministrators(context.Background(), tenant, suite.k8sclient, params)
+	minioSetPolicyMock = func(policyName, entityName string, isGroup bool) error {
+		return nil
+	}
+	params.Body.UserDNS = []string{"mock-user"}
+	params.Body.GroupDNS = []string{"mock-user"}
+	err := setTenantAdministrators(context.Background(), tenant, suite.k8sclient, suite.adminClient, params)
+	suite.assert.Nil(err)
+}
+
+func (suite *TenantTestSuite) TestSetTenantAdministratorsEmptyWithoutError() {
+	params, _ := suite.initSetTenantAdministratorsRequest()
+	tenant := &miniov2.Tenant{
+		Spec: miniov2.TenantSpec{
+			Env: []corev1.EnvVar{
+				{Name: "accesskey", Value: "mock-access"},
+				{Name: "secretkey", Value: "mock-secret"},
+			},
+		},
+	}
+	err := setTenantAdministrators(context.Background(), tenant, suite.k8sclient, suite.adminClient, params)
 	suite.assert.Nil(err)
 }
 
