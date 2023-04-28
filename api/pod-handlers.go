@@ -223,17 +223,17 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 }
 
 func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error) {
-	response := &models.DescribePodWrapper{
+	retval := &models.DescribePodWrapper{
 		Name:              pod.Name,
 		Namespace:         pod.Namespace,
 		PriorityClassName: pod.Spec.PriorityClassName,
 		NodeName:          pod.Spec.NodeName,
 	}
 	if pod.Spec.Priority != nil {
-		response.Priority = int64(*pod.Spec.Priority)
+		retval.Priority = int64(*pod.Spec.Priority)
 	}
 	if pod.Status.StartTime != nil {
-		response.StartTime = pod.Status.StartTime.Time.String()
+		retval.StartTime = pod.Status.StartTime.Time.String()
 	}
 	labelArray := make([]*models.Label, len(pod.Labels))
 	i := 0
@@ -241,26 +241,26 @@ func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error)
 		labelArray[i] = &models.Label{Key: key, Value: pod.Labels[key]}
 		i++
 	}
-	response.Labels = labelArray
+	retval.Labels = labelArray
 	annotationArray := make([]*models.Annotation, len(pod.Annotations))
 	i = 0
 	for key := range pod.Annotations {
 		annotationArray[i] = &models.Annotation{Key: key, Value: pod.Annotations[key]}
 		i++
 	}
-	response.Annotations = annotationArray
+	retval.Annotations = annotationArray
 	if pod.DeletionTimestamp != nil {
-		response.DeletionTimestamp = translateTimestampSince(*pod.DeletionTimestamp)
+		retval.DeletionTimestamp = translateTimestampSince(*pod.DeletionTimestamp)
 	}
 	if pod.DeletionGracePeriodSeconds != nil {
-		response.DeletionGracePeriodSeconds = *pod.DeletionGracePeriodSeconds
+		retval.DeletionGracePeriodSeconds = *pod.DeletionGracePeriodSeconds
 	}
-	response.Phase = string(pod.Status.Phase)
-	response.Reason = pod.Status.Reason
-	response.Message = pod.Status.Message
-	response.PodIP = pod.Status.PodIP
-	response.ControllerRef = metav1.GetControllerOf(pod).String()
-	response.Containers = make([]*models.Container, len(pod.Spec.Containers))
+	retval.Phase = string(pod.Status.Phase)
+	retval.Reason = pod.Status.Reason
+	retval.Message = pod.Status.Message
+	retval.PodIP = pod.Status.PodIP
+	retval.ControllerRef = metav1.GetControllerOf(pod).String()
+	retval.Containers = make([]*models.Container, len(pod.Spec.Containers))
 	statusMap := map[string]corev1.ContainerStatus{}
 	statusKeys := make([]string, len(pod.Status.ContainerStatuses))
 	for i, status := range pod.Status.ContainerStatuses {
@@ -270,7 +270,7 @@ func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error)
 	}
 	for i := range pod.Spec.Containers {
 		container := pod.Spec.Containers[i]
-		response.Containers[i] = &models.Container{
+		retval.Containers[i] = &models.Container{
 			Name:      container.Name,
 			Image:     container.Image,
 			Ports:     describeContainerPorts(container.Ports),
@@ -279,23 +279,23 @@ func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error)
 		}
 		if slices.Contains(statusKeys, container.Name) {
 			containerStatus := statusMap[container.Name]
-			response.Containers[i].ContainerID = containerStatus.ContainerID
-			response.Containers[i].ImageID = containerStatus.ImageID
-			response.Containers[i].Ready = containerStatus.Ready
-			response.Containers[i].RestartCount = int64(containerStatus.RestartCount)
-			response.Containers[i].State = describeContainerState(containerStatus.State)
-			response.Containers[i].LastState = describeContainerState(containerStatus.LastTerminationState)
+			retval.Containers[i].ContainerID = containerStatus.ContainerID
+			retval.Containers[i].ImageID = containerStatus.ImageID
+			retval.Containers[i].Ready = containerStatus.Ready
+			retval.Containers[i].RestartCount = int64(containerStatus.RestartCount)
+			retval.Containers[i].State = describeContainerState(containerStatus.State)
+			retval.Containers[i].LastState = describeContainerState(containerStatus.LastTerminationState)
 		}
-		response.Containers[i].EnvironmentVariables = make([]*models.EnvironmentVariable, len(container.Env))
+		retval.Containers[i].EnvironmentVariables = make([]*models.EnvironmentVariable, len(container.Env))
 		for j := range container.Env {
-			response.Containers[i].EnvironmentVariables[j] = &models.EnvironmentVariable{
+			retval.Containers[i].EnvironmentVariables[j] = &models.EnvironmentVariable{
 				Key:   container.Env[j].Name,
 				Value: container.Env[j].Value,
 			}
 		}
-		response.Containers[i].Mounts = make([]*models.Mount, len(container.VolumeMounts))
+		retval.Containers[i].Mounts = make([]*models.Mount, len(container.VolumeMounts))
 		for j := range container.VolumeMounts {
-			response.Containers[i].Mounts[j] = &models.Mount{
+			retval.Containers[i].Mounts[j] = &models.Mount{
 				Name:      container.VolumeMounts[j].Name,
 				MountPath: container.VolumeMounts[j].MountPath,
 				SubPath:   container.VolumeMounts[j].SubPath,
@@ -303,46 +303,46 @@ func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error)
 			}
 		}
 	}
-	response.Conditions = make([]*models.Condition, len(pod.Status.Conditions))
+	retval.Conditions = make([]*models.Condition, len(pod.Status.Conditions))
 	for i := range pod.Status.Conditions {
-		response.Conditions[i] = &models.Condition{
+		retval.Conditions[i] = &models.Condition{
 			Type:   string(pod.Status.Conditions[i].Type),
 			Status: string(pod.Status.Conditions[i].Status),
 		}
 	}
-	response.Volumes = make([]*models.Volume, len(pod.Spec.Volumes))
+	retval.Volumes = make([]*models.Volume, len(pod.Spec.Volumes))
 	for i := range pod.Spec.Volumes {
-		response.Volumes[i] = &models.Volume{
+		retval.Volumes[i] = &models.Volume{
 			Name: pod.Spec.Volumes[i].Name,
 		}
 		if pod.Spec.Volumes[i].PersistentVolumeClaim != nil {
-			response.Volumes[i].Pvc = &models.Pvc{
+			retval.Volumes[i].Pvc = &models.Pvc{
 				ReadOnly:  pod.Spec.Volumes[i].PersistentVolumeClaim.ReadOnly,
 				ClaimName: pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName,
 			}
 		} else if pod.Spec.Volumes[i].Projected != nil {
-			response.Volumes[i].Projected = &models.ProjectedVolume{}
-			response.Volumes[i].Projected.Sources = make([]*models.ProjectedVolumeSource, len(pod.Spec.Volumes[i].Projected.Sources))
+			retval.Volumes[i].Projected = &models.ProjectedVolume{}
+			retval.Volumes[i].Projected.Sources = make([]*models.ProjectedVolumeSource, len(pod.Spec.Volumes[i].Projected.Sources))
 			for j := range pod.Spec.Volumes[i].Projected.Sources {
-				response.Volumes[i].Projected.Sources[j] = &models.ProjectedVolumeSource{}
+				retval.Volumes[i].Projected.Sources[j] = &models.ProjectedVolumeSource{}
 				if pod.Spec.Volumes[i].Projected.Sources[j].Secret != nil {
-					response.Volumes[i].Projected.Sources[j].Secret = &models.Secret{
+					retval.Volumes[i].Projected.Sources[j].Secret = &models.Secret{
 						Name:     pod.Spec.Volumes[i].Projected.Sources[j].Secret.Name,
 						Optional: pod.Spec.Volumes[i].Projected.Sources[j].Secret.Optional != nil,
 					}
 				}
 				if pod.Spec.Volumes[i].Projected.Sources[j].DownwardAPI != nil {
-					response.Volumes[i].Projected.Sources[j].DownwardAPI = true
+					retval.Volumes[i].Projected.Sources[j].DownwardAPI = true
 				}
 				if pod.Spec.Volumes[i].Projected.Sources[j].ConfigMap != nil {
-					response.Volumes[i].Projected.Sources[j].ConfigMap = &models.ConfigMap{
+					retval.Volumes[i].Projected.Sources[j].ConfigMap = &models.ConfigMap{
 						Name:     pod.Spec.Volumes[i].Projected.Sources[j].ConfigMap.Name,
 						Optional: pod.Spec.Volumes[i].Projected.Sources[j].ConfigMap.Optional != nil,
 					}
 				}
 				if pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken != nil {
 					if pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken.ExpirationSeconds != nil {
-						response.Volumes[i].Projected.Sources[j].ServiceAccountToken = &models.ServiceAccountToken{
+						retval.Volumes[i].Projected.Sources[j].ServiceAccountToken = &models.ServiceAccountToken{
 							ExpirationSeconds: *pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken.ExpirationSeconds,
 						}
 					}
@@ -350,17 +350,17 @@ func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error)
 			}
 		}
 	}
-	response.QosClass = string(getPodQOS(pod))
+	retval.QosClass = string(getPodQOS(pod))
 	nodeSelectorArray := make([]*models.NodeSelector, len(pod.Spec.NodeSelector))
 	i = 0
 	for key := range pod.Spec.NodeSelector {
 		nodeSelectorArray[i] = &models.NodeSelector{Key: key, Value: pod.Spec.NodeSelector[key]}
 		i++
 	}
-	response.NodeSelector = nodeSelectorArray
-	response.Tolerations = make([]*models.Toleration, len(pod.Spec.Tolerations))
+	retval.NodeSelector = nodeSelectorArray
+	retval.Tolerations = make([]*models.Toleration, len(pod.Spec.Tolerations))
 	for i := range pod.Spec.Tolerations {
-		response.Tolerations[i] = &models.Toleration{
+		retval.Tolerations[i] = &models.Toleration{
 			Effect:            string(pod.Spec.Tolerations[i].Effect),
 			Key:               pod.Spec.Tolerations[i].Key,
 			Value:             pod.Spec.Tolerations[i].Value,
@@ -368,7 +368,7 @@ func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error)
 			TolerationSeconds: *pod.Spec.Tolerations[i].TolerationSeconds,
 		}
 	}
-	return response, nil
+	return retval, nil
 }
 
 func describeContainerState(status corev1.ContainerState) *models.State {
