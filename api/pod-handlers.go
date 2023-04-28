@@ -219,17 +219,21 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
-	retval := &models.DescribePodWrapper{
+	return getDescribePod(pod)
+}
+
+func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error) {
+	response := &models.DescribePodWrapper{
 		Name:              pod.Name,
 		Namespace:         pod.Namespace,
 		PriorityClassName: pod.Spec.PriorityClassName,
 		NodeName:          pod.Spec.NodeName,
 	}
 	if pod.Spec.Priority != nil {
-		retval.Priority = int64(*pod.Spec.Priority)
+		response.Priority = int64(*pod.Spec.Priority)
 	}
 	if pod.Status.StartTime != nil {
-		retval.StartTime = pod.Status.StartTime.Time.String()
+		response.StartTime = pod.Status.StartTime.Time.String()
 	}
 	labelArray := make([]*models.Label, len(pod.Labels))
 	i := 0
@@ -237,24 +241,26 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 		labelArray[i] = &models.Label{Key: key, Value: pod.Labels[key]}
 		i++
 	}
-	retval.Labels = labelArray
+	response.Labels = labelArray
 	annotationArray := make([]*models.Annotation, len(pod.Annotations))
 	i = 0
 	for key := range pod.Annotations {
 		annotationArray[i] = &models.Annotation{Key: key, Value: pod.Annotations[key]}
 		i++
 	}
-	retval.Annotations = annotationArray
+	response.Annotations = annotationArray
 	if pod.DeletionTimestamp != nil {
-		retval.DeletionTimestamp = translateTimestampSince(*pod.DeletionTimestamp)
-		retval.DeletionGracePeriodSeconds = *pod.DeletionGracePeriodSeconds
+		response.DeletionTimestamp = translateTimestampSince(*pod.DeletionTimestamp)
 	}
-	retval.Phase = string(pod.Status.Phase)
-	retval.Reason = pod.Status.Reason
-	retval.Message = pod.Status.Message
-	retval.PodIP = pod.Status.PodIP
-	retval.ControllerRef = metav1.GetControllerOf(pod).String()
-	retval.Containers = make([]*models.Container, len(pod.Spec.Containers))
+	if pod.DeletionGracePeriodSeconds != nil {
+		response.DeletionGracePeriodSeconds = *pod.DeletionGracePeriodSeconds
+	}
+	response.Phase = string(pod.Status.Phase)
+	response.Reason = pod.Status.Reason
+	response.Message = pod.Status.Message
+	response.PodIP = pod.Status.PodIP
+	response.ControllerRef = metav1.GetControllerOf(pod).String()
+	response.Containers = make([]*models.Container, len(pod.Spec.Containers))
 	statusMap := map[string]corev1.ContainerStatus{}
 	statusKeys := make([]string, len(pod.Status.ContainerStatuses))
 	for i, status := range pod.Status.ContainerStatuses {
@@ -263,91 +269,98 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 
 	}
 	for i := range pod.Spec.Containers {
-		retval.Containers[i] = &models.Container{
-			Name:      pod.Spec.Containers[i].Name,
-			Image:     pod.Spec.Containers[i].Image,
-			Ports:     describeContainerPorts(pod.Spec.Containers[i].Ports),
-			HostPorts: describeContainerHostPorts(pod.Spec.Containers[i].Ports),
-			Args:      pod.Spec.Containers[i].Args,
+		container := pod.Spec.Containers[i]
+		response.Containers[i] = &models.Container{
+			Name:      container.Name,
+			Image:     container.Image,
+			Ports:     describeContainerPorts(container.Ports),
+			HostPorts: describeContainerHostPorts(container.Ports),
+			Args:      container.Args,
 		}
-		if slices.Contains(statusKeys, pod.Spec.Containers[i].Name) {
-			retval.Containers[i].ContainerID = statusMap[pod.Spec.Containers[i].Name].ContainerID
-			retval.Containers[i].ImageID = statusMap[pod.Spec.Containers[i].Name].ImageID
-			retval.Containers[i].Ready = statusMap[pod.Spec.Containers[i].Name].Ready
-			retval.Containers[i].RestartCount = int64(statusMap[pod.Spec.Containers[i].Name].RestartCount)
-			retval.Containers[i].State, retval.Containers[i].LastState = describeStatus(statusMap[pod.Spec.Containers[i].Name])
+		if slices.Contains(statusKeys, container.Name) {
+			containerStatus := statusMap[container.Name]
+			response.Containers[i].ContainerID = containerStatus.ContainerID
+			response.Containers[i].ImageID = containerStatus.ImageID
+			response.Containers[i].Ready = containerStatus.Ready
+			response.Containers[i].RestartCount = int64(containerStatus.RestartCount)
+			response.Containers[i].State = describeContainerState(containerStatus.State)
+			response.Containers[i].LastState = describeContainerState(containerStatus.LastTerminationState)
 		}
-		retval.Containers[i].EnvironmentVariables = make([]*models.EnvironmentVariable, len(pod.Spec.Containers[i].Env))
-		for j := range pod.Spec.Containers[i].Env {
-			retval.Containers[i].EnvironmentVariables[j] = &models.EnvironmentVariable{
-				Key:   pod.Spec.Containers[i].Env[j].Name,
-				Value: pod.Spec.Containers[i].Env[j].Value,
+		response.Containers[i].EnvironmentVariables = make([]*models.EnvironmentVariable, len(container.Env))
+		for j := range container.Env {
+			response.Containers[i].EnvironmentVariables[j] = &models.EnvironmentVariable{
+				Key:   container.Env[j].Name,
+				Value: container.Env[j].Value,
 			}
 		}
-		retval.Containers[i].Mounts = make([]*models.Mount, len(pod.Spec.Containers[i].VolumeMounts))
-		for j := range pod.Spec.Containers[i].VolumeMounts {
-			retval.Containers[i].Mounts[j] = &models.Mount{
-				Name:      pod.Spec.Containers[i].VolumeMounts[j].Name,
-				MountPath: pod.Spec.Containers[i].VolumeMounts[j].MountPath,
-				SubPath:   pod.Spec.Containers[i].VolumeMounts[j].SubPath,
-				ReadOnly:  pod.Spec.Containers[i].VolumeMounts[j].ReadOnly,
+		response.Containers[i].Mounts = make([]*models.Mount, len(container.VolumeMounts))
+		for j := range container.VolumeMounts {
+			response.Containers[i].Mounts[j] = &models.Mount{
+				Name:      container.VolumeMounts[j].Name,
+				MountPath: container.VolumeMounts[j].MountPath,
+				SubPath:   container.VolumeMounts[j].SubPath,
+				ReadOnly:  container.VolumeMounts[j].ReadOnly,
 			}
 		}
 	}
-	retval.Conditions = make([]*models.Condition, len(pod.Status.Conditions))
+	response.Conditions = make([]*models.Condition, len(pod.Status.Conditions))
 	for i := range pod.Status.Conditions {
-		retval.Conditions[i] = &models.Condition{
+		response.Conditions[i] = &models.Condition{
 			Type:   string(pod.Status.Conditions[i].Type),
 			Status: string(pod.Status.Conditions[i].Status),
 		}
 	}
-	retval.Volumes = make([]*models.Volume, len(pod.Spec.Volumes))
+	response.Volumes = make([]*models.Volume, len(pod.Spec.Volumes))
 	for i := range pod.Spec.Volumes {
-		retval.Volumes[i] = &models.Volume{
+		response.Volumes[i] = &models.Volume{
 			Name: pod.Spec.Volumes[i].Name,
 		}
 		if pod.Spec.Volumes[i].PersistentVolumeClaim != nil {
-			retval.Volumes[i].Pvc = &models.Pvc{
+			response.Volumes[i].Pvc = &models.Pvc{
 				ReadOnly:  pod.Spec.Volumes[i].PersistentVolumeClaim.ReadOnly,
 				ClaimName: pod.Spec.Volumes[i].PersistentVolumeClaim.ClaimName,
 			}
 		} else if pod.Spec.Volumes[i].Projected != nil {
-			retval.Volumes[i].Projected = &models.ProjectedVolume{}
-			retval.Volumes[i].Projected.Sources = make([]*models.ProjectedVolumeSource, len(pod.Spec.Volumes[i].Projected.Sources))
+			response.Volumes[i].Projected = &models.ProjectedVolume{}
+			response.Volumes[i].Projected.Sources = make([]*models.ProjectedVolumeSource, len(pod.Spec.Volumes[i].Projected.Sources))
 			for j := range pod.Spec.Volumes[i].Projected.Sources {
-				retval.Volumes[i].Projected.Sources[j] = &models.ProjectedVolumeSource{}
+				response.Volumes[i].Projected.Sources[j] = &models.ProjectedVolumeSource{}
 				if pod.Spec.Volumes[i].Projected.Sources[j].Secret != nil {
-					retval.Volumes[i].Projected.Sources[j].Secret = &models.Secret{
+					response.Volumes[i].Projected.Sources[j].Secret = &models.Secret{
 						Name:     pod.Spec.Volumes[i].Projected.Sources[j].Secret.Name,
 						Optional: pod.Spec.Volumes[i].Projected.Sources[j].Secret.Optional != nil,
 					}
 				}
 				if pod.Spec.Volumes[i].Projected.Sources[j].DownwardAPI != nil {
-					retval.Volumes[i].Projected.Sources[j].DownwardAPI = true
+					response.Volumes[i].Projected.Sources[j].DownwardAPI = true
 				}
 				if pod.Spec.Volumes[i].Projected.Sources[j].ConfigMap != nil {
-					retval.Volumes[i].Projected.Sources[j].ConfigMap = &models.ConfigMap{
+					response.Volumes[i].Projected.Sources[j].ConfigMap = &models.ConfigMap{
 						Name:     pod.Spec.Volumes[i].Projected.Sources[j].ConfigMap.Name,
 						Optional: pod.Spec.Volumes[i].Projected.Sources[j].ConfigMap.Optional != nil,
 					}
 				}
 				if pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken != nil {
-					retval.Volumes[i].Projected.Sources[j].ServiceAccountToken = &models.ServiceAccountToken{ExpirationSeconds: *pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken.ExpirationSeconds}
+					if pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken.ExpirationSeconds != nil {
+						response.Volumes[i].Projected.Sources[j].ServiceAccountToken = &models.ServiceAccountToken{
+							ExpirationSeconds: *pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken.ExpirationSeconds,
+						}
+					}
 				}
 			}
 		}
 	}
-	retval.QosClass = string(getPodQOS(pod))
+	response.QosClass = string(getPodQOS(pod))
 	nodeSelectorArray := make([]*models.NodeSelector, len(pod.Spec.NodeSelector))
 	i = 0
 	for key := range pod.Spec.NodeSelector {
 		nodeSelectorArray[i] = &models.NodeSelector{Key: key, Value: pod.Spec.NodeSelector[key]}
 		i++
 	}
-	retval.NodeSelector = nodeSelectorArray
-	retval.Tolerations = make([]*models.Toleration, len(pod.Spec.Tolerations))
+	response.NodeSelector = nodeSelectorArray
+	response.Tolerations = make([]*models.Toleration, len(pod.Spec.Tolerations))
 	for i := range pod.Spec.Tolerations {
-		retval.Tolerations[i] = &models.Toleration{
+		response.Tolerations[i] = &models.Toleration{
 			Effect:            string(pod.Spec.Tolerations[i].Effect),
 			Key:               pod.Spec.Tolerations[i].Key,
 			Value:             pod.Spec.Tolerations[i].Value,
@@ -355,49 +368,31 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 			TolerationSeconds: *pod.Spec.Tolerations[i].TolerationSeconds,
 		}
 	}
-	return retval, nil
+	return response, nil
 }
 
-func describeStatus(status corev1.ContainerStatus) (*models.State, *models.State) {
+func describeContainerState(status corev1.ContainerState) *models.State {
 	retval := &models.State{}
-	last := &models.State{}
-	state := status.State
-	lastState := status.LastTerminationState
 	switch {
-	case state.Running != nil:
+	case status.Running != nil:
 		retval.State = "Running"
-		retval.Started = state.Running.StartedAt.Time.Format(time.RFC1123Z)
-	case state.Waiting != nil:
+		retval.Started = status.Running.StartedAt.Time.Format(time.RFC1123Z)
+	case status.Waiting != nil:
 		retval.State = "Waiting"
-		retval.Reason = state.Waiting.Reason
-	case state.Terminated != nil:
+		retval.Reason = status.Waiting.Reason
+		retval.Message = status.Waiting.Message
+	case status.Terminated != nil:
 		retval.State = "Terminated"
-		retval.Message = state.Terminated.Message
-		retval.ExitCode = int64(state.Terminated.ExitCode)
-		retval.Signal = int64(state.Terminated.Signal)
-		retval.Started = state.Terminated.StartedAt.Time.Format(time.RFC1123Z)
-		retval.Finished = state.Terminated.FinishedAt.Time.Format(time.RFC1123Z)
-		switch {
-		case lastState.Running != nil:
-			last.State = "Running"
-			last.Started = lastState.Running.StartedAt.Time.Format(time.RFC1123Z)
-		case lastState.Waiting != nil:
-			last.State = "Waiting"
-			last.Reason = lastState.Waiting.Reason
-		case lastState.Terminated != nil:
-			last.State = "Terminated"
-			last.Message = lastState.Terminated.Message
-			last.ExitCode = int64(lastState.Terminated.ExitCode)
-			last.Signal = int64(lastState.Terminated.Signal)
-			last.Started = lastState.Terminated.StartedAt.Time.Format(time.RFC1123Z)
-			last.Finished = lastState.Terminated.FinishedAt.Time.Format(time.RFC1123Z)
-		default:
-			last.State = "Waiting"
-		}
+		retval.Message = status.Terminated.Message
+		retval.Reason = status.Terminated.Reason
+		retval.ExitCode = int64(status.Terminated.ExitCode)
+		retval.Signal = int64(status.Terminated.Signal)
+		retval.Started = status.Terminated.StartedAt.Time.Format(time.RFC1123Z)
+		retval.Finished = status.Terminated.FinishedAt.Time.Format(time.RFC1123Z)
 	default:
 		retval.State = "Waiting"
 	}
-	return retval, last
+	return retval
 }
 
 func describeContainerPorts(cPorts []corev1.ContainerPort) []string {
@@ -416,6 +411,7 @@ func describeContainerHostPorts(cPorts []corev1.ContainerPort) []string {
 	return ports
 }
 
+// getPodQOS gets Pod's Quality of Service Class
 func getPodQOS(pod *corev1.Pod) corev1.PodQOSClass {
 	requests := corev1.ResourceList{}
 	limits := corev1.ResourceList{}
