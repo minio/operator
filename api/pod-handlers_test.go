@@ -126,7 +126,7 @@ func (suite *TenantTestSuite) initDescribePodRequest() (params operator_api.Desc
 }
 
 func (suite *TenantTestSuite) TestGetDescribePodBuildsResponseFromPodInfo() {
-	mockTime := time.Date(2023, 4, 25, 14, 30, 45, 100, time.Local)
+	mockTime := time.Date(2023, 4, 25, 14, 30, 45, 100, time.UTC)
 	mockContainerOne := corev1.Container{
 		Name:  "c1",
 		Image: "c1-image",
@@ -222,7 +222,8 @@ func (suite *TenantTestSuite) TestGetDescribePodBuildsResponseFromPodInfo() {
 			DeletionTimestamp:          &metav1.Time{Time: mockTime},
 			DeletionGracePeriodSeconds: swag.Int64(60),
 			OwnerReferences: []metav1.OwnerReference{
-				{APIVersion: "v1",
+				{
+					APIVersion: "v1",
 					Kind:       "ReferenceKind",
 					Name:       "ReferenceName",
 					Controller: swag.Bool(true),
@@ -394,7 +395,7 @@ func (suite *TenantTestSuite) TestGetDescribePodBuildsResponseFromPodInfo() {
 				Message:  "",
 				Reason:   "",
 				Signal:   int64(0),
-				Started:  "Tue, 25 Apr 2023 14:30:45 -0700",
+				Started:  "Tue, 25 Apr 2023 14:30:45 +0000",
 				State:    "Running",
 			},
 			LastState: &models.State{
@@ -447,16 +448,16 @@ func (suite *TenantTestSuite) TestGetDescribePodBuildsResponseFromPodInfo() {
 				Message:  "",
 				Reason:   "",
 				Signal:   int64(0),
-				Started:  "Tue, 25 Apr 2023 14:30:45 -0700",
+				Started:  "Tue, 25 Apr 2023 14:30:45 +0000",
 				State:    "Running",
 			},
 			LastState: &models.State{
 				ExitCode: int64(4),
-				Finished: "Tue, 25 Apr 2023 14:30:45 -0700",
+				Finished: "Tue, 25 Apr 2023 14:30:45 +0000",
 				Message:  "c2-some-message",
 				Reason:   "c2-some-reason",
 				Signal:   int64(1),
-				Started:  "Tue, 25 Apr 2023 14:30:45 -0700",
+				Started:  "Tue, 25 Apr 2023 14:30:45 +0000",
 				State:    "Terminated",
 			},
 			EnvironmentVariables: []*models.EnvironmentVariable{
