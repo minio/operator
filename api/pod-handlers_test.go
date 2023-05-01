@@ -367,10 +367,10 @@ func (suite *TenantTestSuite) TestGetDescribePodBuildsResponseFromPodInfo() {
 	suite.assert.Equal(mockPodInfo.Spec.NodeName, res.NodeName)
 	suite.assert.Equal(int64(10), res.Priority)
 	suite.assert.Equal(mockPodInfo.Status.StartTime.Time.String(), res.StartTime)
-	suite.assert.Contains(&models.Label{Key: "Key1", Value: "Val1"}, res.Labels)
-	suite.assert.Contains(&models.Label{Key: "Key2", Value: "Val2"}, res.Labels)
-	suite.assert.Contains(&models.Annotation{Key: "Annotation1", Value: "Annotation1Val1"}, res.Annotations)
-	suite.assert.Contains(&models.Annotation{Key: "Annotation2", Value: "Annotation1Val2"}, res.Annotations)
+	suite.assert.Contains(res.Labels, &models.Label{Key: "Key1", Value: "Val1"})
+	suite.assert.Contains(res.Labels, &models.Label{Key: "Key2", Value: "Val2"})
+	suite.assert.Contains(res.Annotations, &models.Annotation{Key: "Annotation1", Value: "Annotation1Val1"})
+	suite.assert.Contains(res.Annotations, &models.Annotation{Key: "Annotation2", Value: "Annotation1Val2"})
 	suite.assert.Equal(duration.HumanDuration(time.Since(mockTime)), res.DeletionTimestamp)
 	suite.assert.Equal(int64(60), res.DeletionGracePeriodSeconds)
 	suite.assert.Equal("phase", res.Phase)
@@ -527,14 +527,14 @@ func (suite *TenantTestSuite) TestGetDescribePodBuildsResponseFromPodInfo() {
 		},
 	}, res.Volumes)
 	suite.assert.Equal("BestEffort", res.QosClass)
-	suite.assert.Contains(&models.NodeSelector{
+	suite.assert.Contains(res.NodeSelector, &models.NodeSelector{
 		Key:   "p1-ns-key1",
 		Value: "p1-ns-val1",
-	}, res.NodeSelector)
-	suite.assert.Contains(&models.NodeSelector{
+	})
+	suite.assert.Contains(res.NodeSelector, &models.NodeSelector{
 		Key:   "p1-ns-key2",
 		Value: "p1-ns-val2",
-	}, res.NodeSelector)
+	})
 	suite.assert.Equal([]*models.Toleration{
 		{
 			Key:               "p1-t1-key",
