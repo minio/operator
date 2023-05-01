@@ -346,8 +346,11 @@ const PodDescribeContainers = ({ containers }: IPodDescribeContainersProps) => {
               label={"Arguments"}
               value={container.args.join(", ")}
             />
-            <LabelValuePair label={"Started"} value={container.state.started} />
-            <LabelValuePair label={"State"} value={container.state.state} />
+            <LabelValuePair
+              label={"Started"}
+              value={container.state?.started}
+            />
+            <LabelValuePair label={"State"} value={container.state?.state} />
           </Box>
           <Box
             style={{ wordBreak: "break-all" }}
