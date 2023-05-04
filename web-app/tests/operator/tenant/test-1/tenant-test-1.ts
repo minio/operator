@@ -27,7 +27,6 @@ import {
 
 fixture("For user with default permissions").page("http://localhost:9090");
 
-// Test 1
 test("Create Tenant and List Tenants", async (t) => {
   const tenantName = `tenant-${Math.floor(Math.random() * 10000)}`;
   await loginToOperator();
@@ -35,7 +34,6 @@ test("Create Tenant and List Tenants", async (t) => {
   await deleteTenant(tenantName);
 });
 
-// Test 3
 test("Test describe section for PODs in new tenant", async (t) => {
   const tenantName = "myminio";
   await loginToOperator();
@@ -46,6 +44,7 @@ const testPODDescribe = async (tenantName: string) => {
   await goToPodInTenant(tenantName);
   await goToPodSection(1);
   await checkPodDescribeHasSections();
+  await checkRendersPodDecribeTabContents();
 };
 
 const checkPodDescribeHasSections = async () => {
@@ -66,7 +65,26 @@ const checkPodDescribeHasSections = async () => {
     .ok();
 };
 
-// Test 4
+const checkRendersPodDecribeTabContents = async () => {
+  await checkRendersTabContentOnClick("#pod-describe-summary");
+  await checkRendersTabContentOnClick("#pod-describe-annotations");
+  await checkRendersTabContentOnClick("#pod-describe-labels");
+  await checkRendersTabContentOnClick("#pod-describe-conditions");
+  await checkRendersTabContentOnClick("#pod-describe-tolerations");
+  await checkRendersTabContentOnClick("#pod-describe-volumes");
+  await checkRendersTabContentOnClick("#pod-describe-containers");
+};
+
+const checkRendersTabContentOnClick = async (tabSection: string) => {
+  //  expects tab content id to be like `<tab-id>-content`
+  const contentId = tabSection + "-content";
+  await t
+    .click(tabSection)
+    .expect(Selector(contentId).exists)
+    .ok(contentId + " not found")
+    .wait(100);
+};
+
 test("Test describe section for PVCs in new tenant", async (t) => {
   const tenantName = `myminio`;
   await loginToOperator();
@@ -77,6 +95,13 @@ const testPvcDescribe = async (tenantName: string) => {
   await goToPvcInTenant(tenantName);
   await goToPvcSection(1);
   await checkPvcDescribeHasSections();
+  await checkRendersPvcDecribeTabContents();
+};
+
+const checkRendersPvcDecribeTabContents = async () => {
+  await checkRendersTabContentOnClick("#pvc-describe-summary");
+  await checkRendersTabContentOnClick("#pvc-describe-annotations");
+  await checkRendersTabContentOnClick("#pvc-describe-labels");
 };
 
 const checkPvcDescribeHasSections = async () => {
