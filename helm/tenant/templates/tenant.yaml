@@ -19,7 +19,7 @@ metadata:
     name: {{ dig "scheduler" "name" "" . }}
   {{- end }}
 spec:
-  image: {{ dig "image" "repository" "minio/minio" . }}:{{ dig "image" "tag" "RELEASE.2022-01-08T03-11-54Z" . }}
+  image: {{ dig "image" "repository" "minio/minio" . }}{{ ternary (printf ":%s" (dig "image" "tag" "RELEASE.2022-01-08T03-11-54Z" .)) (printf "@%s" .image.digest) (empty (dig "image" "digest" nil .)) }}
   imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" . }}
   {{- if dig "imagePullSecret" "name" "" . }}
   imagePullSecret:

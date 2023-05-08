@@ -45,7 +45,7 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag }}"
+          image: "{{ .Values.operator.image.repository }}{{ ternary (printf ":%s" .Values.operator.image.tag) (printf "@%s" .Values.operator.image.digest) (empty .Values.operator.image.digest) }}"
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
           args:
             - controller

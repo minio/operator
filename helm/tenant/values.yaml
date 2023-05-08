@@ -13,6 +13,8 @@ tenant:
   image:
     repository: quay.io/minio/minio
     tag: RELEASE.2023-05-27T05-56-19Z
+    # Setting the digest takes precedence over the tag
+    digest: ""  # e.g. sha256:123456789abcdef123456789abcdef123456789abcdef123456789abcdef
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported
