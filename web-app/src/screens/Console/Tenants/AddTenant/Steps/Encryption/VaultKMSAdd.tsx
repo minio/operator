@@ -167,6 +167,7 @@ const VaultKMSAdd = () => {
             cleanValidation("vault_endpoint");
           }}
           label="Endpoint"
+          tooltip="Endpoint is the Hashicorp Vault endpoint"
           value={vaultEndpoint}
           error={validationErrors["vault_endpoint"] || ""}
           required
@@ -181,6 +182,7 @@ const VaultKMSAdd = () => {
             cleanValidation("vault_engine");
           }}
           label="Engine"
+          tooltip="Engine is the Hashicorp Vault K/V engine path. If empty, defaults to 'kv'"
           value={vaultEngine}
         />
       </Grid>
@@ -192,6 +194,7 @@ const VaultKMSAdd = () => {
             updateField("vaultNamespace", e.target.value);
           }}
           label="Namespace"
+          tooltip="Namespace is an optional Hashicorp Vault namespace. An empty namespace means no particular namespace is used."
           value={vaultNamespace}
         />
       </Grid>
@@ -203,6 +206,7 @@ const VaultKMSAdd = () => {
             updateField("vaultPrefix", e.target.value);
           }}
           label="Prefix"
+          tooltip="Prefix is an optional prefix / directory within the K/V engine. If empty, keys will be stored at the K/V engine top level"
           value={vaultPrefix}
         />
       </Grid>
@@ -218,6 +222,7 @@ const VaultKMSAdd = () => {
                 updateField("vaultAppRoleEngine", e.target.value);
               }}
               label="Engine"
+              tooltip="AppRoleEngine is the AppRole authentication engine path. If empty, defaults to 'approle'"
               value={vaultAppRoleEngine}
             />
           </Grid>
@@ -230,6 +235,7 @@ const VaultKMSAdd = () => {
                 cleanValidation("vault_id");
               }}
               label="AppRole ID"
+              tooltip="AppRoleSecret is the AppRole access secret for authenticating to Hashicorp Vault via the AppRole method"
               value={vaultId}
               error={validationErrors["vault_id"] || ""}
               required
@@ -244,6 +250,7 @@ const VaultKMSAdd = () => {
                 cleanValidation("vault_secret");
               }}
               label="AppRole Secret"
+              tooltip="AppRoleSecret is the AppRole access secret for authenticating to Hashicorp Vault via the AppRole method"
               value={vaultSecret}
               error={validationErrors["vault_secret"] || ""}
               required

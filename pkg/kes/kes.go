@@ -22,11 +22,18 @@ import (
 	"errors"
 	"time"
 
-	"github.com/minio/kes"
+	"gopkg.in/yaml.v2"
+
+	"github.com/minio/kes-go"
 )
 
 // Identity of KES to use
 type Identity = kes.Identity
+
+// AdminIdentity of KES
+type AdminIdentity struct {
+	Identity Identity `yaml:"identity,omitempty" json:"identity,omitempty"`
+}
 
 // TLSProxyHeader headers for proxy
 type TLSProxyHeader struct {
@@ -197,8 +204,8 @@ type Keys struct {
 	Azure   *Azure   `yaml:"azure,omitempty" json:"azure,omitempty"`
 }
 
-// ServerConfig holds the kes server config
-type ServerConfig struct {
+// ServerConfigV1 holds the kes server config
+type ServerConfigV1 struct {
 	Addr     string            `yaml:"address,omitempty" json:"address,omitempty"`
 	Root     Identity          `yaml:"root,omitempty" json:"root,omitempty"`
 	TLS      TLS               `yaml:"tls,omitempty" json:"tls,omitempty"`
@@ -206,6 +213,38 @@ type ServerConfig struct {
 	Cache    Cache             `yaml:"cache,omitempty" json:"cache,omitempty"`
 	Log      Log               `yaml:"log,omitempty" json:"log,omitempty"`
 	Keys     Keys              `yaml:"keys,omitempty" json:"keys,omitempty"`
+}
+
+// PolicyV2 policy identities for KES Edge after release 2023-04-03T16-41-28Z
+type PolicyV2 struct {
+	Allow      []string   `yaml:"allow,omitempty" json:"paths,omitempty"`
+	Deny       []string   `yaml:"deny,omitempty" json:"deny,omitempty"`
+	Identities []Identity `yaml:"identities,omitempty" json:"identities,omitempty"`
+}
+
+// ExpiryV2 expiration Starting 2023-04-03T16-41-28Z
+type ExpiryV2 struct {
+	Any     time.Duration `yaml:"any,omitempty" json:"any,omitempty"`
+	Unused  time.Duration `yaml:"unused,omitempty" json:"unused,omitempty"`
+	Offline time.Duration `yaml:"offline,omitempty" json:"offline,omitempty"`
+}
+
+// CacheV2 expiry config Starting 2023-04-03T16-41-28Z
+type CacheV2 struct {
+	Expiry *ExpiryV2 `yaml:"expiry,omitempty" json:"expiry,omitempty"`
+}
+
+// ServerConfigV2 holds the kes server config
+// Starting 2023-04-03T16-41-28Z "keys" field changed to "keystore" for Edge
+// And Admin is required
+type ServerConfigV2 struct {
+	Admin    AdminIdentity       `yaml:"admin,omitempty" json:"admin,omitempty"`
+	Addr     string              `yaml:"address,omitempty" json:"address,omitempty"`
+	TLS      TLS                 `yaml:"tls,omitempty" json:"tls,omitempty"`
+	Policies map[string]PolicyV2 `yaml:"policy,omitempty" json:"policy,omitempty"`
+	Cache    CacheV2             `yaml:"cache,omitempty" json:"cache,omitempty"`
+	Log      Log                 `yaml:"log,omitempty" json:"log,omitempty"`
+	Keystore Keys                `yaml:"keystore,omitempty" json:"keystore,omitempty"`
 }
 
 // ParseCertificate parses a certificate
@@ -222,4 +261,14 @@ func ParseCertificate(cert []byte) (*x509.Certificate, error) {
 		}
 	}
 	return nil, errors.New("found no (non-CA) certificate in any PEM block")
+}
+
+// Marshal ServerConfigV1
+func (c ServerConfigV1) Marshal() ([]byte, error) {
+	return yaml.Marshal(c)
+}
+
+// Marshal ServerConfigV2
+func (c ServerConfigV2) Marshal() ([]byte, error) {
+	return yaml.Marshal(c)
 }

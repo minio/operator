@@ -249,6 +249,7 @@ func Test_createOrReplaceKesConfigurationSecrets(t *testing.T) {
 		encryptionCfg              *models.EncryptionConfiguration
 		kesConfigurationSecretName string
 		kesClientCertSecretName    string
+		kesImage                   string
 		tenantName                 string
 		mockDeleteSecret           func(ctx context.Context, namespace string, name string, opts metav1.DeleteOptions) error
 		mockCreateSecret           func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error)
@@ -272,6 +273,7 @@ func Test_createOrReplaceKesConfigurationSecrets(t *testing.T) {
 					},
 				},
 				ns:                         "default",
+				kesImage:                   "minio/kes:v0.22.3",
 				kesConfigurationSecretName: "test-secret",
 				kesClientCertSecretName:    "test-client-secret",
 				tenantName:                 "test",
@@ -295,6 +297,7 @@ func Test_createOrReplaceKesConfigurationSecrets(t *testing.T) {
 					},
 				},
 				ns:                         "default",
+				kesImage:                   "minio/kes:v0.22.3",
 				kesConfigurationSecretName: "test-secret",
 				kesClientCertSecretName:    "test-client-secret",
 				tenantName:                 "test",
@@ -336,6 +339,7 @@ func Test_createOrReplaceKesConfigurationSecrets(t *testing.T) {
 					},
 				},
 				ns:                         "default",
+				kesImage:                   "minio/kes:v0.22.3",
 				kesConfigurationSecretName: "test-secret",
 				kesClientCertSecretName:    "test-client-secret",
 				tenantName:                 "test",
@@ -359,7 +363,7 @@ func Test_createOrReplaceKesConfigurationSecrets(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			k8sClientDeleteSecretMock = tt.args.mockDeleteSecret
 			k8sClientCreateSecretMock = tt.args.mockCreateSecret
-			got, got1, err := createOrReplaceKesConfigurationSecrets(tt.args.ctx, tt.args.clientSet, tt.args.ns, tt.args.encryptionCfg, tt.args.kesConfigurationSecretName, tt.args.kesClientCertSecretName, tt.args.tenantName)
+			got, got1, err := createOrReplaceKesConfigurationSecrets(tt.args.ctx, tt.args.clientSet, tt.args.ns, tt.args.encryptionCfg, tt.args.kesConfigurationSecretName, tt.args.kesClientCertSecretName, tt.args.tenantName, tt.args.kesImage)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("createOrReplaceKesConfigurationSecrets() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -369,6 +373,96 @@ func Test_createOrReplaceKesConfigurationSecrets(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got1, tt.want1) {
 				t.Errorf("createOrReplaceKesConfigurationSecrets() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_GetConfigVersion(t *testing.T) {
+	type args struct {
+		kesImage string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantversion string
+		wantErr     bool
+	}{
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:v0.22.0",
+			},
+			wantversion: KesConfigVersion2,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:v0.21.0",
+			},
+			wantversion: KesConfigVersion1,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:2023-02-15T14-54-37Z",
+			},
+			wantversion: KesConfigVersion2,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:2023-04-03T16-41-28Z",
+			},
+			wantversion: KesConfigVersion2,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:2023-05-02T22-48-10Z",
+			},
+			wantversion: KesConfigVersion2,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:2023-05-02T22-48-10Z-arm64",
+			},
+			wantversion: KesConfigVersion2,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:edge",
+			},
+			wantversion: KesConfigVersion2,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:latest",
+			},
+			wantversion: KesConfigVersion2,
+			wantErr:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getKesConfigVersion(tt.args.kesImage)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getKesConfigVersion() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.wantversion) {
+				t.Errorf("getKesConfigVersion() got = %v, want %v", got, tt.wantversion)
 			}
 		})
 	}

@@ -142,6 +142,7 @@ const GemaltoKMSAdd = () => {
             cleanValidation("gemalto_endpoint");
           }}
           label="Endpoint"
+          tooltip="Endpoint is the endpoint to the KeySecure server"
           value={gemaltoEndpoint}
           error={validationErrors["gemalto_endpoint"] || ""}
           required
@@ -165,6 +166,7 @@ const GemaltoKMSAdd = () => {
                 cleanValidation("gemalto_token");
               }}
               label="Token"
+              tooltip="Token is the refresh authentication token to access the KeySecure server"
               value={gemaltoToken}
               error={validationErrors["gemalto_token"] || ""}
               required
@@ -179,6 +181,7 @@ const GemaltoKMSAdd = () => {
                 cleanValidation("gemalto_domain");
               }}
               label="Domain"
+              tooltip="Domain is the isolated namespace within the KeySecure server. If empty, defaults to the top-level / root domain"
               value={gemaltoDomain}
               error={validationErrors["gemalto_domain"] || ""}
               required
