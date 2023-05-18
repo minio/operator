@@ -108,7 +108,7 @@ func buildOperatorServer() (*api.Server, error) {
 	server := api.NewServer(operatorapi)
 
 	parser := flags.NewParser(server, flags.Default)
-	parser.ShortDescription = "MinIO Console Server"
+	parser.ShortDescription = "MinIO Operator Server"
 	parser.LongDescription = swaggerSpec.Spec().Info.Description
 
 	server.ConfigureFlags()
