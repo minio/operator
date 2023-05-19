@@ -22,7 +22,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/klauspost/compress/gzhttp"
 	"io"
 	"io/fs"
 	"net/http"
@@ -32,6 +31,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/klauspost/compress/gzhttp"
 
 	"github.com/minio/operator/pkg/logger"
 	"github.com/minio/operator/pkg/utils"
