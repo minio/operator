@@ -330,6 +330,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCertErrorV2()
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
 	suite.assert.Nil(res)
 	suite.assert.NotNil(err)
+	suite.assert.Equal(err, errors.New("certificate failed to decode"))
 }
 
 func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCertErrorV1() {
@@ -369,6 +370,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCertErrorV1()
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
 	suite.assert.Nil(res)
 	suite.assert.NotNil(err)
+	suite.assert.Equal(err, errors.New("certificate failed to decode"))
 }
 
 func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCACertErrorV2() {
@@ -407,6 +409,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCACertErrorV2
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
 	suite.assert.Nil(res)
 	suite.assert.NotNil(err)
+	suite.assert.Equal(err, errors.New("certificate failed to decode"))
 }
 
 func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCACertErrorV1() {
@@ -446,6 +449,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithKesClientCACertErrorV1
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
 	suite.assert.Nil(res)
 	suite.assert.NotNil(err)
+	suite.assert.Equal(err, errors.New("certificate failed to decode"))
 }
 
 func (suite *TenantTestSuite) TestTenantEncryptionInfoWithGemaltoErrorV2() {
@@ -484,6 +488,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithGemaltoErrorV2() {
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
 	suite.assert.Nil(res)
 	suite.assert.NotNil(err)
+	suite.assert.Equal(err, errors.New("certificate failed to decode"))
 }
 
 func (suite *TenantTestSuite) TestTenantEncryptionInfoWithGemaltoErrorV1() {
@@ -523,6 +528,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithGemaltoErrorV1() {
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
 	suite.assert.Nil(res)
 	suite.assert.NotNil(err)
+	suite.assert.Equal(err, errors.New("certificate failed to decode"))
 }
 
 func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv2() {
@@ -551,7 +557,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv2() {
 		return nil, errors.New("mock-get-error")
 	}
 	params, _ := suite.initTenantEncryptionInfoRequest()
-	expectedConfig, err := suite.getExpectedEncriptionConfiguration(rawConfig, true, context.Background(), suite.opClient, params.Tenant, params.Namespace, kesImage)
+	expectedConfig, err := suite.getExpectedEncriptionConfiguration(context.Background(), rawConfig, true, suite.opClient, params.Tenant, params.Namespace, kesImage)
 	suite.assert.Nil(err)
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
 	suite.assert.Equal(expectedConfig, res)
@@ -586,7 +592,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv1() {
 		return nil, errors.New("mock-get-error")
 	}
 	params, _ := suite.initTenantEncryptionInfoRequest()
-	expectedConfig, err := suite.getExpectedEncriptionConfiguration(rawConfig, false, context.Background(), suite.opClient, params.Tenant, params.Namespace, kesImage)
+	expectedConfig, err := suite.getExpectedEncriptionConfiguration(context.Background(), rawConfig, false, suite.opClient, params.Tenant, params.Namespace, kesImage)
 	suite.assert.Nil(err)
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
 	suite.assert.Equal(expectedConfig, res)
@@ -594,7 +600,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv1() {
 	suite.assert.Nil(err)
 }
 
-func (suite *TenantTestSuite) getExpectedEncriptionConfiguration(rawConfig []byte, noVault bool, ctx context.Context, operatorClient OperatorClientI, tenantName string, namespace string, kesImage string) (*models.EncryptionConfigurationResponse, error) {
+func (suite *TenantTestSuite) getExpectedEncriptionConfiguration(ctx context.Context, rawConfig []byte, noVault bool, operatorClient OperatorClientI, tenantName string, namespace string, kesImage string) (*models.EncryptionConfigurationResponse, error) {
 	tenant, err := operatorClient.TenantGet(ctx, namespace, tenantName, metav1.GetOptions{})
 	endpoint := "mock-endpoint"
 	mockid := "mock-id"
