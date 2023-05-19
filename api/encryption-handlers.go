@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -48,6 +49,9 @@ const (
 	mTLSClientCaPath  = "/tmp/kes/ca.crt"
 	// if encryption is enabled and encryption is configured to use Vault
 	defaultPing = 10 // default ping
+	// imageTagWithArchRegex is a regular expression to identify if a KES tag
+	// includes the arch as suffix, ie: 2023-05-02T22-48-10Z-arm64
+	kesImageTagWithArchRegexPattern = `(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)(-.*)`
 )
 
 const (
@@ -1138,10 +1142,13 @@ func getKesConfigVersion(image string) (string, error) {
 	}
 
 	releaseTagNoArch := imageTag
-	fields := strings.Split(imageTag, "-")
-	// here we will remove the arch suffix if present, ie: 2023-05-02T22-48-10Z-arm64
-	if len(fields) > 5 {
-		releaseTagNoArch = strings.TrimSuffix(releaseTagNoArch, fmt.Sprintf("-%s", fields[5]))
+
+	re := regexp.MustCompile(kesImageTagWithArchRegexPattern)
+	// if pattern matches, that means we have a tag with arch
+	if matched := re.Match([]byte(imageTag)); matched {
+		slicesOfTag := re.FindStringSubmatch(imageTag)
+		// here we will remove the arch suffix by assigning the first group in the regex
+		releaseTagNoArch = slicesOfTag[1]
 	}
 
 	// v0.22.0 is the initial image version for Kes config v2, any time format came after and is v2
