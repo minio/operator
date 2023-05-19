@@ -19,6 +19,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -525,6 +526,9 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithGemaltoErrorV1() {
 }
 
 func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv2() {
+	rawConfig := suite.getKesV2YamlMock(true)
+	kesImage := miniov2.GetTenantKesImage()
+
 	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
 		return &miniov2.Tenant{
 			Spec: miniov2.TenantSpec{
@@ -540,19 +544,25 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv2() {
 		if secretName == "mock-kes-config" {
 			return &corev1.Secret{
 				Data: map[string][]byte{
-					"server-config.yaml": suite.getKesV2YamlMock(false),
+					"server-config.yaml": rawConfig,
 				},
 			}, nil
 		}
 		return nil, errors.New("mock-get-error")
 	}
 	params, _ := suite.initTenantEncryptionInfoRequest()
+	expectedConfig, err := suite.getExpectedEncriptionConfiguration(rawConfig, true, context.Background(), suite.opClient, params.Tenant, params.Namespace, kesImage)
+	suite.assert.Nil(err)
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
+	suite.assert.Equal(expectedConfig, res)
 	suite.assert.NotNil(res)
 	suite.assert.Nil(err)
 }
 
 func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv1() {
+	rawConfig := suite.getKesV1YamlMock(false)
+	kesImage := "minio/kes:v0.21.1"
+
 	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
 		return &miniov2.Tenant{
 			Spec: miniov2.TenantSpec{
@@ -560,7 +570,7 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv1() {
 					Configuration: &corev1.LocalObjectReference{
 						Name: "mock-kes-config",
 					},
-					Image: "minio/kes:v0.21.1",
+					Image: kesImage,
 				},
 			},
 		}, nil
@@ -569,16 +579,70 @@ func (suite *TenantTestSuite) TestTenantEncryptionInfoWithoutErrorv1() {
 		if secretName == "mock-kes-config" {
 			return &corev1.Secret{
 				Data: map[string][]byte{
-					"server-config.yaml": suite.getKesV1YamlMock(false),
+					"server-config.yaml": rawConfig,
 				},
 			}, nil
 		}
 		return nil, errors.New("mock-get-error")
 	}
 	params, _ := suite.initTenantEncryptionInfoRequest()
+	expectedConfig, err := suite.getExpectedEncriptionConfiguration(rawConfig, false, context.Background(), suite.opClient, params.Tenant, params.Namespace, kesImage)
+	suite.assert.Nil(err)
 	res, err := tenantEncryptionInfo(context.Background(), suite.opClient, suite.k8sclient, params.Namespace, params)
+	suite.assert.Equal(expectedConfig, res)
 	suite.assert.NotNil(res)
 	suite.assert.Nil(err)
+}
+
+func (suite *TenantTestSuite) getExpectedEncriptionConfiguration(rawConfig []byte, noVault bool, ctx context.Context, operatorClient OperatorClientI, tenantName string, namespace string, kesImage string) (*models.EncryptionConfigurationResponse, error) {
+	tenant, err := operatorClient.TenantGet(ctx, namespace, tenantName, metav1.GetOptions{})
+	endpoint := "mock-endpoint"
+	mockid := "mock-id"
+	mocksecret := "mock-secret"
+	mockdomain := "mock-domain"
+	mocktoken := "mock-token"
+
+	if err != nil {
+		return nil, err
+	}
+	response := &models.EncryptionConfigurationResponse{
+		Raw:      string(rawConfig),
+		Image:    kesImage,
+		Replicas: fmt.Sprintf("%d", tenant.Spec.KES.Replicas),
+		Aws:      &models.AwsConfiguration{},
+		Gcp:      &models.GcpConfiguration{},
+		Azure:    &models.AzureConfiguration{},
+		Vault: &models.VaultConfigurationResponse{
+			Prefix:    "mock-prefix",
+			Namespace: "mock-namespace",
+			Engine:    "mock-engine-path",
+			Endpoint:  &endpoint,
+			Status: &models.VaultConfigurationResponseStatus{
+				Ping: 5,
+			},
+			Approle: &models.VaultConfigurationResponseApprole{
+				Engine: "mock-engine-path",
+				ID:     &mockid,
+				Retry:  5,
+				Secret: &mocksecret,
+			},
+		},
+		Gemalto: &models.GemaltoConfigurationResponse{
+			Keysecure: &models.GemaltoConfigurationResponseKeysecure{
+				Endpoint: &endpoint,
+				Credentials: &models.GemaltoConfigurationResponseKeysecureCredentials{
+					Domain: &mockdomain,
+					Retry:  5,
+					Token:  &mocktoken,
+				},
+			},
+		},
+	}
+	if noVault {
+		response.Vault = nil
+	}
+
+	return response, nil
 }
 
 func (suite *TenantTestSuite) getKesV1YamlMock(noVault bool) []byte {
