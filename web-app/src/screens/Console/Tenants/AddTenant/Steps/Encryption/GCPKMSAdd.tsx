@@ -82,6 +82,7 @@ const GCPKMSAdd = () => {
             updateField("gcpProjectID", e.target.value);
           }}
           label="Project ID"
+          tooltip="ProjectID is the GCP project ID."
           value={gcpProjectID}
         />
       </Grid>
@@ -93,6 +94,7 @@ const GCPKMSAdd = () => {
             updateField("gcpEndpoint", e.target.value);
           }}
           label="Endpoint"
+          tooltip="Endpoint is the GCP project ID. If empty defaults to: secretmanager.googleapis.com:443"
           value={gcpEndpoint}
         />
       </Grid>
@@ -107,6 +109,7 @@ const GCPKMSAdd = () => {
                 updateField("gcpClientEmail", e.target.value);
               }}
               label="Client Email"
+              tooltip="Is the Client email of the GCP service account used to access the SecretManager"
               value={gcpClientEmail}
             />
           </Grid>
@@ -118,6 +121,7 @@ const GCPKMSAdd = () => {
                 updateField("gcpClientID", e.target.value);
               }}
               label="Client ID"
+              tooltip="Is the Client ID of the GCP service account used to access the SecretManager"
               value={gcpClientID}
             />
           </Grid>
@@ -129,6 +133,7 @@ const GCPKMSAdd = () => {
                 updateField("gcpPrivateKeyID", e.target.value);
               }}
               label="Private Key ID"
+              tooltip="Is the private key ID of the GCP service account used to access the SecretManager"
               value={gcpPrivateKeyID}
             />
           </Grid>
@@ -140,6 +145,7 @@ const GCPKMSAdd = () => {
                 updateField("gcpPrivateKey", e.target.value);
               }}
               label="Private Key"
+              tooltip="Is the private key of the GCP service account used to access the SecretManager"
               value={gcpPrivateKey}
             />
           </Grid>

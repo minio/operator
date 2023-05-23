@@ -25,7 +25,6 @@ require (
 	github.com/miekg/dns v1.1.50
 	github.com/minio/cli v1.24.2
 	github.com/minio/highwayhash v1.0.2
-	github.com/minio/kes v0.22.3
 	github.com/minio/madmin-go/v2 v2.0.14
 	github.com/minio/mc v0.0.0-20230221142751-40e51ee9affb
 	github.com/minio/minio-go/v7 v7.0.49
@@ -56,6 +55,11 @@ require (
 	k8s.io/kubectl v0.25.4
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3
+)
+
+require (
+	github.com/minio/kes-go v0.1.0
+	golang.org/x/mod v0.10.0
 )
 
 require (
@@ -170,7 +174,6 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0 // indirect

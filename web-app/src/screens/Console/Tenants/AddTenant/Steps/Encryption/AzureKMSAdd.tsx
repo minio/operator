@@ -140,6 +140,7 @@ const AzureKMSAdd = () => {
             cleanValidation("azure_endpoint");
           }}
           label="Endpoint"
+          tooltip="Endpoint is the Azure KeyVault endpoint"
           value={azureEndpoint}
           error={validationErrors["azure_endpoint"] || ""}
         />
@@ -156,6 +157,7 @@ const AzureKMSAdd = () => {
                 cleanValidation("azure_tenant_id");
               }}
               label="Tenant ID"
+              tooltip="TenantID is the ID of the Azure KeyVault tenant"
               value={azureTenantID}
               error={validationErrors["azure_tenant_id"] || ""}
             />
@@ -169,6 +171,7 @@ const AzureKMSAdd = () => {
                 cleanValidation("azure_client_id");
               }}
               label="Client ID"
+              tooltip="ClientID is the ID of the client accessing Azure KeyVault"
               value={azureClientID}
               error={validationErrors["azure_client_id"] || ""}
             />
@@ -182,6 +185,7 @@ const AzureKMSAdd = () => {
                 cleanValidation("azure_client_secret");
               }}
               label="Client Secret"
+              tooltip="ClientSecret is the client secret accessing the Azure KeyVault"
               value={azureClientSecret}
               error={validationErrors["azure_client_secret"] || ""}
             />
