@@ -315,7 +315,7 @@ func replaceBaseInIndex(indexPageBytes []byte, basePath string) []byte {
 
 // handleSPA handles the serving of the React Single Page Application
 func handleSPA(w http.ResponseWriter, r *http.Request) {
-	basePath := "/"
+	basePath := getSubPath()
 	// For SPA mode we will replace root base with a sub path if configured unless we received cp=y and cpb=/NEW/BASE
 	if v := r.URL.Query().Get("cp"); v == "y" {
 		if base := r.URL.Query().Get("cpb"); base != "" {
@@ -363,7 +363,7 @@ func handleSPA(w http.ResponseWriter, r *http.Request) {
 // wrapHandlerSinglePageApplication handles a http.FileServer returning a 404 and overrides it with index.html
 func wrapHandlerSinglePageApplication(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
+		if match, _ := regexp.MatchString(fmt.Sprintf("^%s/?$", getSubPath()), r.URL.Path); match {
 			handleSPA(w, r)
 			return
 		}
@@ -381,8 +381,9 @@ func wrapHandlerSinglePageApplication(h http.Handler) http.HandlerFunc {
 func FileServerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Server", globalAppName) // do not add version information
+		basePath := getSubPath()
 		switch {
-		case strings.HasPrefix(r.URL.Path, "/api"):
+		case strings.HasPrefix(r.URL.Path, basePath+"/api"):
 			next.ServeHTTP(w, r)
 		default:
 			buildFs, err := fs.Sub(webApp.GetStaticAssets(), "build")
