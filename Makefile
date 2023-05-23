@@ -82,6 +82,8 @@ plugin: regen-crd
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
 		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml)
 
+plugin-binary: plugin
+	@(cd $(PLUGIN_HOME) && CGO_ENABLED=0 go build -trimpath --ldflags $(LDFLAGS) -o kubectl-minio .)
 
 generate-code:
 	@./k8s/update-codegen.sh

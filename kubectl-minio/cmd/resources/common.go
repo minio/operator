@@ -16,6 +16,7 @@
 package resources
 
 import (
+	"fmt"
 	"io"
 	"io/fs"
 	"log"
@@ -97,6 +98,11 @@ func Pool(opts *TenantOptions, volumes int32, q resource.Quantity) miniov2.Pool 
 		}
 	}
 	return p
+}
+
+// GeneratePoolName Pool Name Generator
+func GeneratePoolName(poolNumber int) string {
+	return fmt.Sprintf("pool-%d", poolNumber)
 }
 
 // GetSchemeDecoder returns a decoder for the scheme's that we use
