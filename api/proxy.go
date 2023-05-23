@@ -19,6 +19,7 @@ package api
 import (
 	"bytes"
 	"crypto/sha1"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -276,6 +277,9 @@ func handleWSRequest(responseWriter http.ResponseWriter, req *http.Request, prox
 		Proxy:            http.ProxyFromEnvironment,
 		HandshakeTimeout: 45 * time.Second,
 		Jar:              proxyCookieJar,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: true,
+		},
 	}
 
 	upgrader.CheckOrigin = func(r *http.Request) bool {

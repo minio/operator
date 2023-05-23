@@ -32,13 +32,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/klauspost/compress/gzhttp"
+
 	"github.com/minio/operator/pkg/logger"
 	"github.com/minio/operator/pkg/utils"
 	webApp "github.com/minio/operator/web-app"
 	"github.com/minio/pkg/env"
 	"github.com/minio/pkg/mimedb"
 
-	"github.com/klauspost/compress/gzhttp"
 	"github.com/unrolled/secure"
 
 	"github.com/minio/operator/pkg/auth"
@@ -150,10 +151,11 @@ func proxyMiddleware(next http.Handler) http.Handler {
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics.
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
-	// proxy requests
-	next := proxyMiddleware(handler)
+	gnext := gzhttp.GzipHandler(handler)
 	// if audit-log is enabled console will log all incoming request
-	next = AuditLogMiddleware(next)
+	next := AuditLogMiddleware(gnext)
+	// proxy requests
+	next = proxyMiddleware(next)
 	// serve static files
 	next = FileServerMiddleware(next)
 	// add information to request context
@@ -187,7 +189,7 @@ func setupGlobalMiddleware(handler http.Handler) http.Handler {
 	}
 	secureMiddleware := secure.New(secureOptions)
 	next = secureMiddleware.Handler(next)
-	return gzhttp.GzipHandler(next)
+	return next
 }
 
 // ContextMiddleware attachs request info to context
