@@ -25,7 +25,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/minio/operator/pkg/controller/dev/portforward"
 	"io"
 	"net"
 	"net/http"
@@ -35,6 +34,7 @@ import (
 
 	"github.com/minio/madmin-go/v2"
 	mc "github.com/minio/mc/cmd"
+	"github.com/minio/operator/pkg/controller/dev/portforward"
 	"github.com/tidwall/gjson"
 	"golang.org/x/crypto/ssh/terminal"
 )

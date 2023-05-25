@@ -18,10 +18,11 @@ package api
 
 import (
 	"crypto/tls"
-	"github.com/minio/operator/pkg/controller/dev/portforward"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/minio/operator/pkg/controller/dev/portforward"
 )
 
 // PrepareSTSClientTransport :

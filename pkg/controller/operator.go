@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"crypto/tls"
-	"github.com/minio/operator/pkg/controller/dev/portforward"
 	"net"
 	"net/http"
 	"time"
@@ -32,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/controller/dev/portforward"
 	xcerts "github.com/minio/pkg/certs"
 	"github.com/minio/pkg/env"
 	"k8s.io/klog/v2"
