@@ -39,7 +39,7 @@ func NewSvcKubectlPortForwarder(
 		*reqHost = v
 		return nil
 	}
-	cfg, err := clientcmd.BuildConfigFromFlags("", "/Users/guozhili/Library/Application Support/Lens/kubeconfigs/0bd256ad-69a5-4ef5-ab00-7e074498b607")
+	cfg, err := clientcmd.BuildConfigFromFlags("", "kubeconfig")
 	if err != nil {
 		return err
 	}
