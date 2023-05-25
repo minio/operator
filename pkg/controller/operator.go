@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"crypto/tls"
+	"github.com/minio/operator/pkg/controller/dev/portforward"
 	"net"
 	"net/http"
 	"time"
@@ -88,6 +89,7 @@ func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.T
 
 func (c *Controller) getTransport() *http.Transport {
 	if c.transport != nil {
+		c.transport.Proxy = portforward.Proxy
 		return c.transport
 	}
 	rootCAs := miniov2.MustGetSystemCertPool()
@@ -141,7 +143,7 @@ func (c *Controller) getTransport() *http.Transport {
 		KeepAlive: 15 * time.Second,
 	}
 	c.transport = &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
+		Proxy:                 portforward.Proxy,
 		DialContext:           dialer.DialContext,
 		MaxIdleConnsPerHost:   1024,
 		IdleConnTimeout:       15 * time.Second,

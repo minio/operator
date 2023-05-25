@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/minio/operator/pkg/controller/dev/portforward"
 	"io"
 	"net"
 	"net/http"
@@ -108,7 +109,7 @@ func PrepareClientTransport(insecure bool) *http.Transport {
 		KeepAlive: 15 * time.Second,
 	}
 	DefaultTransport := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
+		Proxy:                 portforward.Proxy,
 		DialContext:           dialer.DialContext,
 		MaxIdleConns:          1024,
 		MaxIdleConnsPerHost:   1024,

@@ -30,9 +30,13 @@ var controllerCmd = cli.Command{
 			Name:  "kubeconfig",
 			Usage: "Load configuration from `KUBECONFIG`",
 		},
+		cli.StringFlag{
+			Name:  "development",
+			Usage: "Development for controller",
+		},
 	},
 }
 
 func startController(ctx *cli.Context) {
-	controller.StartOperator(ctx.String("kubeconfig"))
+	controller.StartOperator(ctx.String("kubeconfig"), ctx.Bool("development"))
 }

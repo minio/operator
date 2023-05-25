@@ -66,7 +66,7 @@ func init() {
 }
 
 // StartOperator starts the MinIO Operator controller
-func StartOperator(kubeconfig string) {
+func StartOperator(kubeconfig string, development bool) {
 	klog.Info("Starting MinIO Operator")
 	// set up signals, so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
@@ -122,7 +122,7 @@ func StartOperator(kubeconfig string) {
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	podName := os.Getenv(HostnameEnv)
 	if podName == "" {
-		klog.Info("Could not determine $%s, defaulting to pod name: operator-pod", HostnameEnv)
+		klog.Infof("Could not determine $%s, defaulting to pod name: operator-pod", HostnameEnv)
 		podName = "operator-pod"
 	}
 
@@ -145,7 +145,7 @@ func StartOperator(kubeconfig string) {
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
 
-	if err = mainController.Start(2, stopCh); err != nil {
+	if err = mainController.Start(2, development, stopCh); err != nil {
 		klog.Fatalf("Error running mainController: %s", err.Error())
 	}
 

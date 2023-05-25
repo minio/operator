@@ -390,7 +390,11 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
+	// todo:reopen this
+	//if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
+	//	panic("failed to wait for caches to sync")
+	//}
+	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced); !ok {
 		panic("failed to wait for caches to sync")
 	}
 
@@ -452,7 +456,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
-func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
+func (c *Controller) Start(threadiness int, development bool, stopCh <-chan struct{}) error {
 	// use a Go context so we can tell the leaderelection code when we
 	// want to step down
 	ctx, cancel := context.WithCancel(context.Background())
@@ -502,6 +506,10 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	go func() {
+		if development {
+			leaderRun(ctx, c, threadiness, stopCh)
+			return
+		}
 		// start the leader election code loop
 		leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
 			Lock: lock,
