@@ -3,14 +3,17 @@ package portforward
 import (
 	"context"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
@@ -26,6 +29,8 @@ type DebugConfig struct {
 	// use for runtime
 	hostTarget      map[string]string
 	hostTargetMutex map[string]*sync.Mutex
+	clientSet       *kubernetes.Clientset
+	cfg             *rest.Config
 }
 
 var GlobalDebugConfig = DebugConfig{}
@@ -35,143 +40,206 @@ func InitGlobalDebugConfig(conf *DebugConfig) {
 	GlobalDebugConfig.Kubeconfig = conf.Kubeconfig   // only set here
 	GlobalDebugConfig.hostTarget = map[string]string{}
 	GlobalDebugConfig.hostTargetMutex = map[string]*sync.Mutex{}
+	if conf.Development {
+		cfg, err := clientcmd.BuildConfigFromFlags("", GlobalDebugConfig.Kubeconfig)
+		if err != nil {
+			panic(err)
+		}
+		GlobalDebugConfig.cfg = cfg
+		clientSet, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			panic(err)
+		}
+		GlobalDebugConfig.clientSet = clientSet
+	}
 }
 
 // PortForwarder creates a new PortForwarder using kubectl tooling
 func PortForwarder(
 	ctx context.Context,
-	reqHost *string,
+	httpReq *http.Request,
 ) error {
 	if !GlobalDebugConfig.Development || GlobalDebugConfig.Kubeconfig == "" {
 		return NoNeedDebugError
 	}
 	GlobalDebugConfig.rwLocker.RLock()
-	if v, ok := GlobalDebugConfig.hostTarget[*reqHost]; ok {
-		*reqHost = v
+	if v, ok := GlobalDebugConfig.hostTarget[httpReq.URL.Host]; ok {
+		httpReq.URL.Host = v
 		GlobalDebugConfig.rwLocker.RUnlock()
 		return nil
 	}
 	GlobalDebugConfig.rwLocker.RUnlock()
 
 	GlobalDebugConfig.rwLocker.Lock()
-	mu, ok := GlobalDebugConfig.hostTargetMutex[*reqHost]
+	mu, ok := GlobalDebugConfig.hostTargetMutex[httpReq.URL.Host]
 	if !ok {
 		mu = &sync.Mutex{}
-		GlobalDebugConfig.hostTargetMutex[*reqHost] = mu
+		GlobalDebugConfig.hostTargetMutex[httpReq.URL.Host] = mu
 	}
 	GlobalDebugConfig.rwLocker.Unlock()
 
 	mu.Lock()
 	defer mu.Unlock()
-	host, err := portForwarder(ctx, reqHost)
+	host, err := portForwarder(ctx, httpReq)
 	if err != nil {
 		return err
 	}
 
 	GlobalDebugConfig.rwLocker.Lock()
-	GlobalDebugConfig.hostTarget[*reqHost] = host
-	*reqHost = host
+	GlobalDebugConfig.hostTarget[httpReq.URL.Host] = host
+	httpReq.URL.Host = host
 	GlobalDebugConfig.rwLocker.Unlock()
 	return nil
 }
 
+var podIPv4Regex = regexp.MustCompile(`^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$`)
+
 func portForwarder(
 	ctx context.Context,
-	reqHost *string,
+	httpReq *http.Request,
 ) (string, error) {
-	hosts := strings.SplitN(*reqHost, ".", -1)
+	if podIPv4Regex.MatchString(httpReq.URL.Host) {
+		return "", fmt.Errorf("IPV4 %s,Don't need forward", httpReq.URL.Host)
+	}
+	hosts := strings.SplitN(httpReq.URL.Host, ".", -1)
+	// svcName.namespace => svcName.namespace.svc
+	if len(hosts) == 2 {
+		hosts = append(hosts, "svc")
+	}
 	if len(hosts) < 3 {
 		return "", fmt.Errorf("don't need forward")
 	}
 	switch hosts[2] {
 	case "svc":
-		// may be svc direct
+		// svcName.namespace.svc
 		hosts = hosts[0:3]
-		cfg, err := clientcmd.BuildConfigFromFlags("", GlobalDebugConfig.Kubeconfig)
-		if err != nil {
-			return "", err
-		}
-		clientSet, err := kubernetes.NewForConfig(cfg)
+		namespace := hosts[1]
+		svcName := hosts[0]
+
+		portInReqUrl, err := getPortInReqUrl(httpReq)
 		if err != nil {
 			return "", err
 		}
 
-		// find endpoint
-		endPoint, err := clientSet.CoreV1().Endpoints(hosts[1]).Get(ctx, hosts[0], metav1.GetOptions{})
+		portInService := int32(0)
+		svc, err := GlobalDebugConfig.clientSet.CoreV1().Services(namespace).Get(ctx, svcName, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		for _, p := range svc.Spec.Ports {
+			if p.Port == portInReqUrl {
+				portInService = int32(p.TargetPort.IntValue())
+				break
+			}
+		}
+		if portInService == 0 {
+			return "", fmt.Errorf("can't find any port in svc(%s)", svcName)
+		}
+		//find endpoint
+		endPoint, err := GlobalDebugConfig.clientSet.CoreV1().Endpoints(namespace).Get(ctx, svcName, metav1.GetOptions{})
 		if err != nil {
 			return "", err
 		}
 
-		var namespace, podName string
+		var podName string
 		var ports []string
 
 		// we test one
 		for _, s := range endPoint.Subsets {
 			for _, addr := range s.Addresses {
 				if addr.TargetRef.Kind == "Pod" {
-					namespace = addr.TargetRef.Namespace
-					podName = addr.TargetRef.Name
+					if podName == "" {
+						// we just use first
+						podName = addr.TargetRef.Name
+					}
 				}
 			}
 			for _, port := range s.Ports {
-				ports = append(ports, fmt.Sprintf("%d:%d", 30000+rand.Int31n(10000), port.Port))
+				if port.Port == portInService {
+					ports = append(ports, fmt.Sprintf("%d:%d", 30000+rand.Int31n(10000), port.Port))
+				}
 			}
 		}
-
-		if len(ports) == 0 {
-			return "", fmt.Errorf("no port to forword")
-		}
-
-		req := clientSet.RESTClient().Post().
-			Resource("pods").
-			Namespace(namespace).
-			Name(podName).
-			SubResource("portforward")
-
-		u := url.URL{
-			Scheme:   req.URL().Scheme,
-			Host:     req.URL().Host,
-			Path:     "/api/v1" + req.URL().Path,
-			RawQuery: "timeout=32s",
-		}
-
-		transport, upgrader, err := spdy.RoundTripperFor(cfg)
-		if err != nil {
-			return "", err
-		}
-		readyChan := make(chan struct{})
-		dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, &u)
-		f, err := portforward.New(dialer, ports, ctx.Done(), readyChan, os.Stdout, os.Stdout)
-		if err != nil {
-			close(readyChan)
-			return "", err
-		}
-		go func() {
-			err := f.ForwardPorts()
-			if err != nil {
-				fmt.Println(err.Error())
-			}
-		}()
-		<-readyChan
-		ps, err := f.GetPorts()
-		if err != nil {
-			return "", err
-		}
-		for _, p := range ps {
-			return fmt.Sprintf("localhost:%d", p.Local), nil
-		}
-	case "pod":
+		return portFardWithArgs(ctx, namespace, podName, ports, httpReq.URL.Host)
 	default:
-		// clusterIP
+		// headless
+		// podName.type.namespace:podPort
+		hosts = hosts[0:3]
+		namespace := hosts[2]
+		podName := hosts[0]
+
+		portInReqUrl, err := getPortInReqUrl(httpReq)
+		if err != nil {
+			return "", err
+		}
+
+		return portFardWithArgs(ctx, namespace, podName, []string{strconv.Itoa(int(portInReqUrl))}, httpReq.URL.Host)
 	}
 	return "", fmt.Errorf("empty ports")
 }
 
 func Proxy(req *http.Request) (*url.URL, error) {
-	err := PortForwarder(context.Background(), &req.URL.Host)
+	err := PortForwarder(context.Background(), req)
 	if err != nil {
 		return http.ProxyFromEnvironment(req)
 	}
 	req.Host = req.URL.Host
 	return req.URL, nil
+}
+func getPortInReqUrl(httpReq *http.Request) (int32, error) {
+	portInReqUrl := int32(80)
+	if strings.Contains(httpReq.URL.Host, ":") {
+		hostsIPAndPort := strings.SplitN(httpReq.URL.Host, ":", 2)
+		port, err := strconv.ParseInt(hostsIPAndPort[1], 10, 64)
+		if err == nil {
+			portInReqUrl = int32(port)
+		}
+		return 0, fmt.Errorf("%s parse port error %w", httpReq.URL.Host, err)
+	} else if httpReq.URL.Scheme == "https" {
+		portInReqUrl = 443
+	}
+	return portInReqUrl, nil
+}
+func portFardWithArgs(ctx context.Context, namespace string, podName string, ports []string, host string) (string, error) {
+	req := GlobalDebugConfig.clientSet.RESTClient().Post().
+		Resource("pods").
+		Namespace(namespace).
+		Name(podName).
+		SubResource("portforward")
+
+	u := url.URL{
+		Scheme:   req.URL().Scheme,
+		Host:     req.URL().Host,
+		Path:     "/api/v1" + req.URL().Path,
+		RawQuery: "timeout=32s",
+	}
+
+	transport, upgrader, err := spdy.RoundTripperFor(GlobalDebugConfig.cfg)
+	if err != nil {
+		return "", err
+	}
+	readyChan := make(chan struct{})
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, &u)
+	f, err := portforward.New(dialer, ports, ctx.Done(), readyChan, os.Stdout, os.Stdout)
+	if err != nil {
+		close(readyChan)
+		return "", err
+	}
+	go func() {
+		err := f.ForwardPorts()
+		if err != nil {
+			fmt.Printf("forwardPorts forward %s error: %s\n", host, err)
+		} else {
+			fmt.Printf("forwardPorts forward %s success\n", host)
+		}
+	}()
+	<-readyChan
+	ps, err := f.GetPorts()
+	if err != nil {
+		return "", err
+	}
+	for _, p := range ps {
+		return fmt.Sprintf("localhost:%d", p.Local), nil
+	}
+	return "", fmt.Errorf("forwardPorts forward %s with no ports", host)
 }
