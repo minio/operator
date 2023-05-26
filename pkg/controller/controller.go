@@ -122,7 +122,7 @@ func StartOperator(kubeconfig string) {
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	podName := os.Getenv(HostnameEnv)
 	if podName == "" {
-		klog.Info("Could not determine $%s, defaulting to pod name: operator-pod", HostnameEnv)
+		klog.Infof("Could not determine %s, defaulting to pod name: operator-pod", HostnameEnv)
 		podName = "operator-pod"
 	}
 
