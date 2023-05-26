@@ -3,7 +3,6 @@ package portforward
 import (
 	"context"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"math/rand"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"strings"
 	"sync"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
@@ -35,12 +35,14 @@ type DebugConfig struct {
 
 var GlobalDebugConfig = DebugConfig{}
 
-func InitGlobalDebugConfig(conf *DebugConfig) {
-	GlobalDebugConfig.Development = conf.Development // only set here
-	GlobalDebugConfig.Kubeconfig = conf.Kubeconfig   // only set here
+func init() {
+	Kubeconfig := os.Getenv("KUBECONFIG")
+	Development := os.Getenv("DEVELOPMENT") == "true"
+	GlobalDebugConfig.Development = Development // only set here
+	GlobalDebugConfig.Kubeconfig = Kubeconfig   // only set here
 	GlobalDebugConfig.hostTarget = map[string]string{}
 	GlobalDebugConfig.hostTargetMutex = map[string]*sync.Mutex{}
-	if conf.Development {
+	if Development {
 		cfg, err := clientcmd.BuildConfigFromFlags("", GlobalDebugConfig.Kubeconfig)
 		if err != nil {
 			panic(err)

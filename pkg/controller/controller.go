@@ -27,7 +27,6 @@ import (
 	"github.com/minio/operator/pkg"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
-	"github.com/minio/operator/pkg/controller/dev/portforward"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -63,14 +62,8 @@ func init() {
 }
 
 // StartOperator starts the MinIO Operator controller
-func StartOperator(kubeconfig string, development bool) {
+func StartOperator(kubeconfig string) {
 	klog.Info("Starting MinIO Operator")
-
-	// If use --development
-	portforward.InitGlobalDebugConfig(&portforward.DebugConfig{
-		Kubeconfig:  kubeconfig,
-		Development: development,
-	})
 
 	// set up signals, so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
@@ -149,7 +142,7 @@ func StartOperator(kubeconfig string, development bool) {
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
 
-	if err = mainController.Start(2, development, stopCh); err != nil {
+	if err = mainController.Start(2, stopCh); err != nil {
 		klog.Fatalf("Error running mainController: %s", err.Error())
 	}
 
