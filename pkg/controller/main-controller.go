@@ -390,11 +390,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	// todo:reopen this
-	//if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
-	//	panic("failed to wait for caches to sync")
-	//}
-	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
 		panic("failed to wait for caches to sync")
 	}
 
