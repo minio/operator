@@ -23,17 +23,16 @@ import (
 	"net/http"
 	"time"
 
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/controller/dev/portforward"
+	xcerts "github.com/minio/pkg/certs"
+	"github.com/minio/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"github.com/minio/operator/pkg/controller/dev/portforward"
-	xcerts "github.com/minio/pkg/certs"
-	"github.com/minio/pkg/env"
 	"k8s.io/klog/v2"
 	k8sscheme "k8s.io/kubectl/pkg/scheme"
 )

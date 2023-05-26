@@ -20,9 +20,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/minio/operator/pkg"
-
 	"github.com/minio/cli"
+	"github.com/minio/operator/pkg"
 	_ "github.com/minio/operator/pkg/controller/dev/portforward"
 	"github.com/minio/pkg/console"
 	"github.com/minio/pkg/trie"

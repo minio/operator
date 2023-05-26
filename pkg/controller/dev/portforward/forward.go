@@ -17,7 +17,6 @@ package portforward
 import (
 	"context"
 	"fmt"
-	"k8s.io/client-go/rest"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -29,6 +28,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
