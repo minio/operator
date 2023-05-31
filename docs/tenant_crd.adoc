@@ -4,8 +4,8 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-04-20T17-56-55Z]
-:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2023-04-18T19-36-09Z]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-05-27T05-56-19Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2023-05-02T22-48-10Z]
 
 
 [id="{anchor_prefix}-minio-min-io-v2"]
