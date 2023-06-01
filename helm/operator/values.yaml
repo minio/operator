@@ -12,8 +12,7 @@ operator:
   image:
     repository: quay.io/minio/operator
     tag: v5.0.5
-    # Setting the digest takes precedence over the tag
-    digest: ""  # e.g. sha256:123456789abcdef123456789abcdef123456789abcdef123456789abcdef
+    digest: ""
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]
@@ -52,8 +51,7 @@ console:
   image:
     repository: quay.io/minio/operator
     tag: v5.0.5
-    # Setting the digest takes precedence over the tag
-    digest: ""  # e.g. sha256:123456789abcdef123456789abcdef123456789abcdef123456789abcdef
+    digest: ""
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   initcontainers: [ ]

@@ -82,3 +82,12 @@ Selector labels Operator
 app.kubernetes.io/name: {{ include "minio-operator.name" . }}
 app.kubernetes.io/instance: {{ printf "%s-%s" .Release.Name "console" }}
 {{- end -}}
+
+{{/*
+Image with tag/digest
+*/}}
+{{- define "minio-operator.image" -}}
+{{- $tag := ternary "" (printf ":%s" (toString .tag)) (or (empty .tag) (eq "-" (toString .tag))) -}}
+{{- $digest := ternary "" (printf "@%s" .digest) (empty .digest) -}}
+{{- printf "%s%s%s" .repository $tag $digest -}}
+{{- end -}}

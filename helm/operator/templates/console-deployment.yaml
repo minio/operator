@@ -43,7 +43,7 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.console.image.repository }}{{ ternary (printf ":%s" .Values.console.image.tag) (printf "@%s" .Values.console.image.digest) (empty .Values.console.image.digest) }}"
+          image: {{ include "minio-operator.image" .Values.console.image | quote }}
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
           ports:
             - containerPort: 9090
