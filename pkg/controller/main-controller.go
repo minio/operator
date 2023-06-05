@@ -867,10 +867,10 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// For each pool check if there is a stateful set
-	var totalReplicas int32
+	var totalAvailableReplicas int32
 	var images []string
 
-	err = c.checkKESStatus(ctx, tenant, totalReplicas, cOpts, uOpts, nsName)
+	err = c.checkKESStatus(ctx, tenant, totalAvailableReplicas, cOpts, uOpts, nsName)
 	if err != nil {
 		klog.V(2).Infof("Error checking KES state %v", err)
 		return err
@@ -972,7 +972,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		// keep track of all replicas
-		totalReplicas += ss.Status.Replicas
+		totalAvailableReplicas += ss.Status.AvailableReplicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 	}
 
@@ -1053,7 +1053,7 @@ func (c *Controller) syncHandler(key string) error {
 			compareImage = image
 		}
 		if compareImage != image {
-			if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
+			if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalAvailableReplicas); err != nil {
 				return err
 			}
 			return fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
@@ -1081,7 +1081,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		// Images different with the newer state change, continue to verify
 		// if upgrade is possible
-		tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingMinIOVersion, totalReplicas)
+		tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingMinIOVersion, totalAvailableReplicas)
 		if err != nil {
 			return err
 		}
@@ -1105,7 +1105,7 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 
 			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", tenantName, err)
-			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalReplicas); terr != nil {
+			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
 				return terr
 			}
 
@@ -1121,7 +1121,7 @@ func (c *Controller) syncHandler(key string) error {
 			_ = c.removeArtifacts()
 
 			err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", tenantName, err)
-			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalReplicas); terr != nil {
+			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
 				return terr
 			}
 
@@ -1152,7 +1152,7 @@ func (c *Controller) syncHandler(key string) error {
 				tenantName,
 				us.CurrentVersion)
 			klog.Info(msg)
-			if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalReplicas); terr != nil {
+			if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalAvailableReplicas); terr != nil {
 				return err
 			}
 			return nil
@@ -1301,7 +1301,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
-	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalReplicas)
+	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalAvailableReplicas)
 	return err
 }
 

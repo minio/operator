@@ -181,7 +181,7 @@ func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *min
 	return nil
 }
 
-func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant, totalReplicas int32, cOpts metav1.CreateOptions, uOpts metav1.UpdateOptions, nsName types.NamespacedName) error {
+func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant, totalAvailableReplicas int32, cOpts metav1.CreateOptions, uOpts metav1.UpdateOptions, nsName types.NamespacedName) error {
 	if tenant.HasKESEnabled() {
 		if err := c.checkKESCertificatesStatus(ctx, tenant, nsName); err != nil {
 			return err
@@ -261,7 +261,7 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 			// if the KES StatefulSet doesn't match the spec
 			if !kesStatefulSetMatchesSpec {
 				ks := statefulsets.NewForKES(tenant, svc.Name)
-				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingKES, totalReplicas); err != nil {
+				if tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingKES, totalAvailableReplicas); err != nil {
 					return err
 				}
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ks, uOpts); err != nil {
