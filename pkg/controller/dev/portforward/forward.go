@@ -17,7 +17,6 @@ package portforward
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/env"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -33,6 +32,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
+	"k8s.io/utils/env"
 )
 
 // ErrorNoNeedDebug don't need debug
