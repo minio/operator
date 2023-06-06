@@ -70,8 +70,8 @@ func init() {
 	}
 }
 
-// PortForwarder creates a new PortForwarder using kubectl tooling
-func PortForwarder(
+// PortForward creates a new PortForwardr using kubectl tooling
+func PortForward(
 	ctx context.Context,
 	httpReq *http.Request,
 ) error {
@@ -96,7 +96,7 @@ func PortForwarder(
 
 	mu.Lock()
 	defer mu.Unlock()
-	host, err := portForwarder(ctx, httpReq)
+	host, err := portForward(ctx, httpReq)
 	if err != nil {
 		return err
 	}
@@ -110,12 +110,12 @@ func PortForwarder(
 
 var podIPv4Regex = regexp.MustCompile(`^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$`)
 
-func portForwarder(
+func portForward(
 	ctx context.Context,
 	httpReq *http.Request,
 ) (string, error) {
 	if podIPv4Regex.MatchString(httpReq.URL.Host) {
-		return "", fmt.Errorf("IPV4 %s,Don't need forward", httpReq.URL.Host)
+		return "", fmt.Errorf("IPV4 %s, Don't need forward", httpReq.URL.Host)
 	}
 	hosts := strings.SplitN(httpReq.URL.Host, ".", -1)
 	// svcName.namespace => svcName.namespace.svc
@@ -179,7 +179,7 @@ func portForwarder(
 		return portFardWithArgs(ctx, namespace, podName, ports, httpReq.URL.Host)
 	default:
 		// headless
-		// podName.type.namespace:podPort
+		// podName.svcName.namespace:podPort
 		hosts = hosts[0:3]
 		namespace := hosts[2]
 		podName := hosts[0]
@@ -195,7 +195,7 @@ func portForwarder(
 }
 
 func Proxy(req *http.Request) (*url.URL, error) {
-	err := PortForwarder(context.Background(), req)
+	err := PortForward(context.Background(), req)
 	if err != nil {
 		return http.ProxyFromEnvironment(req)
 	}
@@ -207,10 +207,11 @@ func getPortInReqUrl(httpReq *http.Request) (int32, error) {
 	if strings.Contains(httpReq.URL.Host, ":") {
 		hostsIPAndPort := strings.SplitN(httpReq.URL.Host, ":", 2)
 		port, err := strconv.ParseInt(hostsIPAndPort[1], 10, 64)
-		if err == nil {
+		if err != nil {
+			return 0, fmt.Errorf("%s parse port error %w", httpReq.URL.Host, err)
+		} else {
 			portInReqUrl = int32(port)
 		}
-		return 0, fmt.Errorf("%s parse port error %w", httpReq.URL.Host, err)
 	} else if httpReq.URL.Scheme == "https" {
 		portInReqUrl = 443
 	}
