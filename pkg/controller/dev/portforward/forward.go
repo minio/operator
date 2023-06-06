@@ -154,7 +154,7 @@ func portForward(
 		if portInService == 0 {
 			return "", fmt.Errorf("can't find any port in svc(%s)", svcName)
 		}
-		//find endpoint
+		// find endpoint
 		endPoint, err := GlobalDebugConfig.clientSet.CoreV1().Endpoints(namespace).Get(ctx, svcName, metav1.GetOptions{})
 		if err != nil {
 			return "", err
@@ -162,7 +162,6 @@ func portForward(
 
 		var podName string
 		var ports []string
-
 		// we test one
 		for _, s := range endPoint.Subsets {
 			for _, addr := range s.Addresses {
