@@ -24,7 +24,7 @@ export const MinIOPlan =
 type LogoVar = "simple" | "AGPL" | "standard" | "enterprise";
 
 export const getLogoVar = (): LogoVar => {
-  let logoVar: LogoVar = "AGPL";
+  let logoVar: LogoVar;
   switch (MinIOPlan) {
     case "enterprise":
       logoVar = "enterprise";
