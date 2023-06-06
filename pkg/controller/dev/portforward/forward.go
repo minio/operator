@@ -34,6 +34,7 @@ import (
 	"k8s.io/client-go/transport/spdy"
 )
 
+// ErrorNoNeedDebug don't need debug
 var ErrorNoNeedDebug = fmt.Errorf("ErrorNoNeedDebug")
 
 // DebugConfig define debug config
@@ -134,7 +135,7 @@ func portForward(
 		namespace := hosts[1]
 		svcName := hosts[0]
 
-		portInReqUrl, err := getPortInReqURL(httpReq)
+		portInReqURL, err := getPortInReqURL(httpReq)
 		if err != nil {
 			return "", err
 		}
@@ -145,7 +146,7 @@ func portForward(
 			return "", err
 		}
 		for _, p := range svc.Spec.Ports {
-			if p.Port == portInReqUrl {
+			if p.Port == portInReqURL {
 				portInService = int32(p.TargetPort.IntValue())
 				break
 			}
@@ -186,12 +187,12 @@ func portForward(
 		namespace := hosts[2]
 		podName := hosts[0]
 
-		portInReqUrl, err := getPortInReqURL(httpReq)
+		portInReqURL, err := getPortInReqURL(httpReq)
 		if err != nil {
 			return "", err
 		}
 
-		return portFardWithArgs(ctx, namespace, podName, []string{strconv.Itoa(int(portInReqUrl))}, httpReq.URL.Host)
+		return portFardWithArgs(ctx, namespace, podName, []string{strconv.Itoa(int(portInReqURL))}, httpReq.URL.Host)
 	}
 }
 
@@ -205,18 +206,18 @@ func Proxy(req *http.Request) (*url.URL, error) {
 	return req.URL, nil
 }
 func getPortInReqURL(httpReq *http.Request) (int32, error) {
-	portInReqUrl := int32(80)
+	portInReqURL := int32(80)
 	if strings.Contains(httpReq.URL.Host, ":") {
 		hostsIPAndPort := strings.SplitN(httpReq.URL.Host, ":", 2)
 		port, err := strconv.ParseInt(hostsIPAndPort[1], 10, 64)
 		if err != nil {
 			return 0, fmt.Errorf("%s parse port error %w", httpReq.URL.Host, err)
 		}
-		portInReqUrl = int32(port)
+		portInReqURL = int32(port)
 	} else if httpReq.URL.Scheme == "https" {
-		portInReqUrl = 443
+		portInReqURL = 443
 	}
-	return portInReqUrl, nil
+	return portInReqURL, nil
 }
 func portFardWithArgs(ctx context.Context, namespace string, podName string, ports []string, host string) (string, error) {
 	req := GlobalDebugConfig.clientSet.RESTClient().Post().
