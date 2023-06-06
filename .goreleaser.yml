@@ -15,7 +15,7 @@ before:
   hooks:
     - make clean
     - make swagger-gen
-    - go mod tidy -compat=1.20
+    - go mod tidy -compat=1.19
     - go mod download
 
 builds:

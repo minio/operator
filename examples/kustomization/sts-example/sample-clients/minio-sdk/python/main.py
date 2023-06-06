@@ -14,20 +14,24 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import os
+import ssl
+import sys
+from urllib.parse import urlparse
 
+import certifi
+import urllib3
 from minio import Minio
 from minio.credentials import IamAwsProvider
-from urllib.parse import urlparse
-import urllib3
-import os
-import sys
+
 # import logging
 
 sts_endpoint = os.getenv("STS_ENDPOINT")
 tenant_endpoint = os.getenv("MINIO_ENDPOINT")
 tenant_namespace = os.getenv("TENANT_NAMESPACE")
 token_path = os.getenv("AWS_WEB_IDENTITY_TOKEN_FILE")
-bucketName = os.getenv("BUCKET")
+tenant_region = os.getenv("MINIO_REGION")
+bucket_name = os.getenv("BUCKET")
 kubernetes_ca_file = os.getenv("KUBERNETES_CA_PATH")
 
 # logging.basicConfig(format='%(message)s', level=logging.DEBUG)
@@ -37,22 +41,29 @@ kubernetes_ca_file = os.getenv("KUBERNETES_CA_PATH")
 with open(token_path, "r") as f:
     sa_jwt = f.read()
 
-if sa_jwt == "" or sa_jwt == None:
+if sa_jwt == "" or sa_jwt is None:
     print("Token is empty")
     sys.exit(1)
 
-https_transport = urllib3.PoolManager(
-    cert_reqs='REQUIRED',
-    ca_certs=kubernetes_ca_file,
-    retries=urllib3.Retry(
-                total=5,
-                backoff_factor=0.2,
-                status_forcelist=[500, 502, 503, 504],
-            )
-    )
+# Load Kubernetes custom CA
+ca_file = certifi.where()
+try:
+    with open(kubernetes_ca_file, 'rb') as infile:
+        custom_ca = infile.read()
 
-stsUrl = urlparse(f"{sts_endpoint}/{tenant_namespace}")
-provider = IamAwsProvider(stsUrl.geturl(), http_client=https_transport)
+    # Append kubernetes custom CA
+    with open(ca_file, 'ab') as outfile:
+        outfile.write(custom_ca)
+except Exception as e:
+    print(e)
+
+# Create a custom SSL context
+custom_ssl_context = ssl.create_default_context(cafile=ca_file)
+
+https_transport = urllib3.PoolManager(ssl_context=custom_ssl_context)
+
+sts_url = urlparse(f"{sts_endpoint}/{tenant_namespace}")
+provider = IamAwsProvider(sts_url.geturl(), http_client=https_transport)
 
 credentials = provider.retrieve()
 
@@ -60,15 +71,16 @@ print(f"Access key: {credentials.access_key}")
 print(f"Secret key: {credentials.secret_key}")
 print(f"Session Token key: {credentials.session_token}")
 
-tenantUrl = urlparse(tenant_endpoint)
-isHttps = (tenantUrl.scheme == "https")
+tenant_url = urlparse(tenant_endpoint)
+is_https = (tenant_url.scheme == "https")
 
 client = Minio(
-    f"{tenantUrl.hostname}:{tenantUrl.port}/{tenantUrl.path}",
+    f"{tenant_url.hostname}:{tenant_url.port}/{tenant_url.path}",
     credentials=provider,
-    secure=isHttps,
-    http_client=https_transport
-    )
+    secure=is_https,
+    http_client=https_transport,
+    region=tenant_region
+)
 
 # list buckets
 print("Listing Buckets:")
@@ -77,7 +89,7 @@ for bucket in buckets:
     print(bucket.name, bucket.creation_date)
 
 # list objects in a bucket
-print(f"Listing Objects in bucket {bucketName}:")
-objects = client.list_objects(bucketName, recursive=True)
+print(f"Listing Objects in bucket {bucket_name}:")
+objects = client.list_objects(bucket_name, recursive=True)
 for obj in objects:
     print(obj)
