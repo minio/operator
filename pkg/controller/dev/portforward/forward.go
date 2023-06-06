@@ -204,6 +204,7 @@ func Proxy(req *http.Request) (*url.URL, error) {
 	req.Host = req.URL.Host
 	return req.URL, nil
 }
+
 func getPortInReqURL(httpReq *http.Request) (int32, error) {
 	portInReqURL := int32(80)
 	if strings.Contains(httpReq.URL.Host, ":") {
@@ -218,6 +219,7 @@ func getPortInReqURL(httpReq *http.Request) (int32, error) {
 	}
 	return portInReqURL, nil
 }
+
 func portFardWithArgs(ctx context.Context, namespace string, podName string, ports []string, host string) (string, error) {
 	req := GlobalDebugConfig.clientSet.RESTClient().Post().
 		Resource("pods").
