@@ -17,6 +17,7 @@ package portforward
 import (
 	"context"
 	"fmt"
+	"k8s.io/utils/env"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -53,8 +54,8 @@ type DebugConfig struct {
 var GlobalDebugConfig = DebugConfig{}
 
 func init() {
-	Kubeconfig := os.Getenv("KUBECONFIG")
-	Development := os.Getenv("DEVELOPMENT") == "true"
+	Kubeconfig := env.GetString("KUBECONFIG", "")
+	Development := env.GetString("DEVELOPMENT", "false") == "true"
 	GlobalDebugConfig.Development = Development // only set here
 	GlobalDebugConfig.Kubeconfig = Kubeconfig   // only set here
 	GlobalDebugConfig.hostTarget = map[string]string{}
@@ -73,7 +74,7 @@ func init() {
 	}
 }
 
-// PortForward creates a new PortForwardr using kubectl tooling
+// PortForward creates a new PortForwarder using kubectl tooling
 func PortForward(
 	ctx context.Context,
 	httpReq *http.Request,
@@ -178,7 +179,7 @@ func portForward(
 				}
 			}
 		}
-		return portFardWithArgs(ctx, namespace, podName, ports, httpReq.URL.Host)
+		return portForwardWithArgs(ctx, namespace, podName, ports, httpReq.URL.Host)
 	default:
 		// headless
 		// podName.svcName.namespace:podPort
@@ -191,7 +192,7 @@ func portForward(
 			return "", err
 		}
 
-		return portFardWithArgs(ctx, namespace, podName, []string{strconv.Itoa(int(portInReqURL))}, httpReq.URL.Host)
+		return portForwardWithArgs(ctx, namespace, podName, []string{strconv.Itoa(int(portInReqURL))}, httpReq.URL.Host)
 	}
 }
 
@@ -220,7 +221,7 @@ func getPortInReqURL(httpReq *http.Request) (int32, error) {
 	return portInReqURL, nil
 }
 
-func portFardWithArgs(ctx context.Context, namespace string, podName string, ports []string, host string) (string, error) {
+func portForwardWithArgs(ctx context.Context, namespace string, podName string, ports []string, host string) (string, error) {
 	req := GlobalDebugConfig.clientSet.RESTClient().Post().
 		Resource("pods").
 		Namespace(namespace).
