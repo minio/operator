@@ -34,8 +34,9 @@ import (
 	"k8s.io/client-go/transport/spdy"
 )
 
-var NoNeedDebugError = fmt.Errorf("NoNeedDebugError")
+var ErrorNoNeedDebug = fmt.Errorf("ErrorNoNeedDebug")
 
+// DebugConfig define debug config
 type DebugConfig struct {
 	rwLocker    sync.RWMutex
 	Kubeconfig  string
@@ -47,6 +48,7 @@ type DebugConfig struct {
 	cfg             *rest.Config
 }
 
+// GlobalDebugConfig is for global debuginfo , set it once.
 var GlobalDebugConfig = DebugConfig{}
 
 func init() {
@@ -76,7 +78,7 @@ func PortForward(
 	httpReq *http.Request,
 ) error {
 	if !GlobalDebugConfig.Development || GlobalDebugConfig.Kubeconfig == "" {
-		return NoNeedDebugError
+		return ErrorNoNeedDebug
 	}
 	GlobalDebugConfig.rwLocker.RLock()
 	if v, ok := GlobalDebugConfig.hostTarget[httpReq.URL.Host]; ok {
@@ -132,7 +134,7 @@ func portForward(
 		namespace := hosts[1]
 		svcName := hosts[0]
 
-		portInReqUrl, err := getPortInReqUrl(httpReq)
+		portInReqUrl, err := getPortInReqURL(httpReq)
 		if err != nil {
 			return "", err
 		}
@@ -184,16 +186,16 @@ func portForward(
 		namespace := hosts[2]
 		podName := hosts[0]
 
-		portInReqUrl, err := getPortInReqUrl(httpReq)
+		portInReqUrl, err := getPortInReqURL(httpReq)
 		if err != nil {
 			return "", err
 		}
 
 		return portFardWithArgs(ctx, namespace, podName, []string{strconv.Itoa(int(portInReqUrl))}, httpReq.URL.Host)
 	}
-	return "", fmt.Errorf("empty ports")
 }
 
+// Proxy proxy req.Host if need
 func Proxy(req *http.Request) (*url.URL, error) {
 	err := PortForward(context.Background(), req)
 	if err != nil {
@@ -202,16 +204,15 @@ func Proxy(req *http.Request) (*url.URL, error) {
 	req.Host = req.URL.Host
 	return req.URL, nil
 }
-func getPortInReqUrl(httpReq *http.Request) (int32, error) {
+func getPortInReqURL(httpReq *http.Request) (int32, error) {
 	portInReqUrl := int32(80)
 	if strings.Contains(httpReq.URL.Host, ":") {
 		hostsIPAndPort := strings.SplitN(httpReq.URL.Host, ":", 2)
 		port, err := strconv.ParseInt(hostsIPAndPort[1], 10, 64)
 		if err != nil {
 			return 0, fmt.Errorf("%s parse port error %w", httpReq.URL.Host, err)
-		} else {
-			portInReqUrl = int32(port)
 		}
+		portInReqUrl = int32(port)
 	} else if httpReq.URL.Scheme == "https" {
 		portInReqUrl = 443
 	}
