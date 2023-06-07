@@ -14,10 +14,10 @@ metadata:
     prometheus.io/scrape: "true"
     prometheus.io/scheme: {{ dig "metrics" "protocol" "http" . | quote }}
   {{- end }}
-  {{- if dig "scheduler" "name" "" . }}
-  scheduler:
-    name: {{ dig "scheduler" "name" "" . }}
-  {{- end }}
+{{- if dig "scheduler" "name" "" . }}
+scheduler:
+  name: {{ dig "scheduler" "name" "" . }}
+{{- end }}
 spec:
   image: {{ dig "image" "repository" "minio/minio" . }}:{{ dig "image" "tag" "RELEASE.2022-01-08T03-11-54Z" . }}
   imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" . }}
