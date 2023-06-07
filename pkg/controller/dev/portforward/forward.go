@@ -44,10 +44,24 @@ type DebugConfig struct {
 	Kubeconfig  string
 	Development bool
 	// use for runtime
-	hostTarget      map[string]string
-	hostTargetMutex map[string]*sync.Mutex
-	clientSet       *kubernetes.Clientset
-	cfg             *rest.Config
+	hostTarget     map[string]string
+	hostTargetOnce map[string]*sync.Once
+	clientSet      *kubernetes.Clientset
+	cfg            *rest.Config
+}
+
+// GetCache use proxy instead
+func GetCache(addr string) string {
+	if !GlobalDebugConfig.Development || GlobalDebugConfig.Kubeconfig == "" {
+		return addr
+	}
+	addr = strings.SplitN(addr, ":", -1)[0]
+	GlobalDebugConfig.rwLocker.RLock()
+	defer GlobalDebugConfig.rwLocker.RUnlock()
+	if v, ok := GlobalDebugConfig.hostTarget[addr]; ok {
+		return v
+	}
+	return addr
 }
 
 // GlobalDebugConfig is for global debuginfo , set it once.
@@ -59,7 +73,7 @@ func init() {
 	GlobalDebugConfig.Development = Development // only set here
 	GlobalDebugConfig.Kubeconfig = Kubeconfig   // only set here
 	GlobalDebugConfig.hostTarget = map[string]string{}
-	GlobalDebugConfig.hostTargetMutex = map[string]*sync.Mutex{}
+	GlobalDebugConfig.hostTargetOnce = map[string]*sync.Once{}
 	if Development {
 		cfg, err := clientcmd.BuildConfigFromFlags("", GlobalDebugConfig.Kubeconfig)
 		if err != nil {
@@ -83,32 +97,30 @@ func PortForward(
 		return ErrorNoNeedDebug
 	}
 	GlobalDebugConfig.rwLocker.RLock()
-	if v, ok := GlobalDebugConfig.hostTarget[httpReq.URL.Host]; ok {
-		httpReq.URL.Host = v
+	if _, ok := GlobalDebugConfig.hostTarget[httpReq.URL.Host]; ok {
 		GlobalDebugConfig.rwLocker.RUnlock()
 		return nil
 	}
 	GlobalDebugConfig.rwLocker.RUnlock()
 
 	GlobalDebugConfig.rwLocker.Lock()
-	mu, ok := GlobalDebugConfig.hostTargetMutex[httpReq.URL.Host]
+	once, ok := GlobalDebugConfig.hostTargetOnce[httpReq.URL.Host]
 	if !ok {
-		mu = &sync.Mutex{}
-		GlobalDebugConfig.hostTargetMutex[httpReq.URL.Host] = mu
+		once = &sync.Once{}
+		GlobalDebugConfig.hostTargetOnce[httpReq.URL.Host] = once
 	}
 	GlobalDebugConfig.rwLocker.Unlock()
 
-	mu.Lock()
-	defer mu.Unlock()
-	host, err := portForward(ctx, httpReq)
-	if err != nil {
-		return err
-	}
-
-	GlobalDebugConfig.rwLocker.Lock()
-	GlobalDebugConfig.hostTarget[httpReq.URL.Host] = host
-	httpReq.URL.Host = host
-	GlobalDebugConfig.rwLocker.Unlock()
+	once.Do(func() {
+		host, err := portForward(ctx, httpReq)
+		if err != nil {
+			return
+		}
+		GlobalDebugConfig.rwLocker.Lock()
+		GlobalDebugConfig.hostTarget[httpReq.URL.Host] = host
+		fmt.Println("Cache proxy", httpReq.URL.Host, "==>", host)
+		GlobalDebugConfig.rwLocker.Unlock()
+	})
 	return nil
 }
 
@@ -202,8 +214,9 @@ func Proxy(req *http.Request) (*url.URL, error) {
 	if err != nil {
 		return http.ProxyFromEnvironment(req)
 	}
+	req.URL.Host = GetCache(req.URL.Host)
 	req.Host = req.URL.Host
-	return req.URL, nil
+	return req.URL, err
 }
 
 func getPortInReqURL(httpReq *http.Request) (int32, error) {
@@ -260,7 +273,7 @@ func portForwardWithArgs(ctx context.Context, namespace string, podName string, 
 		return "", err
 	}
 	for _, p := range ps {
-		return fmt.Sprintf("localhost:%d", p.Local), nil
+		return fmt.Sprintf("127.0.0.1:%d", p.Local), nil
 	}
 	return "", fmt.Errorf("forwardPorts forward %s with no ports", host)
 }
