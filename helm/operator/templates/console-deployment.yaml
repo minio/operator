@@ -52,6 +52,10 @@ spec:
           args:
             - ui
             - --certs-dir=/tmp/certs
+          {{- with .Values.console.env }}
+          env:
+          {{ toYaml . | nindent 10 }}
+          {{- end }}
           resources:
           {{- toYaml .Values.console.resources | nindent 12 }}
           volumeMounts:
