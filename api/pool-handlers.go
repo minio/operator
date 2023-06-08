@@ -34,7 +34,7 @@ func registerPoolHandlers(api *operations.OperatorAPI) {
 	// Add Tenant Pools
 	api.OperatorAPITenantAddPoolHandler = operator_api.TenantAddPoolHandlerFunc(func(params operator_api.TenantAddPoolParams, session *models.Principal) middleware.Responder {
 		// check the poolName if it exists
-		resp, err := getTenantDetailsResponse(session, operator_api.TenantDetailsParams{Namespace: params.Namespace, Tenant: params.Tenant})
+		resp, err := getTenantDetailsResponse(session, operator_api.TenantDetailsParams{Namespace: params.Namespace, Tenant: params.Tenant, HTTPRequest: params.HTTPRequest})
 		if err != nil {
 			return operator_api.NewTenantAddPoolDefault(int(err.Code)).WithPayload(err)
 		}
