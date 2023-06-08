@@ -734,7 +734,10 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// Check if we are decommissioning a pool before we ensure defaults, as that would populate a defaulted pool name
-	tenant, err = c.checkForPoolDecommission(ctx, key, tenant, tenantConfiguration)
+	temporal_tenant, err := c.checkForPoolDecommission(ctx, key, tenant, tenantConfiguration)
+	if temporal_tenant != nil {
+		tenant = temporal_tenant
+	}
 	if err != nil {
 		return err
 	}
