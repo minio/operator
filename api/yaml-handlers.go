@@ -109,7 +109,7 @@ func getUpdateTenantYAML(session *models.Principal, params operator_api.PutTenan
 	}
 	inTenant := tenantObject.(*miniov2.Tenant)
 	// check the inTenant if have the same poolName
-	poolNameMapSet := map[string]struct{}{}
+	poolNameMapSet := make(map[string]struct{})
 	for _, pool := range inTenant.Spec.Pools {
 		if _, ok := poolNameMapSet[pool.Name]; ok {
 			return &models.Error{Code: 400, Message: swag.String(fmt.Sprintf("Tenant %s have pool named '%s' already", inTenant.Name, pool.Name))}
