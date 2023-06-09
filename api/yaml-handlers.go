@@ -113,9 +113,8 @@ func getUpdateTenantYAML(session *models.Principal, params operator_api.PutTenan
 	for _, pool := range inTenant.Spec.Pools {
 		if _, ok := poolNameMapSet[pool.Name]; ok {
 			return &models.Error{Code: 400, Message: swag.String(fmt.Sprintf("Tenant %s have pool named '%s' already", inTenant.Name, pool.Name))}
-		} else {
-			poolNameMapSet[pool.Name] = struct{}{}
 		}
+		poolNameMapSet[pool.Name] = struct{}{}
 	}
 	if len(poolNameMapSet) == 0 {
 		return &models.Error{Code: 400, Message: swag.String(fmt.Sprintf("Tenant %s must have one pool at least!", inTenant.Name))}
