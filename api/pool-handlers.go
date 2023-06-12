@@ -33,7 +33,18 @@ import (
 func registerPoolHandlers(api *operations.OperatorAPI) {
 	// Add Tenant Pools
 	api.OperatorAPITenantAddPoolHandler = operator_api.TenantAddPoolHandlerFunc(func(params operator_api.TenantAddPoolParams, session *models.Principal) middleware.Responder {
-		err := getTenantAddPoolResponse(session, params)
+		// check the poolName if it exists
+		resp, err := getTenantDetailsResponse(session, operator_api.TenantDetailsParams{Namespace: params.Namespace, Tenant: params.Tenant, HTTPRequest: params.HTTPRequest})
+		if err != nil {
+			return operator_api.NewTenantAddPoolDefault(int(err.Code)).WithPayload(err)
+		}
+		for _, p := range resp.Pools {
+			if p.Name == params.Body.Name {
+				err = ErrorWithContext(params.HTTPRequest.Context(), ErrPoolExists)
+				return operator_api.NewTenantAddPoolDefault(int(err.Code)).WithPayload(err)
+			}
+		}
+		err = getTenantAddPoolResponse(session, params)
 		if err != nil {
 			return operator_api.NewTenantAddPoolDefault(int(err.Code)).WithPayload(err)
 		}
@@ -52,6 +63,7 @@ func registerPoolHandlers(api *operations.OperatorAPI) {
 func getTenantAddPoolResponse(session *models.Principal, params operator_api.TenantAddPoolParams) *models.Error {
 	ctx, cancel := context.WithCancel(params.HTTPRequest.Context())
 	defer cancel()
+
 	opClientClientSet, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {
 		return ErrorWithContext(ctx, err)
