@@ -27,28 +27,28 @@ import React from "react";
 export const validRoutes = () => {
   let operatorMenus: MenuItemProps[] = [
     {
-      groupName: "Operator",
+      group: "Operator",
       id: "Tenants",
       path: IAM_PAGES.TENANTS,
       name: "Tenants",
       icon: <TenantsOutlineIcon />,
     },
     {
-      groupName: "Operator",
+      group: "Operator",
       id: "License",
       path: IAM_PAGES.LICENSE,
       name: "License",
       icon: <LicenseIcon />,
     },
     {
-      groupName: "Operator",
+      group: "Operator",
       id: "Register",
       path: IAM_PAGES.REGISTER_SUPPORT,
       name: "Register",
       icon: <RegisterMenuIcon />,
     },
     {
-      groupName: "Operator",
+      group: "Operator",
       id: "Documentation",
       path: IAM_PAGES.DOCUMENTATION,
       name: "Documentation",

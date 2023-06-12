@@ -470,13 +470,7 @@ const Login = () => {
       );
   }
 
-  let modeLogo: "console" | "directpv" | "operator" | "kes" | "subnet" =
-    "console";
   const logoVar = getLogoVar();
-
-  if (isOperator) {
-    modeLogo = "operator";
-  }
 
   let docsURL = "https://min.io/docs/minio/linux/index.html?ref=con";
   if (isK8S) {
@@ -488,7 +482,7 @@ const Login = () => {
     <Fragment>
       <MainError />
       <LoginWrapper
-        logoProps={{ applicationName: modeLogo, subVariant: logoVar }}
+        logoProps={{ applicationName: "operator", subVariant: logoVar }}
         form={loginComponent}
         backgroundAnimation={false}
         formFooter={

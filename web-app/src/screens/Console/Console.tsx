@@ -229,7 +229,7 @@ const Console = ({ classes }: IConsoleProps) => {
   }
 
   return (
-    <MainContainer menu={!hideMenu && <AppMenu />}>
+    <MainContainer menu={!hideMenu ? <AppMenu /> : <Fragment />}>
       {session && session.status === "ok" ? (
         <div className={classes.root}>
           <CssBaseline />
@@ -309,7 +309,9 @@ const Console = ({ classes }: IConsoleProps) => {
             </Routes>
           </main>
         </div>
-      ) : null}
+      ) : (
+        <Fragment />
+      )}
     </MainContainer>
   );
 };
