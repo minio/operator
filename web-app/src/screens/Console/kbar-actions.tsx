@@ -25,7 +25,7 @@ export const routesAsKbarActions = (
   navigate: (url: string) => void
 ) => {
   const initialActions: Action[] = [];
-  const allowedMenuItems = validRoutes(features, operatorMode);
+  const allowedMenuItems = validRoutes();
   for (const i of allowedMenuItems) {
     if (i.children && i.children.length > 0) {
       for (const childI of i.children) {
@@ -33,8 +33,8 @@ export const routesAsKbarActions = (
           id: `${childI.id}`,
           name: childI.name,
           section: i.name,
-          perform: () => navigate(`${childI.to}`),
-          icon: <childI.icon />,
+          perform: () => navigate(`${childI.path}`),
+          icon: childI.icon,
         };
         initialActions.push(a);
       }
@@ -43,8 +43,8 @@ export const routesAsKbarActions = (
         id: `${i.id}`,
         name: i.name,
         section: "Navigation",
-        perform: () => navigate(`${i.to}`),
-        icon: <i.icon />,
+        perform: () => navigate(`${i.path}`),
+        icon: i.icon,
       };
       initialActions.push(a);
     }
