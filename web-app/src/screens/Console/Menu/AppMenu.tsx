@@ -42,6 +42,7 @@ const AppMenu = () => {
         applicationName: "operator",
         subVariant: logoPlan,
       }}
+      horizontal={false}
       callPathAction={(path) => navigate(path)}
       collapseAction={() => dispatch(menuOpen(!sidebarOpen))}
       currentPath={pathname}

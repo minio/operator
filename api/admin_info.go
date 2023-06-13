@@ -18,7 +18,6 @@ package api
 
 import (
 	"context"
-
 	"github.com/minio/operator/models"
 )
 
@@ -46,20 +45,9 @@ func GetAdminInfo(ctx context.Context, client MinioAdmin) (*UsageInfo, error) {
 	var rrSCParity float64
 	var standardSCParity float64
 
-	if v, success := serverInfo.Backend.(map[string]interface{}); success {
-		bt, ok := v["backendType"]
-		if ok {
-			backendType = bt.(string)
-		}
-		rp, ok := v["rrSCParity"]
-		if ok {
-			rrSCParity = rp.(float64)
-		}
-		sp, ok := v["standardSCParity"]
-		if ok {
-			standardSCParity = sp.(float64)
-		}
-	}
+	backendType = string(serverInfo.Backend.Type)
+	rrSCParity = float64(serverInfo.Backend.RRSCParity)
+	standardSCParity = float64(serverInfo.Backend.StandardSCParity)
 
 	var usedSpace int64
 	// serverArray contains the serverProperties which describe the servers in the network
