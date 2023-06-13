@@ -30,20 +30,20 @@ import (
 // checkForPoolDecommission validates the spec of the tenant and it's status to detect a pool being removed
 func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (*miniov2.Tenant, error) {
 	var err error
-	// delete useless status.pools first
-	haveUseLessStatusPool := false
-	statusPoolsMap := map[string]struct{}{}
-	statusPools := []miniov2.PoolStatus{}
+	// duplicate status.pools first
+	haveRepeatStatusPool := false
+	statusPoolsDuplicateMap := map[string]struct{}{}
+	statusDuplicatePools := []miniov2.PoolStatus{}
 	for _, pool := range tenant.Status.Pools {
-		if _, ok := statusPoolsMap[pool.SSName]; !ok {
-			statusPoolsMap[pool.SSName] = struct{}{}
-			statusPools = append(statusPools, *pool.DeepCopy())
+		if _, ok := statusPoolsDuplicateMap[pool.SSName]; !ok {
+			statusPoolsDuplicateMap[pool.SSName] = struct{}{}
+			statusDuplicatePools = append(statusDuplicatePools, *pool.DeepCopy())
 		} else {
-			haveUseLessStatusPool = true
+			haveRepeatStatusPool = true
 		}
 	}
-	tenant.Status.Pools = statusPools
-	if haveUseLessStatusPool {
+	tenant.Status.Pools = statusDuplicatePools
+	if haveRepeatStatusPool {
 		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusNotOwned, 0); err != nil {
 			return nil, err
 		}
