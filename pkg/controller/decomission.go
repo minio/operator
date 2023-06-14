@@ -135,7 +135,7 @@ func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, t
 			return nil, ErrMinIORestarting
 		}
 
-		return nil, nil
+		return tenant, nil
 	}
 	return tenant, err
 }

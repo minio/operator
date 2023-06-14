@@ -16,12 +16,17 @@
 
 import Grid from "@mui/material/Grid";
 import React, { Fragment } from "react";
-import { Button, LockFilledIcon, PasswordKeyIcon, UserFilledIcon } from "mds";
+import {
+  Button,
+  InputBox,
+  LockFilledIcon,
+  PasswordKeyIcon,
+  UserFilledIcon,
+} from "mds";
 import { setAccessKey, setSecretKey, setSTS, setUseSTS } from "./loginSlice";
-import { Box, InputAdornment, LinearProgress } from "@mui/material";
+import { Box, LinearProgress } from "@mui/material";
 import { AppState, useAppDispatch } from "../../store";
 import { useSelector } from "react-redux";
-import { LoginField } from "./LoginField";
 import makeStyles from "@mui/styles/makeStyles";
 import { Theme, useTheme } from "@mui/material/styles";
 import createStyles from "@mui/styles/createStyles";
@@ -83,7 +88,7 @@ const StrategyForm = () => {
       <form className={classes.form} noValidate onSubmit={formSubmit}>
         <Grid container spacing={2}>
           <Grid item xs={12} className={classes.spacerBottom}>
-            <LoginField
+            <InputBox
               fullWidth
               id="accessKey"
               className={classes.inputField}
@@ -95,21 +100,11 @@ const StrategyForm = () => {
               name="accessKey"
               autoComplete="username"
               disabled={loginSending}
-              variant={"outlined"}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position="start"
-                    className={classes.iconColor}
-                  >
-                    <UserFilledIcon />
-                  </InputAdornment>
-                ),
-              }}
+              startIcon={<UserFilledIcon />}
             />
           </Grid>
           <Grid item xs={12} className={useSTS ? classes.spacerBottom : ""}>
-            <LoginField
+            <InputBox
               fullWidth
               className={classes.inputField}
               value={secretKey}
@@ -122,22 +117,12 @@ const StrategyForm = () => {
               autoComplete="current-password"
               disabled={loginSending}
               placeholder={useSTS ? "STS Secret" : "Password"}
-              variant={"outlined"}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment
-                    position="start"
-                    className={classes.iconColor}
-                  >
-                    <LockFilledIcon />
-                  </InputAdornment>
-                ),
-              }}
+              startIcon={<LockFilledIcon />}
             />
           </Grid>
           {useSTS && (
             <Grid item xs={12} className={classes.spacerBottom}>
-              <LoginField
+              <InputBox
                 fullWidth
                 id="sts"
                 className={classes.inputField}
@@ -149,17 +134,7 @@ const StrategyForm = () => {
                 name="STS"
                 autoComplete="sts"
                 disabled={loginSending}
-                variant={"outlined"}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment
-                      position="start"
-                      className={classes.iconColor}
-                    >
-                      <PasswordKeyIcon />
-                    </InputAdornment>
-                  ),
-                }}
+                startIcon={<PasswordKeyIcon />}
               />
             </Grid>
           )}
