@@ -292,10 +292,6 @@ const Login = () => {
 
   const isK8S = useSelector((state: AppState) => state.login.isK8S);
 
-  const isOperator =
-    loginStrategy.loginStrategy === loginStrategyType.serviceAccount ||
-    loginStrategy.loginStrategy === loginStrategyType.redirectServiceAccount;
-
   useEffect(() => {
     if (navigateTo !== "") {
       dispatch(resetForm());
