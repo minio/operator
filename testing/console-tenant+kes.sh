@@ -73,6 +73,7 @@ function test_kes_tenant() {
     end_time=$((SECONDS + 120)) #timeout the log search 120 seconds
     while [ $SECONDS -lt $end_time ]; do
       if kubectl logs -l app=vault | grep -q "Root Token: "; then
+        # shellcheck disable=SC2155
         export VAULT_ROOT_TOKEN=$(kubectl logs -l app=vault | grep "Root Token: " | sed -e "s/Root Token: //g")
         break
       fi
