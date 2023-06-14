@@ -64,15 +64,21 @@ function test_kes_tenant() {
     echo "Waiting for Vault (2m timeout)"
 
     try kubectl wait --namespace default \
-	--for=condition=ready pod \
-	--selector=app=vault \
-	--timeout=120s
+        --for=condition=Available deploy \
+        --field-selector="metadata.name=vault" \
+        --timeout=120s
 
     echo "Vault is ready. Bootstrapping Vault..."
 
-    VAULT_ROOT_TOKEN=$(kubectl logs -l app=vault | grep "Root Token: " | sed -e "s/Root Token: //g")
+    end_time=$((SECONDS + 120)) #timeout the log search 120 seconds
+    while [ $SECONDS -lt $end_time ]; do
+      if kubectl logs -l app=vault | grep -q "Root Token: "; then
+        export VAULT_ROOT_TOKEN=$(kubectl logs -l app=vault | grep "Root Token: " | sed -e "s/Root Token: //g")
+        break
+      fi
+    done
+    
     echo "Vault root: '$VAULT_ROOT_TOKEN'"
-
 
     try kubectl exec $(kubectl get pods -l app=vault  | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.0.1:8200" vault auth enable approle'
     try kubectl exec $(kubectl get pods -l app=vault  | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.0.1:8200" vault secrets enable kv'
