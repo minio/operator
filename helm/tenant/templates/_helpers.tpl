@@ -82,3 +82,17 @@ Selector labels Operator
 app.kubernetes.io/name: {{ include "minio-operator.name" . }}
 app.kubernetes.io/instance: {{ printf "%s-%s" .Release.Name "console" }}
 {{- end -}}
+
+
+{{/*
+Renders a value that contains template.
+Usage:
+{{ include "minio-operator.render" ( dict "value" .Values.path.to.the.Value "context" $) }}
+*/}}
+{{- define "minio-operator.render" -}}
+  {{- if typeIs "string" .value }}
+    {{- tpl .value .context }}
+  {{- else }}
+    {{- tpl (.value | toYaml) .context }}
+  {{- end }}
+{{- end -}}

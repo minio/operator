@@ -1,0 +1,4 @@
+{{- range .Values.extraResources }}
+---
+{{- include "minio-operator.render" (dict "value" . "context" $) }}
+{{- end }}
