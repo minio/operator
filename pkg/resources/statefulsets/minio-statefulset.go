@@ -786,7 +786,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, skipEnvVars, pool, hostsTemplate, operatorVersion, certVolumeSources),
-		getSideCarContainer(t, operatorImage),
+		getSideCarContainer(t, operatorImage, pool),
 	}
 
 	// attach any sidecar containers and volumes
@@ -807,7 +807,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		unavailable = intstr.FromInt(2)
 	}
 
-	initContainer := getInitContainer(t, operatorImage)
+	initContainer := getInitContainer(t, operatorImage, pool)
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: ssMeta,
@@ -870,7 +870,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	return ss
 }
 
-func getInitContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
+func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) v1.Container {
 	initContainer := corev1.Container{
 		Name:  "validate-arguments",
 		Image: operatorImage,
@@ -888,6 +888,7 @@ func getInitContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
 		VolumeMounts: []corev1.VolumeMount{
 			CfgVolumeMount,
 		},
+		SecurityContext: poolContainerSecurityContext(pool),
 	}
 	if t.HasConfigurationSecret() {
 		initContainer.VolumeMounts = append(initContainer.VolumeMounts, TmpCfgVolumeMount)
@@ -895,7 +896,7 @@ func getInitContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
 	return initContainer
 }
 
-func getSideCarContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
+func getSideCarContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) v1.Container {
 	sidecarContainer := corev1.Container{
 		Name:  "sidecar",
 		Image: operatorImage,
@@ -915,6 +916,7 @@ func getSideCarContainer(t *miniov2.Tenant, operatorImage string) v1.Container {
 		VolumeMounts: []corev1.VolumeMount{
 			CfgVolumeMount,
 		},
+		SecurityContext: poolContainerSecurityContext(pool),
 	}
 	if t.HasConfigurationSecret() {
 		sidecarContainer.VolumeMounts = append(sidecarContainer.VolumeMounts, TmpCfgVolumeMount)
