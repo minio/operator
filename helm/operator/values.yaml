@@ -21,10 +21,17 @@ operator:
     runAsGroup: 1000
     runAsNonRoot: true
     fsGroup: 1000
+    allowPrivilegeEscalation: false
   containerSecurityContext:
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   nodeSelector: { }
   priorityClassName: ""
   affinity:
@@ -60,10 +67,20 @@ console:
   resources: { }
   securityContext:
     runAsUser: 1000
+    runAsGroup: 1000
     runAsNonRoot: true
+    fsGroup: 1000
+    allowPrivilegeEscalation: false
   containerSecurityContext:
     runAsUser: 1000
+    runAsGroup: 1000
     runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   ingress:
     enabled: false
     ingressClassName: ""
