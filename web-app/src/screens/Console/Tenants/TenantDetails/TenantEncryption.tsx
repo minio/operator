@@ -16,7 +16,7 @@
 
 import { ICertificateInfo, ITenantEncryptionResponse } from "../types";
 import { Theme } from "@mui/material/styles";
-import { Button, WarnIcon } from "mds";
+import { Button, WarnIcon, SectionTitle } from "mds";
 import createStyles from "@mui/styles/createStyles";
 import withStyles from "@mui/styles/withStyles";
 import {
@@ -50,13 +50,13 @@ import {
 } from "../../../../utils/validationFunctions";
 import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
 import TLSCertificate from "../../Common/TLSCertificate/TLSCertificate";
-import SectionTitle from "../../Common/SectionTitle";
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import CodeMirrorWrapper from "../../Common/FormComponents/CodeMirrorWrapper/CodeMirrorWrapper";
 import FormHr from "../../Common/FormHr";
 import { SecurityContext } from "../../../../api/operatorApi";
+import KMSPolicyInfo from "./KMSPolicyInfo";
 
 interface ITenantEncryption {
   classes: any;
@@ -105,6 +105,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
     runAsNonRoot: true,
     runAsUser: "1000",
   });
+  const [policies, setPolicies] = useState<any>([]);
   const [vaultConfiguration, setVaultConfiguration] = useState<any>(null);
   const [awsConfiguration, setAWSConfiguration] = useState<any>(null);
   const [gemaltoConfiguration, setGemaltoConfiguration] = useState<any>(null);
@@ -356,7 +357,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
   ]);
 
   const fetchEncryptionInfo = () => {
-    if (!refreshEncryptionInfo) {
+    if (!refreshEncryptionInfo && tenant?.namespace && tenant?.name) {
       setRefreshEncryptionInfo(true);
       api
         .invoke(
@@ -365,6 +366,9 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
         )
         .then((resp: ITenantEncryptionResponse) => {
           setEncryptionRawConfiguration(resp.raw);
+          if (resp.policies) {
+            setPolicies(resp.policies);
+          }
           if (resp.vault) {
             setEncryptionType("vault");
             setVaultConfiguration(resp.vault);
@@ -413,7 +417,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
   useEffect(() => {
     fetchEncryptionInfo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tenant]);
 
   const removeCertificate = (certificateInfo: ICertificateInfo) => {
     setCertificatesToBeRemoved([
@@ -677,7 +681,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
       )}
       <Grid container spacing={1}>
         <Grid item xs>
-          <h1 className={classes.sectionTitle}>Encryption</h1>
+          <SectionTitle>Encryption</SectionTitle>
         </Grid>
         <Grid item xs={4} justifyContent={"end"} textAlign={"right"}>
           <FormSwitchWrapper
@@ -730,6 +734,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
               </Fragment>
             ) : (
               <Fragment>
+                <KMSPolicyInfo policies={policies} />
                 <Grid item xs={12} className={classes.encryptionTypeOptions}>
                   <RadioGroupSelector
                     currentSelection={encryptionType}
@@ -748,6 +753,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                     ]}
                   />
                 </Grid>
+
                 {encryptionType === "vault" && (
                   <Fragment>
                     <Grid item xs={12}>
