@@ -108,6 +108,8 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 				useSchema = "https"
 			}
 			serverURL = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Minio[0])
+		} else {
+			serverURL = t.Spec.Features.Domains.Minio[0]
 		}
 	}
 	envVarsMap[miniov2.MinIOServerURL] = corev1.EnvVar{
