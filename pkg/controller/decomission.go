@@ -31,19 +31,19 @@ import (
 func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (*miniov2.Tenant, error) {
 	var err error
 	// duplicate status.pools first
-	haveRepeatStatusPool := false
-	statusPoolsDuplicateMap := map[string]struct{}{}
-	statusDuplicatePools := []miniov2.PoolStatus{}
+	haveDuplicateStatusPools := false
+	distinctStatusPoolsMap := map[string]struct{}{}
+	distinctStatusPools := []miniov2.PoolStatus{}
 	for _, pool := range tenant.Status.Pools {
-		if _, ok := statusPoolsDuplicateMap[pool.SSName]; !ok {
-			statusPoolsDuplicateMap[pool.SSName] = struct{}{}
-			statusDuplicatePools = append(statusDuplicatePools, *pool.DeepCopy())
+		if _, ok := distinctStatusPoolsMap[pool.SSName]; !ok {
+			distinctStatusPoolsMap[pool.SSName] = struct{}{}
+			distinctStatusPools = append(distinctStatusPools, *pool.DeepCopy())
 		} else {
-			haveRepeatStatusPool = true
+			haveDuplicateStatusPools = true
 		}
 	}
-	tenant.Status.Pools = statusDuplicatePools
-	if haveRepeatStatusPool {
+	tenant.Status.Pools = distinctStatusPools
+	if haveDuplicateStatusPools {
 		if tenant, err = c.updateTenantStatus(ctx, tenant, StatusNotOwned, 0); err != nil {
 			return nil, err
 		}
