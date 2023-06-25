@@ -868,7 +868,10 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	if pool.RuntimeClassName != nil && *pool.RuntimeClassName != "" {
 		ss.Spec.Template.Spec.RuntimeClassName = pool.RuntimeClassName
 	}
-
+	// add customs initContainers to StatefulSet
+	if len(t.Spec.InitContainers) != 0 {
+		ss.Spec.Template.Spec.InitContainers = append(ss.Spec.Template.Spec.InitContainers, t.Spec.InitContainers...)
+	}
 	return ss
 }
 
