@@ -1094,7 +1094,6 @@ func (c *Controller) syncHandler(key string) error {
 		if err != nil {
 			return err
 		}
-		defer c.removeArtifacts()
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
 			miniov2.GetNSFromFile(),
 			miniov2.GetClusterDomain(),
@@ -1116,12 +1115,10 @@ func (c *Controller) syncHandler(key string) error {
 
 		us, err := adminClnt.ServerUpdate(ctx, updateURL)
 		if err != nil {
-			if err.(madmin.ErrorResponse).Code != "MethodNotAllowed" {
-				err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", tenantName, err)
+			if madmin.ToErrorResponse(err).Code != "MethodNotAllowed" {
 				if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
 					return terr
 				}
-
 				// Update failed, nothing needs to be changed in the container
 				return err
 			}
