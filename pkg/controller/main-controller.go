@@ -1090,6 +1090,7 @@ func (c *Controller) syncHandler(key string) error {
 			tenantName, images[0], tenant.Spec.Image)
 
 		latest, err := c.fetchArtifacts(tenant)
+		defer c.removeArtifacts()
 		if err != nil {
 			return err
 		}
