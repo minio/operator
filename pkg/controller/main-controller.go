@@ -1124,7 +1124,7 @@ func (c *Controller) syncHandler(key string) error {
 				// Update failed, nothing needs to be changed in the container
 				return err
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Set MINIO_UPDATE 'off', shouldn't update the image online!", fmt.Sprintf("Tenant %s", tenant.Name))
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Inplace update is disabled, falling back to performing only statefulset update.", fmt.Sprintf("Tenant %s", tenant.Name))
 		}
 		if err == nil {
 			if us.CurrentVersion != us.UpdatedVersion {
