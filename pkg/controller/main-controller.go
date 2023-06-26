@@ -1123,9 +1123,8 @@ func (c *Controller) syncHandler(key string) error {
 
 				// Update failed, nothing needs to be changed in the container
 				return err
-			} else {
-				c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Set MINIO_UPDATE 'off', shouldn't change the image online!", fmt.Sprintf("Tenant %s", tenant.Name))
 			}
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Set MINIO_UPDATE 'off', shouldn't change the image online!", fmt.Sprintf("Tenant %s", tenant.Name))
 		}
 		if err == nil {
 			if us.CurrentVersion != us.UpdatedVersion {
