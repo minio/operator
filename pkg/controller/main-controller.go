@@ -1091,10 +1091,9 @@ func (c *Controller) syncHandler(key string) error {
 
 		latest, err := c.fetchArtifacts(tenant)
 		if err != nil {
-			_ = c.removeArtifacts()
 			return err
 		}
-
+		defer c.removeArtifacts()
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
 			miniov2.GetNSFromFile(),
 			miniov2.GetClusterDomain(),
@@ -1102,8 +1101,6 @@ func (c *Controller) syncHandler(key string) error {
 			common.WebhookAPIUpdate,
 		))
 		if err != nil {
-			_ = c.removeArtifacts()
-
 			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", tenantName, err)
 			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
 				return terr
@@ -1119,8 +1116,6 @@ func (c *Controller) syncHandler(key string) error {
 		us, err := adminClnt.ServerUpdate(ctx, updateURL)
 		if err != nil {
 			if err.(madmin.ErrorResponse).Code != "MethodNotAllowed" {
-				_ = c.removeArtifacts()
-
 				err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", tenantName, err)
 				if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
 					return terr
@@ -1128,6 +1123,8 @@ func (c *Controller) syncHandler(key string) error {
 
 				// Update failed, nothing needs to be changed in the container
 				return err
+			} else {
+				c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Set MINIO_UPDATE 'off', Shouldn't change image online!", fmt.Sprintf("Tenant %s", tenant.Name))
 			}
 		}
 		if err == nil {
@@ -1160,10 +1157,6 @@ func (c *Controller) syncHandler(key string) error {
 				return nil
 			}
 		}
-
-		// clean the local directory
-		_ = c.removeArtifacts()
-
 		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
 			ss := statefulsets.NewPool(&statefulsets.NewPoolArgs{
