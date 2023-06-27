@@ -760,7 +760,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			klog.V(2).Infof(err2.Error())
 		}
 		// return nil so we don't re-queue this work item
-		return WrapResult(Result{}, err)
+		return WrapResult(Result{}, nil)
 	}
 
 	// AutoCertEnabled verification is used to manage the tenant migration between v1 and v2
@@ -1254,7 +1254,8 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			}
 
 			if existingStatefulSet, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, newStatefulSet, uOpts); err != nil {
-				return WrapResult(Result{}, err)
+				klog.Errorf("[Will try again in 5sec] Update tenant %s statefulset %s error %s", tenant.Name, ssName, err)
+				return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 			}
 		}
 
