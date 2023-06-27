@@ -14,7 +14,9 @@ operator:
     tag: v5.0.5
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
-  initcontainers: [ ]
+  runtimeClassName: ~
+  initContainers: [ ]
+  env: [ ]
   replicaCount: 2
   securityContext:
     runAsUser: 1000
@@ -51,7 +53,8 @@ console:
     tag: v5.0.5
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
-  initcontainers: [ ]
+  runtimeClassName: ~
+  initContainers: [ ]
   replicaCount: 1
   nodeSelector: { }
   affinity: { }
