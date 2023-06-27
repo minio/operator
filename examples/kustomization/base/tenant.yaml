@@ -157,6 +157,9 @@ spec:
     - servers: 4
       ## custom name for the pool
       name: pool-0
+      ## Specify one or more Pod Topology Spread Constraints to apply to pods deployed in the MinIO pool.
+      ## https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints 
+      topologySpreadConstraints: [ ]
       ## volumesPerServer specifies the number of volumes attached per MinIO Tenant Pod / Server.
       volumesPerServer: 4
       ## nodeSelector parameters for MinIO Pods. It specifies a map of key-value pairs. For the pod to be

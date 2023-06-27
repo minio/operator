@@ -89,6 +89,7 @@ export interface ITenantEncryptionResponse {
   raw: string;
   image: string;
   replicas: string;
+  policies?: Record<string, any>;
   securityContext: SecurityContext;
   server_tls: ICertificateInfo;
   minio_mtls: ICertificateInfo;

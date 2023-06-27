@@ -2726,6 +2726,9 @@ func init() {
               "type": "object",
               "$ref": "#/definitions/keyPairConfiguration"
             },
+            "policies": {
+              "type": "object"
+            },
             "raw": {
               "type": "string"
             },
@@ -2797,6 +2800,9 @@ func init() {
             "minio_mtls": {
               "type": "object",
               "$ref": "#/definitions/certificateInfo"
+            },
+            "policies": {
+              "type": "object"
             },
             "raw": {
               "type": "string"
@@ -8245,6 +8251,9 @@ func init() {
               "type": "object",
               "$ref": "#/definitions/keyPairConfiguration"
             },
+            "policies": {
+              "type": "object"
+            },
             "raw": {
               "type": "string"
             },
@@ -8316,6 +8325,9 @@ func init() {
             "minio_mtls": {
               "type": "object",
               "$ref": "#/definitions/certificateInfo"
+            },
+            "policies": {
+              "type": "object"
             },
             "raw": {
               "type": "string"

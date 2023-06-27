@@ -39,7 +39,9 @@ for catalog in "${redhatCatalogs[@]}"; do
   # Operator Image in Digest mode: sha256:xxx
   yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-  yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml resources/templates/olm-template.yaml
+  yq -i "(.spec.relatedImages[] | select( .name == \"minio-operator\")).image |= \"${operatorImageDigest}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i "(.spec.relatedImages[] | select( .name == \"console\")).image |= \"${operatorImageDigest}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+#  yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml resources/templates/olm-template.yaml
 
   # https://connect.redhat.com/support/technology-partner/#/case/03206318
   # If no securityContext is specified, the OLM will choose one that fits within
