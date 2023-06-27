@@ -576,9 +576,9 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: minio/operator@sha256:c9f705ff2bd7e906e56bf8ece337770742fb54d561d5e6f26575779f808b612f
+    - image: quay.io/minio/operator@sha256:c9f705ff2bd7e906e56bf8ece337770742fb54d561d5e6f26575779f808b612f
       name: console
-    - image: minio/operator@sha256:c9f705ff2bd7e906e56bf8ece337770742fb54d561d5e6f26575779f808b612f
+    - image: quay.io/minio/operator@sha256:c9f705ff2bd7e906e56bf8ece337770742fb54d561d5e6f26575779f808b612f
       name: minio-operator
   version: 5.0.5
   labels:
