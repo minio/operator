@@ -734,7 +734,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				klog.V(2).Infof(err2.Error())
 			}
 			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "MissingCreds", "Tenant is missing root credentials")
-			return WrapResult(Result{}, err)
+			return WrapResult(Result{}, nil)
 		}
 		return WrapResult(Result{}, err)
 	}
