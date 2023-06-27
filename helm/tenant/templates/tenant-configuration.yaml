@@ -1,4 +1,4 @@
-{{- if dig "secrets" false (.Values | merge (dict)) }}
+{{- if not .Values.secrets.existingSecret }}
 apiVersion: v1
 kind: Secret
 metadata:
