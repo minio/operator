@@ -2027,6 +2027,8 @@ definitions:
                 type: string
               ca:
                 type: string
+          policies:
+            type: object
           gemalto:
             type: object
             $ref: "#/definitions/gemaltoConfiguration"
@@ -2053,6 +2055,8 @@ definitions:
         properties:
           raw:
             type: string
+          policies:
+            type: object
           image:
             type: string
           replicas:

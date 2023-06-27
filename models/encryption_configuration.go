@@ -57,6 +57,9 @@ type EncryptionConfiguration struct {
 	// minio mtls
 	MinioMtls *KeyPairConfiguration `json:"minio_mtls,omitempty"`
 
+	// policies
+	Policies interface{} `json:"policies,omitempty"`
+
 	// raw
 	Raw string `json:"raw,omitempty"`
 
@@ -101,6 +104,8 @@ func (m *EncryptionConfiguration) UnmarshalJSON(raw []byte) error {
 
 		MinioMtls *KeyPairConfiguration `json:"minio_mtls,omitempty"`
 
+		Policies interface{} `json:"policies,omitempty"`
+
 		Raw string `json:"raw,omitempty"`
 
 		Replicas string `json:"replicas,omitempty"`
@@ -130,6 +135,8 @@ func (m *EncryptionConfiguration) UnmarshalJSON(raw []byte) error {
 	m.KmsMtls = dataAO1.KmsMtls
 
 	m.MinioMtls = dataAO1.MinioMtls
+
+	m.Policies = dataAO1.Policies
 
 	m.Raw = dataAO1.Raw
 
@@ -170,6 +177,8 @@ func (m EncryptionConfiguration) MarshalJSON() ([]byte, error) {
 
 		MinioMtls *KeyPairConfiguration `json:"minio_mtls,omitempty"`
 
+		Policies interface{} `json:"policies,omitempty"`
+
 		Raw string `json:"raw,omitempty"`
 
 		Replicas string `json:"replicas,omitempty"`
@@ -196,6 +205,8 @@ func (m EncryptionConfiguration) MarshalJSON() ([]byte, error) {
 	dataAO1.KmsMtls = m.KmsMtls
 
 	dataAO1.MinioMtls = m.MinioMtls
+
+	dataAO1.Policies = m.Policies
 
 	dataAO1.Raw = m.Raw
 

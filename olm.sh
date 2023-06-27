@@ -59,7 +59,8 @@ for catalog in "${redhatCatalogs[@]}"; do
     --metadata \
     --output-dir bundles/$catalog/$RELEASE \
     --channels stable \
-    --overwrite
+    --overwrite \
+    --use-image-digests
 
   # deploymentName has to be minio-operator, the reason is in case/03206318 or redhat support.
   # the deployment name you set is "operator", and in CSV, there are two deployments 'console' and 'minio-operator'
@@ -126,8 +127,9 @@ for catalog in "${redhatCatalogs[@]}"; do
   # To provide channel for upgrade where we tell what versions can be replaced by the new version we offer
   # You can read the documentation at link below:
   # https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html/operators/understanding-the-operator-lifecycle-manager-olm#olm-upgrades_olm-understanding-olm
-  echo "To provide channel for upgrading Operator..."
-  yq -i e ".metadata.annotations.\"olm.skipRange\" |= \">=4.4.16 <$RELEASE\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  echo "To provide replacement for upgrading Operator..."
+  echo "WARNING: This need to be updated manually prior to publish in redhat catalogs"
+  yq -i e ".spec.\"replaces\" |= \"${package}.v${RELEASE}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
   # In order to deploy via OLM, we should let OLM to decide on the security
   # context; otherwise deploy will fail and operator update will not be possible
