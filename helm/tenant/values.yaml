@@ -5,6 +5,8 @@ secrets:
   # MinIO root user and password
   accessKey: minio
   secretKey: minio123
+  ## Set the value for existingSecret to use a pre created secret and dont create default one
+  # existingSecret: random-env-configuration
 ## MinIO Tenant Definition
 tenant:
   # Tenant name
@@ -72,6 +74,12 @@ tenant:
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
   ## Sub path inside Mount path where MinIO stores data.
+  ## WARNING:
+  ## We recommend you to keep the same mountPath and the same subPath once the
+  ## Tenant has been deployed over your different PVs.
+  ## This is because if you change these values once Tenant is deployed, then
+  ## you will end up with multiple paths for different buckets. So please, be
+  ## very careful to keep same value for the life of the Tenant.
   subPath: /data
   # pool metrics to be read by Prometheus
   metrics:
