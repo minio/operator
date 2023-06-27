@@ -174,3 +174,19 @@ func setupSignalHandler() (stopCh <-chan struct{}) {
 
 	return stop
 }
+
+// Result contains the result of a sync invocation.
+type Result struct {
+	// Requeue tells the Controller to requeue the reconcile key.  Defaults to false.
+	Requeue bool
+
+	// RequeueAfter if greater than 0, tells the Controller to requeue the reconcile key after the Duration.
+	// Implies that Requeue is true, there is no need to set Requeue to true at the same time as RequeueAfter.
+	RequeueAfter time.Duration
+}
+
+// WrapResult is wrap for result.
+// We can find where return result.
+func WrapResult(result Result, err error) (Result, error) {
+	return result, err
+}
