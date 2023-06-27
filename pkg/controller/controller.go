@@ -185,6 +185,8 @@ type Result struct {
 	RequeueAfter time.Duration
 }
 
+// WrapResult is wrap for result.
+// We can find where return result.
 func WrapResult(result Result, err error) (Result, error) {
 	return result, err
 }
