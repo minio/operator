@@ -471,7 +471,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/console@sha256:1a32f5143f02e22acd5f2e368d98b783c069409ee550c0ddd0972db9a386d29a
+                    image: quay.io/minio/operator@sha256:1a32f5143f02e22acd5f2e368d98b783c069409ee550c0ddd0972db9a386d29a
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:

@@ -463,7 +463,9 @@ func getConfigurationResponseFromV1(ctx context.Context, clientSet K8sClientI, r
 		}
 		encryptConfig.Azure = azureConfig
 	}
-
+	if kesConfiguration.Policies != nil {
+		encryptConfig.Policies = kesConfiguration.Policies
+	}
 	return nil
 }
 
@@ -589,6 +591,9 @@ func getConfigurationResponseFromV2(ctx context.Context, clientSet K8sClientI, r
 			return err
 		}
 		encryptConfig.Azure = azureConfig
+	}
+	if kesConfiguration.Policies != nil {
+		encryptConfig.Policies = kesConfiguration.Policies
 	}
 	return nil
 }

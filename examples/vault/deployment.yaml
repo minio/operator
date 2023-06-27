@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: vault
-          image: vault:latest
+          image: vault:1.13.3
           imagePullPolicy: "IfNotPresent"
           env:
             - name: SECRET_SHARES
