@@ -230,12 +230,12 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	if err == nil && oprDep != nil {
 		// assume we are the first container, just in case they changed the default name
 		if len(oprDep.Spec.Template.Spec.Containers) > 0 {
-			//oprImg = oprDep.Spec.Template.Spec.Containers[0].Image
+			oprImg = oprDep.Spec.Template.Spec.Containers[0].Image
 		}
 		// attempt to iterate in case there's multiple containers
 		for _, c := range oprDep.Spec.Template.Spec.Containers {
 			if c.Name == "minio-operator" || c.Name == "operator" {
-				//oprImg = c.Image
+				oprImg = c.Image
 			}
 		}
 	}
