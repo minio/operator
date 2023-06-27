@@ -2,13 +2,11 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: console-sa
-  namespace: {{ .Release.Namespace }}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: console-sa-secret
-  namespace: {{ .Release.Namespace }}
   annotations:
     kubernetes.io/service-account.name: console-sa
 type: kubernetes.io/service-account-token
@@ -271,4 +269,3 @@ data:
 kind: ConfigMap
 metadata:
   name: console-env
-  namespace: {{ .Release.Namespace }}
