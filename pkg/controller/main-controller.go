@@ -26,8 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/madmin-go/v2"
 	"github.com/minio/operator/pkg/common"
-
 	xcerts "github.com/minio/pkg/certs"
 
 	"github.com/minio/minio-go/v7/pkg/set"
@@ -867,10 +867,10 @@ func (c *Controller) syncHandler(key string) error {
 	}
 
 	// For each pool check if there is a stateful set
-	var totalReplicas int32
+	var totalAvailableReplicas int32
 	var images []string
 
-	err = c.checkKESStatus(ctx, tenant, totalReplicas, cOpts, uOpts, nsName)
+	err = c.checkKESStatus(ctx, tenant, totalAvailableReplicas, cOpts, uOpts, nsName)
 	if err != nil {
 		klog.V(2).Infof("Error checking KES state %v", err)
 		return err
@@ -972,7 +972,7 @@ func (c *Controller) syncHandler(key string) error {
 		}
 
 		// keep track of all replicas
-		totalReplicas += ss.Status.Replicas
+		totalAvailableReplicas += ss.Status.AvailableReplicas
 		images = append(images, ss.Spec.Template.Spec.Containers[0].Image)
 	}
 
@@ -1053,7 +1053,7 @@ func (c *Controller) syncHandler(key string) error {
 			compareImage = image
 		}
 		if compareImage != image {
-			if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalReplicas); err != nil {
+			if _, err = c.updateTenantStatus(ctx, tenant, StatusInconsistentMinIOVersions, totalAvailableReplicas); err != nil {
 				return err
 			}
 			return fmt.Errorf("Pool %d is running incorrect image version, all pools are required to be on the same MinIO version. Attempting update of the inconsistent pool",
@@ -1081,7 +1081,7 @@ func (c *Controller) syncHandler(key string) error {
 
 		// Images different with the newer state change, continue to verify
 		// if upgrade is possible
-		tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingMinIOVersion, totalReplicas)
+		tenant, err = c.updateTenantStatus(ctx, tenant, StatusUpdatingMinIOVersion, totalAvailableReplicas)
 		if err != nil {
 			return err
 		}
@@ -1090,11 +1090,10 @@ func (c *Controller) syncHandler(key string) error {
 			tenantName, images[0], tenant.Spec.Image)
 
 		latest, err := c.fetchArtifacts(tenant)
+		defer c.removeArtifacts()
 		if err != nil {
-			_ = c.removeArtifacts()
 			return err
 		}
-
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
 			miniov2.GetNSFromFile(),
 			miniov2.GetClusterDomain(),
@@ -1102,10 +1101,8 @@ func (c *Controller) syncHandler(key string) error {
 			common.WebhookAPIUpdate,
 		))
 		if err != nil {
-			_ = c.removeArtifacts()
-
 			err = fmt.Errorf("Unable to get canonical update URL for Tenant '%s', failed with %v", tenantName, err)
-			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalReplicas); terr != nil {
+			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
 				return terr
 			}
 
@@ -1118,49 +1115,45 @@ func (c *Controller) syncHandler(key string) error {
 
 		us, err := adminClnt.ServerUpdate(ctx, updateURL)
 		if err != nil {
-			_ = c.removeArtifacts()
-
-			err = fmt.Errorf("Tenant '%s' MinIO update failed with %w", tenantName, err)
-			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalReplicas); terr != nil {
-				return terr
-			}
-
-			// Update failed, nothing needs to be changed in the container
-			return err
-		}
-
-		if us.CurrentVersion != us.UpdatedVersion {
-			// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
-			// MinIO server integrated with Console), we need to delete the old console deployment and service.
-			// We do this only when MinIO server is successfully updated.
-			unifiedConsoleReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("RELEASE.2021-07-27T02-40-15Z")
-			newVer, err := miniov2.ReleaseTagToReleaseTime(us.UpdatedVersion)
-			if err != nil {
-				klog.Errorf("Unsupported release tag on new image, server updated but might leave dangling console deployment %v", err)
+			if madmin.ToErrorResponse(err).Code != "MethodNotAllowed" {
+				if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
+					return terr
+				}
+				// Update failed, nothing needs to be changed in the container
 				return err
 			}
-			consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())
-			if unifiedConsoleReleaseTime.Before(newVer) && consoleDeployment != nil && err == nil {
-				if err := c.deleteOldConsoleDeployment(ctx, tenant, consoleDeployment.Name); err != nil {
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Inplace update is disabled, falling back to performing only statefulset update.", fmt.Sprintf("Tenant %s", tenant.Name))
+		}
+		if err == nil {
+			if us.CurrentVersion != us.UpdatedVersion {
+				// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
+				// MinIO server integrated with Console), we need to delete the old console deployment and service.
+				// We do this only when MinIO server is successfully updated.
+				unifiedConsoleReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("RELEASE.2021-07-27T02-40-15Z")
+				newVer, err := miniov2.ReleaseTagToReleaseTime(us.UpdatedVersion)
+				if err != nil {
+					klog.Errorf("Unsupported release tag on new image, server updated but might leave dangling console deployment %v", err)
 					return err
 				}
+				consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())
+				if unifiedConsoleReleaseTime.Before(newVer) && consoleDeployment != nil && err == nil {
+					if err := c.deleteOldConsoleDeployment(ctx, tenant, consoleDeployment.Name); err != nil {
+						return err
+					}
+				}
+				klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
+					tenantName, us.CurrentVersion, us.UpdatedVersion)
+			} else {
+				msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
+					tenantName,
+					us.CurrentVersion)
+				klog.Info(msg)
+				if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalAvailableReplicas); terr != nil {
+					return err
+				}
+				return nil
 			}
-			klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
-				tenantName, us.CurrentVersion, us.UpdatedVersion)
-		} else {
-			msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
-				tenantName,
-				us.CurrentVersion)
-			klog.Info(msg)
-			if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalReplicas); terr != nil {
-				return err
-			}
-			return nil
 		}
-
-		// clean the local directory
-		_ = c.removeArtifacts()
-
 		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
 			ss := statefulsets.NewPool(&statefulsets.NewPoolArgs{
@@ -1301,7 +1294,7 @@ func (c *Controller) syncHandler(key string) error {
 
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
-	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalReplicas)
+	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalAvailableReplicas)
 	return err
 }
 
