@@ -624,4 +624,4 @@ spec:
     operatorframework.io/os.solaris: supported
     operatorframework.io/os.windows: supported
     operatorframework.io/os.zos: supported
-  replaces: minio-operator.v5.0.6
+  replaces: minio-operator.v5.0.5
