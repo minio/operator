@@ -14,7 +14,7 @@ tenant:
   ## Registry location and Tag to download MinIO Server image
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-05-27T05-56-19Z
+    tag: RELEASE.2023-06-23T20-26-00Z
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported
