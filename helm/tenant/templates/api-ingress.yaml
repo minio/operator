@@ -10,8 +10,8 @@ metadata:
   annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.ingress.api.ingressClassName }}
-  ingressClassName: {{ .Values.ingress.api.ingressClassName }}
+  {{- with .Values.ingress.api.ingressClassName }}
+  ingressClassName: {{ . }}
   {{- end }}
   {{- if .Values.ingress.api.tls }}
   tls:
@@ -38,4 +38,4 @@ spec:
                   {{- else }}
                   name: http-minio
                   {{- end }}
-{{ end }}
+{{- end }}

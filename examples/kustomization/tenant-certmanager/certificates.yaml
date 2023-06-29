@@ -12,6 +12,16 @@ metadata:
   name: tenant-certmanager-cert
   namespace: minio-tenant
 spec:
+  # If you see "Empty issuer DN not allowed in X509Certificates"
+  # You will need to add spec.subject.organizations or spec.commonName
+  # As documented in https://cert-manager.io/docs/usage/certificate/
+  # This specially if your other apps can't trust MinIO cert issued by cert-manager
+  # Example
+  #
+  # subject:
+  #   organizations:
+  #     - jetstack
+  # commonName: example.com
   dnsNames:
     - "*.tenant-certmanager.svc.cluster.local"
     - "*.myminio.tenant-certmanager.svc.cluster.local"

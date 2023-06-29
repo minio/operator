@@ -11,10 +11,12 @@ operator:
   #     value: ""
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.5
+    tag: v5.0.6
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
-  initcontainers: [ ]
+  runtimeClassName: ~
+  initContainers: [ ]
+  env: [ ]
   replicaCount: 2
   securityContext:
     runAsUser: 1000
@@ -48,10 +50,11 @@ operator:
 console:
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.5
+    tag: v5.0.6
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
-  initcontainers: [ ]
+  runtimeClassName: ~
+  initContainers: [ ]
   replicaCount: 1
   nodeSelector: { }
   affinity: { }

@@ -1,49 +1,45 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: "console"
-  namespace: {{ .Release.Namespace }}
-  labels:
-  {{- include "minio-operator.labels" . | nindent 4 }}
+  name: console
+  labels: {{- include "minio-operator.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.console.replicaCount }}
   selector:
-    matchLabels:
-  {{- include "minio-operator.console-selectorLabels" . | nindent 6 }}
+    matchLabels: {{- include "minio-operator.console-selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels:
-    {{- include "minio-operator.console-selectorLabels" . | nindent 8 }}
+      labels: {{- include "minio-operator.console-selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.operator.imagePullSecrets }}
-      imagePullSecrets:
-      {{- toYaml . | nindent 8 }}
+      {{- with .Values.console.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.console.runtimeClassName }}
+      runtimeClassName: {{ . }}
       {{- end }}
       serviceAccountName: console-sa
       {{- with .Values.console.securityContext }}
-      securityContext:
-      {{- toYaml . | nindent 8 }}
+      securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.console.nodeSelector }}
-      nodeSelector:
-      {{- toYaml . | nindent 8 }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.console.affinity }}
-      affinity:
-      {{- toYaml . | nindent 8 }}
+      affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.console.tolerations }}
-      tolerations:
-      {{- toYaml . | nindent 8 }}
+      tolerations: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.console.topologySpreadConstraints }}
-      topologySpreadConstraints:
-      {{- toYaml . | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.console.initContainers }}
+      initContainers: {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.console.image.repository }}:{{ .Values.console.image.tag }}"
-          imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.console.image.pullPolicy }}
           ports:
             - containerPort: 9090
               name: http
@@ -52,25 +48,13 @@ spec:
           args:
             - ui
             - --certs-dir=/tmp/certs
-          resources:
-          {{- toYaml .Values.console.resources | nindent 12 }}
-          volumeMounts:
-          {{- with .Values.console.volumeMounts }}
-          {{- toYaml . | nindent 12 }}
-          {{- end }}
-          securityContext:
+          resources: {{- toYaml .Values.console.resources | nindent 12 }}
           {{- with .Values.console.containerSecurityContext }}
-          {{- toYaml . | nindent 12 }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
-      volumes:
+          {{- with .Values.console.volumeMounts }}
+          volumeMounts: {{- toYaml . | nindent 12 }}
+          {{- end }}
       {{- with .Values.console.volumes }}
-      {{- toYaml . | nindent 8 }}
+      volumes: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.console.initContainers }}
-      initContainers:
-      {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.operator.runtimeClassName }}
-      runtimeClassName:
-      {{- toYaml . | nindent 8 }}
-  {{- end}}

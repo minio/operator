@@ -22,6 +22,7 @@ import (
 
 	certificatesV1 "k8s.io/api/certificates/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 )
@@ -81,7 +82,13 @@ func GetCertificatesAPIVersion(clientSet kubernetes.Interface) CSRVersion {
 		default:
 			apiVersions, err := clientSet.Discovery().ServerPreferredResources()
 			if err != nil {
-				panic(err)
+				// If extension API server is not available, we emit a warning and continue.
+				if discovery.IsGroupDiscoveryFailedError(err) {
+					klog.Warningf("The Kubernetes server has an orphaned API service. Server reports: %s", err)
+					klog.Warningf("To fix this, check related API Server or kubectl delete apiservice <service-name>")
+				} else {
+					panic(err)
+				}
 			}
 			for _, api := range apiVersions {
 				// if certificates v1beta1 is present operator will use that api by default

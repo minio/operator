@@ -10,8 +10,8 @@ metadata:
   annotations: {{ toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if .Values.ingress.console.ingressClassName }}
-  ingressClassName: {{ .Values.ingress.console.ingressClassName }}
+  {{- with .Values.ingress.console.ingressClassName }}
+  ingressClassName: {{ . }}
   {{- end }}
   {{- if .Values.ingress.console.tls }}
   tls:
@@ -38,4 +38,4 @@ spec:
                   {{- else }}
                   name: http-console
                   {{- end }}
-{{ end }}
+{{- end }}

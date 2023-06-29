@@ -2,46 +2,42 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: "minio-operator"
-  namespace: {{ .Release.Namespace }}
-  labels:
-  {{- include "minio-operator.labels" . | nindent 4 }}
+  labels: {{- include "minio-operator.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.operator.replicaCount }}
   selector:
-    matchLabels:
-  {{- include "minio-operator.selectorLabels" . | nindent 6 }}
+    matchLabels: {{- include "minio-operator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels:
-    {{- include "minio-operator.selectorLabels" . | nindent 8 }}
+      labels: {{- include "minio-operator.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.operator.imagePullSecrets }}
-      imagePullSecrets:
-      {{- toYaml . | nindent 8 }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.operator.runtimeClassName }}
+      runtimeClassName: {{ . }}
       {{- end }}
       serviceAccountName: minio-operator
       {{- with .Values.operator.securityContext }}
-      securityContext:
-      {{- toYaml . | nindent 8 }}
+      securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.operator.nodeSelector }}
-      nodeSelector:
-      {{- toYaml . | nindent 8 }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.operator.affinity }}
-      affinity:
-      {{- toYaml . | nindent 8 }}
+      affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.operator.tolerations }}
-      tolerations:
-      {{- toYaml . | nindent 8 }}
+      tolerations: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.operator.topologySpreadConstraints }}
-      topologySpreadConstraints:
-      {{- toYaml . | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.operator.priorityClassName }}
       priorityClassName: {{ . }}
+      {{- end }}
+      {{- with .Values.operator.initContainers }}
+      initContainers: {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -50,20 +46,9 @@ spec:
           args:
             - controller
           {{- with .Values.operator.env }}
-          env:
-          {{ toYaml . | nindent 10 }}
+          env: {{- toYaml . | nindent 12 }}
           {{- end }}
-          resources:
-          {{- toYaml .Values.operator.resources | nindent 12 }}
-          securityContext:
+          resources: {{- toYaml .Values.operator.resources | nindent 12 }}
           {{- with .Values.operator.containerSecurityContext }}
-          {{- toYaml . | nindent 12 }}
+          securityContext: {{- toYaml . | nindent 12 }}
           {{- end }}
-      {{- with .Values.operator.initContainers }}
-      initContainers:
-      {{- toYaml . | nindent 8 }}
-      {{- end}}
-      {{- with .Values.operator.runtimeClassName }}
-      runtimeClassName:
-      {{- toYaml . | nindent 8 }}
-  {{- end }}
