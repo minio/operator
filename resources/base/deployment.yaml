@@ -11,6 +11,8 @@ spec:
   selector:
     matchLabels:
       name: minio-operator
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
