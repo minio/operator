@@ -2,13 +2,13 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"myminio","namespace":"minio-tenant"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:d560100702023bf91fc9080bd672db1322c4c920d67938ada98696417c3a9609","imagePullSecret":{},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
+    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"myminio","namespace":"minio-tenant"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:f6427f313105222ff49c7472cdc63ddcaea5d9a7500260fd718ef86e2a336bbd","imagePullSecret":{},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
     capabilities: "Full Lifecycle"
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
-    containerImage: quay.io/minio/operator:v5.0.6
+    containerImage: quay.io/minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -472,7 +472,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.6
+                    image: quay.io/minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -481,8 +481,6 @@ spec:
                       - containerPort: 9433
                         name: https
                     resources: {}
-                    securityContext:
-                      runAsNonRoot: true
                     volumeMounts:
                       - mountPath: /tmp/certs
                         name: tls-certificates
@@ -516,7 +514,8 @@ spec:
             selector:
               matchLabels:
                 name: minio-operator
-            strategy: {}
+            strategy:
+              type: Recreate
             template:
               metadata:
                 labels:
@@ -542,7 +541,7 @@ spec:
                         value: "off"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.6
+                    image: quay.io/minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -550,8 +549,6 @@ spec:
                         cpu: 200m
                         ephemeral-storage: 500Mi
                         memory: 256Mi
-                    securityContext:
-                      runAsNonRoot: true
                 serviceAccountName: minio-operator
     strategy: deployment
   installModes:
@@ -582,9 +579,9 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: minio/operator@sha256:c9f705ff2bd7e906e56bf8ece337770742fb54d561d5e6f26575779f808b612f
+    - image: quay.io/minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
       name: console
-    - image: minio/operator@sha256:c9f705ff2bd7e906e56bf8ece337770742fb54d561d5e6f26575779f808b612f
+    - image: quay.io/minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
       name: minio-operator
   version: 5.0.6
   labels:
