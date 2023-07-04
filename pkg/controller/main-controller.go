@@ -188,6 +188,9 @@ type Controller struct {
 	// image being used in the operator deployment
 	operatorImage string
 
+	initContainerImage string
+	sidecarImage       string
+
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
@@ -226,11 +229,21 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	ns := miniov2.GetNSFromFile()
 	ctx := context.Background()
 	oprImg := DefaultOperatorImage
+	initContainerImg := oprImg
+	sidecarImg := oprImg
 	oprDep, err := kubeClientSet.AppsV1().Deployments(ns).Get(ctx, DefaultDeploymentName, metav1.GetOptions{})
 	if err == nil && oprDep != nil {
 		// assume we are the first container, just in case they changed the default name
 		if len(oprDep.Spec.Template.Spec.Containers) > 0 {
 			oprImg = oprDep.Spec.Template.Spec.Containers[0].Image
+			for _, envVar := range oprDep.Spec.Template.Spec.Containers[0].Env {
+				if envVar.Name == "INIT_CONTAINER_IMAGE" {
+					initContainerImg = envVar.Value
+				}
+				if envVar.Name == "SIDECAR_IMAGE" {
+					sidecarImg = envVar.Value
+				}
+			}
 		}
 		// attempt to iterate in case there's multiple containers
 		for _, c := range oprDep.Spec.Template.Spec.Containers {
@@ -261,6 +274,8 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
+		initContainerImage:        initContainerImg,
+		sidecarImage:              sidecarImg,
 	}
 
 	// Initialize operator HTTP upgrade server handlers
@@ -958,15 +973,17 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				return WrapResult(Result{}, err)
 			}
 			ss = statefulsets.NewPool(&statefulsets.NewPoolArgs{
-				Tenant:          tenant,
-				SkipEnvVars:     skipEnvVars,
-				Pool:            &pool,
-				PoolStatus:      &tenant.Status.Pools[i],
-				ServiceName:     hlSvc.Name,
-				HostsTemplate:   c.hostsTemplate,
-				OperatorVersion: c.operatorVersion,
-				OperatorCATLS:   operatorCATLSExists,
-				OperatorImage:   c.operatorImage,
+				Tenant:             tenant,
+				SkipEnvVars:        skipEnvVars,
+				Pool:               &pool,
+				PoolStatus:         &tenant.Status.Pools[i],
+				ServiceName:        hlSvc.Name,
+				HostsTemplate:      c.hostsTemplate,
+				OperatorVersion:    c.operatorVersion,
+				OperatorCATLS:      operatorCATLSExists,
+				OperatorImage:      c.operatorImage,
+				InitContainerImage: c.initContainerImage,
+				SidecarImage:       c.sidecarImage,
 			})
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
@@ -1168,15 +1185,17 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
 			ss := statefulsets.NewPool(&statefulsets.NewPoolArgs{
-				Tenant:          tenant,
-				SkipEnvVars:     skipEnvVars,
-				Pool:            &pool,
-				PoolStatus:      &tenant.Status.Pools[i],
-				ServiceName:     hlSvc.Name,
-				HostsTemplate:   c.hostsTemplate,
-				OperatorVersion: c.operatorVersion,
-				OperatorCATLS:   operatorCATLSExists,
-				OperatorImage:   c.operatorImage,
+				Tenant:             tenant,
+				SkipEnvVars:        skipEnvVars,
+				Pool:               &pool,
+				PoolStatus:         &tenant.Status.Pools[i],
+				ServiceName:        hlSvc.Name,
+				HostsTemplate:      c.hostsTemplate,
+				OperatorVersion:    c.operatorVersion,
+				OperatorCATLS:      operatorCATLSExists,
+				OperatorImage:      c.operatorImage,
+				InitContainerImage: c.initContainerImage,
+				SidecarImage:       c.sidecarImage,
 			})
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return WrapResult(Result{}, err)
@@ -1218,15 +1237,17 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		}
 		// generated the expected StatefulSet based on the new tenant configuration
 		expectedStatefulSet := statefulsets.NewPool(&statefulsets.NewPoolArgs{
-			Tenant:          tenant,
-			SkipEnvVars:     skipEnvVars,
-			Pool:            &pool,
-			PoolStatus:      &tenant.Status.Pools[i],
-			ServiceName:     hlSvc.Name,
-			HostsTemplate:   c.hostsTemplate,
-			OperatorVersion: c.operatorVersion,
-			OperatorCATLS:   operatorCATLSExists,
-			OperatorImage:   c.operatorImage,
+			Tenant:             tenant,
+			SkipEnvVars:        skipEnvVars,
+			Pool:               &pool,
+			PoolStatus:         &tenant.Status.Pools[i],
+			ServiceName:        hlSvc.Name,
+			HostsTemplate:      c.hostsTemplate,
+			OperatorVersion:    c.operatorVersion,
+			OperatorCATLS:      operatorCATLSExists,
+			OperatorImage:      c.operatorImage,
+			InitContainerImage: c.initContainerImage,
+			SidecarImage:       c.sidecarImage,
 		})
 		// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
 		poolMatchesSS, err := poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet)

@@ -1656,6 +1656,10 @@ definitions:
           $ref: "#/definitions/pool"
       image:
         type: string
+      initContainerImage:
+        type: string
+      sidecarImage:
+        type: string
       namespace:
         type: string
       total_size:
@@ -1821,6 +1825,10 @@ definitions:
         type: string
         pattern: "^[a-z0-9-]{3,63}$"
       image:
+        type: string
+      initContainerImage:
+        type: string
+      sidecarImage:
         type: string
       pools:
         type: array
@@ -3413,4 +3421,4 @@ definitions:
       filename:
         type: string
       blob:
-       type: string        
+       type: string

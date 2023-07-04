@@ -87,6 +87,8 @@ func newInitCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVar(&o.operatorOpts.PrometheusNamespace, "prometheus-namespace", "", "namespace of the prometheus managed by prometheus-operator")
 	f.StringVar(&o.operatorOpts.PrometheusName, "prometheus-name", "", "name of the prometheus managed by prometheus-operator")
 	f.BoolVarP(&o.output, "output", "o", false, "dry run this command and generate requisite yaml")
+	f.StringVar(&o.operatorOpts.InitContainerImage, "init-container-image", "", "init container image")
+	f.StringVar(&o.operatorOpts.SidecarImage, "sidecar-image", "", "sidecar image")
 
 	return cmd
 }
@@ -238,6 +240,26 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 			Value: corev1.EnvVar{
 				Name:  "OPERATOR_STS_ENABLED",
 				Value: "on",
+			},
+		})
+	}
+	if o.operatorOpts.InitContainerImage != "" {
+		operatorDepPatches = append(operatorDepPatches, opInterface{
+			Op:   "add",
+			Path: "/spec/template/spec/containers/0/env/0",
+			Value: corev1.EnvVar{
+				Name:  "INIT_CONTAINER_IMAGE",
+				Value: o.operatorOpts.InitContainerImage,
+			},
+		})
+	}
+	if o.operatorOpts.SidecarImage != "" {
+		operatorDepPatches = append(operatorDepPatches, opInterface{
+			Op:   "add",
+			Path: "/spec/template/spec/containers/0/env/0",
+			Value: corev1.EnvVar{
+				Name:  "SIDECAR_IMAGE",
+				Value: o.operatorOpts.SidecarImage,
 			},
 		})
 	}

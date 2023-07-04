@@ -208,3 +208,7 @@ const PrometheusAddlScrapeConfigSecret = "minio-prom-additional-scrape-config"
 
 // PrometheusAddlScrapeConfigKey is the key in secret data
 const PrometheusAddlScrapeConfigKey = "prometheus-additional.yaml"
+
+const initContainerImageEnv = "INIT_CONTAINER_IMAGE"
+
+const sidecarImageEnv = "SIDECAR_IMAGE"

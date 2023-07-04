@@ -41,6 +41,10 @@ spec:
               value: "off"
             - name: OPERATOR_STS_ENABLED
               value: "off"
+            - name: SIDECAR_IMAGE
+              value: minio/operator:v5.0.6
+            - name: INIT_CONTAINER_IMAGE
+              value: minio/operator:v5.0.6
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

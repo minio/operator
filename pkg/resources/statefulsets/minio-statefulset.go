@@ -435,15 +435,17 @@ const CfgVol = "cfg-vol"
 
 // NewPoolArgs arguments used to create a new pool
 type NewPoolArgs struct {
-	Tenant          *miniov2.Tenant
-	SkipEnvVars     map[string][]byte
-	Pool            *miniov2.Pool
-	PoolStatus      *miniov2.PoolStatus
-	ServiceName     string
-	HostsTemplate   string
-	OperatorVersion string
-	OperatorCATLS   bool
-	OperatorImage   string
+	Tenant             *miniov2.Tenant
+	SkipEnvVars        map[string][]byte
+	Pool               *miniov2.Pool
+	PoolStatus         *miniov2.PoolStatus
+	ServiceName        string
+	HostsTemplate      string
+	OperatorVersion    string
+	OperatorCATLS      bool
+	OperatorImage      string
+	InitContainerImage string
+	SidecarImage       string
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
@@ -456,7 +458,6 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	hostsTemplate := args.HostsTemplate
 	operatorVersion := args.OperatorVersion
 	operatorCATLS := args.OperatorCATLS
-	operatorImage := args.OperatorImage
 
 	var podVolumes []corev1.Volume
 	replicas := pool.Servers
@@ -788,7 +789,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, skipEnvVars, pool, hostsTemplate, operatorVersion, certVolumeSources),
-		getSideCarContainer(t, operatorImage, pool),
+		getSideCarContainer(t, args.SidecarImage, pool),
 	}
 
 	// attach any sidecar containers and volumes
@@ -809,7 +810,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		unavailable = intstr.FromInt(2)
 	}
 
-	initContainer := getInitContainer(t, operatorImage, pool)
+	initContainer := getInitContainer(t, args.InitContainerImage, pool)
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: ssMeta,
@@ -875,10 +876,10 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	return ss
 }
 
-func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) v1.Container {
+func getInitContainer(t *miniov2.Tenant, initContainerImage string, pool *miniov2.Pool) v1.Container {
 	initContainer := corev1.Container{
 		Name:  "validate-arguments",
-		Image: operatorImage,
+		Image: initContainerImage,
 		Args: []string{
 			"validate",
 			"--tenant",
@@ -901,10 +902,10 @@ func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Poo
 	return initContainer
 }
 
-func getSideCarContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) v1.Container {
+func getSideCarContainer(t *miniov2.Tenant, sidecarImage string, pool *miniov2.Pool) v1.Container {
 	sidecarContainer := corev1.Container{
 		Name:  "sidecar",
-		Image: operatorImage,
+		Image: sidecarImage,
 		Args: []string{
 			"sidecar",
 			"--tenant",

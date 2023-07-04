@@ -81,13 +81,17 @@ type hostsTemplateValues struct {
 }
 
 var (
-	once                    sync.Once
-	tenantMinIOImageOnce    sync.Once
-	tenantKesImageOnce      sync.Once
-	monitoringIntervalOnce  sync.Once
-	k8sClusterDomain        string
-	tenantMinIOImage        string
-	tenantKesImage          string
+	once                   sync.Once
+	tenantMinIOImageOnce   sync.Once
+	tenantKesImageOnce     sync.Once
+	monitoringIntervalOnce sync.Once
+	// initContainerImageOnce  sync.Once
+	// sidecarImageOnce        sync.Once
+	k8sClusterDomain string
+	tenantMinIOImage string
+	tenantKesImage   string
+	// initContainerImage      string
+	// sidecarImage            string
 	monitoringInterval      int
 	prometheusNamespace     string
 	prometheusName          string
@@ -942,6 +946,22 @@ func GetTenantKesImage() string {
 	})
 	return tenantKesImage
 }
+
+// // GetInitContainerImage returns the init container image
+// func GetInitContainerImage() string {
+// 	initContainerImageOnce.Do(func() {
+// 		initContainerImage = envGet(initContainerImageEnv, "")
+// 	})
+// 	return initContainerImage
+// }
+
+// // GetSidecarImage returns the sidecar image
+// func GetSidecarImage() string {
+// 	sidecarImageOnce.Do(func() {
+// 		sidecarImage = envGet(sidecarImageEnv, "")
+// 	})
+// 	return sidecarImage
+// }
 
 // GetMonitoringInterval returns how ofter we should query tenants for cluster/health
 func GetMonitoringInterval() int {

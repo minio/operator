@@ -31,4 +31,6 @@ type OperatorOptions struct {
 	PrometheusNamespace string
 	PrometheusName      string
 	STS                 bool
+	InitContainerImage  string
+	SidecarImage        string
 }
