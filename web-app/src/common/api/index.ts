@@ -62,13 +62,11 @@ export class API {
 
   onError(err: any) {
     if (err.status) {
-      const errMessage = get(
-        err.response,
-        "body.message",
-        `Error ${err.status.toString()}`
-      );
+      const errMessage =
+        get(err.response, "body.message", `Error ${err.status.toString()}`) ||
+        "";
 
-      let detailedMessage = get(err.response, "body.detailedMessage", "");
+      let detailedMessage = get(err.response, "body.detailedMessage", "") || "";
 
       if (errMessage === detailedMessage) {
         detailedMessage = "";
