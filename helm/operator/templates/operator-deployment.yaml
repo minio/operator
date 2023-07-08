@@ -50,8 +50,7 @@ spec:
           args:
             - controller
           {{- with .Values.operator.env }}
-          env:
-          {{ toYaml . | nindent 10 }}
+          env: {{- toYaml . | nindent 10 }}
           {{- end }}
           resources:
           {{- toYaml .Values.operator.resources | nindent 12 }}
