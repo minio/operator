@@ -49,7 +49,7 @@ spec:
             - ui
             - --certs-dir=/tmp/certs
           {{- with .Values.console.env }}
-          env: {{- toYaml . | nindent 10 }}
+          env: {{- toYaml . | nindent 12 }}
           {{- end }}
           resources: {{- toYaml .Values.console.resources | nindent 12 }}
           {{- with .Values.console.containerSecurityContext }}
