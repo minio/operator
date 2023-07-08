@@ -50,6 +50,7 @@ console:
     repository: quay.io/minio/operator
     tag: v5.0.5
     pullPolicy: IfNotPresent
+  env: [ ]
   imagePullSecrets: [ ]
   initcontainers: [ ]
   replicaCount: 1
