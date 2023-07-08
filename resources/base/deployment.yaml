@@ -11,6 +11,8 @@ spec:
   selector:
     matchLabels:
       name: minio-operator
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -21,7 +23,7 @@ spec:
       serviceAccountName: minio-operator
       containers:
         - name: minio-operator
-          image: minio/operator:v5.0.5
+          image: minio/operator:v5.0.6
           imagePullPolicy: IfNotPresent
           args:
             - controller

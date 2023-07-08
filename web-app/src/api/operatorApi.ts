@@ -308,6 +308,7 @@ export type EncryptionConfiguration = MetadataFields & {
     crt?: string;
     ca?: string;
   };
+  policies?: object;
   gemalto?: GemaltoConfiguration;
   aws?: AwsConfiguration;
   vault?: VaultConfiguration;
@@ -318,6 +319,7 @@ export type EncryptionConfiguration = MetadataFields & {
 
 export type EncryptionConfigurationResponse = MetadataFields & {
   raw?: string;
+  policies?: object;
   image?: string;
   replicas?: string;
   server_tls?: CertificateInfo;

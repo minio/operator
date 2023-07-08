@@ -16,14 +16,10 @@
 
 import React, { Fragment, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  InputAdornment,
-  LinearProgress,
-  MenuItem,
-  Select,
-} from "@mui/material";
+import { LinearProgress, MenuItem, Select } from "@mui/material";
 import {
   Button,
+  InputBox,
   Loader,
   LockIcon,
   LoginWrapper,
@@ -47,7 +43,6 @@ import {
 } from "./loginThunks";
 import { resetForm, setJwt } from "./loginSlice";
 import StrategyForm from "./StrategyForm";
-import { LoginField } from "./LoginField";
 import { redirectRules } from "../../utils/sortFunctions";
 import { getLogoVar } from "../../config";
 
@@ -297,10 +292,6 @@ const Login = () => {
 
   const isK8S = useSelector((state: AppState) => state.login.isK8S);
 
-  const isOperator =
-    loginStrategy.loginStrategy === loginStrategyType.serviceAccount ||
-    loginStrategy.loginStrategy === loginStrategyType.redirectServiceAccount;
-
   useEffect(() => {
     if (navigateTo !== "") {
       dispatch(resetForm());
@@ -409,7 +400,7 @@ const Login = () => {
           <form className={classes.form} noValidate onSubmit={formSubmit}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <LoginField
+                <InputBox
                   required
                   className={classes.inputField}
                   fullWidth
@@ -422,14 +413,7 @@ const Login = () => {
                   autoComplete="off"
                   disabled={loginSending}
                   placeholder={"Enter JWT"}
-                  variant={"outlined"}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockIcon />
-                      </InputAdornment>
-                    ),
-                  }}
+                  startIcon={<LockIcon />}
                 />
               </Grid>
             </Grid>
@@ -482,13 +466,7 @@ const Login = () => {
       );
   }
 
-  let modeLogo: "console" | "directpv" | "operator" | "kes" | "subnet" =
-    "console";
   const logoVar = getLogoVar();
-
-  if (isOperator) {
-    modeLogo = "operator";
-  }
 
   let docsURL = "https://min.io/docs/minio/linux/index.html?ref=con";
   if (isK8S) {
@@ -500,9 +478,9 @@ const Login = () => {
     <Fragment>
       <MainError />
       <LoginWrapper
-        logoProps={{ applicationName: modeLogo, subVariant: logoVar }}
+        logoProps={{ applicationName: "operator", subVariant: logoVar }}
         form={loginComponent}
-        disableAnimation={true}
+        backgroundAnimation={false}
         formFooter={
           <Fragment>
             <a href={docsURL} target="_blank" rel="noopener">

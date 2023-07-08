@@ -22,7 +22,7 @@ import React, {
   useState,
 } from "react";
 import { Theme } from "@mui/material/styles";
-import { Button } from "mds";
+import { MainContainer } from "mds";
 import debounce from "lodash/debounce";
 import createStyles from "@mui/styles/createStyles";
 import withStyles from "@mui/styles/withStyles";
@@ -33,9 +33,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../store";
 import { snackBarCommon } from "./Common/FormComponents/common/styleLibrary";
-import { ErrorResponseHandler } from "../../common/types";
-import Menu from "./Menu/Menu";
-import api from "../../common/api";
+import AppMenu from "./Menu/AppMenu";
 import MainError from "./Common/MainError/MainError";
 import {
   CONSOLE_UI_RESOURCE,
@@ -47,12 +45,7 @@ import { IRouteRule } from "./Menu/types";
 import LoadingComponent from "../../common/LoadingComponent";
 import EditPool from "./Tenants/TenantDetails/Pools/EditPool/EditPool";
 import ComponentsScreen from "./Common/ComponentsScreen";
-import {
-  menuOpen,
-  serverIsLoading,
-  setServerNeedsRestart,
-  setSnackBarMessage,
-} from "../../systemSlice";
+import { menuOpen, setSnackBarMessage } from "../../systemSlice";
 import { selFeatures, selSession } from "./consoleSlice";
 
 const Hop = React.lazy(() => import("./Tenants/TenantDetails/hop/Hop"));
@@ -123,12 +116,6 @@ const Console = ({ classes }: IConsoleProps) => {
   const snackBarMessage = useSelector(
     (state: AppState) => state.system.snackBar
   );
-  const needsRestart = useSelector(
-    (state: AppState) => state.system.serverNeedsRestart
-  );
-  const isServerLoading = useSelector(
-    (state: AppState) => state.system.serverIsLoading
-  );
   const loadingProgress = useSelector(
     (state: AppState) => state.system.loadingProgress
   );
@@ -136,25 +123,6 @@ const Console = ({ classes }: IConsoleProps) => {
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
 
   const obOnly = !!features?.includes("object-browser-only");
-
-  const restartServer = () => {
-    dispatch(serverIsLoading(true));
-    api
-      .invoke("POST", "/api/v1/service/restart", {})
-      .then((res) => {
-        console.log("success restarting service");
-        dispatch(serverIsLoading(false));
-        dispatch(setServerNeedsRestart(false));
-      })
-      .catch((err: ErrorResponseHandler) => {
-        if (err.errorMessage === "Error 502") {
-          dispatch(setServerNeedsRestart(false));
-        }
-        dispatch(serverIsLoading(false));
-        console.log("failure restarting service");
-        console.error(err);
-      });
-  };
 
   // Layout effect to be executed after last re-render for resizing only
   useLayoutEffect(() => {
@@ -261,36 +229,12 @@ const Console = ({ classes }: IConsoleProps) => {
   }
 
   return (
-    <Fragment>
+    <MainContainer menu={!hideMenu ? <AppMenu /> : <Fragment />}>
       {session && session.status === "ok" ? (
         <div className={classes.root}>
           <CssBaseline />
-          {!hideMenu && <Menu />}
 
           <main className={classes.content}>
-            {needsRestart && (
-              <div className={classes.warningBar}>
-                {isServerLoading ? (
-                  <Fragment>
-                    The server is restarting.
-                    <LinearProgress className={classes.progress} />
-                  </Fragment>
-                ) : (
-                  <Fragment>
-                    The instance needs to be restarted for configuration changes
-                    to take effect.{" "}
-                    <Button
-                      id={"restart-server"}
-                      variant="secondary"
-                      onClick={() => {
-                        restartServer();
-                      }}
-                      label={"Restart"}
-                    />
-                  </Fragment>
-                )}
-              </div>
-            )}
             {loadingProgress < 100 && (
               <LinearProgress
                 className={classes.progress}
@@ -365,8 +309,10 @@ const Console = ({ classes }: IConsoleProps) => {
             </Routes>
           </main>
         </div>
-      ) : null}
-    </Fragment>
+      ) : (
+        <Fragment />
+      )}
+    </MainContainer>
   );
 };
 
