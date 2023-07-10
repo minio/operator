@@ -87,7 +87,7 @@ func GetCertificatesAPIVersion(clientSet kubernetes.Interface) CSRVersion {
 					klog.Warningf("The Kubernetes server has an orphaned API service. Server reports: %s", err)
 					klog.Warningf("To fix this, check related API Server or kubectl delete apiservice <service-name>")
 				} else {
-					panic(err)
+					klog.Warningf("API Discovery failed, Certificate generation might be affected: %s", err)
 				}
 			}
 			for _, api := range apiVersions {
