@@ -2892,7 +2892,7 @@
     "@typescript-eslint/types" "5.60.1"
     eslint-visitor-keys "^3.3.0"
 
-"@uiw/react-textarea-code-editor@^2.1.1", "@uiw/react-textarea-code-editor@^2.1.7":
+"@uiw/react-textarea-code-editor@^2.1.1":
   version "2.1.7"
   resolved "https://registry.yarnpkg.com/@uiw/react-textarea-code-editor/-/react-textarea-code-editor-2.1.7.tgz#f67a190e3f2b4627268e0d17600bbbe396545c33"
   integrity sha512-mh3+PLiWPM9eclpdQ16jhm1mlS9IEwwiNkfQX34RACB9M0p7JoSI8Tq0T+3sTgbGzgwkrruOvsXUY6NKYLohZQ==
@@ -4684,10 +4684,10 @@ destroy@1.2.0:
   resolved "https://registry.yarnpkg.com/destroy/-/destroy-1.2.0.tgz#4803735509ad8be552934c67df614f94e66fa015"
   integrity sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==
 
-detect-gpu@^5.0.29:
-  version "5.0.30"
-  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-5.0.30.tgz#87278708be4be1f79d2766eb4d6dc04c4d530fde"
-  integrity sha512-TfoGbAsy3uRz82OklH456eYS5eO+9BoqzKRZNpwFcW73ZHN8EvNmlSSrEU2XhLqIuBE+U9GtErl74kG4qTSEYg==
+detect-gpu@^5.0.17:
+  version "5.0.32"
+  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-5.0.32.tgz#ca03b5d943f5c3db18f0ef6afb326092012d0c49"
+  integrity sha512-Z310uSFzHnWoInT7czpgPH8yuragsoylzFTatKHSZ11UDSm+pTRnR8U2bkhwGn9AECjl72oYoJWD+G3P8RW2NQ==
   dependencies:
     webgl-constants "^1.1.1"
 
@@ -7811,15 +7811,14 @@ mdn-data@2.0.4:
   resolved "https://registry.yarnpkg.com/mdn-data/-/mdn-data-2.0.4.tgz#699b3c38ac6f1d728091a64650b65d388502fd5b"
   integrity sha512-iV3XNKw06j5Q7mi6h+9vbx23Tv7JkjEVgKHW4pimwyDGWm0OIQntJJ+u1C6mg6mK1EaTv42XQ7w76yuzH7M2cA==
 
-"mds@https://github.com/minio/mds.git#v0.6.7":
-  version "0.6.7"
-  resolved "https://github.com/minio/mds.git#e1e8f8888fd78c21be6efef3aa9ed3e1e454fe1d"
+"mds@https://github.com/minio/mds.git#v0.3.3":
+  version "0.3.3"
+  resolved "https://github.com/minio/mds.git#309b13379f64ec66a0e1f2670e7e8611b84e3215"
   dependencies:
     "@types/styled-components" "^5.1.25"
-    "@uiw/react-textarea-code-editor" "^2.1.7"
-    detect-gpu "^5.0.29"
-    react-virtualized "^9.22.5"
-    styled-components "^5.3.11"
+    detect-gpu "^5.0.17"
+    react-virtualized "^9.22.3"
+    styled-components "^5.3.9"
 
 media-typer@0.3.0:
   version "0.3.0"
@@ -9454,7 +9453,7 @@ react-virtual@^2.8.2:
   dependencies:
     "@reach/observe-rect" "^1.1.0"
 
-react-virtualized@^9.22.3, react-virtualized@^9.22.5:
+react-virtualized@^9.22.3:
   version "9.22.5"
   resolved "https://registry.yarnpkg.com/react-virtualized/-/react-virtualized-9.22.5.tgz#bfb96fed519de378b50d8c0064b92994b3b91620"
   integrity sha512-YqQMRzlVANBv1L/7r63OHa2b0ZsAaDp1UhVNEdUaXI8A5u6hTpA5NYtUueLH2rFuY/27mTGIBl7ZhqFKzw18YQ==
@@ -10410,7 +10409,7 @@ style-loader@^3.3.1:
   resolved "https://registry.yarnpkg.com/style-loader/-/style-loader-3.3.3.tgz#bba8daac19930169c0c9c96706749a597ae3acff"
   integrity sha512-53BiGLXAcll9maCYtZi2RCQZKa8NQQai5C4horqKyRmHj9H7QmcUyucrH+4KW/gBQbXM2AsB0axoEcFZPlfPcw==
 
-styled-components@^5.3.11:
+styled-components@^5.3.9:
   version "5.3.11"
   resolved "https://registry.yarnpkg.com/styled-components/-/styled-components-5.3.11.tgz#9fda7bf1108e39bf3f3e612fcc18170dedcd57a8"
   integrity sha512-uuzIIfnVkagcVHv9nE0VPlHPSCmXIUGKfJ42LNjxCCTDTL5sgnJ8Z7GZBq0EnLYGln77tPpEpExt2+qa+cZqSw==
