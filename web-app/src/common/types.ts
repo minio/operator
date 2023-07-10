@@ -166,6 +166,7 @@ export interface ErrorResponseHandler {
   errorMessage: string;
   detailedError: string;
   statusCode?: number;
+  message?: string; // if any type error thrown
 }
 
 export interface IBytesCalc {

@@ -87,21 +87,24 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
       })
       .catch((err: ErrorResponseHandler) => {
         setAddLoading(false);
-        setErrorMessage(err.errorMessage);
+        const errMessage = err?.message || "" || err.errorMessage;
+        setErrorMessage(errMessage);
       });
   };
 
   useEffect(() => {
-    api
-      .invoke("GET", `/api/v1/namespaces/${namespace}/tenants/${tenant}/yaml`)
-      .then((res: ITenantYAML) => {
-        setLoading(false);
-        setTenantYaml(res.yaml);
-      })
-      .catch((err: ErrorResponseHandler) => {
-        setLoading(false);
-        dispatch(setModalErrorSnackMessage(err));
-      });
+    if (namespace && tenant) {
+      api
+        .invoke("GET", `/api/v1/namespaces/${namespace}/tenants/${tenant}/yaml`)
+        .then((res: ITenantYAML) => {
+          setLoading(false);
+          setTenantYaml(res.yaml);
+        })
+        .catch((err: ErrorResponseHandler) => {
+          setLoading(false);
+          dispatch(setModalErrorSnackMessage(err));
+        });
+    }
   }, [tenant, namespace, dispatch]);
 
   useEffect(() => {}, []);
@@ -116,15 +119,13 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
             <LinearProgress />
           </Grid>
         ))}
-      {errorMessage !== "" && (
-        <div className={classes.errorState}>{errorMessage}</div>
-      )}
 
       {!loading && (
         <form
           noValidate
           autoComplete="off"
           onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
+            e.preventDefault();
             updateTenant(e);
           }}
         >
@@ -132,7 +133,26 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
             <Grid item xs={12}>
               <SectionTitle>Tenant Specification</SectionTitle>
             </Grid>
-            <Grid item xs={12}>
+            {errorMessage ? (
+              <Grid
+                item
+                xs={12}
+                sx={{
+                  marginTop: "5px",
+                  marginBottom: "2px",
+                  border: "1px solid #b53b4b",
+                  borderRadius: "2px",
+                  padding: "5px",
+                }}
+              >
+                <div className={classes.errorState}>{errorMessage}</div>
+              </Grid>
+            ) : null}
+            <Grid
+              item
+              xs={12}
+              sx={errorMessage ? { border: "1px solid #b53b4b" } : {}}
+            >
               <CodeMirrorWrapper
                 value={tenantYaml}
                 mode={"yaml"}
