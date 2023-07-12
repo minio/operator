@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"crypto/tls"
+	"github.com/minio/operator/pkg/common"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -52,20 +53,6 @@ const (
 	// DefaultOperatorImage is the version fo the operator being used
 	DefaultOperatorImage = "minio/operator:v5.0.6"
 )
-
-const (
-	// OperatorRuntimeK8s is the default runtime when no specific runtime is set
-	OperatorRuntimeK8s Runtime = "k8s"
-	// OperatorRuntimeEKS is the EKS runtime flag
-	OperatorRuntimeEKS Runtime = "EKS"
-	// OperatorRuntimeOpenshift is the Openshift runtime flag
-	OperatorRuntimeOpenshift Runtime = "OPENSHIFT"
-	// OperatorRuntimeRancher is the Rancher runtime flag
-	OperatorRuntimeRancher Runtime = "RANCHER"
-)
-
-// Runtime type to for Operator runtime
-type Runtime string
 
 var serverCertsManager *xcerts.Manager
 
@@ -127,7 +114,7 @@ func (c *Controller) getTransport() *http.Transport {
 
 	// These chunk of code is intended for OpenShift ONLY and it will help us trust the signer to solve issue:
 	// https://github.com/minio/operator/issues/1412
-	if GetOperatorRuntime() == OperatorRuntimeOpenshift {
+	if GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
 		openShiftCATLSCert, err := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
 			context.Background(), "csr-signer", metav1.GetOptions{})
 		klog.Info("Checking if this is OpenShift Environment to append the certificates...")
@@ -257,22 +244,22 @@ func getOperatorDeploymentName() string {
 
 func GetOperatorRuntime() Runtime {
 	envString := os.Getenv(OperatorRuntimeEnv)
-	runtimeReturn := OperatorRuntimeK8s
+	runtimeReturn := common.OperatorRuntimeK8s
 	if envString != "" {
 		envString = strings.TrimSpace(envString)
 		envString = strings.ToUpper(envString)
 		switch envString {
-		case string(OperatorRuntimeEKS):
-			runtimeReturn = OperatorRuntimeEKS
+		case string(common.OperatorRuntimeEKS):
+			runtimeReturn = common.OperatorRuntimeEKS
 			break
-		case string(OperatorRuntimeOpenshift):
-			runtimeReturn = OperatorRuntimeEKS
+		case string(common.OperatorRuntimeOpenshift):
+			runtimeReturn = common.OperatorRuntimeEKS
 			break
-		case string(OperatorRuntimeRancher):
-			runtimeReturn = OperatorRuntimeRancher
+		case string(common.OperatorRuntimeRancher):
+			runtimeReturn = common.OperatorRuntimeRancher
 			break
 		default:
-			runtimeReturn = OperatorRuntimeK8s
+			runtimeReturn = common.OperatorRuntimeK8s
 		}
 	}
 	return runtimeReturn

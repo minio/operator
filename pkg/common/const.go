@@ -24,3 +24,17 @@ const (
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
 	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
 )
+
+const (
+	// OperatorRuntimeK8s is the default runtime when no specific runtime is set
+	OperatorRuntimeK8s Runtime = "k8s"
+	// OperatorRuntimeEKS is the EKS runtime flag
+	OperatorRuntimeEKS Runtime = "EKS"
+	// OperatorRuntimeOpenshift is the Openshift runtime flag
+	OperatorRuntimeOpenshift Runtime = "OPENSHIFT"
+	// OperatorRuntimeRancher is the Rancher runtime flag
+	OperatorRuntimeRancher Runtime = "RANCHER"
+)
+
+// Runtime type to for Operator runtime
+type Runtime string
