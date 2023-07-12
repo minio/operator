@@ -25,7 +25,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/klog/v2"
 	"strings"
+	"sync"
 )
 
 func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err error) {
@@ -88,4 +90,46 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 		return fmt.Errorf("%s empty pools", t.Name)
 	}
 	return nil
+}
+
+type PDBAvailable struct {
+	v1     bool
+	v1beta bool
+}
+
+var globalPdbAvailable = PDBAvailable{}
+var globalPdbAvailableOnce = sync.Once{}
+
+func (c *Controller) PDBAvailable() PDBAvailable {
+	globalPdbAvailableOnce.Do(func() {
+		defer func() {
+			if globalPdbAvailable.v1 {
+				klog.Infof("PodDisruptionBudget: v1")
+			} else if globalPdbAvailable.v1beta {
+				klog.Infof("PodDisruptionBudget: v1beta")
+			} else {
+				klog.Infof("PodDisruptionBudget: unsupport")
+			}
+		}()
+		resouces, _ := c.kubeClientSet.Discovery().ServerPreferredResources()
+		for _, r := range resouces {
+			if r.GroupVersion == "policy/v1" {
+				for _, api := range r.APIResources {
+					if api.Kind == "PodDisruptionBudget" {
+						globalPdbAvailable.v1 = true
+						return
+					}
+				}
+			}
+			if r.GroupVersion == "policy/v1beta" {
+				for _, api := range r.APIResources {
+					if api.Kind == "PodDisruptionBudget" {
+						globalPdbAvailable.v1beta = true
+						return
+					}
+				}
+			}
+		}
+	})
+	return globalPdbAvailable
 }
