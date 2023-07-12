@@ -18,6 +18,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"sync"
+
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	v1 "k8s.io/api/policy/v1"
 	"k8s.io/api/policy/v1beta1"
@@ -27,10 +30,41 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/klog/v2"
-	"strings"
-	"sync"
 )
 
+func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
+	available := c.PDBAvailable()
+	if !available.Available() {
+		return nil
+	}
+	if available.V1Available() {
+		pdbs, err := c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, pdb := range pdbs.Items {
+			err := c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Delete(ctx, pdb.Name, metav1.DeleteOptions{})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	if available.V1BetaAvailable() {
+		pdbs, err := c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		for _, pdb := range pdbs.Items {
+			err := c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Delete(ctx, pdb.Name, metav1.DeleteOptions{})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// CreateOrUpdatePDB - hold PDB as expected
 func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err error) {
 	available := c.PDBAvailable()
 	if !available.Available() {
@@ -157,27 +191,30 @@ type PDBAvailable struct {
 	v1beta bool
 }
 
+// V1Available - show if it support PDB v1
 func (p *PDBAvailable) V1Available() bool {
 	return p.v1
 }
 
+// V1BetaAvailable - show if it support PDB v1beta
 func (p *PDBAvailable) V1BetaAvailable() bool {
 	return p.v1beta
 }
 
+// Available - show if it support PDB
 func (p *PDBAvailable) Available() bool {
 	return p.v1 || p.v1beta
 }
 
-var globalPdbAvailable = PDBAvailable{}
-var globalPdbAvailableOnce = sync.Once{}
+var globalPDBAvailable = PDBAvailable{}
+var globalPDBAvailableOnce = sync.Once{}
 
 func (c *Controller) PDBAvailable() PDBAvailable {
-	globalPdbAvailableOnce.Do(func() {
+	globalPDBAvailableOnce.Do(func() {
 		defer func() {
-			if globalPdbAvailable.v1 {
+			if globalPDBAvailable.v1 {
 				klog.Infof("PodDisruptionBudget: v1")
-			} else if globalPdbAvailable.v1beta {
+			} else if globalPDBAvailable.v1beta {
 				klog.Infof("PodDisruptionBudget: v1beta")
 			} else {
 				klog.Infof("PodDisruptionBudget: unsupport")
@@ -188,7 +225,7 @@ func (c *Controller) PDBAvailable() PDBAvailable {
 			if r.GroupVersion == "policy/v1" {
 				for _, api := range r.APIResources {
 					if api.Kind == "PodDisruptionBudget" {
-						globalPdbAvailable.v1 = true
+						globalPDBAvailable.v1 = true
 						return
 					}
 				}
@@ -196,12 +233,12 @@ func (c *Controller) PDBAvailable() PDBAvailable {
 			if r.GroupVersion == "policy/v1beta" {
 				for _, api := range r.APIResources {
 					if api.Kind == "PodDisruptionBudget" {
-						globalPdbAvailable.v1beta = true
+						globalPDBAvailable.v1beta = true
 						return
 					}
 				}
 			}
 		}
 	})
-	return globalPdbAvailable
+	return globalPDBAvailable
 }
