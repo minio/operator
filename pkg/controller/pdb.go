@@ -32,6 +32,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// DeletePDB - delete PDB for tenant
 func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 	available := c.PDBAvailable()
 	if !available.Available() {
