@@ -19,18 +19,18 @@ package controller
 import (
 	"context"
 	"crypto/tls"
+	"net"
+	"net/http"
+	"time"
+
 	"github.com/minio/operator/pkg/common"
+	"github.com/minio/operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"net"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xcerts "github.com/minio/pkg/certs"
@@ -44,8 +44,7 @@ const (
 	CertPasswordEnv = "OPERATOR_CERT_PASSWD"
 	// OperatorDeploymentNameEnv Env variable to specify a custom deployment name for Operator
 	OperatorDeploymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
-	// OperatorRuntimeEnv tells us which runtime we have. (EKS, Rancher, OpenShift, etc...)
-	OperatorRuntimeEnv = "MINIO_OPERATOR_RUNTIME"
+
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
 	OperatorCATLSSecretName = "operator-ca-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
@@ -114,7 +113,7 @@ func (c *Controller) getTransport() *http.Transport {
 
 	// These chunk of code is intended for OpenShift ONLY and it will help us trust the signer to solve issue:
 	// https://github.com/minio/operator/issues/1412
-	if GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+	if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
 		openShiftCATLSCert, err := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
 			context.Background(), "csr-signer", metav1.GetOptions{})
 		klog.Info("Checking if this is OpenShift Environment to append the certificates...")
@@ -240,27 +239,4 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 // getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
 func getOperatorDeploymentName() string {
 	return env.Get(OperatorDeploymentNameEnv, DefaultDeploymentName)
-}
-
-func GetOperatorRuntime() Runtime {
-	envString := os.Getenv(OperatorRuntimeEnv)
-	runtimeReturn := common.OperatorRuntimeK8s
-	if envString != "" {
-		envString = strings.TrimSpace(envString)
-		envString = strings.ToUpper(envString)
-		switch envString {
-		case string(common.OperatorRuntimeEKS):
-			runtimeReturn = common.OperatorRuntimeEKS
-			break
-		case string(common.OperatorRuntimeOpenshift):
-			runtimeReturn = common.OperatorRuntimeEKS
-			break
-		case string(common.OperatorRuntimeRancher):
-			runtimeReturn = common.OperatorRuntimeRancher
-			break
-		default:
-			runtimeReturn = common.OperatorRuntimeK8s
-		}
-	}
-	return runtimeReturn
 }

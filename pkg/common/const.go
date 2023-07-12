@@ -26,6 +26,8 @@ const (
 )
 
 const (
+	// OperatorRuntimeEnv tells us which runtime we have. (EKS, Rancher, OpenShift, etc...)
+	OperatorRuntimeEnv = "MINIO_OPERATOR_RUNTIME"
 	// OperatorRuntimeK8s is the default runtime when no specific runtime is set
 	OperatorRuntimeK8s Runtime = "k8s"
 	// OperatorRuntimeEKS is the EKS runtime flag

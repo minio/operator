@@ -16,11 +16,12 @@ package certificates
 
 import (
 	"context"
-	"github.com/minio/operator/pkg/common"
-	"github.com/minio/operator/pkg/controller"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/minio/operator/pkg/common"
+	"github.com/minio/operator/pkg/utils"
 
 	certificatesV1 "k8s.io/api/certificates/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -112,7 +113,7 @@ func GetCSRSignerName(clientSet kubernetes.Interface) string {
 		// get certificates using their CSRSignerName https://docs.aws.amazon.com/eks/latest/userguide/cert-signing.html
 		if GetCertificatesAPIVersion(clientSet) == CSRV1 {
 			// if the user specified the EKS runtime, no need to do the check
-			if controller.GetOperatorRuntime() == common.OperatorRuntimeEKS {
+			if utils.GetOperatorRuntime() == common.OperatorRuntimeEKS {
 				csrSignerName = EKSCsrSignerName
 				return
 			}
