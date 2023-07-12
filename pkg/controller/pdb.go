@@ -97,6 +97,10 @@ type PDBAvailable struct {
 	v1beta bool
 }
 
+func (p *PDBAvailable) Available() bool {
+	return p.v1 || p.v1beta
+}
+
 var globalPdbAvailable = PDBAvailable{}
 var globalPdbAvailableOnce = sync.Once{}
 
