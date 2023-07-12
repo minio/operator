@@ -20,6 +20,7 @@ import (
 	"fmt"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	v1 "k8s.io/api/policy/v1"
+	"k8s.io/api/policy/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -39,56 +40,111 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 		if strings.TrimSpace(pool.Name) == "" {
 			continue
 		}
-		var pdb *v1.PodDisruptionBudget
-		var isCreate = false
-		pdb, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Get(ctx, pool.Name, metav1.GetOptions{})
-		if err != nil {
-			if k8serrors.IsNotFound(err) {
-				pdb = &v1.PodDisruptionBudget{}
-				isCreate = true
+		if available.V1Available() {
+			var pdb *v1.PodDisruptionBudget
+			var isCreate = false
+			pdb, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Get(ctx, pool.Name, metav1.GetOptions{})
+			if err != nil {
+				if k8serrors.IsNotFound(err) {
+					pdb = &v1.PodDisruptionBudget{}
+					isCreate = true
+				} else {
+					return err
+				}
+			}
+			if !isCreate {
+				// exist and as expected
+				if pdb.Spec.MaxUnavailable != nil && pdb.Spec.MaxUnavailable.IntValue() == (int(pool.Servers/2)) {
+					return nil
+				}
+			}
+			// set filed we expected
+			pdb.Name = pool.Name
+			pdb.Namespace = t.Namespace
+			maxUnavailable := intstr.FromInt(int(pool.Servers / 2))
+			pdb.Spec.MaxUnavailable = &maxUnavailable
+			pdb.Labels = map[string]string{
+				v2.TenantLabel: t.Name,
+				v2.PoolLabel:   pool.Name,
+			}
+			pdb.Spec.Selector = metav1.SetAsLabelSelector(labels.Set{
+				v2.PoolLabel:   pool.Name,
+				v2.TenantLabel: t.Name,
+			})
+			if isCreate {
+				_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Create(ctx, pdb, metav1.CreateOptions{})
+				if err != nil {
+					return err
+				}
 			} else {
-				return err
+				patchData := map[string]interface{}{
+					"spec": map[string]interface{}{
+						"maxUnavailable": pdb.Spec.MaxUnavailable,
+					},
+				}
+				pData, err := json.Marshal(patchData)
+				if err != nil {
+					return err
+				}
+				_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Patch(ctx, t.Name, types.MergePatchType, pData, metav1.PatchOptions{})
+				if err != nil {
+					return nil
+				}
 			}
 		}
-		if !isCreate {
-			// exist and as expected
-			if pdb.Spec.MaxUnavailable != nil && pdb.Spec.MaxUnavailable.IntValue() == (int(pool.Servers/2)) {
-				return nil
-			}
-		}
-		// set filed we expected
-		pdb.Name = pool.Name
-		pdb.Namespace = t.Namespace
-		maxUnavailable := intstr.FromInt(int(pool.Servers / 2))
-		pdb.Spec.MaxUnavailable = &maxUnavailable
-		pdb.Labels = map[string]string{
-			v2.TenantLabel: t.Name,
-			v2.PoolLabel:   pool.Name,
-		}
-		pdb.Spec.Selector = metav1.SetAsLabelSelector(labels.Set{
-			v2.PoolLabel:   pool.Name,
-			v2.TenantLabel: t.Name,
-		})
-		if isCreate {
-			_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Create(ctx, pdb, metav1.CreateOptions{})
+		if available.V1BetaAvailable() {
+			var pdb *v1beta1.PodDisruptionBudget
+			var isCreate = false
+			pdb, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Get(ctx, pool.Name, metav1.GetOptions{})
 			if err != nil {
-				return err
+				if k8serrors.IsNotFound(err) {
+					pdb = &v1beta1.PodDisruptionBudget{}
+					isCreate = true
+				} else {
+					return err
+				}
 			}
-		} else {
-			patchData := map[string]interface{}{
-				"spec": map[string]interface{}{
-					"maxUnavailable": pdb.Spec.MaxUnavailable,
-				},
+			if !isCreate {
+				// exist and as expected
+				if pdb.Spec.MaxUnavailable != nil && pdb.Spec.MaxUnavailable.IntValue() == (int(pool.Servers/2)) {
+					return nil
+				}
 			}
-			pData, err := json.Marshal(patchData)
-			if err != nil {
-				return err
+			// set filed we expected
+			pdb.Name = pool.Name
+			pdb.Namespace = t.Namespace
+			maxUnavailable := intstr.FromInt(int(pool.Servers / 2))
+			pdb.Spec.MaxUnavailable = &maxUnavailable
+			pdb.Labels = map[string]string{
+				v2.TenantLabel: t.Name,
+				v2.PoolLabel:   pool.Name,
 			}
-			_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Patch(ctx, t.Name, types.MergePatchType, pData, metav1.PatchOptions{})
-			if err != nil {
-				return nil
+			pdb.Spec.Selector = metav1.SetAsLabelSelector(labels.Set{
+				v2.PoolLabel:   pool.Name,
+				v2.TenantLabel: t.Name,
+			})
+			if isCreate {
+				_, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Create(ctx, pdb, metav1.CreateOptions{})
+				if err != nil {
+					return err
+				}
+			} else {
+				patchData := map[string]interface{}{
+					"spec": map[string]interface{}{
+						"maxUnavailable": pdb.Spec.MaxUnavailable,
+					},
+				}
+				pData, err := json.Marshal(patchData)
+				if err != nil {
+					return err
+				}
+				_, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Patch(ctx, t.Name, types.MergePatchType, pData, metav1.PatchOptions{})
+				if err != nil {
+					return nil
+				}
 			}
 		}
+
 	}
 	if len(t.Spec.Pools) == 0 {
 		return fmt.Errorf("%s empty pools", t.Name)
@@ -99,6 +155,14 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 type PDBAvailable struct {
 	v1     bool
 	v1beta bool
+}
+
+func (p *PDBAvailable) V1Available() bool {
+	return p.v1
+}
+
+func (p *PDBAvailable) V1BetaAvailable() bool {
+	return p.v1beta
 }
 
 func (p *PDBAvailable) Available() bool {
