@@ -31,6 +31,10 @@ import (
 )
 
 func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err error) {
+	available := c.PDBAvailable()
+	if !available.Available() {
+		return nil
+	}
 	for _, pool := range t.Spec.Pools {
 		if strings.TrimSpace(pool.Name) == "" {
 			continue
