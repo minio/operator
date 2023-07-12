@@ -33,17 +33,19 @@ function main() {
 
     setup_sts_bucket
 
-    #install_sts_client "minio-sdk-dotnet"
+#    install_sts_client "minio-sdk-dotnet" &
 
-    install_sts_client "minio-sdk-go"
+    install_sts_client "minio-sdk-go" &
 
-    #install_sts_client "minio-sdk-java"
+    #install_sts_client "minio-sdk-java" &
 
-    # install_sts_client "minio-sdk-javascript"
+    # install_sts_client "minio-sdk-javascript" &
 
-    install_sts_client "minio-sdk-python"
+    install_sts_client "minio-sdk-python" &
 
-    install_sts_client "aws-sdk-python"
+    install_sts_client "aws-sdk-python" &
+
+    wait
 
     destroy_kind
 }
