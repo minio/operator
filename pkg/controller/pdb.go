@@ -39,27 +39,23 @@ func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 		return nil
 	}
 	if available.V1Available() {
-		pdbs, err := c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).List(ctx, metav1.ListOptions{})
+		err := c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: metav1.SetAsLabelSelector(labels.Set{
+				v2.TenantLabel: t.Name,
+			}).String(),
+		})
 		if err != nil {
 			return err
-		}
-		for _, pdb := range pdbs.Items {
-			err := c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Delete(ctx, pdb.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return err
-			}
 		}
 	}
 	if available.V1BetaAvailable() {
-		pdbs, err := c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).List(ctx, metav1.ListOptions{})
+		err := c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: metav1.SetAsLabelSelector(labels.Set{
+				v2.TenantLabel: t.Name,
+			}).String(),
+		})
 		if err != nil {
 			return err
-		}
-		for _, pdb := range pdbs.Items {
-			err := c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Delete(ctx, pdb.Name, metav1.DeleteOptions{})
-			if err != nil {
-				return err
-			}
 		}
 	}
 	return nil
