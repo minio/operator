@@ -38,5 +38,13 @@ const (
 	OperatorRuntimeRancher Runtime = "RANCHER"
 )
 
+// Runtimes is a map of the supported Kubernetes runtimes
+var Runtimes = map[string]Runtime{
+	"K8S":       OperatorRuntimeK8s,
+	"EKS":       OperatorRuntimeK8s,
+	"OPENSHIFT": OperatorRuntimeOpenshift,
+	"RANCHER":   OperatorRuntimeRancher,
+}
+
 // Runtime type to for Operator runtime
 type Runtime string

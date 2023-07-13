@@ -65,15 +65,8 @@ func GetOperatorRuntime() common.Runtime {
 	if envString != "" {
 		envString = strings.TrimSpace(envString)
 		envString = strings.ToUpper(envString)
-		switch envString {
-		case string(common.OperatorRuntimeEKS):
-			runtimeReturn = common.OperatorRuntimeEKS
-		case string(common.OperatorRuntimeOpenshift):
-			runtimeReturn = common.OperatorRuntimeEKS
-		case string(common.OperatorRuntimeRancher):
-			runtimeReturn = common.OperatorRuntimeRancher
-		default:
-			runtimeReturn = common.OperatorRuntimeK8s
+		if val, ok := common.Runtimes[envString]; ok {
+			runtimeReturn = val
 		}
 	}
 	return runtimeReturn
