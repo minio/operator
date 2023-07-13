@@ -41,7 +41,7 @@ const (
 // Runtimes is a map of the supported Kubernetes runtimes
 var Runtimes = map[string]Runtime{
 	"K8S":       OperatorRuntimeK8s,
-	"EKS":       OperatorRuntimeK8s,
+	"EKS":       OperatorRuntimeEKS,
 	"OPENSHIFT": OperatorRuntimeOpenshift,
 	"RANCHER":   OperatorRuntimeRancher,
 }
