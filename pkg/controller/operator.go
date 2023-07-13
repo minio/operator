@@ -21,7 +21,6 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/minio/operator/pkg/common"
@@ -239,5 +238,5 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 
 // getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
 func getOperatorDeploymentName() string {
-	return strings.ToUpper(env.Get(OperatorDeploymentNameEnv, DefaultDeploymentName))
+	return env.Get(OperatorDeploymentNameEnv, DefaultDeploymentName)
 }
