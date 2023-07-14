@@ -194,7 +194,7 @@ func (p *PDBAvailable) V1Available() bool {
 	return p.v1
 }
 
-// V1BetaAvailable - show if it support PDB v1beta
+// V1BetaAvailable - show if it supports PDB v1beta
 func (p *PDBAvailable) V1BetaAvailable() bool {
 	return p.v1beta
 }
