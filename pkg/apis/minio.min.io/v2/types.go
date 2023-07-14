@@ -132,6 +132,12 @@ type TenantSpec struct {
 	// If provided, the MinIO Operator adds the specified environment variables when deploying the Tenant resource.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// *Optional* +
+	//
+	// Starts minio server with SFTP support
+	EnableSFTP *bool `json:"enableSFTP,omitempty"`
+
 	// *Optional* +
 	//
 	// Enables TLS with SNI support on each MinIO pod in the tenant. If `externalCertSecret` is omitted *and* `requestAutoCert` is set to `false`, the MinIO Tenant deploys *without* TLS enabled. +
