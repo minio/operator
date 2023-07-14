@@ -204,8 +204,8 @@ func (p *PDBAvailable) Available() bool {
 	return p.v1 || p.v1beta
 }
 
-var globalPDBAvailable = PDBAvailable{}
-var globalPDBAvailableOnce = sync.Once{}
+var globalPDBAvailable PDBAvailable
+var globalPDBAvailableOnce sync.Once
 
 // PDBAvailable - return globalPDBAvailable
 func (c *Controller) PDBAvailable() PDBAvailable {
