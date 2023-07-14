@@ -24,3 +24,27 @@ const (
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
 	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
 )
+
+const (
+	// OperatorRuntimeEnv tells us which runtime we have. (EKS, Rancher, OpenShift, etc...)
+	OperatorRuntimeEnv = "MINIO_OPERATOR_RUNTIME"
+	// OperatorRuntimeK8s is the default runtime when no specific runtime is set
+	OperatorRuntimeK8s Runtime = "K8S"
+	// OperatorRuntimeEKS is the EKS runtime flag
+	OperatorRuntimeEKS Runtime = "EKS"
+	// OperatorRuntimeOpenshift is the Openshift runtime flag
+	OperatorRuntimeOpenshift Runtime = "OPENSHIFT"
+	// OperatorRuntimeRancher is the Rancher runtime flag
+	OperatorRuntimeRancher Runtime = "RANCHER"
+)
+
+// Runtimes is a map of the supported Kubernetes runtimes
+var Runtimes = map[string]Runtime{
+	"K8S":       OperatorRuntimeK8s,
+	"EKS":       OperatorRuntimeEKS,
+	"OPENSHIFT": OperatorRuntimeOpenshift,
+	"RANCHER":   OperatorRuntimeRancher,
+}
+
+// Runtime type to for Operator runtime
+type Runtime string
