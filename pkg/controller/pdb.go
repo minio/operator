@@ -73,7 +73,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 		}
 		if available.V1Available() {
 			var pdb *v1.PodDisruptionBudget
-			var isCreate = false
+			var isCreate bool
 			pdb, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Get(ctx, pool.Name, metav1.GetOptions{})
 			if err != nil {
 				if k8serrors.IsNotFound(err) {
@@ -125,7 +125,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 		}
 		if available.V1BetaAvailable() {
 			var pdb *v1beta1.PodDisruptionBudget
-			var isCreate = false
+			var isCreate bool
 			pdb, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Get(ctx, pool.Name, metav1.GetOptions{})
 			if err != nil {
 				if k8serrors.IsNotFound(err) {
