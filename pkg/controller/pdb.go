@@ -183,12 +183,13 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 	return nil
 }
 
+// PDBAvailable - v1 for v1.PDB and v1beta for v1beta.PDB,flag for support or not
 type PDBAvailable struct {
 	v1     bool
 	v1beta bool
 }
 
-// V1Available - show if it support PDB v1
+// V1Available - show if it supports PDB v1
 func (p *PDBAvailable) V1Available() bool {
 	return p.v1
 }
@@ -198,7 +199,7 @@ func (p *PDBAvailable) V1BetaAvailable() bool {
 	return p.v1beta
 }
 
-// Available - show if it support PDB
+// Available - show if it supports PDB
 func (p *PDBAvailable) Available() bool {
 	return p.v1 || p.v1beta
 }
@@ -206,6 +207,7 @@ func (p *PDBAvailable) Available() bool {
 var globalPDBAvailable = PDBAvailable{}
 var globalPDBAvailableOnce = sync.Once{}
 
+// PDBAvailable - return globalPDBAvailable
 func (c *Controller) PDBAvailable() PDBAvailable {
 	globalPDBAvailableOnce.Do(func() {
 		defer func() {
