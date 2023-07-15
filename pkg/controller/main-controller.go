@@ -1306,6 +1306,12 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
 	}
 
+	// Create Or Update PDB for tenant
+	err = c.CreateOrUpdatePDB(ctx, tenant)
+	if err != nil {
+		return WrapResult(Result{}, err)
+	}
+
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
 	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalAvailableReplicas)

@@ -34,7 +34,7 @@ import (
 
 // DeletePDB - delete PDB for tenant
 func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
-	available := c.PDBAvailable()
+	available := c.GetPDBAvailable()
 	if !available.Available() {
 		return nil
 	}
@@ -45,6 +45,11 @@ func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 			}).String(),
 		})
 		if err != nil {
+			// don't exist
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
+			klog.Errorf("Delete tenant %s's V1.PDB failed:%s", t.Name, err.Error())
 			return err
 		}
 	}
@@ -55,6 +60,11 @@ func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 			}).String(),
 		})
 		if err != nil {
+			// don't exist
+			if k8serrors.IsNotFound(err) {
+				return nil
+			}
+			klog.Errorf("Delete tenant %s's V1Bata.PDB failed:%s", t.Name, err.Error())
 			return err
 		}
 	}
@@ -63,7 +73,7 @@ func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 
 // CreateOrUpdatePDB - hold PDB as expected
 func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err error) {
-	available := c.PDBAvailable()
+	available := c.GetPDBAvailable()
 	if !available.Available() {
 		return nil
 	}
@@ -209,8 +219,9 @@ var (
 	globalPDBAvailableOnce sync.Once
 )
 
-// PDBAvailable - return globalPDBAvailable
-func (c *Controller) PDBAvailable() PDBAvailable {
+// GetPDBAvailable - return globalPDBAvailable
+// thread safe
+func (c *Controller) GetPDBAvailable() PDBAvailable {
 	globalPDBAvailableOnce.Do(func() {
 		defer func() {
 			if globalPDBAvailable.v1 {
