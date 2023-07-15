@@ -60,7 +60,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !o.force {
 				if !helpers.Ask("This will delete the MinIO Operator and ALL its data. Do you want to proceed") {
-					return fmt.Errorf(helpers.Bold("Aborting MinIO Operator deletion"))
+					return fmt.Errorf("Aborting MinIO Operator deletion")
 				}
 			}
 			err := o.run(out)
