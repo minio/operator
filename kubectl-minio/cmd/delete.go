@@ -46,6 +46,7 @@ type deleteCmd struct {
 	output       bool
 	operatorOpts resources.OperatorOptions
 	force        bool
+	dangerous    bool
 }
 
 func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
@@ -63,6 +64,11 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 					return fmt.Errorf("Aborting MinIO Operator deletion")
 				}
 			}
+			if !o.dangerous {
+				if !helpers.Ask("Please provide the dangerous flag to confirm deletion") {
+					return fmt.Errorf("Aborting MinIO Operator deletion")
+				}
+			}
 			err := o.run(out)
 			if err != nil {
 				klog.Warning(err)
@@ -75,6 +81,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f := cmd.Flags()
 	f.StringVarP(&o.operatorOpts.Namespace, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	f.BoolVarP(&o.force, "force", "f", false, "force delete without confirmation")
+	f.BoolVarP(&o.dangerous, "dangerous", "d", false, "delete without confirmation")
 	return cmd
 }
 
