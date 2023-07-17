@@ -95,15 +95,15 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			}
 			if !isCreate {
 				// exist and as expected
-				if pdb.Spec.MaxUnavailable != nil && pdb.Spec.MaxUnavailable.IntValue() == (int(pool.Servers/2)) {
+				if pdb.Spec.MinAvailable != nil && pdb.Spec.MinAvailable.IntValue() == (int(pool.Servers/2)) {
 					return nil
 				}
 			}
 			// set filed we expected
 			pdb.Name = pool.Name
 			pdb.Namespace = t.Namespace
-			maxUnavailable := intstr.FromInt(int(pool.Servers / 2))
-			pdb.Spec.MaxUnavailable = &maxUnavailable
+			minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
+			pdb.Spec.MinAvailable = &minAvailable
 			pdb.Labels = map[string]string{
 				v2.TenantLabel: t.Name,
 				v2.PoolLabel:   pool.Name,
@@ -120,7 +120,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			} else {
 				patchData := map[string]interface{}{
 					"spec": map[string]interface{}{
-						"maxUnavailable": pdb.Spec.MaxUnavailable,
+						"minAvailable": pdb.Spec.MinAvailable,
 					},
 				}
 				pData, err := json.Marshal(patchData)
@@ -147,15 +147,15 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			}
 			if !isCreate {
 				// exist and as expected
-				if pdb.Spec.MaxUnavailable != nil && pdb.Spec.MaxUnavailable.IntValue() == (int(pool.Servers/2)) {
+				if pdb.Spec.MinAvailable != nil && pdb.Spec.MinAvailable.IntValue() == (int(pool.Servers/2)) {
 					return nil
 				}
 			}
 			// set filed we expected
 			pdb.Name = pool.Name
 			pdb.Namespace = t.Namespace
-			maxUnavailable := intstr.FromInt(int(pool.Servers / 2))
-			pdb.Spec.MaxUnavailable = &maxUnavailable
+			minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
+			pdb.Spec.MinAvailable = &minAvailable
 			pdb.Labels = map[string]string{
 				v2.TenantLabel: t.Name,
 				v2.PoolLabel:   pool.Name,
@@ -172,7 +172,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			} else {
 				patchData := map[string]interface{}{
 					"spec": map[string]interface{}{
-						"maxUnavailable": pdb.Spec.MaxUnavailable,
+						"minAvailable": pdb.Spec.MinAvailable,
 					},
 				}
 				pData, err := json.Marshal(patchData)
