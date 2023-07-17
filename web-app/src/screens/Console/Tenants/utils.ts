@@ -16,7 +16,7 @@
 
 export const clearValidationError = (
   validationErrors: any,
-  fieldKey: string
+  fieldKey: string,
 ) => {
   const newValidationElement = { ...validationErrors };
   delete newValidationElement[fieldKey];

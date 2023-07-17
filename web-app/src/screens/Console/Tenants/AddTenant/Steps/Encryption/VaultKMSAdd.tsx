@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const VaultKMSAdd = () => {
@@ -50,34 +50,35 @@ const VaultKMSAdd = () => {
   const classes = useStyles();
 
   const encryptionTab = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.encryptionTab
+    (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
   );
   const vaultEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.vaultEndpoint,
   );
   const vaultEngine = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultEngine
+    (state: AppState) => state.createTenant.fields.encryption.vaultEngine,
   );
   const vaultNamespace = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultNamespace
+    (state: AppState) => state.createTenant.fields.encryption.vaultNamespace,
   );
   const vaultPrefix = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultPrefix
+    (state: AppState) => state.createTenant.fields.encryption.vaultPrefix,
   );
   const vaultAppRoleEngine = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultAppRoleEngine
+    (state: AppState) =>
+      state.createTenant.fields.encryption.vaultAppRoleEngine,
   );
   const vaultId = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultId
+    (state: AppState) => state.createTenant.fields.encryption.vaultId,
   );
   const vaultSecret = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultSecret
+    (state: AppState) => state.createTenant.fields.encryption.vaultSecret,
   );
   const vaultRetry = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultRetry
+    (state: AppState) => state.createTenant.fields.encryption.vaultRetry,
   );
   const vaultPing = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultPing
+    (state: AppState) => state.createTenant.fields.encryption.vaultPing,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -127,7 +128,7 @@ const VaultKMSAdd = () => {
       isPageValid({
         pageName: "encryption",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -146,10 +147,10 @@ const VaultKMSAdd = () => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {

@@ -112,7 +112,7 @@ const CSVMultiSelector = ({
     (newString: string) => {
       onChange(newString);
     },
-    [onChange]
+    [onChange],
   );
 
   // We avoid multiple re-renders / hang issue typing too fast

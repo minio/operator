@@ -61,7 +61,7 @@ const styles = (theme: Theme) =>
 const inputStyles = makeStyles((theme: Theme) =>
   createStyles({
     ...inputFieldStyles,
-  })
+  }),
 );
 
 function InputField(props: TextFieldProps) {

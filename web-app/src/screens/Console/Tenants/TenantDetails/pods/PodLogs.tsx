@@ -91,7 +91,7 @@ const PodLogs = ({
 }: IPodLogsProps) => {
   const dispatch = useAppDispatch();
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
   const [highlight, setHighlight] = useState<string>("");
   const [logLines, setLogLines] = useState<string[]>([]);
@@ -163,7 +163,7 @@ const PodLogs = ({
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${namespace}/tenants/${tenant}/pods/${podName}`
+          `/api/v1/namespaces/${namespace}/tenants/${tenant}/pods/${podName}`,
         )
         .then((res: string) => {
           setLogLines(res.split("\n"));

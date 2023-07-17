@@ -37,5 +37,5 @@ export const getTenantAsync = createAsyncThunk(
         dispatch(setErrorSnackMessage(err));
         return rejectWithValue(err);
       });
-  }
+  },
 );

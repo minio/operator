@@ -139,7 +139,7 @@ const CredentialsPrompt = ({
       "credentials.json",
       JSON.stringify({
         ...consoleExtras,
-      })
+      }),
     );
   };
 
@@ -162,7 +162,7 @@ const CredentialsPrompt = ({
       "all_credentials.json",
       JSON.stringify({
         ...allCredentials,
-      })
+      }),
     );
   };
 

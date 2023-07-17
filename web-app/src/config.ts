@@ -17,7 +17,7 @@
 export const MinIOPlan =
   (
     document.head.querySelector(
-      "[name~=minio-license][content]"
+      "[name~=minio-license][content]",
     ) as HTMLMetaElement
   )?.content || "AGPL";
 

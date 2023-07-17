@@ -30,7 +30,7 @@ const AppMenu = () => {
   let logoPlan = getLogoVar();
 
   const sidebarOpen = useSelector(
-    (state: AppState) => state.system.sidebarOpen
+    (state: AppState) => state.system.sidebarOpen,
   );
 
   const routes = validRoutes();

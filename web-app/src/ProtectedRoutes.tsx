@@ -66,7 +66,7 @@ const ProtectedRoute = ({ Component }: ProtectedRouteProps) => {
 
         if (res.customStyles && res.customStyles !== "") {
           const overrideColorVariants = getOverrideColorVariants(
-            res.customStyles
+            res.customStyles,
           );
 
           if (overrideColorVariants !== false) {
@@ -91,7 +91,7 @@ const ProtectedRoute = ({ Component }: ProtectedRouteProps) => {
               undefined,
               {
                 "X-Anonymous": "1",
-              }
+              },
             )
             .then((value) => {
               dispatch(setAnonymousMode());

@@ -78,7 +78,7 @@ const SelectStyled = withStyles((theme: Theme) =>
       borderBottom: 0,
       fontSize: 12,
     },
-  })
+  }),
 )(InputBase);
 
 interface IDateSelectorProps {
@@ -106,7 +106,7 @@ const DateSelector = forwardRef(
       onDateChange,
       value = "",
     }: IDateSelectorProps,
-    ref: any
+    ref: any,
   ) => {
     useImperativeHandle(ref, () => ({ resetDate }));
 
@@ -276,7 +276,7 @@ const DateSelector = forwardRef(
         </div>
       </Grid>
     );
-  }
+  },
 );
 
 export default withStyles(styles)(DateSelector);

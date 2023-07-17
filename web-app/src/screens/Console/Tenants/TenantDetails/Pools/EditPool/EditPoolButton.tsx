@@ -25,14 +25,14 @@ const EditPoolButton = () => {
   const requiredPages = ["setup", "affinity", "configure"];
 
   const selectedStorageClass = useSelector(
-    (state: AppState) => state.editPool.fields.setup.storageClass
+    (state: AppState) => state.editPool.fields.setup.storageClass,
   );
   const validPages = useSelector(
-    (state: AppState) => state.editPool.validPages
+    (state: AppState) => state.editPool.validPages,
   );
 
   const editSending = useSelector(
-    (state: AppState) => state.editPool.editSending
+    (state: AppState) => state.editPool.editSending,
   );
 
   const enabled =

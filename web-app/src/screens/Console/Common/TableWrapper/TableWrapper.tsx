@@ -255,7 +255,7 @@ const selectWidth = 45;
 const subRenderFunction = (
   rowData: any,
   column: IColumns,
-  isSelected: boolean
+  isSelected: boolean,
 ) => {
   const itemElement = isString(rowData)
     ? rowData
@@ -281,13 +281,13 @@ const calculateColumnRest = (
   hasSelect: boolean,
   hasActions: boolean,
   columnsSelector: boolean,
-  columnsShown: string[]
+  columnsShown: string[],
 ) => {
   let colsItems = [...columns];
 
   if (columnsSelector) {
     colsItems = columns.filter((column) =>
-      columnsShown.includes(column.elementKey!)
+      columnsShown.includes(column.elementKey!),
     );
   }
 
@@ -320,7 +320,7 @@ const generateColumnsMap = (
   columnsSelector: boolean,
   columnsShown: string[],
   sortColumn: string,
-  sortDirection: "ASC" | "DESC" | undefined
+  sortDirection: "ASC" | "DESC" | undefined,
 ) => {
   const commonRestWidth = calculateColumnRest(
     columns,
@@ -329,7 +329,7 @@ const generateColumnsMap = (
     hasSelect,
     hasActions,
     columnsSelector,
-    columnsShown
+    columnsShown,
   );
   return columns.map((column: IColumns, index: number) => {
     if (columnsSelector && !columnsShown.includes(column.elementKey!)) {
@@ -366,7 +366,7 @@ const generateColumnsMap = (
         cellRenderer={({ rowData }) => {
           const isSelected = selectedItems
             ? selectedItems.includes(
-                isString(rowData) ? rowData : rowData[idField]
+                isString(rowData) ? rowData : rowData[idField],
               )
             : false;
           return subRenderFunction(rowData, column, isSelected);
@@ -384,7 +384,7 @@ const elementActions = (
   actions: ItemActions[],
   valueToSend: any,
   selected: boolean,
-  idField: string
+  idField: string,
 ) => {
   return actions.map((action: ItemActions, index: number) => {
     if (action.type === "view") {
@@ -620,7 +620,7 @@ const TableWrapper = ({
                       width,
                       itemActions
                         ? itemActions.filter((el) => el.type !== "view").length
-                        : 0
+                        : 0,
                     );
                     const hasSelect: boolean = !!(onSelect && selectedItems);
                     const hasOptions: boolean = !!(
@@ -674,7 +674,7 @@ const TableWrapper = ({
                               return get(
                                 TableRowPredefStyles,
                                 returnElement,
-                                {}
+                                {},
                               );
                             }
 
@@ -715,7 +715,7 @@ const TableWrapper = ({
                                 ? selectedItems.includes(
                                     isString(rowData)
                                       ? rowData
-                                      : rowData[idField]
+                                      : rowData[idField],
                                   )
                                 : false;
 
@@ -770,7 +770,7 @@ const TableWrapper = ({
                           columnsSelector,
                           columnsShown,
                           sortConfig ? sortConfig.currentSort : "",
-                          sortConfig ? sortConfig.currentDirection : undefined
+                          sortConfig ? sortConfig.currentDirection : undefined,
                         )}
                         {hasOptions && (
                           // @ts-ignore
@@ -784,14 +784,14 @@ const TableWrapper = ({
                                 ? selectedItems.includes(
                                     isString(rowData)
                                       ? rowData
-                                      : rowData[idField]
+                                      : rowData[idField],
                                   )
                                 : false;
                               return elementActions(
                                 itemActions || [],
                                 rowData,
                                 isSelected,
-                                idField
+                                idField,
                               );
                             }}
                           />

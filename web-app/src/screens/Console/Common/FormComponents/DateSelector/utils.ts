@@ -35,7 +35,7 @@ const currentYear = new Date().getFullYear();
 
 export const years = Array.from(
   Array(25),
-  (_, numYear) => numYear + currentYear
+  (_, numYear) => numYear + currentYear,
 );
 
 export const validDate = (year: string, month: string, day: string): any[] => {

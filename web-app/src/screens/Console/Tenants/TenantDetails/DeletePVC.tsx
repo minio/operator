@@ -54,13 +54,13 @@ const DeletePVC = ({
         setErrorSnackMessage({
           errorMessage: "PVC name is incorrect",
           detailedError: "",
-        })
+        }),
       );
       return;
     }
     invokeDeleteApi(
       "DELETE",
-      `/api/v1/namespaces/${selectedPVC.namespace}/tenants/${selectedPVC.tenant}/pvc/${selectedPVC.name}`
+      `/api/v1/namespaces/${selectedPVC.namespace}/tenants/${selectedPVC.tenant}/pvc/${selectedPVC.name}`,
     );
   };
 

@@ -105,7 +105,7 @@ const VerticalTabs = ({
   useEffect(() => {
     if (isRouteTabs) {
       const tabConfigElement = children.find(
-        (item) => item.tabConfig.to === pathname
+        (item) => item.tabConfig.to === pathname,
       );
 
       if (tabConfigElement) {

@@ -159,16 +159,16 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const encryptionEnabled = useSelector((state: AppState) =>
-    get(state.tenants.tenantInfo, "encryptionEnabled", false)
+    get(state.tenants.tenantInfo, "encryptionEnabled", false),
   );
   const minioTLS = useSelector((state: AppState) =>
-    get(state.tenants.tenantInfo, "minioTLS", false)
+    get(state.tenants.tenantInfo, "minioTLS", false),
   );
   const adEnabled = useSelector((state: AppState) =>
-    get(state.tenants.tenantInfo, "idpAdEnabled", false)
+    get(state.tenants.tenantInfo, "idpAdEnabled", false),
   );
   const oidcEnabled = useSelector((state: AppState) =>
-    get(state.tenants.tenantInfo, "idpOidcEnabled", false)
+    get(state.tenants.tenantInfo, "idpOidcEnabled", false),
   );
 
   const [poolCount, setPoolCount] = useState<number>(0);
@@ -183,8 +183,8 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
       setVolumes(
         tenant.pools?.reduce(
           (sum, p) => sum + p.volumes_per_server * p.servers,
-          0
-        ) || 0
+          0,
+        ) || 0,
       );
       setInstances(tenant.pools?.reduce((sum, p) => sum + p.servers, 0) || 0);
     }

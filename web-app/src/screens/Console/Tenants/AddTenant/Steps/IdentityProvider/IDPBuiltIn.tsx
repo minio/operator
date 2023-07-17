@@ -77,7 +77,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const IDPBuiltIn = () => {
@@ -85,13 +85,14 @@ const IDPBuiltIn = () => {
   const classes = useStyles();
 
   const idpSelection = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.idpSelection
+    (state: AppState) =>
+      state.createTenant.fields.identityProvider.idpSelection,
   );
   const accessKeys = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.accessKeys
+    (state: AppState) => state.createTenant.fields.identityProvider.accessKeys,
   );
   const secretKeys = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.secretKeys
+    (state: AppState) => state.createTenant.fields.identityProvider.secretKeys,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -130,7 +131,7 @@ const IDPBuiltIn = () => {
       isPageValid({
         pageName: "identityProvider",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -154,7 +155,7 @@ const IDPBuiltIn = () => {
                     setIDPUsrAtIndex({
                       index,
                       accessKey: e.target.value,
-                    })
+                    }),
                   );
                   cleanValidation(`accesskey-${index.toString()}`);
                 }}
@@ -173,7 +174,7 @@ const IDPBuiltIn = () => {
                     setIDPPwdAtIndex({
                       index,
                       secretKey: e.target.value,
-                    })
+                    }),
                   );
                   cleanValidation(`secretkey-${index.toString()}`);
                 }}
@@ -212,13 +213,13 @@ const IDPBuiltIn = () => {
                           setIDPUsrAtIndex({
                             index,
                             accessKey: getRandomString(16),
-                          })
+                          }),
                         );
                         dispatch(
                           setIDPPwdAtIndex({
                             index,
                             secretKey: getRandomString(16),
-                          })
+                          }),
                         );
                       }}
                       size={"small"}

@@ -92,69 +92,71 @@ const Encryption = ({ classes }: IEncryptionProps) => {
   const dispatch = useAppDispatch();
 
   const replicas = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.replicas
+    (state: AppState) => state.createTenant.fields.encryption.replicas,
   );
   const rawConfiguration = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.rawConfiguration
+    (state: AppState) => state.createTenant.fields.encryption.rawConfiguration,
   );
   const encryptionTab = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.encryptionTab
+    (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
   );
   const enableEncryption = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.enableEncryption
+    (state: AppState) => state.createTenant.fields.encryption.enableEncryption,
   );
   const encryptionType = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.encryptionType
+    (state: AppState) => state.createTenant.fields.encryption.encryptionType,
   );
 
   const gcpProjectID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpProjectID
+    (state: AppState) => state.createTenant.fields.encryption.gcpProjectID,
   );
   const gcpEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.gcpEndpoint,
   );
   const gcpClientEmail = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpClientEmail
+    (state: AppState) => state.createTenant.fields.encryption.gcpClientEmail,
   );
   const gcpClientID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpClientID
+    (state: AppState) => state.createTenant.fields.encryption.gcpClientID,
   );
   const gcpPrivateKeyID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKeyID
+    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKeyID,
   );
   const gcpPrivateKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKey
+    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKey,
   );
   const enableCustomCertsForKES = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.encryption.enableCustomCertsForKES
+      state.createTenant.fields.encryption.enableCustomCertsForKES,
   );
   const enableAutoCert = useSelector(
-    (state: AppState) => state.createTenant.fields.security.enableAutoCert
+    (state: AppState) => state.createTenant.fields.security.enableAutoCert,
   );
   const enableTLS = useSelector(
-    (state: AppState) => state.createTenant.fields.security.enableTLS
+    (state: AppState) => state.createTenant.fields.security.enableTLS,
   );
   const minioServerCertificates = useSelector(
-    (state: AppState) => state.createTenant.certificates.minioServerCertificates
+    (state: AppState) =>
+      state.createTenant.certificates.minioServerCertificates,
   );
   const kesServerCertificate = useSelector(
-    (state: AppState) => state.createTenant.certificates.kesServerCertificate
+    (state: AppState) => state.createTenant.certificates.kesServerCertificate,
   );
   const minioMTLSCertificate = useSelector(
-    (state: AppState) => state.createTenant.certificates.minioMTLSCertificate
+    (state: AppState) => state.createTenant.certificates.minioMTLSCertificate,
   );
   const kmsMTLSCertificate = useSelector(
-    (state: AppState) => state.createTenant.certificates.kmsMTLSCertificate
+    (state: AppState) => state.createTenant.certificates.kmsMTLSCertificate,
   );
   const kmsCA = useSelector(
-    (state: AppState) => state.createTenant.certificates.kmsCA
+    (state: AppState) => state.createTenant.certificates.kmsCA,
   );
   const enableCustomCerts = useSelector(
-    (state: AppState) => state.createTenant.fields.security.enableCustomCerts
+    (state: AppState) => state.createTenant.fields.security.enableCustomCerts,
   );
   const kesSecurityContext = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.kesSecurityContext
+    (state: AppState) =>
+      state.createTenant.fields.encryption.kesSecurityContext,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -165,7 +167,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
     (enableAutoCert ||
       (minioServerCertificates &&
         minioServerCertificates.filter(
-          (item) => item.encoded_key && item.encoded_cert
+          (item) => item.encoded_key && item.encoded_cert,
         ).length > 0))
   ) {
     encryptionAvailable = true;
@@ -175,10 +177,10 @@ const Encryption = ({ classes }: IEncryptionProps) => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {
@@ -264,7 +266,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
       isPageValid({
         pageName: "encryption",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -423,7 +425,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                               key: "key",
                               fileName: fileName,
                               value: encodedValue,
-                            })
+                            }),
                           );
                           cleanValidation("serverKey");
                         }}
@@ -442,7 +444,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                               key: "cert",
                               fileName: fileName,
                               value: encodedValue,
-                            })
+                            }),
                           );
                           cleanValidation("serverCert");
                         }}
@@ -471,7 +473,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                               key: "key",
                               fileName: fileName,
                               value: encodedValue,
-                            })
+                            }),
                           );
                           cleanValidation("clientKey");
                         }}
@@ -490,7 +492,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                               key: "cert",
                               fileName: fileName,
                               value: encodedValue,
-                            })
+                            }),
                           );
                           cleanValidation("clientCert");
                         }}
@@ -518,7 +520,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                             key: "key",
                             fileName: fileName,
                             value: encodedValue,
-                          })
+                          }),
                         );
                         cleanValidation("vault_key");
                       }}
@@ -535,7 +537,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                             key: "cert",
                             fileName: fileName,
                             value: encodedValue,
-                          })
+                          }),
                         );
                         cleanValidation("vault_cert");
                       }}
@@ -551,7 +553,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
                           addFileKMSCa({
                             fileName: fileName,
                             value: encodedValue,
-                          })
+                          }),
                         );
                         cleanValidation("vault_ca");
                       }}
