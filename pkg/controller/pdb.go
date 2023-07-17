@@ -64,7 +64,7 @@ func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 			if k8serrors.IsNotFound(err) {
 				return nil
 			}
-			klog.Errorf("Delete tenant %s's V1Bata.PDB failed:%s", t.Name, err.Error())
+			klog.Errorf("Delete tenant %s's V1Beta.PDB failed:%s", t.Name, err.Error())
 			return err
 		}
 	}
@@ -80,6 +80,17 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 	for _, pool := range t.Spec.Pools {
 		if strings.TrimSpace(pool.Name) == "" {
 			continue
+		}
+		if available.Available() {
+			// check sts status first.
+			ssName := t.PoolStatefulsetName(&pool)
+			existingStatefulSet, err := c.statefulSetLister.StatefulSets(t.Namespace).Get(ssName)
+			if err != nil {
+				return err
+			}
+			if existingStatefulSet.Status.ReadyReplicas != existingStatefulSet.Status.Replicas || existingStatefulSet.Status.Replicas == 0 {
+				return nil
+			}
 		}
 		if available.V1Available() {
 			var pdb *v1.PodDisruptionBudget
