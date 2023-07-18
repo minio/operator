@@ -151,7 +151,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				}
 				_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Patch(ctx, t.Name, types.MergePatchType, pData, metav1.PatchOptions{})
 				if err != nil {
-					return nil
+					return err
 				}
 			}
 		}
@@ -210,7 +210,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				}
 				_, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Patch(ctx, t.Name, types.MergePatchType, pData, metav1.PatchOptions{})
 				if err != nil {
-					return nil
+					return err
 				}
 			}
 		}
