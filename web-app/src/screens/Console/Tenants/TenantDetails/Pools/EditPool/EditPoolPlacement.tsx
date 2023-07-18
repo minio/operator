@@ -119,25 +119,25 @@ const Affinity = ({ classes }: IAffinityProps) => {
   const dispatch = useAppDispatch();
 
   const podAffinity = useSelector(
-    (state: AppState) => state.editPool.fields.affinity.podAffinity
+    (state: AppState) => state.editPool.fields.affinity.podAffinity,
   );
   const nodeSelectorLabels = useSelector(
-    (state: AppState) => state.editPool.fields.affinity.nodeSelectorLabels
+    (state: AppState) => state.editPool.fields.affinity.nodeSelectorLabels,
   );
   const withPodAntiAffinity = useSelector(
-    (state: AppState) => state.editPool.fields.affinity.withPodAntiAffinity
+    (state: AppState) => state.editPool.fields.affinity.withPodAntiAffinity,
   );
   const keyValuePairs = useSelector(
-    (state: AppState) => state.editPool.fields.nodeSelectorPairs
+    (state: AppState) => state.editPool.fields.nodeSelectorPairs,
   );
   const tolerations = useSelector(
-    (state: AppState) => state.editPool.fields.tolerations
+    (state: AppState) => state.editPool.fields.tolerations,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [keyValueMap, setKeyValueMap] = useState<{ [key: string]: string[] }>(
-    {}
+    {},
   );
   const [keyOptions, setKeyOptions] = useState<OptionPair[]>([]);
 
@@ -149,10 +149,10 @@ const Affinity = ({ classes }: IAffinityProps) => {
           page: "affinity",
           field: field,
           value: value,
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   useEffect(() => {
@@ -236,7 +236,7 @@ const Affinity = ({ classes }: IAffinityProps) => {
       isEditPoolPageValid({
         page: "affinity",
         status: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -249,7 +249,7 @@ const Affinity = ({ classes }: IAffinityProps) => {
       setEditPoolTolerationInfo({
         index: index,
         tolerationValue: alterToleration,
-      })
+      }),
     );
   };
 
@@ -424,7 +424,7 @@ const Affinity = ({ classes }: IAffinityProps) => {
                               size={"small"}
                               onClick={() => {
                                 const arrCp = keyValuePairs.filter(
-                                  (item, index) => index !== i
+                                  (item, index) => index !== i,
                                 );
                                 dispatch(setEditPoolKeyValuePairs(arrCp));
                               }}

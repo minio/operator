@@ -81,7 +81,7 @@ const UpdateTenantModal = ({
           break;
       }
     },
-    [minioImage]
+    [minioImage],
   );
 
   useEffect(() => {
@@ -125,7 +125,7 @@ const UpdateTenantModal = ({
       .invoke(
         "PUT",
         `/api/v1/namespaces/${namespace}/tenants/${idTenant}`,
-        payload
+        payload,
       )
       .then(() => {
         setIsSending(false);

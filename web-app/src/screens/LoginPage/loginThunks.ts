@@ -60,7 +60,7 @@ export const doLoginAsync = createAsyncThunk(
       .invoke(
         "POST",
         loginStrategyEndpoints[loginStrategy.loginStrategy] || "/api/v1/login",
-        loginStrategyPayload[loginStrategy.loginStrategy]
+        loginStrategyPayload[loginStrategy.loginStrategy],
       )
       .then((res) => {
         // We set the state in redux
@@ -91,7 +91,7 @@ export const doLoginAsync = createAsyncThunk(
       .catch((err) => {
         dispatch(setErrorSnackMessage(err));
       });
-  }
+  },
 );
 export const getFetchConfigurationAsync = createAsyncThunk(
   "login/getFetchConfigurationAsync",
@@ -104,7 +104,7 @@ export const getFetchConfigurationAsync = createAsyncThunk(
       .catch((err: ErrorResponseHandler) => {
         dispatch(setErrorSnackMessage(err));
       });
-  }
+  },
 );
 
 export const getVersionAsync = createAsyncThunk(
@@ -121,7 +121,7 @@ export const getVersionAsync = createAsyncThunk(
           latest_version: string;
         }) => {
           return latest_version;
-        }
+        },
       )
       .catch((err: ErrorResponseHandler) => {
         // try the operator version
@@ -136,11 +136,11 @@ export const getVersionAsync = createAsyncThunk(
               latest_version: string;
             }) => {
               return latest_version;
-            }
+            },
           )
           .catch((err: ErrorResponseHandler) => {
             return err;
           });
       });
-  }
+  },
 );

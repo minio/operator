@@ -123,7 +123,7 @@ export const k8sScalarUnitsExcluding = (exclude?: string[]) => {
 export const getBytes = (
   value: string,
   unit: string,
-  fromk8s: boolean = false
+  fromk8s: boolean = false,
 ): string => {
   return getBytesNumber(value, unit, fromk8s).toString(10);
 };
@@ -132,7 +132,7 @@ export const getBytes = (
 export const getBytesNumber = (
   value: string,
   unit: string,
-  fromk8s: boolean = false
+  fromk8s: boolean = false,
 ): number => {
   const vl: number = parseFloat(value);
 
@@ -158,7 +158,7 @@ export const getTotalSize = (value: string, unit: string) => {
 export const setMemoryResource = (
   memorySize: number,
   capacitySize: string,
-  maxMemorySize: number
+  maxMemorySize: number,
 ) => {
   // value always comes as Gi
   const requestedSizeBytes = getBytes(memorySize.toString(10), "Gi", true);
@@ -202,22 +202,22 @@ export const setMemoryResource = (
   if (capSize >= parseInt(getBytes("1", "Pi", true), 10)) {
     memLimitSize = Math.max(
       memReqSize,
-      parseInt(getBytes("64", "Gi", true), 10)
+      parseInt(getBytes("64", "Gi", true), 10),
     );
   } else if (capSize >= parseInt(getBytes("100", "Ti"), 10)) {
     memLimitSize = Math.max(
       memReqSize,
-      parseInt(getBytes("32", "Gi", true), 10)
+      parseInt(getBytes("32", "Gi", true), 10),
     );
   } else if (capSize >= parseInt(getBytes("10", "Ti"), 10)) {
     memLimitSize = Math.max(
       memReqSize,
-      parseInt(getBytes("16", "Gi", true), 10)
+      parseInt(getBytes("16", "Gi", true), 10),
     );
   } else if (capSize >= parseInt(getBytes("1", "Ti"), 10)) {
     memLimitSize = Math.max(
       memReqSize,
-      parseInt(getBytes("8", "Gi", true), 10)
+      parseInt(getBytes("8", "Gi", true), 10),
     );
   }
 
@@ -234,12 +234,12 @@ export const calculateDistribution = (
   limitSize: number = 0,
   drivesPerServer: number = 0,
   marketplaceIntegration?: IMkEnvs,
-  selectedStorageType?: string
+  selectedStorageType?: string,
 ): IStorageDistribution => {
   const requestedSizeBytes = getBytes(
     capacityToUse.value,
     capacityToUse.unit,
-    true
+    true,
   );
 
   if (parseInt(requestedSizeBytes, 10) < minStReq) {
@@ -268,7 +268,7 @@ export const calculateDistribution = (
     limitSize,
     drivesPerServer,
     marketplaceIntegration,
-    selectedStorageType
+    selectedStorageType,
   );
 
   return numberOfNodes;
@@ -280,7 +280,7 @@ const calculateStorage = (
   limitSize: number,
   drivesPerServer: number,
   marketplaceIntegration?: IMkEnvs,
-  selectedStorageType?: string
+  selectedStorageType?: string,
 ): IStorageDistribution => {
   // Size validation
   const intReqBytes = parseInt(requestedBytes, 10);
@@ -294,7 +294,7 @@ const calculateStorage = (
     limitSize,
     drivesPerServer,
     marketplaceIntegration,
-    selectedStorageType
+    selectedStorageType,
   );
 };
 
@@ -305,7 +305,7 @@ const structureCalc = (
   maxClusterSize: number,
   disksPerNode: number = 0,
   marketplaceIntegration?: IMkEnvs,
-  selectedStorageType?: string
+  selectedStorageType?: string,
 ): IStorageDistribution => {
   if (
     isNaN(nodes) ||
@@ -328,7 +328,7 @@ const structureCalc = (
 
   if (disksPerNode === 0) {
     persistentVolumeSize = Math.floor(
-      Math.min(desiredCapacity / Math.max(4, nodes), maxDiskSize)
+      Math.min(desiredCapacity / Math.max(4, nodes), maxDiskSize),
     ); // pVS = min((desiredCapacity / max(4 | nodes)) | maxDiskSize)
 
     numberPersistentVolumes = desiredCapacity / persistentVolumeSize; // nPV = dC / pVS
@@ -339,7 +339,7 @@ const structureCalc = (
     volumesPerServer = disksPerNode;
     numberPersistentVolumes = volumesPerServer * nodes;
     persistentVolumeSize = Math.floor(
-      desiredCapacity / numberPersistentVolumes
+      desiredCapacity / numberPersistentVolumes,
     );
   }
 
@@ -348,7 +348,7 @@ const structureCalc = (
     volumesPerServer = Math.ceil(volumesPerServer); // Increment of volumes per server
     numberPersistentVolumes = volumesPerServer * nodes; // nPV = vPS * n
     persistentVolumeSize = Math.floor(
-      desiredCapacity / numberPersistentVolumes
+      desiredCapacity / numberPersistentVolumes,
     ); // pVS = dC / nPV
 
     const limitSize = persistentVolumeSize * volumesPerServer * nodes; // lS = pVS * vPS * n
@@ -384,20 +384,20 @@ const structureCalc = (
       const configs: IntegrationConfiguration[] = get(
         setConfigs,
         "configurations",
-        []
+        [],
       );
       const mainSelection = configs.find(
-        (item) => item.typeSelection === selectedStorageType
+        (item) => item.typeSelection === selectedStorageType,
       );
 
       if (mainSelection !== undefined && mainSelection.minimumVolumeSize) {
         const minimumPvSize = getBytesNumber(
           mainSelection.minimumVolumeSize?.driveSize,
           mainSelection.minimumVolumeSize?.sizeUnit,
-          true
+          true,
         );
         const storageTypeLabel = setConfigs.variantSelectorValues!.find(
-          (item) => item.value === selectedStorageType
+          (item) => item.value === selectedStorageType,
         );
 
         if (persistentVolumeSize < minimumPvSize) {
@@ -431,7 +431,7 @@ export const erasureCodeCalc = (
   parityValidValues: string[],
   totalDisks: number,
   pvSize: number,
-  totalNodes: number
+  totalNodes: number,
 ): IErasureCodeCalc => {
   // Parity Values is empty
   if (parityValidValues.length < 1) {
@@ -466,7 +466,7 @@ export const erasureCodeCalc = (
         maxCapacity: maxCapacity.toString(10),
         maxFailureTolerations: maxTolerations,
       };
-    }
+    },
   );
 
   let defaultEC = maxEC;
@@ -561,7 +561,7 @@ const twoDigitsNumberString = (value: number) => {
 export const getTimeFromTimestamp = (
   timestamp: string,
   fullDate: boolean = false,
-  simplifiedDate: boolean = false
+  simplifiedDate: boolean = false,
 ) => {
   const timestampToInt = parseInt(timestamp);
   if (isNaN(timestampToInt)) {
@@ -572,9 +572,9 @@ export const getTimeFromTimestamp = (
   if (fullDate) {
     if (simplifiedDate) {
       return `${twoDigitsNumberString(
-        dateObject.getMonth() + 1
+        dateObject.getMonth() + 1,
       )}/${twoDigitsNumberString(dateObject.getDate())} ${twoDigitsNumberString(
-        dateObject.getHours()
+        dateObject.getHours(),
       )}:${twoDigitsNumberString(dateObject.getMinutes())}`;
     } else {
       return dateObject.toLocaleString();
@@ -582,7 +582,7 @@ export const getTimeFromTimestamp = (
   }
   return `${dateObject.getHours()}:${String(dateObject.getMinutes()).padStart(
     2,
-    "0"
+    "0",
   )}`;
 };
 
@@ -590,7 +590,7 @@ export const calculateBytes = (
   x: string | number,
   showDecimals = false,
   roundFloor = true,
-  k8sUnit = false
+  k8sUnit = false,
 ): IBytesCalc => {
   let bytes;
 

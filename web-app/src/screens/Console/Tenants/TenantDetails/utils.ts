@@ -47,7 +47,7 @@ export const getNodeSelector = (
   labels: string,
   withPodAntiAffinity: boolean,
   tenantName: string,
-  poolName: string
+  poolName: string,
 ) => {
   // Labels in the form of key1=value1&key2=value2&key3=value3...
   const splittedLabels = labels.split("&");

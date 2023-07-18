@@ -137,7 +137,7 @@ const TolerationSelector = ({
               <SelectWrapper
                 onChange={(e: SelectChangeEvent<string>) => {
                   onOperatorChange(
-                    ITolerationOperator[e.target.value as ITolerationOperator]
+                    ITolerationOperator[e.target.value as ITolerationOperator],
                   );
                 }}
                 id={`operator-${index}`}
@@ -176,7 +176,7 @@ const TolerationSelector = ({
               <SelectWrapper
                 onChange={(e: SelectChangeEvent<string>) => {
                   onEffectChange(
-                    ITolerationEffect[e.target.value as ITolerationEffect]
+                    ITolerationEffect[e.target.value as ITolerationEffect],
                   );
                 }}
                 id={`effects-${index}`}

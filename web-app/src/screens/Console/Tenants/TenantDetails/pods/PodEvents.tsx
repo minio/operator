@@ -40,7 +40,7 @@ const PodEvents = ({
 }: IPodEventsProps) => {
   const dispatch = useAppDispatch();
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
   const [events, setEvents] = useState<IEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -62,7 +62,7 @@ const PodEvents = ({
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${namespace}/tenants/${tenant}/pods/${podName}/events`
+          `/api/v1/namespaces/${namespace}/tenants/${tenant}/pods/${podName}/events`,
         )
         .then((res: IEvent[]) => {
           for (let i = 0; i < res.length; i++) {

@@ -29,18 +29,18 @@ const NamespaceSelector = ({ formToRender }: { formToRender?: IMkEnvs }) => {
   const dispatch = useAppDispatch();
 
   const namespace = useSelector(
-    (state: AppState) => state.createTenant.fields.nameTenant.namespace
+    (state: AppState) => state.createTenant.fields.nameTenant.namespace,
   );
 
   const showNSCreateButton = useSelector(
-    (state: AppState) => state.createTenant.showNSCreateButton
+    (state: AppState) => state.createTenant.showNSCreateButton,
   );
 
   const namespaceError = useSelector(
-    (state: AppState) => state.createTenant.validationErrors["namespace"]
+    (state: AppState) => state.createTenant.validationErrors["namespace"],
   );
   const openAddNSConfirm = useSelector(
-    (state: AppState) => state.createTenant.addNSOpen
+    (state: AppState) => state.createTenant.addNSOpen,
   );
 
   const debounceNamespace = useMemo(
@@ -48,7 +48,7 @@ const NamespaceSelector = ({ formToRender }: { formToRender?: IMkEnvs }) => {
       debounce(() => {
         dispatch(validateNamespaceAsync());
       }, 500),
-    [dispatch]
+    [dispatch],
   );
 
   useEffect(() => {

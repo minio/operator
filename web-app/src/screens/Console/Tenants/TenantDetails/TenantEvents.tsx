@@ -52,7 +52,7 @@ const TenantEvents = ({ classes }: ITenantEventsProps) => {
   const params = useParams();
 
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [events, setEvents] = useState<IEvent[]>([]);
@@ -71,7 +71,7 @@ const TenantEvents = ({ classes }: ITenantEventsProps) => {
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${tenantNamespace}/tenants/${tenantName}/events`
+          `/api/v1/namespaces/${tenantNamespace}/tenants/${tenantName}/events`,
         )
         .then((res: IEvent[]) => {
           for (let i = 0; i < res.length; i++) {

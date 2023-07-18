@@ -63,7 +63,7 @@ const DeleteTenant = ({
     invokeDeleteApi(
       "DELETE",
       `/api/v1/namespaces/${selectedTenant.namespace}/tenants/${selectedTenant.name}`,
-      { delete_pvcs: deleteVolumes }
+      { delete_pvcs: deleteVolumes },
     );
   };
 

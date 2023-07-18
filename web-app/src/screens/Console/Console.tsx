@@ -54,18 +54,18 @@ const RegisterOperator = React.lazy(() => import("./Support/RegisterOperator"));
 const AddTenant = React.lazy(() => import("./Tenants/AddTenant/AddTenant"));
 
 const ListTenants = React.lazy(
-  () => import("./Tenants/ListTenants/ListTenants")
+  () => import("./Tenants/ListTenants/ListTenants"),
 );
 
 const IconsScreen = React.lazy(() => import("./Common/IconsScreen"));
 
 const TenantDetails = React.lazy(
-  () => import("./Tenants/TenantDetails/TenantDetails")
+  () => import("./Tenants/TenantDetails/TenantDetails"),
 );
 const License = React.lazy(() => import("./License/License"));
 const Marketplace = React.lazy(() => import("./Marketplace/Marketplace"));
 const AddPool = React.lazy(
-  () => import("./Tenants/TenantDetails/Pools/AddPool/AddPool")
+  () => import("./Tenants/TenantDetails/Pools/AddPool/AddPool"),
 );
 
 const styles = (theme: Theme) =>
@@ -114,10 +114,10 @@ const Console = ({ classes }: IConsoleProps) => {
   const session = useSelector(selSession);
   const features = useSelector(selFeatures);
   const snackBarMessage = useSelector(
-    (state: AppState) => state.system.snackBar
+    (state: AppState) => state.system.snackBar,
   );
   const loadingProgress = useSelector(
-    (state: AppState) => state.system.loadingProgress
+    (state: AppState) => state.system.loadingProgress,
   );
 
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
@@ -198,9 +198,9 @@ const Console = ({ classes }: IConsoleProps) => {
             ? route.customPermissionFnc()
             : hasPermission(
                 CONSOLE_UI_RESOURCE,
-                IAM_PAGES_PERMISSIONS[route.path]
+                IAM_PAGES_PERMISSIONS[route.path],
               ))) &&
-        !route.fsHidden
+        !route.fsHidden,
   );
 
   const closeSnackBar = () => {

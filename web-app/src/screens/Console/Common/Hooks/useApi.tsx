@@ -8,7 +8,7 @@ type IsApiInProgress = boolean;
 
 const useApi = (
   onSuccess: NoReturnFunction,
-  onError: NoReturnFunction
+  onError: NoReturnFunction,
 ): [IsApiInProgress, ApiMethodToInvoke] => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 

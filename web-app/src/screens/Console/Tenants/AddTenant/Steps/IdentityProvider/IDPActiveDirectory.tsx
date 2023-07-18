@@ -75,7 +75,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const IDPActiveDirectory = () => {
@@ -83,51 +83,52 @@ const IDPActiveDirectory = () => {
   const classes = useStyles();
 
   const idpSelection = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.idpSelection
+    (state: AppState) =>
+      state.createTenant.fields.identityProvider.idpSelection,
   );
   const ADURL = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.ADURL
+    (state: AppState) => state.createTenant.fields.identityProvider.ADURL,
   );
   const ADSkipTLS = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.ADSkipTLS
+    (state: AppState) => state.createTenant.fields.identityProvider.ADSkipTLS,
   );
   const ADServerInsecure = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.ADServerInsecure
+      state.createTenant.fields.identityProvider.ADServerInsecure,
   );
   const ADGroupSearchBaseDN = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.ADGroupSearchBaseDN
+      state.createTenant.fields.identityProvider.ADGroupSearchBaseDN,
   );
   const ADGroupSearchFilter = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.ADGroupSearchFilter
+      state.createTenant.fields.identityProvider.ADGroupSearchFilter,
   );
   const ADUserDNs = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.ADUserDNs
+    (state: AppState) => state.createTenant.fields.identityProvider.ADUserDNs,
   );
   const ADGroupDNs = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.ADGroupDNs
+    (state: AppState) => state.createTenant.fields.identityProvider.ADGroupDNs,
   );
   const ADLookupBindDN = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.ADLookupBindDN
+      state.createTenant.fields.identityProvider.ADLookupBindDN,
   );
   const ADLookupBindPassword = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.ADLookupBindPassword
+      state.createTenant.fields.identityProvider.ADLookupBindPassword,
   );
   const ADUserDNSearchBaseDN = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.ADUserDNSearchBaseDN
+      state.createTenant.fields.identityProvider.ADUserDNSearchBaseDN,
   );
   const ADUserDNSearchFilter = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.ADUserDNSearchFilter
+      state.createTenant.fields.identityProvider.ADUserDNSearchFilter,
   );
   const ADServerStartTLS = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.ADServerStartTLS
+      state.createTenant.fields.identityProvider.ADServerStartTLS,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -139,10 +140,10 @@ const IDPActiveDirectory = () => {
           pageName: "identityProvider",
           field: field,
           value: value,
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {
@@ -175,7 +176,7 @@ const IDPActiveDirectory = () => {
       isPageValid({
         pageName: "identityProvider",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -357,7 +358,7 @@ const IDPActiveDirectory = () => {
                         setIDPADUsrAtIndex({
                           index: index,
                           userDN: e.target.value,
-                        })
+                        }),
                       );
                       cleanValidation(`ad-userdn-${index.toString()}`);
                     }}
@@ -418,7 +419,7 @@ const IDPActiveDirectory = () => {
                         setIDPADGroupAtIndex({
                           index: index,
                           userDN: e.target.value,
-                        })
+                        }),
                       );
                       cleanValidation(`ad-groupdn-${index.toString()}`);
                     }}
