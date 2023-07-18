@@ -108,7 +108,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			}
 			if !isCreate {
 				// exist and as expected
-				if pdb.Spec.MinAvailable != nil && pdb.Spec.MinAvailable.IntValue() == (int(pool.Servers/2)) {
+				if pdb.Spec.MinAvailable != nil && pdb.Spec.MinAvailable.IntValue() == (int(pool.Servers/2)+1) {
 					return nil
 				}
 			}
@@ -168,7 +168,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			}
 			if !isCreate {
 				// exist and as expected
-				if pdb.Spec.MinAvailable != nil && pdb.Spec.MinAvailable.IntValue() == (int(pool.Servers/2)) {
+				if pdb.Spec.MinAvailable != nil && pdb.Spec.MinAvailable.IntValue() == (int(pool.Servers/2)+1) {
 					return nil
 				}
 			}
