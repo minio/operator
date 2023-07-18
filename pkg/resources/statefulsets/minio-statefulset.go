@@ -309,7 +309,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 		},
 	}
 
-	if t.Spec.EnableSFTP != nil && *t.Spec.EnableSFTP {
+	if t.Spec.Features != nil && t.Spec.Features.EnableSFTP != nil && *t.Spec.Features.EnableSFTP {
 		pkFile := filepath.Join(miniov2.MinIOCertPath, certs.PrivateKeyFile)
 		args = append(args, []string{
 			"--sftp", fmt.Sprintf("address=:%d", miniov2.MinIOSFTPPort),
@@ -319,6 +319,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 			ContainerPort: miniov2.MinIOSFTPPort,
 		})
 	}
+
 	if t.Spec.Logging != nil {
 		// If logging is specified, expect users to
 		// provide the right set of settings to toggle

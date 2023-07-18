@@ -21,8 +21,9 @@ package v2
 // FeaturesApplyConfiguration represents an declarative configuration of the Features type for use
 // with apply.
 type FeaturesApplyConfiguration struct {
-	BucketDNS *bool                            `json:"bucketDNS,omitempty"`
-	Domains   *TenantDomainsApplyConfiguration `json:"domains,omitempty"`
+	BucketDNS  *bool                            `json:"bucketDNS,omitempty"`
+	Domains    *TenantDomainsApplyConfiguration `json:"domains,omitempty"`
+	EnableSFTP *bool                            `json:"enableSFTP,omitempty"`
 }
 
 // FeaturesApplyConfiguration constructs an declarative configuration of the Features type for use with
@@ -44,5 +45,13 @@ func (b *FeaturesApplyConfiguration) WithBucketDNS(value bool) *FeaturesApplyCon
 // If called multiple times, the Domains field is set to the value of the last call.
 func (b *FeaturesApplyConfiguration) WithDomains(value *TenantDomainsApplyConfiguration) *FeaturesApplyConfiguration {
 	b.Domains = value
+	return b
+}
+
+// WithEnableSFTP sets the EnableSFTP field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the EnableSFTP field is set to the value of the last call.
+func (b *FeaturesApplyConfiguration) WithEnableSFTP(value bool) *FeaturesApplyConfiguration {
+	b.EnableSFTP = &value
 	return b
 }

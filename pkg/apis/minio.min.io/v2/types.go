@@ -84,6 +84,10 @@ type Features struct {
 	// Specify a list of domains used to access MinIO and Console.
 	//
 	Domains *TenantDomains `json:"domains,omitempty"`
+	// *Optional* +
+	//
+	// Starts minio server with SFTP support
+	EnableSFTP *bool `json:"enableSFTP,omitempty"`
 }
 
 // TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
@@ -132,11 +136,6 @@ type TenantSpec struct {
 	// If provided, the MinIO Operator adds the specified environment variables when deploying the Tenant resource.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
-
-	// *Optional* +
-	//
-	// Starts minio server with SFTP support
-	EnableSFTP *bool `json:"enableSFTP,omitempty"`
 
 	// *Optional* +
 	//

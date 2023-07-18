@@ -79,8 +79,6 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              enableSFTP:
-                type: boolean
               env:
                 items:
                   properties:
@@ -207,6 +205,8 @@ spec:
                           type: string
                         type: array
                     type: object
+                  enableSFTP:
+                    type: boolean
                 type: object
               image:
                 type: string
