@@ -66,7 +66,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     ...formFieldStyles,
     ...modalStyleUtils,
-  })
+  }),
 );
 
 const EditPool = () => {
@@ -77,14 +77,14 @@ const EditPool = () => {
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const selectedPool = useSelector(
-    (state: AppState) => state.tenants.selectedPool
+    (state: AppState) => state.tenants.selectedPool,
   );
 
   const editSending = useSelector(
-    (state: AppState) => state.editPool.editSending
+    (state: AppState) => state.editPool.editSending,
   );
   const navigateTo = useSelector(
-    (state: AppState) => state.editPool.navigateTo
+    (state: AppState) => state.editPool.navigateTo,
   );
 
   const poolsURL = `/namespaces/${tenant?.namespace || ""}/tenants/${
@@ -94,7 +94,7 @@ const EditPool = () => {
   useEffect(() => {
     if (selectedPool) {
       const poolDetails = tenant?.pools?.find(
-        (pool) => pool.name === selectedPool
+        (pool) => pool.name === selectedPool,
       );
 
       if (poolDetails) {

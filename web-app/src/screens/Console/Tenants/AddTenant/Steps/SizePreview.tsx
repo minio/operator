@@ -52,34 +52,34 @@ const styles = (theme: Theme) =>
 
 const SizePreview = ({ classes }: ISizePreviewProps) => {
   const nodes = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.nodes
+    (state: AppState) => state.createTenant.fields.tenantSize.nodes,
   );
   const memoryNode = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesMemoryRequest
+      state.createTenant.fields.tenantSize.resourcesMemoryRequest,
   );
   const ecParity = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.ecParity
+    (state: AppState) => state.createTenant.fields.tenantSize.ecParity,
   );
 
   const distribution = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.distribution
+    (state: AppState) => state.createTenant.fields.tenantSize.distribution,
   );
   const ecParityCalc = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.ecParityCalc
+    (state: AppState) => state.createTenant.fields.tenantSize.ecParityCalc,
   );
 
   const cpuToUse = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesCPURequest
+      state.createTenant.fields.tenantSize.resourcesCPURequest,
   );
   const integrationSelection = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.integrationSelection
+      state.createTenant.fields.tenantSize.integrationSelection,
   );
 
   const usableInformation = ecParityCalc.storageFactors.find(
-    (element) => element.erasureCode === ecParity
+    (element) => element.erasureCode === ecParity,
   );
 
   return (
@@ -173,7 +173,7 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
                   {distribution
                     ? Math.floor(
                         usableInformation.maxFailureTolerations /
-                          distribution.disks
+                          distribution.disks,
                       )
                     : "-"}
                 </TableCell>

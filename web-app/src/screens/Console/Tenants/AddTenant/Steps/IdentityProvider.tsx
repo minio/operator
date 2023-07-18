@@ -58,7 +58,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...createTenantCommon,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const IdentityProvider = () => {
@@ -66,7 +66,8 @@ const IdentityProvider = () => {
   const classes = useStyles();
 
   const idpSelection = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.idpSelection
+    (state: AppState) =>
+      state.createTenant.fields.identityProvider.idpSelection,
   );
 
   return (

@@ -58,7 +58,7 @@ const TenantCapacity = ({
   let tiersList: CapacityValue[] = [];
 
   const standardTier = usedSpaceVariants.find(
-    (tier) => tier.variant === "STANDARD"
+    (tier) => tier.variant === "STANDARD",
   ) || {
     value: 0,
     variant: "empty",

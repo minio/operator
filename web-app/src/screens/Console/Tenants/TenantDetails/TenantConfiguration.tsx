@@ -114,7 +114,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -126,7 +126,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
     api
       .invoke(
         "GET",
-        `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/configuration`
+        `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/configuration`,
       )
       .then((res: ITenantConfigurationResponse) => {
         if (res.environmentVariables) {
@@ -154,7 +154,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
       .invoke(
         "PATCH",
         `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/configuration`,
-        payload
+        payload,
       )
       .then(() => {
         setIsSending(false);
@@ -215,8 +215,8 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                         existingEnvVars.map((keyPair, i) =>
                           i === index
                             ? { key: e.target.value, value: keyPair.value }
-                            : keyPair
-                        )
+                            : keyPair,
+                        ),
                       );
                     }}
                     index={index}
@@ -235,8 +235,8 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                         existingEnvVars.map((keyPair, i) =>
                           i === index
                             ? { key: keyPair.key, value: e.target.value }
-                            : keyPair
-                        )
+                            : keyPair,
+                        ),
                       );
                     }}
                     index={index}
@@ -269,7 +269,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                       size={"small"}
                       onClick={() => {
                         const existingEnvVars = envVars.filter(
-                          (item, fIndex) => fIndex !== index
+                          (item, fIndex) => fIndex !== index,
                         );
                         setEnvVars(existingEnvVars);
                         setEnvVarsToBeDeleted([

@@ -66,7 +66,7 @@ const MenuItem = ({
         ? item.customPermissionFnc()
         : hasPermission(CONSOLE_UI_RESOURCE, IAM_PAGES_PERMISSIONS[item.to])) ||
         item.forceDisplay) &&
-      !item.fsHidden
+      !item.fsHidden,
   );
 
   let hasChildren = childrenMenuList?.length;
@@ -89,7 +89,7 @@ const MenuItem = ({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [page, selectedMenuItem, previewMenuGroup, expandedGroup]
+    [page, selectedMenuItem, previewMenuGroup, expandedGroup],
   );
 
   const selectMenuHandler = useCallback(
@@ -99,7 +99,7 @@ const MenuItem = ({
       page.onClick && page.onClick(e);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [page]
+    [page],
   );
 
   const onClickHandler = hasChildren

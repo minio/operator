@@ -22,7 +22,7 @@ const hasPermission = (
   resource: string | string[] | undefined,
   scopes: string[],
   matchAll?: boolean,
-  containsResource?: boolean
+  containsResource?: boolean,
 ) => {
   if (!resource) {
     return false;
@@ -46,7 +46,7 @@ const hasPermission = (
 
     // Filter wildcard items
     const wildcards = Object.keys(sessionGrants).filter(
-      (item) => item.includes("*") && item !== "arn:aws:s3:::*"
+      (item) => item.includes("*") && item !== "arn:aws:s3:::*",
     );
 
     const getMatchingWildcards = (path: string) => {
@@ -130,7 +130,7 @@ const hasPermission = (
       ...anyResourceGrant,
     ],
     scopes,
-    matchAll
+    matchAll,
   );
 };
 
@@ -140,7 +140,7 @@ const hasPermission = (
 const hasAccessToResource = (
   userPermissionsOnBucket: string[] | null | undefined,
   requiredPermissions: string[] = [],
-  matchAll?: boolean
+  matchAll?: boolean,
 ) => {
   if (!userPermissionsOnBucket) {
     return false;
@@ -148,7 +148,7 @@ const hasAccessToResource = (
 
   const s3All = userPermissionsOnBucket.includes(IAM_SCOPES.S3_ALL_ACTIONS);
   const AdminAll = userPermissionsOnBucket.includes(
-    IAM_SCOPES.ADMIN_ALL_ACTIONS
+    IAM_SCOPES.ADMIN_ALL_ACTIONS,
   );
 
   const permissions = requiredPermissions.filter(function (n) {

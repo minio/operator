@@ -83,7 +83,7 @@ export const registerSlice = createSlice({
     },
     setSubnetOrganizations: (
       state,
-      action: PayloadAction<SubnetOrganization[]>
+      action: PayloadAction<SubnetOrganization[]>,
     ) => {
       state.subnetOrganizations = action.payload;
     },

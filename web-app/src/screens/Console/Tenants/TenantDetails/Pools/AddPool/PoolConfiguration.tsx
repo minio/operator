@@ -82,16 +82,16 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
   const dispatch = useAppDispatch();
 
   const securityContextEnabled = useSelector(
-    (state: AppState) => state.addPool.configuration.securityContextEnabled
+    (state: AppState) => state.addPool.configuration.securityContextEnabled,
   );
   const securityContext = useSelector(
-    (state: AppState) => state.addPool.configuration.securityContext
+    (state: AppState) => state.addPool.configuration.securityContext,
   );
   const customRuntime = useSelector(
-    (state: AppState) => state.addPool.configuration.customRuntime
+    (state: AppState) => state.addPool.configuration.customRuntime,
   );
   const runtimeClassName = useSelector(
-    (state: AppState) => state.addPool.configuration.runtimeClassName
+    (state: AppState) => state.addPool.configuration.runtimeClassName,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -104,10 +104,10 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
           page: "configuration",
           field: field,
           value: value,
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Validation
@@ -151,7 +151,7 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
       isPoolPageValid({
         page: "configure",
         status: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);

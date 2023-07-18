@@ -971,7 +971,7 @@ export interface ApiConfig<SecurityDataType = unknown> {
   baseUrl?: string;
   baseApiParams?: Omit<RequestParams, "baseUrl" | "cancelToken" | "signal">;
   securityWorker?: (
-    securityData: SecurityDataType | null
+    securityData: SecurityDataType | null,
   ) => Promise<RequestParams | void> | RequestParams | void;
   customFetch?: typeof fetch;
 }
@@ -1017,7 +1017,7 @@ export class HttpClient<SecurityDataType = unknown> {
   protected encodeQueryParam(key: string, value: any) {
     const encodedKey = encodeURIComponent(key);
     return `${encodedKey}=${encodeURIComponent(
-      typeof value === "number" ? value : `${value}`
+      typeof value === "number" ? value : `${value}`,
     )}`;
   }
 
@@ -1033,13 +1033,13 @@ export class HttpClient<SecurityDataType = unknown> {
   protected toQueryString(rawQuery?: QueryParamsType): string {
     const query = rawQuery || {};
     const keys = Object.keys(query).filter(
-      (key) => "undefined" !== typeof query[key]
+      (key) => "undefined" !== typeof query[key],
     );
     return keys
       .map((key) =>
         Array.isArray(query[key])
           ? this.addArrayQueryParam(query, key)
-          : this.addQueryParam(query, key)
+          : this.addQueryParam(query, key),
       )
       .join("&");
   }
@@ -1067,7 +1067,7 @@ export class HttpClient<SecurityDataType = unknown> {
             ? property
             : typeof property === "object" && property !== null
             ? JSON.stringify(property)
-            : `${property}`
+            : `${property}`,
         );
         return formData;
       }, new FormData()),
@@ -1076,7 +1076,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
   protected mergeRequestParams(
     params1: RequestParams,
-    params2?: RequestParams
+    params2?: RequestParams,
   ): RequestParams {
     return {
       ...this.baseApiParams,
@@ -1091,7 +1091,7 @@ export class HttpClient<SecurityDataType = unknown> {
   }
 
   protected createAbortSignal = (
-    cancelToken: CancelToken
+    cancelToken: CancelToken,
   ): AbortSignal | undefined => {
     if (this.abortControllers.has(cancelToken)) {
       const abortController = this.abortControllers.get(cancelToken);
@@ -1155,7 +1155,7 @@ export class HttpClient<SecurityDataType = unknown> {
           typeof body === "undefined" || body === null
             ? null
             : payloadFormatter(body),
-      }
+      },
     ).then(async (response) => {
       const r = response as HttpResponse<T, E>;
       r.data = null as unknown as T;
@@ -1193,7 +1193,7 @@ export class HttpClient<SecurityDataType = unknown> {
  * @baseUrl /api/v1
  */
 export class Api<
-  SecurityDataType extends unknown
+  SecurityDataType extends unknown,
 > extends HttpClient<SecurityDataType> {
   login = {
     /**
@@ -1239,7 +1239,7 @@ export class Api<
      */
     loginOauth2Auth: (
       body: LoginOauth2AuthRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/login/oauth2/auth`,
@@ -1333,7 +1333,7 @@ export class Api<
      */
     subscriptionValidate: (
       body: SubscriptionValidateRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<License, Error>({
         path: `/subscription/validate`,
@@ -1375,7 +1375,7 @@ export class Api<
     subscriptionActivate: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/subscription/namespaces/${namespace}/tenants/${tenant}/activate`,
@@ -1402,7 +1402,7 @@ export class Api<
         /** @format int32 */
         limit?: number;
       },
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<ListTenantsResponse, Error>({
         path: `/tenants`,
@@ -1472,7 +1472,7 @@ export class Api<
         /** @format int32 */
         limit?: number;
       },
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<ListTenantsResponse, Error>({
         path: `/namespaces/${namespace}/tenants`,
@@ -1495,7 +1495,7 @@ export class Api<
     listTenantCertificateSigningRequest: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<CsrElements, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/csr`,
@@ -1517,7 +1517,7 @@ export class Api<
     tenantIdentityProvider: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<IdpConfiguration, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/identity-provider`,
@@ -1540,7 +1540,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: IdpConfiguration,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/identity-provider`,
@@ -1564,7 +1564,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: SetAdministratorsRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/set-administrators`,
@@ -1587,7 +1587,7 @@ export class Api<
     tenantConfiguration: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<TenantConfigurationResponse, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/configuration`,
@@ -1610,7 +1610,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: UpdateTenantConfigurationRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/configuration`,
@@ -1633,7 +1633,7 @@ export class Api<
     tenantSecurity: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<TenantSecurityResponse, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/security`,
@@ -1656,7 +1656,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: UpdateTenantSecurityRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/security`,
@@ -1679,7 +1679,7 @@ export class Api<
     tenantDetails: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<Tenant, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}`,
@@ -1702,7 +1702,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: DeleteTenantRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}`,
@@ -1726,7 +1726,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: UpdateTenantRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}`,
@@ -1750,7 +1750,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: Pool,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pools`,
@@ -1774,7 +1774,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: PoolUpdateRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<Tenant, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pools`,
@@ -1798,7 +1798,7 @@ export class Api<
     listPvCsForTenant: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<ListPVCsResponse, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pvcs`,
@@ -1820,7 +1820,7 @@ export class Api<
     getTenantUsage: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<TenantUsage, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/usage`,
@@ -1842,7 +1842,7 @@ export class Api<
     getTenantPods: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<TenantPod[], Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pods`,
@@ -1864,7 +1864,7 @@ export class Api<
     getTenantEvents: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<EventListWrapper, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/events`,
@@ -1886,7 +1886,7 @@ export class Api<
     getTenantLogReport: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<TenantLogReport, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/log-report`,
@@ -1909,7 +1909,7 @@ export class Api<
       namespace: string,
       tenant: string,
       podName: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<string, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pods/${podName}`,
@@ -1932,7 +1932,7 @@ export class Api<
       namespace: string,
       tenant: string,
       podName: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pods/${podName}`,
@@ -1954,7 +1954,7 @@ export class Api<
       namespace: string,
       tenant: string,
       podName: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<EventListWrapper, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pods/${podName}/events`,
@@ -1977,7 +1977,7 @@ export class Api<
       namespace: string,
       tenant: string,
       podName: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<DescribePodWrapper, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pods/${podName}/describe`,
@@ -2000,7 +2000,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: TlsConfiguration,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/certificates`,
@@ -2023,7 +2023,7 @@ export class Api<
     tenantDeleteEncryption: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/encryption`,
@@ -2045,7 +2045,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: EncryptionConfiguration,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/encryption`,
@@ -2068,7 +2068,7 @@ export class Api<
     tenantEncryptionInfo: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<EncryptionConfigurationResponse, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/encryption`,
@@ -2090,7 +2090,7 @@ export class Api<
     getTenantYaml: (
       namespace: string,
       tenant: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<TenantYAML, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/yaml`,
@@ -2113,7 +2113,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: TenantYAML,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/yaml`,
@@ -2137,7 +2137,7 @@ export class Api<
       namespace: string,
       tenant: string,
       body: UpdateDomainsRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/domains`,
@@ -2160,7 +2160,7 @@ export class Api<
     getResourceQuota: (
       namespace: string,
       resourceQuotaName: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<ResourceQuota, Error>({
         path: `/namespaces/${namespace}/resourcequotas/${resourceQuotaName}`,
@@ -2183,7 +2183,7 @@ export class Api<
       namespace: string,
       tenant: string,
       pvcName: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<void, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pvc/${pvcName}`,
@@ -2205,7 +2205,7 @@ export class Api<
       namespace: string,
       tenant: string,
       pvcName: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<EventListWrapper, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pvcs/${pvcName}/events`,
@@ -2228,7 +2228,7 @@ export class Api<
       namespace: string,
       tenant: string,
       pvcName: string,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<DescribePVCWrapper, Error>({
         path: `/namespaces/${namespace}/tenants/${tenant}/pvcs/${pvcName}/describe`,
@@ -2256,7 +2256,7 @@ export class Api<
          */
         num_nodes: number;
       },
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<MaxAllocatableMemResponse, Error>({
         path: `/cluster/max-allocatable-memory`,
@@ -2284,7 +2284,7 @@ export class Api<
          */
         num_nodes: number;
       },
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<AllocatableResourcesResponse, Error>({
         path: `/cluster/allocatable-resources`,
@@ -2308,7 +2308,7 @@ export class Api<
     getParity: (
       nodes: number,
       disksPerNode: number,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<ParityResponse, Error>({
         path: `/get-parity/${nodes}/${disksPerNode}`,
@@ -2411,7 +2411,7 @@ export class Api<
      */
     operatorSubnetLogin: (
       body: OperatorSubnetLoginRequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<OperatorSubnetLoginResponse, Error>({
         path: `/subnet/login`,
@@ -2434,7 +2434,7 @@ export class Api<
      */
     operatorSubnetLoginMfa: (
       body: OperatorSubnetLoginMFARequest,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<OperatorSubnetLoginResponse, Error>({
         path: `/subnet/login/mfa`,
@@ -2459,7 +2459,7 @@ export class Api<
       query: {
         token: string;
       },
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<OperatorSubnetAPIKey, Error>({
         path: `/subnet/apikey`,
@@ -2481,7 +2481,7 @@ export class Api<
      */
     operatorSubnetRegisterApiKey: (
       body: OperatorSubnetAPIKey,
-      params: RequestParams = {}
+      params: RequestParams = {},
     ) =>
       this.request<OperatorSubnetRegisterAPIKeyResponse, Error>({
         path: `/subnet/apikey/register`,

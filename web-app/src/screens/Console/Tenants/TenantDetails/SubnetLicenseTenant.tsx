@@ -164,7 +164,7 @@ const SubnetLicenseTenant = ({
                     (tenant.subnet_license?.storage_capacity || 0) *
                     1099511627776
                   ) // 1 Terabyte = 1099511627776 Bytes
-                    .toString(10)
+                    .toString(10),
                 )}
               </Typography>
               <Typography

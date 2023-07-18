@@ -166,7 +166,7 @@ const PVCDescribe = ({
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${namespace}/tenants/${tenant}/pvcs/${pvcName}/describe`
+          `/api/v1/namespaces/${namespace}/tenants/${tenant}/pvcs/${pvcName}/describe`,
         )
         .then((res: DescribeResponse) => {
           setDescribeInfo(res);

@@ -50,7 +50,7 @@ export const bucketsElement = sidebarItem.withAttribute("href", "/buckets");
 
 export const serviceAcctsElement = sidebarItem.withAttribute(
   "href",
-  IAM_PAGES.ACCOUNT
+  IAM_PAGES.ACCOUNT,
 );
 
 export const identityElement = Selector(".MuiPaper-root")
@@ -67,7 +67,7 @@ export const groupsElement = identityChildren
 
 export const iamPoliciesElement = sidebarItem.withAttribute(
   "href",
-  IAM_PAGES.POLICIES
+  IAM_PAGES.POLICIES,
 );
 
 export const configurationsElement = Selector(".MuiPaper-root")
@@ -93,7 +93,7 @@ export const profileElement = Selector(".MuiPaper-root")
   .child("#profile");
 export const inspectElement = sidebarItem.withAttribute(
   "href",
-  "/support/inspect"
+  "/support/inspect",
 );
 
 export const licenseElement = sidebarItem.withAttribute("href", "/license");

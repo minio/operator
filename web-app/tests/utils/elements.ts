@@ -21,7 +21,7 @@ import { Selector } from "testcafe";
 //----------------------------------------------------
 export const loginSubmitButton = Selector("form button");
 export const closeAlertButton = Selector(
-  'button[class*="ModalError-closeButton"]'
+  'button[class*="ModalError-closeButton"]',
 );
 
 export const uploadButton = Selector("span")
@@ -33,7 +33,7 @@ export const saveButton = Selector("button:enabled").withText("Save");
 export const deleteButton = Selector("button:enabled").withExactText("Delete");
 
 export const addEventDestination = Selector("button:enabled").withText(
-  "Add Event Destination"
+  "Add Event Destination",
 );
 export const createTierButton =
   Selector("button:enabled").withText("Create Tier");
@@ -62,16 +62,16 @@ export const switchInput = Selector(".MuiSwitch-input");
 export const bucketNameInput = Selector("#bucket-name");
 export const bucketsPrefixInput = Selector("#prefix");
 export const bucketsAccessInput = Selector(
-  'input[class*="MuiSelect-nativeInput"]'
+  'input[class*="MuiSelect-nativeInput"]',
 );
 export const bucketsAccessReadOnlyInput = Selector(
-  'li[class*="MuiMenuItem-root"]'
+  'li[class*="MuiMenuItem-root"]',
 ).withText("readonly");
 export const bucketsAccessWriteOnlyInput = Selector(
-  'li[class*="MuiMenuItem-root"]'
+  'li[class*="MuiMenuItem-root"]',
 ).withText("writeonly");
 export const bucketsAccessReadWriteInput = Selector(
-  'li[class*="MuiMenuItem-root"]'
+  'li[class*="MuiMenuItem-root"]',
 ).withText("readwrite");
 export const uploadInput = Selector("input").withAttribute("type", "file");
 export const createPolicyName = Selector("#policy-name");
@@ -82,7 +82,7 @@ export const groupNameInput = Selector("#group-name");
 export const searchResourceInput = Selector("#search-resource");
 export const filterUserInput = searchResourceInput.withAttribute(
   "placeholder",
-  "Filter Users"
+  "Filter Users",
 );
 export const groupUserCheckbox = Selector(".ReactVirtualized__Table__row span")
   .withText(constants.TEST_USER_NAME)
@@ -96,7 +96,7 @@ export const groupUserCheckbox = Selector(".ReactVirtualized__Table__row span")
 export const bucketDropdownOptionFor = (modifier) => {
   return Selector("li").withAttribute(
     "data-value",
-    `${constants.TEST_BUCKET_NAME}-${modifier}`
+    `${constants.TEST_BUCKET_NAME}-${modifier}`,
   );
 };
 
@@ -112,10 +112,10 @@ export const table = Selector(".ReactVirtualized__Table");
 export const bucketsTableDisabled = Selector("#object-list-wrapper")
   .find(".MuiPaper-root")
   .withText(
-    "You require additional permissions in order to view Objects in this bucket. Please ask your MinIO administrator to grant you"
+    "You require additional permissions in order to view Objects in this bucket. Please ask your MinIO administrator to grant you",
   );
 export const createGroupUserTable = Selector(
-  ".MuiDialog-container .ReactVirtualized__Table"
+  ".MuiDialog-container .ReactVirtualized__Table",
 );
 
 //----------------------------------------------------
@@ -134,43 +134,43 @@ export const settingsWindow = Selector("#settings-container");
 //----------------------------------------------------
 export const settingsRegionTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/region"
+  "/settings/configurations/region",
 );
 export const settingsCompressionTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/compression"
+  "/settings/configurations/compression",
 );
 export const settingsApiTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/api"
+  "/settings/configurations/api",
 );
 export const settingsHealTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/heal"
+  "/settings/configurations/heal",
 );
 export const settingsScannerTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/scanner"
+  "/settings/configurations/scanner",
 );
 export const settingsEtcdTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/etcd"
+  "/settings/configurations/etcd",
 );
 export const settingsOpenIdTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/identity_openid"
+  "/settings/configurations/identity_openid",
 );
 export const settingsLdapTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/identity_ldap"
+  "/settings/configurations/identity_ldap",
 );
 export const settingsLoggerWebhookTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/logger_webhook"
+  "/settings/configurations/logger_webhook",
 );
 export const settingsAuditWebhookTab = Selector(".MuiTab-root").withAttribute(
   "href",
-  "/settings/configurations/audit_webhook"
+  "/settings/configurations/audit_webhook",
 );
 
 //----------------------------------------------------
@@ -188,17 +188,17 @@ export const userPolicies = Selector(".MuiTab-root").withText("Policies");
 //----------------------------------------------------
 export const rewindButton = Selector("button").withAttribute(
   "id",
-  "rewind-objects-list"
+  "rewind-objects-list",
 );
 export const rewindToInput = Selector("input").withAttribute(
   "id",
-  "rewind-selector"
+  "rewind-selector",
 );
 export const rewindDataButton = Selector("button").withAttribute(
   "id",
-  "rewind-apply-button"
+  "rewind-apply-button",
 );
 export const locationEmpty = Selector("div").withAttribute(
   "id",
-  "empty-results"
+  "empty-results",
 );

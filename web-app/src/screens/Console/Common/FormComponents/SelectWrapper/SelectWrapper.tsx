@@ -86,7 +86,7 @@ const SelectStyled = withStyles((theme: Theme) =>
         backgroundColor: "#fff",
       },
     },
-  })
+  }),
 )(InputBase);
 
 const SelectWrapper = ({

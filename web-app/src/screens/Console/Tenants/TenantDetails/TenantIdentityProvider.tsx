@@ -106,7 +106,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -205,7 +205,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
     api
       .invoke(
         "GET",
-        `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/identity-provider`
+        `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/identity-provider`,
       )
       .then((res: ITenantIdentityProviderResponse) => {
         if (res) {
@@ -223,7 +223,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
             setADLookupBindDN(res.active_directory.lookup_bind_dn);
             setADLookupBindPassword(res.active_directory.lookup_bind_password);
             setADUserDNSearchBaseDN(
-              res.active_directory.user_dn_search_base_dn
+              res.active_directory.user_dn_search_base_dn,
             );
             setADUserDNSearchFilter(res.active_directory.user_dn_search_filter);
             setADGroupSearchBaseDN(res.active_directory.group_search_base_dn);
@@ -281,7 +281,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
       .invoke(
         "POST",
         `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/identity-provider`,
-        payload
+        payload,
       )
       .then(() => {
         setIsSending(false);
@@ -313,7 +313,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
       .invoke(
         "POST",
         `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/set-administrators`,
-        payload
+        payload,
       )
       .then(() => {
         setIsSending(false);
@@ -669,12 +669,12 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                             name={`ad-userdn-${index.toString()}`}
                             value={ADUserDNs[index]}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) => {
                               setADUserDNs(
                                 ADUserDNs.map((group, i) =>
-                                  i === index ? e.target.value : group
-                                )
+                                  i === index ? e.target.value : group,
+                                ),
                               );
                             }}
                             index={index}
@@ -703,7 +703,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                                 onClick={() => {
                                   if (ADUserDNs.length > 1) {
                                     setADUserDNs(
-                                      ADUserDNs.filter((_, i) => i !== index)
+                                      ADUserDNs.filter((_, i) => i !== index),
                                     );
                                   }
                                 }}
@@ -735,12 +735,12 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                             name={`ad-groupdn-${index.toString()}`}
                             value={ADGroupDNs[index]}
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) => {
                               setADGroupDNs(
                                 ADGroupDNs.map((group, i) =>
-                                  i === index ? e.target.value : group
-                                )
+                                  i === index ? e.target.value : group,
+                                ),
                               );
                             }}
                             index={index}
@@ -769,7 +769,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                                 onClick={() => {
                                   if (ADGroupDNs.length > 1) {
                                     setADGroupDNs(
-                                      ADGroupDNs.filter((_, i) => i !== index)
+                                      ADGroupDNs.filter((_, i) => i !== index),
                                     );
                                   }
                                 }}

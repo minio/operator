@@ -92,7 +92,7 @@ const EditDomains = ({
       if (consoleDomainSet !== "") {
         // We Validate console domain
         const consoleRegExp = new RegExp(
-          /^(https?):\/\/([a-zA-Z0-9\-.]+)(:[0-9]+)?(\/[a-zA-Z0-9\-./]*)?$/
+          /^(https?):\/\/([a-zA-Z0-9\-.]+)(:[0-9]+)?(\/[a-zA-Z0-9\-./]*)?$/,
         );
 
         setConsoleDomainValid(consoleRegExp.test(consoleDomainSet));
@@ -104,7 +104,7 @@ const EditDomains = ({
         setMinioDomains(domains.minio);
 
         const minioRegExp = new RegExp(
-          /^(https?):\/\/([a-zA-Z0-9\-.]+)(:[0-9]+)?$/
+          /^(https?):\/\/([a-zA-Z0-9\-.]+)(:[0-9]+)?$/,
         );
 
         const initialValidations = domains.minio.map((domain) => {
@@ -144,7 +144,7 @@ const EditDomains = ({
       .invoke(
         "PUT",
         `/api/v1/namespaces/${namespace}/tenants/${idTenant}/domains`,
-        payload
+        payload,
       )
       .then(() => {
         setIsSending(false);
@@ -177,11 +177,11 @@ const EditDomains = ({
 
   const removeMinIODomain = (removeIndex: number) => {
     const filteredDomains = minioDomains.filter(
-      (_, index) => index !== removeIndex
+      (_, index) => index !== removeIndex,
     );
 
     const filterValidations = minioDomainValid.filter(
-      (_, index) => index !== removeIndex
+      (_, index) => index !== removeIndex,
     );
 
     setMinioDomains(filteredDomains);
@@ -243,7 +243,7 @@ const EditDomains = ({
                           updateMinIODomain(e.target.value, index);
                           setMinioDomainValidation(
                             e.target.validity.valid,
-                            index
+                            index,
                           );
                         }}
                         label={`MinIO Domain ${index + 1}`}

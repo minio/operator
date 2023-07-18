@@ -89,19 +89,19 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const storageClasses = useSelector(
-    (state: AppState) => state.addPool.storageClasses
+    (state: AppState) => state.addPool.storageClasses,
   );
   const numberOfNodes = useSelector((state: AppState) =>
-    state.addPool.setup.numberOfNodes.toString()
+    state.addPool.setup.numberOfNodes.toString(),
   );
   const storageClass = useSelector(
-    (state: AppState) => state.addPool.setup.storageClass
+    (state: AppState) => state.addPool.setup.storageClass,
   );
   const volumeSize = useSelector((state: AppState) =>
-    state.addPool.setup.volumeSize.toString()
+    state.addPool.setup.volumeSize.toString(),
   );
   const volumesPerServer = useSelector((state: AppState) =>
-    state.addPool.setup.volumesPerServer.toString()
+    state.addPool.setup.volumesPerServer.toString(),
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -145,7 +145,7 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
       isPoolPageValid({
         page: "setup",
         status: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -156,14 +156,14 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${tenant.namespace}/resourcequotas/${tenant.namespace}-storagequota`
+          `/api/v1/namespaces/${tenant.namespace}/resourcequotas/${tenant.namespace}-storagequota`,
         )
         .then((res: IQuotas) => {
           const elements: IQuotaElement[] = get(res, "elements", []);
 
           const newStorage = elements.map((storageClass: any) => {
             const name = get(storageClass, "name", "").split(
-              ".storageclass.storage.k8s.io/requests.storage"
+              ".storageclass.storage.k8s.io/requests.storage",
             )[0];
 
             return { label: name, value: name };
@@ -174,7 +174,7 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
               page: "setup",
               field: "storageClass",
               value: newStorage[0].value,
-            })
+            }),
           );
 
           dispatch(setPoolStorageClasses(newStorage));
@@ -191,7 +191,7 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
         page: "setup",
         field: fieldName,
         value: value,
-      })
+      }),
     );
   };
 
