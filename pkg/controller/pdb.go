@@ -97,9 +97,10 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			}
 		}
 		if available.V1Available() {
+			pdbName := t.Name + "-" + pool.Name
 			var pdb *v1.PodDisruptionBudget
 			var isCreate bool
-			pdb, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Get(ctx, pool.Name, metav1.GetOptions{})
+			pdb, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Get(ctx, pdbName, metav1.GetOptions{})
 			if err != nil {
 				if k8serrors.IsNotFound(err) {
 					pdb = &v1.PodDisruptionBudget{}
@@ -115,7 +116,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				}
 			}
 			// set filed we expected
-			pdb.Name = pool.Name
+			pdb.Name = pdbName
 			pdb.Namespace = t.Namespace
 			minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
 			pdb.Spec.MinAvailable = &minAvailable
@@ -149,16 +150,17 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				if err != nil {
 					return err
 				}
-				_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Patch(ctx, t.Name, types.MergePatchType, pData, metav1.PatchOptions{})
+				_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Patch(ctx, pdbName, types.MergePatchType, pData, metav1.PatchOptions{})
 				if err != nil {
 					return err
 				}
 			}
 		}
 		if available.V1BetaAvailable() {
+			pdbName := t.Name + "-" + pool.Name
 			var pdb *v1beta1.PodDisruptionBudget
 			var isCreate bool
-			pdb, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Get(ctx, pool.Name, metav1.GetOptions{})
+			pdb, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Get(ctx, pdbName, metav1.GetOptions{})
 			if err != nil {
 				if k8serrors.IsNotFound(err) {
 					pdb = &v1beta1.PodDisruptionBudget{}
@@ -174,7 +176,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				}
 			}
 			// set filed we expected
-			pdb.Name = pool.Name
+			pdb.Name = pdbName
 			pdb.Namespace = t.Namespace
 			minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
 			pdb.Spec.MinAvailable = &minAvailable
@@ -208,7 +210,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				if err != nil {
 					return err
 				}
-				_, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Patch(ctx, t.Name, types.MergePatchType, pData, metav1.PatchOptions{})
+				_, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Patch(ctx, pdbName, types.MergePatchType, pData, metav1.PatchOptions{})
 				if err != nil {
 					return err
 				}
