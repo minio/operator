@@ -92,6 +92,9 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			if existingStatefulSet.Status.ReadyReplicas != existingStatefulSet.Status.Replicas || existingStatefulSet.Status.Replicas == 0 {
 				return nil
 			}
+			if t.Status.CurrentState != StatusInitialized {
+				return nil
+			}
 		}
 		if available.V1Available() {
 			var pdb *v1.PodDisruptionBudget
