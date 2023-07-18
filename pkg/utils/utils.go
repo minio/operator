@@ -18,6 +18,10 @@ package utils
 
 import (
 	"encoding/base64"
+	"os"
+	"strings"
+
+	"github.com/minio/operator/pkg/common"
 
 	"github.com/google/uuid"
 )
@@ -53,3 +57,17 @@ const (
 	ContextRequestRemoteAddr = key("request-remote-addr")
 	ContextAuditKey          = key("request-audit-entry")
 )
+
+// GetOperatorRuntime Retrieves the runtime from env variable
+func GetOperatorRuntime() common.Runtime {
+	envString := os.Getenv(common.OperatorRuntimeEnv)
+	runtimeReturn := common.OperatorRuntimeK8s
+	if envString != "" {
+		envString = strings.TrimSpace(envString)
+		envString = strings.ToUpper(envString)
+		if val, ok := common.Runtimes[envString]; ok {
+			runtimeReturn = val
+		}
+	}
+	return runtimeReturn
+}
