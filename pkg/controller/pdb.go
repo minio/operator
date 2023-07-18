@@ -260,7 +260,7 @@ func (c *Controller) GetPDBAvailable() PDBAvailable {
 			} else if globalPDBAvailable.v1beta {
 				klog.Infof("PodDisruptionBudget: v1beta")
 			} else {
-				klog.Infof("PodDisruptionBudget: unsupport")
+				klog.Infof("PodDisruptionBudget: not supported")
 			}
 		}()
 		resouces, _ := c.kubeClientSet.Discovery().ServerPreferredResources()
