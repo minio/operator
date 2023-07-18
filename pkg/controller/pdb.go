@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"strings"
 	"sync"
 
@@ -123,6 +124,13 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				v2.PoolLabel:   pool.Name,
 				v2.TenantLabel: t.Name,
 			})
+			pdb.OwnerReferences = []metav1.OwnerReference{
+				*metav1.NewControllerRef(t, schema.GroupVersionKind{
+					Group:   v2.SchemeGroupVersion.Group,
+					Version: v2.SchemeGroupVersion.Version,
+					Kind:    v2.MinIOCRDResourceKind,
+				}),
+			}
 			if isCreate {
 				_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Create(ctx, pdb, metav1.CreateOptions{})
 				if err != nil {
@@ -175,6 +183,13 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				v2.PoolLabel:   pool.Name,
 				v2.TenantLabel: t.Name,
 			})
+			pdb.OwnerReferences = []metav1.OwnerReference{
+				*metav1.NewControllerRef(t, schema.GroupVersionKind{
+					Group:   v2.SchemeGroupVersion.Group,
+					Version: v2.SchemeGroupVersion.Version,
+					Kind:    v2.MinIOCRDResourceKind,
+				}),
+			}
 			if isCreate {
 				_, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Create(ctx, pdb, metav1.CreateOptions{})
 				if err != nil {
