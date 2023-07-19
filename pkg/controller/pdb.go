@@ -40,10 +40,8 @@ func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 		return nil
 	}
 	if available.V1Available() {
-		err := c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: metav1.SetAsLabelSelector(labels.Set{
-				v2.TenantLabel: t.Name,
-			}).String(),
+		err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s", v2.TenantLabel, t.Name),
 		})
 		if err != nil {
 			// don't exist
@@ -56,9 +54,7 @@ func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 	}
 	if available.V1BetaAvailable() {
 		err := c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: metav1.SetAsLabelSelector(labels.Set{
-				v2.TenantLabel: t.Name,
-			}).String(),
+			LabelSelector: fmt.Sprintf("%s=%s", v2.TenantLabel, t.Name),
 		})
 		if err != nil {
 			// don't exist
