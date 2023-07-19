@@ -90,7 +90,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				return err
 			}
 			if existingStatefulSet.Status.ReadyReplicas != existingStatefulSet.Status.Replicas || existingStatefulSet.Status.Replicas == 0 {
-				return nil
+				continue
 			}
 			if t.Status.CurrentState != StatusInitialized {
 				return nil
