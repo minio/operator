@@ -18,7 +18,7 @@ import React, { ComponentType, Suspense, SuspenseProps } from "react";
 
 function withSuspense<P extends string | number | object>(
   WrappedComponent: ComponentType<P>,
-  fallback: SuspenseProps["fallback"] = null
+  fallback: SuspenseProps["fallback"] = null,
 ) {
   function ComponentWithSuspense(props: P) {
     return (

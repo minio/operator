@@ -52,7 +52,7 @@ export const uploadNamedObjectToBucket = (
   t,
   modifier,
   objectName,
-  objectPath
+  objectPath,
 ) => {
   const bucketName = modifier;
   const minioClient = new Minio.Client({
@@ -123,7 +123,7 @@ export const namedTestBucketBrowseButtonFor = (name) => {
 
 export const testBucketBrowseButtonFor = (modifier) => {
   return namedTestBucketBrowseButtonFor(
-    `${constants.TEST_BUCKET_NAME}-${modifier}`
+    `${constants.TEST_BUCKET_NAME}-${modifier}`,
   );
 };
 
@@ -172,7 +172,7 @@ export const createUser = (t) => {
 
 export const cleanUpUser = (t) => {
   const userListItem = Selector(".ReactVirtualized__Table__rowColumn").withText(
-    constants.TEST_USER_NAME
+    constants.TEST_USER_NAME,
   );
 
   const userDeleteIconButton = userListItem

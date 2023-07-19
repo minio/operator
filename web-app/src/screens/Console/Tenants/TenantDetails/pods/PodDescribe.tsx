@@ -402,7 +402,7 @@ const PodDescribe = ({
 }: IPodEventsProps) => {
   const dispatch = useAppDispatch();
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [describeInfo, setDescribeInfo] = useState<DescribeResponse>();
@@ -426,7 +426,7 @@ const PodDescribe = ({
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${namespace}/tenants/${tenant}/pods/${podName}/describe`
+          `/api/v1/namespaces/${namespace}/tenants/${tenant}/pods/${podName}/describe`,
         )
         .then((res: DescribeResponse) => {
           const cleanRes = cleanDescribeResponseEnvVariables(res);
@@ -441,11 +441,11 @@ const PodDescribe = ({
   }, [loading, podName, namespace, tenant, dispatch]);
 
   const cleanDescribeResponseEnvVariables = (
-    res: DescribeResponse
+    res: DescribeResponse,
   ): DescribeResponse => {
     res.containers = res.containers.map((c) => {
       c.environmentVariables = c.environmentVariables.filter(
-        (item) => item !== null
+        (item) => item !== null,
       );
       return c;
     });

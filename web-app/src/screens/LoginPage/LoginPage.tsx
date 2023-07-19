@@ -242,7 +242,7 @@ const useStyles = makeStyles((theme: Theme) =>
       },
     },
     ...spacingUtils,
-  })
+  }),
 );
 
 export interface LoginStrategyRoutes {
@@ -277,16 +277,16 @@ const Login = () => {
 
   const jwt = useSelector((state: AppState) => state.login.jwt);
   const loginStrategy = useSelector(
-    (state: AppState) => state.login.loginStrategy
+    (state: AppState) => state.login.loginStrategy,
   );
   const loginSending = useSelector(
-    (state: AppState) => state.login.loginSending
+    (state: AppState) => state.login.loginSending,
   );
   const loadingFetchConfiguration = useSelector(
-    (state: AppState) => state.login.loadingFetchConfiguration
+    (state: AppState) => state.login.loadingFetchConfiguration,
   );
   const loadingVersion = useSelector(
-    (state: AppState) => state.login.loadingVersion
+    (state: AppState) => state.login.loadingVersion,
   );
   const navigateTo = useSelector((state: AppState) => state.login.navigateTo);
 

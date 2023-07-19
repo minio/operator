@@ -46,7 +46,7 @@ export const editTenantSecurityContextSlice = createSlice({
     },
     setFSGroupChangePolicy: (
       state,
-      action: PayloadAction<fsGroupChangePolicyType>
+      action: PayloadAction<fsGroupChangePolicyType>,
     ) => {
       state.fsGroupChangePolicy = action.payload;
     },

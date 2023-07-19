@@ -36,7 +36,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const GCPKMSAdd = () => {
@@ -44,32 +44,32 @@ const GCPKMSAdd = () => {
   const dispatch = useAppDispatch();
 
   const gcpProjectID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpProjectID
+    (state: AppState) => state.createTenant.fields.encryption.gcpProjectID,
   );
   const gcpEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.gcpEndpoint,
   );
   const gcpClientEmail = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpClientEmail
+    (state: AppState) => state.createTenant.fields.encryption.gcpClientEmail,
   );
   const gcpClientID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpClientID
+    (state: AppState) => state.createTenant.fields.encryption.gcpClientID,
   );
   const gcpPrivateKeyID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKeyID
+    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKeyID,
   );
   const gcpPrivateKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKey
+    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKey,
   );
 
   // Common
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   return (

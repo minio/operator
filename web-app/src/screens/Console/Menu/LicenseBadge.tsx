@@ -24,7 +24,7 @@ import { registeredCluster } from "../../../config";
 
 const LicenseBadge = () => {
   const licenseInfo = useSelector(
-    (state: AppState) => state?.system?.licenseInfo
+    (state: AppState) => state?.system?.licenseInfo,
   );
 
   const isAgplAckDone = getLicenseConsent();

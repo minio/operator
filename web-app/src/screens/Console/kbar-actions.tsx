@@ -22,7 +22,7 @@ import { IAM_PAGES } from "../../common/SecureComponent/permissions";
 export const routesAsKbarActions = (
   features: string[] | null,
   operatorMode: boolean,
-  navigate: (url: string) => void
+  navigate: (url: string) => void,
 ) => {
   const initialActions: Action[] = [];
   const allowedMenuItems = validRoutes();

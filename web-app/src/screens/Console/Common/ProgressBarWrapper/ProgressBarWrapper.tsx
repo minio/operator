@@ -51,7 +51,7 @@ const SmallBorderLinearProgress = styled(BorderLinearProgress)(() => ({
 }));
 
 function LinearProgressWithLabel(
-  props: { error: boolean; cancelled: boolean } & LinearProgressProps
+  props: { error: boolean; cancelled: boolean } & LinearProgressProps,
 ) {
   let color = "#000";
   let size = 18;

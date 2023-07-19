@@ -69,29 +69,29 @@ const PodsSummary = withSuspense(React.lazy(() => import("./PodsSummary")));
 const TenantEvents = withSuspense(React.lazy(() => import("./TenantEvents")));
 const TenantCSR = withSuspense(React.lazy(() => import("./TenantCSR")));
 const VolumesSummary = withSuspense(
-  React.lazy(() => import("./VolumesSummary"))
+  React.lazy(() => import("./VolumesSummary")),
 );
 const TenantMetrics = withSuspense(React.lazy(() => import("./TenantMetrics")));
 const TenantTrace = withSuspense(React.lazy(() => import("./TenantTrace")));
 const TenantVolumes = withSuspense(
-  React.lazy(() => import("./pvcs/TenantVolumes"))
+  React.lazy(() => import("./pvcs/TenantVolumes")),
 );
 const TenantIdentityProvider = withSuspense(
-  React.lazy(() => import("./TenantIdentityProvider"))
+  React.lazy(() => import("./TenantIdentityProvider")),
 );
 const TenantSecurity = withSuspense(
-  React.lazy(() => import("./TenantSecurity"))
+  React.lazy(() => import("./TenantSecurity")),
 );
 const TenantEncryption = withSuspense(
-  React.lazy(() => import("./TenantEncryption"))
+  React.lazy(() => import("./TenantEncryption")),
 );
 const DeleteTenant = withSuspense(
-  React.lazy(() => import("../ListTenants/DeleteTenant"))
+  React.lazy(() => import("../ListTenants/DeleteTenant")),
 );
 const PodDetails = withSuspense(React.lazy(() => import("./pods/PodDetails")));
 
 const TenantConfiguration = withSuspense(
-  React.lazy(() => import("./TenantConfiguration"))
+  React.lazy(() => import("./TenantConfiguration")),
 );
 
 interface ITenantDetailsProps {
@@ -155,13 +155,13 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
   const { pathname = "" } = useLocation();
 
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
   const selectedTenant = useSelector(
-    (state: AppState) => state.tenants.currentTenant
+    (state: AppState) => state.tenants.currentTenant,
   );
   const selectedNamespace = useSelector(
-    (state: AppState) => state.tenants.currentNamespace
+    (state: AppState) => state.tenants.currentNamespace,
   );
   const tenantInfo = useSelector((state: AppState) => state.tenants.tenantInfo);
 
@@ -179,7 +179,7 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
         setTenantName({
           name: tenantName,
           namespace: tenantNamespace,
-        })
+        }),
       );
       dispatch(getTenantAsync());
     }
@@ -271,7 +271,7 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                   {tenantInfo && tenantInfo.status && (
                     <span
                       className={healthStatusToClass(
-                        tenantInfo.status?.health_status!
+                        tenantInfo.status?.health_status!,
                       )}
                     >
                       <CircleIcon />
@@ -317,7 +317,7 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                     id={"tenant-hop"}
                     onClick={() => {
                       navigate(
-                        `/namespaces/${tenantNamespace}/tenants/${tenantName}/hop`
+                        `/namespaces/${tenantNamespace}/tenants/${tenantName}/hop`,
                       );
                     }}
                     disabled={!tenantInfo || !tenantIsOnline(tenantInfo)}

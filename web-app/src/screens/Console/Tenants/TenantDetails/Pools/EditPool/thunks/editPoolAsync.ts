@@ -73,14 +73,14 @@ export const editPoolAsync = createAsyncThunk(
             nodeSelectorLabels,
             withPodAntiAffinity,
             tenant.name!,
-            poolName
+            poolName,
           ),
         };
         break;
     }
 
     const tolerationValues = tolerations.filter(
-      (toleration) => toleration.key.trim() !== ""
+      (toleration) => toleration.key.trim() !== "",
     );
 
     const cleanPools = tenant?.pools
@@ -147,5 +147,5 @@ export const editPoolAsync = createAsyncThunk(
       .catch((err: ErrorResponseHandler) => {
         dispatch(setErrorSnackMessage(err));
       });
-  }
+  },
 );

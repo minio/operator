@@ -178,7 +178,7 @@ const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
       setTenantName({
         name: tenant.name!,
         namespace: tenant.namespace!,
-      })
+      }),
     );
     dispatch(getTenantAsync());
     navigate(`/namespaces/${tenant.namespace}/tenants/${tenant.name}/summary`);

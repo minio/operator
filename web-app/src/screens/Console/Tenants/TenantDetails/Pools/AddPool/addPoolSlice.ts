@@ -104,7 +104,7 @@ export const addPoolSlice = createSlice({
           | "nodeSelectorPairs";
         field: string;
         value: any;
-      }>
+      }>,
     ) => {
       if (has(state, `${action.payload.page}.${action.payload.field}`)) {
         const originPageNameItems = get(state, `${action.payload.page}`, {});
@@ -123,7 +123,7 @@ export const addPoolSlice = createSlice({
       action: PayloadAction<{
         page: string;
         status: boolean;
-      }>
+      }>,
     ) => {
       if (action.payload.status) {
         if (!state.validPages.includes(action.payload.page)) {
@@ -131,7 +131,7 @@ export const addPoolSlice = createSlice({
         }
       } else {
         state.validPages = state.validPages.filter(
-          (elm) => elm !== action.payload.page
+          (elm) => elm !== action.payload.page,
         );
       }
     },
@@ -143,7 +143,7 @@ export const addPoolSlice = createSlice({
       action: PayloadAction<{
         index: number;
         tolerationValue: ITolerationModel;
-      }>
+      }>,
     ) => {
       state.tolerations[action.payload.index] = action.payload.tolerationValue;
     },
@@ -158,7 +158,7 @@ export const addPoolSlice = createSlice({
     },
     removePoolToleration: (state, action: PayloadAction<number>) => {
       state.tolerations = state.tolerations.filter(
-        (_, index) => index !== action.payload
+        (_, index) => index !== action.payload,
       );
     },
     setPoolKeyValuePairs: (state, action: PayloadAction<LabelKeyPair[]>) => {

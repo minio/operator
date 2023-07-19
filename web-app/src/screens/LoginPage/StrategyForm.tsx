@@ -61,7 +61,7 @@ const useStyles = makeStyles((theme: Theme) =>
       height: 10,
     },
     ...spacingUtils,
-  })
+  }),
 );
 
 const StrategyForm = () => {
@@ -75,7 +75,7 @@ const StrategyForm = () => {
   const useSTS = useSelector((state: AppState) => state.login.useSTS);
 
   const loginSending = useSelector(
-    (state: AppState) => state.login.loginSending
+    (state: AppState) => state.login.loginSending,
   );
 
   const formSubmit = (e: React.FormEvent<HTMLFormElement>) => {

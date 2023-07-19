@@ -111,7 +111,7 @@ const Hop = ({ classes }: IHopSimple) => {
                     if (loc.indexOf("cp=y") < 0) {
                       const next = `${loc}${add}cp=y`;
                       consoleFrame.current.contentDocument.location.replace(
-                        next
+                        next,
                       );
                     } else {
                       consoleFrame.current.contentDocument.location.reload();
@@ -128,7 +128,7 @@ const Hop = ({ classes }: IHopSimple) => {
                 component="span"
                 onClick={() => {
                   navigate(
-                    `/namespaces/${tenantNamespace}/tenants/${tenantName}`
+                    `/namespaces/${tenantNamespace}/tenants/${tenantName}`,
                   );
                 }}
                 size="large"

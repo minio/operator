@@ -25,16 +25,16 @@ const CreateTenantButton = () => {
   const dispatch = useAppDispatch();
 
   const addSending = useSelector(
-    (state: AppState) => state.createTenant.addingTenant
+    (state: AppState) => state.createTenant.addingTenant,
   );
 
   const validPages = useSelector(
-    (state: AppState) => state.createTenant.validPages
+    (state: AppState) => state.createTenant.validPages,
   );
 
   const selectedStorageClass = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.nameTenant.selectedStorageClass
+      state.createTenant.fields.nameTenant.selectedStorageClass,
   );
 
   const enabled =

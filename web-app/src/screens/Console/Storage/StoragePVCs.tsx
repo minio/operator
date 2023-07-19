@@ -76,7 +76,7 @@ const StorageVolumes = ({ classes }: IStorageVolumesProps) => {
   }, [loading, dispatch]);
 
   const filteredRecords: IStoragePVCs[] = records.filter((elementItem) =>
-    elementItem.name.toLowerCase().includes(filter.toLowerCase())
+    elementItem.name.toLowerCase().includes(filter.toLowerCase()),
   );
 
   const confirmDeletePVC = (pvcItem: IStoragePVCs) => {

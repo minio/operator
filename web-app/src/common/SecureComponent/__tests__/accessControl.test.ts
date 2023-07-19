@@ -49,7 +49,7 @@ const setPolicy1 = () => {
       },
       operator: false,
       status: "ok",
-    })
+    }),
   );
 };
 const setPolicy2 = () => {
@@ -91,7 +91,7 @@ const setPolicy2 = () => {
         "console-ui": ["admin:CreateServiceAccount", "admin:CreateUser"],
       },
       status: "ok",
-    })
+    }),
   );
 };
 const setPolicy3 = () => {
@@ -109,7 +109,7 @@ const setPolicy3 = () => {
       },
       status: "ok",
       operator: false,
-    })
+    }),
   );
 };
 
@@ -125,7 +125,7 @@ const setPolicy4 = () => {
       },
       status: "ok",
       operator: false,
-    })
+    }),
   );
 };
 
@@ -137,7 +137,7 @@ test("Upload button disabled", () => {
 test("Upload button enabled valid prefix", () => {
   setPolicy1();
   expect(hasPermission("testcafe/write", ["s3:PutObject"], false, true)).toBe(
-    true
+    true,
   );
 });
 
@@ -146,8 +146,8 @@ test("Can Browse Bucket", () => {
   expect(
     hasPermission(
       "bucket-svc",
-      IAM_PAGES_PERMISSIONS[IAM_PAGES.OBJECT_BROWSER_VIEW]
-    )
+      IAM_PAGES_PERMISSIONS[IAM_PAGES.OBJECT_BROWSER_VIEW],
+    ),
   ).toBe(true);
 });
 
@@ -166,8 +166,8 @@ test("Can browse a bucket for a policy with a wildcard", () => {
   expect(
     hasPermission(
       "testbucket-0",
-      IAM_PAGES_PERMISSIONS[IAM_PAGES.OBJECT_BROWSER_VIEW]
-    )
+      IAM_PAGES_PERMISSIONS[IAM_PAGES.OBJECT_BROWSER_VIEW],
+    ),
   ).toBe(true);
 });
 
@@ -179,8 +179,8 @@ test("Can delete an object inside a bucket prefix", () => {
         "xref_cust_guid_actd-v1.jpg",
         "test/digitalinsights/xref_cust_guid_actd-v1.jpg",
       ],
-      [IAM_SCOPES.S3_DELETE_OBJECT]
-    )
+      [IAM_SCOPES.S3_DELETE_OBJECT],
+    ),
   ).toBe(true);
 });
 
@@ -189,7 +189,7 @@ test("Can't delete an object inside a bucket prefix", () => {
   expect(
     hasPermission(
       ["xref_cust_guid_actd-v1.jpg", "test/xref_cust_guid_actd-v1.jpg"],
-      [IAM_SCOPES.S3_DELETE_OBJECT]
-    )
+      [IAM_SCOPES.S3_DELETE_OBJECT],
+    ),
   ).toBe(false);
 });

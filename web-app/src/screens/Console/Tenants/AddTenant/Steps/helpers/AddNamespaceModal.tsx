@@ -39,7 +39,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     ...modalBasic,
     ...deleteDialogStyles,
-  })
+  }),
 );
 
 const AddNamespaceModal = () => {
@@ -47,13 +47,13 @@ const AddNamespaceModal = () => {
   const classes = useStyles();
 
   const namespace = useSelector(
-    (state: AppState) => state.createTenant.fields.nameTenant.namespace
+    (state: AppState) => state.createTenant.fields.nameTenant.namespace,
   );
   const addNamespaceLoading = useSelector(
-    (state: AppState) => state.createTenant.addNSLoading
+    (state: AppState) => state.createTenant.addNSLoading,
   );
   const addNamespaceOpen = useSelector(
-    (state: AppState) => state.createTenant.addNSOpen
+    (state: AppState) => state.createTenant.addNSOpen,
   );
 
   return (

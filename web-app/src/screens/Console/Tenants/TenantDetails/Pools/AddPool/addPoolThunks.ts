@@ -65,14 +65,14 @@ export const addPoolAsync = createAsyncThunk(
             nodeSelectorLabels,
             withPodAntiAffinity,
             tenant.name!,
-            poolName
+            poolName,
           ),
         };
         break;
     }
 
     const tolerationValues = tolerations.filter(
-      (toleration) => toleration.key.trim() !== ""
+      (toleration) => toleration.key.trim() !== "",
     );
 
     let runtimeClass = {};
@@ -104,7 +104,7 @@ export const addPoolAsync = createAsyncThunk(
       .invoke(
         "POST",
         `/api/v1/namespaces/${tenant.namespace}/tenants/${tenant.name}/pools`,
-        data
+        data,
       )
       .then(() => {
         dispatch(resetPoolForm());
@@ -114,5 +114,5 @@ export const addPoolAsync = createAsyncThunk(
       .catch((err: ErrorResponseHandler) => {
         dispatch(setErrorSnackMessage(err));
       });
-  }
+  },
 );

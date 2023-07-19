@@ -60,7 +60,7 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
 
   const tenant = useSelector((state: AppState) => state.tenants.currentTenant);
   const namespace = useSelector(
-    (state: AppState) => state.tenants.currentNamespace
+    (state: AppState) => state.tenants.currentNamespace,
   );
 
   const [addLoading, setAddLoading] = useState<boolean>(false);
@@ -178,7 +178,7 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
                 disabled={addLoading}
                 onClick={() => {
                   navigate(
-                    `/namespaces/${namespace}/tenants/${tenant}/summary`
+                    `/namespaces/${namespace}/tenants/${tenant}/summary`,
                   );
                 }}
                 label={"Cancel"}
