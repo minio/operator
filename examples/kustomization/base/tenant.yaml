@@ -27,7 +27,7 @@ spec:
     domains: { }
     ## Enable access via SFTP
     ## This feature is turned off by default
-    enableSFTP: false
+    # enableSFTP: false
   ## Create users in the Tenant using this field. Make sure to create secrets per user added here.
   ## Secret should follow the format used in `minio-creds-secret`.
   users:
