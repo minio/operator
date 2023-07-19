@@ -49,7 +49,7 @@ func init() {
 }
 
 // New creates a new root command for kubectl-minio
-func New(streams genericclioptions.IOStreams) *cobra.Command {
+func New(_ genericclioptions.IOStreams) *cobra.Command {
 	rootCmd = helpers.DisableHelp(rootCmd)
 	cobra.EnableCommandSorting = false
 	rootCmd.AddCommand(newInitCmd(rootCmd.OutOrStdout(), rootCmd.ErrOrStderr()))
