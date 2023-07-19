@@ -174,3 +174,4 @@ rules:
       - list
       - patch
       - update
+      - deletecollection
