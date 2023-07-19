@@ -55,7 +55,7 @@ const TenantCSR = ({ classes }: ITenantCSRProps) => {
   const { tenantName, tenantNamespace } = useParams();
 
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -76,7 +76,7 @@ const TenantCSR = ({ classes }: ITenantCSRProps) => {
           "GET",
           `/api/v1/namespaces/${tenantNamespace || ""}/tenants/${
             tenantName || ""
-          }/csr`
+          }/csr`,
         )
         .then((res) => {
           for (var _i = 0; _i < res.csrElement.length; _i++) {

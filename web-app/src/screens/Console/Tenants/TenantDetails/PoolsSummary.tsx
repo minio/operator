@@ -55,10 +55,10 @@ const PoolsSummary = ({ classes }: IPoolsSummary) => {
   const { pathname = "" } = useLocation();
 
   const selectedPool = useSelector(
-    (state: AppState) => state.tenants.selectedPool
+    (state: AppState) => state.tenants.selectedPool,
   );
   const poolDetailsOpen = useSelector(
-    (state: AppState) => state.tenants.poolDetailsOpen
+    (state: AppState) => state.tenants.poolDetailsOpen,
   );
 
   return (

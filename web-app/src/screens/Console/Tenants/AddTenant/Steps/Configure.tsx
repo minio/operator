@@ -147,35 +147,35 @@ const Configure = ({ classes }: IConfigureProps) => {
   const dispatch = useAppDispatch();
 
   const exposeMinIO = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.exposeMinIO
+    (state: AppState) => state.createTenant.fields.configure.exposeMinIO,
   );
   const exposeConsole = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.exposeConsole
+    (state: AppState) => state.createTenant.fields.configure.exposeConsole,
   );
   const setDomains = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.setDomains
+    (state: AppState) => state.createTenant.fields.configure.setDomains,
   );
   const consoleDomain = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.consoleDomain
+    (state: AppState) => state.createTenant.fields.configure.consoleDomain,
   );
   const minioDomains = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.minioDomains
+    (state: AppState) => state.createTenant.fields.configure.minioDomains,
   );
   const tenantCustom = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.tenantCustom
+    (state: AppState) => state.createTenant.fields.configure.tenantCustom,
   );
   const tenantEnvVars = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.envVars
+    (state: AppState) => state.createTenant.fields.configure.envVars,
   );
   const tenantSecurityContext = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.configure.tenantSecurityContext
+      state.createTenant.fields.configure.tenantSecurityContext,
   );
   const customRuntime = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.customRuntime
+    (state: AppState) => state.createTenant.fields.configure.customRuntime,
   );
   const runtimeClassName = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.runtimeClassName
+    (state: AppState) => state.createTenant.fields.configure.runtimeClassName,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -184,10 +184,10 @@ const Configure = ({ classes }: IConfigureProps) => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "configure", field: field, value: value })
+        updateAddField({ pageName: "configure", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Validation
@@ -258,7 +258,7 @@ const Configure = ({ classes }: IConfigureProps) => {
       isPageValid({
         pageName: "configure",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -378,7 +378,7 @@ const Configure = ({ classes }: IConfigureProps) => {
                           id={`minio-domain-${index.toString()}`}
                           name={`minio-domain-${index.toString()}`}
                           onChange={(
-                            e: React.ChangeEvent<HTMLInputElement>
+                            e: React.ChangeEvent<HTMLInputElement>,
                           ) => {
                             updateMinIODomain(e.target.value, index);
                           }}
@@ -637,9 +637,9 @@ const Configure = ({ classes }: IConfigureProps) => {
                       existingEnvVars.map((keyPair, i) =>
                         i === index
                           ? { key: e.target.value, value: keyPair.value }
-                          : keyPair
-                      )
-                    )
+                          : keyPair,
+                      ),
+                    ),
                   );
                 }}
                 index={index}
@@ -659,9 +659,9 @@ const Configure = ({ classes }: IConfigureProps) => {
                       existingEnvVars.map((keyPair, i) =>
                         i === index
                           ? { key: keyPair.key, value: e.target.value }
-                          : keyPair
-                      )
-                    )
+                          : keyPair,
+                      ),
+                    ),
                   );
                 }}
                 index={index}
@@ -688,7 +688,7 @@ const Configure = ({ classes }: IConfigureProps) => {
                   size={"small"}
                   onClick={() => {
                     const existingEnvVars = tenantEnvVars.filter(
-                      (item, fIndex) => fIndex !== index
+                      (item, fIndex) => fIndex !== index,
                     );
                     dispatch(setEnvVars(existingEnvVars));
                   }}

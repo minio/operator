@@ -48,7 +48,7 @@ import {
 } from "../../../../api/operatorApi";
 
 const CredentialsPrompt = withSuspense(
-  React.lazy(() => import("../../Common/CredentialsPrompt/CredentialsPrompt"))
+  React.lazy(() => import("../../Common/CredentialsPrompt/CredentialsPrompt")),
 );
 
 const useStyles = makeStyles((theme: Theme) => ({

@@ -17,7 +17,7 @@ export const admin = Role(
       .typeText("#secretKey", "minioadmin")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const bucketAssignPolicy = Role(
@@ -28,7 +28,7 @@ export const bucketAssignPolicy = Role(
       .typeText("#secretKey", "bucketassignpolicy")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const bucketRead = Role(
@@ -39,7 +39,7 @@ export const bucketRead = Role(
       .typeText("#secretKey", "bucketread")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const bucketWrite = Role(
@@ -50,7 +50,7 @@ export const bucketWrite = Role(
       .typeText("#secretKey", "bucketwrite")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const bucketReadWrite = Role(
@@ -61,7 +61,7 @@ export const bucketReadWrite = Role(
       .typeText("#secretKey", "bucketreadwrite")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const bucketObjectTags = Role(
@@ -72,7 +72,7 @@ export const bucketObjectTags = Role(
       .typeText("#secretKey", "bucketobjecttags")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const bucketCannotTag = Role(
@@ -83,7 +83,7 @@ export const bucketCannotTag = Role(
       .typeText("#secretKey", "bucketcannottag")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const bucketSpecific = Role(
@@ -94,7 +94,7 @@ export const bucketSpecific = Role(
       .typeText("#secretKey", "bucketspecific")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const bucketWritePrefixOnly = Role(
@@ -105,7 +105,7 @@ export const bucketWritePrefixOnly = Role(
       .typeText("#secretKey", "bucketwriteprefixonlypolicy")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const dashboard = Role(
@@ -116,7 +116,7 @@ export const dashboard = Role(
       .typeText("#secretKey", "dashboard")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const diagnostics = Role(
@@ -127,7 +127,7 @@ export const diagnostics = Role(
       .typeText("#secretKey", "diagnostics")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const groups = Role(
@@ -138,7 +138,7 @@ export const groups = Role(
       .typeText("#secretKey", "groups1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const heal = Role(
@@ -149,7 +149,7 @@ export const heal = Role(
       .typeText("#secretKey", "heal1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const iamPolicies = Role(
@@ -160,7 +160,7 @@ export const iamPolicies = Role(
       .typeText("#secretKey", "iampolicies")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const logs = Role(
@@ -171,7 +171,7 @@ export const logs = Role(
       .typeText("#secretKey", "logs1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const notificationEndpoints = Role(
@@ -182,7 +182,7 @@ export const notificationEndpoints = Role(
       .typeText("#secretKey", "notificationendpoints")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const settings = Role(
@@ -193,7 +193,7 @@ export const settings = Role(
       .typeText("#secretKey", "settings")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const tiers = Role(
@@ -204,7 +204,7 @@ export const tiers = Role(
       .typeText("#secretKey", "tiers1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const trace = Role(
@@ -215,7 +215,7 @@ export const trace = Role(
       .typeText("#secretKey", "trace1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const users = Role(
@@ -226,7 +226,7 @@ export const users = Role(
       .typeText("#secretKey", "users1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const watch = Role(
@@ -237,7 +237,7 @@ export const watch = Role(
       .typeText("#secretKey", "watch1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const deleteObjectWithPrefixOnly = Role(
@@ -248,7 +248,7 @@ export const deleteObjectWithPrefixOnly = Role(
       .typeText("#secretKey", "deleteobjectwithprefix1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const conditions1 = Role(
@@ -259,7 +259,7 @@ export const conditions1 = Role(
       .typeText("#secretKey", "conditions1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );
 
 export const conditions2 = Role(
@@ -270,5 +270,5 @@ export const conditions2 = Role(
       .typeText("#secretKey", "conditions1234")
       .click(submitButton);
   },
-  { preserveUrl: true }
+  { preserveUrl: true },
 );

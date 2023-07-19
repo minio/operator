@@ -50,11 +50,11 @@ export const validateNamespaceAsync = createAsyncThunk(
           setModalErrorSnackMessage({
             errorMessage: "Error validating if namespace already has tenants",
             detailedError: err.detailedError,
-          })
+          }),
         );
         return rejectWithValue(false);
       });
-  }
+  },
 );
 
 export const namespaceResourcesAsync = createAsyncThunk(
@@ -67,7 +67,7 @@ export const namespaceResourcesAsync = createAsyncThunk(
     return api
       .invoke(
         "GET",
-        `/api/v1/namespaces/${namespace}/resourcequotas/${namespace}-storagequota`
+        `/api/v1/namespaces/${namespace}/resourcequotas/${namespace}-storagequota`,
       )
       .then((res: IQuotas): IQuotas => {
         return res;
@@ -76,7 +76,7 @@ export const namespaceResourcesAsync = createAsyncThunk(
         console.error("Namespace quota error: ", err);
         return rejectWithValue(null);
       });
-  }
+  },
 );
 
 export const createNamespaceAsync = createAsyncThunk(
@@ -98,5 +98,5 @@ export const createNamespaceAsync = createAsyncThunk(
         dispatch(setErrorSnackMessage(err));
         rejectWithValue(false);
       });
-  }
+  },
 );

@@ -56,7 +56,7 @@ const TenantVolumes = ({ classes }: ITenantVolumesProps) => {
   const { tenantName, tenantNamespace } = useParams();
 
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [records, setRecords] = useState<IStoragePVCs[]>([]);
@@ -70,7 +70,7 @@ const TenantVolumes = ({ classes }: ITenantVolumesProps) => {
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${tenantNamespace}/tenants/${tenantName}/pvcs`
+          `/api/v1/namespaces/${tenantNamespace}/tenants/${tenantName}/pvcs`,
         )
         .then((res: IStoragePVCs) => {
           let volumes = get(res, "pvcs", []);
@@ -95,14 +95,14 @@ const TenantVolumes = ({ classes }: ITenantVolumesProps) => {
   };
 
   const filteredRecords: IStoragePVCs[] = records.filter((elementItem) =>
-    elementItem.name.toLowerCase().includes(filter.toLowerCase())
+    elementItem.name.toLowerCase().includes(filter.toLowerCase()),
   );
 
   const PVCViewAction = (PVC: IPodListElement) => {
     navigate(
       `/namespaces/${tenantNamespace || ""}/tenants/${tenantName || ""}/pvcs/${
         PVC.name
-      }`
+      }`,
     );
     return;
   };

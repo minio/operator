@@ -69,7 +69,7 @@ const ModalWrapper = ({
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
 
   const modalSnackMessage = useSelector(
-    (state: AppState) => state.system.modalSnackBar
+    (state: AppState) => state.system.modalSnackBar,
   );
 
   useEffect(() => {

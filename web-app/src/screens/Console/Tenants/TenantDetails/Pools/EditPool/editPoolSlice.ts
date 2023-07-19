@@ -112,7 +112,7 @@ export const editPoolSlice = createSlice({
                 value: exp.values?.join(", ")!,
               });
             });
-          }
+          },
         );
         nodeSelectorLabels = labelItems.join("&");
       }
@@ -184,7 +184,7 @@ export const editPoolSlice = createSlice({
         const originPageNameItems = get(
           state.fields,
           `${action.payload.page}`,
-          {}
+          {},
         );
 
         let newValue: any = {};
@@ -200,7 +200,7 @@ export const editPoolSlice = createSlice({
       action: PayloadAction<{
         page: string;
         status: boolean;
-      }>
+      }>,
     ) => {
       const edPoolPV = [...state.validPages];
 
@@ -212,7 +212,7 @@ export const editPoolSlice = createSlice({
         }
       } else {
         const newSetOfPages = edPoolPV.filter(
-          (elm) => elm !== action.payload.page
+          (elm) => elm !== action.payload.page,
         );
 
         state.validPages = [...newSetOfPages];
@@ -226,7 +226,7 @@ export const editPoolSlice = createSlice({
       action: PayloadAction<{
         index: number;
         tolerationValue: ITolerationModel;
-      }>
+      }>,
     ) => {
       const editPoolTolerationValue = [...state.fields.tolerations];
 
@@ -245,12 +245,12 @@ export const editPoolSlice = createSlice({
     },
     removeEditPoolToleration: (state, action: PayloadAction<number>) => {
       state.fields.tolerations = state.fields.tolerations.filter(
-        (_, index) => index !== action.payload
+        (_, index) => index !== action.payload,
       );
     },
     setEditPoolKeyValuePairs: (
       state,
-      action: PayloadAction<LabelKeyPair[]>
+      action: PayloadAction<LabelKeyPair[]>,
     ) => {
       state.fields.nodeSelectorPairs = action.payload;
     },

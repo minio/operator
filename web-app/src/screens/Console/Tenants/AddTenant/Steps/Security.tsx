@@ -124,32 +124,34 @@ const Security = ({ classes }: ISecurityProps) => {
   const dispatch = useAppDispatch();
 
   const enableTLS = useSelector(
-    (state: AppState) => state.createTenant.fields.security.enableTLS
+    (state: AppState) => state.createTenant.fields.security.enableTLS,
   );
   const enableAutoCert = useSelector(
-    (state: AppState) => state.createTenant.fields.security.enableAutoCert
+    (state: AppState) => state.createTenant.fields.security.enableAutoCert,
   );
   const enableCustomCerts = useSelector(
-    (state: AppState) => state.createTenant.fields.security.enableCustomCerts
+    (state: AppState) => state.createTenant.fields.security.enableCustomCerts,
   );
   const minioCertificates = useSelector(
-    (state: AppState) => state.createTenant.certificates.minioServerCertificates
+    (state: AppState) =>
+      state.createTenant.certificates.minioServerCertificates,
   );
   const minioClientCertificates = useSelector(
-    (state: AppState) => state.createTenant.certificates.minioClientCertificates
+    (state: AppState) =>
+      state.createTenant.certificates.minioClientCertificates,
   );
   const caCertificates = useSelector(
-    (state: AppState) => state.createTenant.certificates.minioCAsCertificates
+    (state: AppState) => state.createTenant.certificates.minioCAsCertificates,
   );
 
   // Common
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "security", field: field, value: value })
+        updateAddField({ pageName: "security", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Validation
@@ -253,7 +255,7 @@ const Security = ({ classes }: ISecurityProps) => {
                                 key: "cert",
                                 fileName: fileName,
                                 value: encodedValue,
-                              })
+                              }),
                             );
                           }}
                           accept=".cer,.crt,.cert,.pem"
@@ -270,7 +272,7 @@ const Security = ({ classes }: ISecurityProps) => {
                                 key: "key",
                                 fileName: fileName,
                                 value: encodedValue,
-                              })
+                              }),
                             );
                           }}
                           accept=".key,.pem"
@@ -326,7 +328,7 @@ const Security = ({ classes }: ISecurityProps) => {
                                 key: "cert",
                                 fileName: fileName,
                                 value: encodedValue,
-                              })
+                              }),
                             );
                           }}
                           accept=".cer,.crt,.cert,.pem"
@@ -343,7 +345,7 @@ const Security = ({ classes }: ISecurityProps) => {
                                 key: "key",
                                 fileName: fileName,
                                 value: encodedValue,
-                              })
+                              }),
                             );
                           }}
                           accept=".key,.pem"
@@ -401,7 +403,7 @@ const Security = ({ classes }: ISecurityProps) => {
                                 key: "cert",
                                 fileName: fileName,
                                 value: encodedValue,
-                              })
+                              }),
                             );
                           }}
                           accept=".cer,.crt,.cert,.pem"

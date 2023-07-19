@@ -59,7 +59,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const IDPOpenID = () => {
@@ -67,30 +67,32 @@ const IDPOpenID = () => {
   const classes = useStyles();
 
   const idpSelection = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.idpSelection
+    (state: AppState) =>
+      state.createTenant.fields.identityProvider.idpSelection,
   );
   const openIDConfigurationURL = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.openIDConfigurationURL
+      state.createTenant.fields.identityProvider.openIDConfigurationURL,
   );
   const openIDClientID = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.openIDClientID
+      state.createTenant.fields.identityProvider.openIDClientID,
   );
   const openIDSecretID = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.openIDSecretID
+      state.createTenant.fields.identityProvider.openIDSecretID,
   );
   const openIDCallbackURL = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.openIDCallbackURL
+      state.createTenant.fields.identityProvider.openIDCallbackURL,
   );
   const openIDClaimName = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.identityProvider.openIDClaimName
+      state.createTenant.fields.identityProvider.openIDClaimName,
   );
   const openIDScopes = useSelector(
-    (state: AppState) => state.createTenant.fields.identityProvider.openIDScopes
+    (state: AppState) =>
+      state.createTenant.fields.identityProvider.openIDScopes,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -102,10 +104,10 @@ const IDPOpenID = () => {
           pageName: "identityProvider",
           field: field,
           value: value,
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {
@@ -148,7 +150,7 @@ const IDPOpenID = () => {
       isPageValid({
         pageName: "identityProvider",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);

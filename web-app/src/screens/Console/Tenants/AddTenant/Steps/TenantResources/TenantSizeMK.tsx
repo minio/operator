@@ -64,54 +64,54 @@ const TenantSizeMK = ({
   const dispatch = useAppDispatch();
 
   const volumeSize = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.volumeSize
+    (state: AppState) => state.createTenant.fields.tenantSize.volumeSize,
   );
   const sizeFactor = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.sizeFactor
+    (state: AppState) => state.createTenant.fields.tenantSize.sizeFactor,
   );
   const drivesPerServer = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.drivesPerServer
+    (state: AppState) => state.createTenant.fields.tenantSize.drivesPerServer,
   );
   const nodes = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.nodes
+    (state: AppState) => state.createTenant.fields.tenantSize.nodes,
   );
   const memoryNode = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.memoryNode
+    (state: AppState) => state.createTenant.fields.tenantSize.memoryNode,
   );
   const ecParity = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.ecParity
+    (state: AppState) => state.createTenant.fields.tenantSize.ecParity,
   );
   const ecParityChoices = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.ecParityChoices
+    (state: AppState) => state.createTenant.fields.tenantSize.ecParityChoices,
   );
   const cleanECChoices = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.cleanECChoices
+    (state: AppState) => state.createTenant.fields.tenantSize.cleanECChoices,
   );
   const resourcesSize = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.resourcesSize
+    (state: AppState) => state.createTenant.fields.tenantSize.resourcesSize,
   );
   const distribution = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.distribution
+    (state: AppState) => state.createTenant.fields.tenantSize.distribution,
   );
   const ecParityCalc = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.ecParityCalc
+    (state: AppState) => state.createTenant.fields.tenantSize.ecParityCalc,
   );
   const cpuToUse = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.cpuToUse
+    (state: AppState) => state.createTenant.fields.tenantSize.cpuToUse,
   );
   const maxCPUsUse = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.maxCPUsUse
+    (state: AppState) => state.createTenant.fields.tenantSize.maxCPUsUse,
   );
   const integrationSelection = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.integrationSelection
+      state.createTenant.fields.tenantSize.integrationSelection,
   );
   const limitSize = useSelector(
-    (state: AppState) => state.createTenant.limitSize
+    (state: AppState) => state.createTenant.limitSize,
   );
   const selectedStorageType = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.nameTenant.selectedStorageType
+      state.createTenant.fields.nameTenant.selectedStorageType,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -124,10 +124,10 @@ const TenantSizeMK = ({
           pageName: "tenantSize",
           field: field,
           value: value,
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const updateMainField = useCallback(
@@ -137,10 +137,10 @@ const TenantSizeMK = ({
           pageName: "nameTenant",
           field: field,
           value: value,
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {
@@ -156,7 +156,7 @@ const TenantSizeMK = ({
         cleanECChoices,
         distribution.persistentVolumes,
         distribution.pvSize,
-        distribution.nodes
+        distribution.nodes,
       );
 
       updateField("ecParityCalc", ecCodeValidated);
@@ -179,11 +179,11 @@ const TenantSizeMK = ({
         const configs: IntegrationConfiguration[] = get(
           setConfigs,
           "configurations",
-          []
+          [],
         );
 
         const mainSelection = configs.find(
-          (item) => item.typeSelection === selectedStorageType
+          (item) => item.typeSelection === selectedStorageType,
         );
 
         if (mainSelection) {
@@ -194,9 +194,9 @@ const TenantSizeMK = ({
             getBytes(
               mainSelection.driveSize.driveSize,
               mainSelection.driveSize.sizeUnit,
-              true
+              true,
             ),
-            10
+            10,
           );
 
           const distrCalculate: IStorageDistribution = {
@@ -211,11 +211,11 @@ const TenantSizeMK = ({
           // apply requests, half of the available resources
           updateField(
             "resourcesCPURequest",
-            Math.max(1, mainSelection.CPU / 2)
+            Math.max(1, mainSelection.CPU / 2),
           );
           updateField(
             "resourcesMemoryRequest",
-            Math.max(2, mainSelection.memory / 2)
+            Math.max(2, mainSelection.memory / 2),
           );
         }
       }
@@ -247,7 +247,7 @@ const TenantSizeMK = ({
           resourcesSize.error === "" &&
           ecParity !== "" &&
           parseInt(nodes) >= 4,
-      })
+      }),
     );
 
     setValidationErrors(commonValidation);
@@ -275,7 +275,7 @@ const TenantSizeMK = ({
         api
           .invoke(
             "GET",
-            `api/v1/get-parity/${nodes}/${integrationSelection.drivesPerServer}`
+            `api/v1/get-parity/${nodes}/${integrationSelection.drivesPerServer}`,
           )
           .then((ecList: string[]) => {
             updateField("ecParityChoices", ecListTransform(ecList));
@@ -287,7 +287,7 @@ const TenantSizeMK = ({
               isPageValid({
                 pageName: "tenantSize",
                 valid: false,
-              })
+              }),
             );
             updateField("ecParity", "");
           });

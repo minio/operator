@@ -23,7 +23,7 @@ import MainRouter from "./MainRouter";
 import StyleHandler from "./StyleHandler";
 
 const root = ReactDOM.createRoot(
-  document.getElementById("root") as HTMLElement
+  document.getElementById("root") as HTMLElement,
 );
 
 root.render(
@@ -33,7 +33,7 @@ root.render(
         <MainRouter />
       </StyleHandler>
     </Provider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
 
 // If you want your app to work offline and load faster, you can change

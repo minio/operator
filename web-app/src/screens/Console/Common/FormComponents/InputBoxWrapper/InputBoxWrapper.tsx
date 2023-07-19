@@ -95,7 +95,7 @@ const styles = (theme: Theme) =>
 const inputStyles = makeStyles((theme: Theme) =>
   createStyles({
     ...inputFieldStyles,
-  })
+  }),
 );
 
 function InputField(props: TextFieldProps) {
@@ -173,7 +173,7 @@ const InputBoxWrapper = ({
         container
         className={clsx(
           className !== "" ? className : "",
-          error !== "" ? classes.errorInField : classes.inputBoxContainer
+          error !== "" ? classes.errorInField : classes.inputBoxContainer,
         )}
       >
         {label !== "" && (

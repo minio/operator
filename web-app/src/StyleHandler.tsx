@@ -43,7 +43,7 @@ interface IStyleHandler {
 
 const StyleHandler = ({ children }: IStyleHandler) => {
   const colorVariants = useSelector(
-    (state: AppState) => state.system.overrideStyles
+    (state: AppState) => state.system.overrideStyles,
   );
 
   let thm = theme;

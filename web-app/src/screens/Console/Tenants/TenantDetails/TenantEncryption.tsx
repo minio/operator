@@ -132,12 +132,12 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
   const [kmsCACertificateSecret, setKMSCACertificateSecret] =
     useState<ICertificateInfo | null>(null);
   const [kmsMTLSCertificate, setKmsMTLSCertificate] = useState<KeyPair | null>(
-    null
+    null,
   );
   const [kesServerCertificate, setKESServerCertificate] =
     useState<KeyPair | null>(null);
   const [kmsCACertificate, setKmsCACertificate] = useState<KeyPair | null>(
-    null
+    null,
   );
   const [validationErrors, setValidationErrors] = useState<any>({});
   const cleanValidation = (fieldName: string) => {
@@ -362,7 +362,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/encryption`
+          `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/encryption`,
         )
         .then((resp: ITenantEncryptionResponse) => {
           setEncryptionRawConfiguration(resp.raw);
@@ -453,7 +453,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                   domain:
                     gemaltoConfiguration?.keysecure?.credentials?.domain || "",
                   retry: parseInt(
-                    gemaltoConfiguration?.keysecure?.credentials?.retry
+                    gemaltoConfiguration?.keysecure?.credentials?.retry,
                   ),
                 },
               },
@@ -614,7 +614,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
           .invoke(
             "PUT",
             `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/encryption`,
-            dataSend
+            dataSend,
           )
           .then(() => {
             setConfirmOpen(false);
@@ -633,7 +633,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
           .invoke(
             "DELETE",
             `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/encryption`,
-            {}
+            {},
           )
           .then(() => {
             setConfirmOpen(false);
@@ -831,7 +831,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="vault_approle_engine"
                             name="vault_approle_engine"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setVaultConfiguration({
                                 ...vaultConfiguration,
@@ -852,7 +852,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="vault_id"
                             name="vault_id"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setVaultConfiguration({
                                 ...vaultConfiguration,
@@ -885,7 +885,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="vault_secret"
                             name="vault_secret"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setVaultConfiguration({
                                 ...vaultConfiguration,
@@ -919,7 +919,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="vault_retry"
                             name="vault_retry"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setVaultConfiguration({
                                 ...vaultConfiguration,
@@ -1000,7 +1000,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="azure_tenant_id"
                             name="azure_tenant_id"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setAzureConfiguration({
                                 ...azureConfiguration,
@@ -1028,7 +1028,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="azure_client_id"
                             name="azure_client_id"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setAzureConfiguration({
                                 ...azureConfiguration,
@@ -1056,7 +1056,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="azure_client_secret"
                             name="azure_client_secret"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setAzureConfiguration({
                                 ...azureConfiguration,
@@ -1133,7 +1133,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="gcp_client_email"
                             name="gcp_client_email"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setGCPConfiguration({
                                 ...gcpConfiguration,
@@ -1160,7 +1160,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="gcp_client_id"
                             name="gcp_client_id"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setGCPConfiguration({
                                 ...gcpConfiguration,
@@ -1187,7 +1187,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="gcp_private_key_id"
                             name="gcp_private_key_id"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setGCPConfiguration({
                                 ...gcpConfiguration,
@@ -1214,7 +1214,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="gcp_private_key"
                             name="gcp_private_key"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setGCPConfiguration({
                                 ...gcpConfiguration,
@@ -1310,7 +1310,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="aws_accessKey"
                             name="aws_accessKey"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setAWSConfiguration({
                                 ...awsConfiguration,
@@ -1339,7 +1339,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="aws_secretKey"
                             name="aws_secretKey"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setAWSConfiguration({
                                 ...awsConfiguration,
@@ -1368,7 +1368,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="aws_token"
                             name="aws_token"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setAWSConfiguration({
                                 ...awsConfiguration,
@@ -1432,7 +1432,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="gemalto_token"
                             name="gemalto_token"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setGemaltoConfiguration({
                                 ...gemaltoConfiguration,
@@ -1461,7 +1461,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="gemalto_domain"
                             name="gemalto_domain"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setGemaltoConfiguration({
                                 ...gemaltoConfiguration,
@@ -1492,7 +1492,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                             id="gemalto_retry"
                             name="gemalto_retry"
                             onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>
+                              e: React.ChangeEvent<HTMLInputElement>,
                             ) =>
                               setGemaltoConfiguration({
                                 ...gemaltoConfiguration,

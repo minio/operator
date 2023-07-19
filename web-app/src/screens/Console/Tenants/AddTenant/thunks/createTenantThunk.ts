@@ -126,7 +126,7 @@ export const createTenantAsync = createAsyncThunk(
     let namespace = state.createTenant.fields.nameTenant.namespace;
 
     const tolerationValues = tolerations.filter(
-      (toleration) => toleration.key.trim() !== ""
+      (toleration) => toleration.key.trim() !== "",
     );
 
     const poolName = generatePoolName([]);
@@ -145,7 +145,7 @@ export const createTenantAsync = createAsyncThunk(
             nodeSelectorLabels,
             withPodAntiAffinity,
             tenantName,
-            poolName
+            poolName,
           ),
         };
         break;
@@ -205,12 +205,12 @@ export const createTenantAsync = createAsyncThunk(
         dataSend.pools[0].resources.requests = {};
         if (fields.tenantSize.resourcesCPURequest !== "") {
           dataSend.pools[0].resources.requests.cpu = parseInt(
-            fields.tenantSize.resourcesCPURequest
+            fields.tenantSize.resourcesCPURequest,
           );
         }
         if (fields.tenantSize.resourcesMemoryRequest !== "") {
           dataSend.pools[0].resources.requests.memory = parseInt(
-            getBytes(fields.tenantSize.resourcesMemoryRequest, "Gi", true)
+            getBytes(fields.tenantSize.resourcesMemoryRequest, "Gi", true),
           );
         }
       }
@@ -222,12 +222,12 @@ export const createTenantAsync = createAsyncThunk(
         dataSend.pools[0].resources.limits = {};
         if (fields.tenantSize.resourcesCPULimit !== "") {
           dataSend.pools[0].resources.limits.cpu = parseInt(
-            fields.tenantSize.resourcesCPULimit
+            fields.tenantSize.resourcesCPULimit,
           );
         }
         if (fields.tenantSize.resourcesMemoryLimit !== "") {
           dataSend.pools[0].resources.limits.memory = parseInt(
-            getBytes(fields.tenantSize.resourcesMemoryLimit, "Gi", true)
+            getBytes(fields.tenantSize.resourcesMemoryLimit, "Gi", true),
           );
         }
       }
@@ -536,5 +536,5 @@ export const createTenantAsync = createAsyncThunk(
         dispatch(setErrorSnackMessage(err));
         return rejectWithValue(err);
       });
-  }
+  },
 );
