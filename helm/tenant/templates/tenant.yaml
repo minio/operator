@@ -1,35 +1,35 @@
-{{- with .Values.tenant }}
+{{- with .Values }}
 apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
-  name: {{ .name }}
+  name: {{ .tenant.name }}
   ## Optionally pass labels to be applied to the statefulset pods
   labels:
     app: minio
-  {{- if dig "metrics" "enabled" false . }}
+  {{- if dig "metrics" "enabled" false .tenant }}
   ## Annotations for MinIO Tenant Pods
   annotations:
     prometheus.io/path: /minio/v2/metrics/cluster
-    prometheus.io/port: {{ dig "metrics" "port" 9000 . | quote }}
+    prometheus.io/port: {{ dig "metrics" "port" 9000 .tenant | quote }}
     prometheus.io/scrape: "true"
-    prometheus.io/scheme: {{ dig "metrics" "protocol" "http" . | quote }}
+    prometheus.io/scheme: {{ dig "metrics" "protocol" "http" .tenant | quote }}
   {{- end }}
-{{- if dig "scheduler" "name" "" . }}
+{{- if dig "scheduler" "name" "" .tenant }}
 scheduler:
-  name: {{ dig "scheduler" "name" "" . }}
+  name: {{ dig "scheduler" "name" "" .tenant }}
 {{- end }}
 spec:
-  image: {{ dig "image" "repository" "minio/minio" . }}:{{ dig "image" "tag" "RELEASE.2022-01-08T03-11-54Z" . }}
-  imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" . }}
-  {{- if dig "imagePullSecret" "name" "" . }}
+  image: {{ dig "image" "repository" "minio/minio" .tenant }}:{{ dig "image" "tag" "RELEASE.2022-01-08T03-11-54Z" .tenant }}
+  imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" .tenant }}
+  {{- if dig "imagePullSecret" "name" "" .tenant }}
   imagePullSecret:
-    name: {{ dig "imagePullSecret" "name" "" . }}
+    name: {{ dig "imagePullSecret" "name" "" .tenant }}
   {{- end }}
   ## Secret with default environment variable configurations
   configuration:
-    name: {{ .configuration.name }}
+    name: {{ .secrets.existingSecret | default .secrets.name }}
   pools:
-    {{- range (dig "pools" (list) .) }}
+    {{- range (dig "pools" (list) .tenant) }}
     - servers: {{ dig "servers" 4 . }}
       name: {{ dig "name" "" . }}
       volumesPerServer: {{ dig "volumesPerServer" 4 . }}
@@ -47,112 +47,112 @@ spec:
             requests:
               storage: {{ dig "size" "10Gi" . }}
       {{- with (dig "annotations" (dict) .) }}
-      annotations: {{- toYaml . | nindent 8 }}
+      annotations: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
       {{- with (dig "labels" (dict) .) }}
-      labels: {{- toYaml . | nindent 8 }}
+      labels: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
       {{- with (dig "tolerations" (list) .) }}
-      tolerations: {{- toYaml . | nindent 8 }}
+      tolerations: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
       {{- with (dig "nodeSelector" (dict) .) }}
-      nodeSelector: {{- toYaml . | nindent 8 }}
+      nodeSelector: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
       {{- with (dig "affinity" (dict) .) }}
-      affinity: {{- toYaml . | nindent 8 }}
+      affinity: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
       {{- with (dig "resources" (dict) .) }}
-      resources: {{- toYaml . | nindent 8 }}
+      resources: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
       {{- with (dig "securityContext" (dict) .) }}
-      securityContext: {{- toYaml . | nindent 8 }}
+      securityContext: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
       {{- with (dig "containerSecurityContext" (dict) .) }}
-      containerSecurityContext: {{- toYaml . | nindent 8 }}
+      containerSecurityContext: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
       {{- with (dig "topologySpreadConstraints" (list) .) }}
-      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml .tenant | nindent 8 }}
       {{- end }}
     {{- end }}
-  mountPath: {{ dig "mountPath" "/export" . }}
-  subPath: {{ dig "subPath" "/data" . }}
-  {{- with (dig "certificate" "externalCaCertSecret" (list) .) }}
-  externalCaCertSecret: {{- toYaml . | nindent 6 }}
+  mountPath: {{ dig "mountPath" "/export" .tenant }}
+  subPath: {{ dig "subPath" "/data" .tenant }}
+  {{- with (dig "certificate" "externalCaCertSecret" (list) .tenant) }}
+  externalCaCertSecret: {{- toYaml .tenant | nindent 6 }}
   {{- end }}
-  {{- with (dig "certificate" "externalCertSecret" (list) .) }}
-  externalCertSecret: {{- toYaml . | nindent 6 }}
+  {{- with (dig "certificate" "externalCertSecret" (list) .tenant) }}
+  externalCertSecret: {{- toYaml .tenant | nindent 6 }}
   {{- end }}
-  requestAutoCert: {{ dig "certificate" "requestAutoCert" false . }}
-  {{- if dig "s3" "bucketDNS" false . }}
+  requestAutoCert: {{ dig "certificate" "requestAutoCert" false .tenant }}
+  {{- if dig "s3" "bucketDNS" false .tenant }}
     {{- fail "Value 'tenant.s3.bucketDNS' is deprecated since Operator v4.3.2, use 'tenant.features.bucketDNS' instead" }}
   {{- end }}
   features:
-    bucketDNS: {{ dig "features" "bucketDNS" false . }}
-    {{- with (dig "features" "domains" (dict) .) }}
-    domains: {{- toYaml . | nindent 6 }}
+    bucketDNS: {{ dig "features" "bucketDNS" false .tenant }}
+    {{- with (dig "features" "domains" (dict) .tenant) }}
+    domains: {{- toYaml .tenant | nindent 6 }}
     {{- end }}
-    enableSFTP: {{ dig "features" "enableSFTP" false . }}
-  {{- with (dig "buckets" (list) .) }}
-  buckets: {{- toYaml . | nindent 4 }}
+    enableSFTP: {{ dig "features" "enableSFTP" false .tenant }}
+  {{- with (dig "buckets" (list) .tenant) }}
+  buckets: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- with (dig "users" (list) .) }}
-  users: {{- toYaml . | nindent 4 }}
+  {{- with (dig "users" (list) .tenant) }}
+  users: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- with (dig "certificate" "certConfig" (dict) .) }}
-  certConfig: {{- toYaml . | nindent 4 }}
+  {{- with (dig "certificate" "certConfig" (dict) .tenant) }}
+  certConfig: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" . }}
-  {{- with (dig "readiness" (dict) .) }}
-  readiness: {{- toYaml . | nindent 4 }}
+  podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" .tenant }}
+  {{- with (dig "readiness" (dict) .tenant) }}
+  readiness: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- with (dig "liveness" (dict) .) }}
-  liveness: {{- toYaml . | nindent 4 }}
+  {{- with (dig "liveness" (dict) .tenant) }}
+  liveness: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- with (dig "startup" (dict) .) }}
-  startup: {{- toYaml . | nindent 4 }}
+  {{- with (dig "startup" (dict) .tenant) }}
+  startup: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- with (dig "exposeServices" (dict) .) }}
-  exposeServices: {{- toYaml . | nindent 4 }}
+  {{- with (dig "exposeServices" (dict) .tenant) }}
+  exposeServices: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- if dig "serviceAccountName" "" . }}
-  serviceAccountName: {{ dig "serviceAccountName" "" . }}
+  {{- if dig "serviceAccountName" "" .tenant }}
+  serviceAccountName: {{ dig "serviceAccountName" "" .tenant }}
   {{- end }}
-  prometheusOperator: {{ dig "prometheusOperator" "false" . }}
-  {{- with (dig "logging" (dict) .) }}
-  logging: {{- toYaml . | nindent 4 }}
+  prometheusOperator: {{ dig "prometheusOperator" "false" .tenant }}
+  {{- with (dig "logging" (dict) .tenant) }}
+  logging: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- with (dig "serviceMetadata" (dict) .) }}
-  serviceMetadata: {{- toYaml . | nindent 4 }}
+  {{- with (dig "serviceMetadata" (dict) .tenant) }}
+  serviceMetadata: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- with (dig "env" (list) .) }}
-  env: {{- toYaml . | nindent 4 }}
+  {{- with (dig "env" (list) .tenant) }}
+  env: {{- toYaml .tenant | nindent 4 }}
   {{- end }}
-  {{- if dig "priorityClassName" "" . }}
-  priorityClassName: {{ dig "priorityClassName" "" . }}
+  {{- if dig "priorityClassName" "" .tenant }}
+  priorityClassName: {{ dig "priorityClassName" "" .tenant }}
   {{- end }}
-  {{- if dig "kes" "configuration" false . }}
+  {{- if dig "kes" "configuration" false .tenant }}
   kes:
-    image: {{ .kes.image | quote }}
-    {{- with (dig "kes" "env" (list) .) }}
-    env: {{- toYaml . | nindent 4 }}
+    image: {{ .tenant.kes.image | quote }}
+    {{- with (dig "kes" "env" (list) .tenant) }}
+    env: {{- toYaml .tenant | nindent 4 }}
     {{- end }}
-    replicas: {{ .kes.replicas | int }}
+    replicas: {{ .tenant.kes.replicas | int }}
     kesSecret:
       name: "kes-configuration"
-    imagePullPolicy: {{ .kes.imagePullPolicy | quote }}
+    imagePullPolicy: {{ .tenant.kes.imagePullPolicy | quote }}
     {{- with (dig "kes" "externalCertSecret" (dict) .) }}
-    externalCertSecret: {{- toYaml . | nindent 6 }}
+    externalCertSecret: {{- toYaml .tenant | nindent 6 }}
     {{- end }}
     {{- with (dig "kes" "clientCertSecret" (dict) .) }}
-    clientCertSecret: {{- toYaml . | nindent 6 }}
+    clientCertSecret: {{- toYaml .tenant | nindent 6 }}
     {{- end }}
     ## Key name to be created on the KMS, default is "my-minio-key"
-    keyName: {{ .kes.keyName | quote }}
-    {{- with (dig "resources" (dict) .) }}
+    keyName: {{ .tenant.kes.keyName | quote }}
+    {{- with (dig "resources" (dict) .tenant) }}
     resources: {{- toYaml . | nindent 4 }}
     {{- end }}
     {{- with (dig "nodeSelector" (dict) .) }}
-    nodeSelector: {{- toYaml . | nindent 4 }}
+    nodeSelector: {{- toYaml .tenant | nindent 4 }}
     {{- end }}
     affinity:
       nodeAffinity: {}
@@ -160,16 +160,16 @@ spec:
       podAntiAffinity: {}
     tolerations: []
     {{- with (dig "annotations" (dict) .) }}
-    annotations: {{- toYaml . | nindent 4 }}
+    annotations: {{- toYaml .tenant | nindent 4 }}
     {{- end }}
     {{- with (dig "labels" (dict) .) }}
-    labels: {{- toYaml . | nindent 4 }}
+    labels: {{- toYaml .tenant | nindent 4 }}
     {{- end }}
-    serviceAccountName: {{ .kes.serviceAccountName | quote }}
+    serviceAccountName: {{ .tenant.kes.serviceAccountName | quote }}
     securityContext:
-      runAsUser: {{ .kes.securityContext.runAsUser | int }}
-      runAsGroup: {{ .kes.securityContext.runAsGroup | int }}
-      runAsNonRoot: {{ .kes.securityContext.runAsNonRoot }}
-      fsGroup: {{ .kes.securityContext.fsGroup | int }}
+      runAsUser: {{ .tenant.kes.securityContext.runAsUser | int }}
+      runAsGroup: {{ .tenant.kes.securityContext.runAsGroup | int }}
+      runAsNonRoot: {{ .tenant.kes.securityContext.runAsNonRoot }}
+      fsGroup: {{ .tenant.kes.securityContext.fsGroup | int }}
   {{- end }}
 {{- end }}
