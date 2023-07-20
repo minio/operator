@@ -204,6 +204,8 @@ spec:
                           type: string
                         type: array
                     type: object
+                  enableSFTP:
+                    type: boolean
                 type: object
               image:
                 type: string

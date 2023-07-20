@@ -209,6 +209,11 @@ func (in *Features) DeepCopyInto(out *Features) {
 		*out = new(TenantDomains)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.EnableSFTP != nil {
+		in, out := &in.EnableSFTP, &out.EnableSFTP
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 
@@ -747,6 +752,13 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		in, out := &in.Configuration, &out.Configuration
 		*out = new(v1.LocalObjectReference)
 		**out = **in
+	}
+	if in.InitContainers != nil {
+		in, out := &in.InitContainers, &out.InitContainers
+		*out = make([]v1.Container, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	return
 }

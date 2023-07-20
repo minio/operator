@@ -104,6 +104,10 @@ func minioSvcMatchesSpecification(svc *v1.Service, expectedSvc *v1.Service) (boo
 		}
 	}
 	// expected ports match
+	if len(svc.Spec.Ports) != len(expectedSvc.Spec.Ports) {
+		return false, errors.New("service ports don't match")
+	}
+
 	for i, expPort := range expectedSvc.Spec.Ports {
 		if expPort.Name != svc.Spec.Ports[i].Name ||
 			expPort.Port != svc.Spec.Ports[i].Port ||
