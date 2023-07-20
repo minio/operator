@@ -513,6 +513,11 @@ func (m *EncryptionConfiguration) ContextValidate(ctx context.Context, formats s
 func (m *EncryptionConfiguration) contextValidateAws(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Aws != nil {
+
+		if swag.IsZero(m.Aws) { // not required
+			return nil
+		}
+
 		if err := m.Aws.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aws")
@@ -529,6 +534,11 @@ func (m *EncryptionConfiguration) contextValidateAws(ctx context.Context, format
 func (m *EncryptionConfiguration) contextValidateAzure(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Azure != nil {
+
+		if swag.IsZero(m.Azure) { // not required
+			return nil
+		}
+
 		if err := m.Azure.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("azure")
@@ -545,6 +555,11 @@ func (m *EncryptionConfiguration) contextValidateAzure(ctx context.Context, form
 func (m *EncryptionConfiguration) contextValidateGcp(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Gcp != nil {
+
+		if swag.IsZero(m.Gcp) { // not required
+			return nil
+		}
+
 		if err := m.Gcp.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gcp")
@@ -561,6 +576,11 @@ func (m *EncryptionConfiguration) contextValidateGcp(ctx context.Context, format
 func (m *EncryptionConfiguration) contextValidateGemalto(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Gemalto != nil {
+
+		if swag.IsZero(m.Gemalto) { // not required
+			return nil
+		}
+
 		if err := m.Gemalto.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gemalto")
@@ -577,6 +597,11 @@ func (m *EncryptionConfiguration) contextValidateGemalto(ctx context.Context, fo
 func (m *EncryptionConfiguration) contextValidateKmsMtls(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.KmsMtls != nil {
+
+		if swag.IsZero(m.KmsMtls) { // not required
+			return nil
+		}
+
 		if err := m.KmsMtls.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kms_mtls")
@@ -593,6 +618,11 @@ func (m *EncryptionConfiguration) contextValidateKmsMtls(ctx context.Context, fo
 func (m *EncryptionConfiguration) contextValidateMinioMtls(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.MinioMtls != nil {
+
+		if swag.IsZero(m.MinioMtls) { // not required
+			return nil
+		}
+
 		if err := m.MinioMtls.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("minio_mtls")
@@ -609,6 +639,11 @@ func (m *EncryptionConfiguration) contextValidateMinioMtls(ctx context.Context, 
 func (m *EncryptionConfiguration) contextValidateSecurityContext(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.SecurityContext != nil {
+
+		if swag.IsZero(m.SecurityContext) { // not required
+			return nil
+		}
+
 		if err := m.SecurityContext.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("securityContext")
@@ -625,6 +660,11 @@ func (m *EncryptionConfiguration) contextValidateSecurityContext(ctx context.Con
 func (m *EncryptionConfiguration) contextValidateServerTLS(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.ServerTLS != nil {
+
+		if swag.IsZero(m.ServerTLS) { // not required
+			return nil
+		}
+
 		if err := m.ServerTLS.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("server_tls")
@@ -641,6 +681,11 @@ func (m *EncryptionConfiguration) contextValidateServerTLS(ctx context.Context, 
 func (m *EncryptionConfiguration) contextValidateVault(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Vault != nil {
+
+		if swag.IsZero(m.Vault) { // not required
+			return nil
+		}
+
 		if err := m.Vault.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vault")

@@ -1867,6 +1867,8 @@ definitions:
         type: boolean
       expose_console:
         type: boolean
+      expose_sftp:
+        type: boolean
       domains:
         type: object
         $ref: "#/definitions/domainsConfiguration"

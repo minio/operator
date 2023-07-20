@@ -242,6 +242,7 @@ export interface CreateTenantRequest {
   encryption?: EncryptionConfiguration;
   expose_minio?: boolean;
   expose_console?: boolean;
+  expose_sftp?: boolean;
   domains?: DomainsConfiguration;
   environmentVariables?: EnvironmentVariable[];
 }

@@ -102,6 +102,11 @@ func (m *ResourceQuota) contextValidateElements(ctx context.Context, formats str
 	for i := 0; i < len(m.Elements); i++ {
 
 		if m.Elements[i] != nil {
+
+			if swag.IsZero(m.Elements[i]) { // not required
+				return nil
+			}
+
 			if err := m.Elements[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("elements" + "." + strconv.Itoa(i))

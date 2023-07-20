@@ -147,6 +147,7 @@ export interface IConfigureFields {
   imageRegistryPassword: string;
   exposeMinIO: boolean;
   exposeConsole: boolean;
+  exposeSFTP: boolean;
   tenantCustom: boolean;
   customRuntime: boolean;
   runtimeClassName: string;

@@ -98,6 +98,11 @@ func (m *LoginRequest) ContextValidate(ctx context.Context, formats strfmt.Regis
 func (m *LoginRequest) contextValidateFeatures(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Features != nil {
+
+		if swag.IsZero(m.Features) { // not required
+			return nil
+		}
+
 		if err := m.Features.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("features")

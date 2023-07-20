@@ -2417,6 +2417,9 @@ func init() {
         "expose_minio": {
           "type": "boolean"
         },
+        "expose_sftp": {
+          "type": "boolean"
+        },
         "idp": {
           "type": "object",
           "$ref": "#/definitions/idpConfiguration"
@@ -7940,6 +7943,9 @@ func init() {
           "type": "boolean"
         },
         "expose_minio": {
+          "type": "boolean"
+        },
+        "expose_sftp": {
           "type": "boolean"
         },
         "idp": {

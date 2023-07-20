@@ -99,6 +99,11 @@ func (m *TenantConfigurationResponse) contextValidateEnvironmentVariables(ctx co
 	for i := 0; i < len(m.EnvironmentVariables); i++ {
 
 		if m.EnvironmentVariables[i] != nil {
+
+			if swag.IsZero(m.EnvironmentVariables[i]) { // not required
+				return nil
+			}
+
 			if err := m.EnvironmentVariables[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("environmentVariables" + "." + strconv.Itoa(i))
