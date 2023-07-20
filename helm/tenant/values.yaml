@@ -24,8 +24,6 @@ tenant:
   scheduler: {}
   ## Secret name that contains additional environment variable configurations.
   ## The secret is expected to have a key named config.env containing environment variables exports.
-  # configuration:
-  # name: "{{ .Values.secrets.existingSecret }}"
   ## Specification for MinIO Pool(s) in this Tenant.
   pools:
     ## Servers specifies the number of MinIO Tenant Pods / Servers in this pool.
