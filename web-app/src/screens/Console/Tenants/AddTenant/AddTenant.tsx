@@ -63,7 +63,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...modalBasic,
     ...wizardCommon,
     ...settingsCommon,
-  })
+  }),
 );
 
 const AddTenant = () => {
@@ -75,7 +75,7 @@ const AddTenant = () => {
 
   // Fields
   const addSending = useSelector(
-    (state: AppState) => state.createTenant.addingTenant
+    (state: AppState) => state.createTenant.addingTenant,
   );
   const [formRender, setFormRender] = useState<IMkEnvs | null>(null);
 
@@ -90,7 +90,7 @@ const AddTenant = () => {
           setConfiguration = get(
             resourcesConfigurations,
             element,
-            IMkEnvs.default
+            IMkEnvs.default,
           );
         }
       });

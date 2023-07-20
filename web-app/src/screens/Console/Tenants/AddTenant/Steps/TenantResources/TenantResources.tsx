@@ -36,7 +36,7 @@ const TenantResources = () => {
           setConfiguration = get(
             resourcesConfigurations,
             element,
-            IMkEnvs.default
+            IMkEnvs.default,
           );
         }
       });

@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const AWSKMSAdd = () => {
@@ -49,25 +49,25 @@ const AWSKMSAdd = () => {
   const classes = useStyles();
 
   const encryptionTab = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.encryptionTab
+    (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
   );
   const awsEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.awsEndpoint,
   );
   const awsRegion = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsRegion
+    (state: AppState) => state.createTenant.fields.encryption.awsRegion,
   );
   const awsKMSKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsKMSKey
+    (state: AppState) => state.createTenant.fields.encryption.awsKMSKey,
   );
   const awsAccessKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsAccessKey
+    (state: AppState) => state.createTenant.fields.encryption.awsAccessKey,
   );
   const awsSecretKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsSecretKey
+    (state: AppState) => state.createTenant.fields.encryption.awsSecretKey,
   );
   const awsToken = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsToken
+    (state: AppState) => state.createTenant.fields.encryption.awsToken,
   );
   const [validationErrors, setValidationErrors] = useState<any>({});
 
@@ -107,7 +107,7 @@ const AWSKMSAdd = () => {
       isPageValid({
         pageName: "encryption",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -124,10 +124,10 @@ const AWSKMSAdd = () => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {

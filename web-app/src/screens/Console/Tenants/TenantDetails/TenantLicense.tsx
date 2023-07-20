@@ -50,7 +50,7 @@ const TenantLicense = ({ classes }: ITenantLicense) => {
   const dispatch = useAppDispatch();
 
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
 
@@ -68,7 +68,7 @@ const TenantLicense = ({ classes }: ITenantLicense) => {
       .invoke(
         "POST",
         `/api/v1/subscription/namespaces/${namespace}/tenants/${tenant}/activate`,
-        {}
+        {},
       )
       .then(() => {
         setLoadingActivateProduct(false);

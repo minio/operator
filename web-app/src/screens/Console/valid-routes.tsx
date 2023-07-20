@@ -56,7 +56,7 @@ export const validRoutes = () => {
       onClick: (path) => {
         window.open(
           "https://min.io/docs/minio/linux/index.html?ref=op",
-          "_blank"
+          "_blank",
         );
       },
     },

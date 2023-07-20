@@ -60,11 +60,11 @@ const styles = (theme: Theme) =>
 const NameTenantField = () => {
   const dispatch = useAppDispatch();
   const tenantName = useSelector(
-    (state: AppState) => state.createTenant.fields.nameTenant.tenantName
+    (state: AppState) => state.createTenant.fields.nameTenant.tenantName,
   );
 
   const tenantNameError = useSelector(
-    (state: AppState) => state.createTenant.validationErrors["tenant-name"]
+    (state: AppState) => state.createTenant.validationErrors["tenant-name"],
   );
 
   return (
@@ -92,14 +92,14 @@ const NameTenantMain = ({ classes, formToRender }: INameTenantMainScreen) => {
 
   const selectedStorageClass = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.nameTenant.selectedStorageClass
+      state.createTenant.fields.nameTenant.selectedStorageClass,
   );
   const selectedStorageType = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.nameTenant.selectedStorageType
+      state.createTenant.fields.nameTenant.selectedStorageType,
   );
   const storageClasses = useSelector(
-    (state: AppState) => state.createTenant.storageClasses
+    (state: AppState) => state.createTenant.storageClasses,
   );
   const features = useSelector(selFeatures);
 
@@ -107,10 +107,10 @@ const NameTenantMain = ({ classes, formToRender }: INameTenantMainScreen) => {
   const updateField = useCallback(
     (field: string, value: string) => {
       dispatch(
-        updateAddField({ pageName: "nameTenant", field: field, value: value })
+        updateAddField({ pageName: "nameTenant", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Validation
@@ -150,7 +150,7 @@ const NameTenantMain = ({ classes, formToRender }: INameTenantMainScreen) => {
                     onChange={(e: SelectChangeEvent<string>) => {
                       updateField(
                         "selectedStorageClass",
-                        e.target.value as string
+                        e.target.value as string,
                       );
                     }}
                     label="Storage Class"
@@ -169,19 +169,19 @@ const NameTenantMain = ({ classes, formToRender }: INameTenantMainScreen) => {
                         setStorageType({
                           storageType: e.target.value as string,
                           features: features,
-                        })
+                        }),
                       );
                     }}
                     label={get(
                       mkPanelConfigurations,
                       `${formToRender}.variantSelectorLabel`,
-                      "Storage Type"
+                      "Storage Type",
                     )}
                     value={selectedStorageType}
                     options={get(
                       mkPanelConfigurations,
                       `${formToRender}.variantSelectorValues`,
-                      []
+                      [],
                     )}
                   />
                 </Grid>
@@ -192,7 +192,7 @@ const NameTenantMain = ({ classes, formToRender }: INameTenantMainScreen) => {
                 get(
                   mkPanelConfigurations,
                   `${formToRender}.sizingComponent`,
-                  null
+                  null,
                 )
               )}
             </Grid>

@@ -56,59 +56,59 @@ ITenantSizeResourcesProps) => {
   const dispatch = useAppDispatch();
 
   const nodes = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.nodes
+    (state: AppState) => state.createTenant.fields.tenantSize.nodes,
   );
 
   const resourcesSize = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.resourcesSize
+    (state: AppState) => state.createTenant.fields.tenantSize.resourcesSize,
   );
   const selectedStorageClass = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.nameTenant.selectedStorageClass
+      state.createTenant.fields.nameTenant.selectedStorageClass,
   );
   const maxCPUsUse = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.maxCPUsUse
+    (state: AppState) => state.createTenant.fields.tenantSize.maxCPUsUse,
   );
   const maxMemorySize = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.maxMemorySize
+    (state: AppState) => state.createTenant.fields.tenantSize.maxMemorySize,
   );
 
   const resourcesSpecifyLimit = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesSpecifyLimit
+      state.createTenant.fields.tenantSize.resourcesSpecifyLimit,
   );
 
   const resourcesCPURequestError = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesCPURequestError
+      state.createTenant.fields.tenantSize.resourcesCPURequestError,
   );
   const resourcesCPURequest = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesCPURequest
+      state.createTenant.fields.tenantSize.resourcesCPURequest,
   );
   const resourcesCPULimitError = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesCPULimitError
+      state.createTenant.fields.tenantSize.resourcesCPULimitError,
   );
   const resourcesCPULimit = useSelector(
-    (state: AppState) => state.createTenant.fields.tenantSize.resourcesCPULimit
+    (state: AppState) => state.createTenant.fields.tenantSize.resourcesCPULimit,
   );
 
   const resourcesMemoryRequestError = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesMemoryRequestError
+      state.createTenant.fields.tenantSize.resourcesMemoryRequestError,
   );
   const resourcesMemoryRequest = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesMemoryRequest
+      state.createTenant.fields.tenantSize.resourcesMemoryRequest,
   );
   const resourcesMemoryLimitError = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesMemoryLimitError
+      state.createTenant.fields.tenantSize.resourcesMemoryLimitError,
   );
   const resourcesMemoryLimit = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.tenantSize.resourcesMemoryLimit
+      state.createTenant.fields.tenantSize.resourcesMemoryLimit,
   );
 
   // Common
@@ -119,10 +119,10 @@ ITenantSizeResourcesProps) => {
           pageName: "tenantSize",
           field: field,
           value: value,
-        })
+        }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   /*Debounce functions*/
@@ -136,7 +136,7 @@ ITenantSizeResourcesProps) => {
           resourcesMemoryLimitError === "" &&
           resourcesCPURequestError === "" &&
           resourcesCPULimitError === "",
-      })
+      }),
     );
   }, [
     dispatch,
@@ -161,13 +161,13 @@ ITenantSizeResourcesProps) => {
         const memoryExists = get(
           maxAllocatableResources,
           "min_allocatable_mem",
-          false
+          false,
         );
 
         const cpuExists = get(
           maxAllocatableResources,
           "min_allocatable_cpu",
-          false
+          false,
         );
 
         if (memoryExists === false || cpuExists === false) {
@@ -180,19 +180,19 @@ ITenantSizeResourcesProps) => {
         }
 
         const maxMemory = floor(
-          res.mem_priority.max_allocatable_mem / 1024 / 1024 / 1024
+          res.mem_priority.max_allocatable_mem / 1024 / 1024 / 1024,
         );
         // We default to Best CPU Configuration
         updateField("maxMemorySize", maxMemory.toString());
         updateField(
           "maxCPUsUse",
-          res.cpu_priority.max_allocatable_cpu.toString()
+          res.cpu_priority.max_allocatable_cpu.toString(),
         );
 
         const maxAllocatableCPU = get(
           maxAllocatableResources,
           "cpu_priority.max_allocatable_cpu",
-          0
+          0,
         );
 
         const baseCpuUse = Math.max(1, floor(maxAllocatableCPU / 2));
@@ -248,7 +248,7 @@ ITenantSizeResourcesProps) => {
             } else if (value > parseInt(maxCPUsUse)) {
               updateField(
                 "resourcesCPURequestError",
-                `Request exceeds available cores (${maxCPUsUse})`
+                `Request exceeds available cores (${maxCPUsUse})`,
               );
             } else if (e.target.validity.valid) {
               updateField("resourcesCPURequestError", "");
@@ -278,19 +278,19 @@ ITenantSizeResourcesProps) => {
             } else if (value > parseInt(maxMemorySize)) {
               updateField(
                 "resourcesMemoryRequestError",
-                `Request exceeds available memory across ${nodes} nodes (${maxMemorySize}Gi)`
+                `Request exceeds available memory across ${nodes} nodes (${maxMemorySize}Gi)`,
               );
             } else if (value < 2) {
               updateField(
                 "resourcesMemoryRequestError",
-                "At least 2Gi must be requested"
+                "At least 2Gi must be requested",
               );
             } else if (e.target.validity.valid) {
               updateField("resourcesMemoryRequestError", "");
             } else {
               updateField(
                 "resourcesMemoryRequestError",
-                "Invalid configuration"
+                "Invalid configuration",
               );
             }
             updateField("resourcesMemoryRequest", e.target.value);
@@ -346,7 +346,7 @@ ITenantSizeResourcesProps) => {
                 } else {
                   updateField(
                     "resourcesCPULimitError",
-                    "Invalid configuration"
+                    "Invalid configuration",
                   );
                 }
                 updateField("resourcesCPULimit", e.target.value);
@@ -374,7 +374,7 @@ ITenantSizeResourcesProps) => {
                 } else {
                   updateField(
                     "resourcesMemoryLimitError",
-                    "Invalid configuration"
+                    "Invalid configuration",
                   );
                 }
                 updateField("resourcesMemoryLimit", e.target.value);

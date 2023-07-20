@@ -49,32 +49,32 @@ const Images = ({ classes }: IImagesProps) => {
   const dispatch = useAppDispatch();
 
   const customImage = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.customImage
+    (state: AppState) => state.createTenant.fields.configure.customImage,
   );
   const imageName = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.imageName
+    (state: AppState) => state.createTenant.fields.configure.imageName,
   );
   const customDockerhub = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.customDockerhub
+    (state: AppState) => state.createTenant.fields.configure.customDockerhub,
   );
   const imageRegistry = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.imageRegistry
+    (state: AppState) => state.createTenant.fields.configure.imageRegistry,
   );
   const imageRegistryUsername = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.configure.imageRegistryUsername
+      state.createTenant.fields.configure.imageRegistryUsername,
   );
   const imageRegistryPassword = useSelector(
     (state: AppState) =>
-      state.createTenant.fields.configure.imageRegistryPassword
+      state.createTenant.fields.configure.imageRegistryPassword,
   );
 
   const tenantCustom = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.tenantCustom
+    (state: AppState) => state.createTenant.fields.configure.tenantCustom,
   );
 
   const kesImage = useSelector(
-    (state: AppState) => state.createTenant.fields.configure.kesImage
+    (state: AppState) => state.createTenant.fields.configure.kesImage,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -83,10 +83,10 @@ const Images = ({ classes }: IImagesProps) => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "configure", field: field, value: value })
+        updateAddField({ pageName: "configure", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   // Validation
@@ -139,7 +139,7 @@ const Images = ({ classes }: IImagesProps) => {
       isPageValid({
         pageName: "configure",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);

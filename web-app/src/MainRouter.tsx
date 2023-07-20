@@ -24,7 +24,7 @@ import { baseUrl } from "./history";
 const Login = React.lazy(() => import("./screens/LoginPage/LoginPage"));
 const Logout = React.lazy(() => import("./screens/LogoutPage/LogoutPage"));
 const LoginCallback = React.lazy(
-  () => import("./screens/LoginPage/LoginCallback")
+  () => import("./screens/LoginPage/LoginCallback"),
 );
 
 const MainRouter = () => {

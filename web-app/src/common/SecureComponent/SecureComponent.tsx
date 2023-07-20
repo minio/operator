@@ -40,7 +40,7 @@ const SecureComponent = ({
     resource,
     scopes,
     matchAll,
-    containsResource
+    containsResource,
   );
   if (!permissionGranted && !errorProps) return <RenderError />;
   if (!permissionGranted && errorProps) {

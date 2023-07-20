@@ -68,7 +68,7 @@ export const tenantSlice = createSlice({
       action: PayloadAction<{
         name: string;
         namespace: string;
-      }>
+      }>,
     ) => {
       state.currentTenant = action.payload.name;
       state.currentNamespace = action.payload.namespace;

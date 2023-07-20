@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const AzureKMSAdd = () => {
@@ -49,19 +49,19 @@ const AzureKMSAdd = () => {
   const classes = useStyles();
 
   const encryptionTab = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.encryptionTab
+    (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
   );
   const azureEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.azureEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.azureEndpoint,
   );
   const azureTenantID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.azureTenantID
+    (state: AppState) => state.createTenant.fields.encryption.azureTenantID,
   );
   const azureClientID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.azureClientID
+    (state: AppState) => state.createTenant.fields.encryption.azureClientID,
   );
   const azureClientSecret = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.azureClientSecret
+    (state: AppState) => state.createTenant.fields.encryption.azureClientSecret,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -102,7 +102,7 @@ const AzureKMSAdd = () => {
       isPageValid({
         pageName: "encryption",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -119,10 +119,10 @@ const AzureKMSAdd = () => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {

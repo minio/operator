@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...actionsTray,
     ...tableStyles,
     ...containerForHeader,
-  })
+  }),
 );
 
 const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
@@ -56,7 +56,7 @@ const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
   const classes = useStyles();
 
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
 
@@ -118,7 +118,7 @@ const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
               navigate(
                 `/namespaces/${tenant?.namespace || ""}/tenants/${
                   tenant?.name || ""
-                }/add-pool`
+                }/add-pool`,
               );
             }}
             icon={<AddIcon />}
@@ -137,7 +137,9 @@ const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
               renderFullObject: true,
               renderFunction: (x: Pool) =>
                 niceBytesInt(
-                  x.volumes_per_server * x.servers * x.volume_configuration.size
+                  x.volumes_per_server *
+                    x.servers *
+                    x.volume_configuration.size,
                 ),
             },
             { label: "Servers", elementKey: "servers" },

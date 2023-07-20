@@ -58,7 +58,7 @@ const DeletePod = ({
     }
     invokeDeleteApi(
       "DELETE",
-      `/api/v1/namespaces/${selectedPod.namespace}/tenants/${selectedPod.tenant}/pods/${selectedPod.name}`
+      `/api/v1/namespaces/${selectedPod.namespace}/tenants/${selectedPod.tenant}/pods/${selectedPod.name}`,
     );
   };
 

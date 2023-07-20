@@ -137,7 +137,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -188,26 +188,26 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
     useState<ICertificateInfo[]>([]);
 
   const runAsGroup = useSelector(
-    (state: AppState) => state.editTenantSecurityContext.runAsGroup
+    (state: AppState) => state.editTenantSecurityContext.runAsGroup,
   );
   const runAsUser = useSelector(
-    (state: AppState) => state.editTenantSecurityContext.runAsUser
+    (state: AppState) => state.editTenantSecurityContext.runAsUser,
   );
   const fsGroup = useSelector(
-    (state: AppState) => state.editTenantSecurityContext.fsGroup
+    (state: AppState) => state.editTenantSecurityContext.fsGroup,
   );
   const runAsNonRoot = useSelector(
-    (state: AppState) => state.editTenantSecurityContext.runAsNonRoot
+    (state: AppState) => state.editTenantSecurityContext.runAsNonRoot,
   );
   const fsGroupChangePolicy = useSelector(
-    (state: AppState) => state.editTenantSecurityContext.fsGroupChangePolicy
+    (state: AppState) => state.editTenantSecurityContext.fsGroupChangePolicy,
   );
 
   const getTenantSecurityInfo = useCallback(() => {
     api
       .invoke(
         "GET",
-        `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/security`
+        `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/security`,
       )
       .then((res: ITenantSecurityResponse) => {
         setEnableAutoCert(res.autoCert);
@@ -229,8 +229,8 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
         dispatch(setRunAsNonRoot(res.securityContext.runAsNonRoot));
         dispatch(
           setFSGroupChangePolicy(
-            res.securityContext.fsGroupChangePolicy as fsGroupChangePolicyType
-          )
+            res.securityContext.fsGroupChangePolicy as fsGroupChangePolicyType,
+          ),
         );
       })
       .catch((err: ErrorResponseHandler) => {
@@ -292,7 +292,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
       .invoke(
         "POST",
         `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/security`,
-        payload
+        payload,
       )
       .then(() => {
         setIsSending(false);
@@ -346,16 +346,16 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
     // Update MinIO server TLS certificate secrets
     const updatedMinioServerCertificateSecrets =
       minioServerCertificateSecrets.filter(
-        (certificateSecret) => certificateSecret.name !== certificateInfo.name
+        (certificateSecret) => certificateSecret.name !== certificateInfo.name,
       );
     // Update MinIO client TLS certificate secrets
     const updatedMinioClientCertificateSecrets =
       minioClientCertificateSecrets.filter(
-        (certificateSecret) => certificateSecret.name !== certificateInfo.name
+        (certificateSecret) => certificateSecret.name !== certificateInfo.name,
       );
     const updatedMinIOTLSCaCertificateSecrets =
       minioTLSCaCertificateSecrets.filter(
-        (certificateSecret) => certificateSecret.name !== certificateInfo.name
+        (certificateSecret) => certificateSecret.name !== certificateInfo.name,
       );
     setMinioServerCertificateSecrets(updatedMinioServerCertificateSecrets);
     setMinioClientCertificateSecrets(updatedMinioClientCertificateSecrets);
@@ -367,7 +367,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
     id: string,
     key: string,
     fileName: string,
-    value: string
+    value: string,
   ) => {
     let certificates = minioServerCertificates;
     let updateCertificates: any = () => {};
@@ -429,7 +429,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
 
     if (certificates.length > 1) {
       const cleanCertsList = certificates.filter(
-        (item: KeyPair) => item.id !== id
+        (item: KeyPair) => item.id !== id,
       );
       updateCertificates(cleanCertsList);
     }
@@ -567,7 +567,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                             certificateInfo={certificateInfo}
                             onDelete={() => removeCertificate(certificateInfo)}
                           />
-                        )
+                        ),
                       )}
                     </Grid>
                     <Grid item xs={12} className={classes.formFieldRow}>
@@ -586,7 +586,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                                   keyPair.id,
                                   "cert",
                                   fileName,
-                                  encodedValue
+                                  encodedValue,
                                 )
                               }
                               accept=".cer,.crt,.cert,.pem"
@@ -602,7 +602,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                                   keyPair.id,
                                   "key",
                                   fileName,
-                                  encodedValue
+                                  encodedValue,
                                 )
                               }
                               accept=".key,.pem"
@@ -650,7 +650,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                             certificateInfo={certificateInfo}
                             onDelete={() => removeCertificate(certificateInfo)}
                           />
-                        )
+                        ),
                       )}
                     </Grid>
                     <Grid item xs={12} className={classes.formFieldRow}>
@@ -669,7 +669,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                                   keyPair.id,
                                   "cert",
                                   fileName,
-                                  encodedValue
+                                  encodedValue,
                                 )
                               }
                               accept=".cer,.crt,.cert,.pem"
@@ -685,7 +685,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                                   keyPair.id,
                                   "key",
                                   fileName,
-                                  encodedValue
+                                  encodedValue,
                                 )
                               }
                               accept=".key,.pem"
@@ -733,7 +733,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                             certificateInfo={certificateInfo}
                             onDelete={() => removeCertificate(certificateInfo)}
                           />
-                        )
+                        ),
                       )}
                     </Grid>
                     <Grid item xs={12}>
@@ -752,7 +752,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                                   keyPair.id,
                                   "cert",
                                   fileName,
-                                  encodedValue
+                                  encodedValue,
                                 )
                               }
                               accept=".cer,.crt,.cert,.pem"

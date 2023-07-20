@@ -24,7 +24,7 @@ const AddPoolCreateButton = () => {
   const dispatch = useAppDispatch();
 
   const selectedStorageClass = useSelector(
-    (state: AppState) => state.addPool.setup.storageClass
+    (state: AppState) => state.addPool.setup.storageClass,
   );
   const validPages = useSelector((state: AppState) => state.addPool.validPages);
 

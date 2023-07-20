@@ -67,7 +67,7 @@ const useStyles = makeStyles((theme: Theme) =>
     },
     ...formFieldStyles,
     ...modalStyleUtils,
-  })
+  }),
 );
 
 const AddPool = () => {
