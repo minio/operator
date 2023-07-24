@@ -4239,6 +4239,9 @@ func init() {
             "$ref": "#/definitions/pool"
           }
         },
+        "sftpExposed": {
+          "type": "boolean"
+        },
         "status": {
           "$ref": "#/definitions/tenantStatus"
         },
@@ -4265,6 +4268,9 @@ func init() {
           "items": {
             "$ref": "#/definitions/environmentVariable"
           }
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -4561,6 +4567,9 @@ func init() {
           "items": {
             "type": "string"
           }
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -4576,6 +4585,9 @@ func init() {
         },
         "image_registry": {
           "$ref": "#/definitions/imageRegistry"
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -9620,6 +9632,9 @@ func init() {
             "$ref": "#/definitions/pool"
           }
         },
+        "sftpExposed": {
+          "type": "boolean"
+        },
         "status": {
           "$ref": "#/definitions/tenantStatus"
         },
@@ -9646,6 +9661,9 @@ func init() {
           "items": {
             "$ref": "#/definitions/environmentVariable"
           }
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -9942,6 +9960,9 @@ func init() {
           "items": {
             "type": "string"
           }
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -9957,6 +9978,9 @@ func init() {
         },
         "image_registry": {
           "$ref": "#/definitions/imageRegistry"
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },

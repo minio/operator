@@ -43,11 +43,13 @@ export interface ICustomCertificates {
 
 export interface ITenantConfigurationResponse {
   environmentVariables: LabelKeyPair[];
+  sftpExposed: boolean;
 }
 
 export interface ITenantConfigurationRequest {
   environmentVariables: LabelKeyPair[];
   keysToBeDeleted: string[];
+  sftpExposed: boolean;
 }
 
 export interface ITenantSecurityResponse {

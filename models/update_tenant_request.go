@@ -45,6 +45,9 @@ type UpdateTenantRequest struct {
 
 	// image registry
 	ImageRegistry *ImageRegistry `json:"image_registry,omitempty"`
+
+	// sftp exposed
+	SftpExposed bool `json:"sftpExposed,omitempty"`
 }
 
 // Validate validates this update tenant request

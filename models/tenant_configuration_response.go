@@ -38,6 +38,9 @@ type TenantConfigurationResponse struct {
 
 	// environment variables
 	EnvironmentVariables []*EnvironmentVariable `json:"environmentVariables"`
+
+	// sftp exposed
+	SftpExposed bool `json:"sftpExposed,omitempty"`
 }
 
 // Validate validates this tenant configuration response

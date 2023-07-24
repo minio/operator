@@ -93,6 +93,9 @@ func parseTenantConfiguration(ctx context.Context, k8sClient K8sClientI, minTena
 		return envVars[i].Key < envVars[j].Key
 	})
 	configurationInfo := &models.TenantConfigurationResponse{EnvironmentVariables: envVars}
+	if minTenant.Spec.Features != nil && minTenant.Spec.Features.EnableSFTP != nil {
+		configurationInfo.SftpExposed = *minTenant.Spec.Features.EnableSFTP
+	}
 	return configurationInfo, nil
 }
 
@@ -161,6 +164,14 @@ func updateTenantConfigurationFile(ctx context.Context, operatorClient OperatorC
 	if err != nil {
 		return err
 	}
+
+	// Update SFTP flag
+	tenant.Spec.Features.EnableSFTP = &requestBody.SftpExposed
+	_, err = operatorClient.TenantUpdate(ctx, tenant, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
 	// Restart all MinIO pods at the same time for they to take the new configuration
 	err = client.deletePodCollection(ctx, namespace, metav1.DeleteOptions{}, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, tenant.Name),
@@ -168,5 +179,6 @@ func updateTenantConfigurationFile(ctx context.Context, operatorClient OperatorC
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

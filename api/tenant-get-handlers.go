@@ -140,10 +140,15 @@ func getTenantDetailsResponse(session *models.Principal, params operator_api.Ten
 
 	var domains models.DomainsConfiguration
 
-	if minTenant.Spec.Features != nil && minTenant.Spec.Features.Domains != nil {
-		domains = models.DomainsConfiguration{
-			Console: minTenant.Spec.Features.Domains.Console,
-			Minio:   minTenant.Spec.Features.Domains.Minio,
+	if minTenant.Spec.Features != nil {
+		if minTenant.Spec.Features.EnableSFTP != nil {
+			info.SftpExposed = *minTenant.Spec.Features.EnableSFTP
+		}
+		if minTenant.Spec.Features.Domains != nil {
+			domains = models.DomainsConfiguration{
+				Console: minTenant.Spec.Features.Domains.Console,
+				Minio:   minTenant.Spec.Features.Domains.Minio,
+			}
 		}
 	}
 

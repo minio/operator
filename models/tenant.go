@@ -75,6 +75,9 @@ type Tenant struct {
 	// pools
 	Pools []*Pool `json:"pools"`
 
+	// sftp exposed
+	SftpExposed bool `json:"sftpExposed,omitempty"`
+
 	// status
 	Status *TenantStatus `json:"status,omitempty"`
 

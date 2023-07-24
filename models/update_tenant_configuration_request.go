@@ -41,6 +41,9 @@ type UpdateTenantConfigurationRequest struct {
 
 	// keys to be deleted
 	KeysToBeDeleted []string `json:"keysToBeDeleted"`
+
+	// sftp exposed
+	SftpExposed bool `json:"sftpExposed,omitempty"`
 }
 
 // Validate validates this update tenant configuration request
