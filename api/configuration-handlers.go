@@ -166,10 +166,12 @@ func updateTenantConfigurationFile(ctx context.Context, operatorClient OperatorC
 	}
 
 	// Update SFTP flag
-	tenant.Spec.Features.EnableSFTP = &requestBody.SftpExposed
-	_, err = operatorClient.TenantUpdate(ctx, tenant, metav1.UpdateOptions{})
-	if err != nil {
-		return err
+	if tenant.Spec.Features != nil {
+		tenant.Spec.Features.EnableSFTP = &requestBody.SftpExposed
+		_, err = operatorClient.TenantUpdate(ctx, tenant, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
 	}
 
 	// Restart all MinIO pods at the same time for they to take the new configuration
