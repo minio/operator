@@ -48,7 +48,7 @@ func getTenantNamespace(client *operatorv1.Clientset, tenantName string) (string
 	return "", fmt.Errorf("tenant: %s not found on any namespace", tenantName)
 }
 
-func newTenantCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+func newTenantCmd(_ io.Writer, _ io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tenant",
 		Short: "Manage MinIO tenant(s)",

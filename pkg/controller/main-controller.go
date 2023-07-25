@@ -843,6 +843,41 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		} else {
 			return WrapResult(Result{}, err)
 		}
+	} else {
+		existingPorts := hlSvc.Spec.Ports
+		sftpPortFound := false
+		for _, port := range existingPorts {
+			if port.Name == miniov2.MinIOServiceSFTPPortName {
+				sftpPortFound = true
+				break
+			}
+		}
+		var newPorts []corev1.ServicePort
+		if tenant.Spec.Features != nil && tenant.Spec.Features.EnableSFTP != nil && *tenant.Spec.Features.EnableSFTP {
+			if !sftpPortFound {
+				newPorts = existingPorts
+				newPorts = append(newPorts, corev1.ServicePort{Port: miniov2.MinIOSFTPPort, Name: miniov2.MinIOServiceSFTPPortName})
+				hlSvc.Spec.Ports = newPorts
+				_, err := c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, hlSvc, metav1.UpdateOptions(cOpts))
+				if err != nil {
+					return WrapResult(Result{}, err)
+				}
+			}
+		} else {
+			if sftpPortFound {
+				for _, port := range existingPorts {
+					if port.Name == miniov2.MinIOServiceSFTPPortName {
+						continue
+					}
+					newPorts = append(newPorts, port)
+				}
+				hlSvc.Spec.Ports = newPorts
+				_, err := c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, hlSvc, metav1.UpdateOptions(cOpts))
+				if err != nil {
+					return WrapResult(Result{}, err)
+				}
+			}
+		}
 	}
 
 	// List all MinIO Tenants in this namespace.
@@ -1308,7 +1343,14 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
-	_, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalAvailableReplicas)
+	tenant, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalAvailableReplicas)
+
+	// Create Or Update PDB for tenant
+	err = c.CreateOrUpdatePDB(ctx, tenant)
+	if err != nil {
+		return WrapResult(Result{}, err)
+	}
+
 	return WrapResult(Result{}, err)
 }
 

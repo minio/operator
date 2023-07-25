@@ -102,6 +102,7 @@ const initialState: ICreateTenant = {
       imageRegistryPassword: "",
       exposeMinIO: true,
       exposeConsole: true,
+      exposeSFTP: false,
       tenantCustom: false,
       customRuntime: false,
       runtimeClassName: "",

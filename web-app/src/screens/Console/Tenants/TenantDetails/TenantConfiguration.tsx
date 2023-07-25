@@ -17,6 +17,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { connect, useSelector } from "react-redux";
 import { Theme } from "@mui/material/styles";
+import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
 import { DialogContentText, IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { Button, ConfirmModalIcon, Loader, RemoveIcon } from "mds";
@@ -121,6 +122,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [envVars, setEnvVars] = useState<LabelKeyPair[]>([]);
   const [envVarsToBeDeleted, setEnvVarsToBeDeleted] = useState<string[]>([]);
+  const [sftpExposed, setSftpEnabled] = useState<boolean>(false);
 
   const getTenantConfigurationInfo = useCallback(() => {
     api
@@ -131,6 +133,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
       .then((res: ITenantConfigurationResponse) => {
         if (res.environmentVariables) {
           setEnvVars(res.environmentVariables);
+          setSftpEnabled(res.sftpExposed);
         }
       })
       .catch((err: ErrorResponseHandler) => {
@@ -149,6 +152,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
     let payload: ITenantConfigurationRequest = {
       environmentVariables: envVars.filter((env) => env.key !== ""),
       keysToBeDeleted: envVarsToBeDeleted,
+      sftpExposed: sftpExposed,
     };
     api
       .invoke(
@@ -285,6 +289,28 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                 </Grid>
               </Grid>
             ))}
+          </Grid>
+          <Grid container spacing={1}>
+            <Grid
+              item
+              xs={12}
+              justifyContent={"end"}
+              textAlign={"right"}
+              className={classes.configSectionItem}
+            >
+              <FormSwitchWrapper
+                label={"SFTP"}
+                indicatorLabels={["Enabled", "Disabled"]}
+                checked={sftpExposed}
+                value={"expose_sftp"}
+                id="expose-sftp"
+                name="expose-sftp"
+                onChange={() => {
+                  setSftpEnabled(!sftpExposed);
+                }}
+                description=""
+              />
+            </Grid>
           </Grid>
           <Grid
             item

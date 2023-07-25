@@ -45,6 +45,8 @@ type deleteCmd struct {
 	errOut       io.Writer
 	output       bool
 	operatorOpts resources.OperatorOptions
+	force        bool
+	dangerous    bool
 }
 
 func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
@@ -57,8 +59,15 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Example: deleteExample,
 		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !helpers.Ask("Are you sure you want to delete ALL the MinIO Tenants and MinIO Operator, this is not a reversible operation") {
-				return fmt.Errorf(Bold("Aborting Operator deletion"))
+			if !o.force {
+				if !helpers.Ask("This is irreversible, are you sure you want to delete MinIO Operator and all it's tenants") {
+					return fmt.Errorf("Aborting MinIO Operator deletion")
+				}
+			}
+			if !o.dangerous {
+				if !helpers.Ask("Please provide the dangerous flag to confirm deletion") {
+					return fmt.Errorf("Aborting MinIO Operator deletion")
+				}
 			}
 			err := o.run(out)
 			if err != nil {
@@ -71,6 +80,8 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	cmd = helpers.DisableHelp(cmd)
 	f := cmd.Flags()
 	f.StringVarP(&o.operatorOpts.Namespace, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
+	f.BoolVarP(&o.force, "force", "f", false, "allow without confirmation")
+	f.BoolVarP(&o.dangerous, "dangerous", "d", false, "confirm deletion")
 	return cmd
 }
 
