@@ -40,6 +40,7 @@ export const createTenantAsync = createAsyncThunk(
     const imageRegistryPassword = fields.configure.imageRegistryPassword;
     const exposeMinIO = fields.configure.exposeMinIO;
     const exposeConsole = fields.configure.exposeConsole;
+    const exposeSFTP = fields.configure.exposeSFTP;
     const idpSelection = fields.identityProvider.idpSelection;
     const openIDConfigurationURL =
       fields.identityProvider.openIDConfigurationURL;
@@ -171,6 +172,7 @@ export const createTenantAsync = createAsyncThunk(
       image: imageName,
       expose_minio: exposeMinIO,
       expose_console: exposeConsole,
+      expose_sftp: exposeSFTP,
       pools: [
         {
           name: poolName,

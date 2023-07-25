@@ -270,8 +270,8 @@ func createTenant(ctx context.Context, params operator_api.CreateTenantParams, c
 	}
 	minInst.Spec.Configuration = &corev1.LocalObjectReference{Name: tenantConfigurationName}
 
+	var features miniov2.Features
 	if tenantReq.Domains != nil {
-		var features miniov2.Features
 		var domains miniov2.TenantDomains
 
 		// tenant domains
@@ -284,9 +284,11 @@ func createTenant(ctx context.Context, params operator_api.CreateTenantParams, c
 		}
 
 		features.Domains = &domains
-
-		minInst.Spec.Features = &features
 	}
+	if tenantReq.ExposeSftp {
+		features.EnableSFTP = &tenantReq.ExposeSftp
+	}
+	minInst.Spec.Features = &features
 
 	opClient, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {

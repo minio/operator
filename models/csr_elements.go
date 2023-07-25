@@ -99,6 +99,11 @@ func (m *CsrElements) contextValidateCsrElement(ctx context.Context, formats str
 	for i := 0; i < len(m.CsrElement); i++ {
 
 		if m.CsrElement[i] != nil {
+
+			if swag.IsZero(m.CsrElement[i]) { // not required
+				return nil
+			}
+
 			if err := m.CsrElement[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("csrElement" + "." + strconv.Itoa(i))

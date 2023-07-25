@@ -120,6 +120,11 @@ func (m *CsrElement) contextValidateAnnotations(ctx context.Context, formats str
 	for i := 0; i < len(m.Annotations); i++ {
 
 		if m.Annotations[i] != nil {
+
+			if swag.IsZero(m.Annotations[i]) { // not required
+				return nil
+			}
+
 			if err := m.Annotations[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("annotations" + "." + strconv.Itoa(i))
