@@ -139,13 +139,13 @@ rules:
       - create
   - apiGroups:
       - minio.min.io
+      - sts.min.io
     resources:
       - "*"
     verbs:
       - "*"
   - apiGroups:
       - min.io
-      - sts.min.io
     resources:
       - "*"
     verbs:
