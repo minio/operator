@@ -77,10 +77,10 @@ spec:
   mountPath: {{ dig "mountPath" "/export" .tenant }}
   subPath: {{ dig "subPath" "/data" .tenant }}
   {{- with (dig "certificate" "externalCaCertSecret" (list) .tenant) }}
-  externalCaCertSecret: {{- toYaml .tenant | nindent 6 }}
+  externalCaCertSecret: {{- toYaml . | nindent 6 }}
   {{- end }}
   {{- with (dig "certificate" "externalCertSecret" (list) .tenant) }}
-  externalCertSecret: {{- toYaml .tenant | nindent 6 }}
+  externalCertSecret: {{- toYaml . | nindent 6 }}
   {{- end }}
   requestAutoCert: {{ dig "certificate" "requestAutoCert" false .tenant }}
   {{- if dig "s3" "bucketDNS" false .tenant }}
