@@ -103,6 +103,10 @@ clean-swagger:
 	@rm -rf models
 	@rm -rf api/operations
 
+install-go-swagger:
+	@echo "installing latest go-swagger"
+	@go install github.com/go-swagger/go-swagger/cmd/swagger@latest
+
 swagger-operator:
 	@echo "Generating swagger server code from yaml"
 	@swagger generate server -A operator --main-package=operator --server-package=api --exclude-main -P models.Principal -f ./swagger.yml -r NOTICE
@@ -110,7 +114,7 @@ swagger-operator:
 	@npx swagger-typescript-api -p ./swagger.yml -o ./web-app/src/api -n operatorApi.ts
 	@(cd web-app && npm install -g prettier && prettier -w .)
 
-swagger-gen: clean-swagger swagger-operator apply-gofmt
+swagger-gen: install-go-swagger clean-swagger swagger-operator apply-gofmt
 	@echo "Done Generating swagger server code from yaml"
 
 assets:
