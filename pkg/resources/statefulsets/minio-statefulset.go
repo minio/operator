@@ -16,10 +16,12 @@ package statefulsets
 
 import (
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/minio/operator/pkg/certs"
 	"github.com/minio/operator/pkg/common"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -292,7 +294,32 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
 	}
-	args := []string{"server", "--certs-dir", miniov2.MinIOCertPath, "--console-address", ":" + strconv.Itoa(consolePort)}
+	args := []string{
+		"server",
+		"--certs-dir", miniov2.MinIOCertPath,
+		"--console-address", ":" + strconv.Itoa(consolePort),
+	}
+
+	containerPorts := []corev1.ContainerPort{
+		{
+			ContainerPort: miniov2.MinIOPort,
+		},
+		{
+			ContainerPort: int32(consolePort),
+		},
+	}
+
+	if t.Spec.Features != nil && t.Spec.Features.EnableSFTP != nil && *t.Spec.Features.EnableSFTP {
+		pkFile := filepath.Join(miniov2.MinIOCertPath, certs.PrivateKeyFile)
+		args = append(args, []string{
+			"--sftp", fmt.Sprintf("address=:%d", miniov2.MinIOSFTPPort),
+			"--sftp", "ssh-private-key=" + pkFile,
+		}...)
+		containerPorts = append(containerPorts, v1.ContainerPort{
+			ContainerPort: miniov2.MinIOSFTPPort,
+		})
+	}
+
 	if t.Spec.Logging != nil {
 		// If logging is specified, expect users to
 		// provide the right set of settings to toggle
@@ -309,16 +336,9 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 	}
 
 	return corev1.Container{
-		Name:  miniov2.MinIOServerName,
-		Image: t.Spec.Image,
-		Ports: []corev1.ContainerPort{
-			{
-				ContainerPort: miniov2.MinIOPort,
-			},
-			{
-				ContainerPort: int32(consolePort),
-			},
-		},
+		Name:            miniov2.MinIOServerName,
+		Image:           t.Spec.Image,
+		Ports:           containerPorts,
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, pool, certVolumeSources),
 		Args:            args,

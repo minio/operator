@@ -48,6 +48,9 @@ spec:
           args:
             - ui
             - --certs-dir=/tmp/certs
+          {{- with .Values.console.env }}
+          env: {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources: {{- toYaml .Values.console.resources | nindent 12 }}
           {{- with .Values.console.containerSecurityContext }}
           securityContext: {{- toYaml . | nindent 12 }}
