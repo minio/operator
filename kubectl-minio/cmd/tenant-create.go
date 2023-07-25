@@ -122,7 +122,7 @@ func (c *createCmd) validate(args []string) error {
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (c *createCmd) run(args []string) error {
+func (c *createCmd) run(_ []string) error {
 	// Create operator and kube client
 	path, _ := rootCmd.Flags().GetString(kubeconfig)
 	operatorClient, err := helpers.GetKubeOperatorClient(path)

@@ -69,7 +69,7 @@ func (d *listCmd) validate(args []string) error {
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (d *listCmd) run(args []string) error {
+func (d *listCmd) run(_ []string) error {
 	// Create operator client
 	path, _ := rootCmd.Flags().GetString(kubeconfig)
 	oclient, err := helpers.GetKubeOperatorClient(path)
