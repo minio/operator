@@ -89,43 +89,43 @@ spec:
   features:
     bucketDNS: {{ dig "features" "bucketDNS" false .tenant }}
     {{- with (dig "features" "domains" (dict) .tenant) }}
-    domains: {{- toYaml .tenant | nindent 6 }}
+    domains: {{- toYaml . | nindent 6 }}
     {{- end }}
     enableSFTP: {{ dig "features" "enableSFTP" false .tenant }}
   {{- with (dig "buckets" (list) .tenant) }}
-  buckets: {{- toYaml .tenant | nindent 4 }}
+  buckets: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "users" (list) .tenant) }}
-  users: {{- toYaml .tenant | nindent 4 }}
+  users: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "certificate" "certConfig" (dict) .tenant) }}
-  certConfig: {{- toYaml .tenant | nindent 4 }}
+  certConfig: {{- toYaml . | nindent 4 }}
   {{- end }}
   podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" .tenant }}
   {{- with (dig "readiness" (dict) .tenant) }}
-  readiness: {{- toYaml .tenant | nindent 4 }}
+  readiness: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "liveness" (dict) .tenant) }}
-  liveness: {{- toYaml .tenant | nindent 4 }}
+  liveness: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "startup" (dict) .tenant) }}
-  startup: {{- toYaml .tenant | nindent 4 }}
+  startup: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "exposeServices" (dict) .tenant) }}
-  exposeServices: {{- toYaml .tenant | nindent 4 }}
+  exposeServices: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- if dig "serviceAccountName" "" .tenant }}
   serviceAccountName: {{ dig "serviceAccountName" "" .tenant }}
   {{- end }}
   prometheusOperator: {{ dig "prometheusOperator" "false" .tenant }}
   {{- with (dig "logging" (dict) .tenant) }}
-  logging: {{- toYaml .tenant | nindent 4 }}
+  logging: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "serviceMetadata" (dict) .tenant) }}
-  serviceMetadata: {{- toYaml .tenant | nindent 4 }}
+  serviceMetadata: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- with (dig "env" (list) .tenant) }}
-  env: {{- toYaml .tenant | nindent 4 }}
+  env: {{- toYaml . | nindent 4 }}
   {{- end }}
   {{- if dig "priorityClassName" "" .tenant }}
   priorityClassName: {{ dig "priorityClassName" "" .tenant }}
@@ -134,36 +134,36 @@ spec:
   kes:
     image: {{ .tenant.kes.image | quote }}
     {{- with (dig "kes" "env" (list) .tenant) }}
-    env: {{- toYaml .tenant | nindent 4 }}
+    env: {{- toYaml . | nindent 4 }}
     {{- end }}
     replicas: {{ .tenant.kes.replicas | int }}
     kesSecret:
       name: "kes-configuration"
     imagePullPolicy: {{ .tenant.kes.imagePullPolicy | quote }}
-    {{- with (dig "kes" "externalCertSecret" (dict) .) }}
-    externalCertSecret: {{- toYaml .tenant | nindent 6 }}
+    {{- with (dig "kes" "externalCertSecret" (dict) .tenant) }}
+    externalCertSecret: {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with (dig "kes" "clientCertSecret" (dict) .) }}
-    clientCertSecret: {{- toYaml .tenant | nindent 6 }}
+    {{- with (dig "kes" "clientCertSecret" (dict) .tenant) }}
+    clientCertSecret: {{- toYaml . | nindent 6 }}
     {{- end }}
     ## Key name to be created on the KMS, default is "my-minio-key"
     keyName: {{ .tenant.kes.keyName | quote }}
     {{- with (dig "resources" (dict) .tenant) }}
     resources: {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "nodeSelector" (dict) .) }}
-    nodeSelector: {{- toYaml .tenant | nindent 4 }}
+    {{- with (dig "nodeSelector" (dict) .tenant) }}
+    nodeSelector: {{- toYaml . | nindent 4 }}
     {{- end }}
     affinity:
       nodeAffinity: {}
       podAffinity: {}
       podAntiAffinity: {}
     tolerations: []
-    {{- with (dig "annotations" (dict) .) }}
-    annotations: {{- toYaml .tenant | nindent 4 }}
+    {{- with (dig "annotations" (dict) .tenant) }}
+    annotations: {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "labels" (dict) .) }}
-    labels: {{- toYaml .tenant | nindent 4 }}
+    {{- with (dig "labels" (dict) .tenant) }}
+    labels: {{- toYaml . | nindent 4 }}
     {{- end }}
     serviceAccountName: {{ .tenant.kes.serviceAccountName | quote }}
     securityContext:
