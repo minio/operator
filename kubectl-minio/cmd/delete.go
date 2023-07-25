@@ -60,7 +60,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !o.force {
-				if !helpers.Ask("This is irreversible, Are you sure you want to delete MinIO Operator and all it's tenants") {
+				if !helpers.Ask("This is irreversible, are you sure you want to delete MinIO Operator and all it's tenants") {
 					return fmt.Errorf("Aborting MinIO Operator deletion")
 				}
 			}
