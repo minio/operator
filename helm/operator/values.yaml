@@ -29,6 +29,8 @@ operator:
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
+  volumes: [ ]
+  volumeMounts: [ ]
   nodeSelector: { }
   priorityClassName: ""
   affinity:
