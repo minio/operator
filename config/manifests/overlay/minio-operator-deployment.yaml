@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-operator
+  namespace: minio-operator
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: minio-operator
+          env:
+            - name: MINIO_OPERATOR_RUNTIME
+              value: "OpenShift"
