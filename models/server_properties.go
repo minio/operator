@@ -120,6 +120,11 @@ func (m *ServerProperties) contextValidateDrives(ctx context.Context, formats st
 	for i := 0; i < len(m.Drives); i++ {
 
 		if m.Drives[i] != nil {
+
+			if swag.IsZero(m.Drives[i]) { // not required
+				return nil
+			}
+
 			if err := m.Drives[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("drives" + "." + strconv.Itoa(i))

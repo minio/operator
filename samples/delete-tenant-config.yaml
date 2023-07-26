@@ -1,0 +1,7 @@
+$patch: delete
+apiVersion: v1
+kind: Secret
+metadata:
+  name: storage-configuration
+  namespace: minio-tenant
+type: Opaque

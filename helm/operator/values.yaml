@@ -9,6 +9,8 @@ operator:
   #     value: "cluster.domain"
   #   - name: WATCHED_NAMESPACE
   #     value: ""
+  #   - name: MINIO_OPERATOR_RUNTIME
+  #     value: "OpenShift"
   image:
     repository: quay.io/minio/operator
     tag: v5.0.6

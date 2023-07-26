@@ -223,6 +223,11 @@ func (m *Container) contextValidateEnvironmentVariables(ctx context.Context, for
 	for i := 0; i < len(m.EnvironmentVariables); i++ {
 
 		if m.EnvironmentVariables[i] != nil {
+
+			if swag.IsZero(m.EnvironmentVariables[i]) { // not required
+				return nil
+			}
+
 			if err := m.EnvironmentVariables[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("environmentVariables" + "." + strconv.Itoa(i))
@@ -241,6 +246,11 @@ func (m *Container) contextValidateEnvironmentVariables(ctx context.Context, for
 func (m *Container) contextValidateLastState(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.LastState != nil {
+
+		if swag.IsZero(m.LastState) { // not required
+			return nil
+		}
+
 		if err := m.LastState.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("lastState")
@@ -259,6 +269,11 @@ func (m *Container) contextValidateMounts(ctx context.Context, formats strfmt.Re
 	for i := 0; i < len(m.Mounts); i++ {
 
 		if m.Mounts[i] != nil {
+
+			if swag.IsZero(m.Mounts[i]) { // not required
+				return nil
+			}
+
 			if err := m.Mounts[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("mounts" + "." + strconv.Itoa(i))
@@ -277,6 +292,11 @@ func (m *Container) contextValidateMounts(ctx context.Context, formats strfmt.Re
 func (m *Container) contextValidateState(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.State != nil {
+
+		if swag.IsZero(m.State) { // not required
+			return nil
+		}
+
 		if err := m.State.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("state")

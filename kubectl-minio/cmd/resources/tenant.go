@@ -152,7 +152,7 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 	return t, t.Validate()
 }
 
-func getAutoCertConfig(opts *TenantOptions) *miniov2.CertificateConfig {
+func getAutoCertConfig(_ *TenantOptions) *miniov2.CertificateConfig {
 	return &miniov2.CertificateConfig{
 		CommonName:       "",
 		OrganizationName: []string{},

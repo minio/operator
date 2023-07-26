@@ -1,5 +1,8 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
 metadata:
   annotations:
+    alm-examples: '[]'
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -7,9 +10,13 @@ metadata:
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
+    marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
+    marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
     capabilities: "Full Lifecycle"
-  namespace: minio-operator
+  name: minio-operator-rhmp.v0.0.0
+  namespace: placeholder
 spec:
+  apiservicedefinitions: {}
   maturity: stable
   customresourcedefinitions:
     owned:
@@ -81,3 +88,55 @@ spec:
 
     * Locally attached volumes for performance or some CSI to provision block
     storage to the MinIO pods.
+  displayName: Minio Operator Rhmp
+  installModes:
+    - supported: false
+      type: OwnNamespace
+    - supported: false
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+  labels:
+    operatorframework.io/arch.386: supported
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.amd64p32: supported
+    operatorframework.io/arch.arm: supported
+    operatorframework.io/arch.armbe: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/arch.arm64be: supported
+    operatorframework.io/arch.loong64: supported
+    operatorframework.io/arch.mips: supported
+    operatorframework.io/arch.mipsle: supported
+    operatorframework.io/arch.mips64: supported
+    operatorframework.io/arch.mips64le: supported
+    operatorframework.io/arch.mips64p32: supported
+    operatorframework.io/arch.mips64p32le: supported
+    operatorframework.io/arch.ppc: supported
+    operatorframework.io/arch.ppc64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.riscv: supported
+    operatorframework.io/arch.riscv64: supported
+    operatorframework.io/arch.s390: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/arch.sparc: supported
+    operatorframework.io/arch.sparc64: supported
+    operatorframework.io/arch.wasm: supported
+    operatorframework.io/os.aix: supported
+    operatorframework.io/os.android: supported
+    operatorframework.io/os.darwin: supported
+    operatorframework.io/os.dragonfly: supported
+    operatorframework.io/os.freebsd: supported
+    operatorframework.io/os.hurd: supported
+    operatorframework.io/os.illumos: supported
+    operatorframework.io/os.ios: supported
+    operatorframework.io/os.js: supported
+    operatorframework.io/os.linux: supported
+    operatorframework.io/os.nacl: supported
+    operatorframework.io/os.netbsd: supported
+    operatorframework.io/os.openbsd: supported
+    operatorframework.io/os.plan9: supported
+    operatorframework.io/os.solaris: supported
+    operatorframework.io/os.windows: supported
+    operatorframework.io/os.zos: supported

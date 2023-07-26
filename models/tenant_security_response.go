@@ -123,6 +123,11 @@ func (m *TenantSecurityResponse) ContextValidate(ctx context.Context, formats st
 func (m *TenantSecurityResponse) contextValidateCustomCertificates(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.CustomCertificates != nil {
+
+		if swag.IsZero(m.CustomCertificates) { // not required
+			return nil
+		}
+
 		if err := m.CustomCertificates.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("customCertificates")
@@ -139,6 +144,11 @@ func (m *TenantSecurityResponse) contextValidateCustomCertificates(ctx context.C
 func (m *TenantSecurityResponse) contextValidateSecurityContext(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.SecurityContext != nil {
+
+		if swag.IsZero(m.SecurityContext) { // not required
+			return nil
+		}
+
 		if err := m.SecurityContext.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("securityContext")
@@ -312,6 +322,11 @@ func (m *TenantSecurityResponseCustomCertificates) contextValidateClient(ctx con
 	for i := 0; i < len(m.Client); i++ {
 
 		if m.Client[i] != nil {
+
+			if swag.IsZero(m.Client[i]) { // not required
+				return nil
+			}
+
 			if err := m.Client[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("customCertificates" + "." + "client" + "." + strconv.Itoa(i))
@@ -332,6 +347,11 @@ func (m *TenantSecurityResponseCustomCertificates) contextValidateMinio(ctx cont
 	for i := 0; i < len(m.Minio); i++ {
 
 		if m.Minio[i] != nil {
+
+			if swag.IsZero(m.Minio[i]) { // not required
+				return nil
+			}
+
 			if err := m.Minio[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("customCertificates" + "." + "minio" + "." + strconv.Itoa(i))
@@ -352,6 +372,11 @@ func (m *TenantSecurityResponseCustomCertificates) contextValidateMinioCAs(ctx c
 	for i := 0; i < len(m.MinioCAs); i++ {
 
 		if m.MinioCAs[i] != nil {
+
+			if swag.IsZero(m.MinioCAs[i]) { // not required
+				return nil
+			}
+
 			if err := m.MinioCAs[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("customCertificates" + "." + "minioCAs" + "." + strconv.Itoa(i))

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: "operator"
+  name: operator
   labels: {{- include "minio-operator.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
@@ -11,15 +11,3 @@ spec:
   selector:
     operator: leader
     {{- include "minio-operator.selectorLabels" . | nindent 4 }}
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: "sts"
-  labels: {{- include "minio-operator.labels" . | nindent 4 }}
-spec:
-  type: ClusterIP
-  ports:
-    - port: 4223
-      name: https
-  selector: {{- include "minio-operator.selectorLabels" . | nindent 4 }}
