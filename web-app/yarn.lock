@@ -4684,10 +4684,10 @@ destroy@1.2.0:
   resolved "https://registry.yarnpkg.com/destroy/-/destroy-1.2.0.tgz#4803735509ad8be552934c67df614f94e66fa015"
   integrity sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==
 
-detect-gpu@^5.0.32:
-  version "5.0.32"
-  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-5.0.32.tgz#ca03b5d943f5c3db18f0ef6afb326092012d0c49"
-  integrity sha512-Z310uSFzHnWoInT7czpgPH8yuragsoylzFTatKHSZ11UDSm+pTRnR8U2bkhwGn9AECjl72oYoJWD+G3P8RW2NQ==
+detect-gpu@^5.0.34:
+  version "5.0.34"
+  resolved "https://registry.yarnpkg.com/detect-gpu/-/detect-gpu-5.0.34.tgz#c4a29f99e3d78ac35df44355f0298f5ae29c6fe4"
+  integrity sha512-iHYDY2iy6OVvJVmTXvMrp5+OROP0Q62qTlrsC7wl3kZmm6yVAoOhQx5cIIxTVEEIZe1M1aPVI3RgsbG/Z6/7PQ==
   dependencies:
     webgl-constants "^1.1.1"
 
@@ -7811,13 +7811,13 @@ mdn-data@2.0.4:
   resolved "https://registry.yarnpkg.com/mdn-data/-/mdn-data-2.0.4.tgz#699b3c38ac6f1d728091a64650b65d388502fd5b"
   integrity sha512-iV3XNKw06j5Q7mi6h+9vbx23Tv7JkjEVgKHW4pimwyDGWm0OIQntJJ+u1C6mg6mK1EaTv42XQ7w76yuzH7M2cA==
 
-"mds@https://github.com/minio/mds.git#v0.6.9":
-  version "0.6.9"
-  resolved "https://github.com/minio/mds.git#ee054161ef898a0ab46bbdbc94346572bfe4e7b3"
+"mds@https://github.com/minio/mds.git#v0.8.2":
+  version "0.8.2"
+  resolved "https://github.com/minio/mds.git#c8cb9553a85601d1f0fccf98438ff49ee9ae1bf5"
   dependencies:
     "@types/styled-components" "^5.1.25"
     "@uiw/react-textarea-code-editor" "^2.1.7"
-    detect-gpu "^5.0.32"
+    detect-gpu "^5.0.34"
     react-virtualized "^9.22.5"
     styled-components "^5.3.11"
 
