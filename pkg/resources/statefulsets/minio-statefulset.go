@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -818,7 +819,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	}
 
 	moreServers := pool.Servers > 4
-	unavailable := intstr.FromInt(1)
+	var unavailable *intstr.IntOrString
 	if moreServers {
 		// if we have more servers than 4 nodes in a statefulset,
 		// we can allow rolling update strategy to roll two pods
@@ -826,7 +827,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		// beyond 4 servers are capable of tolerating a minimum
 		// of 2 replicas being down - this allows for faster
 		// rolling update strategy for all our deployments.
-		unavailable = intstr.FromInt(2)
+		unavailable = ptr.To(intstr.FromInt(2))
 	}
 
 	initContainer := getInitContainer(t, operatorImage, pool)
@@ -837,7 +838,8 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				Type: miniov2.DefaultUpdateStrategy,
 				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
-					MaxUnavailable: &unavailable,
+					MaxUnavailable: unavailable,
+					Partition:      ptr.To[int32](0),
 				},
 			},
 			PodManagementPolicy: t.Spec.PodManagementPolicy,
