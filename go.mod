@@ -53,7 +53,7 @@ require (
 	k8s.io/code-generator v0.27.0-alpha.2
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kubectl v0.25.4
-	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
+	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3
 )
 
