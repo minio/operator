@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
@@ -1078,58 +1077,6 @@ func Test_poolSSMatchesSpec(t *testing.T) {
 				},
 			},
 			want:    false,
-			wantErr: false,
-		},
-		{
-			name: "UpdateStrategy Unchanged",
-			args: args{
-				expectedSS: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-pool-0",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-							Type: miniov2.DefaultUpdateStrategy,
-							RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
-								MaxUnavailable: nil,
-								Partition:      ptr.To(int32(0)),
-							},
-						},
-						Template: corev1.PodTemplateSpec{
-							Spec: corev1.PodSpec{
-								Containers: []corev1.Container{
-									{
-										Name: "minio",
-									},
-								},
-							},
-						},
-					},
-				},
-				existingSS: &appsv1.StatefulSet{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "tenant-a-pool-0",
-					},
-					Spec: appsv1.StatefulSetSpec{
-						UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-							Type: miniov2.DefaultUpdateStrategy,
-							RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{
-								Partition: ptr.To(int32(0)),
-							},
-						},
-						Template: corev1.PodTemplateSpec{
-							Spec: corev1.PodSpec{
-								Containers: []corev1.Container{
-									{
-										Name: "minio",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-			want:    true,
 			wantErr: false,
 		},
 		{
