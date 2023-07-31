@@ -19,7 +19,7 @@ scheduler:
   name: {{ dig "scheduler" "name" "" . }}
 {{- end }}
 spec:
-  image: {{ dig "image" "repository" "minio/minio" . }}:{{ dig "image" "tag" "RELEASE.2022-01-08T03-11-54Z" . }}
+  image: "{{ .image.repository }}:{{ .image.digest | default .image.tag }}"
   imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" . }}
   {{- if dig "imagePullSecret" "name" "" . }}
   imagePullSecret:
@@ -132,7 +132,7 @@ spec:
   {{- end }}
   {{- if dig "kes" "configuration" false . }}
   kes:
-    image: {{ .kes.image | quote }}
+    image: "{{ .kes.image.repository }}:{{ .kes.image.digest | default .kes.image.tag }}"
     {{- with (dig "kes" "env" (list) .) }}
     env: {{- toYaml . | nindent 4 }}
     {{- end }}
