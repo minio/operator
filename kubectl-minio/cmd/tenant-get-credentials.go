@@ -32,7 +32,7 @@ import (
 const (
 	getCredentialsDesc = `
 'get-credentials' command get credentials from MinIO tenant`
-	getCredentialsExample = ` kubectl minio tenant get-credentials tenant1`
+	getCredentialsExample = ` kubectl minio tenant get-credentials`
 )
 
 type getCredentialsCmd struct {
@@ -52,11 +52,7 @@ func newTenantGetCredentialsCmd(out io.Writer, errOut io.Writer) *cobra.Command 
 		Long:    getCredentialsDesc,
 		Example: getCredentialsExample,
 		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				return fmt.Errorf("provide the name of the tenant, e.g. 'kubectl minio tenant %s tenant1'", cmd)
-			}
-			v.name = args[0]
-			return nil
+			return v.validate(args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := v.run()
@@ -72,6 +68,18 @@ func newTenantGetCredentialsCmd(out io.Writer, errOut io.Writer) *cobra.Command 
 	f.StringVarP(&v.namespace, "namespace", "n", "", "k8s namespace for this MinIO tenant")
 
 	return cmd
+}
+
+func (v *getCredentialsCmd) validate(args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("provide the name of the tenant, e.g. 'kubectl minio tenant get-credentials'")
+	}
+	// Tenant name should have DNS token restrictions
+	if err := helpers.CheckValidTenantName(args[0]); err != nil {
+		return err
+	}
+	v.name = args[0]
+	return nil
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
