@@ -47,7 +47,7 @@ func newTenantGetCredentialsCmd(out io.Writer, errOut io.Writer) *cobra.Command 
 	v := &getCredentialsCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     " <TENANTNAME> get-credentials --namespace <TENANTNS>",
+		Use:     "<TENANTNAME> get-credentials --namespace <TENANTNS>",
 		Short:   "get credentials from existing tenant",
 		Long:    getCredentialsDesc,
 		Example: getCredentialsExample,
