@@ -82,7 +82,9 @@ func (v *getCredentialsCmd) validate(args []string) error {
 	return nil
 }
 
-// run initializes local config and installs MinIO Operator to Kubernetes cluster.
+// run initializes local config
+// get the tenant first
+// get the secret from tenant
 func (v *getCredentialsCmd) run() error {
 	// Create operator client
 	path, _ := rootCmd.Flags().GetString(kubeconfig)
