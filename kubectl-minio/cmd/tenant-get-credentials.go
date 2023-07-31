@@ -19,7 +19,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"time"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/spf13/cobra"
@@ -33,11 +36,11 @@ const (
 )
 
 type getCredentialsCmd struct {
-	out        io.Writer
-	errOut     io.Writer
-	output     bool
-	namespace  string
-	tenantName string
+	out       io.Writer
+	errOut    io.Writer
+	output    bool
+	namespace string
+	name      string
 }
 
 func newTenantGetCredentialsCmd(out io.Writer, errOut io.Writer) *cobra.Command {
@@ -52,7 +55,8 @@ func newTenantGetCredentialsCmd(out io.Writer, errOut io.Writer) *cobra.Command 
 			if len(args) == 0 {
 				return fmt.Errorf("provide the name of the tenant, e.g. 'kubectl minio tenant %s tenant1'", cmd)
 			}
-			v.tenantName = args[0]
+			v.name = args[0]
+			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := v.run()
@@ -80,21 +84,29 @@ func (v *getCredentialsCmd) run() error {
 	}
 
 	if v.namespace == "" || v.namespace == helpers.DefaultNamespace {
-		v.namespace, err = getTenantNamespace(client, v.tenantName)
+		v.namespace, err = getTenantNamespace(client, v.name)
 		if err != nil {
 			return err
 		}
 	}
-
-	t, err := client.MinioV2().Tenants(v.namespace).Get(context.Background(), v.tenantName, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	t, err := client.MinioV2().Tenants(v.namespace).Get(ctx, v.name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	if t.Spec.Configuration != nil {
-		t, err := client.Discovery().Tenants(v.namespace).Get(context.Background(), t.Spec.Configuration.Name, metav1.GetOptions{})
+		result := &v1.Secret{}
+		err = client.RESTClient().Get().Namespace(v.namespace).
+			Resource("secrets").
+			Name(t.Spec.Configuration.Name).
+			VersionedParams(&metav1.GetOptions{}, scheme.ParameterCodec).
+			Do(ctx).
+			Into(result)
 		if err != nil {
 			return err
 		}
+		fmt.Println(string(result.Data["config.env"]))
 	}
 
 	return nil
