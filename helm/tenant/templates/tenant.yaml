@@ -47,31 +47,31 @@ spec:
             requests:
               storage: {{ dig "size" "10Gi" . }}
       {{- with (dig "annotations" (dict) .) }}
-      annotations: {{- toYaml .tenant | nindent 8 }}
+      annotations: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "labels" (dict) .) }}
-      labels: {{- toYaml .tenant | nindent 8 }}
+      labels: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "tolerations" (list) .) }}
-      tolerations: {{- toYaml .tenant | nindent 8 }}
+      tolerations: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "nodeSelector" (dict) .) }}
-      nodeSelector: {{- toYaml .tenant | nindent 8 }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "affinity" (dict) .) }}
-      affinity: {{- toYaml .tenant | nindent 8 }}
+      affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "resources" (dict) .) }}
-      resources: {{- toYaml .tenant | nindent 8 }}
+      resources: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "securityContext" (dict) .) }}
-      securityContext: {{- toYaml .tenant | nindent 8 }}
+      securityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "containerSecurityContext" (dict) .) }}
-      containerSecurityContext: {{- toYaml .tenant | nindent 8 }}
+      containerSecurityContext: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with (dig "topologySpreadConstraints" (list) .) }}
-      topologySpreadConstraints: {{- toYaml .tenant | nindent 8 }}
+      topologySpreadConstraints: {{- toYaml . | nindent 8 }}
       {{- end }}
     {{- end }}
   mountPath: {{ dig "mountPath" "/export" .tenant }}
