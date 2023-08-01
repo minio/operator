@@ -88,14 +88,14 @@ func (v *getCredentialsCmd) validate(args []string) error {
 func (v *getCredentialsCmd) run() error {
 	cfg := config.GetConfigOrDie()
 	// If config is passed as a flag use that instead
-	mcli, err := client.New(cfg, client.Options{})
+	k8sClient, err := client.New(cfg, client.Options{})
 	if err != nil {
 		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 	tenantList := &v2.TenantList{}
-	err = mcli.List(ctx, tenantList)
+	err = k8sClient.List(ctx, tenantList)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (v *getCredentialsCmd) run() error {
 						Namespace: tenant.Namespace,
 					},
 				}
-				err = mcli.Get(ctx, client.ObjectKeyFromObject(secret), secret)
+				err = k8sClient.Get(ctx, client.ObjectKeyFromObject(secret), secret)
 				if err != nil {
 					return err
 				}
