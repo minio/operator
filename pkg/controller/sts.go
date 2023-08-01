@@ -400,6 +400,6 @@ func (c *Controller) generateSTSTLSCert() (*string, *string) {
 }
 
 // waitSTSTLSCert Waits for the Operator leader to issue the TLS Certificate for STS
-func (c *Controller) waitSTSTLSCert() (*string, *string) {
+func (c *Controller) waitSTSTLSCert() (string, string) {
 	return c.waitForCertSecretReady("sts", STSTLSSecretName)
 }

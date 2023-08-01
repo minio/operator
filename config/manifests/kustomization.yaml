@@ -8,6 +8,9 @@ resources:
 
 patchesStrategicMerge:
   - overlay/minio-operator-deployment.yaml
+  - overlay/console-deployment.yaml
+  - overlay/console_v1_service.yaml
+  - overlay/sts_v1_service.yaml
 
 patchesJson6902:
   - target:

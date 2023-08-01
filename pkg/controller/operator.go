@@ -137,6 +137,11 @@ func (c *Controller) fetchTransportCACertificates() (pool *x509.CertPool) {
 	// Default kubernetes CA certificate
 	rootCAs.AppendCertsFromPEM(miniov2.GetPodCAFromFile())
 
+	// Openshift Service CA certificate
+	if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+		rootCAs.AppendCertsFromPEM(miniov2.GetPodServiceCAFromFile())
+	}
+
 	// Custom ca certificate to be used by operator
 	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorCATLSSecretName, metav1.GetOptions{})
 	if err == nil && operatorCATLSCert != nil {

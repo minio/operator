@@ -40,7 +40,7 @@ import (
 )
 
 // waitForCertSecretReady Function designed to run in a non-leader operator container to wait for the leader to issue a TLS certificate
-func (c *Controller) waitForCertSecretReady(serviceName string, secretName string) (*string, *string) {
+func (c *Controller) waitForCertSecretReady(serviceName string, secretName string) (string, string) {
 	ctx := context.Background()
 	namespace := miniov2.GetNSFromFile()
 	var publicCertPath, publicKeyPath string
@@ -65,7 +65,7 @@ func (c *Controller) waitForCertSecretReady(serviceName string, secretName strin
 		panic(err)
 	}
 
-	return &publicCertPath, &publicKeyPath
+	return publicCertPath, publicKeyPath
 }
 
 // getCertificateSecret gets a TLS Certificate secret
@@ -81,8 +81,8 @@ func (c *Controller) writeCertSecretToFile(tlsCertSecret *corev1.Secret, service
 		panic(mkdirerr)
 	}
 
-	publicCertPath := fmt.Sprintf("/tmp/%s/public.crt", serviceName)
-	publicKeyPath := fmt.Sprintf("/tmp/%s/private.key", serviceName)
+	publicCertPath := miniov2.GetPublicCertFilePath(serviceName)
+	publicKeyPath := miniov2.GetPrivateKeyFilePath(serviceName)
 	publicCertKey, privateKeyKey := c.getKeyNames(tlsCertSecret)
 
 	if val, ok := tlsCertSecret.Data[publicCertKey]; ok {

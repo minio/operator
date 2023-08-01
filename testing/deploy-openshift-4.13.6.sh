@@ -24,17 +24,13 @@ function main() {
     
     install_binaries
 
-    setup_crc
+    setup_crc "4.13.6"
 
     create_marketplace_catalog "certified-operators"
 
-    install_operator "certified-operators" # "community-operators", "redhat-marketplace"
+    install_operator "certified-operators"
 
-    # install_operator
-    # install_tenant
-    # check_tenant_status tenant-lite myminio
-    
-    destroy_crc
+    #destroy_crc
 }
 
 time main "$@"
