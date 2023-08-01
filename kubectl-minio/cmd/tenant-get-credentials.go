@@ -22,32 +22,35 @@ import (
 	"time"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
+	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 const (
 	getCredentialsDesc = `
 'get-credentials' command get credentials from MinIO tenant`
-	getCredentialsExample = ` kubectl minio tenant get-credentials`
+	getCredentialsExample = ` kubectl minio tenant get-credentials tenantName`
 )
 
 type getCredentialsCmd struct {
-	out       io.Writer
-	errOut    io.Writer
-	output    bool
-	namespace string
-	name      string
+	out    io.Writer
+	errOut io.Writer
+	output bool
+	name   string
 }
 
 func newTenantGetCredentialsCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+	_ = v2.AddToScheme(scheme.Scheme)
 	v := &getCredentialsCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "get-credentials <TENANTNAME> --namespace <TENANTNS>",
+		Use:     "get-credentials <TENANTNAME>",
 		Short:   "get credentials from existing tenant",
 		Long:    getCredentialsDesc,
 		Example: getCredentialsExample,
@@ -64,15 +67,12 @@ func newTenantGetCredentialsCmd(out io.Writer, errOut io.Writer) *cobra.Command 
 		},
 	}
 	cmd = helpers.DisableHelp(cmd)
-	f := cmd.Flags()
-	f.StringVarP(&v.namespace, "namespace", "n", "", "k8s namespace for this MinIO tenant")
-
 	return cmd
 }
 
 func (v *getCredentialsCmd) validate(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("provide the name of the tenant, e.g. 'kubectl minio tenant get-credentials'")
+		return fmt.Errorf("provide the name of the tenant, e.g. 'kubectl minio tenant get-credentials tenantName'")
 	}
 	// Tenant name should have DNS token restrictions
 	if err := helpers.CheckValidTenantName(args[0]); err != nil {
@@ -86,38 +86,35 @@ func (v *getCredentialsCmd) validate(args []string) error {
 // get the tenant first
 // get the secret from tenant
 func (v *getCredentialsCmd) run() error {
-	// Create operator client
-	path, _ := rootCmd.Flags().GetString(kubeconfig)
-	client, err := helpers.GetKubeOperatorClient(path)
+	cfg := config.GetConfigOrDie()
+	// If config is passed as a flag use that instead
+	mcli, err := client.New(cfg, client.Options{})
 	if err != nil {
 		return err
-	}
-
-	if v.namespace == "" || v.namespace == helpers.DefaultNamespace {
-		v.namespace, err = getTenantNamespace(client, v.name)
-		if err != nil {
-			return err
-		}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
-	t, err := client.MinioV2().Tenants(v.namespace).Get(ctx, v.name, metav1.GetOptions{})
+	tenantList := &v2.TenantList{}
+	err = mcli.List(ctx, tenantList)
 	if err != nil {
 		return err
 	}
-	if t.Spec.Configuration != nil {
-		result := &v1.Secret{}
-		err = client.RESTClient().Get().Namespace(v.namespace).
-			Resource("secrets").
-			Name(t.Spec.Configuration.Name).
-			VersionedParams(&metav1.GetOptions{}, scheme.ParameterCodec).
-			Do(ctx).
-			Into(result)
-		if err != nil {
-			return err
+	for _, tenant := range tenantList.Items {
+		if tenant.Name == v.name {
+			if tenant.Spec.Configuration != nil {
+				secret := &v1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      tenant.Spec.Configuration.Name,
+						Namespace: tenant.Namespace,
+					},
+				}
+				err = mcli.Get(ctx, client.ObjectKeyFromObject(secret), secret)
+				if err != nil {
+					return err
+				}
+				fmt.Println(string(secret.Data["config.env"]))
+			}
 		}
-		fmt.Println(string(result.Data["config.env"]))
 	}
-
 	return nil
 }
