@@ -4,4 +4,8 @@ data:
   CONSOLE_TLS_PORT: "9443"
 kind: ConfigMap
 metadata:
+  annotations:
+    operator.min.io/authors: MinIO, Inc.
+    operator.min.io/license: AGPLv3
+    operator.min.io/support: https://subnet.min.io
   name: console-env
