@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"strconv"
 	"strings"
 
@@ -30,6 +28,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
