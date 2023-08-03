@@ -19,17 +19,23 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"regexp"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"strconv"
 	"strings"
 
 	"github.com/dustin/go-humanize"
 	"github.com/minio/kubectl-minio/cmd/helpers"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 const (
@@ -43,6 +49,7 @@ type infoCmd struct {
 }
 
 func newTenantInfoCmd(out io.Writer, errOut io.Writer) *cobra.Command {
+	_ = v2.AddToScheme(scheme.Scheme)
 	c := &infoCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
@@ -93,8 +100,40 @@ func (d *infoCmd) run(args []string) error {
 		return err
 	}
 	printTenantInfo(*tenant)
-
+	// show the secret
+	fmt.Println("\n")
+	cfg := config.GetConfigOrDie()
+	// If config is passed as a flag use that instead
+	k8sClient, err := client.New(cfg, client.Options{})
+	if err != nil {
+		return err
+	}
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tenant.Spec.Configuration.Name,
+			Namespace: tenant.Namespace,
+		},
+	}
+	err = k8sClient.Get(context.Background(), client.ObjectKeyFromObject(secret), secret)
+	if err != nil {
+		return err
+	}
+	printTenantCredentials(string(secret.Data["config.env"]))
 	return nil
+}
+
+func printTenantCredentials(data string) {
+	users := regexp.MustCompile(`MINIO_ROOT_USER="([^"])+"`).FindAllString(data, -1)
+	passs := regexp.MustCompile(`MINIO_ROOT_PASSWORD="([^"])+"`).FindAllString(data, -1)
+	if len(users) >= 1 || len(passs) >= 1 {
+		fmt.Println("MinIO Root User CRedentials:")
+	}
+	if len(users) >= 1 {
+		fmt.Println(users[0])
+	}
+	if len(passs) >= 1 {
+		fmt.Println(passs[0])
+	}
 }
 
 func printTenantInfo(tenant miniov2.Tenant) {
