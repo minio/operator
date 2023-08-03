@@ -11,6 +11,18 @@ operator:
   #     value: ""
   #   - name: MINIO_OPERATOR_RUNTIME
   #     value: "OpenShift"
+  #
+  ### Image field:
+  ## Image from tag (original behaviour), for example:
+  # image:
+  #   repository: quay.io/minio/operator
+  #   tag: v5.0.6
+  #   pullPolicy: IfNotPresent
+  ## Image from digest (added after original behaviour), for example:
+  # image:
+  #   repository: quay.io/minio/operator@sha256
+  #   digest: 28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+  #   pullPolicy: IfNotPresent
   image:
     repository: quay.io/minio/operator
     tag: v5.0.6
