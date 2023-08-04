@@ -101,7 +101,7 @@ func (d *infoCmd) run(args []string) error {
 	}
 	printTenantInfo(*tenant)
 	// show the secret
-	fmt.Println("\n")
+	fmt.Println()
 	cfg := config.GetConfigOrDie()
 	// If config is passed as a flag use that instead
 	k8sClient, err := client.New(cfg, client.Options{})
