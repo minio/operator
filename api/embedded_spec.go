@@ -2417,6 +2417,9 @@ func init() {
         "expose_minio": {
           "type": "boolean"
         },
+        "expose_sftp": {
+          "type": "boolean"
+        },
         "idp": {
           "type": "object",
           "$ref": "#/definitions/idpConfiguration"
@@ -2726,6 +2729,9 @@ func init() {
               "type": "object",
               "$ref": "#/definitions/keyPairConfiguration"
             },
+            "policies": {
+              "type": "object"
+            },
             "raw": {
               "type": "string"
             },
@@ -2797,6 +2803,9 @@ func init() {
             "minio_mtls": {
               "type": "object",
               "$ref": "#/definitions/certificateInfo"
+            },
+            "policies": {
+              "type": "object"
             },
             "raw": {
               "type": "string"
@@ -4230,6 +4239,9 @@ func init() {
             "$ref": "#/definitions/pool"
           }
         },
+        "sftpExposed": {
+          "type": "boolean"
+        },
         "status": {
           "$ref": "#/definitions/tenantStatus"
         },
@@ -4256,6 +4268,9 @@ func init() {
           "items": {
             "$ref": "#/definitions/environmentVariable"
           }
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -4552,6 +4567,9 @@ func init() {
           "items": {
             "type": "string"
           }
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -4567,6 +4585,9 @@ func init() {
         },
         "image_registry": {
           "$ref": "#/definitions/imageRegistry"
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -7936,6 +7957,9 @@ func init() {
         "expose_minio": {
           "type": "boolean"
         },
+        "expose_sftp": {
+          "type": "boolean"
+        },
         "idp": {
           "type": "object",
           "$ref": "#/definitions/idpConfiguration"
@@ -8245,6 +8269,9 @@ func init() {
               "type": "object",
               "$ref": "#/definitions/keyPairConfiguration"
             },
+            "policies": {
+              "type": "object"
+            },
             "raw": {
               "type": "string"
             },
@@ -8316,6 +8343,9 @@ func init() {
             "minio_mtls": {
               "type": "object",
               "$ref": "#/definitions/certificateInfo"
+            },
+            "policies": {
+              "type": "object"
             },
             "raw": {
               "type": "string"
@@ -9602,6 +9632,9 @@ func init() {
             "$ref": "#/definitions/pool"
           }
         },
+        "sftpExposed": {
+          "type": "boolean"
+        },
         "status": {
           "$ref": "#/definitions/tenantStatus"
         },
@@ -9628,6 +9661,9 @@ func init() {
           "items": {
             "$ref": "#/definitions/environmentVariable"
           }
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -9924,6 +9960,9 @@ func init() {
           "items": {
             "type": "string"
           }
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },
@@ -9939,6 +9978,9 @@ func init() {
         },
         "image_registry": {
           "$ref": "#/definitions/imageRegistry"
+        },
+        "sftpExposed": {
+          "type": "boolean"
         }
       }
     },

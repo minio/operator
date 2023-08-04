@@ -60,6 +60,9 @@ func updateTenantAction(ctx context.Context, operatorClient OperatorClientI, cli
 		}
 	}
 
+	if minInst.Spec.Features != nil {
+		minInst.Spec.Features.EnableSFTP = &params.Body.SftpExposed
+	}
 	payloadBytes, err := json.Marshal(minInst)
 	if err != nil {
 		return err

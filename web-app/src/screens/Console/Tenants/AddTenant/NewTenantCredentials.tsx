@@ -26,10 +26,10 @@ const NewTenantCredentials = () => {
   const navigate = useNavigate();
 
   const showNewCredentials = useSelector(
-    (state: AppState) => state.createTenant.showNewCredentials
+    (state: AppState) => state.createTenant.showNewCredentials,
   );
   const createdAccount = useSelector(
-    (state: AppState) => state.createTenant.createdAccount
+    (state: AppState) => state.createTenant.createdAccount,
   );
 
   return (

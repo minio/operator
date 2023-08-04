@@ -32,7 +32,7 @@ import { getLicenseConsent } from "./utils";
 import PageHeaderWrapper from "../Common/PageHeaderWrapper/PageHeaderWrapper";
 
 const LicenseConsentModal = withSuspense(
-  React.lazy(() => import("./LicenseConsentModal"))
+  React.lazy(() => import("./LicenseConsentModal")),
 );
 
 const License = () => {

@@ -60,7 +60,7 @@ const TenantVolumes = ({ classes }: IPVCDetailsProps) => {
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${tenantNamespace}/tenants/${tenantName}/pvcs/${PVCName}/events`
+          `/api/v1/namespaces/${tenantNamespace}/tenants/${tenantName}/pvcs/${PVCName}/events`,
         )
         .then((res: IEvent[]) => {
           for (let i = 0; i < res.length; i++) {

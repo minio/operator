@@ -17,14 +17,14 @@
 export const MinIOPlan =
   (
     document.head.querySelector(
-      "[name~=minio-license][content]"
+      "[name~=minio-license][content]",
     ) as HTMLMetaElement
   )?.content || "AGPL";
 
 type LogoVar = "simple" | "AGPL" | "standard" | "enterprise";
 
 export const getLogoVar = (): LogoVar => {
-  let logoVar: LogoVar = "AGPL";
+  let logoVar: LogoVar;
   switch (MinIOPlan) {
     case "enterprise":
       logoVar = "enterprise";

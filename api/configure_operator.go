@@ -32,13 +32,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/klauspost/compress/gzhttp"
+
 	"github.com/minio/operator/pkg/logger"
 	"github.com/minio/operator/pkg/utils"
 	webApp "github.com/minio/operator/web-app"
 	"github.com/minio/pkg/env"
 	"github.com/minio/pkg/mimedb"
 
-	"github.com/klauspost/compress/gzhttp"
 	"github.com/unrolled/secure"
 
 	"github.com/minio/operator/pkg/auth"
@@ -150,10 +151,11 @@ func proxyMiddleware(next http.Handler) http.Handler {
 // The middleware configuration happens before anything, this middleware also applies to serving the swagger.json document.
 // So this is a good place to plug in a panic handling middleware, logging and metrics.
 func setupGlobalMiddleware(handler http.Handler) http.Handler {
-	// proxy requests
-	next := proxyMiddleware(handler)
+	gnext := gzhttp.GzipHandler(handler)
 	// if audit-log is enabled console will log all incoming request
-	next = AuditLogMiddleware(next)
+	next := AuditLogMiddleware(gnext)
+	// proxy requests
+	next = proxyMiddleware(next)
 	// serve static files
 	next = FileServerMiddleware(next)
 	// add information to request context
@@ -187,7 +189,7 @@ func setupGlobalMiddleware(handler http.Handler) http.Handler {
 	}
 	secureMiddleware := secure.New(secureOptions)
 	next = secureMiddleware.Handler(next)
-	return gzhttp.GzipHandler(next)
+	return next
 }
 
 // ContextMiddleware attachs request info to context
@@ -274,7 +276,8 @@ var (
 	subPathOnce sync.Once
 )
 
-func getSubPath() string {
+// GetSubPath is the sub-path where Operator UI will run
+func GetSubPath() string {
 	subPathOnce.Do(func() {
 		subPath = parseSubPath(env.Get(SubPath, ""))
 	})
@@ -315,7 +318,7 @@ func replaceBaseInIndex(indexPageBytes []byte, basePath string) []byte {
 
 // handleSPA handles the serving of the React Single Page Application
 func handleSPA(w http.ResponseWriter, r *http.Request) {
-	basePath := "/"
+	basePath := GetSubPath()
 	// For SPA mode we will replace root base with a sub path if configured unless we received cp=y and cpb=/NEW/BASE
 	if v := r.URL.Query().Get("cp"); v == "y" {
 		if base := r.URL.Query().Get("cpb"); base != "" {
@@ -342,11 +345,11 @@ func handleSPA(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// if we have a seeded basePath. This should override CONSOLE_SUBPATH every time, thus the `if else`
-	if basePath != "/" {
+	if basePath != GetSubPath() {
 		indexPageBytes = replaceBaseInIndex(indexPageBytes, basePath)
 		// if we have a custom subpath replace it in
-	} else if getSubPath() != "/" {
-		indexPageBytes = replaceBaseInIndex(indexPageBytes, getSubPath())
+	} else if GetSubPath() != "/" {
+		indexPageBytes = replaceBaseInIndex(indexPageBytes, GetSubPath())
 	}
 	indexPageBytes = replaceLicense(indexPageBytes)
 
@@ -363,7 +366,7 @@ func handleSPA(w http.ResponseWriter, r *http.Request) {
 // wrapHandlerSinglePageApplication handles a http.FileServer returning a 404 and overrides it with index.html
 func wrapHandlerSinglePageApplication(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/" {
+		if match, _ := regexp.MatchString(fmt.Sprintf("^%s/?$", GetSubPath()), r.URL.Path); match {
 			handleSPA(w, r)
 			return
 		}
@@ -381,15 +384,16 @@ func wrapHandlerSinglePageApplication(h http.Handler) http.HandlerFunc {
 func FileServerMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Server", globalAppName) // do not add version information
+		basePath := GetSubPath()
 		switch {
-		case strings.HasPrefix(r.URL.Path, "/api"):
+		case strings.HasPrefix(r.URL.Path, basePath+"api"):
 			next.ServeHTTP(w, r)
 		default:
 			buildFs, err := fs.Sub(webApp.GetStaticAssets(), "build")
 			if err != nil {
 				panic(err)
 			}
-			wrapHandlerSinglePageApplication(requestBounce(http.FileServer(http.FS(buildFs)))).ServeHTTP(w, r)
+			wrapHandlerSinglePageApplication(requestBounce(http.StripPrefix(basePath, http.FileServer(http.FS(buildFs))))).ServeHTTP(w, r)
 		}
 	})
 }

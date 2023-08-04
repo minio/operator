@@ -20,7 +20,7 @@ import { Draft } from "@reduxjs/toolkit";
 export const flipValidPageInState = (
   state: Draft<ICreateTenant>,
   pageName: string,
-  valid: boolean
+  valid: boolean,
 ) => {
   let originValidPages = state.validPages;
   if (valid) {

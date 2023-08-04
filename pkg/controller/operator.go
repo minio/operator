@@ -23,6 +23,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/minio/operator/pkg/common"
+	"github.com/minio/operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,14 +42,15 @@ import (
 const (
 	// CertPasswordEnv Env variable is used to decrypt the private key in the TLS certificate for operator if need it
 	CertPasswordEnv = "OPERATOR_CERT_PASSWD"
-	// OperatorDeplymentNameEnv Env variable to specify a custom deployment name for Operator
-	OperatorDeplymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
+	// OperatorDeploymentNameEnv Env variable to specify a custom deployment name for Operator
+	OperatorDeploymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
+
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
 	OperatorCATLSSecretName = "operator-ca-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
 	// DefaultOperatorImage is the version fo the operator being used
-	DefaultOperatorImage = "minio/operator:v5.0.2"
+	DefaultOperatorImage = "minio/operator:v5.0.6"
 )
 
 var serverCertsManager *xcerts.Manager
@@ -110,32 +113,33 @@ func (c *Controller) getTransport() *http.Transport {
 
 	// These chunk of code is intended for OpenShift ONLY and it will help us trust the signer to solve issue:
 	// https://github.com/minio/operator/issues/1412
-	openShiftCATLSCert, err := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
-		context.Background(), "csr-signer", metav1.GetOptions{})
-	klog.Info("Checking if this is OpenShift Environment to append the certificates...")
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			// Do nothing special, because this is maybe k8s vanilla
-			klog.Info("csr-signer secret wasn't found, very likely this is not OpenShift but k8s Vanilla or other...")
-		} else {
-			// Lack of permissions to read the secret
-			klog.Errorf("csr-signer secret was found but we failed to get openShiftCATLSCert: %#v", err)
-		}
-	} else if err == nil && openShiftCATLSCert != nil {
-		// When secret was obtained with no errors
-		if val, ok := openShiftCATLSCert.Data["tls.crt"]; ok {
-			// OpenShift csr-signer secret has tls.crt certificates that we need to append in order
-			// to trust the signer. If we append the val, Operator will be able to provisioning the
-			// initial users and get Tenant Health, so tenant can be properly initialized and in
-			// green status, otherwise if we don't append it, it will get stuck and expose this
-			// issue in the log:
-			// Failed to get cluster health: Get "https://minio.tenant-lite.svc.cluster.local/minio/health/cluster":
-			// x509: certificate signed by unknown authority
-			klog.Info("Appending OpenShift csr-signer to trust the Signer")
-			rootCAs.AppendCertsFromPEM(val)
+	if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+		openShiftCATLSCert, err := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
+			context.Background(), "csr-signer", metav1.GetOptions{})
+		klog.Info("Checking if this is OpenShift Environment to append the certificates...")
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				// Do nothing special, because this is maybe k8s vanilla
+				klog.Info("csr-signer secret wasn't found, very likely this is not OpenShift but k8s Vanilla or other...")
+			} else {
+				// Lack of permissions to read the secret
+				klog.Errorf("csr-signer secret was found but we failed to get openShiftCATLSCert: %#v", err)
+			}
+		} else if err == nil && openShiftCATLSCert != nil {
+			// When secret was obtained with no errors
+			if val, ok := openShiftCATLSCert.Data["tls.crt"]; ok {
+				// OpenShift csr-signer secret has tls.crt certificates that we need to append in order
+				// to trust the signer. If we append the val, Operator will be able to provisioning the
+				// initial users and get Tenant Health, so tenant can be properly initialized and in
+				// green status, otherwise if we don't append it, it will get stuck and expose this
+				// issue in the log:
+				// Failed to get cluster health: Get "https://minio.tenant-lite.svc.cluster.local/minio/health/cluster":
+				// x509: certificate signed by unknown authority
+				klog.Info("Appending OpenShift csr-signer to trust the Signer")
+				rootCAs.AppendCertsFromPEM(val)
+			}
 		}
 	}
-
 	dialer := &net.Dialer{
 		Timeout:   15 * time.Second,
 		KeepAlive: 15 * time.Second,
@@ -234,5 +238,5 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 
 // getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
 func getOperatorDeploymentName() string {
-	return env.Get(OperatorDeplymentNameEnv, DefaultDeploymentName)
+	return env.Get(OperatorDeploymentNameEnv, DefaultDeploymentName)
 }

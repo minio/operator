@@ -1,0 +1,8 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+  - ../examples/kustomization/tenant-openshift/
+
+patchesStrategicMerge:
+  - delete-namespace.yaml
+  - delete-storage-user.yaml
+  - delete-tenant-config.yaml

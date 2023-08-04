@@ -17,6 +17,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { connect, useSelector } from "react-redux";
 import { Theme } from "@mui/material/styles";
+import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
 import { DialogContentText, IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { Button, ConfirmModalIcon, Loader, RemoveIcon } from "mds";
@@ -114,23 +115,25 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [isSending, setIsSending] = useState<boolean>(false);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
   const [envVars, setEnvVars] = useState<LabelKeyPair[]>([]);
   const [envVarsToBeDeleted, setEnvVarsToBeDeleted] = useState<string[]>([]);
+  const [sftpExposed, setSftpEnabled] = useState<boolean>(false);
 
   const getTenantConfigurationInfo = useCallback(() => {
     api
       .invoke(
         "GET",
-        `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/configuration`
+        `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/configuration`,
       )
       .then((res: ITenantConfigurationResponse) => {
         if (res.environmentVariables) {
           setEnvVars(res.environmentVariables);
+          setSftpEnabled(res.sftpExposed);
         }
       })
       .catch((err: ErrorResponseHandler) => {
@@ -149,12 +152,13 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
     let payload: ITenantConfigurationRequest = {
       environmentVariables: envVars.filter((env) => env.key !== ""),
       keysToBeDeleted: envVarsToBeDeleted,
+      sftpExposed: sftpExposed,
     };
     api
       .invoke(
         "PATCH",
         `/api/v1/namespaces/${tenant?.namespace}/tenants/${tenant?.name}/configuration`,
-        payload
+        payload,
       )
       .then(() => {
         setIsSending(false);
@@ -215,8 +219,8 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                         existingEnvVars.map((keyPair, i) =>
                           i === index
                             ? { key: e.target.value, value: keyPair.value }
-                            : keyPair
-                        )
+                            : keyPair,
+                        ),
                       );
                     }}
                     index={index}
@@ -235,8 +239,8 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                         existingEnvVars.map((keyPair, i) =>
                           i === index
                             ? { key: keyPair.key, value: e.target.value }
-                            : keyPair
-                        )
+                            : keyPair,
+                        ),
                       );
                     }}
                     index={index}
@@ -269,7 +273,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                       size={"small"}
                       onClick={() => {
                         const existingEnvVars = envVars.filter(
-                          (item, fIndex) => fIndex !== index
+                          (item, fIndex) => fIndex !== index,
                         );
                         setEnvVars(existingEnvVars);
                         setEnvVarsToBeDeleted([
@@ -285,6 +289,28 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                 </Grid>
               </Grid>
             ))}
+          </Grid>
+          <Grid container spacing={1}>
+            <Grid
+              item
+              xs={12}
+              justifyContent={"end"}
+              textAlign={"right"}
+              className={classes.configSectionItem}
+            >
+              <FormSwitchWrapper
+                label={"SFTP"}
+                indicatorLabels={["Enabled", "Disabled"]}
+                checked={sftpExposed}
+                value={"expose_sftp"}
+                id="expose-sftp"
+                name="expose-sftp"
+                onChange={() => {
+                  setSftpEnabled(!sftpExposed);
+                }}
+                description=""
+              />
+            </Grid>
           </Grid>
           <Grid
             item

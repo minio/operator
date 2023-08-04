@@ -57,6 +57,9 @@ type EncryptionConfigurationResponse struct {
 	// minio mtls
 	MinioMtls *CertificateInfo `json:"minio_mtls,omitempty"`
 
+	// policies
+	Policies interface{} `json:"policies,omitempty"`
+
 	// raw
 	Raw string `json:"raw,omitempty"`
 
@@ -98,6 +101,8 @@ func (m *EncryptionConfigurationResponse) UnmarshalJSON(raw []byte) error {
 
 		MinioMtls *CertificateInfo `json:"minio_mtls,omitempty"`
 
+		Policies interface{} `json:"policies,omitempty"`
+
 		Raw string `json:"raw,omitempty"`
 
 		Replicas string `json:"replicas,omitempty"`
@@ -125,6 +130,8 @@ func (m *EncryptionConfigurationResponse) UnmarshalJSON(raw []byte) error {
 	m.KmsMtls = dataAO1.KmsMtls
 
 	m.MinioMtls = dataAO1.MinioMtls
+
+	m.Policies = dataAO1.Policies
 
 	m.Raw = dataAO1.Raw
 
@@ -163,6 +170,8 @@ func (m EncryptionConfigurationResponse) MarshalJSON() ([]byte, error) {
 
 		MinioMtls *CertificateInfo `json:"minio_mtls,omitempty"`
 
+		Policies interface{} `json:"policies,omitempty"`
+
 		Raw string `json:"raw,omitempty"`
 
 		Replicas string `json:"replicas,omitempty"`
@@ -187,6 +196,8 @@ func (m EncryptionConfigurationResponse) MarshalJSON() ([]byte, error) {
 	dataAO1.KmsMtls = m.KmsMtls
 
 	dataAO1.MinioMtls = m.MinioMtls
+
+	dataAO1.Policies = m.Policies
 
 	dataAO1.Raw = m.Raw
 
@@ -491,6 +502,11 @@ func (m *EncryptionConfigurationResponse) ContextValidate(ctx context.Context, f
 func (m *EncryptionConfigurationResponse) contextValidateAws(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Aws != nil {
+
+		if swag.IsZero(m.Aws) { // not required
+			return nil
+		}
+
 		if err := m.Aws.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("aws")
@@ -507,6 +523,11 @@ func (m *EncryptionConfigurationResponse) contextValidateAws(ctx context.Context
 func (m *EncryptionConfigurationResponse) contextValidateAzure(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Azure != nil {
+
+		if swag.IsZero(m.Azure) { // not required
+			return nil
+		}
+
 		if err := m.Azure.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("azure")
@@ -523,6 +544,11 @@ func (m *EncryptionConfigurationResponse) contextValidateAzure(ctx context.Conte
 func (m *EncryptionConfigurationResponse) contextValidateGcp(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Gcp != nil {
+
+		if swag.IsZero(m.Gcp) { // not required
+			return nil
+		}
+
 		if err := m.Gcp.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gcp")
@@ -539,6 +565,11 @@ func (m *EncryptionConfigurationResponse) contextValidateGcp(ctx context.Context
 func (m *EncryptionConfigurationResponse) contextValidateGemalto(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Gemalto != nil {
+
+		if swag.IsZero(m.Gemalto) { // not required
+			return nil
+		}
+
 		if err := m.Gemalto.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("gemalto")
@@ -555,6 +586,11 @@ func (m *EncryptionConfigurationResponse) contextValidateGemalto(ctx context.Con
 func (m *EncryptionConfigurationResponse) contextValidateKmsMtls(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.KmsMtls != nil {
+
+		if swag.IsZero(m.KmsMtls) { // not required
+			return nil
+		}
+
 		if err := m.KmsMtls.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kms_mtls")
@@ -571,6 +607,11 @@ func (m *EncryptionConfigurationResponse) contextValidateKmsMtls(ctx context.Con
 func (m *EncryptionConfigurationResponse) contextValidateMinioMtls(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.MinioMtls != nil {
+
+		if swag.IsZero(m.MinioMtls) { // not required
+			return nil
+		}
+
 		if err := m.MinioMtls.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("minio_mtls")
@@ -587,6 +628,11 @@ func (m *EncryptionConfigurationResponse) contextValidateMinioMtls(ctx context.C
 func (m *EncryptionConfigurationResponse) contextValidateSecurityContext(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.SecurityContext != nil {
+
+		if swag.IsZero(m.SecurityContext) { // not required
+			return nil
+		}
+
 		if err := m.SecurityContext.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("securityContext")
@@ -603,6 +649,11 @@ func (m *EncryptionConfigurationResponse) contextValidateSecurityContext(ctx con
 func (m *EncryptionConfigurationResponse) contextValidateServerTLS(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.ServerTLS != nil {
+
+		if swag.IsZero(m.ServerTLS) { // not required
+			return nil
+		}
+
 		if err := m.ServerTLS.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("server_tls")
@@ -619,6 +670,11 @@ func (m *EncryptionConfigurationResponse) contextValidateServerTLS(ctx context.C
 func (m *EncryptionConfigurationResponse) contextValidateVault(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Vault != nil {
+
+		if swag.IsZero(m.Vault) { // not required
+			return nil
+		}
+
 		if err := m.Vault.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("vault")
@@ -739,6 +795,11 @@ func (m *EncryptionConfigurationResponseAO1KmsMtls) ContextValidate(ctx context.
 func (m *EncryptionConfigurationResponseAO1KmsMtls) contextValidateCa(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Ca != nil {
+
+		if swag.IsZero(m.Ca) { // not required
+			return nil
+		}
+
 		if err := m.Ca.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kms_mtls" + "." + "ca")
@@ -755,6 +816,11 @@ func (m *EncryptionConfigurationResponseAO1KmsMtls) contextValidateCa(ctx contex
 func (m *EncryptionConfigurationResponseAO1KmsMtls) contextValidateCrt(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Crt != nil {
+
+		if swag.IsZero(m.Crt) { // not required
+			return nil
+		}
+
 		if err := m.Crt.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kms_mtls" + "." + "crt")

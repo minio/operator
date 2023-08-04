@@ -43,7 +43,7 @@ export interface KeyPair {
 
 export const ecListTransform = (
   ecList: string[],
-  defaultEC: string = ""
+  defaultEC: string = "",
 ): Opts[] => {
   return ecList.map((value) => {
     let defLabel = value;
@@ -68,7 +68,7 @@ export const getLimitSizes = (resourceQuotas: IQuotas) => {
 
   quotas.forEach((rsQuota) => {
     const stCName = rsQuota.name.split(
-      ".storageclass.storage.k8s.io/requests.storage"
+      ".storageclass.storage.k8s.io/requests.storage",
     )[0];
     const hard = get(rsQuota, "hard", 0);
     const used = get(rsQuota, "used", 0);

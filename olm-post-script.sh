@@ -36,17 +36,23 @@ for catalog in "${redhatCatalogs[@]}"; do
   echo "operatorImageDigest: ${operatorImageDigest} @ ${digest}"
   yq -i ".metadata.annotations.containerImage |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
-  # Console Image in Digested form: sha256:xxxx
-  consoleImage=$(yq eval-all '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml)
-  echo "consoleImage: ${consoleImage}"
-  consoleImageDigest=$(docker pull "quay.io/"${consoleImage} | grep Digest | awk -F ' ' '{print $2}')
-  echo "consoleImageDigest: ${consoleImageDigest}"
-  consoleImageDigest="quay.io/minio/console@${consoleImageDigest}"
-  yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${consoleImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-
   # Operator Image in Digest mode: sha256:xxx
+  yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-  yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml resources/templates/olm-template.yaml
+  yq -i "(.spec.relatedImages[] | select( .name == \"minio-operator\")).image |= \"${operatorImageDigest}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i "(.spec.relatedImages[] | select( .name == \"console\")).image |= \"${operatorImageDigest}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+#  yq eval-all -i ". as \$item ireduce ({}; . * \$item )" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml resources/templates/olm-template.yaml
+
+  # https://connect.redhat.com/support/technology-partner/#/case/03206318
+  # If no securityContext is specified, the OLM will choose one that fits within
+  # the security context constraint either explicitly specified for the project under which the pod is run,
+  # or the default. If the SCC specifies a value that doesn't match the specified value in our files,
+  # the pods will not start properly and we can't be installed.
+  # Let the user select their own securityContext and don't hardcode values that can affect the ability
+  # to debug and deploy our Operator in OperatorHub.
+  echo "Removing securityContext from CSV"
+  yq -i eval 'del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
 done
 echo " "

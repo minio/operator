@@ -103,12 +103,16 @@ func buildOperatorServer() (*api.Server, error) {
 		return nil, err
 	}
 
+	subPath := api.GetSubPath()
+	swaggerSpec.Spec().BasePath = subPath + swaggerSpec.Spec().BasePath
+	swaggerSpec.OrigSpec().BasePath = subPath + swaggerSpec.OrigSpec().BasePath
+
 	operatorapi := operations.NewOperatorAPI(swaggerSpec)
 	operatorapi.Logger = api.LogInfo
 	server := api.NewServer(operatorapi)
 
 	parser := flags.NewParser(server, flags.Default)
-	parser.ShortDescription = "MinIO Console Server"
+	parser.ShortDescription = "MinIO Operator Server"
 	parser.LongDescription = swaggerSpec.Spec().Info.Description
 
 	server.ConfigureFlags()

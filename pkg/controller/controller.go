@@ -66,7 +66,7 @@ func init() {
 }
 
 // StartOperator starts the MinIO Operator controller
-func StartOperator() {
+func StartOperator(kubeconfig string) {
 	klog.Info("Starting MinIO Operator")
 	// set up signals, so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
@@ -122,7 +122,7 @@ func StartOperator() {
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	podName := os.Getenv(HostnameEnv)
 	if podName == "" {
-		klog.Info("Could not determine $%s, defaulting to pod name: operator-pod", HostnameEnv)
+		klog.Infof("Could not determine %s, defaulting to pod name: operator-pod", HostnameEnv)
 		podName = "operator-pod"
 	}
 
@@ -173,4 +173,20 @@ func setupSignalHandler() (stopCh <-chan struct{}) {
 	}()
 
 	return stop
+}
+
+// Result contains the result of a sync invocation.
+type Result struct {
+	// Requeue tells the Controller to requeue the reconcile key.  Defaults to false.
+	Requeue bool
+
+	// RequeueAfter if greater than 0, tells the Controller to requeue the reconcile key after the Duration.
+	// Implies that Requeue is true, there is no need to set Requeue to true at the same time as RequeueAfter.
+	RequeueAfter time.Duration
+}
+
+// WrapResult is wrap for result.
+// We can find where return result.
+func WrapResult(result Result, err error) (Result, error) {
+	return result, err
 }

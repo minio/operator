@@ -5,14 +5,26 @@ secrets:
   # MinIO root user and password
   accessKey: minio
   secretKey: minio123
+  ## Set the value for existingSecret to use a pre created secret and dont create default one
+  # existingSecret: random-env-configuration
 ## MinIO Tenant Definition
 tenant:
   # Tenant name
   name: myminio
-  ## Registry location and Tag to download MinIO Server image
+  ### Registry location and Tag or Digest to download MinIO Server image, options:
+  ## Option 1: Image from tag (original behaviour):
+  # image:
+  #    repository: quay.io/minio/minio
+  #    tag: RELEASE.2023-06-23T20-26-00Z
+  #    pullPolicy: IfNotPresent
+  ## Option 2: Image from digest (added after original):
+  # image:
+  #    repository: quay.io/minio/minio@sha256
+  #    digest: 28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+  #    pullPolicy: IfNotPresent
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-03-24T21-41-23Z
+    tag: RELEASE.2023-06-23T20-26-00Z
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported
@@ -72,6 +84,12 @@ tenant:
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
   ## Sub path inside Mount path where MinIO stores data.
+  ## WARNING:
+  ## We recommend you to keep the same mountPath and the same subPath once the
+  ## Tenant has been deployed over your different PVs.
+  ## This is because if you change these values once Tenant is deployed, then
+  ## you will end up with multiple paths for different buckets. So please, be
+  ## very careful to keep same value for the life of the Tenant.
   subPath: /data
   # pool metrics to be read by Prometheus
   metrics:
@@ -99,7 +117,12 @@ tenant:
   features:
     bucketDNS: false
     domains: { }
-  ## List of bucket names to create during tenant provisioning
+    enableSFTP: false
+  ## List of bucket definitions to create during tenant provisioning.
+  ## Example:
+  #   - name: my-minio-bucket
+  #     objectLock: false        # optional
+  #     region: us-east-1        # optional
   buckets: [ ]
   ## List of secret names to use for generating MinIO users during tenant provisioning
   users: [ ]
@@ -146,7 +169,19 @@ tenant:
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   #kes:
-  #  image: "" # minio/kes:2023-02-15T14-54-37Z
+  #  ### Image field:
+  #  ## Image from tag (original behaviour), for example:
+  #  # image:
+  #  #   repository: quay.io/minio/kes
+  #  #   tag: 2023-07-26T11-13-07Z
+  #  ## Image from digest (added after original behaviour), for example:
+  #  # image:
+  #  #   repository: quay.io/minio/kes@sha256
+  #  #   digest: fb15af611149892f357a8a99d1bcd8bf5dae713bd64c15e6eb27fbdb88fc208b
+  #  image:
+  #    repository: quay.io/minio/kes
+  #    tag: 2023-07-26T11-13-07Z
+  #    pullPolicy: IfNotPresent
   #  env: [ ]
   #  replicas: 2
   #  configuration: |-

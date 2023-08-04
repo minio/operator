@@ -158,6 +158,11 @@ func (m *IdpConfiguration) ContextValidate(ctx context.Context, formats strfmt.R
 func (m *IdpConfiguration) contextValidateActiveDirectory(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.ActiveDirectory != nil {
+
+		if swag.IsZero(m.ActiveDirectory) { // not required
+			return nil
+		}
+
 		if err := m.ActiveDirectory.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("active_directory")
@@ -176,6 +181,11 @@ func (m *IdpConfiguration) contextValidateKeys(ctx context.Context, formats strf
 	for i := 0; i < len(m.Keys); i++ {
 
 		if m.Keys[i] != nil {
+
+			if swag.IsZero(m.Keys[i]) { // not required
+				return nil
+			}
+
 			if err := m.Keys[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("keys" + "." + strconv.Itoa(i))
@@ -194,6 +204,11 @@ func (m *IdpConfiguration) contextValidateKeys(ctx context.Context, formats strf
 func (m *IdpConfiguration) contextValidateOidc(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Oidc != nil {
+
+		if swag.IsZero(m.Oidc) { // not required
+			return nil
+		}
+
 		if err := m.Oidc.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("oidc")

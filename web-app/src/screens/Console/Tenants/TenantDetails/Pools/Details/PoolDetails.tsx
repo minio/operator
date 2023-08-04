@@ -46,7 +46,7 @@ const PoolDetails = () => {
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const selectedPool = useSelector(
-    (state: AppState) => state.tenants.selectedPool
+    (state: AppState) => state.tenants.selectedPool,
   );
   if (tenant === null) {
     return <Fragment />;
@@ -93,7 +93,7 @@ const PoolDetails = () => {
               navigate(
                 `/namespaces/${tenant?.namespace || ""}/tenants/${
                   tenant?.name || ""
-                }/edit-pool`
+                }/edit-pool`,
               );
             }}
             label={"Edit Pool"}
@@ -116,7 +116,7 @@ const PoolDetails = () => {
             value={niceBytesInt(
               poolInformation.volumes_per_server *
                 poolInformation.servers *
-                poolInformation.volume_configuration.size
+                poolInformation.volume_configuration.size,
             )}
           />
           <LabelValuePair
@@ -135,7 +135,7 @@ const PoolDetails = () => {
               <LabelValuePair
                 label={"Memory"}
                 value={niceBytesInt(
-                  poolInformation.resources?.requests?.memory!
+                  poolInformation.resources?.requests?.memory!,
                 )}
               />
             </Fragment>
@@ -225,7 +225,7 @@ const PoolDetails = () => {
                         </li>
                       );
                     });
-                  }
+                  },
                 )}
               </ul>
             </Fragment>

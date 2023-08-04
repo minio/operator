@@ -55,7 +55,7 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
   const { tenantName, tenantNamespace } = useParams();
 
   const loadingTenant = useSelector(
-    (state: AppState) => state.tenants.loadingTenant
+    (state: AppState) => state.tenants.loadingTenant,
   );
 
   const [pods, setPods] = useState<IPodListElement[]>([]);
@@ -74,7 +74,7 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
     navigate(
       `/namespaces/${tenantNamespace || ""}/tenants/${tenantName || ""}/pods/${
         pod.name
-      }`
+      }`,
     );
     return;
   };
@@ -84,7 +84,7 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
       let element = document.createElement("a");
       element.setAttribute(
         "href",
-        `data:application/gzip;base64,${logReportFileContent}`
+        `data:application/gzip;base64,${logReportFileContent}`,
       );
       element.setAttribute("download", filename);
 
@@ -112,7 +112,7 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
   };
 
   const filteredRecords: IPodListElement[] = pods.filter((elementItem) =>
-    elementItem.name.toLowerCase().includes(filter.toLowerCase())
+    elementItem.name.toLowerCase().includes(filter.toLowerCase()),
   );
 
   const podTableActions = [
@@ -133,13 +133,13 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
           "GET",
           `/api/v1/namespaces/${tenantNamespace || ""}/tenants/${
             tenantName || ""
-          }/pods`
+          }/pods`,
         )
         .then((result: IPodListElement[]) => {
           for (let i = 0; i < result.length; i++) {
             let currentTime = (Date.now() / 1000) | 0;
             result[i].time = niceDays(
-              (currentTime - parseInt(result[i].timeCreated)).toString()
+              (currentTime - parseInt(result[i].timeCreated)).toString(),
             );
           }
           setPods(result);
@@ -150,7 +150,7 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
             setErrorSnackMessage({
               errorMessage: "Error loading pods",
               detailedError: err.detailedError,
-            })
+            }),
           );
         });
     }
@@ -163,7 +163,7 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
       api
         .invoke(
           "GET",
-          `/api/v1/namespaces/${tenantNamespace}/tenants/${tenantName}/log-report`
+          `/api/v1/namespaces/${tenantNamespace}/tenants/${tenantName}/log-report`,
         )
         .then(async (res: any) => {
           setLogReportFileContent(decodeURIComponent(res.blob));

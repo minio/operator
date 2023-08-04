@@ -19,6 +19,7 @@ package api
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strings"
 
 	"github.com/go-openapi/swag"
@@ -72,6 +73,7 @@ var (
 	ErrEncryptionConfigNotFound         = errors.New("encryption configuration not found")
 	ErrPolicyNotFound                   = errors.New("policy does not exist")
 	ErrLoginNotAllowed                  = errors.New("login not allowed")
+	ErrPoolExists                       = errors.New("pool exists")
 )
 
 // ErrorWithContext :
@@ -239,6 +241,10 @@ func ErrorWithContext(ctx context.Context, err ...interface{}) *models.Error {
 			if minio.ToErrorResponse(err1).Code == "BucketAlreadyOwnedByYou" {
 				errorCode = 400
 				errorMessage = "Bucket already exists"
+			}
+			if errors.Is(err1, ErrPoolExists) {
+				errorCode = http.StatusNotAcceptable
+				errorMessage = err1.Error()
 			}
 			LogError("ErrorWithContext:%v", err...)
 			LogIf(ctx, err1, err...)

@@ -20,8 +20,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/minio/operator/pkg/common"
+	"github.com/minio/operator/pkg/utils"
+
 	certificatesV1 "k8s.io/api/certificates/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 )
@@ -29,8 +33,6 @@ import (
 const (
 	// OperatorCertificatesVersion is the ENV var to force the certificates api version to use.
 	OperatorCertificatesVersion = "MINIO_OPERATOR_CERTIFICATES_VERSION"
-	// OperatorRuntime tells us which runtime we have. (EKS, Rancher, OpenShift, etc...)
-	OperatorRuntime = "MINIO_OPERATOR_RUNTIME"
 	// CSRSignerName is the name to use for the CSR Signer, will override the default
 	CSRSignerName = "MINIO_OPERATOR_CSR_SIGNER_NAME"
 	// EKSCsrSignerName is the signer we should use on EKS after version 1.22
@@ -81,7 +83,13 @@ func GetCertificatesAPIVersion(clientSet kubernetes.Interface) CSRVersion {
 		default:
 			apiVersions, err := clientSet.Discovery().ServerPreferredResources()
 			if err != nil {
-				panic(err)
+				// If extension API server is not available, we emit a warning and continue.
+				if discovery.IsGroupDiscoveryFailedError(err) {
+					klog.Warningf("The Kubernetes server has an orphaned API service. Server reports: %s", err)
+					klog.Warningf("To fix this, check related API Server or kubectl delete apiservice <service-name>")
+				} else {
+					klog.Warningf("API Discovery failed, Certificate generation might be affected: %s", err)
+				}
 			}
 			for _, api := range apiVersions {
 				// if certificates v1beta1 is present operator will use that api by default
@@ -105,7 +113,7 @@ func GetCSRSignerName(clientSet kubernetes.Interface) string {
 		// get certificates using their CSRSignerName https://docs.aws.amazon.com/eks/latest/userguide/cert-signing.html
 		if GetCertificatesAPIVersion(clientSet) == CSRV1 {
 			// if the user specified the EKS runtime, no need to do the check
-			if os.Getenv(OperatorRuntime) == "EKS" {
+			if utils.GetOperatorRuntime() == common.OperatorRuntimeEKS {
 				csrSignerName = EKSCsrSignerName
 				return
 			}

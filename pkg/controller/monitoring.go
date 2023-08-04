@@ -294,15 +294,27 @@ func (c *Controller) processNextHealthCheckItem() bool {
 			return nil
 		}
 		klog.V(2).Infof("Key from healthCheckQueue: %s", key)
-		// Run the syncHandler, passing it the namespace/name string of the
-		// Tenant resource to be synced.
-		if err := c.syncHealthCheckHandler(key); err != nil {
+
+		result, err := c.syncHealthCheckHandler(key)
+		switch {
+		case err != nil:
+			c.workqueue.AddRateLimited(key)
 			return fmt.Errorf("error checking health check '%s': %s", key, err.Error())
+		case result.RequeueAfter > 0:
+			// The result.RequeueAfter request will be lost, if it is returned
+			// along with a non-nil error. But this is intended as
+			// We need to drive to stable reconcile loops before queuing due
+			// to result.RequestAfter
+			c.workqueue.Forget(obj)
+			c.workqueue.AddAfter(key, result.RequeueAfter)
+		case result.Requeue:
+			c.workqueue.AddRateLimited(key)
+		default:
+			// Finally, if no error occurs we Forget this item so it does not
+			// get queued again until another change happens.
+			c.workqueue.Forget(obj)
+			klog.V(4).Infof("Successfully health checked '%s'", key)
 		}
-		// Finally, if no error occurs we Forget this item so it does not
-		// get queued again until another change happens.
-		c.healthCheckQueue.Forget(obj)
-		klog.V(4).Infof("Successfully health checked '%s'", key)
 		return nil
 	}
 
@@ -314,11 +326,11 @@ func (c *Controller) processNextHealthCheckItem() bool {
 }
 
 // syncHealthCheckHandler acts on work items from the healthCheckQueue
-func (c *Controller) syncHealthCheckHandler(key string) error {
+func (c *Controller) syncHealthCheckHandler(key string) (Result, error) {
 	// Convert the namespace/name string into a distinct namespace and name
 	if key == "" {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))
-		return nil
+		return WrapResult(Result{}, nil)
 	}
 
 	namespace, tenantName := key2NamespaceName(key)
@@ -329,17 +341,17 @@ func (c *Controller) syncHealthCheckHandler(key string) error {
 		// The Tenant resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
 			runtime.HandleError(fmt.Errorf("Tenant '%s' in work queue no longer exists", key))
-			return nil
+			return WrapResult(Result{}, nil)
 		}
-		return err
+		return WrapResult(Result{}, err)
 	}
 
 	tenant.EnsureDefaults()
 
 	if err = c.updateHealthStatusForTenant(tenant); err != nil {
 		klog.Errorf("%v", err)
-		return err
+		return WrapResult(Result{}, err)
 	}
 
-	return nil
+	return WrapResult(Result{}, nil)
 }

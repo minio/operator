@@ -167,7 +167,7 @@ jobs:
         working-directory: ./web-app
         continue-on-error: false
         run: |
-          yarn audit  
+          yarn audit --groups dependencies
 
   all-operator-tests-1:
     timeout-minutes: 30

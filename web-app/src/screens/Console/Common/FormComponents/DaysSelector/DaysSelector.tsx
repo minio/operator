@@ -109,7 +109,7 @@ const calculateNewTime = (
   initialDate: Date,
   days: number,
   hours: number,
-  minutes: number
+  minutes: number,
 ) => {
   return DateTime.fromJSDate(initialDate).plus({ days, hours, minutes });
 };
@@ -140,8 +140,8 @@ const DaysSelector = ({
           initialDate,
           selectedDays,
           selectedHours,
-          selectedMinutes
-        )
+          selectedMinutes,
+        ),
       );
     }
   }, [initialDate, selectedDays, selectedHours, selectedMinutes]);

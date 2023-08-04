@@ -102,6 +102,7 @@ const initialState: ICreateTenant = {
       imageRegistryPassword: "",
       exposeMinIO: true,
       exposeConsole: true,
+      exposeSFTP: false,
       tenantCustom: false,
       customRuntime: false,
       runtimeClassName: "",
@@ -351,7 +352,7 @@ export const createTenantSlice = createSlice({
         pageName: keyof IFieldStore;
         field: string;
         value: any;
-      }>
+      }>,
     ) => {
       if (
         has(state.fields, `${action.payload.pageName}.${action.payload.field}`)
@@ -359,7 +360,7 @@ export const createTenantSlice = createSlice({
         const originPageNameItems = get(
           state.fields,
           `${action.payload.pageName}`,
-          {}
+          {},
         );
 
         let newValue: any = {};
@@ -375,7 +376,7 @@ export const createTenantSlice = createSlice({
       action: PayloadAction<{
         pageName: keyof IFieldStore;
         valid: boolean;
-      }>
+      }>,
     ) => {
       let originValidPages = state.validPages;
       if (action.payload.valid) {
@@ -386,7 +387,7 @@ export const createTenantSlice = createSlice({
         }
       } else {
         const newSetOfPages = originValidPages.filter(
-          (elm) => elm !== action.payload.pageName
+          (elm) => elm !== action.payload.pageName,
         );
         state.validPages = [...newSetOfPages];
       }
@@ -399,7 +400,7 @@ export const createTenantSlice = createSlice({
       action: PayloadAction<{
         storageType: string;
         features?: string[];
-      }>
+      }>,
     ) => {
       let size = state.fields.tenantSize.volumeSize;
       let sizeFactor = state.fields.tenantSize.sizeFactor;
@@ -423,7 +424,7 @@ export const createTenantSlice = createSlice({
             formToRender = get(
               resourcesConfigurations,
               element,
-              IMkEnvs.default
+              IMkEnvs.default,
             );
           }
         });
@@ -439,10 +440,10 @@ export const createTenantSlice = createSlice({
             const configs: IntegrationConfiguration[] = get(
               setConfigs,
               "configurations",
-              []
+              [],
             );
             const mainSelection = configs.find(
-              (item) => item.typeSelection === action.payload.storageType
+              (item) => item.typeSelection === action.payload.storageType,
             );
             if (mainSelection !== undefined) {
               // store the selected storage class
@@ -451,7 +452,7 @@ export const createTenantSlice = createSlice({
                 const minimumSize = getBytesNumber(
                   mainSelection.minimumVolumeSize?.driveSize,
                   mainSelection.minimumVolumeSize?.sizeUnit,
-                  true
+                  true,
                 );
 
                 const drivesPerServer = state.fields.tenantSize.drivesPerServer;
@@ -460,7 +461,7 @@ export const createTenantSlice = createSlice({
                 const currentSize = getBytesNumber(
                   size.toString(),
                   sizeFactor,
-                  true
+                  true,
                 );
                 if (currentSize < minimumSize) {
                   // size = minimumSize.toString(10);
@@ -522,7 +523,7 @@ export const createTenantSlice = createSlice({
 
       if (minioCertsList.length > 1) {
         state.certificates.minioServerCertificates = minioCertsList.filter(
-          (item: KeyPair) => item.id !== action.payload
+          (item: KeyPair) => item.id !== action.payload,
         );
       }
     },
@@ -561,7 +562,7 @@ export const createTenantSlice = createSlice({
       if (minioClientCertsList.length > 1) {
         state.certificates.minioClientCertificates =
           minioClientCertsList.filter(
-            (item: KeyPair) => item.id !== action.payload
+            (item: KeyPair) => item.id !== action.payload,
           );
       }
     },
@@ -576,7 +577,7 @@ export const createTenantSlice = createSlice({
     },
     addFileToCaCertificates: (
       state,
-      action: PayloadAction<CertificateFile>
+      action: PayloadAction<CertificateFile>,
     ) => {
       const caCertificates = state.certificates.minioCAsCertificates;
 
@@ -596,7 +597,7 @@ export const createTenantSlice = createSlice({
       const CACertsList = state.certificates.minioCAsCertificates;
       if (CACertsList.length > 1) {
         state.certificates.minioCAsCertificates = CACertsList.filter(
-          (item: KeyPair) => item.id !== action.payload
+          (item: KeyPair) => item.id !== action.payload,
         );
       }
     },
@@ -648,7 +649,7 @@ export const createTenantSlice = createSlice({
       action: PayloadAction<{
         index: number;
         tolerationValue: ITolerationModel;
-      }>
+      }>,
     ) => {
       state.tolerations[action.payload.index] = action.payload.tolerationValue;
     },
@@ -667,7 +668,7 @@ export const createTenantSlice = createSlice({
     },
     removeToleration: (state, action: PayloadAction<number>) => {
       state.tolerations = state.tolerations.filter(
-        (_, index) => index !== action.payload
+        (_, index) => index !== action.payload,
       );
     },
     addNewMinIODomain: (state) => {
@@ -676,7 +677,7 @@ export const createTenantSlice = createSlice({
     removeMinIODomain: (state, action: PayloadAction<number>) => {
       state.fields.configure.minioDomains =
         state.fields.configure.minioDomains.filter(
-          (_, index) => index !== action.payload
+          (_, index) => index !== action.payload,
         );
     },
     addIDPNewKeyPair: (state) => {
@@ -694,7 +695,7 @@ export const createTenantSlice = createSlice({
       action: PayloadAction<{
         index: number;
         accessKey: string;
-      }>
+      }>,
     ) => {
       if (
         state.fields.identityProvider.accessKeys.length > action.payload.index
@@ -708,7 +709,7 @@ export const createTenantSlice = createSlice({
       action: PayloadAction<{
         index: number;
         secretKey: string;
-      }>
+      }>,
     ) => {
       if (
         state.fields.identityProvider.secretKeys.length > action.payload.index
@@ -730,7 +731,7 @@ export const createTenantSlice = createSlice({
       action: PayloadAction<{
         index: number;
         userDN: string;
-      }>
+      }>,
     ) => {
       if (
         state.fields.identityProvider.ADUserDNs.length > action.payload.index
@@ -752,7 +753,7 @@ export const createTenantSlice = createSlice({
       action: PayloadAction<{
         index: number;
         userDN: string;
-      }>
+      }>,
     ) => {
       if (
         state.fields.identityProvider.ADGroupDNs.length > action.payload.index
@@ -886,7 +887,7 @@ export const createTenantSlice = createSlice({
         }
         const newStorage = elements.map((storageClass: any) => {
           const name = get(storageClass, "name", "").split(
-            ".storageclass.storage.k8s.io/requests.storage"
+            ".storageclass.storage.k8s.io/requests.storage",
           )[0];
 
           return { label: name, value: name };
@@ -895,7 +896,7 @@ export const createTenantSlice = createSlice({
         state.storageClasses = newStorage;
         const stExists = newStorage.findIndex(
           (storageClass) =>
-            storageClass.value === state.fields.nameTenant.selectedStorageClass
+            storageClass.value === state.fields.nameTenant.selectedStorageClass,
         );
 
         if (newStorage.length > 0 && stExists === -1) {

@@ -150,6 +150,13 @@ func ServiceForBucket(t *miniov2.Tenant, bucket string) *corev1.Service {
 // NewHeadlessForMinIO will return a new headless Kubernetes service for a Tenant
 func NewHeadlessForMinIO(t *miniov2.Tenant) *corev1.Service {
 	minioPort := corev1.ServicePort{Port: miniov2.MinIOPort, Name: miniov2.MinIOServiceHTTPPortName}
+	ports := []corev1.ServicePort{minioPort}
+
+	if t.Spec.Features != nil && t.Spec.Features.EnableSFTP != nil && *t.Spec.Features.EnableSFTP {
+		minioSFTPPort := corev1.ServicePort{Port: miniov2.MinIOSFTPPort, Name: miniov2.MinIOServiceSFTPPortName}
+		ports = append(ports, minioSFTPPort)
+	}
+
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels:          t.MinIOPodLabels(),
@@ -158,7 +165,7 @@ func NewHeadlessForMinIO(t *miniov2.Tenant) *corev1.Service {
 			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:     []corev1.ServicePort{minioPort},
+			Ports:     ports,
 			Selector:  t.MinIOPodLabels(),
 			Type:      corev1.ServiceTypeClusterIP,
 			ClusterIP: corev1.ClusterIPNone,

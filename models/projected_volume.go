@@ -99,6 +99,11 @@ func (m *ProjectedVolume) contextValidateSources(ctx context.Context, formats st
 	for i := 0; i < len(m.Sources); i++ {
 
 		if m.Sources[i] != nil {
+
+			if swag.IsZero(m.Sources[i]) { // not required
+				return nil
+			}
+
 			if err := m.Sources[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("sources" + "." + strconv.Itoa(i))

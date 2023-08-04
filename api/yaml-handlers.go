@@ -108,6 +108,17 @@ func getUpdateTenantYAML(session *models.Principal, params operator_api.PutTenan
 		return &models.Error{Code: 400, Message: swag.String(err.Error())}
 	}
 	inTenant := tenantObject.(*miniov2.Tenant)
+	// check the inTenant if have the same poolName
+	poolNameMapSet := make(map[string]struct{})
+	for _, pool := range inTenant.Spec.Pools {
+		if _, ok := poolNameMapSet[pool.Name]; ok {
+			return &models.Error{Code: 400, Message: swag.String(fmt.Sprintf("Tenant %s have pool named '%s' already", inTenant.Name, pool.Name))}
+		}
+		poolNameMapSet[pool.Name] = struct{}{}
+	}
+	if len(poolNameMapSet) == 0 {
+		return &models.Error{Code: 400, Message: swag.String(fmt.Sprintf("Tenant %s must have one pool at least!", inTenant.Name))}
+	}
 	// get Kubernetes Client
 	opClient, err := GetOperatorClient(session.STSSessionToken)
 	if err != nil {

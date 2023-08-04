@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const GemaltoKMSAdd = () => {
@@ -49,19 +49,19 @@ const GemaltoKMSAdd = () => {
   const classes = useStyles();
 
   const encryptionTab = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.encryptionTab
+    (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
   );
   const gemaltoEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gemaltoEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.gemaltoEndpoint,
   );
   const gemaltoToken = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gemaltoToken
+    (state: AppState) => state.createTenant.fields.encryption.gemaltoToken,
   );
   const gemaltoDomain = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gemaltoDomain
+    (state: AppState) => state.createTenant.fields.encryption.gemaltoDomain,
   );
   const gemaltoRetry = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gemaltoRetry
+    (state: AppState) => state.createTenant.fields.encryption.gemaltoRetry,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -104,7 +104,7 @@ const GemaltoKMSAdd = () => {
       isPageValid({
         pageName: "encryption",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -121,10 +121,10 @@ const GemaltoKMSAdd = () => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {
@@ -142,6 +142,7 @@ const GemaltoKMSAdd = () => {
             cleanValidation("gemalto_endpoint");
           }}
           label="Endpoint"
+          tooltip="Endpoint is the endpoint to the KeySecure server"
           value={gemaltoEndpoint}
           error={validationErrors["gemalto_endpoint"] || ""}
           required
@@ -165,6 +166,7 @@ const GemaltoKMSAdd = () => {
                 cleanValidation("gemalto_token");
               }}
               label="Token"
+              tooltip="Token is the refresh authentication token to access the KeySecure server"
               value={gemaltoToken}
               error={validationErrors["gemalto_token"] || ""}
               required
@@ -179,6 +181,7 @@ const GemaltoKMSAdd = () => {
                 cleanValidation("gemalto_domain");
               }}
               label="Domain"
+              tooltip="Domain is the isolated namespace within the KeySecure server. If empty, defaults to the top-level / root domain"
               value={gemaltoDomain}
               error={validationErrors["gemalto_domain"] || ""}
               required

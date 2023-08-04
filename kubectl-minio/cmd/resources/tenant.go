@@ -44,6 +44,7 @@ type TenantOptions struct {
 	DisableAntiAffinity     bool
 	ExposeMinioService      bool
 	ExposeConsoleService    bool
+	EnableSFTP              bool
 
 	Interactive bool
 }
@@ -136,6 +137,9 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 					Name: userSecret.Name,
 				},
 			},
+			Features: &miniov2.Features{
+				EnableSFTP: &opts.EnableSFTP,
+			},
 		},
 	}
 
@@ -148,7 +152,7 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 	return t, t.Validate()
 }
 
-func getAutoCertConfig(opts *TenantOptions) *miniov2.CertificateConfig {
+func getAutoCertConfig(_ *TenantOptions) *miniov2.CertificateConfig {
 	return &miniov2.CertificateConfig{
 		CommonName:       "",
 		OrganizationName: []string{},

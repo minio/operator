@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const AWSKMSAdd = () => {
@@ -49,25 +49,25 @@ const AWSKMSAdd = () => {
   const classes = useStyles();
 
   const encryptionTab = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.encryptionTab
+    (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
   );
   const awsEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.awsEndpoint,
   );
   const awsRegion = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsRegion
+    (state: AppState) => state.createTenant.fields.encryption.awsRegion,
   );
   const awsKMSKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsKMSKey
+    (state: AppState) => state.createTenant.fields.encryption.awsKMSKey,
   );
   const awsAccessKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsAccessKey
+    (state: AppState) => state.createTenant.fields.encryption.awsAccessKey,
   );
   const awsSecretKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsSecretKey
+    (state: AppState) => state.createTenant.fields.encryption.awsSecretKey,
   );
   const awsToken = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.awsToken
+    (state: AppState) => state.createTenant.fields.encryption.awsToken,
   );
   const [validationErrors, setValidationErrors] = useState<any>({});
 
@@ -107,7 +107,7 @@ const AWSKMSAdd = () => {
       isPageValid({
         pageName: "encryption",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -124,10 +124,10 @@ const AWSKMSAdd = () => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {
@@ -145,6 +145,7 @@ const AWSKMSAdd = () => {
             cleanValidation("aws_endpoint");
           }}
           label="Endpoint"
+          tooltip="Endpoint is the AWS SecretsManager endpoint. AWS SecretsManager endpoints have the following schema: secrestmanager[-fips].<region>.amanzonaws.com"
           value={awsEndpoint}
           error={validationErrors["aws_endpoint"] || ""}
           required
@@ -159,6 +160,7 @@ const AWSKMSAdd = () => {
             cleanValidation("aws_region");
           }}
           label="Region"
+          tooltip="Region is the AWS region the SecretsManager is located"
           value={awsRegion}
           error={validationErrors["aws_region"] || ""}
           required
@@ -172,6 +174,7 @@ const AWSKMSAdd = () => {
             updateField("awsKMSKey", e.target.value);
           }}
           label="KMS Key"
+          tooltip="KMSKey is the AWS-KMS key ID (CMK-ID) used to en/decrypt secrets managed by the SecretsManager. If empty, the default AWS KMS key is used"
           value={awsKMSKey}
         />
       </Grid>
@@ -187,6 +190,7 @@ const AWSKMSAdd = () => {
                 cleanValidation("aws_accessKey");
               }}
               label="Access Key"
+              tooltip="AccessKey is the access key for authenticating to AWS"
               value={awsAccessKey}
               error={validationErrors["aws_accessKey"] || ""}
               required
@@ -201,6 +205,7 @@ const AWSKMSAdd = () => {
                 cleanValidation("aws_secretKey");
               }}
               label="Secret Key"
+              tooltip="SecretKey is the secret key for authenticating to AWS"
               value={awsSecretKey}
               error={validationErrors["aws_secretKey"] || ""}
               required
@@ -210,6 +215,7 @@ const AWSKMSAdd = () => {
             <InputBoxWrapper
               id="aws_token"
               name="aws_token"
+              tooltip="SessionToken is an optional session token for authenticating to AWS when using STS"
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 updateField("awsToken", e.target.value);
               }}

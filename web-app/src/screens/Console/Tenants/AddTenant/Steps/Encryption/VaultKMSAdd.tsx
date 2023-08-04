@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const VaultKMSAdd = () => {
@@ -50,34 +50,35 @@ const VaultKMSAdd = () => {
   const classes = useStyles();
 
   const encryptionTab = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.encryptionTab
+    (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
   );
   const vaultEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.vaultEndpoint,
   );
   const vaultEngine = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultEngine
+    (state: AppState) => state.createTenant.fields.encryption.vaultEngine,
   );
   const vaultNamespace = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultNamespace
+    (state: AppState) => state.createTenant.fields.encryption.vaultNamespace,
   );
   const vaultPrefix = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultPrefix
+    (state: AppState) => state.createTenant.fields.encryption.vaultPrefix,
   );
   const vaultAppRoleEngine = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultAppRoleEngine
+    (state: AppState) =>
+      state.createTenant.fields.encryption.vaultAppRoleEngine,
   );
   const vaultId = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultId
+    (state: AppState) => state.createTenant.fields.encryption.vaultId,
   );
   const vaultSecret = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultSecret
+    (state: AppState) => state.createTenant.fields.encryption.vaultSecret,
   );
   const vaultRetry = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultRetry
+    (state: AppState) => state.createTenant.fields.encryption.vaultRetry,
   );
   const vaultPing = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.vaultPing
+    (state: AppState) => state.createTenant.fields.encryption.vaultPing,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -127,7 +128,7 @@ const VaultKMSAdd = () => {
       isPageValid({
         pageName: "encryption",
         valid: Object.keys(commonVal).length === 0,
-      })
+      }),
     );
 
     setValidationErrors(commonVal);
@@ -146,10 +147,10 @@ const VaultKMSAdd = () => {
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   const cleanValidation = (fieldName: string) => {
@@ -167,6 +168,7 @@ const VaultKMSAdd = () => {
             cleanValidation("vault_endpoint");
           }}
           label="Endpoint"
+          tooltip="Endpoint is the Hashicorp Vault endpoint"
           value={vaultEndpoint}
           error={validationErrors["vault_endpoint"] || ""}
           required
@@ -181,6 +183,7 @@ const VaultKMSAdd = () => {
             cleanValidation("vault_engine");
           }}
           label="Engine"
+          tooltip="Engine is the Hashicorp Vault K/V engine path. If empty, defaults to 'kv'"
           value={vaultEngine}
         />
       </Grid>
@@ -192,6 +195,7 @@ const VaultKMSAdd = () => {
             updateField("vaultNamespace", e.target.value);
           }}
           label="Namespace"
+          tooltip="Namespace is an optional Hashicorp Vault namespace. An empty namespace means no particular namespace is used."
           value={vaultNamespace}
         />
       </Grid>
@@ -203,6 +207,7 @@ const VaultKMSAdd = () => {
             updateField("vaultPrefix", e.target.value);
           }}
           label="Prefix"
+          tooltip="Prefix is an optional prefix / directory within the K/V engine. If empty, keys will be stored at the K/V engine top level"
           value={vaultPrefix}
         />
       </Grid>
@@ -218,6 +223,7 @@ const VaultKMSAdd = () => {
                 updateField("vaultAppRoleEngine", e.target.value);
               }}
               label="Engine"
+              tooltip="AppRoleEngine is the AppRole authentication engine path. If empty, defaults to 'approle'"
               value={vaultAppRoleEngine}
             />
           </Grid>
@@ -230,6 +236,7 @@ const VaultKMSAdd = () => {
                 cleanValidation("vault_id");
               }}
               label="AppRole ID"
+              tooltip="AppRoleSecret is the AppRole access secret for authenticating to Hashicorp Vault via the AppRole method"
               value={vaultId}
               error={validationErrors["vault_id"] || ""}
               required
@@ -244,6 +251,7 @@ const VaultKMSAdd = () => {
                 cleanValidation("vault_secret");
               }}
               label="AppRole Secret"
+              tooltip="AppRoleSecret is the AppRole access secret for authenticating to Hashicorp Vault via the AppRole method"
               value={vaultSecret}
               error={validationErrors["vault_secret"] || ""}
               required

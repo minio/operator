@@ -92,6 +92,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.BoolVar(&c.tenantOpts.Interactive, "interactive", false, "Create tenant in interactive mode")
 	f.BoolVar(&c.tenantOpts.ExposeMinioService, "expose-minio-service", false, "Enable/Disable expose the Minio Service")
 	f.BoolVar(&c.tenantOpts.ExposeConsoleService, "expose-console-service", false, "Enable/Disable expose the Console service")
+	f.BoolVar(&c.tenantOpts.EnableSFTP, "enable-sftp", false, "Enable/Disable SFTP access to the tenant")
 	return cmd
 }
 
@@ -121,7 +122,7 @@ func (c *createCmd) validate(args []string) error {
 }
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
-func (c *createCmd) run(args []string) error {
+func (c *createCmd) run(_ []string) error {
 	// Create operator and kube client
 	path, _ := rootCmd.Flags().GetString(kubeconfig)
 	operatorClient, err := helpers.GetKubeOperatorClient(path)
@@ -189,6 +190,7 @@ func (c *createCmd) populateInteractiveTenant() error {
 	c.tenantOpts.DisableTLS = helpers.Ask("Disable TLS")
 	c.tenantOpts.ExposeMinioService = helpers.Ask("Expose Minio Service")
 	c.tenantOpts.ExposeConsoleService = helpers.Ask("Expose Console Service")
+	c.tenantOpts.EnableSFTP = helpers.Ask("Enable SFTP")
 	return nil
 }
 

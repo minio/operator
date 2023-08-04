@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"sort"
 	"time"
 
@@ -100,13 +101,22 @@ func getPodLogsResponse(session *models.Principal, params operator_api.GetPodLog
 	if err != nil {
 		return "", ErrorWithContext(ctx, err)
 	}
-	listOpts := &corev1.PodLogOptions{}
+	listOpts := &corev1.PodLogOptions{Container: "minio"}
 	logs := clientset.CoreV1().Pods(params.Namespace).GetLogs(params.PodName, listOpts)
-	buff, err := logs.DoRaw(ctx)
+
+	buffLogs, err := logs.Stream(ctx)
 	if err != nil {
 		return "", ErrorWithContext(ctx, err)
 	}
-	return string(buff), nil
+
+	defer buffLogs.Close()
+
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, buffLogs)
+	if err != nil {
+		return "", ErrorWithContext(ctx, err)
+	}
+	return buf.String(), nil
 }
 
 func getTenantPodsResponse(session *models.Principal, params operator_api.GetTenantPodsParams) ([]*models.TenantPod, *models.Error) {
@@ -209,6 +219,10 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 	if err != nil {
 		return nil, ErrorWithContext(ctx, err)
 	}
+	return getDescribePod(pod)
+}
+
+func getDescribePod(pod *corev1.Pod) (*models.DescribePodWrapper, *models.Error) {
 	retval := &models.DescribePodWrapper{
 		Name:              pod.Name,
 		Namespace:         pod.Namespace,
@@ -237,6 +251,8 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 	retval.Annotations = annotationArray
 	if pod.DeletionTimestamp != nil {
 		retval.DeletionTimestamp = translateTimestampSince(*pod.DeletionTimestamp)
+	}
+	if pod.DeletionGracePeriodSeconds != nil {
 		retval.DeletionGracePeriodSeconds = *pod.DeletionGracePeriodSeconds
 	}
 	retval.Phase = string(pod.Status.Phase)
@@ -253,34 +269,37 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 
 	}
 	for i := range pod.Spec.Containers {
+		container := pod.Spec.Containers[i]
 		retval.Containers[i] = &models.Container{
-			Name:      pod.Spec.Containers[i].Name,
-			Image:     pod.Spec.Containers[i].Image,
-			Ports:     describeContainerPorts(pod.Spec.Containers[i].Ports),
-			HostPorts: describeContainerHostPorts(pod.Spec.Containers[i].Ports),
-			Args:      pod.Spec.Containers[i].Args,
+			Name:      container.Name,
+			Image:     container.Image,
+			Ports:     describeContainerPorts(container.Ports),
+			HostPorts: describeContainerHostPorts(container.Ports),
+			Args:      container.Args,
 		}
-		if slices.Contains(statusKeys, pod.Spec.Containers[i].Name) {
-			retval.Containers[i].ContainerID = statusMap[pod.Spec.Containers[i].Name].ContainerID
-			retval.Containers[i].ImageID = statusMap[pod.Spec.Containers[i].Name].ImageID
-			retval.Containers[i].Ready = statusMap[pod.Spec.Containers[i].Name].Ready
-			retval.Containers[i].RestartCount = int64(statusMap[pod.Spec.Containers[i].Name].RestartCount)
-			retval.Containers[i].State, retval.Containers[i].LastState = describeStatus(statusMap[pod.Spec.Containers[i].Name])
+		if slices.Contains(statusKeys, container.Name) {
+			containerStatus := statusMap[container.Name]
+			retval.Containers[i].ContainerID = containerStatus.ContainerID
+			retval.Containers[i].ImageID = containerStatus.ImageID
+			retval.Containers[i].Ready = containerStatus.Ready
+			retval.Containers[i].RestartCount = int64(containerStatus.RestartCount)
+			retval.Containers[i].State = describeContainerState(containerStatus.State)
+			retval.Containers[i].LastState = describeContainerState(containerStatus.LastTerminationState)
 		}
-		retval.Containers[i].EnvironmentVariables = make([]*models.EnvironmentVariable, len(pod.Spec.Containers[0].Env))
-		for j := range pod.Spec.Containers[i].Env {
+		retval.Containers[i].EnvironmentVariables = make([]*models.EnvironmentVariable, len(container.Env))
+		for j := range container.Env {
 			retval.Containers[i].EnvironmentVariables[j] = &models.EnvironmentVariable{
-				Key:   pod.Spec.Containers[i].Env[j].Name,
-				Value: pod.Spec.Containers[i].Env[j].Value,
+				Key:   container.Env[j].Name,
+				Value: container.Env[j].Value,
 			}
 		}
-		retval.Containers[i].Mounts = make([]*models.Mount, len(pod.Spec.Containers[i].VolumeMounts))
-		for j := range pod.Spec.Containers[i].VolumeMounts {
+		retval.Containers[i].Mounts = make([]*models.Mount, len(container.VolumeMounts))
+		for j := range container.VolumeMounts {
 			retval.Containers[i].Mounts[j] = &models.Mount{
-				Name:      pod.Spec.Containers[i].VolumeMounts[j].Name,
-				MountPath: pod.Spec.Containers[i].VolumeMounts[j].MountPath,
-				SubPath:   pod.Spec.Containers[i].VolumeMounts[j].SubPath,
-				ReadOnly:  pod.Spec.Containers[i].VolumeMounts[j].ReadOnly,
+				Name:      container.VolumeMounts[j].Name,
+				MountPath: container.VolumeMounts[j].MountPath,
+				SubPath:   container.VolumeMounts[j].SubPath,
+				ReadOnly:  container.VolumeMounts[j].ReadOnly,
 			}
 		}
 	}
@@ -322,7 +341,11 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 					}
 				}
 				if pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken != nil {
-					retval.Volumes[i].Projected.Sources[j].ServiceAccountToken = &models.ServiceAccountToken{ExpirationSeconds: *pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken.ExpirationSeconds}
+					if pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken.ExpirationSeconds != nil {
+						retval.Volumes[i].Projected.Sources[j].ServiceAccountToken = &models.ServiceAccountToken{
+							ExpirationSeconds: *pod.Spec.Volumes[i].Projected.Sources[j].ServiceAccountToken.ExpirationSeconds,
+						}
+					}
 				}
 			}
 		}
@@ -348,46 +371,28 @@ func getDescribePodResponse(session *models.Principal, params operator_api.Descr
 	return retval, nil
 }
 
-func describeStatus(status corev1.ContainerStatus) (*models.State, *models.State) {
+func describeContainerState(status corev1.ContainerState) *models.State {
 	retval := &models.State{}
-	last := &models.State{}
-	state := status.State
-	lastState := status.LastTerminationState
 	switch {
-	case state.Running != nil:
+	case status.Running != nil:
 		retval.State = "Running"
-		retval.Started = state.Running.StartedAt.Time.Format(time.RFC1123Z)
-	case state.Waiting != nil:
+		retval.Started = status.Running.StartedAt.Time.Format(time.RFC1123Z)
+	case status.Waiting != nil:
 		retval.State = "Waiting"
-		retval.Reason = state.Waiting.Reason
-	case state.Terminated != nil:
+		retval.Reason = status.Waiting.Reason
+		retval.Message = status.Waiting.Message
+	case status.Terminated != nil:
 		retval.State = "Terminated"
-		retval.Message = state.Terminated.Message
-		retval.ExitCode = int64(state.Terminated.ExitCode)
-		retval.Signal = int64(state.Terminated.Signal)
-		retval.Started = state.Terminated.StartedAt.Time.Format(time.RFC1123Z)
-		retval.Finished = state.Terminated.FinishedAt.Time.Format(time.RFC1123Z)
-		switch {
-		case lastState.Running != nil:
-			last.State = "Running"
-			last.Started = lastState.Running.StartedAt.Time.Format(time.RFC1123Z)
-		case lastState.Waiting != nil:
-			last.State = "Waiting"
-			last.Reason = lastState.Waiting.Reason
-		case lastState.Terminated != nil:
-			last.State = "Terminated"
-			last.Message = lastState.Terminated.Message
-			last.ExitCode = int64(lastState.Terminated.ExitCode)
-			last.Signal = int64(lastState.Terminated.Signal)
-			last.Started = lastState.Terminated.StartedAt.Time.Format(time.RFC1123Z)
-			last.Finished = lastState.Terminated.FinishedAt.Time.Format(time.RFC1123Z)
-		default:
-			last.State = "Waiting"
-		}
+		retval.Message = status.Terminated.Message
+		retval.Reason = status.Terminated.Reason
+		retval.ExitCode = int64(status.Terminated.ExitCode)
+		retval.Signal = int64(status.Terminated.Signal)
+		retval.Started = status.Terminated.StartedAt.Time.Format(time.RFC1123Z)
+		retval.Finished = status.Terminated.FinishedAt.Time.Format(time.RFC1123Z)
 	default:
 		retval.State = "Waiting"
 	}
-	return retval, last
+	return retval
 }
 
 func describeContainerPorts(cPorts []corev1.ContainerPort) []string {
@@ -406,6 +411,7 @@ func describeContainerHostPorts(cPorts []corev1.ContainerPort) []string {
 	return ports
 }
 
+// getPodQOS gets Pod's Quality of Service Class
 func getPodQOS(pod *corev1.Pod) corev1.PodQOSClass {
 	requests := corev1.ResourceList{}
 	limits := corev1.ResourceList{}

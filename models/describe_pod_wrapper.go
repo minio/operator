@@ -363,6 +363,11 @@ func (m *DescribePodWrapper) contextValidateAnnotations(ctx context.Context, for
 	for i := 0; i < len(m.Annotations); i++ {
 
 		if m.Annotations[i] != nil {
+
+			if swag.IsZero(m.Annotations[i]) { // not required
+				return nil
+			}
+
 			if err := m.Annotations[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("annotations" + "." + strconv.Itoa(i))
@@ -383,6 +388,11 @@ func (m *DescribePodWrapper) contextValidateConditions(ctx context.Context, form
 	for i := 0; i < len(m.Conditions); i++ {
 
 		if m.Conditions[i] != nil {
+
+			if swag.IsZero(m.Conditions[i]) { // not required
+				return nil
+			}
+
 			if err := m.Conditions[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("conditions" + "." + strconv.Itoa(i))
@@ -403,6 +413,11 @@ func (m *DescribePodWrapper) contextValidateContainers(ctx context.Context, form
 	for i := 0; i < len(m.Containers); i++ {
 
 		if m.Containers[i] != nil {
+
+			if swag.IsZero(m.Containers[i]) { // not required
+				return nil
+			}
+
 			if err := m.Containers[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("containers" + "." + strconv.Itoa(i))
@@ -423,6 +438,11 @@ func (m *DescribePodWrapper) contextValidateLabels(ctx context.Context, formats 
 	for i := 0; i < len(m.Labels); i++ {
 
 		if m.Labels[i] != nil {
+
+			if swag.IsZero(m.Labels[i]) { // not required
+				return nil
+			}
+
 			if err := m.Labels[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("labels" + "." + strconv.Itoa(i))
@@ -443,6 +463,11 @@ func (m *DescribePodWrapper) contextValidateNodeSelector(ctx context.Context, fo
 	for i := 0; i < len(m.NodeSelector); i++ {
 
 		if m.NodeSelector[i] != nil {
+
+			if swag.IsZero(m.NodeSelector[i]) { // not required
+				return nil
+			}
+
 			if err := m.NodeSelector[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("nodeSelector" + "." + strconv.Itoa(i))
@@ -463,6 +488,11 @@ func (m *DescribePodWrapper) contextValidateTolerations(ctx context.Context, for
 	for i := 0; i < len(m.Tolerations); i++ {
 
 		if m.Tolerations[i] != nil {
+
+			if swag.IsZero(m.Tolerations[i]) { // not required
+				return nil
+			}
+
 			if err := m.Tolerations[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("tolerations" + "." + strconv.Itoa(i))
@@ -483,6 +513,11 @@ func (m *DescribePodWrapper) contextValidateVolumes(ctx context.Context, formats
 	for i := 0; i < len(m.Volumes); i++ {
 
 		if m.Volumes[i] != nil {
+
+			if swag.IsZero(m.Volumes[i]) { // not required
+				return nil
+			}
+
 			if err := m.Volumes[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("volumes" + "." + strconv.Itoa(i))

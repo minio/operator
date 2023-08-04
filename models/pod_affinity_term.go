@@ -111,6 +111,11 @@ func (m *PodAffinityTerm) ContextValidate(ctx context.Context, formats strfmt.Re
 func (m *PodAffinityTerm) contextValidateLabelSelector(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.LabelSelector != nil {
+
+		if swag.IsZero(m.LabelSelector) { // not required
+			return nil
+		}
+
 		if err := m.LabelSelector.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("labelSelector")
@@ -213,6 +218,11 @@ func (m *PodAffinityTermLabelSelector) contextValidateMatchExpressions(ctx conte
 	for i := 0; i < len(m.MatchExpressions); i++ {
 
 		if m.MatchExpressions[i] != nil {
+
+			if swag.IsZero(m.MatchExpressions[i]) { // not required
+				return nil
+			}
+
 			if err := m.MatchExpressions[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("labelSelector" + "." + "matchExpressions" + "." + strconv.Itoa(i))

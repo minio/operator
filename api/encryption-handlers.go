@@ -24,7 +24,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
@@ -33,10 +35,39 @@ import (
 	"github.com/minio/operator/models"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/kes"
+	"golang.org/x/mod/semver"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const (
+	// miniov2 will mount the mTLSCertificates in the following paths
+	// therefore we set these values in the KES yaml kesConfiguration
+	mTLSClientCrtPath = "/tmp/kes/client.crt"
+	mTLSClientKeyPath = "/tmp/kes/client.key"
+	mTLSClientCaPath  = "/tmp/kes/ca.crt"
+	// if encryption is enabled and encryption is configured to use Vault
+	defaultPing = 10 // default ping
+	// imageTagWithArchRegex is a regular expression to identify if a KES tag
+	// includes the arch as suffix, ie: 2023-05-02T22-48-10Z-arm64
+	kesImageTagWithArchRegexPattern = `(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)(-.*)`
+)
+
+const (
+	// KesConfigVersion1 identifier v1
+	KesConfigVersion1 = "v1"
+	// KesConfigVersion2 identifier v2
+	KesConfigVersion2 = "v2"
+)
+
+// KesConfigVersionsMap is a map of kes config version types
+var KesConfigVersionsMap = map[string]interface{}{
+	KesConfigVersion1: kes.ServerConfigV1{},
+	KesConfigVersion2: kes.ServerConfigV2{},
+}
+
+type configVersion func(clientCrtIdentity string, encryptionCfg *models.EncryptionConfiguration, mTLSCertificates map[string][]byte) ([]byte, error)
 
 func registerEncryptionHandlers(api *operations.OperatorAPI) {
 	// Get Tenant Encryption Configuration
@@ -212,17 +243,17 @@ func tenantUpdateEncryption(ctx context.Context, operatorClient OperatorClientI,
 	// update KES identities in kes-configuration.yaml secret
 	kesConfigurationSecretName := fmt.Sprintf("%s-kes-configuration", secretName)
 	kesClientCertSecretName := fmt.Sprintf("%s-kes-client-cert", secretName)
-	kesConfigurationSecret, kesClientCertSecret, err := createOrReplaceKesConfigurationSecrets(ctx, clientSet, namespace, body, kesConfigurationSecretName, kesClientCertSecretName, tenantName)
-	if err != nil {
-		return err
-	}
-	tenant.Spec.KES.Configuration = kesConfigurationSecret
-	tenant.Spec.KES.ClientCertSecret = kesClientCertSecret
 	image := params.Body.Image
 	if image == "" {
 		image = miniov2.DefaultKESImage
 	}
 	tenant.Spec.KES.Image = image
+	kesConfigurationSecret, kesClientCertSecret, err := createOrReplaceKesConfigurationSecrets(ctx, clientSet, namespace, body, kesConfigurationSecretName, kesClientCertSecretName, tenantName, tenant.Spec.KES.Image)
+	if err != nil {
+		return err
+	}
+	tenant.Spec.KES.Configuration = kesConfigurationSecret
+	tenant.Spec.KES.ClientCertSecret = kesClientCertSecret
 	i, err := strconv.ParseInt(params.Body.Replicas, 10, 32)
 	if err != nil {
 		return err
@@ -280,133 +311,291 @@ func tenantEncryptionInfo(ctx context.Context, operatorClient OperatorClientI, c
 				return nil, err
 			}
 			if rawConfiguration, ok := configSecret.Data["server-config.yaml"]; ok {
-				kesConfiguration := &kes.ServerConfig{}
-				// return raw configuration in case the user wants to edit KES configuration manually
-				encryptConfig.Raw = string(rawConfiguration)
-				err := yaml.Unmarshal(rawConfiguration, kesConfiguration)
+				kesConfigVersion, err := getKesConfigVersion(encryptConfig.Image)
 				if err != nil {
 					return nil, err
 				}
-				if kesConfiguration.Keys.Vault != nil {
-					vault := kesConfiguration.Keys.Vault
-					vaultConfig := &models.VaultConfigurationResponse{
-						Prefix:    vault.Prefix,
-						Namespace: vault.Namespace,
-						Engine:    vault.EnginePath,
-						Endpoint:  &vault.Endpoint,
-					}
-					if vault.Status != nil {
-						vaultConfig.Status = &models.VaultConfigurationResponseStatus{
-							Ping: int64(vault.Status.Ping.Seconds()),
-						}
-					}
-					if vault.AppRole != nil {
-						vaultConfig.Approle = &models.VaultConfigurationResponseApprole{
-							Engine: vault.AppRole.EnginePath,
-							ID:     &vault.AppRole.ID,
-							Retry:  int64(vault.AppRole.Retry.Seconds()),
-							Secret: &vault.AppRole.Secret,
-						}
-					}
-					if tenant.KESClientCert() {
-						encryptConfig.KmsMtls = &models.EncryptionConfigurationResponseAO1KmsMtls{}
-						clientSecretName := tenant.Spec.KES.ClientCertSecret.Name
-						keyPair, err := clientSet.getSecret(ctx, namespace, clientSecretName, metav1.GetOptions{})
-						if err != nil {
-							return nil, err
-						}
-						// Extract client public certificate
-						if rawCert, ok := keyPair.Data["client.crt"]; ok {
-							encryptConfig.KmsMtls.Crt, err = parseCertificate(clientSecretName, rawCert)
-							if err != nil {
-								return nil, err
-							}
-						}
-						// Extract client ca certificate
-						if rawCert, ok := keyPair.Data["ca.crt"]; ok {
-							encryptConfig.KmsMtls.Ca, err = parseCertificate(clientSecretName, rawCert)
-							if err != nil {
-								return nil, err
-							}
-						}
-					}
-					encryptConfig.Vault = vaultConfig
-				}
-				if kesConfiguration.Keys.Aws != nil {
-					awsJSON, err := json.Marshal(kesConfiguration.Keys.Aws)
+				// return raw configuration in case the user wants to edit KES configuration manually
+				switch kesConfigVersion {
+				case KesConfigVersion1:
+					err := getConfigurationResponseFromV1(ctx, clientSet, rawConfiguration, tenant, encryptConfig)
 					if err != nil {
 						return nil, err
 					}
-					awsConfig := &models.AwsConfiguration{}
-					err = json.Unmarshal(awsJSON, awsConfig)
+				case KesConfigVersion2:
+					err := getConfigurationResponseFromV2(ctx, clientSet, rawConfiguration, tenant, encryptConfig)
 					if err != nil {
 						return nil, err
 					}
-					encryptConfig.Aws = awsConfig
-				}
-				if kesConfiguration.Keys.Gcp != nil {
-					gcpJSON, err := json.Marshal(kesConfiguration.Keys.Gcp)
+				default:
+					err := getConfigurationResponseFromV2(ctx, clientSet, rawConfiguration, tenant, encryptConfig)
 					if err != nil {
 						return nil, err
 					}
-					gcpConfig := &models.GcpConfiguration{}
-					err = json.Unmarshal(gcpJSON, gcpConfig)
-					if err != nil {
-						return nil, err
-					}
-					encryptConfig.Gcp = gcpConfig
-				}
-				if kesConfiguration.Keys.Gemalto != nil {
-					gemalto := kesConfiguration.Keys.Gemalto
-					gemaltoConfig := &models.GemaltoConfigurationResponse{
-						Keysecure: &models.GemaltoConfigurationResponseKeysecure{},
-					}
-					if gemalto.KeySecure != nil {
-						gemaltoConfig.Keysecure.Endpoint = &gemalto.KeySecure.Endpoint
-						if gemalto.KeySecure.Credentials != nil {
-							gemaltoConfig.Keysecure.Credentials = &models.GemaltoConfigurationResponseKeysecureCredentials{
-								Domain: &gemalto.KeySecure.Credentials.Domain,
-								Retry:  int64(gemalto.KeySecure.Credentials.Retry.Seconds()),
-								Token:  &gemalto.KeySecure.Credentials.Token,
-							}
-						}
-						if gemalto.KeySecure.TLS != nil {
-							if tenant.KESClientCert() {
-								encryptConfig.KmsMtls = &models.EncryptionConfigurationResponseAO1KmsMtls{}
-								clientSecretName := tenant.Spec.KES.ClientCertSecret.Name
-								keyPair, err := clientSet.getSecret(ctx, namespace, clientSecretName, metav1.GetOptions{})
-								if err != nil {
-									return nil, err
-								}
-								// Extract client ca certificate
-								if rawCert, ok := keyPair.Data["ca.crt"]; ok {
-									encryptConfig.KmsMtls.Ca, err = parseCertificate(clientSecretName, rawCert)
-									if err != nil {
-										return nil, err
-									}
-								}
-							}
-						}
-					}
-					encryptConfig.Gemalto = gemaltoConfig
-				}
-				if kesConfiguration.Keys.Azure != nil {
-					azureJSON, err := json.Marshal(kesConfiguration.Keys.Azure)
-					if err != nil {
-						return nil, err
-					}
-					azureConfig := &models.AzureConfiguration{}
-					err = json.Unmarshal(azureJSON, azureConfig)
-					if err != nil {
-						return nil, err
-					}
-					encryptConfig.Azure = azureConfig
 				}
 			}
 		}
 		return encryptConfig, nil
 	}
 	return nil, ErrEncryptionConfigNotFound
+}
+
+// getConfigurationResponseFromV2 hidrates EncryptionConfigurationResponse struct from ServerConfigV1
+func getConfigurationResponseFromV1(ctx context.Context, clientSet K8sClientI, rawConfiguration []byte, tenant *miniov2.Tenant, encryptConfig *models.EncryptionConfigurationResponse) error {
+	kesConfiguration := &kes.ServerConfigV1{}
+	encryptConfig.Raw = string(rawConfiguration)
+	err := yaml.Unmarshal(rawConfiguration, kesConfiguration)
+	if err != nil {
+		return err
+	}
+	if kesConfiguration.Keys.Vault != nil {
+		vault := kesConfiguration.Keys.Vault
+		vaultConfig := &models.VaultConfigurationResponse{
+			Prefix:    vault.Prefix,
+			Namespace: vault.Namespace,
+			Engine:    vault.EnginePath,
+			Endpoint:  &vault.Endpoint,
+		}
+		if vault.Status != nil {
+			vaultConfig.Status = &models.VaultConfigurationResponseStatus{
+				Ping: int64(vault.Status.Ping.Seconds()),
+			}
+		}
+		if vault.AppRole != nil {
+			vaultConfig.Approle = &models.VaultConfigurationResponseApprole{
+				Engine: vault.AppRole.EnginePath,
+				ID:     &vault.AppRole.ID,
+				Retry:  int64(vault.AppRole.Retry.Seconds()),
+				Secret: &vault.AppRole.Secret,
+			}
+		}
+		if tenant.KESClientCert() {
+			encryptConfig.KmsMtls = &models.EncryptionConfigurationResponseAO1KmsMtls{}
+			clientSecretName := tenant.Spec.KES.ClientCertSecret.Name
+			keyPair, err := clientSet.getSecret(ctx, tenant.Namespace, clientSecretName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			// Extract client public certificate
+			if rawCert, ok := keyPair.Data["client.crt"]; ok {
+				encryptConfig.KmsMtls.Crt, err = parseCertificate(clientSecretName, rawCert)
+				if err != nil {
+					return err
+				}
+			}
+			// Extract client ca certificate
+			if rawCert, ok := keyPair.Data["ca.crt"]; ok {
+				encryptConfig.KmsMtls.Ca, err = parseCertificate(clientSecretName, rawCert)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		encryptConfig.Vault = vaultConfig
+	}
+	if kesConfiguration.Keys.Aws != nil {
+		awsJSON, err := json.Marshal(kesConfiguration.Keys.Aws)
+		if err != nil {
+			return err
+		}
+		awsConfig := &models.AwsConfiguration{}
+		err = json.Unmarshal(awsJSON, awsConfig)
+		if err != nil {
+			return err
+		}
+		encryptConfig.Aws = awsConfig
+	}
+	if kesConfiguration.Keys.Gcp != nil {
+		gcpJSON, err := json.Marshal(kesConfiguration.Keys.Gcp)
+		if err != nil {
+			return err
+		}
+		gcpConfig := &models.GcpConfiguration{}
+		err = json.Unmarshal(gcpJSON, gcpConfig)
+		if err != nil {
+			return err
+		}
+		encryptConfig.Gcp = gcpConfig
+	}
+	if kesConfiguration.Keys.Gemalto != nil {
+		gemalto := kesConfiguration.Keys.Gemalto
+		gemaltoConfig := &models.GemaltoConfigurationResponse{
+			Keysecure: &models.GemaltoConfigurationResponseKeysecure{},
+		}
+		if gemalto.KeySecure != nil {
+			gemaltoConfig.Keysecure.Endpoint = &gemalto.KeySecure.Endpoint
+			if gemalto.KeySecure.Credentials != nil {
+				gemaltoConfig.Keysecure.Credentials = &models.GemaltoConfigurationResponseKeysecureCredentials{
+					Domain: &gemalto.KeySecure.Credentials.Domain,
+					Retry:  int64(gemalto.KeySecure.Credentials.Retry.Seconds()),
+					Token:  &gemalto.KeySecure.Credentials.Token,
+				}
+			}
+			if gemalto.KeySecure.TLS != nil {
+				if tenant.KESClientCert() {
+					encryptConfig.KmsMtls = &models.EncryptionConfigurationResponseAO1KmsMtls{}
+					clientSecretName := tenant.Spec.KES.ClientCertSecret.Name
+					keyPair, err := clientSet.getSecret(ctx, tenant.Namespace, clientSecretName, metav1.GetOptions{})
+					if err != nil {
+						return err
+					}
+					// Extract client ca certificate
+					if rawCert, ok := keyPair.Data["ca.crt"]; ok {
+						encryptConfig.KmsMtls.Ca, err = parseCertificate(clientSecretName, rawCert)
+						if err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+		encryptConfig.Gemalto = gemaltoConfig
+	}
+	if kesConfiguration.Keys.Azure != nil {
+		azureJSON, err := json.Marshal(kesConfiguration.Keys.Azure)
+		if err != nil {
+			return err
+		}
+		azureConfig := &models.AzureConfiguration{}
+		err = json.Unmarshal(azureJSON, azureConfig)
+		if err != nil {
+			return err
+		}
+		encryptConfig.Azure = azureConfig
+	}
+	if kesConfiguration.Policies != nil {
+		encryptConfig.Policies = kesConfiguration.Policies
+	}
+	return nil
+}
+
+// getConfigurationResponseFromV2 hidrates EncryptionConfigurationResponse struct from ServerConfigV2
+func getConfigurationResponseFromV2(ctx context.Context, clientSet K8sClientI, rawConfiguration []byte, tenant *miniov2.Tenant, encryptConfig *models.EncryptionConfigurationResponse) error {
+	kesConfiguration := &kes.ServerConfigV2{}
+	encryptConfig.Raw = string(rawConfiguration)
+	err := yaml.Unmarshal(rawConfiguration, kesConfiguration)
+	if err != nil {
+		return err
+	}
+	if kesConfiguration.Keystore.Vault != nil {
+		vault := kesConfiguration.Keystore.Vault
+		vaultConfig := &models.VaultConfigurationResponse{
+			Prefix:    vault.Prefix,
+			Namespace: vault.Namespace,
+			Engine:    vault.EnginePath,
+			Endpoint:  &vault.Endpoint,
+		}
+		if vault.Status != nil {
+			vaultConfig.Status = &models.VaultConfigurationResponseStatus{
+				Ping: int64(vault.Status.Ping.Seconds()),
+			}
+		}
+		if vault.AppRole != nil {
+			vaultConfig.Approle = &models.VaultConfigurationResponseApprole{
+				Engine: vault.AppRole.EnginePath,
+				ID:     &vault.AppRole.ID,
+				Retry:  int64(vault.AppRole.Retry.Seconds()),
+				Secret: &vault.AppRole.Secret,
+			}
+		}
+		if tenant.KESClientCert() {
+			encryptConfig.KmsMtls = &models.EncryptionConfigurationResponseAO1KmsMtls{}
+			clientSecretName := tenant.Spec.KES.ClientCertSecret.Name
+			keyPair, err := clientSet.getSecret(ctx, tenant.Namespace, clientSecretName, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			// Extract client public certificate
+			if rawCert, ok := keyPair.Data["client.crt"]; ok {
+				encryptConfig.KmsMtls.Crt, err = parseCertificate(clientSecretName, rawCert)
+				if err != nil {
+					return err
+				}
+			}
+			// Extract client ca certificate
+			if rawCert, ok := keyPair.Data["ca.crt"]; ok {
+				encryptConfig.KmsMtls.Ca, err = parseCertificate(clientSecretName, rawCert)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		encryptConfig.Vault = vaultConfig
+	}
+	if kesConfiguration.Keystore.Aws != nil {
+		awsJSON, err := json.Marshal(kesConfiguration.Keystore.Aws)
+		if err != nil {
+			return err
+		}
+		awsConfig := &models.AwsConfiguration{}
+		err = json.Unmarshal(awsJSON, awsConfig)
+		if err != nil {
+			return err
+		}
+		encryptConfig.Aws = awsConfig
+	}
+	if kesConfiguration.Keystore.Gcp != nil {
+		gcpJSON, err := json.Marshal(kesConfiguration.Keystore.Gcp)
+		if err != nil {
+			return err
+		}
+		gcpConfig := &models.GcpConfiguration{}
+		err = json.Unmarshal(gcpJSON, gcpConfig)
+		if err != nil {
+			return err
+		}
+		encryptConfig.Gcp = gcpConfig
+	}
+	if kesConfiguration.Keystore.Gemalto != nil {
+		gemalto := kesConfiguration.Keystore.Gemalto
+		gemaltoConfig := &models.GemaltoConfigurationResponse{
+			Keysecure: &models.GemaltoConfigurationResponseKeysecure{},
+		}
+		if gemalto.KeySecure != nil {
+			gemaltoConfig.Keysecure.Endpoint = &gemalto.KeySecure.Endpoint
+			if gemalto.KeySecure.Credentials != nil {
+				gemaltoConfig.Keysecure.Credentials = &models.GemaltoConfigurationResponseKeysecureCredentials{
+					Domain: &gemalto.KeySecure.Credentials.Domain,
+					Retry:  int64(gemalto.KeySecure.Credentials.Retry.Seconds()),
+					Token:  &gemalto.KeySecure.Credentials.Token,
+				}
+			}
+			if gemalto.KeySecure.TLS != nil {
+				if tenant.KESClientCert() {
+					encryptConfig.KmsMtls = &models.EncryptionConfigurationResponseAO1KmsMtls{}
+					clientSecretName := tenant.Spec.KES.ClientCertSecret.Name
+					keyPair, err := clientSet.getSecret(ctx, tenant.Namespace, clientSecretName, metav1.GetOptions{})
+					if err != nil {
+						return err
+					}
+					// Extract client ca certificate
+					if rawCert, ok := keyPair.Data["ca.crt"]; ok {
+						encryptConfig.KmsMtls.Ca, err = parseCertificate(clientSecretName, rawCert)
+						if err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+		encryptConfig.Gemalto = gemaltoConfig
+	}
+	if kesConfiguration.Keystore.Azure != nil {
+		azureJSON, err := json.Marshal(kesConfiguration.Keystore.Azure)
+		if err != nil {
+			return err
+		}
+		azureConfig := &models.AzureConfiguration{}
+		err = json.Unmarshal(azureJSON, azureConfig)
+		if err != nil {
+			return err
+		}
+		encryptConfig.Azure = azureConfig
+	}
+	if kesConfiguration.Policies != nil {
+		encryptConfig.Policies = kesConfiguration.Policies
+	}
+	return nil
 }
 
 // getKESConfiguration will generate the KES server certificate secrets, the tenant client secrets for mTLS authentication between MinIO and KES and the
@@ -449,7 +638,7 @@ func getKESConfiguration(ctx context.Context, clientSet K8sClientI, ns string, e
 		}
 	}
 	// Prepare kesConfiguration for KES
-	serverConfigSecret, clientCertSecret, err := createOrReplaceKesConfigurationSecrets(ctx, clientSet, ns, encryptionCfg, kesConfigurationSecretName, kesClientCertSecretName, tenantName)
+	serverConfigSecret, clientCertSecret, err := createOrReplaceKesConfigurationSecrets(ctx, clientSet, ns, encryptionCfg, kesConfigurationSecretName, kesClientCertSecretName, tenantName, kesConfiguration.Image)
 	if err != nil {
 		return nil, err
 	}
@@ -460,7 +649,7 @@ func getKESConfiguration(ctx context.Context, clientSet K8sClientI, ns string, e
 	return kesConfiguration, nil
 }
 
-func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sClientI, ns string, encryptionCfg *models.EncryptionConfiguration, kesConfigurationSecretName, kesClientCertSecretName, tenantName string) (*corev1.LocalObjectReference, *miniov2.LocalCertificateReference, error) {
+func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sClientI, ns string, encryptionCfg *models.EncryptionConfiguration, kesConfigurationSecretName, kesClientCertSecretName, tenantName string, image string) (*corev1.LocalObjectReference, *miniov2.LocalCertificateReference, error) {
 	// if autoCert is enabled then Operator will generate the client certificates, calculate the client cert identity
 	// and pass it to KES via the ${MINIO_KES_IDENTITY} variable
 	clientCrtIdentity := "${MINIO_KES_IDENTITY}"
@@ -480,8 +669,99 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 		h.Write(certificate.RawSubjectPublicKeyInfo)
 		clientCrtIdentity = hex.EncodeToString(h.Sum(nil))
 	}
+
+	// map to hold mTLSCertificates for KES mTLS against Vault
+	mTLSCertificates := map[string][]byte{}
+
+	imm := true
+	// if mTLSCertificates contains elements we create the kubernetes secret
+	var clientCertSecretReference *miniov2.LocalCertificateReference
+	var serverRawConfig []byte
+	var err error
+
+	if encryptionCfg.Raw != "" {
+		serverRawConfig = []byte(encryptionCfg.Raw)
+		// verify provided configuration is in valid YAML format
+
+		cv, err := getKesConfigVersion(image)
+		if err != nil {
+			return nil, nil, err
+		}
+		configType := KesConfigVersionsMap[cv]
+		err = yaml.Unmarshal(serverRawConfig, &configType)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+
+		// Identify which method use to generate the KES config YAML
+		// Based on the KES Image name
+		kesConfigMethodVersion, err := getKesConfigMethod(image)
+		if err != nil {
+			return nil, nil, err
+		}
+		// Invoke the resulting kes config method
+		serverRawConfig, err = kesConfigMethodVersion(clientCrtIdentity, encryptionCfg, mTLSCertificates)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	if len(mTLSCertificates) > 0 {
+		// delete KES client cert secret only if new client certificates are provided
+		if err := clientSet.deleteSecret(ctx, ns, kesClientCertSecretName, metav1.DeleteOptions{}); err != nil {
+			// log the errors if any and continue
+			LogError("deleting secret name %s failed: %v, continuing..", kesClientCertSecretName, err)
+		}
+		// Secret to store KES mTLS kesConfiguration to authenticate against a KMS
+		kesClientCertSecret := corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: kesClientCertSecretName,
+				Labels: map[string]string{
+					miniov2.TenantLabel: tenantName,
+				},
+			},
+			Immutable: &imm,
+			Data:      mTLSCertificates,
+		}
+		_, err := clientSet.createSecret(ctx, ns, &kesClientCertSecret, metav1.CreateOptions{})
+		if err != nil {
+			return nil, nil, err
+		}
+		// kubernetes generic secret
+		clientCertSecretReference = &miniov2.LocalCertificateReference{
+			Name: kesClientCertSecretName,
+		}
+	}
+
+	// delete KES configuration secret if exists
+	if err := clientSet.deleteSecret(ctx, ns, kesConfigurationSecretName, metav1.DeleteOptions{}); err != nil {
+		// log the errors if any and continue
+		LogError("deleting secret name %s failed: %v, continuing..", kesConfigurationSecretName, err)
+	}
+
+	// Secret to store KES server kesConfiguration
+	kesConfigurationSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kesConfigurationSecretName,
+			Labels: map[string]string{
+				miniov2.TenantLabel: tenantName,
+			},
+		},
+		Immutable: &imm,
+		Data: map[string][]byte{
+			"server-config.yaml": serverRawConfig,
+		},
+	}
+	_, err = clientSet.createSecret(ctx, ns, &kesConfigurationSecret, metav1.CreateOptions{})
+	return &corev1.LocalObjectReference{
+		Name: kesConfigurationSecretName,
+	}, clientCertSecretReference, err
+}
+
+func createKesConfigV1(clientCrtIdentity string, encryptionCfg *models.EncryptionConfiguration, mTLSCertificates map[string][]byte) ([]byte, error) {
 	// Default kesConfiguration for KES
-	kesConfig := &kes.ServerConfig{
+	kesConfig := &kes.ServerConfigV1{
 		Addr: "0.0.0.0:7373",
 		Root: "disabled",
 		TLS: kes.TLS{
@@ -512,17 +792,9 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 		},
 		Keys: kes.Keys{},
 	}
-	// miniov2 will mount the mTLSCertificates in the following paths
-	// therefore we set these values in the KES yaml kesConfiguration
-	mTLSClientCrtPath := "/tmp/kes/client.crt"
-	mTLSClientKeyPath := "/tmp/kes/client.key"
-	mTLSClientCaPath := "/tmp/kes/ca.crt"
-	// map to hold mTLSCertificates for KES mTLS against Vault
-	mTLSCertificates := map[string][]byte{}
-	// if encryption is enabled and encryption is configured to use Vault
 	switch {
 	case encryptionCfg.Vault != nil:
-		ping := 10 // default ping
+		ping := defaultPing
 		if encryptionCfg.Vault.Status != nil {
 			ping = int(encryptionCfg.Vault.Status.Ping)
 		}
@@ -546,7 +818,7 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 				Retry:      time.Duration(retry) * time.Second,
 			}
 		} else {
-			return nil, nil, errors.New("approle credentials missing for kes")
+			return nil, errors.New("approle credentials missing for kes")
 		}
 		// Vault mTLS kesConfiguration
 		if encryptionCfg.KmsMtls != nil {
@@ -555,7 +827,7 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 			if vaultTLSConfig.Crt != "" {
 				clientCrt, err := base64.StdEncoding.DecodeString(vaultTLSConfig.Crt)
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 				mTLSCertificates["client.crt"] = clientCrt
 				kesConfig.Keys.Vault.TLS.CertPath = mTLSClientCrtPath
@@ -563,7 +835,7 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 			if vaultTLSConfig.Key != "" {
 				clientKey, err := base64.StdEncoding.DecodeString(vaultTLSConfig.Key)
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 				mTLSCertificates["client.key"] = clientKey
 				kesConfig.Keys.Vault.TLS.KeyPath = mTLSClientKeyPath
@@ -571,7 +843,7 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 			if vaultTLSConfig.Ca != "" {
 				caCrt, err := base64.StdEncoding.DecodeString(vaultTLSConfig.Ca)
 				if err != nil {
-					return nil, nil, err
+					return nil, err
 				}
 				mTLSCertificates["ca.crt"] = caCrt
 				kesConfig.Keys.Vault.TLS.CAPath = mTLSClientCaPath
@@ -609,7 +881,7 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 				if encryptionCfg.KmsMtls.Ca != "" {
 					caCrt, err := base64.StdEncoding.DecodeString(encryptionCfg.KmsMtls.Ca)
 					if err != nil {
-						return nil, nil, err
+						return nil, err
 					}
 					mTLSCertificates["ca.crt"] = caCrt
 					kesConfig.Keys.Gemalto.KeySecure.TLS = &kes.GemaltoTLS{
@@ -661,76 +933,240 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 			}
 		}
 	}
-	imm := true
-	// if mTLSCertificates contains elements we create the kubernetes secret
-	var clientCertSecretReference *miniov2.LocalCertificateReference
-	if len(mTLSCertificates) > 0 {
-		// delete KES client cert secret only if new client certificates are provided
-		if err := clientSet.deleteSecret(ctx, ns, kesClientCertSecretName, metav1.DeleteOptions{}); err != nil {
-			// log the errors if any and continue
-			LogError("deleting secret name %s failed: %v, continuing..", kesClientCertSecretName, err)
-		}
-		// Secret to store KES mTLS kesConfiguration to authenticate against a KMS
-		kesClientCertSecret := corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: kesClientCertSecretName,
-				Labels: map[string]string{
-					miniov2.TenantLabel: tenantName,
-				},
+	return kesConfig.Marshal()
+}
+
+func createKesConfigV2(clientCrtIdentity string, encryptionCfg *models.EncryptionConfiguration, mTLSCertificates map[string][]byte) ([]byte, error) {
+	kesConfig := &kes.ServerConfigV2{
+		Addr: "0.0.0.0:7373",
+		TLS: kes.TLS{
+			KeyPath:  "/tmp/kes/server.key",
+			CertPath: "/tmp/kes/server.crt",
+		},
+		Admin: kes.AdminIdentity{
+			Identity: kes.Identity(clientCrtIdentity),
+		},
+		Cache: kes.CacheV2{
+			Expiry: &kes.ExpiryV2{
+				Any:    5 * time.Minute,
+				Unused: 20 * time.Second,
 			},
-			Immutable: &imm,
-			Data:      mTLSCertificates,
-		}
-		_, err := clientSet.createSecret(ctx, ns, &kesClientCertSecret, metav1.CreateOptions{})
-		if err != nil {
-			return nil, nil, err
-		}
-		// kubernetes generic secret
-		clientCertSecretReference = &miniov2.LocalCertificateReference{
-			Name: kesClientCertSecretName,
-		}
+		},
+		Log: kes.Log{
+			Error: "on",
+			Audit: "off",
+		},
+		Keystore: kes.Keys{},
 	}
 
-	var serverRawConfig []byte
-	var err error
-
-	if encryptionCfg.Raw != "" {
-		serverRawConfig = []byte(encryptionCfg.Raw)
-		// verify provided configuration is in valid YAML format
-		var configTest kes.ServerConfig
-		err = yaml.Unmarshal(serverRawConfig, &configTest)
-		if err != nil {
-			return nil, nil, err
+	switch {
+	case encryptionCfg.Vault != nil:
+		ping := defaultPing
+		if encryptionCfg.Vault.Status != nil {
+			ping = int(encryptionCfg.Vault.Status.Ping)
 		}
+		// Initialize Vault Config
+		kesConfig.Keystore.Vault = &kes.Vault{
+			Endpoint:   *encryptionCfg.Vault.Endpoint,
+			EnginePath: encryptionCfg.Vault.Engine,
+			Namespace:  encryptionCfg.Vault.Namespace,
+			Prefix:     encryptionCfg.Vault.Prefix,
+			Status: &kes.VaultStatus{
+				Ping: time.Duration(ping) * time.Second,
+			},
+		}
+		// Vault AppRole credentials
+		if encryptionCfg.Vault.Approle != nil {
+			retry := encryptionCfg.Vault.Approle.Retry
+			kesConfig.Keystore.Vault.AppRole = &kes.AppRole{
+				EnginePath: encryptionCfg.Vault.Approle.Engine,
+				ID:         *encryptionCfg.Vault.Approle.ID,
+				Secret:     *encryptionCfg.Vault.Approle.Secret,
+				Retry:      time.Duration(retry) * time.Second,
+			}
+		} else {
+			return nil, errors.New("approle credentials missing for kes")
+		}
+		// Vault mTLS kesConfiguration
+		if encryptionCfg.KmsMtls != nil {
+			vaultTLSConfig := encryptionCfg.KmsMtls
+			kesConfig.Keystore.Vault.TLS = &kes.VaultTLS{}
+			if vaultTLSConfig.Crt != "" {
+				clientCrt, err := base64.StdEncoding.DecodeString(vaultTLSConfig.Crt)
+				if err != nil {
+					return nil, err
+				}
+				mTLSCertificates["client.crt"] = clientCrt
+				kesConfig.Keystore.Vault.TLS.CertPath = mTLSClientCrtPath
+			}
+			if vaultTLSConfig.Key != "" {
+				clientKey, err := base64.StdEncoding.DecodeString(vaultTLSConfig.Key)
+				if err != nil {
+					return nil, err
+				}
+				mTLSCertificates["client.key"] = clientKey
+				kesConfig.Keystore.Vault.TLS.KeyPath = mTLSClientKeyPath
+			}
+			if vaultTLSConfig.Ca != "" {
+				caCrt, err := base64.StdEncoding.DecodeString(vaultTLSConfig.Ca)
+				if err != nil {
+					return nil, err
+				}
+				mTLSCertificates["ca.crt"] = caCrt
+				kesConfig.Keystore.Vault.TLS.CAPath = mTLSClientCaPath
+			}
+		}
+	case encryptionCfg.Aws != nil:
+		// Initialize AWS
+		kesConfig.Keystore.Aws = &kes.Aws{
+			SecretsManager: &kes.AwsSecretManager{},
+		}
+		// AWS basic kesConfiguration
+		if encryptionCfg.Aws.Secretsmanager != nil {
+			kesConfig.Keystore.Aws.SecretsManager.Endpoint = *encryptionCfg.Aws.Secretsmanager.Endpoint
+			kesConfig.Keystore.Aws.SecretsManager.Region = *encryptionCfg.Aws.Secretsmanager.Region
+			kesConfig.Keystore.Aws.SecretsManager.KmsKey = encryptionCfg.Aws.Secretsmanager.Kmskey
+			// AWS credentials
+			if encryptionCfg.Aws.Secretsmanager.Credentials != nil {
+				kesConfig.Keystore.Aws.SecretsManager.Login = &kes.AwsSecretManagerLogin{
+					AccessKey:    *encryptionCfg.Aws.Secretsmanager.Credentials.Accesskey,
+					SecretKey:    *encryptionCfg.Aws.Secretsmanager.Credentials.Secretkey,
+					SessionToken: encryptionCfg.Aws.Secretsmanager.Credentials.Token,
+				}
+			}
+		}
+	case encryptionCfg.Gemalto != nil:
+		// Initialize Gemalto
+		kesConfig.Keystore.Gemalto = &kes.Gemalto{
+			KeySecure: &kes.GemaltoKeySecure{},
+		}
+		// Gemalto Configuration
+		if encryptionCfg.Gemalto.Keysecure != nil {
+			kesConfig.Keystore.Gemalto.KeySecure.Endpoint = *encryptionCfg.Gemalto.Keysecure.Endpoint
+			// Gemalto TLS kesConfiguration
+			if encryptionCfg.KmsMtls != nil {
+				if encryptionCfg.KmsMtls.Ca != "" {
+					caCrt, err := base64.StdEncoding.DecodeString(encryptionCfg.KmsMtls.Ca)
+					if err != nil {
+						return nil, err
+					}
+					mTLSCertificates["ca.crt"] = caCrt
+					kesConfig.Keystore.Gemalto.KeySecure.TLS = &kes.GemaltoTLS{
+						CAPath: mTLSClientCaPath,
+					}
+				}
+			}
+			// Gemalto Login
+			if encryptionCfg.Gemalto.Keysecure.Credentials != nil {
+				kesConfig.Keystore.Gemalto.KeySecure.Credentials = &kes.GemaltoCredentials{
+					Token:  *encryptionCfg.Gemalto.Keysecure.Credentials.Token,
+					Domain: *encryptionCfg.Gemalto.Keysecure.Credentials.Domain,
+					Retry:  15 * time.Second,
+				}
+			}
+		}
+	case encryptionCfg.Gcp != nil:
+		// Initialize GCP
+		kesConfig.Keystore.Gcp = &kes.Gcp{
+			SecretManager: &kes.GcpSecretManager{},
+		}
+		// GCP basic kesConfiguration
+		if encryptionCfg.Gcp.Secretmanager != nil {
+			kesConfig.Keystore.Gcp.SecretManager.ProjectID = *encryptionCfg.Gcp.Secretmanager.ProjectID
+			kesConfig.Keystore.Gcp.SecretManager.Endpoint = encryptionCfg.Gcp.Secretmanager.Endpoint
+			// GCP credentials
+			if encryptionCfg.Gcp.Secretmanager.Credentials != nil {
+				kesConfig.Keystore.Gcp.SecretManager.Credentials = &kes.GcpCredentials{
+					ClientEmail:  encryptionCfg.Gcp.Secretmanager.Credentials.ClientEmail,
+					ClientID:     encryptionCfg.Gcp.Secretmanager.Credentials.ClientID,
+					PrivateKeyID: encryptionCfg.Gcp.Secretmanager.Credentials.PrivateKeyID,
+					PrivateKey:   encryptionCfg.Gcp.Secretmanager.Credentials.PrivateKey,
+				}
+			}
+		}
+	case encryptionCfg.Azure != nil:
+		// Initialize Azure
+		kesConfig.Keystore.Azure = &kes.Azure{
+			KeyVault: &kes.AzureKeyVault{},
+		}
+		if encryptionCfg.Azure.Keyvault != nil {
+			kesConfig.Keystore.Azure.KeyVault.Endpoint = *encryptionCfg.Azure.Keyvault.Endpoint
+			if encryptionCfg.Azure.Keyvault.Credentials != nil {
+				kesConfig.Keystore.Azure.KeyVault.Credentials = &kes.AzureCredentials{
+					TenantID:     *encryptionCfg.Azure.Keyvault.Credentials.TenantID,
+					ClientID:     *encryptionCfg.Azure.Keyvault.Credentials.ClientID,
+					ClientSecret: *encryptionCfg.Azure.Keyvault.Credentials.ClientSecret,
+				}
+			}
+		}
+	}
+	return kesConfig.Marshal()
+}
+
+// getKesConfigMethod identify the config method to use based from the KES image name
+func getKesConfigMethod(image string) (configVersion, error) {
+	version, err := getKesConfigVersion(image)
+	if err != nil {
+		return nil, err
+	}
+	// switch for future (or previous) versions of KES config
+	switch version {
+	case KesConfigVersion1:
+		return createKesConfigV1, nil
+	default:
+		return createKesConfigV2, nil
+	}
+}
+
+func getKesConfigVersion(image string) (string, error) {
+	version := KesConfigVersion2
+
+	imageStrings := strings.Split(image, ":")
+	var imageTag string
+	if len(imageStrings) > 1 {
+		imageTag = imageStrings[1]
 	} else {
-		// Generate Yaml kesConfiguration for KES
-		serverRawConfig, err = yaml.Marshal(kesConfig)
-		if err != nil {
-			return nil, nil, err
+		return "", fmt.Errorf("%s not a valid KES release tag", image)
+	}
+
+	if imageTag == "edge" {
+		return KesConfigVersion2, nil
+	}
+
+	if imageTag == "latest" {
+		return KesConfigVersion2, nil
+	}
+
+	// When the image tag is semantic version is config v1
+	if semver.IsValid(imageTag) {
+		// Admin is required starting version v0.22.0
+		if semver.Compare(imageTag, "v0.22.0") < 0 {
+			return KesConfigVersion1, nil
 		}
+		return KesConfigVersion2, nil
 	}
 
-	// delete KES configuration secret if exists
-	if err := clientSet.deleteSecret(ctx, ns, kesConfigurationSecretName, metav1.DeleteOptions{}); err != nil {
-		// log the errors if any and continue
-		LogError("deleting secret name %s failed: %v, continuing..", kesConfigurationSecretName, err)
+	releaseTagNoArch := imageTag
+
+	re := regexp.MustCompile(kesImageTagWithArchRegexPattern)
+	// if pattern matches, that means we have a tag with arch
+	if matched := re.Match([]byte(imageTag)); matched {
+		slicesOfTag := re.FindStringSubmatch(imageTag)
+		// here we will remove the arch suffix by assigning the first group in the regex
+		releaseTagNoArch = slicesOfTag[1]
 	}
 
-	// Secret to store KES server kesConfiguration
-	kesConfigurationSecret := corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: kesConfigurationSecretName,
-			Labels: map[string]string{
-				miniov2.TenantLabel: tenantName,
-			},
-		},
-		Immutable: &imm,
-		Data: map[string][]byte{
-			"server-config.yaml": serverRawConfig,
-		},
+	// v0.22.0 is the initial image version for Kes config v2, any time format came after and is v2
+	_, err := miniov2.ReleaseTagToReleaseTime(releaseTagNoArch)
+	if err != nil {
+		// could not parse semversion either, returning error
+		return "", fmt.Errorf("could not identify KES version from image TAG: %s", releaseTagNoArch)
 	}
-	_, err = clientSet.createSecret(ctx, ns, &kesConfigurationSecret, metav1.CreateOptions{})
-	return &corev1.LocalObjectReference{
-		Name: kesConfigurationSecretName,
-	}, clientCertSecretReference, err
+
+	// Leaving this snippet as comment as this will helpful to compare in future config versions
+	// kesv2ReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("2023-04-03T16-41-28Z")
+	// if imageVersionTime.Before(kesv2ReleaseTime) {
+	// 	version = kesConfigVersion2
+	// }
+	return version, nil
 }

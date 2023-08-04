@@ -913,7 +913,7 @@ func parseTenantPoolRequest(poolParams *models.Pool) (*miniov2.Pool, error) {
 	if len(nodeSelectorTerms) > 0 || len(preferredSchedulingTerm) > 0 {
 		nodeAffinity = &corev1.NodeAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-				NodeSelectorTerms: nodeSelectorTerms,
+				NodeSelectorTerms: mergeNodeSelectorTerms(nodeSelectorTerms),
 			},
 			PreferredDuringSchedulingIgnoredDuringExecution: preferredSchedulingTerm,
 		}
@@ -1026,6 +1026,49 @@ func parseTenantPoolRequest(poolParams *models.Pool) (*miniov2.Pool, error) {
 		pool.SecurityContext = sc
 	}
 	return pool, nil
+}
+
+// mergeNodeSelectorTerms is for matchExpressions merge, when matchExpressions/matchFields have the same Key+Operator , we merge values.
+// When matchExpressions/matchFields have the same Key+Operator, Set it 'And'
+func mergeNodeSelectorTerms(terms []corev1.NodeSelectorTerm) []corev1.NodeSelectorTerm {
+	mergedTerms := []corev1.NodeSelectorTerm{}
+	for _, term := range terms {
+		nodeSelectorTerm := corev1.NodeSelectorTerm{}
+		nodeSelectorMatchExpressionsMap := map[string]*corev1.NodeSelectorRequirement{}
+		for _, exp := range term.MatchExpressions {
+			if selector, ok := nodeSelectorMatchExpressionsMap[fmt.Sprintf("%s-%s", exp.Key, exp.Operator)]; ok {
+				selector.Values = append(selector.Values, exp.Values...)
+			} else {
+				nodeSelectorMatchExpressionsMap[fmt.Sprintf("%s-%s", exp.Key, exp.Operator)] = &corev1.NodeSelectorRequirement{
+					Key:      exp.Key,
+					Operator: exp.Operator,
+					Values:   exp.Values,
+				}
+			}
+		}
+		nodeSelectorMatchMatchFieldsMap := map[string]*corev1.NodeSelectorRequirement{}
+		for _, field := range term.MatchFields {
+			if selector, ok := nodeSelectorMatchMatchFieldsMap[fmt.Sprintf("%s-%s", field.Key, field.Operator)]; ok {
+				selector.Values = append(selector.Values, field.Values...)
+			} else {
+				nodeSelectorMatchMatchFieldsMap[fmt.Sprintf("%s-%s", field.Key, field.Operator)] = &corev1.NodeSelectorRequirement{
+					Key:      field.Key,
+					Operator: field.Operator,
+					Values:   field.Values,
+				}
+			}
+		}
+		for _, exp := range nodeSelectorMatchExpressionsMap {
+			nodeSelectorTerm.MatchExpressions = append(nodeSelectorTerm.MatchExpressions, *exp)
+		}
+		for _, field := range nodeSelectorMatchMatchFieldsMap {
+			nodeSelectorTerm.MatchExpressions = append(nodeSelectorTerm.MatchFields, *field)
+		}
+		if len(nodeSelectorMatchExpressionsMap) != 0 || len(nodeSelectorMatchMatchFieldsMap) != 0 {
+			mergedTerms = append(mergedTerms, nodeSelectorTerm)
+		}
+	}
+	return mergedTerms
 }
 
 func parseModelPodAffinityTerm(term *models.PodAffinityTerm) corev1.PodAffinityTerm {

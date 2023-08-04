@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import subprocess
 
-version = "v5.0.2"
+version = "v5.0.6"
 
 template = f"""apiVersion: krew.googlecontainertools.github.com/v1alpha2
 kind: Plugin
@@ -44,7 +44,7 @@ for os_key in builds:
     for arch_key in builds[os_key]:
         url = main_url.format(version=version, os=os_key, arch=arch_key['arch'], suffix=arch_key['suffix'])
         ps = subprocess.Popen(('curl', '-L', '--fail', url), stdout=subprocess.PIPE)
-        output = subprocess.check_output(('/usr/local/bin/sha256sum'), stdin=ps.stdout)
+        output = subprocess.check_output(('sha256sum'), stdin=ps.stdout)
         ps.wait()
         hash = output.strip().decode("utf-8", "ignore").replace("  -", "")
         # print(hash)

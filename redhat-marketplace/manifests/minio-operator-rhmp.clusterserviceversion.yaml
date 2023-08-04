@@ -2,13 +2,13 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"myminio","namespace":"minio-tenant"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:ac727c1d3d54dda5dddb687f7304ece600237792e01a73d134e129e3c5c26dae","imagePullSecret":{},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
+    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"myminio","namespace":"minio-tenant"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:f6427f313105222ff49c7472cdc63ddcaea5d9a7500260fd718ef86e2a336bbd","imagePullSecret":{},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
     capabilities: "Full Lifecycle"
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
-    containerImage: quay.io/minio/operator:v5.0.2
+    containerImage: quay.io/minio/operator:v5.0.6
     categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
@@ -16,7 +16,7 @@ metadata:
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
-  name: minio-operator-rhmp.v5.0.2
+  name: minio-operator-rhmp.v5.0.6
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -472,13 +472,13 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.2
+                    image: quay.io/minio/operator:v5.0.6
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
                       - containerPort: 9090
                         name: http
-                      - containerPort: 9433
+                      - containerPort: 9443
                         name: https
                     resources: {}
                     securityContext:
@@ -512,11 +512,12 @@ spec:
             app.kubernetes.io/name: operator
           name: minio-operator
           spec:
-            replicas: 2
+            replicas: 1
             selector:
               matchLabels:
                 name: minio-operator
-            strategy: {}
+            strategy:
+              type: Recreate
             template:
               metadata:
                 labels:
@@ -542,7 +543,7 @@ spec:
                         value: "off"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.2
+                    image: quay.io/minio/operator:v5.0.6
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -581,4 +582,52 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  version: 5.0.2
+  relatedImages:
+    - image: minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+      name: console
+    - image: minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+      name: minio-operator
+  version: 5.0.6
+  labels:
+    operatorframework.io/arch.386: supported
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.amd64p32: supported
+    operatorframework.io/arch.arm: supported
+    operatorframework.io/arch.armbe: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/arch.arm64be: supported
+    operatorframework.io/arch.loong64: supported
+    operatorframework.io/arch.mips: supported
+    operatorframework.io/arch.mipsle: supported
+    operatorframework.io/arch.mips64: supported
+    operatorframework.io/arch.mips64le: supported
+    operatorframework.io/arch.mips64p32: supported
+    operatorframework.io/arch.mips64p32le: supported
+    operatorframework.io/arch.ppc: supported
+    operatorframework.io/arch.ppc64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.riscv: supported
+    operatorframework.io/arch.riscv64: supported
+    operatorframework.io/arch.s390: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/arch.sparc: supported
+    operatorframework.io/arch.sparc64: supported
+    operatorframework.io/arch.wasm: supported
+    operatorframework.io/os.aix: supported
+    operatorframework.io/os.android: supported
+    operatorframework.io/os.darwin: supported
+    operatorframework.io/os.dragonfly: supported
+    operatorframework.io/os.freebsd: supported
+    operatorframework.io/os.hurd: supported
+    operatorframework.io/os.illumos: supported
+    operatorframework.io/os.ios: supported
+    operatorframework.io/os.js: supported
+    operatorframework.io/os.linux: supported
+    operatorframework.io/os.nacl: supported
+    operatorframework.io/os.netbsd: supported
+    operatorframework.io/os.openbsd: supported
+    operatorframework.io/os.plan9: supported
+    operatorframework.io/os.solaris: supported
+    operatorframework.io/os.windows: supported
+    operatorframework.io/os.zos: supported
+  replaces: minio-operator-rhmp.v5.0.5

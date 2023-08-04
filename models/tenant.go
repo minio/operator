@@ -75,6 +75,9 @@ type Tenant struct {
 	// pools
 	Pools []*Pool `json:"pools"`
 
+	// sftp exposed
+	SftpExposed bool `json:"sftpExposed,omitempty"`
+
 	// status
 	Status *TenantStatus `json:"status,omitempty"`
 
@@ -287,6 +290,11 @@ func (m *Tenant) ContextValidate(ctx context.Context, formats strfmt.Registry) e
 func (m *Tenant) contextValidateDomains(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Domains != nil {
+
+		if swag.IsZero(m.Domains) { // not required
+			return nil
+		}
+
 		if err := m.Domains.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("domains")
@@ -303,6 +311,11 @@ func (m *Tenant) contextValidateDomains(ctx context.Context, formats strfmt.Regi
 func (m *Tenant) contextValidateEndpoints(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Endpoints != nil {
+
+		if swag.IsZero(m.Endpoints) { // not required
+			return nil
+		}
+
 		if err := m.Endpoints.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("endpoints")
@@ -321,6 +334,11 @@ func (m *Tenant) contextValidatePools(ctx context.Context, formats strfmt.Regist
 	for i := 0; i < len(m.Pools); i++ {
 
 		if m.Pools[i] != nil {
+
+			if swag.IsZero(m.Pools[i]) { // not required
+				return nil
+			}
+
 			if err := m.Pools[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("pools" + "." + strconv.Itoa(i))
@@ -339,6 +357,11 @@ func (m *Tenant) contextValidatePools(ctx context.Context, formats strfmt.Regist
 func (m *Tenant) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Status != nil {
+
+		if swag.IsZero(m.Status) { // not required
+			return nil
+		}
+
 		if err := m.Status.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")
@@ -355,6 +378,11 @@ func (m *Tenant) contextValidateStatus(ctx context.Context, formats strfmt.Regis
 func (m *Tenant) contextValidateSubnetLicense(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.SubnetLicense != nil {
+
+		if swag.IsZero(m.SubnetLicense) { // not required
+			return nil
+		}
+
 		if err := m.SubnetLicense.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("subnet_license")
@@ -373,6 +401,11 @@ func (m *Tenant) contextValidateTiers(ctx context.Context, formats strfmt.Regist
 	for i := 0; i < len(m.Tiers); i++ {
 
 		if m.Tiers[i] != nil {
+
+			if swag.IsZero(m.Tiers[i]) { // not required
+				return nil
+			}
+
 			if err := m.Tiers[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("tiers" + "." + strconv.Itoa(i))

@@ -18,6 +18,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -25,6 +26,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/minio/madmin-go/v2"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
 	"github.com/minio/operator/models"
@@ -49,6 +51,7 @@ type OperatorSubnetTestSuite struct {
 	registerAPIKeyServer    *httptest.Server
 	registerAPIKeyWithError bool
 	k8sClient               k8sClientMock
+	adminClient             AdminClientMock
 }
 
 func (suite *OperatorSubnetTestSuite) SetupSuite() {
@@ -58,6 +61,7 @@ func (suite *OperatorSubnetTestSuite) SetupSuite() {
 	suite.getAPIKeyServer = httptest.NewServer(http.HandlerFunc(suite.getAPIKeyHandler))
 	suite.registerAPIKeyServer = httptest.NewServer(http.HandlerFunc(suite.registerAPIKeyHandler))
 	suite.k8sClient = k8sClientMock{}
+	suite.adminClient = AdminClientMock{}
 	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
 		return &corev1.Secret{}, nil
 	}
@@ -247,16 +251,24 @@ func (suite *OperatorSubnetTestSuite) initSubnetAPIKeyRequest() (params operator
 
 func (suite *OperatorSubnetTestSuite) TestOperatorSubnetRegisterAPIKeyHandlerWithUnreachableTenant() {
 	ctx := context.Background()
-	res, err := registerTenants(ctx, []v2.Tenant{{
-		Spec: v2.TenantSpec{CredsSecret: &corev1.LocalObjectReference{Name: "secret-name"}},
-	}}, "mockAPIKey", suite.k8sClient)
+	MinioServerInfoMock = func(ctx context.Context) (madmin.InfoMessage, error) {
+		return madmin.InfoMessage{}, errors.New("error")
+	}
+	res, err := registerTenants(ctx, suite.k8sClient, []tenantInterface{
+		{
+			tenant: v2.Tenant{
+				Spec: v2.TenantSpec{CredsSecret: &corev1.LocalObjectReference{Name: "secret-name"}},
+			},
+			mAdminClient: suite.adminClient,
+		},
+	}, "mockAPIKey")
 	suite.assert.Nil(res)
 	suite.assert.NotNil(err)
 }
 
 func (suite *OperatorSubnetTestSuite) TestOperatorSubnetRegisterAPIKeyHandlerZeroTenants() {
 	ctx := context.Background()
-	res, err := registerTenants(ctx, []v2.Tenant{}, "mockAPIKey", suite.k8sClient)
+	res, err := registerTenants(ctx, suite.k8sClient, []tenantInterface{}, "mockAPIKey")
 	suite.assert.NotNil(res)
 	suite.assert.Nil(err)
 }

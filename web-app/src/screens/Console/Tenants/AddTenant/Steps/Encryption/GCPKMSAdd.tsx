@@ -36,7 +36,7 @@ const useStyles = makeStyles((theme: Theme) =>
     ...formFieldStyles,
     ...modalBasic,
     ...wizardCommon,
-  })
+  }),
 );
 
 const GCPKMSAdd = () => {
@@ -44,32 +44,32 @@ const GCPKMSAdd = () => {
   const dispatch = useAppDispatch();
 
   const gcpProjectID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpProjectID
+    (state: AppState) => state.createTenant.fields.encryption.gcpProjectID,
   );
   const gcpEndpoint = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpEndpoint
+    (state: AppState) => state.createTenant.fields.encryption.gcpEndpoint,
   );
   const gcpClientEmail = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpClientEmail
+    (state: AppState) => state.createTenant.fields.encryption.gcpClientEmail,
   );
   const gcpClientID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpClientID
+    (state: AppState) => state.createTenant.fields.encryption.gcpClientID,
   );
   const gcpPrivateKeyID = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKeyID
+    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKeyID,
   );
   const gcpPrivateKey = useSelector(
-    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKey
+    (state: AppState) => state.createTenant.fields.encryption.gcpPrivateKey,
   );
 
   // Common
   const updateField = useCallback(
     (field: string, value: any) => {
       dispatch(
-        updateAddField({ pageName: "encryption", field: field, value: value })
+        updateAddField({ pageName: "encryption", field: field, value: value }),
       );
     },
-    [dispatch]
+    [dispatch],
   );
 
   return (
@@ -82,6 +82,7 @@ const GCPKMSAdd = () => {
             updateField("gcpProjectID", e.target.value);
           }}
           label="Project ID"
+          tooltip="ProjectID is the GCP project ID."
           value={gcpProjectID}
         />
       </Grid>
@@ -93,6 +94,7 @@ const GCPKMSAdd = () => {
             updateField("gcpEndpoint", e.target.value);
           }}
           label="Endpoint"
+          tooltip="Endpoint is the GCP project ID. If empty defaults to: secretmanager.googleapis.com:443"
           value={gcpEndpoint}
         />
       </Grid>
@@ -107,6 +109,7 @@ const GCPKMSAdd = () => {
                 updateField("gcpClientEmail", e.target.value);
               }}
               label="Client Email"
+              tooltip="Is the Client email of the GCP service account used to access the SecretManager"
               value={gcpClientEmail}
             />
           </Grid>
@@ -118,6 +121,7 @@ const GCPKMSAdd = () => {
                 updateField("gcpClientID", e.target.value);
               }}
               label="Client ID"
+              tooltip="Is the Client ID of the GCP service account used to access the SecretManager"
               value={gcpClientID}
             />
           </Grid>
@@ -129,6 +133,7 @@ const GCPKMSAdd = () => {
                 updateField("gcpPrivateKeyID", e.target.value);
               }}
               label="Private Key ID"
+              tooltip="Is the private key ID of the GCP service account used to access the SecretManager"
               value={gcpPrivateKeyID}
             />
           </Grid>
@@ -140,6 +145,7 @@ const GCPKMSAdd = () => {
                 updateField("gcpPrivateKey", e.target.value);
               }}
               label="Private Key"
+              tooltip="Is the private key of the GCP service account used to access the SecretManager"
               value={gcpPrivateKey}
             />
           </Grid>

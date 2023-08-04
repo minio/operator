@@ -129,6 +129,11 @@ func (v *expandCmd) run() error {
 		return err
 	}
 
+	// Tenant pool id is zero based, generating pool using the count of existing pools in the tenant
+	if v.tenantOpts.PoolName == "" {
+		v.tenantOpts.PoolName = resources.GeneratePoolName(len(t.Spec.Pools))
+	}
+
 	t.Spec.Pools = append(t.Spec.Pools, resources.Pool(&v.tenantOpts, volumesPerServer, *capacityPerVolume))
 	expandedCapacity := helpers.TotalCapacity(*t)
 	if !v.output {

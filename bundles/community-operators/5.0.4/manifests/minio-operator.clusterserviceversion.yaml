@@ -1,0 +1,623 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[{"apiVersion":"minio.min.io/v2","kind":"Tenant","metadata":{"annotations":{"prometheus.io/path":"/minio/v2/metrics/cluster","prometheus.io/port":"9000","prometheus.io/scrape":"true"},"labels":{"app":"minio"},"name":"myminio","namespace":"minio-tenant"},"spec":{"certConfig":{},"configuration":{"name":"storage-configuration"},"env":[],"externalCaCertSecret":[],"externalCertSecret":[],"externalClientCertSecrets":[],"features":{"bucketDNS":false,"domains":{}},"image":"quay.io/minio/minio@sha256:ac727c1d3d54dda5dddb687f7304ece600237792e01a73d134e129e3c5c26dae","imagePullSecret":{},"mountPath":"/export","podManagementPolicy":"Parallel","pools":[{"name":"pool-0","servers":4,"volumeClaimTemplate":{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"resources":{"requests":{"storage":"2Gi"}}}},"volumesPerServer":2}],"priorityClassName":"","requestAutoCert":true,"serviceAccountName":"","serviceMetadata":{"consoleServiceAnnotations":{},"consoleServiceLabels":{},"minioServiceAnnotations":{},"minioServiceLabels":{}},"subPath":"","users":[{"name":"storage-user"}]}}]'
+    capabilities: "Full Lifecycle"
+    operators.operatorframework.io/builder: operator-sdk-v1.22.2
+    operators.operatorframework.io/project_layout: unknown
+    olm.skipRange: '>=4.4.16 <5.0.4'
+    containerImage: quay.io/minio/operator:v5.0.4
+    categories: "AI/Machine Learning, Big Data, Cloud Provider, Storage"
+    description: |-
+      MinIO is a Kubernetes-native high performance object store with an
+      S3-compatible API. The MinIO Operator supports deploying MinIO Tenants
+      onto any Kubernetes.
+    k8sMinVersion: "1.18"
+    repository: https://github.com/minio/operator
+  name: minio-operator.v5.0.4
+  namespace: minio-operator
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+      - kind: Tenant
+        name: tenants.minio.min.io
+        version: v2
+      - kind: PolicyBinding
+        name: policybindings.sts.min.io
+        version: v1alpha1
+  description: |-
+    ## Overview
+
+
+    The MinIO Operator brings native support for deploying and managing MinIO
+    deployments (“MinIO Tenants”) on a Kubernetes cluster.
+
+
+    MinIO is a high performance, Kubernetes native object storage suite. With an
+    extensive list of enterprise features, it is scalable, secure and resilient
+    while remaining remarkably simple to deploy and operate at scale.
+    Software-defined, MinIO can run on any infrastructure and in any cloud -
+    public, private or edge. MinIO is the world's fastest object storage and can
+    run the broadest set of workloads in the industry. It is widely considered
+    to be the leader in compatibility with Amazon's S3 API.
+
+    ## Features
+
+
+    The MinIO Operator takes care of the deployment of MinIO Tenant along with:
+
+    * TLS Certificate Management
+
+    * Configuration of the encryption at rest
+
+    * Cluster expansion
+
+    * Hot Updates
+
+    * Users and Buckets bootstrapping
+
+    ## Prerequisites for enabling this Operator
+
+    * At least Kubernetes 1.18
+
+    * [CSR
+    Capability](https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/)
+    must be enabled
+
+    * Locally attached volumes for performance or some CSI to provision block
+    storage to the MinIO pods.
+  displayName: Minio Operator
+  icon:
+    - base64data: >-
+        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
+      mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+        - rules:
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - patch
+                - update
+                - delete
+                - deletecollection
+            - apiGroups:
+                - ""
+              resources:
+                - namespaces
+                - services
+                - events
+                - resourcequotas
+                - nodes
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - patch
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - patch
+                - delete
+                - deletecollection
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumeclaims
+              verbs:
+                - deletecollection
+                - list
+                - get
+                - watch
+                - update
+            - apiGroups:
+                - storage.k8s.io
+              resources:
+                - storageclasses
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - patch
+            - apiGroups:
+                - apps
+              resources:
+                - statefulsets
+                - deployments
+              verbs:
+                - get
+                - create
+                - list
+                - patch
+                - watch
+                - update
+                - delete
+            - apiGroups:
+                - batch
+              resources:
+                - jobs
+              verbs:
+                - get
+                - create
+                - list
+                - patch
+                - watch
+                - update
+                - delete
+            - apiGroups:
+                - certificates.k8s.io
+              resources:
+                - certificatesigningrequests
+                - certificatesigningrequests/approval
+                - certificatesigningrequests/status
+              verbs:
+                - update
+                - create
+                - get
+                - delete
+                - list
+            - apiGroups:
+                - minio.min.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - min.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumes
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumeclaims
+              verbs:
+                - get
+                - list
+                - watch
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - list
+                - watch
+                - update
+                - patch
+            - apiGroups:
+                - snapshot.storage.k8s.io
+              resources:
+                - volumesnapshots
+              verbs:
+                - get
+                - list
+            - apiGroups:
+                - snapshot.storage.k8s.io
+              resources:
+                - volumesnapshotcontents
+              verbs:
+                - get
+                - list
+            - apiGroups:
+                - storage.k8s.io
+              resources:
+                - csinodes
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - storage.k8s.io
+              resources:
+                - volumeattachments
+              verbs:
+                - get
+                - list
+                - watch
+            - apiGroups:
+                - ""
+              resources:
+                - endpoints
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+              verbs:
+                - get
+                - list
+                - watch
+                - create
+                - update
+                - delete
+            - apiGroups:
+                - ""
+              resources:
+                - pod
+                - pods/log
+              verbs:
+                - get
+                - list
+                - watch
+          serviceAccountName: console-sa
+        - rules:
+            - apiGroups:
+                - apiextensions.k8s.io
+              resources:
+                - customresourcedefinitions
+              verbs:
+                - get
+                - update
+            - apiGroups:
+                - ""
+              resources:
+                - persistentvolumeclaims
+              verbs:
+                - get
+                - update
+                - list
+            - apiGroups:
+                - ""
+              resources:
+                - namespaces
+                - nodes
+              verbs:
+                - get
+                - watch
+                - list
+            - apiGroups:
+                - ""
+              resources:
+                - pods
+                - services
+                - events
+                - configmaps
+              verbs:
+                - get
+                - watch
+                - create
+                - list
+                - delete
+                - deletecollection
+                - update
+                - patch
+            - apiGroups:
+                - ""
+              resources:
+                - secrets
+              verbs:
+                - get
+                - watch
+                - create
+                - update
+                - list
+                - delete
+                - deletecollection
+            - apiGroups:
+                - ""
+              resources:
+                - serviceaccounts
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - rbac.authorization.k8s.io
+              resources:
+                - roles
+                - rolebindings
+              verbs:
+                - create
+                - delete
+                - get
+                - list
+                - patch
+                - update
+                - watch
+            - apiGroups:
+                - apps
+              resources:
+                - statefulsets
+                - deployments
+                - deployments/finalizers
+              verbs:
+                - get
+                - create
+                - list
+                - patch
+                - watch
+                - update
+                - delete
+            - apiGroups:
+                - batch
+              resources:
+                - jobs
+              verbs:
+                - get
+                - create
+                - list
+                - patch
+                - watch
+                - update
+                - delete
+            - apiGroups:
+                - certificates.k8s.io
+              resources:
+                - certificatesigningrequests
+                - certificatesigningrequests/approval
+                - certificatesigningrequests/status
+              verbs:
+                - update
+                - create
+                - get
+                - delete
+                - list
+            - apiGroups:
+                - certificates.k8s.io
+              resourceNames:
+                - kubernetes.io/legacy-unknown
+                - kubernetes.io/kube-apiserver-client
+                - kubernetes.io/kubelet-serving
+                - beta.eks.amazonaws.com/app-serving
+              resources:
+                - signers
+              verbs:
+                - approve
+                - sign
+            - apiGroups:
+                - authentication.k8s.io
+              resources:
+                - tokenreviews
+              verbs:
+                - create
+            - apiGroups:
+                - minio.min.io
+                - sts.min.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - min.io
+              resources:
+                - '*'
+              verbs:
+                - '*'
+            - apiGroups:
+                - monitoring.coreos.com
+              resources:
+                - prometheuses
+              verbs:
+                - '*'
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - get
+                - update
+                - create
+          serviceAccountName: minio-operator
+      deployments:
+        - label:
+            app.kubernetes.io/instance: minio-operator
+            app.kubernetes.io/name: operator
+          name: console
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: console
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  app: console
+                  app.kubernetes.io/instance: minio-operator-console
+                  app.kubernetes.io/name: operator
+              spec:
+                containers:
+                  - args:
+                      - ui
+                      - --certs-dir=/tmp/certs
+                    image: quay.io/minio/operator:v5.0.4
+                    imagePullPolicy: IfNotPresent
+                    name: console
+                    ports:
+                      - containerPort: 9090
+                        name: http
+                      - containerPort: 9433
+                        name: https
+                    resources: {}
+                    securityContext: {}
+                    volumeMounts:
+                      - mountPath: /tmp/certs
+                        name: tls-certificates
+                serviceAccountName: console-sa
+                volumes:
+                  - name: tls-certificates
+                    projected:
+                      sources:
+                        - secret:
+                            items:
+                              - key: public.crt
+                                path: public.crt
+                              - key: public.crt
+                                path: CAs/public.crt
+                              - key: private.key
+                                path: private.key
+                              - key: tls.crt
+                                path: tls.crt
+                              - key: tls.crt
+                                path: CAs/tls.crt
+                              - key: tls.key
+                                path: tls.key
+                            name: operator-console-tls
+                            optional: true
+        - label:
+            app.kubernetes.io/instance: minio-operator
+            app.kubernetes.io/name: operator
+          name: minio-operator
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                name: minio-operator
+            strategy: {}
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/instance: minio-operator
+                  app.kubernetes.io/name: operator
+                  name: minio-operator
+              spec:
+                affinity:
+                  podAntiAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      - labelSelector:
+                          matchExpressions:
+                            - key: name
+                              operator: In
+                              values:
+                                - minio-operator
+                        topologyKey: kubernetes.io/hostname
+                containers:
+                  - args:
+                      - controller
+                    env:
+                      - name: MINIO_CONSOLE_TLS_ENABLE
+                        value: "off"
+                      - name: OPERATOR_STS_ENABLED
+                        value: "off"
+                    image: quay.io/minio/operator:v5.0.4
+                    imagePullPolicy: IfNotPresent
+                    name: minio-operator
+                    resources:
+                      requests:
+                        cpu: 200m
+                        ephemeral-storage: 500Mi
+                        memory: 256Mi
+                    securityContext: {}
+                serviceAccountName: minio-operator
+    strategy: deployment
+  installModes:
+    - supported: false
+      type: OwnNamespace
+    - supported: false
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces
+  keywords:
+    - S3
+    - MinIO
+    - Object Storage
+  links:
+    - name: Website
+      url: 'https://min.io'
+    - name: Support
+      url: 'https://subnet.min.io'
+    - name: Github
+      url: 'https://github.com/minio/operator'
+  maintainers:
+    - name: MinIO Team
+      email: dev@min.io
+  maturity: stable
+  provider:
+    name: MinIO Inc
+    url: https://min.io
+  version: 5.0.4
+  labels:
+    operatorframework.io/arch.386: supported
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.amd64p32: supported
+    operatorframework.io/arch.arm: supported
+    operatorframework.io/arch.armbe: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/arch.arm64be: supported
+    operatorframework.io/arch.loong64: supported
+    operatorframework.io/arch.mips: supported
+    operatorframework.io/arch.mipsle: supported
+    operatorframework.io/arch.mips64: supported
+    operatorframework.io/arch.mips64le: supported
+    operatorframework.io/arch.mips64p32: supported
+    operatorframework.io/arch.mips64p32le: supported
+    operatorframework.io/arch.ppc: supported
+    operatorframework.io/arch.ppc64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.riscv: supported
+    operatorframework.io/arch.riscv64: supported
+    operatorframework.io/arch.s390: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/arch.sparc: supported
+    operatorframework.io/arch.sparc64: supported
+    operatorframework.io/arch.wasm: supported
+    operatorframework.io/os.aix: supported
+    operatorframework.io/os.android: supported
+    operatorframework.io/os.darwin: supported
+    operatorframework.io/os.dragonfly: supported
+    operatorframework.io/os.freebsd: supported
+    operatorframework.io/os.hurd: supported
+    operatorframework.io/os.illumos: supported
+    operatorframework.io/os.ios: supported
+    operatorframework.io/os.js: supported
+    operatorframework.io/os.linux: supported
+    operatorframework.io/os.nacl: supported
+    operatorframework.io/os.netbsd: supported
+    operatorframework.io/os.openbsd: supported
+    operatorframework.io/os.plan9: supported
+    operatorframework.io/os.solaris: supported
+    operatorframework.io/os.windows: supported
+    operatorframework.io/os.zos: supported

@@ -47,15 +47,12 @@ const styles = (theme: Theme) =>
       top: 80,
       height: "calc(100vh - 81px)",
       width: "100%",
+      borderTop: "1px solid #dedede",
     },
     loader: {
       width: 100,
       margin: "auto",
       marginTop: 80,
-    },
-
-    pageHeader: {
-      borderBottom: "1px solid #dedede",
     },
 
     ...containerForHeader,
@@ -73,7 +70,7 @@ const Hop = ({ classes }: IHopSimple) => {
 
   return (
     <Fragment>
-      <Box className={classes.pageHeader}>
+      <Box>
         <PageHeaderWrapper
           label={
             <Fragment>
@@ -114,7 +111,7 @@ const Hop = ({ classes }: IHopSimple) => {
                     if (loc.indexOf("cp=y") < 0) {
                       const next = `${loc}${add}cp=y`;
                       consoleFrame.current.contentDocument.location.replace(
-                        next
+                        next,
                       );
                     } else {
                       consoleFrame.current.contentDocument.location.reload();
@@ -131,7 +128,7 @@ const Hop = ({ classes }: IHopSimple) => {
                 component="span"
                 onClick={() => {
                   navigate(
-                    `/namespaces/${tenantNamespace}/tenants/${tenantName}`
+                    `/namespaces/${tenantNamespace}/tenants/${tenantName}`,
                   );
                 }}
                 size="large"
