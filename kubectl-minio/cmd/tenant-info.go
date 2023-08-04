@@ -126,7 +126,7 @@ func printTenantCredentials(data string) {
 	users := regexp.MustCompile(`MINIO_ROOT_USER="([^"])+"`).FindAllString(data, -1)
 	passs := regexp.MustCompile(`MINIO_ROOT_PASSWORD="([^"])+"`).FindAllString(data, -1)
 	if len(users) >= 1 || len(passs) >= 1 {
-		fmt.Println("MinIO Root User CRedentials:")
+		fmt.Println("MinIO Root User Credentials:")
 	}
 	if len(users) >= 1 {
 		fmt.Println(users[0])
