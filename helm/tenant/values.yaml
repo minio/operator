@@ -15,7 +15,7 @@ tenant:
   ## Option 1: Image from tag (original behaviour):
   # image:
   #    repository: quay.io/minio/minio
-  #    tag: RELEASE.2023-06-23T20-26-00Z
+  #    tag: RELEASE.2023-07-21T21-12-44Z
   #    pullPolicy: IfNotPresent
   ## Option 2: Image from digest (added after original):
   # image:
@@ -24,7 +24,7 @@ tenant:
   #    pullPolicy: IfNotPresent
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-06-23T20-26-00Z
+    tag: RELEASE.2023-07-21T21-12-44Z
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported

@@ -3,6 +3,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
+    operator.min.io/authors: MinIO, Inc.
+    operator.min.io/license: AGPLv3
+    operator.min.io/support: https://subnet.min.io
   creationTimestamp: null
   name: tenants.minio.min.io
 spec:
@@ -204,6 +207,8 @@ spec:
                           type: string
                         type: array
                     type: object
+                  enableSFTP:
+                    type: boolean
                 type: object
               image:
                 type: string
