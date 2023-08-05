@@ -16,7 +16,7 @@ operator:
   ## Image from tag (original behaviour), for example:
   # image:
   #   repository: quay.io/minio/operator
-  #   tag: v5.0.6
+  #   tag: v5.0.7
   #   pullPolicy: IfNotPresent
   ## Image from digest (added after original behaviour), for example:
   # image:
@@ -25,7 +25,7 @@ operator:
   #   pullPolicy: IfNotPresent
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.6
+    tag: v5.0.7
     pullPolicy: IfNotPresent
   imagePullSecrets: [ ]
   runtimeClassName: ~
@@ -66,7 +66,7 @@ operator:
 console:
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.6
+    tag: v5.0.7
     pullPolicy: IfNotPresent
   env: [ ]
   imagePullSecrets: [ ]
