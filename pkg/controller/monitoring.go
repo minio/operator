@@ -100,7 +100,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		return err
 	}
 
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport(false))
 	if err != nil {
 		klog.Errorf("Error instantiating adminClnt '%s/%s': %v", tenant.Namespace, tenant.Name, err)
 		return err
@@ -112,7 +112,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		klog.Infof("'%s/%s': %v", tenant.Namespace, tenant.Name, err)
 		return nil
 	}
-	aClnt.SetCustomTransport(c.getTransport())
+	aClnt.SetCustomTransport(c.getTransport(false))
 
 	hctx, hcancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer hcancel()

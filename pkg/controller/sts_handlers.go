@@ -172,7 +172,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		writeSTSErrorResponse(w, true, ErrSTSInternalError, fmt.Errorf("Error getting tenant '%s' root credentials: %s", tenant.Name, err))
 		return
 	}
-	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
+	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport(false))
 	if err != nil {
 		writeSTSErrorResponse(w, true, ErrSTSInternalError, fmt.Errorf("Error communicating with tenant '%s': %s", tenant.Name, err))
 		return

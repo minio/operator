@@ -119,7 +119,7 @@ func (c *Controller) restartInitializedPool(ctx context.Context, tenant *miniov2
 	}
 
 	livePodAddress := fmt.Sprintf("%s:9000", tenant.MinIOHLPodHostname(livePod.Name))
-	livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, c.getTransport())
+	livePodAdminClnt, err := tenant.NewMinIOAdminForAddress(livePodAddress, tenantConfiguration, c.getTransport(false))
 	if err != nil {
 		return err
 	}

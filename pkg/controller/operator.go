@@ -89,8 +89,10 @@ func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.T
 	return userCredentials
 }
 
-func (c *Controller) getTransport() *http.Transport {
-	if c.transport != nil {
+// getTransport returns a *http.Transport with the collection of the trusted CA certificates
+// reload=true forces to reload the CA certificates instead of return the cached transport
+func (c *Controller) getTransport(reload bool) *http.Transport {
+	if c.transport != nil && !reload {
 		return c.transport
 	}
 	rootCAs := miniov2.MustGetSystemCertPool()
@@ -187,7 +189,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	}
 
 	// get a new admin client
-	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
+	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport(false))
 	if err != nil {
 		klog.Errorf("Error instantiating adminClnt: %v", err)
 		return err
@@ -221,7 +223,7 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 	}
 
 	// get a new admin client
-	minioClient, err := tenant.NewMinIOUser(tenantConfiguration, c.getTransport())
+	minioClient, err := tenant.NewMinIOUser(tenantConfiguration, c.getTransport(false))
 	if err != nil {
 		// show the error and continue
 		klog.Errorf("Error instantiating minio Client: %v ", err)
