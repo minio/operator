@@ -88,7 +88,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.7
+    containerImage: quay.io/minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
   name: minio-operator-rhmp.v5.0.7
   namespace: minio-operator
 spec:
@@ -560,7 +560,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.7
+                    image: quay.io/minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -569,7 +569,6 @@ spec:
                       - containerPort: 9443
                         name: https
                     resources: {}
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/certs
                         name: tls-certificates
@@ -636,7 +635,7 @@ spec:
                         value: "off"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.7
+                    image: quay.io/minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -644,7 +643,6 @@ spec:
                         cpu: 200m
                         ephemeral-storage: 500Mi
                         memory: 256Mi
-                    securityContext: {}
                 serviceAccountName: minio-operator
     strategy: deployment
   installModes:
@@ -717,9 +715,9 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+    - image: quay.io/minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
       name: console
-    - image: minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+    - image: quay.io/minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
       name: minio-operator
     - image: quay.io/minio/minio@sha256:f6427f313105222ff49c7472cdc63ddcaea5d9a7500260fd718ef86e2a336bbd
       name: minio-f6427f313105222ff49c7472cdc63ddcaea5d9a7500260fd718ef86e2a336bbd-annotation
