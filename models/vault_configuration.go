@@ -148,7 +148,6 @@ func (m *VaultConfiguration) ContextValidate(ctx context.Context, formats strfmt
 func (m *VaultConfiguration) contextValidateApprole(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Approle != nil {
-
 		if err := m.Approle.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("approle")
@@ -165,11 +164,6 @@ func (m *VaultConfiguration) contextValidateApprole(ctx context.Context, formats
 func (m *VaultConfiguration) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Status != nil {
-
-		if swag.IsZero(m.Status) { // not required
-			return nil
-		}
-
 		if err := m.Status.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("status")

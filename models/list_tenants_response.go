@@ -102,11 +102,6 @@ func (m *ListTenantsResponse) contextValidateTenants(ctx context.Context, format
 	for i := 0; i < len(m.Tenants); i++ {
 
 		if m.Tenants[i] != nil {
-
-			if swag.IsZero(m.Tenants[i]) { // not required
-				return nil
-			}
-
 			if err := m.Tenants[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("tenants" + "." + strconv.Itoa(i))

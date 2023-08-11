@@ -163,11 +163,6 @@ func (m *DescribePVCWrapper) contextValidateAnnotations(ctx context.Context, for
 	for i := 0; i < len(m.Annotations); i++ {
 
 		if m.Annotations[i] != nil {
-
-			if swag.IsZero(m.Annotations[i]) { // not required
-				return nil
-			}
-
 			if err := m.Annotations[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("annotations" + "." + strconv.Itoa(i))
@@ -188,11 +183,6 @@ func (m *DescribePVCWrapper) contextValidateLabels(ctx context.Context, formats 
 	for i := 0; i < len(m.Labels); i++ {
 
 		if m.Labels[i] != nil {
-
-			if swag.IsZero(m.Labels[i]) { // not required
-				return nil
-			}
-
 			if err := m.Labels[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("labels" + "." + strconv.Itoa(i))

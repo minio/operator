@@ -278,7 +278,6 @@ export interface IdpConfiguration {
     configuration_url: string;
     client_id: string;
     secret_id: string;
-    callback_url?: string;
     claim_name: string;
     scopes?: string;
   };

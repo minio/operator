@@ -3081,9 +3081,6 @@ func init() {
             "claim_name"
           ],
           "properties": {
-            "callback_url": {
-              "type": "string"
-            },
             "claim_name": {
               "type": "string"
             },
@@ -7223,9 +7220,6 @@ func init() {
         "claim_name"
       ],
       "properties": {
-        "callback_url": {
-          "type": "string"
-        },
         "claim_name": {
           "type": "string"
         },
@@ -8609,9 +8603,6 @@ func init() {
             "claim_name"
           ],
           "properties": {
-            "callback_url": {
-              "type": "string"
-            },
             "claim_name": {
               "type": "string"
             },

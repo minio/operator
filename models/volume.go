@@ -122,11 +122,6 @@ func (m *Volume) ContextValidate(ctx context.Context, formats strfmt.Registry) e
 func (m *Volume) contextValidateProjected(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Projected != nil {
-
-		if swag.IsZero(m.Projected) { // not required
-			return nil
-		}
-
 		if err := m.Projected.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("projected")
@@ -143,11 +138,6 @@ func (m *Volume) contextValidateProjected(ctx context.Context, formats strfmt.Re
 func (m *Volume) contextValidatePvc(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Pvc != nil {
-
-		if swag.IsZero(m.Pvc) { // not required
-			return nil
-		}
-
 		if err := m.Pvc.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("pvc")

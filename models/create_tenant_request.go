@@ -365,11 +365,6 @@ func (m *CreateTenantRequest) ContextValidate(ctx context.Context, formats strfm
 func (m *CreateTenantRequest) contextValidateDomains(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Domains != nil {
-
-		if swag.IsZero(m.Domains) { // not required
-			return nil
-		}
-
 		if err := m.Domains.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("domains")
@@ -386,11 +381,6 @@ func (m *CreateTenantRequest) contextValidateDomains(ctx context.Context, format
 func (m *CreateTenantRequest) contextValidateEncryption(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Encryption != nil {
-
-		if swag.IsZero(m.Encryption) { // not required
-			return nil
-		}
-
 		if err := m.Encryption.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("encryption")
@@ -409,11 +399,6 @@ func (m *CreateTenantRequest) contextValidateEnvironmentVariables(ctx context.Co
 	for i := 0; i < len(m.EnvironmentVariables); i++ {
 
 		if m.EnvironmentVariables[i] != nil {
-
-			if swag.IsZero(m.EnvironmentVariables[i]) { // not required
-				return nil
-			}
-
 			if err := m.EnvironmentVariables[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("environmentVariables" + "." + strconv.Itoa(i))
@@ -432,11 +417,6 @@ func (m *CreateTenantRequest) contextValidateEnvironmentVariables(ctx context.Co
 func (m *CreateTenantRequest) contextValidateIdp(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Idp != nil {
-
-		if swag.IsZero(m.Idp) { // not required
-			return nil
-		}
-
 		if err := m.Idp.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("idp")
@@ -453,11 +433,6 @@ func (m *CreateTenantRequest) contextValidateIdp(ctx context.Context, formats st
 func (m *CreateTenantRequest) contextValidateImageRegistry(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.ImageRegistry != nil {
-
-		if swag.IsZero(m.ImageRegistry) { // not required
-			return nil
-		}
-
 		if err := m.ImageRegistry.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("image_registry")
@@ -476,11 +451,6 @@ func (m *CreateTenantRequest) contextValidatePools(ctx context.Context, formats 
 	for i := 0; i < len(m.Pools); i++ {
 
 		if m.Pools[i] != nil {
-
-			if swag.IsZero(m.Pools[i]) { // not required
-				return nil
-			}
-
 			if err := m.Pools[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("pools" + "." + strconv.Itoa(i))
@@ -499,11 +469,6 @@ func (m *CreateTenantRequest) contextValidatePools(ctx context.Context, formats 
 func (m *CreateTenantRequest) contextValidateTLS(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.TLS != nil {
-
-		if swag.IsZero(m.TLS) { // not required
-			return nil
-		}
-
 		if err := m.TLS.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("tls")

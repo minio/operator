@@ -1958,8 +1958,6 @@ definitions:
             type: string
           secret_id:
             type: string
-          callback_url:
-            type: string
           claim_name:
             type: string
           scopes:

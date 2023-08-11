@@ -92,7 +92,6 @@ func (m *GemaltoConfigurationResponse) ContextValidate(ctx context.Context, form
 func (m *GemaltoConfigurationResponse) contextValidateKeysecure(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Keysecure != nil {
-
 		if err := m.Keysecure.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("keysecure")
@@ -202,7 +201,6 @@ func (m *GemaltoConfigurationResponseKeysecure) ContextValidate(ctx context.Cont
 func (m *GemaltoConfigurationResponseKeysecure) contextValidateCredentials(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Credentials != nil {
-
 		if err := m.Credentials.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("keysecure" + "." + "credentials")

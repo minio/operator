@@ -152,11 +152,6 @@ func (m *ProjectedVolumeSource) ContextValidate(ctx context.Context, formats str
 func (m *ProjectedVolumeSource) contextValidateConfigMap(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.ConfigMap != nil {
-
-		if swag.IsZero(m.ConfigMap) { // not required
-			return nil
-		}
-
 		if err := m.ConfigMap.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("configMap")
@@ -173,11 +168,6 @@ func (m *ProjectedVolumeSource) contextValidateConfigMap(ctx context.Context, fo
 func (m *ProjectedVolumeSource) contextValidateSecret(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Secret != nil {
-
-		if swag.IsZero(m.Secret) { // not required
-			return nil
-		}
-
 		if err := m.Secret.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("secret")
@@ -194,11 +184,6 @@ func (m *ProjectedVolumeSource) contextValidateSecret(ctx context.Context, forma
 func (m *ProjectedVolumeSource) contextValidateServiceAccountToken(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.ServiceAccountToken != nil {
-
-		if swag.IsZero(m.ServiceAccountToken) { // not required
-			return nil
-		}
-
 		if err := m.ServiceAccountToken.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("serviceAccountToken")

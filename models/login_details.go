@@ -160,11 +160,6 @@ func (m *LoginDetails) contextValidateRedirectRules(ctx context.Context, formats
 	for i := 0; i < len(m.RedirectRules); i++ {
 
 		if m.RedirectRules[i] != nil {
-
-			if swag.IsZero(m.RedirectRules[i]) { // not required
-				return nil
-			}
-
 			if err := m.RedirectRules[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("redirectRules" + "." + strconv.Itoa(i))

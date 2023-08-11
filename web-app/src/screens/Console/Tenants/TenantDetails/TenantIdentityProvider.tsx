@@ -117,7 +117,6 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
   const [openIDClientID, setOpenIDClientID] = useState<string>("");
   const [openIDSecretID, setOpenIDSecretID] = useState<string>("");
   const [showOIDCSecretID, setShowOIDCSecretID] = useState<boolean>(false);
-  const [openIDCallbackURL, setOpenIDCallbackURL] = useState<string>("");
   const [openIDClaimName, setOpenIDClaimName] = useState<string>("");
   const [openIDScopes, setOpenIDScopes] = useState<string>("");
   const [ADURL, setADURL] = useState<string>("");
@@ -214,7 +213,6 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
             setOpenIDConfigurationURL(res.oidc.configuration_url);
             setOpenIDClientID(res.oidc.client_id);
             setOpenIDSecretID(res.oidc.secret_id);
-            setOpenIDCallbackURL(res.oidc.callback_url);
             setOpenIDClaimName(res.oidc.claim_name);
             setOpenIDScopes(res.oidc.scopes);
           } else if (res.active_directory) {
@@ -268,7 +266,6 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
           configuration_url: openIDConfigurationURL,
           client_id: openIDClientID,
           secret_id: openIDSecretID,
-          callback_url: openIDCallbackURL,
           claim_name: openIDClaimName,
           scopes: openIDScopes,
         };
@@ -429,20 +426,6 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                     )
                   }
                   overlayAction={() => setShowOIDCSecretID(!showOIDCSecretID)}
-                />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
-                  id="openID_callbackURL"
-                  name="openID_callbackURL"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setOpenIDCallbackURL(e.target.value);
-                    cleanValidation("openID_callbackURL");
-                  }}
-                  label="Callback URL"
-                  value={openIDCallbackURL}
-                  placeholder="https://your-console-endpoint:9443/oauth_callback"
-                  error={validationErrors["openID_callbackURL"] || ""}
                 />
               </Grid>
               <Grid item xs={12} className={classes.formFieldRow}>

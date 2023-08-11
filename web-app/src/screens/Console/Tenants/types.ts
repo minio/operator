@@ -168,7 +168,6 @@ export interface IIdentityProviderFields {
   openIDConfigurationURL: string;
   openIDClientID: string;
   openIDSecretID: string;
-  openIDCallbackURL: string;
   openIDClaimName: string;
   openIDScopes: string;
   ADURL: string;
@@ -302,7 +301,6 @@ export interface IPoolConfiguration {
 
 export interface ITenantIdentityProviderResponse {
   oidc?: {
-    callback_url: string;
     claim_name: string;
     client_id: string;
     configuration_url: string;

@@ -99,11 +99,6 @@ func (m *ListPVCsResponse) contextValidatePvcs(ctx context.Context, formats strf
 	for i := 0; i < len(m.Pvcs); i++ {
 
 		if m.Pvcs[i] != nil {
-
-			if swag.IsZero(m.Pvcs[i]) { // not required
-				return nil
-			}
-
 			if err := m.Pvcs[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("pvcs" + "." + strconv.Itoa(i))

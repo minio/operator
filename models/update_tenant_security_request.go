@@ -123,11 +123,6 @@ func (m *UpdateTenantSecurityRequest) ContextValidate(ctx context.Context, forma
 func (m *UpdateTenantSecurityRequest) contextValidateCustomCertificates(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.CustomCertificates != nil {
-
-		if swag.IsZero(m.CustomCertificates) { // not required
-			return nil
-		}
-
 		if err := m.CustomCertificates.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("customCertificates")
@@ -144,11 +139,6 @@ func (m *UpdateTenantSecurityRequest) contextValidateCustomCertificates(ctx cont
 func (m *UpdateTenantSecurityRequest) contextValidateSecurityContext(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.SecurityContext != nil {
-
-		if swag.IsZero(m.SecurityContext) { // not required
-			return nil
-		}
-
 		if err := m.SecurityContext.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("securityContext")
@@ -291,11 +281,6 @@ func (m *UpdateTenantSecurityRequestCustomCertificates) contextValidateMinioClie
 	for i := 0; i < len(m.MinioClientCertificates); i++ {
 
 		if m.MinioClientCertificates[i] != nil {
-
-			if swag.IsZero(m.MinioClientCertificates[i]) { // not required
-				return nil
-			}
-
 			if err := m.MinioClientCertificates[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("customCertificates" + "." + "minioClientCertificates" + "." + strconv.Itoa(i))
@@ -316,11 +301,6 @@ func (m *UpdateTenantSecurityRequestCustomCertificates) contextValidateMinioServ
 	for i := 0; i < len(m.MinioServerCertificates); i++ {
 
 		if m.MinioServerCertificates[i] != nil {
-
-			if swag.IsZero(m.MinioServerCertificates[i]) { // not required
-				return nil
-			}
-
 			if err := m.MinioServerCertificates[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("customCertificates" + "." + "minioServerCertificates" + "." + strconv.Itoa(i))

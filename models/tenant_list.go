@@ -169,11 +169,6 @@ func (m *TenantList) ContextValidate(ctx context.Context, formats strfmt.Registr
 func (m *TenantList) contextValidateDomains(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Domains != nil {
-
-		if swag.IsZero(m.Domains) { // not required
-			return nil
-		}
-
 		if err := m.Domains.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("domains")
@@ -192,11 +187,6 @@ func (m *TenantList) contextValidateTiers(ctx context.Context, formats strfmt.Re
 	for i := 0; i < len(m.Tiers); i++ {
 
 		if m.Tiers[i] != nil {
-
-			if swag.IsZero(m.Tiers[i]) { // not required
-				return nil
-			}
-
 			if err := m.Tiers[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("tiers" + "." + strconv.Itoa(i))

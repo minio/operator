@@ -92,7 +92,6 @@ func (m *AwsConfiguration) ContextValidate(ctx context.Context, formats strfmt.R
 func (m *AwsConfiguration) contextValidateSecretsmanager(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Secretsmanager != nil {
-
 		if err := m.Secretsmanager.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("secretsmanager")
@@ -222,7 +221,6 @@ func (m *AwsConfigurationSecretsmanager) ContextValidate(ctx context.Context, fo
 func (m *AwsConfigurationSecretsmanager) contextValidateCredentials(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Credentials != nil {
-
 		if err := m.Credentials.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("secretsmanager" + "." + "credentials")

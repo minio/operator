@@ -253,11 +253,6 @@ func (m *Pool) ContextValidate(ctx context.Context, formats strfmt.Registry) err
 func (m *Pool) contextValidateAffinity(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Affinity != nil {
-
-		if swag.IsZero(m.Affinity) { // not required
-			return nil
-		}
-
 		if err := m.Affinity.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("affinity")
@@ -274,11 +269,6 @@ func (m *Pool) contextValidateAffinity(ctx context.Context, formats strfmt.Regis
 func (m *Pool) contextValidateResources(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Resources != nil {
-
-		if swag.IsZero(m.Resources) { // not required
-			return nil
-		}
-
 		if err := m.Resources.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("resources")
@@ -295,11 +285,6 @@ func (m *Pool) contextValidateResources(ctx context.Context, formats strfmt.Regi
 func (m *Pool) contextValidateSecurityContext(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.SecurityContext != nil {
-
-		if swag.IsZero(m.SecurityContext) { // not required
-			return nil
-		}
-
 		if err := m.SecurityContext.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("securityContext")
@@ -330,7 +315,6 @@ func (m *Pool) contextValidateTolerations(ctx context.Context, formats strfmt.Re
 func (m *Pool) contextValidateVolumeConfiguration(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.VolumeConfiguration != nil {
-
 		if err := m.VolumeConfiguration.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("volume_configuration")

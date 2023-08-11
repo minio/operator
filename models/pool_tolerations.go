@@ -71,11 +71,6 @@ func (m PoolTolerations) ContextValidate(ctx context.Context, formats strfmt.Reg
 	for i := 0; i < len(m); i++ {
 
 		if m[i] != nil {
-
-			if swag.IsZero(m[i]) { // not required
-				return nil
-			}
-
 			if err := m[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName(strconv.Itoa(i))
@@ -165,11 +160,6 @@ func (m *PoolTolerationsItems0) ContextValidate(ctx context.Context, formats str
 func (m *PoolTolerationsItems0) contextValidateTolerationSeconds(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.TolerationSeconds != nil {
-
-		if swag.IsZero(m.TolerationSeconds) { // not required
-			return nil
-		}
-
 		if err := m.TolerationSeconds.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("tolerationSeconds")

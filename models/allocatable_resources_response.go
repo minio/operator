@@ -125,11 +125,6 @@ func (m *AllocatableResourcesResponse) ContextValidate(ctx context.Context, form
 func (m *AllocatableResourcesResponse) contextValidateCPUPriority(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.CPUPriority != nil {
-
-		if swag.IsZero(m.CPUPriority) { // not required
-			return nil
-		}
-
 		if err := m.CPUPriority.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cpu_priority")
@@ -146,11 +141,6 @@ func (m *AllocatableResourcesResponse) contextValidateCPUPriority(ctx context.Co
 func (m *AllocatableResourcesResponse) contextValidateMemPriority(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.MemPriority != nil {
-
-		if swag.IsZero(m.MemPriority) { // not required
-			return nil
-		}
-
 		if err := m.MemPriority.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("mem_priority")

@@ -116,11 +116,6 @@ func (m *UpdateTenantRequest) ContextValidate(ctx context.Context, formats strfm
 func (m *UpdateTenantRequest) contextValidateImageRegistry(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.ImageRegistry != nil {
-
-		if swag.IsZero(m.ImageRegistry) { // not required
-			return nil
-		}
-
 		if err := m.ImageRegistry.ContextValidate(ctx, formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("image_registry")

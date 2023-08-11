@@ -406,7 +406,6 @@ func getTenantIdentityProvider(ctx context.Context, clientSet K8sClientI, tenant
 
 	if tenantConfiguration["MINIO_IDENTITY_OPENID_CONFIG_URL"] != "" {
 
-		callbackURL := tenantConfiguration["MINIO_IDENTITY_OPENID_REDIRECT_URI"]
 		claimName := tenantConfiguration["MINIO_IDENTITY_OPENID_CLAIM_NAME"]
 		clientID := tenantConfiguration["MINIO_IDENTITY_OPENID_CLIENT_ID"]
 		configurationURL := tenantConfiguration["MINIO_IDENTITY_OPENID_CONFIG_URL"]
@@ -415,7 +414,6 @@ func getTenantIdentityProvider(ctx context.Context, clientSet K8sClientI, tenant
 
 		idpConfiguration = &models.IdpConfiguration{
 			Oidc: &models.IdpConfigurationOidc{
-				CallbackURL:      callbackURL,
 				ClaimName:        &claimName,
 				ClientID:         &clientID,
 				ConfigurationURL: &configurationURL,
@@ -476,13 +474,11 @@ func updateTenantIdentityProvider(ctx context.Context, operatorClient OperatorCl
 		secretID := *oidcConfig.SecretID
 		claimName := *oidcConfig.ClaimName
 		scopes := oidcConfig.Scopes
-		callbackURL := oidcConfig.CallbackURL
 		// oidc config
 		tenantConfiguration["MINIO_IDENTITY_OPENID_CONFIG_URL"] = configurationURL
 		tenantConfiguration["MINIO_IDENTITY_OPENID_CLIENT_ID"] = clientID
 		tenantConfiguration["MINIO_IDENTITY_OPENID_CLIENT_SECRET"] = secretID
 		tenantConfiguration["MINIO_IDENTITY_OPENID_CLAIM_NAME"] = claimName
-		tenantConfiguration["MINIO_IDENTITY_OPENID_REDIRECT_URI"] = callbackURL
 		if scopes == "" {
 			scopes = "openid,profile,email"
 		}
@@ -494,7 +490,7 @@ func updateTenantIdentityProvider(ctx context.Context, operatorClient OperatorCl
 		delete(tenantConfiguration, "MINIO_IDENTITY_OPENID_CONFIG_URL")
 		delete(tenantConfiguration, "MINIO_IDENTITY_OPENID_SCOPES")
 		delete(tenantConfiguration, "MINIO_IDENTITY_OPENID_CLIENT_SECRET")
-		delete(tenantConfiguration, "MINIO_IDENTITY_OPENID_REDIRECT_URI")
+		delete(tenantConfiguration, "MINIO_BROWSER_REDIRECT_URL")
 	}
 	ldapConfig := params.Body.ActiveDirectory
 	// set new active directory configuration fields

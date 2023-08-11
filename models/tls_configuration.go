@@ -139,11 +139,6 @@ func (m *TLSConfiguration) contextValidateMinioClientCertificates(ctx context.Co
 	for i := 0; i < len(m.MinioClientCertificates); i++ {
 
 		if m.MinioClientCertificates[i] != nil {
-
-			if swag.IsZero(m.MinioClientCertificates[i]) { // not required
-				return nil
-			}
-
 			if err := m.MinioClientCertificates[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("minioClientCertificates" + "." + strconv.Itoa(i))
@@ -164,11 +159,6 @@ func (m *TLSConfiguration) contextValidateMinioServerCertificates(ctx context.Co
 	for i := 0; i < len(m.MinioServerCertificates); i++ {
 
 		if m.MinioServerCertificates[i] != nil {
-
-			if swag.IsZero(m.MinioServerCertificates[i]) { // not required
-				return nil
-			}
-
 			if err := m.MinioServerCertificates[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("minioServerCertificates" + "." + strconv.Itoa(i))

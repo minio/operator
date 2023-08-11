@@ -102,11 +102,6 @@ func (m *CreateTenantResponse) contextValidateConsole(ctx context.Context, forma
 	for i := 0; i < len(m.Console); i++ {
 
 		if m.Console[i] != nil {
-
-			if swag.IsZero(m.Console[i]) { // not required
-				return nil
-			}
-
 			if err := m.Console[i].ContextValidate(ctx, formats); err != nil {
 				if ve, ok := err.(*errors.Validation); ok {
 					return ve.ValidateName("console" + "." + strconv.Itoa(i))
