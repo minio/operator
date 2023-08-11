@@ -195,40 +195,31 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 		}
 	}
 
-	publicCert, ok := tenantCaSecret.Data[common.PublicCRT]
-	if ok && !bytes.Equal(publicCert, operatorPublicCert) {
+	update := false
+
+	if publicCert, ok := tenantCaSecret.Data[common.PublicCRT]; ok && !bytes.Equal(publicCert, operatorPublicCert) {
 		tenantCaSecret.Data[common.PublicCRT] = operatorPublicCert
-		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
-		if err != nil {
-			return false, err
-		}
-		// Reload certificates
-		c.createTransport()
-		return false, fmt.Errorf("'public.crt' in '%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
+		update = true
 	}
 
-	tlsCert, ok := tenantCaSecret.Data[common.TLSCRT]
-	if ok && !bytes.Equal(tlsCert, operatorTLSCert) {
+	if tlsCert, ok := tenantCaSecret.Data[common.TLSCRT]; ok && !bytes.Equal(tlsCert, operatorTLSCert) {
 		tenantCaSecret.Data[common.TLSCRT] = tlsCert
-		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
-		if err != nil {
-			return false, err
-		}
-		// Reload certificates
-		c.createTransport()
-		return false, fmt.Errorf("'tls.crt' in '%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
+		update = true
 	}
 
-	caCert, ok := tenantCaSecret.Data[common.CACRT]
-	if ok && !bytes.Equal(caCert, operatorCACert) {
+	if caCert, ok := tenantCaSecret.Data[common.CACRT]; ok && !bytes.Equal(caCert, operatorCACert) {
 		tenantCaSecret.Data[common.CACRT] = caCert
+		update = true
+	}
+
+	if update {
 		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
 		if err != nil {
 			return false, err
 		}
 		// Reload certificates
 		c.createTransport()
-		return false, fmt.Errorf("'ca.crt' in '%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
+		return false, fmt.Errorf("'%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
 	}
 
 	return true, nil
