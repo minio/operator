@@ -904,7 +904,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, err)
 	}
 
-	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport(false))
+	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		if _, uerr := c.updateTenantStatus(ctx, tenant, StatusTenantCredentialsNotSet, 0); uerr != nil {
 			return WrapResult(Result{}, uerr)
@@ -1083,7 +1083,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			}
 		} else {
 			// check if MinIO is already online after the previous restart
-			if tenant.MinIOHealthCheck(c.getTransport(false)) {
+			if tenant.MinIOHealthCheck(c.getTransport()) {
 				tenant.Status.WaitingOnReady = nil
 				if _, err = c.updatePoolStatus(ctx, tenant); err != nil {
 					klog.Infof("'%s' Can't update tenant status: %v", key, err)
@@ -1120,7 +1120,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		ssImage = ssImages[1]
 	}
 	if specImage != ssImage && tenant.Status.CurrentState != StatusUpdatingMinIOVersion {
-		if !tenant.MinIOHealthCheck(c.getTransport(false)) {
+		if !tenant.MinIOHealthCheck(c.getTransport()) {
 			klog.Infof("%s is not running can't update image online", key)
 			return WrapResult(Result{}, ErrMinIONotReady)
 		}

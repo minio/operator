@@ -348,7 +348,7 @@ func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sess
 // getTenantClient returns an http client that can be used to connect with the tenant
 func getTenantClient(ctx context.Context, c *Controller, tenant *miniov2.Tenant) (*http.Client, string, string, error) {
 	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
-	transport := c.getTransport(false)
+	transport := c.getTransport()
 	if err != nil {
 		return nil, "", "", err
 	}

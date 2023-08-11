@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"net/http"
 	"time"
@@ -90,11 +91,48 @@ func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.T
 }
 
 // getTransport returns a *http.Transport with the collection of the trusted CA certificates
-// reload=true forces to reload the CA certificates instead of return the cached transport
-func (c *Controller) getTransport(reload bool) *http.Transport {
-	if c.transport != nil && !reload {
+// returns a cached transport if already available
+func (c *Controller) getTransport() *http.Transport {
+	if c.transport != nil {
 		return c.transport
 	}
+	c.transport = c.createTransport()
+	return c.transport
+}
+
+// createTransport returns a *http.Transport with the collection of the trusted CA certificates
+func (c *Controller) createTransport() *http.Transport {
+	rootCAs := c.fetchTransportCACertificates()
+	dialer := &net.Dialer{
+		Timeout:   15 * time.Second,
+		KeepAlive: 15 * time.Second,
+	}
+	c.transport = &http.Transport{
+		Proxy:                 http.ProxyFromEnvironment,
+		DialContext:           dialer.DialContext,
+		MaxIdleConnsPerHost:   1024,
+		IdleConnTimeout:       15 * time.Second,
+		ResponseHeaderTimeout: 15 * time.Minute,
+		TLSHandshakeTimeout:   15 * time.Second,
+		ExpectContinueTimeout: 15 * time.Second,
+		// Go net/http automatically unzip if content-type is
+		// gzip disable this feature, as we are always interested
+		// in raw stream.
+		DisableCompression: true,
+		TLSClientConfig: &tls.Config{
+			// Can't use SSLv3 because of POODLE and BEAST
+			// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
+			// Can't use TLSv1.1 because of RC4 cipher usage
+			MinVersion: tls.VersionTLS12,
+			RootCAs:    rootCAs,
+		},
+	}
+
+	return c.transport
+}
+
+// fetchTransportCACertificates retrieves a *x509.CertPool with all CA that operator will trust
+func (c *Controller) fetchTransportCACertificates() (pool *x509.CertPool) {
 	rootCAs := miniov2.MustGetSystemCertPool()
 	// Default kubernetes CA certificate
 	rootCAs.AppendCertsFromPEM(miniov2.GetPodCAFromFile())
@@ -142,32 +180,7 @@ func (c *Controller) getTransport(reload bool) *http.Transport {
 			}
 		}
 	}
-	dialer := &net.Dialer{
-		Timeout:   15 * time.Second,
-		KeepAlive: 15 * time.Second,
-	}
-	c.transport = &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           dialer.DialContext,
-		MaxIdleConnsPerHost:   1024,
-		IdleConnTimeout:       15 * time.Second,
-		ResponseHeaderTimeout: 15 * time.Minute,
-		TLSHandshakeTimeout:   15 * time.Second,
-		ExpectContinueTimeout: 15 * time.Second,
-		// Go net/http automatically unzip if content-type is
-		// gzip disable this feature, as we are always interested
-		// in raw stream.
-		DisableCompression: true,
-		TLSClientConfig: &tls.Config{
-			// Can't use SSLv3 because of POODLE and BEAST
-			// Can't use TLSv1.0 because of POODLE and BEAST using CBC cipher
-			// Can't use TLSv1.1 because of RC4 cipher usage
-			MinVersion: tls.VersionTLS12,
-			RootCAs:    rootCAs,
-		},
-	}
-
-	return c.transport
+	return rootCAs
 }
 
 func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (err error) {
@@ -189,7 +202,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	}
 
 	// get a new admin client
-	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport(false))
+	adminClient, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		klog.Errorf("Error instantiating adminClnt: %v", err)
 		return err
@@ -223,7 +236,7 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 	}
 
 	// get a new admin client
-	minioClient, err := tenant.NewMinIOUser(tenantConfiguration, c.getTransport(false))
+	minioClient, err := tenant.NewMinIOUser(tenantConfiguration, c.getTransport())
 	if err != nil {
 		// show the error and continue
 		klog.Errorf("Error instantiating minio Client: %v ", err)

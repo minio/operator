@@ -36,6 +36,15 @@ const (
 	OperatorRuntimeOpenshift Runtime = "OPENSHIFT"
 	// OperatorRuntimeRancher is the Rancher runtime flag
 	OperatorRuntimeRancher Runtime = "RANCHER"
+
+	// TLSCRT is  name of the field containing tls certificate in secret
+	TLSCRT = "tls.crt"
+
+	// CACRT name of the field containing ca certificate in secret
+	CACRT = "ca.crt"
+
+	// PublicCRT name of the field containing public certificate in secret
+	PublicCRT = "public.crt"
 )
 
 // Runtimes is a map of the supported Kubernetes runtimes

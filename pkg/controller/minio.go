@@ -30,6 +30,8 @@ import (
 	"slices"
 	"time"
 
+	"github.com/minio/operator/pkg/common"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/minio/operator/pkg/controller/certificates"
@@ -113,9 +115,9 @@ func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName
 
 func getOperatorCertFromSecret(secretData map[string][]byte, key string) ([]byte, error) {
 	keys := []string{
-		"tls.crt",
-		"ca.crt",
-		"public.crt",
+		common.TLSCRT,
+		common.CACRT,
+		common.PublicCRT,
 	}
 	if slices.Contains(keys, key) {
 		data, ok := secretData[key]
@@ -140,22 +142,22 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 		return false, err
 	}
 
-	operatorPublicCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, "public.crt")
+	operatorPublicCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.PublicCRT)
 	if err != nil {
 		// If no public.crt is present we error, other certs are optional
 		return false, err
 	}
 
-	certsData["public.crt"] = operatorPublicCert
+	certsData[common.PublicCRT] = operatorPublicCert
 
-	operatorTLSCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, "tls.crt")
+	operatorTLSCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.TLSCRT)
 	if err == nil {
-		certsData["tls.crt"] = operatorTLSCert
+		certsData[common.TLSCRT] = operatorTLSCert
 	}
 
-	operatorCACert, err := getOperatorCertFromSecret(operatorCaSecret.Data, "ca.crt")
+	operatorCACert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.CACRT)
 	if err == nil {
-		certsData["ca.crt"] = operatorCACert
+		certsData[common.CACRT] = operatorCACert
 	}
 
 	var tenantCaSecret *corev1.Secret
@@ -193,39 +195,39 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 		}
 	}
 
-	publicCert, ok := tenantCaSecret.Data["public.crt"]
+	publicCert, ok := tenantCaSecret.Data[common.PublicCRT]
 	if ok && !bytes.Equal(publicCert, operatorPublicCert) {
-		tenantCaSecret.Data["public.crt"] = operatorPublicCert
+		tenantCaSecret.Data[common.PublicCRT] = operatorPublicCert
 		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
 		if err != nil {
 			return false, err
 		}
 		// Reload certificates
-		c.getTransport(true)
+		c.createTransport()
 		return false, fmt.Errorf("'public.crt' in '%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
 	}
 
-	tlsCert, ok := tenantCaSecret.Data["tls.crt"]
+	tlsCert, ok := tenantCaSecret.Data[common.TLSCRT]
 	if ok && !bytes.Equal(tlsCert, operatorTLSCert) {
-		tenantCaSecret.Data["tls.crt"] = tlsCert
+		tenantCaSecret.Data[common.TLSCRT] = tlsCert
 		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
 		if err != nil {
 			return false, err
 		}
 		// Reload certificates
-		c.getTransport(true)
+		c.createTransport()
 		return false, fmt.Errorf("'tls.crt' in '%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
 	}
 
-	caCert, ok := tenantCaSecret.Data["ca.crt"]
+	caCert, ok := tenantCaSecret.Data[common.CACRT]
 	if ok && !bytes.Equal(caCert, operatorCACert) {
-		tenantCaSecret.Data["ca.crt"] = caCert
+		tenantCaSecret.Data[common.CACRT] = caCert
 		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
 		if err != nil {
 			return false, err
 		}
 		// Reload certificates
-		c.getTransport(true)
+		c.createTransport()
 		return false, fmt.Errorf("'ca.crt' in '%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
 	}
 
