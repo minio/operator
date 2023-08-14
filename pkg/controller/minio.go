@@ -27,7 +27,10 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"slices"
 	"time"
+
+	"github.com/minio/operator/pkg/common"
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -110,23 +113,25 @@ func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName
 	return c.kubeClientSet.CoreV1().Secrets(nsName).Get(ctx, secretName, metav1.GetOptions{})
 }
 
-func getOperatorCACert(secretData map[string][]byte) ([]byte, error) {
-	for _, key := range []string{
-		"tls.crt",
-		"ca.crt",
-		"public.crt",
-	} {
+func getOperatorCertFromSecret(secretData map[string][]byte, key string) ([]byte, error) {
+	keys := []string{
+		common.TLSCRT,
+		common.CACRT,
+		common.PublicCRT,
+	}
+	if slices.Contains(keys, key) {
 		data, ok := secretData[key]
 		if ok {
 			return data, nil
 		}
 	}
-	return nil, fmt.Errorf("missing 'public.crt' in %s/%s secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName)
+	return nil, fmt.Errorf("missing '%s' in %s/%s secret", key, miniov2.GetNSFromFile(), OperatorCATLSSecretName)
 }
 
 // checkOperatorCaForTenant create or updates the operator-ca-tls secret for tenant if need it
 func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *miniov2.Tenant) (operatorCATLSExists bool, err error) {
-	var tenantCaCert []byte
+	var certsData map[string][]byte
+
 	// get operator-ca-tls in minio-operator namespace
 	operatorCaSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -137,9 +142,22 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 		return false, err
 	}
 
-	operatorCaCert, err := getOperatorCACert(operatorCaSecret.Data)
+	operatorPublicCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.PublicCRT)
 	if err != nil {
+		// If no public.crt is present we error, other certs are optional
 		return false, err
+	}
+
+	certsData[common.PublicCRT] = operatorPublicCert
+
+	operatorTLSCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.TLSCRT)
+	if err == nil {
+		certsData[common.TLSCRT] = operatorTLSCert
+	}
+
+	operatorCACert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.CACRT)
+	if err == nil {
+		certsData[common.CACRT] = operatorCACert
 	}
 
 	var tenantCaSecret *corev1.Secret
@@ -160,9 +178,7 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 					}),
 				},
 			},
-			Data: map[string][]byte{
-				"public.crt": operatorCaCert,
-			},
+			Data: certsData,
 		}
 		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, tenantCaSecret, metav1.CreateOptions{})
 		return err
@@ -179,14 +195,31 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 		}
 	}
 
-	tenantCaCert = tenantCaSecret.Data["public.crt"]
-	if !bytes.Equal(tenantCaCert, operatorCaCert) {
-		tenantCaSecret.Data["public.crt"] = operatorCaCert
+	update := false
+
+	if publicCert, ok := tenantCaSecret.Data[common.PublicCRT]; ok && !bytes.Equal(publicCert, operatorPublicCert) {
+		tenantCaSecret.Data[common.PublicCRT] = operatorPublicCert
+		update = true
+	}
+
+	if tlsCert, ok := tenantCaSecret.Data[common.TLSCRT]; ok && !bytes.Equal(tlsCert, operatorTLSCert) {
+		tenantCaSecret.Data[common.TLSCRT] = tlsCert
+		update = true
+	}
+
+	if caCert, ok := tenantCaSecret.Data[common.CACRT]; ok && !bytes.Equal(caCert, operatorCACert) {
+		tenantCaSecret.Data[common.CACRT] = caCert
+		update = true
+	}
+
+	if update {
 		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
 		if err != nil {
 			return false, err
 		}
-		return false, fmt.Errorf("'public.crt' in '%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
+		// Reload certificates
+		c.createTransport()
+		return false, fmt.Errorf("'%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
 	}
 
 	return true, nil
