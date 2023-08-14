@@ -22,7 +22,7 @@ export default function Copyright() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
       {"Copyright © "}
-      <Link color="inherit" href="https://min.io/?ref=con">
+      <Link color="inherit" href="https://min.io/?ref=op">
         MinIO
       </Link>{" "}
       {new Date().getFullYear()}

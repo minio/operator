@@ -93,7 +93,7 @@ const LicenseConsentModal = ({
           the license obligations, we offer a commercial license which is
           available here:{" "}
           <a
-            href={`https://min.io/signup?ref=con`}
+            href={`https://min.io/signup?ref=op`}
             rel="noopener"
             className={"link-text"}
           >

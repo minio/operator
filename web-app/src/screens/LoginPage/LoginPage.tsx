@@ -468,10 +468,10 @@ const Login = () => {
 
   const logoVar = getLogoVar();
 
-  let docsURL = "https://min.io/docs/minio/linux/index.html?ref=con";
+  let docsURL = "https://min.io/docs/minio/linux/index.html?ref=op";
   if (isK8S) {
     docsURL =
-      "https://min.io/docs/minio/kubernetes/upstream/index.html?ref=con";
+      "https://min.io/docs/minio/kubernetes/upstream/index.html?ref=op";
   }
 
   return (
@@ -496,7 +496,7 @@ const Login = () => {
             </a>
             <span className={classes.separator}>|</span>
             <a
-              href="https://subnet.min.io/?ref=con"
+              href="https://subnet.min.io/?ref=op"
               target="_blank"
               rel="noopener"
             >
@@ -504,7 +504,7 @@ const Login = () => {
             </a>
             <span className={classes.separator}>|</span>
             <a
-              href="https://min.io/download/?ref=con"
+              href="https://min.io/download/?ref=op"
               target="_blank"
               rel="noopener"
             >
