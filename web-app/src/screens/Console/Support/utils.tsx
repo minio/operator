@@ -108,7 +108,7 @@ export const ProxyConfiguration = () => {
                 color: "#2781B0",
                 cursor: "pointer",
               }}
-              href="https://min.io/docs/minio/linux/reference/minio-mc-admin/mc-admin-config.html?ref=con"
+              href="https://min.io/docs/minio/linux/reference/minio-mc-admin/mc-admin-config.html?ref=op"
               target="_blank"
             >
               configure a proxy

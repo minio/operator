@@ -37,7 +37,7 @@ type FeatureItem = {
 const FeatureLink = ({ text, anchor }: { text: string; anchor: string }) => {
   return (
     <a
-      href={`https://min.io/product/subnet?ref=con#${anchor}`}
+      href={`https://min.io/product/subnet?ref=op#${anchor}`}
       className={"link-text"}
       target="_blank"
       rel="noopener "
@@ -239,7 +239,7 @@ export const STANDARD_PLAN_FEATURES = [
             the MinIO Subscription Network
           </span>{" "}
           <a
-            href="https://min.io/product/subnet?ref=con"
+            href="https://min.io/product/subnet?ref=op"
             className={"link-text"}
             target="_blank"
             rel="noopener"
@@ -352,7 +352,7 @@ export const ENTERPRISE_PLAN_FEATURES = [
             about the MinIO Subscription Network
           </span>{" "}
           <a
-            href="https://min.io/product/subnet?ref=con"
+            href="https://min.io/product/subnet?ref=op"
             className={"link-text"}
             target="_blank"
             rel="noopener"
