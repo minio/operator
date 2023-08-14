@@ -470,8 +470,7 @@ const Login = () => {
 
   let docsURL = "https://min.io/docs/minio/linux/index.html?ref=op";
   if (isK8S) {
-    docsURL =
-      "https://min.io/docs/minio/kubernetes/upstream/index.html?ref=op";
+    docsURL = "https://min.io/docs/minio/kubernetes/upstream/index.html?ref=op";
   }
 
   return (
