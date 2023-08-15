@@ -164,7 +164,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
         },
         {
           fieldKey: "openID_claimName",
-          required: true,
+          required: false,
           value: openIDClaimName,
         },
       ];
@@ -441,8 +441,8 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   }}
                   label="Claim Name"
                   value={openIDClaimName}
+                  placeholder="policy"
                   error={validationErrors["openID_claimName"] || ""}
-                  required
                 />
               </Grid>
               <Grid item xs={12} className={classes.formFieldRow}>
