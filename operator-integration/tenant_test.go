@@ -171,7 +171,7 @@ func TestMain(m *testing.M) {
 		return
 	}
 	secret2 := out2.String()
-	jwt := decodeBase64(secret2[1 : len(secret2)-1])
+	jwt = decodeBase64(secret2[1 : len(secret2)-1])
 	if jwt == "" {
 		fmt.Println("jwt cannot be empty string")
 		os.Exit(-1)
