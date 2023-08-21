@@ -127,8 +127,8 @@ func GetPublicCertFilePath(serviceName string) string {
 
 // GetPrivateKeyFilePath return the path to the key file based for the serviceName
 func GetPrivateKeyFilePath(serviceName string) string {
-	publicKeyPath := fmt.Sprintf("/tmp/%s/private.key", serviceName)
-	return publicKeyPath
+	privateKey := fmt.Sprintf("/tmp/%s/private.key", serviceName)
+	return privateKey
 }
 
 // GetNSFromFile assumes the operator is running inside a k8s pod and extract the

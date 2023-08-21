@@ -82,8 +82,8 @@ func (c *Controller) writeCertSecretToFile(tlsCertSecret *corev1.Secret, service
 	}
 
 	publicCertPath := miniov2.GetPublicCertFilePath(serviceName)
-	publicKeyPath := miniov2.GetPrivateKeyFilePath(serviceName)
-	publicCertKey, privateKeyKey := c.getKeyNames(tlsCertSecret)
+	privateKeyPath := miniov2.GetPrivateKeyFilePath(serviceName)
+	publicCertKey, privateKey := c.getKeyNames(tlsCertSecret)
 
 	if val, ok := tlsCertSecret.Data[publicCertKey]; ok {
 		err := os.WriteFile(publicCertPath, val, 0o644)
@@ -93,15 +93,15 @@ func (c *Controller) writeCertSecretToFile(tlsCertSecret *corev1.Secret, service
 	} else {
 		panic(fmt.Errorf("missing '%s' in %s/%s", publicCertKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
 	}
-	if val, ok := tlsCertSecret.Data[privateKeyKey]; ok {
-		err := os.WriteFile(publicKeyPath, val, 0o644)
+	if val, ok := tlsCertSecret.Data[privateKey]; ok {
+		err := os.WriteFile(privateKeyPath, val, 0o644)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		panic(fmt.Errorf("missing '%s' in %s/%s", privateKeyKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
+		panic(fmt.Errorf("missing '%s' in %s/%s", privateKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
 	}
-	return publicCertPath, publicKeyPath
+	return publicCertPath, privateKeyPath
 }
 
 // generateTLSCert Generic method to generate TLS Certificartes for different services
