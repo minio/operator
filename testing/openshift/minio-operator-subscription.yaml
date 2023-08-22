@@ -1,0 +1,11 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: test-subscription
+  namespace: minio-operator
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: minio-operator-noop
+  source: minio-test-operators
+  sourceNamespace: openshift-marketplace

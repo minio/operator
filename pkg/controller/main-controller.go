@@ -723,6 +723,13 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 
 	namespace, tenantName := key2NamespaceName(key)
 
+	if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+		err := c.checkOpenshiftSignerCACertInOperatorNamespace(ctx)
+		if err != nil {
+			klog.Errorf("Error checking openshift-csr-signer-ca secret, %#v", err)
+		}
+	}
+
 	// Get the Tenant resource with this namespace/name
 	tenant, err := c.minioClientSet.MinioV2().Tenants(namespace).Get(context.Background(), tenantName, metav1.GetOptions{})
 	if err != nil {
