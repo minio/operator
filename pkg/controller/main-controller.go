@@ -59,6 +59,7 @@ import (
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 
@@ -120,6 +121,8 @@ type Controller struct {
 	podName string
 	// namespacesToWatch restricts the action of the opreator to a list of namespaces
 	namespacesToWatch set.StringSet
+	// k8sClient is a kubernetes client
+	k8sClient client.Client
 	// kubeClientSet is a standard kubernetes clientset
 	kubeClientSet kubernetes.Interface
 	// minioClientSet is a clientset for our own API group
@@ -211,7 +214,7 @@ type EventNotification struct {
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, k8sClient client.Client, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -244,6 +247,7 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		podName:                   podName,
 		namespacesToWatch:         namespacesToWatch,
 		kubeClientSet:             kubeClientSet,
+		k8sClient:                 k8sClient,
 		minioClientSet:            minioClientSet,
 		promClient:                promClient,
 		statefulSetLister:         statefulSetInformer.Lister(),
