@@ -64,11 +64,20 @@ func convertModelSCToK8sSC(sc *models.SecurityContext) (*corev1.PodSecurityConte
 
 // convertK8sSCToModelSC validates and converts from corev1.PodSecurityContext to models.SecurityContext
 func convertK8sSCToModelSC(sc *corev1.PodSecurityContext) *models.SecurityContext {
-	runAsUser := strconv.FormatInt(*sc.RunAsUser, 10)
-	runAsGroup := strconv.FormatInt(*sc.RunAsGroup, 10)
-	fsGroup := strconv.FormatInt(*sc.FSGroup, 10)
+	var runAsUser string
+	var runAsGroup string
+	var fsGroup string
 	fsGroupChangePolicy := "Always"
 
+	if sc.RunAsUser != nil && *sc.RunAsUser != 0 {
+		runAsUser = strconv.FormatInt(*sc.RunAsUser, 10)
+	}
+	if sc.RunAsGroup != nil && *sc.RunAsGroup != 0 {
+		runAsGroup = strconv.FormatInt(*sc.RunAsGroup, 10)
+	}
+	if sc.FSGroup != nil && *sc.FSGroup != 0 {
+		fsGroup = strconv.FormatInt(*sc.FSGroup, 10)
+	}
 	if sc.FSGroupChangePolicy != nil {
 		fsGroupChangePolicy = string(*sc.FSGroupChangePolicy)
 	}
