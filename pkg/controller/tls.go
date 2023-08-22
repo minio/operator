@@ -40,7 +40,7 @@ import (
 )
 
 // waitForCertSecretReady Function designed to run in a non-leader operator container to wait for the leader to issue a TLS certificate
-func (c *Controller) waitForCertSecretReady(serviceName string, secretName string) (*string, *string) {
+func (c *Controller) waitForCertSecretReady(serviceName string, secretName string) (string, string) {
 	ctx := context.Background()
 	namespace := miniov2.GetNSFromFile()
 	var publicCertPath, publicKeyPath string
@@ -65,7 +65,7 @@ func (c *Controller) waitForCertSecretReady(serviceName string, secretName strin
 		panic(err)
 	}
 
-	return &publicCertPath, &publicKeyPath
+	return publicCertPath, publicKeyPath
 }
 
 // getCertificateSecret gets a TLS Certificate secret
@@ -81,9 +81,9 @@ func (c *Controller) writeCertSecretToFile(tlsCertSecret *corev1.Secret, service
 		panic(mkdirerr)
 	}
 
-	publicCertPath := fmt.Sprintf("/tmp/%s/public.crt", serviceName)
-	publicKeyPath := fmt.Sprintf("/tmp/%s/private.key", serviceName)
-	publicCertKey, privateKeyKey := c.getKeyNames(tlsCertSecret)
+	publicCertPath := miniov2.GetPublicCertFilePath(serviceName)
+	privateKeyPath := miniov2.GetPrivateKeyFilePath(serviceName)
+	publicCertKey, privateKey := c.getKeyNames(tlsCertSecret)
 
 	if val, ok := tlsCertSecret.Data[publicCertKey]; ok {
 		err := os.WriteFile(publicCertPath, val, 0o644)
@@ -93,15 +93,15 @@ func (c *Controller) writeCertSecretToFile(tlsCertSecret *corev1.Secret, service
 	} else {
 		panic(fmt.Errorf("missing '%s' in %s/%s", publicCertKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
 	}
-	if val, ok := tlsCertSecret.Data[privateKeyKey]; ok {
-		err := os.WriteFile(publicKeyPath, val, 0o644)
+	if val, ok := tlsCertSecret.Data[privateKey]; ok {
+		err := os.WriteFile(privateKeyPath, val, 0o644)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		panic(fmt.Errorf("missing '%s' in %s/%s", privateKeyKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
+		panic(fmt.Errorf("missing '%s' in %s/%s", privateKey, tlsCertSecret.Namespace, tlsCertSecret.Name))
 	}
-	return publicCertPath, publicKeyPath
+	return publicCertPath, privateKeyPath
 }
 
 // generateTLSCert Generic method to generate TLS Certificartes for different services

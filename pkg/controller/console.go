@@ -37,7 +37,7 @@ const (
 	// DefaultConsoleDeploymentName is the default name of the console deployment
 	DefaultConsoleDeploymentName = "console"
 	// OperatorConsoleTLSSecretName is the name of secret created with TLS certs for Operator console
-	OperatorConsoleTLSSecretName = "operator-console-tls"
+	OperatorConsoleTLSSecretName = "console-tls"
 )
 
 // checkConsoleSvc validates the existence of the MinIO service and validate it's status against what the specification

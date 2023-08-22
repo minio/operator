@@ -110,6 +110,27 @@ func GetPodCAFromFile() []byte {
 	return namespace
 }
 
+// GetPodServiceCAFromFile extracts the service-ca.crt certificate in Openshift deployments coming from configmap openshift-service-ca.crt
+func GetPodServiceCAFromFile() []byte {
+	caPath, err := os.ReadFile("/tmp/service-ca/ca.crt")
+	if err != nil {
+		return nil
+	}
+	return caPath
+}
+
+// GetPublicCertFilePath return the path to the certificate file based for the serviceName
+func GetPublicCertFilePath(serviceName string) string {
+	publicCertPath := fmt.Sprintf("/tmp/%s/public.crt", serviceName)
+	return publicCertPath
+}
+
+// GetPrivateKeyFilePath return the path to the key file based for the serviceName
+func GetPrivateKeyFilePath(serviceName string) string {
+	privateKey := fmt.Sprintf("/tmp/%s/private.key", serviceName)
+	return privateKey
+}
+
 // GetNSFromFile assumes the operator is running inside a k8s pod and extract the
 // current namespace from the /var/run/secrets/kubernetes.io/serviceaccount/namespace file
 func GetNSFromFile() string {

@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/utils"
+
 	"github.com/minio/madmin-go/v2"
 	"github.com/minio/operator/pkg/common"
 	xcerts "github.com/minio/pkg/certs"
@@ -356,8 +358,13 @@ func (c *Controller) startUpgradeServer(ctx context.Context) <-chan error {
 // startUpgradeServer Starts the Upgrade tenant API server and notifies the start and stop via notificationChannel
 func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel chan<- *EventNotification) {
 	klog.Infof("Starting STS API server")
-	publicCertPath, publicKeyPath := c.waitSTSTLSCert()
-	certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
+
+	publicCertPath := miniov2.GetPublicCertFilePath("sts")
+	privateKeyPath := miniov2.GetPrivateKeyFilePath("sts")
+	if utils.GetOperatorRuntime() != common.OperatorRuntimeOpenshift {
+		publicCertPath, privateKeyPath = c.waitSTSTLSCert()
+	}
+	certsManager, err := xcerts.NewManager(ctx, publicCertPath, privateKeyPath, LoadX509KeyPair)
 	if err != nil {
 		klog.Errorf("HTTPS STS API server failed to load CA certificate: %v", err)
 		notificationChannel <- &EventNotification{
@@ -367,6 +374,7 @@ func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel 
 	}
 	serverCertsManager = certsManager
 	c.sts.TLSConfig = c.createTLSConfig(serverCertsManager)
+
 	if err := c.sts.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
 		// only notify on server failure, on http.ErrServerClosed the channel should be already closed
 		notificationChannel <- &EventNotification{
@@ -410,15 +418,20 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	if isOperatorConsoleTLS() {
 		klog.Info("Waiting for Console TLS")
 		go func() {
-			klog.Infof("Console TLS is enabled, starting console TLS certificate setup")
-			err := c.recreateOperatorConsoleCertsIfRequired(ctx)
-			if err != nil {
-				panic(err)
-			}
-			klog.Infof("Restarting Console pods")
-			err = c.rolloutRestartDeployment(getConsoleDeploymentName())
-			if err != nil {
-				klog.Errorf("Console deployment didn't restart: %s", err)
+			if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+				klog.Infof("Console TLS is enabled, skipping TLS certificate generation on Openshift deployment")
+			} else {
+				klog.Infof("Console TLS is enabled, starting console TLS certificate setup")
+
+				err := c.recreateOperatorConsoleCertsIfRequired(ctx)
+				if err != nil {
+					panic(err)
+				}
+				klog.Infof("Restarting Console pods")
+				err = c.rolloutRestartDeployment(getConsoleDeploymentName())
+				if err != nil {
+					klog.Errorf("Console deployment didn't restart: %s", err)
+				}
 			}
 		}()
 	} else {
@@ -428,8 +441,12 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	// 2) we need to make sure we have STS API certificates (if enabled)
 	if IsSTSEnabled() {
 		go func() {
-			klog.Infof("STS is enabled, starting STS API certificate setup")
-			c.generateSTSTLSCert()
+			if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+				klog.Infof("STS is enabled, skipping TLS certificate generation on Openshift deployment")
+			} else {
+				klog.Infof("STS is enabled, starting API certificate setup")
+				c.generateSTSTLSCert()
+			}
 		}()
 	}
 
@@ -440,7 +457,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 				klog.Errorf("Upgrade Server stopped: %v, going to restart", err)
 				upgradeServerChannel = c.startUpgradeServer(ctx)
 			}
-			// webswerver was instructed to stop, do not attempt to restart
+			// webserver was instructed to stop, do not attempt to restart
 			continue
 		case <-stopCh:
 			return
