@@ -283,7 +283,7 @@ ingress:
 
 ## Use an extraResources template section to include additional Kubernetes resources
 ## with the Helm deployment.
-## For example, if you wished to create the config secret together with the tenant:
+## Example: the following creates the config secret together with the tenant:
 #secrets:
 #  existingSecret: custom-env-configuration
 #extraResources:
