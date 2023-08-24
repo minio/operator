@@ -280,3 +280,20 @@ ingress:
     host: minio-console.local
     path: /
     pathType: Prefix
+
+## Extra extraResources is a helm template section to include additional Kubernetes resources of any kind that you would
+## like to include with the helm deployment.
+## For example, if you wished to create the config secret together with the tenant:
+#secrets:
+#  existingSecret: custom-env-configuration
+#extraResources:
+#  - |
+#    apiVersion: v1
+#    kind: Secret
+#    type: Opaque
+#    metadata:
+#      name: {{ dig "secrets" "existingSecret" "" (.Values | merge (dict)) }}
+#    stringData:
+#      config.env: |-
+#        export MINIO_ROOT_USER='minio'
+#        export MINIO_ROOT_PASSWORD='minio123'
