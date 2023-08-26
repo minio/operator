@@ -156,7 +156,7 @@ func (c *Controller) fetchTransportCACertificates() (pool *x509.CertPool) {
 		}
 	}
 
-	// These chunk of code is intended for OpenShift ONLY and it will help us trust the signer to solve issue:
+	// These chunk of code is intended for OpenShift ONLY, and it will help us trust the signer to solve issue:
 	// https://github.com/minio/operator/issues/1412
 	if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
 		openShiftCATLSCert, err := c.kubeClientSet.CoreV1().Secrets("openshift-kube-controller-manager-operator").Get(
