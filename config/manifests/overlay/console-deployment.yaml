@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console
+  namespace: minio-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: console
+          volumeMounts:
+            - name: tls-certificates
+              mountPath: /tmp/certs
+      volumes:
+        - name: tls-certificates
+          projected:
+            defaultMode: 420
+            sources:
+              - secret:
+                  name: console-tls
+                  items:
+                    - key: tls.crt
+                      path: public.crt
+                    - key: tls.key
+                      path: private.key
+
+                  optional: true
+              - configMap:
+                  name: openshift-service-ca.crt
+                  items:
+                    - key: service-ca.crt
+                      path: CAs/ca.crt
+                  optional: true

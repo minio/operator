@@ -11,6 +11,7 @@ metadata:
     k8sMinVersion: "1.18"
     repository: https://github.com/minio/operator
     capabilities: "Full Lifecycle"
+    operatorframework.io/suggested-namespace: minio-operator
   name: minio-operator.v0.0.0
   namespace: placeholder
 spec:

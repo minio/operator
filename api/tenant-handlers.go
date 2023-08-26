@@ -976,6 +976,12 @@ func parseTenantPoolRequest(poolParams *models.Pool) (*miniov2.Pool, error) {
 		if elem.TolerationSeconds != nil {
 			// elem.TolerationSeconds.Seconds is allowed to be nil
 			tolerationSeconds = elem.TolerationSeconds.Seconds
+
+			if tolerationSeconds != nil {
+				if corev1.TaintEffect(elem.Effect) != corev1.TaintEffectNoExecute {
+					return nil, fmt.Errorf(`Invalid value: "%s": effect must be 'NoExecute' when tolerationSeconds is set`, elem.Effect)
+				}
+			}
 		}
 
 		toleration := corev1.Toleration{
