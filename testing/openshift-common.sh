@@ -14,8 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 #OPERATOR_SDK_VERSION=v1.22.2
-ARCH=$({ case "$(uname -m)" in "x86_64") echo -n "amd64" ;; "aarch64") echo -n "arm64" ;; *) echo -n "$(uname -m)" ;; esac })
-MACHINE="$(uname -m)"
+ARCH=$(go env GOARCH)
 OS=$(uname | awk '{print tolower($0)}')
 # shellcheck disable=SC2155
 export TMP_BIN_DIR="$(mktemp -d)"
@@ -24,24 +23,8 @@ function install_binaries() {
 
 	echo -e "\e[34mInstalling temporal binaries in $TMP_BIN_DIR\e[0m"
 
-	#echo "kubectl"
-	#curl -#L "https://dl.k8s.io/release/v1.23.1/bin/$OS/$ARCH/kubectl" -o $TMP_BIN_DIR/kubectl
-	#chmod +x $TMP_BIN_DIR/kubectl
-
-	#echo "mc"
-	#curl -#L "https://dl.min.io/client/mc/release/${OS}-${ARCH}/mc" -o $TMP_BIN_DIR/mc
-	#chmod +x $TMP_BIN_DIR/mc
-
-	echo "yq"
-	curl -#L "https://github.com/mikefarah/yq/releases/latest/download/yq_${OS}_${ARCH}" -o $TMP_BIN_DIR/yq
-	chmod +x $TMP_BIN_DIR/yq
-
-	# latest kubectl and oc
-	# curl -#L "https://mirror.openshift.com/pub/openshift-v4/$MACHINE/clients/ocp/stable/openshift-client-$OS.tar.gz" -o $TMP_BIN_DIR/openshift-client-$OS.tar.gz
-	# tar -zxvf openshift-client-$OS.tar.gz
-
 	echo "opm"
-	curl -#L "https://mirror.openshift.com/pub/openshift-v4/$MACHINE/clients/ocp/stable/opm-$OS.tar.gz" -o $TMP_BIN_DIR/opm-$OS.tar.gz
+	curl -#L "https://mirror.openshift.com/pub/openshift-v4/$ARCH/clients/ocp/stable/opm-$OS.tar.gz" -o $TMP_BIN_DIR/opm-$OS.tar.gz
 	tar -zxf $TMP_BIN_DIR/opm-$OS.tar.gz -C $TMP_BIN_DIR/
 	chmod +x $TMP_BIN_DIR/opm
 
@@ -50,9 +33,6 @@ function install_binaries() {
 	tar -xJf $TMP_BIN_DIR/crc-$OS-$ARCH.tar.xz -C $TMP_BIN_DIR/ --strip-components=1
 	chmod +x $TMP_BIN_DIR/crc
 
-	#echo "operator-sdk"
-	#curl -#L "https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION/operator-sdk_${OS}_${ARCH}" -o ${TMP_BIN_DIR}/operator-sdk
-	#chmod +x $TMP_BIN_DIR/operator-sdk
 }
 
 function remove_temp_binaries() {
@@ -142,9 +122,10 @@ function create_marketplace_catalog() {
 	registry="default-route-openshift-image-registry.apps-crc.testing"
 	operatorNamespace="openshift-operators"
 	marketplaceNamespace="openshift-marketplace"
-	operatorContainerImage="$registry/$operatorNamespace/operator:noop"
-	bundleContainerImage="$registry/$marketplaceNamespace/operator-bundle:noop"
-	indexContainerImage="$registry/$marketplaceNamespace/minio-operator-index:noop"
+	operatorrepotag="operator:latest"
+	operatorContainerImage="$registry/$operatorNamespace/$operatorrepotag"
+	bundleContainerImage="$registry/$marketplaceNamespace/operator-bundle:latest"
+	indexContainerImage="$registry/$marketplaceNamespace/minio-operator-index:latest"
 	package="minio-operator"
 	if [[ "$catalog" == "redhat-marketplace" ]]; then
 		package=minio-operator-rhmp
@@ -157,15 +138,15 @@ function create_marketplace_catalog() {
 	podman login -u $(oc whoami) -p $(oc whoami --show-token) $registry/$operatorNamespace --tls-verify=false
 	podman push $operatorContainerImage --tls-verify=false
 
-	echo "Image Stream for operator:"
+	echo "Image Stream for operator"
 	oc get is -n $operatorNamespace operator
 	try oc set image-lookup operator -n $operatorNamespace
 
 	echo "Compiling operator bundle for $catalog"
 	cp -r "${SCRIPT_DIR}/../$catalog/." ${SCRIPT_DIR}/openshift/bundle
-	yq -i ".metadata.annotations.containerImage |= (\"${operatorContainerImage}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
-	yq -i ".spec.install.spec.deployments.[0].spec.template.spec.containers.[0].image |= (\"${operatorContainerImage}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
-	yq -i ".spec.install.spec.deployments.[1].spec.template.spec.containers.[0].image |= (\"${operatorContainerImage}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
+	yq -i ".metadata.annotations.containerImage |= (\"${operatorrepotag}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
+	yq -i ".spec.install.spec.deployments.[0].spec.template.spec.containers.[0].image |= (\"${operatorrepotag}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
+	yq -i ".spec.install.spec.deployments.[1].spec.template.spec.containers.[0].image |= (\"${operatorrepotag}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
 	yq -i ".annotations.\"operators.operatorframework.io.bundle.package.v1\" |= (\"${package}-noop\")" ${SCRIPT_DIR}/openshift/bundle/metadata/annotations.yaml
 	(cd "${SCRIPT_DIR}/.." && podman build --quiet --no-cache -t $bundleContainerImage -f ${SCRIPT_DIR}/openshift/bundle.Dockerfile ${SCRIPT_DIR}/openshift)
 	podman login -u $(oc whoami) -p $(oc whoami --show-token) $registry --tls-verify=false
@@ -192,18 +173,9 @@ function create_marketplace_catalog() {
 		--timeout=300s
 
 	echo "Create 'Test Minio Operators' marketplace catalog source"
-	oc create -f ${SCRIPT_DIR}/openshift/test-operator-catalogsource.yaml
+	oc apply -f ${SCRIPT_DIR}/openshift/test-operator-catalogsource.yaml
 	sleep 5
 	echo "Catalog Source:"
-	oc get catalogsource -n $marketplaceNamespace minio-test-operators
-
-	catalogSourcePod=$(oc get pods -n $marketplaceNamespace -ojson | jq -r '.items[] | select(.metadata.name | startswith("minio-test-operators")) | .metadata.name')
-
-	# Hack, for some reason the original catalgosource pod cannot pull the image.
-	# deleting the pod forces to create a new pod and the newly scheduled pod does have the grants to access the image registry
-	echo "deleting pod $catalogSourcePod" -n $marketplaceNamespace
-	oc delete pod $catalogSourcePod -n $marketplaceNamespace
-
 	echo "Waiting for Package manifest to be ready (5m timeout)"
 	try timeout 300 bash -c -- 'while ! oc get packagemanifests -n '"$marketplaceNamespace"' | grep "Test Minio Operators" 2> /dev/null; do sleep 1 && printf ".";done'
 }
@@ -216,41 +188,47 @@ function install_operator() {
 		catalog="certified-operators"
 	fi
 
+	#obtain subscription namespace
+	snamespace="$2"
+	if [ -z "$snamespace" ]; then
+		snamespace="openshift-operators"
+	fi
+
 	echo -e "\e[34mInstalling Operator from catalog '$catalog'\e[0m"
 
-	try oc create -f ${SCRIPT_DIR}/openshift/test-subscription.yaml
+	try oc apply -f ${SCRIPT_DIR}/openshift/${snamespace}-subscription.yaml
 
 	echo "Subscription:"
-	try oc get sub -n openshift-operators test-subscription
+	try oc get sub -n $snamespace test-subscription
 	#we wait a moment for the resource to get a status field
 	sleep 10s
 
 	echo "Wait subscription to be ready (10m timeout)"
-	try oc wait -n openshift-operators \
-		--for=jsonpath='{.status.state}'=AtLatestKnown subscription --field-selector metadata.name=$(oc get subscription -n openshift-operators -o json | jq -r '.items[0] | .metadata.name') \
+	try oc wait -n $snamespace \
+		--for=jsonpath='{.status.state}'=AtLatestKnown subscription --field-selector metadata.name=$(oc get subscription -n $snamespace -o json | jq -r '.items[0] | .metadata.name') \
 		--timeout=600s
 
 	echo "Install plan:"
-	try oc get installplan -n openshift-operators
+	try oc get installplan -n $snamespace
 
 	echo "Waiting for install plan to be completed (10m timeout)"
-	oc wait -n openshift-operators \
+	oc wait -n $snamespace \
 		--for=jsonpath='{.status.phase}'=Complete installplan \
-		--field-selector metadata.name=$(oc get installplan -n openshift-operators -o json | jq -r '.items[0] | .metadata.name') \
+		--field-selector metadata.name=$(oc get installplan -n $snamespace -o json | jq -r '.items[0] | .metadata.name') \
 		--timeout=600s
 
 	echo "Deployment:"
-	oc -n openshift-operators get deployment minio-operator
+	oc -n $snamespace get deployment minio-operator
 
 	echo "Waiting for Operator Deployment to come online (5m timeout)"
-	try oc wait -n openshift-operators deployment \
+	try oc wait -n $snamespace deployment \
 		--for=condition=Available \
 		--field-selector metadata.name=minio-operator \
 		--timeout=300s
 
 	echo "start - get data to verify proper image is being used"
 	echo "Pods:"
-	oc get pods --namespace openshift-operators
+	oc get pods -n $snamespace
 	echo "Images:"
-	oc describe pods -n openshift-operators | grep Image
+	oc describe pods -n $snamespace | grep Image
 }

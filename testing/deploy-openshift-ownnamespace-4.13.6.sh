@@ -28,7 +28,7 @@ function main() {
 
 	create_marketplace_catalog "certified-operators"
 
-	install_operator "certified-operators"
+	install_operator "certified-operators" "minio-operator"
 
 	#destroy_crc
 }

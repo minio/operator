@@ -103,20 +103,29 @@ var (
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
 // current ca certificate from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 func GetPodCAFromFile() []byte {
-	namespace, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	cert, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
 		return nil
 	}
-	return namespace
+	return cert
 }
 
-// GetPodServiceCAFromFile extracts the service-ca.crt certificate in Openshift deployments coming from configmap openshift-service-ca.crt
-func GetPodServiceCAFromFile() []byte {
-	caPath, err := os.ReadFile("/tmp/service-ca/ca.crt")
+// GetOpenshiftServiceCAFromFile extracts the service-ca.crt certificate in Openshift deployments coming from configmap openshift-service-ca.crt
+func GetOpenshiftServiceCAFromFile() []byte {
+	cert, err := os.ReadFile("/tmp/service-ca/service-ca.crt")
 	if err != nil {
 		return nil
 	}
-	return caPath
+	return cert
+}
+
+// GetOpenshiftCSRSignerCAFromFile extracts the tls.crt certificate in Openshift deployments coming from the mounted secret openshift-csr-signer-ca
+func GetOpenshiftCSRSignerCAFromFile() []byte {
+	cert, err := os.ReadFile("/tmp/csr-signer-ca/tls.crt")
+	if err != nil {
+		return nil
+	}
+	return cert
 }
 
 // GetPublicCertFilePath return the path to the certificate file based for the serviceName

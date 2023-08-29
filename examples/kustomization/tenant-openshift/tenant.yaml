@@ -24,3 +24,5 @@ spec:
           resources:
             requests:
               storage: 2Gi
+      securityContext: {}
+      containerSecurityContext: {}
