@@ -37,6 +37,7 @@ import (
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -84,9 +85,13 @@ func StartOperator(kubeconfig string) {
 	if kubeconfig != "" {
 		cfg, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
 	}
-
 	if err != nil {
 		klog.Fatalf("Error building kubeconfig: %s", err.Error())
+	}
+
+	k8sClient, err := client.New(cfg, client.Options{})
+	if err != nil {
+		klog.Fatalf("Error building k8sClient: %s", err.Error())
 	}
 
 	kubeClient, err := kubernetes.NewForConfig(cfg)
@@ -130,6 +135,7 @@ func StartOperator(kubeconfig string) {
 		podName,
 		namespaces,
 		kubeClient,
+		k8sClient,
 		controllerClient,
 		promClient,
 		kubeInformerFactory.Apps().V1().StatefulSets(),
