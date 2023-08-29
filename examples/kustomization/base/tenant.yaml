@@ -200,12 +200,16 @@ spec:
               storage: 1Ti
           storageClassName: standard
         status: { }
-      ## Configure security context
+      ## Configure Pod's security context
+      ## We recommend to skip the recursive permission change by using
+      ## fsGroupChangePolicy as OnRootMismatch because it can be pretty
+      ## expensive for larger volumes with lots of small files.
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
         fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
       ## Configure container security context
       containerSecurityContext:
         runAsUser: 1000
