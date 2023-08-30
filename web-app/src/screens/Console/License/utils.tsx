@@ -279,7 +279,7 @@ export const STANDARD_PLAN_FEATURES = [
           marginBottom: "5px",
         }}
       >
-        (Minimum of 100TiB)
+        (Minimum of 200TiB)
       </Box>
     ),
   },
