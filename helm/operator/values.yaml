@@ -77,7 +77,10 @@ console:
   affinity: { }
   tolerations: [ ]
   topologySpreadConstraints: [ ]
-  resources: { }
+  resources:
+    requests:
+      cpu: 0.25
+      memory: 512Mi
   securityContext:
     runAsUser: 1000
     runAsNonRoot: true
