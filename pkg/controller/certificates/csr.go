@@ -63,6 +63,7 @@ func getDefaultCsrSignerName() string {
 	defaultCsrSignerNameOnce.Do(func() {
 		if os.Getenv(CSRSignerName) != "" {
 			defaultCsrSignerName = os.Getenv(CSRSignerName)
+			return
 		}
 		defaultCsrSignerName = certificatesV1.KubeletServingSignerName
 	})
