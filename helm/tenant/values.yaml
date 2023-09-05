@@ -284,3 +284,20 @@ ingress:
     host: minio-console.local
     path: /
     pathType: Prefix
+
+## Use an extraResources template section to include additional Kubernetes resources
+## with the Helm deployment.
+## Example: the following creates the config secret together with the tenant:
+#secrets:
+#  existingSecret: custom-env-configuration
+#extraResources:
+#  - |
+#    apiVersion: v1
+#    kind: Secret
+#    type: Opaque
+#    metadata:
+#      name: {{ dig "secrets" "existingSecret" "" (.Values | merge (dict)) }}
+#    stringData:
+#      config.env: |-
+#        export MINIO_ROOT_USER='minio'
+#        export MINIO_ROOT_PASSWORD='minio123'
