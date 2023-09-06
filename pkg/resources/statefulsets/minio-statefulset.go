@@ -896,6 +896,10 @@ func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Poo
 		},
 		SecurityContext: poolContainerSecurityContext(pool),
 	}
+	// That's ok to use the sidecar's resource
+	if t.Spec.SideCars.Resources != nil {
+		initContainer.Resources = *t.Spec.SideCars.Resources
+	}
 	if t.HasConfigurationSecret() {
 		initContainer.VolumeMounts = append(initContainer.VolumeMounts, TmpCfgVolumeMount)
 	}
@@ -923,6 +927,9 @@ func getSideCarContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.
 			CfgVolumeMount,
 		},
 		SecurityContext: poolContainerSecurityContext(pool),
+	}
+	if t.Spec.SideCars.Resources != nil {
+		sidecarContainer.Resources = *t.Spec.SideCars.Resources
 	}
 	if t.HasConfigurationSecret() {
 		sidecarContainer.VolumeMounts = append(sidecarContainer.VolumeMounts, TmpCfgVolumeMount)

@@ -189,6 +189,10 @@ Features (`features`) - Object describing which MinIO features to enable/disable
 |*Optional* + 
  Specify a list of domains used to access MinIO and Console.
 
+|*`enableSFTP`* __boolean__ 
+|*Optional* + 
+ Starts minio server with SFTP support
+
 |===
 
 
@@ -261,11 +265,11 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 
 |*`gcpCredentialSecretName`* __string__ 
 |*Optional* + 
-  Specify the GCP default credentials to be used for KES to authenticate to GCP key store
+ Specify the GCP default credentials to be used for KES to authenticate to GCP key store
 
 |*`gcpWorkloadIdentityPool`* __string__ 
 |*Optional* + 
-  Specify the name of the workload identity pool (This is required for generating service account token)
+ Specify the name of the workload identity pool (This is required for generating service account token)
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 
@@ -550,6 +554,10 @@ SideCars (`sidecars`) defines a list of containers that the Operator attaches to
 |*Optional* + 
  List of volumes that can be mounted by containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes
 
+|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
+|*Optional* + 
+ Sidecars Resource
+
 |===
 
 
@@ -708,7 +716,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*`externalClientCertSecrets`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$] array__ 
 |*Optional* + 
  Provide support for mounting additional client certificate into MinIO Tenant pods Multiple client certificates will be mounted using the following folder structure: 
- 	certs 		| 		|			+ client.crt 		|			+ client.key 		|			+ client.crt 		|			+ client.key 		|			+ client.crt 		|			+ client.key 
+ certs | |			+ client.crt |			+ client.key |			+ client.crt |			+ client.key |			+ client.crt |			+ client.key 
  Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified certificate to every MinIO server pod in the tenant that later can be referenced using environment variables. The secret *must* contain the following fields: + 
  * `name` - The name of the Kubernetes secret containing the TLS certificate. + 
  * `type` - Specify `kubernetes.io/tls` +
@@ -803,6 +811,10 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*`configuration`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
 |*Optional* + 
  Specify a secret that contains additional environment variable configurations to be used for the MinIO pools. The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
+
+|*`initContainers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#container-v1-core[$$Container$$] array__ 
+|*Optional* + 
+ Add customs initContainers to StatefulSet
 
 |===
 
