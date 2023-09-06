@@ -49,6 +49,10 @@ tenant:
       ## size specifies the capacity per volume
       size: 10Gi
       ## storageClass specifies the storage class name to be used for this pool
+      ### If using Amazon Elastic Block Store (EBS) CSI driver
+      ### Please make sure to set xfs for "csi.storage.k8s.io/fstype" parameter
+      ### under StorageClass.parameters.
+      ### Docs: https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/parameters.md
       storageClassName: standard
       ## Used to specify annotations for pods
       annotations: { }
