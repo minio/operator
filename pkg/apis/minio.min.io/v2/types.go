@@ -343,6 +343,18 @@ type TenantSpec struct {
 	// Add customs initContainers to StatefulSet
 	// +optional
 	InitContainers []corev1.Container `json:"initContainers,omitempty"`
+	// *Optional* +
+	//
+	// If provided, work statefulset will add this volumes.
+	// You should set the rules for the corresponding volume and VolumeMount. We will not test this rule, K8S will show the result.
+	// +optional
+	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
+	// *Optional* +
+	//
+	// If provided, work statefulset will add this volumemunts.
+	// You should set the rules for the corresponding volume and VolumeMount. We will not test this rule, K8S will show the result.
+	// +optional
+	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 }
 
 // Logging describes Logging for MinIO tenants.
