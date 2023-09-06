@@ -877,4 +877,9 @@ type SideCars struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge,retainKeys
 	Volumes []corev1.Volume `json:"volumes,omitempty" patchStrategy:"merge,retainKeys" patchMergeKey:"name" protobuf:"bytes,1,rep,name=volumes"`
+	// *Optional* +
+	//
+	// sidecar's Resource, initcontainer will use that if set.
+	// +optional
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
