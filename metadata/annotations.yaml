@@ -9,3 +9,4 @@ annotations:
   com.redhat.openshift.versions: v4.8-v4.13
   # Annotation to add default bundle channel as potential is declared
   operators.operatorframework.io.bundle.channel.default.v1: stable
+  operatorframework.io/suggested-namespace: minio-operator

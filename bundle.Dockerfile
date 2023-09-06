@@ -8,5 +8,5 @@ LABEL operators.operatorframework.io.bundle.package.v1=minio-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=stable
 
 # Copy files to locations specified by labels.
-COPY bundles/community-operators/5.0.7/manifests /manifests/
-COPY bundles/community-operators/5.0.7/metadata /metadata/
+COPY bundles/community-operators/5.0.8/manifests /manifests/
+COPY bundles/community-operators/5.0.8/metadata /metadata/
