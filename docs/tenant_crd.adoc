@@ -265,11 +265,11 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 
 |*`gcpCredentialSecretName`* __string__ 
 |*Optional* + 
-  Specify the GCP default credentials to be used for KES to authenticate to GCP key store
+ Specify the GCP default credentials to be used for KES to authenticate to GCP key store
 
 |*`gcpWorkloadIdentityPool`* __string__ 
 |*Optional* + 
-  Specify the name of the workload identity pool (This is required for generating service account token)
+ Specify the name of the workload identity pool (This is required for generating service account token)
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 
@@ -823,7 +823,15 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 
 |*`initContainers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#container-v1-core[$$Container$$] array__ 
 |*Optional* + 
- Add customs initContainers to StatefulSet
+ Add custom initContainers to StatefulSet
+
+|*`additionalVolumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#volume-v1-core[$$Volume$$] array__ 
+|*Optional* + 
+ If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
+
+|*`additionalVolumeMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#volumemount-v1-core[$$VolumeMount$$] array__ 
+|*Optional* + 
+ If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
 
 |===
 

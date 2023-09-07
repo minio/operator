@@ -873,6 +873,16 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	if len(t.Spec.InitContainers) != 0 {
 		ss.Spec.Template.Spec.InitContainers = append(ss.Spec.Template.Spec.InitContainers, t.Spec.InitContainers...)
 	}
+	// add customs VolumeMounts and Volumes.
+	if len(t.Spec.AdditionalVolumeMounts) != 0 && len(t.Spec.AdditionalVolumes) == len(t.Spec.AdditionalVolumeMounts) {
+		for i := range ss.Spec.Template.Spec.InitContainers {
+			ss.Spec.Template.Spec.InitContainers[i].VolumeMounts = append(ss.Spec.Template.Spec.InitContainers[i].VolumeMounts, t.Spec.AdditionalVolumeMounts...)
+		}
+		for i := range ss.Spec.Template.Spec.Containers {
+			ss.Spec.Template.Spec.Containers[i].VolumeMounts = append(ss.Spec.Template.Spec.Containers[i].VolumeMounts, t.Spec.AdditionalVolumeMounts...)
+		}
+		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, t.Spec.AdditionalVolumes...)
+	}
 	return ss
 }
 
