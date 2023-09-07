@@ -1090,7 +1090,7 @@ func GetPrometheusNamespace() string {
 // GetPrometheusName returns namespace of the prometheus managed by prometheus operator
 func GetPrometheusName() string {
 	prometheusNameOnce.Do(func() {
-		prometheusName = envGet(prometheusName, "")
+		prometheusName = envGet(PrometheusName, "")
 	})
 	return prometheusName
 }

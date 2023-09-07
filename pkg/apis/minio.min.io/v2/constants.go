@@ -206,6 +206,9 @@ const DefaultMonitoringInterval = 3
 // PrometheusNamespace is the namespace of the prometheus
 const PrometheusNamespace = "PROMETHEUS_NAMESPACE"
 
+// PrometheusName is the name of the prometheus
+const PrometheusName = "PROMETHEUS_NAME"
+
 // DefaultPrometheusNamespace is the default namespace for prometheus
 const DefaultPrometheusNamespace = "default"
 
