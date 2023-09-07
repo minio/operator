@@ -32,13 +32,15 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio@sha256:f6427f313105222ff49c7472cdc63ddcaea5d9a7500260fd718ef86e2a336bbd",
+            "image": "quay.io/minio/minio@sha256:8e5e9490cd50018457d53a447e9881eaef6a327b320991347c2ea01db5f3c784",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
             "pools": [
               {
+                "containerSecurityContext": {},
                 "name": "pool-0",
+                "securityContext": {},
                 "servers": 4,
                 "volumeClaimTemplate": {
                   "metadata": {
@@ -85,11 +87,12 @@ metadata:
     k8sMinVersion: "1.18"
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
+    operatorframework.io/suggested-namespace: minio-operator
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.7
-  name: minio-operator-rhmp.v5.0.7
+    containerImage: quay.io/minio/operator:v5.0.8
+  name: minio-operator-rhmp.v5.0.8
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -560,7 +563,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.7
+                    image: quay.io/minio/operator:v5.0.8
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -577,22 +580,21 @@ spec:
                 volumes:
                   - name: tls-certificates
                     projected:
+                      defaultMode: 420
                       sources:
                         - secret:
                             items:
-                              - key: public.crt
+                              - key: tls.crt
                                 path: public.crt
-                              - key: public.crt
-                                path: CAs/public.crt
-                              - key: private.key
-                                path: private.key
-                              - key: tls.crt
-                                path: tls.crt
-                              - key: tls.crt
-                                path: CAs/tls.crt
                               - key: tls.key
-                                path: tls.key
-                            name: operator-console-tls
+                                path: private.key
+                            name: console-tls
+                            optional: true
+                        - configMap:
+                            items:
+                              - key: service-ca.crt
+                                path: CAs/ca.crt
+                            name: openshift-service-ca.crt
                             optional: true
         - label:
             app.kubernetes.io/instance: minio-operator
@@ -633,10 +635,10 @@ spec:
                       - name: MINIO_OPERATOR_RUNTIME
                         value: OpenShift
                       - name: MINIO_CONSOLE_TLS_ENABLE
-                        value: "off"
+                        value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.7
+                    image: quay.io/minio/operator:v5.0.8
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -645,7 +647,44 @@ spec:
                         ephemeral-storage: 500Mi
                         memory: 256Mi
                     securityContext: {}
+                    volumeMounts:
+                      - mountPath: /tmp/service-ca
+                        name: openshift-service-ca
+                      - mountPath: /tmp/csr-signer-ca
+                        name: openshift-csr-signer-ca
+                      - mountPath: /tmp/sts
+                        name: sts-tls
                 serviceAccountName: minio-operator
+                volumes:
+                  - name: sts-tls
+                    projected:
+                      defaultMode: 420
+                      sources:
+                        - secret:
+                            items:
+                              - key: tls.crt
+                                path: public.crt
+                              - key: tls.key
+                                path: private.key
+                            name: sts-tls
+                            optional: true
+                  - configMap:
+                      items:
+                        - key: service-ca.crt
+                          path: service-ca.crt
+                      name: openshift-service-ca.crt
+                      optional: true
+                    name: openshift-service-ca
+                  - name: openshift-csr-signer-ca
+                    projected:
+                      defaultMode: 420
+                      sources:
+                        - secret:
+                            items:
+                              - key: tls.crt
+                                path: tls.crt
+                            name: openshift-csr-signer-ca
+                            optional: true
     strategy: deployment
   installModes:
     - supported: false
@@ -717,10 +756,11 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+    - image: minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
       name: console
-    - image: minio/operator@sha256:28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+    - image: minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
       name: minio-operator
-    - image: quay.io/minio/minio@sha256:f6427f313105222ff49c7472cdc63ddcaea5d9a7500260fd718ef86e2a336bbd
-      name: minio-f6427f313105222ff49c7472cdc63ddcaea5d9a7500260fd718ef86e2a336bbd-annotation
-  version: 5.0.7
+    - image: quay.io/minio/minio@sha256:8e5e9490cd50018457d53a447e9881eaef6a327b320991347c2ea01db5f3c784
+      name: minio-8e5e9490cd50018457d53a447e9881eaef6a327b320991347c2ea01db5f3c784-annotation
+  version: 5.0.8
+  replaces: minio-operator-rhmp.v5.0.7

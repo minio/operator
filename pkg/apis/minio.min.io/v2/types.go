@@ -188,19 +188,27 @@ type TenantSpec struct {
 	// *Optional* +
 	//
 	// Provide support for mounting additional client certificate into MinIO Tenant pods
-	// Multiple client certificates will be mounted using the following folder structure:
+	// Multiple client certificates will be mounted using the following folder structure: +
 	//
-	//	certs
-	//		|
-	//		+ client-0
-	//		|			+ client.crt
-	//		|			+ client.key
-	//		+ client-1
-	//		|			+ client.crt
-	//		|			+ client.key
-	//		+ client-2
-	//		|			+ client.crt
-	//		|			+ client.key
+	//* certs +
+	//
+	//* * client-0 +
+	//
+	//* * * client.crt +
+	//
+	//* * * client.key +
+	//
+	//* * client-1 +
+	//
+	//* * * client.crt +
+	//
+	//* * * client.key +
+	//
+	//* * * client-2 +
+	//
+	//* * client.crt +
+	//
+	//* * *  client.key +
 	//
 	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified certificate to every MinIO server pod in the tenant that later can be referenced using environment variables. The secret *must* contain the following fields: +
 	//
@@ -887,4 +895,9 @@ type SideCars struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge,retainKeys
 	Volumes []corev1.Volume `json:"volumes,omitempty" patchStrategy:"merge,retainKeys" patchMergeKey:"name" protobuf:"bytes,1,rep,name=volumes"`
+	// *Optional* +
+	//
+	// sidecar's Resource, initcontainer will use that if set.
+	// +optional
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }

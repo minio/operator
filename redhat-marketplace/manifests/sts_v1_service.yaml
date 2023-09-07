@@ -5,7 +5,7 @@ metadata:
     operator.min.io/authors: MinIO, Inc.
     operator.min.io/license: AGPLv3
     operator.min.io/support: https://subnet.min.io
-    service.beta.openshift.io/serving-cert-secret-name: operator-tls
+    service.beta.openshift.io/serving-cert-secret-name: sts-tls
   creationTimestamp: null
   labels:
     name: minio-operator
