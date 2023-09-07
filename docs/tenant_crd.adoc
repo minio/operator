@@ -810,15 +810,15 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 
 |*`initContainers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#container-v1-core[$$Container$$] array__ 
 |*Optional* + 
- Add customs initContainers to StatefulSet
+ Add custom initContainers to StatefulSet
 
 |*`additionalVolumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#volume-v1-core[$$Volume$$] array__ 
 |*Optional* + 
- If provided, work statefulset will add this volumes. You should set the rules for the corresponding volume and VolumeMount. We will not test this rule, K8S will show the result.
+ If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
 
 |*`additionalVolumeMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#volumemount-v1-core[$$VolumeMount$$] array__ 
 |*Optional* + 
- If provided, work statefulset will add this volumemunts. You should set the rules for the corresponding volume and VolumeMount. We will not test this rule, K8S will show the result.
+ If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
 
 |===
 
