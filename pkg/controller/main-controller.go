@@ -523,8 +523,6 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	go func() {
-		leaderRun(ctx, c, threadiness, stopCh)
-		return
 		// start the leader election code loop
 		leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
 			Lock: lock,
