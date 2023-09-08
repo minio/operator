@@ -15,6 +15,7 @@ operator:
 #      value: ""
 #    - name: MINIO_OPERATOR_RUNTIME
 #      value: "OpenShift"
+  env: [ ]
   #
   ### Image field:
   ## Image from tag (original behaviour), for example:
@@ -34,7 +35,6 @@ operator:
   imagePullSecrets: [ ]
   runtimeClassName: ~
   initContainers: [ ]
-  env: [ ]
   replicaCount: 2
   securityContext:
     runAsUser: 1000
