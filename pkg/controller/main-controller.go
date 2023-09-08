@@ -231,7 +231,7 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	ns := miniov2.GetNSFromFile()
 	ctx := context.Background()
 	oprImg := DefaultOperatorImage
-	oprDep, err := kubeClientSet.AppsV1().Deployments(ns).Get(ctx, DefaultDeploymentName, metav1.GetOptions{})
+	oprDep, err := kubeClientSet.AppsV1().Deployments(ns).Get(ctx, getOperatorDeploymentName(), metav1.GetOptions{})
 	if err == nil && oprDep != nil {
 		// assume we are the first container, just in case they changed the default name
 		if len(oprDep.Spec.Template.Spec.Containers) > 0 {
@@ -523,6 +523,8 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	}
 
 	go func() {
+		leaderRun(ctx, c, threadiness, stopCh)
+		return
 		// start the leader election code loop
 		leaderelection.RunOrDie(ctx, leaderelection.LeaderElectionConfig{
 			Lock: lock,

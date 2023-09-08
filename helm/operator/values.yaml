@@ -2,15 +2,19 @@
 
 operator:
   ## Setup environment variables for the Operator
-  # env:
-  #   - name: MINIO_CONSOLE_TLS_ENABLE
-  #     value: "off"
-  #   - name: CLUSTER_DOMAIN
-  #     value: "cluster.domain"
-  #   - name: WATCHED_NAMESPACE
-  #     value: ""
-  #   - name: MINIO_OPERATOR_RUNTIME
-  #     value: "OpenShift"
+#  env:
+#    - name: MINIO_OPERATOR_DEPLOYMENT_NAME
+#      valueFrom:
+#        fieldRef:
+#          fieldPath: metadata.labels['app.kubernetes.io/name']
+#    - name: MINIO_CONSOLE_TLS_ENABLE
+#      value: "off"
+#    - name: CLUSTER_DOMAIN
+#      value: "cluster.domain"
+#    - name: WATCHED_NAMESPACE
+#      value: ""
+#    - name: MINIO_OPERATOR_RUNTIME
+#      value: "OpenShift"
   #
   ### Image field:
   ## Image from tag (original behaviour), for example:
