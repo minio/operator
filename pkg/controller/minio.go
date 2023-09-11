@@ -129,8 +129,8 @@ func getOperatorCertFromSecret(secretData map[string][]byte, key string) ([]byte
 }
 
 // checkOperatorCaForTenant create or updates the operator-ca-tls secret for tenant if need it
-func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *miniov2.Tenant) (operatorCATLSExists bool, err error) {
-	var certsData map[string][]byte
+func (c *Controller) checkOperatorCAForTenant(ctx context.Context, tenant *miniov2.Tenant) (operatorCATLSExists bool, err error) {
+	certsData := make(map[string][]byte)
 
 	// get operator-ca-tls in minio-operator namespace
 	operatorCaSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
@@ -143,12 +143,9 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 	}
 
 	operatorPublicCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.PublicCRT)
-	if err != nil {
-		// If no public.crt is present we error, other certs are optional
-		return false, err
+	if err == nil {
+		certsData[common.PublicCRT] = operatorPublicCert
 	}
-
-	certsData[common.PublicCRT] = operatorPublicCert
 
 	operatorTLSCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.TLSCRT)
 	if err == nil {
@@ -158,6 +155,10 @@ func (c *Controller) checkOperatorCaForTenant(ctx context.Context, tenant *minio
 	operatorCACert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.CACRT)
 	if err == nil {
 		certsData[common.CACRT] = operatorCACert
+	}
+
+	if len(certsData) == 0 {
+		return false, fmt.Errorf("'%s' secret exists but is missing public.crt, tls.crt and ca.crt, please fix it manually", OperatorCATLSSecretName)
 	}
 
 	var tenantCaSecret *corev1.Secret
