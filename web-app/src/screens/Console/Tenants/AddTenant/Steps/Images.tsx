@@ -180,7 +180,7 @@ const Images = ({ classes }: IImagesProps) => {
             label="MinIO"
             value={imageName}
             error={validationErrors["image"] || ""}
-            placeholder="minio/minio:RELEASE.2023-09-04T19-57-37Z"
+            placeholder="minio/minio:RELEASE.2023-09-07T02-05-02Z"
           />
         </Grid>
 
