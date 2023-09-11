@@ -952,7 +952,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	}
 
 	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
-	operatorCATLSExists, err := c.checkOperatorCaForTenant(ctx, tenant)
+	operatorCATLSExists, err := c.checkOperatorCAForTenant(ctx, tenant)
 	if err != nil {
 		return WrapResult(Result{}, err)
 	}
