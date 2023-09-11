@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio@sha256:8e5e9490cd50018457d53a447e9881eaef6a327b320991347c2ea01db5f3c784",
+            "image": "quay.io/minio/minio@sha256:6fce70c2fd719603cb538e25ec3f58d77c12c1f5141e46240a850065c7ce4470",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -89,8 +89,8 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.8
-  name: minio-operator.v5.0.8
+    containerImage: quay.io/minio/operator:v5.0.9
+  name: minio-operator.v5.0.9
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -561,7 +561,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.8
+                    image: quay.io/minio/operator:v5.0.9
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -636,7 +636,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.8
+                    image: quay.io/minio/operator:v5.0.9
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -754,11 +754,11 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
+    - image: minio/operator@sha256:3cde156eab8bdbd012350b21817e360f3d2e330f4c10ff8742cf85bd5c85fed0
       name: console
-    - image: minio/operator@sha256:32527ce94bf19b19e3fe35acfc2ce57ad1d94d8280083d94dc1d9d45a365763a
+    - image: minio/operator@sha256:3cde156eab8bdbd012350b21817e360f3d2e330f4c10ff8742cf85bd5c85fed0
       name: minio-operator
-    - image: quay.io/minio/minio@sha256:8e5e9490cd50018457d53a447e9881eaef6a327b320991347c2ea01db5f3c784
-      name: minio-8e5e9490cd50018457d53a447e9881eaef6a327b320991347c2ea01db5f3c784-annotation
-  version: 5.0.8
+    - image: quay.io/minio/minio@sha256:6fce70c2fd719603cb538e25ec3f58d77c12c1f5141e46240a850065c7ce4470
+      name: minio-6fce70c2fd719603cb538e25ec3f58d77c12c1f5141e46240a850065c7ce4470-annotation
+  version: 5.0.9
   replaces: "null"
