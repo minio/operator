@@ -51,7 +51,7 @@ func NewAdminClientWithInsecure(url, accessKey, secretKey, sessionToken string, 
 	stsClient := PrepareConsoleHTTPClient(insecure)
 	admClient.SetCustomTransport(stsClient.Transport)
 	// set user-agent to differentiate Console UI requests for auditing.
-	admClient.SetAppInfo("MinIO Console", pkg.Version)
+	admClient.SetAppInfo("MinIO Operator Console", pkg.Version)
 	return admClient, nil
 }
 

@@ -444,11 +444,10 @@ func getUserAgent() string {
 	uaAppend := func(p, q string) {
 		userAgentParts = append(userAgentParts, p, q)
 	}
-	uaAppend("Console (", runtime.GOOS)
+	uaAppend("Operator Console (", runtime.GOOS)
 	uaAppend("; ", runtime.GOARCH)
-	uaAppend(") Console/", pkg.Version)
-	uaAppend(" Console/", pkg.ReleaseTag)
-	uaAppend(" Console/", pkg.CommitID)
+	uaAppend(") Operator Console/", pkg.Version)
+	uaAppend(" Operator Console/", pkg.ShortCommitID)
 
 	return strings.Join(userAgentParts, "")
 }
