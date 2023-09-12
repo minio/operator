@@ -82,6 +82,10 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 		if strings.TrimSpace(pool.Name) == "" {
 			continue
 		}
+		// No PodDisruptionBudget for single pod
+		if pool.Servers == 1 {
+			continue
+		}
 		if available.Available() {
 			// check sts status first.
 			ssName := t.PoolStatefulsetName(&pool)
