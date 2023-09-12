@@ -89,7 +89,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.9
+    containerImage: quay.io/minio/operator@sha256:57116c38ab9193ff2b105e3a98491f9bf9e6b733f26fae73445c80bb4fc57aa2
   name: minio-operator.v5.0.9
   namespace: minio-operator
 spec:
@@ -561,7 +561,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.9
+                    image: quay.io/minio/operator@sha256:57116c38ab9193ff2b105e3a98491f9bf9e6b733f26fae73445c80bb4fc57aa2
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -570,7 +570,6 @@ spec:
                       - containerPort: 9443
                         name: https
                     resources: {}
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/certs
                         name: tls-certificates
@@ -636,7 +635,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.9
+                    image: quay.io/minio/operator@sha256:57116c38ab9193ff2b105e3a98491f9bf9e6b733f26fae73445c80bb4fc57aa2
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -644,7 +643,6 @@ spec:
                         cpu: 200m
                         ephemeral-storage: 500Mi
                         memory: 256Mi
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/service-ca
                         name: openshift-service-ca
@@ -756,9 +754,9 @@ spec:
   relatedImages:
     - image: quay.io/minio/minio@sha256:6fce70c2fd719603cb538e25ec3f58d77c12c1f5141e46240a850065c7ce4470
       name: minio-6fce70c2fd719603cb538e25ec3f58d77c12c1f5141e46240a850065c7ce4470-annotation
-    - image: minio/operator@sha256:3cde156eab8bdbd012350b21817e360f3d2e330f4c10ff8742cf85bd5c85fed0
+    - image: quay.io/minio/operator@sha256:57116c38ab9193ff2b105e3a98491f9bf9e6b733f26fae73445c80bb4fc57aa2
       name: console
-    - image: minio/operator@sha256:3cde156eab8bdbd012350b21817e360f3d2e330f4c10ff8742cf85bd5c85fed0
+    - image: quay.io/minio/operator@sha256:57116c38ab9193ff2b105e3a98491f9bf9e6b733f26fae73445c80bb4fc57aa2
       name: minio-operator
   version: 5.0.9
   replaces: minio-operator.v5.0.8
