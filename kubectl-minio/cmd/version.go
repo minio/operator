@@ -16,10 +16,17 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 
+	v1 "k8s.io/api/apps/v1"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	"github.com/spf13/cobra"
@@ -49,6 +56,10 @@ func newVersionCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 		Example: operatorVersionExample,
 		Args:    cobra.MaximumNArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			path, _ := rootCmd.Flags().GetString(kubeconfig)
+			if path != "" {
+				os.Setenv(clientcmd.RecommendedConfigPathEnvVar, path)
+			}
 			err := o.run()
 			if err != nil {
 				klog.Warning(err)
@@ -64,6 +75,35 @@ func newVersionCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 
 // run initializes local config and installs MinIO Operator to Kubernetes cluster.
 func (o *operatorVersionCmd) run() error {
-	fmt.Println(version)
+	fmt.Println("Kubectl-Plugin Version:", version)
+	cfg := config.GetConfigOrDie()
+	// If config is passed as a flag use that instead
+	k8sClient, err := client.New(cfg, client.Options{})
+	if err != nil {
+		return err
+	}
+	deployList := &v1.DeploymentList{}
+	listOpt := &client.ListOptions{}
+	client.MatchingLabels{"app.kubernetes.io/name": "minio-operator"}.ApplyToList(listOpt)
+	err = k8sClient.List(context.Background(), deployList, listOpt)
+	if err != nil {
+		return err
+	}
+	for _, item := range deployList.Items {
+		image := ""
+		if len(item.Spec.Template.Spec.Containers) == 1 {
+			image = item.Spec.Template.Spec.Containers[0].Image
+		} else {
+			for _, container := range item.Spec.Template.Spec.Containers {
+				if strings.Contains(container.Image, "operator") {
+					image = container.Image
+					break
+				}
+			}
+		}
+		if image != "" {
+			fmt.Printf("Minio-Operator Version: %s/%s:%s \r\n", item.Namespace, item.Name, strings.SplitN(image, ":", 2)[1])
+		}
+	}
 	return nil
 }
