@@ -145,7 +145,11 @@ func (s *ObjectSyncer) Sync(ctx context.Context) (SyncResult, error) {
 	default:
 		result.SetEventData(eventNormal, EventReason(s.Obj, err),
 			fmt.Sprintf("%s %s %s successfully", s.objectTypeName(s.Obj), key, result.Operation))
-		klog.Infof("%s key %s kind %s diff %s", string(result.Operation), key, s.objectTypeName(s.Obj), diff)
+		// Only print this log if there is a difference to show for the sync
+		// otherwise keep it like this to avoid flooding the Operator log with unchanged difference.
+		if diff != nil {
+			klog.Infof("%s key %s kind %s diff %s", string(result.Operation), key, s.objectTypeName(s.Obj), diff)
+		}
 	}
 
 	return result, err
