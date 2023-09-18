@@ -83,7 +83,7 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			continue
 		}
 		// No PodDisruptionBudget for minAvailable equal server's numbers.
-		if pool.Servers == (int32(pool.Servers/2) + 1) {
+		if pool.Servers == pool.Servers/2+1 {
 			continue
 		}
 		if available.Available() {
