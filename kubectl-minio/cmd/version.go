@@ -102,7 +102,12 @@ func (o *operatorVersionCmd) run() error {
 			}
 		}
 		if image != "" {
-			fmt.Printf("Minio-Operator Version: %s/%s:%s \r\n", item.Namespace, item.Name, strings.SplitN(image, ":", 2)[1])
+			if item.Name == "console" {
+				fmt.Printf("Minio-Operator Console Version: %s/%s:%s \r\n", item.Namespace, item.Name, strings.SplitN(image, ":", 2)[1])
+			}
+			if item.Name == "minio-operator" {
+				fmt.Printf("Minio-Operator Controller Version: %s/%s:%s \r\n", item.Namespace, item.Name, strings.SplitN(image, ":", 2)[1])
+			}
 		}
 	}
 	return nil
