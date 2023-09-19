@@ -467,7 +467,7 @@ type NewPoolArgs struct {
 
 // NewPool creates a new StatefulSet for the given Cluster.
 func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
-	t := args.Tenant
+	t := args.Tenant.DeepCopy()
 	skipEnvVars := args.SkipEnvVars
 	pool := args.Pool
 	poolStatus := args.PoolStatus
