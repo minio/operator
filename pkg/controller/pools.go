@@ -82,10 +82,6 @@ func poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet *appsv1.Stateful
 	if miniov2.IsContainersEnvUpdated(existingStatefulSet.Spec.Template.Spec.Containers, expectedStatefulSet.Spec.Template.Spec.Containers) {
 		return false, nil
 	}
-	if !equality.Semantic.DeepEqual(expectedStatefulSet.Spec, existingStatefulSet.Spec) {
-		// some field set by the operator has changed
-		return false, nil
-	}
 	return true, nil
 }
 
