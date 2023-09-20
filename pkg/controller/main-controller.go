@@ -1359,7 +1359,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	}
 
 	// Ensure we are only creating the bucket
-	if !tenant.Status.ProvisionedBuckets && len(tenant.Spec.Buckets) > 0 {
+	if len(tenant.Spec.Buckets) > 0 {
 		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
 			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
