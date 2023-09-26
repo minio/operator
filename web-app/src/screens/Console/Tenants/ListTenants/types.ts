@@ -96,29 +96,6 @@ export interface ITenantMonitoringStruct {
   prometheusEnabled: boolean;
 }
 
-export interface ITenantLogsStruct {
-  auditLoggingEnabled: boolean;
-  image: string;
-  labels: IKeyValue[];
-  annotations: IKeyValue[];
-  nodeSelector: IKeyValue[];
-  diskCapacityGB: number;
-  serviceAccountName: string;
-  dbImage: string;
-  dbInitImage: string;
-  dbLabels: IKeyValue[];
-  dbAnnotations: IKeyValue[];
-  dbNodeSelector: IKeyValue[];
-  dbServiceAccountName: string;
-  disabled: boolean;
-  logCPURequest: string;
-  logMemRequest: string;
-  logDBCPURequest: string;
-  logDBMemRequest: string;
-  securityContext: SecurityContext;
-  dbSecurityContext: SecurityContext;
-}
-
 export interface ValueUnit {
   value: string;
   unit: string;
@@ -133,11 +110,4 @@ export interface CapacityValue {
   value: number;
   label: string;
   color: string;
-}
-
-export interface ITenantAuditLogs {
-  classes: any;
-  labels: IKeyValue[];
-  annotations: IKeyValue[];
-  nodeSelector: IKeyValue[];
 }

@@ -168,12 +168,6 @@ export interface ErrorResponseHandler {
   statusCode?: number;
   message?: string; // if any type error thrown
 }
-
-export interface IBytesCalc {
-  total: number;
-  unit: string;
-}
-
 export interface IEmbeddedCustomButton {
   backgroundColor?: string;
   textColor?: string;

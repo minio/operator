@@ -269,11 +269,6 @@ export interface ITenantAffinity {
   withPodAntiAffinity: boolean;
 }
 
-export interface ILabelKeyPair {
-  labelKey: string;
-  labelValue: string;
-}
-
 export interface AllocableResourcesResponse {
   min_allocatable_mem?: number;
   min_allocatable_cpu?: number;
@@ -326,14 +321,6 @@ export interface ITenantIdentityProviderResponse {
 export interface ITenantSetAdministratorsRequest {
   user_dns?: string[];
   group_dns?: string[];
-}
-
-export interface IEditMonitoringSecurityContext {
-  securityContextEnabled: boolean;
-  runAsUser: string;
-  runAsGroup: string;
-  fsGroup: string;
-  runAsNonRoot: boolean;
 }
 
 export interface IEditTenantSecurityContext {

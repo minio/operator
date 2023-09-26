@@ -77,6 +77,11 @@ jobs:
         continue-on-error: false
         run: |
           ./check-prettier.sh
+      - name: Check for dead code
+        working-directory: ./web-app
+        continue-on-error: false
+        run: |
+          ./check-deadcode.sh
   reuse-golang-dependencies:
     timeout-minutes: 30
     name: reuse golang dependencies
