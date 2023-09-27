@@ -30,11 +30,6 @@ export interface SubnetLoginRequest {
   proxy?: string;
 }
 
-export interface SubnetRegisterRequest {
-  token: string;
-  account_id: string;
-}
-
 export interface SubnetOrganization {
   userId: number;
   accountId: number;
@@ -49,15 +44,4 @@ export interface SubnetLoginResponse {
   mfa_token: string;
   access_token: string;
   organizations: SubnetOrganization[];
-}
-
-export interface SubnetLoginWithMFARequest {
-  username: string;
-  otp: string;
-  mfa_token: string;
-  proxy?: string;
-}
-
-export interface SubnetRegTokenResponse {
-  regToken: string;
 }

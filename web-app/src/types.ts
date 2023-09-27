@@ -29,22 +29,6 @@ export interface SRInfoStateType {
   siteName: string;
 }
 
-export interface SystemState {
-  loggedIn: boolean;
-  operatorMode: boolean;
-  sidebarOpen: boolean;
-  session: string;
-  userName: string;
-  serverNeedsRestart: boolean;
-  serverIsLoading: boolean;
-  loadingProgress: number;
-  snackBar: snackBarMessage;
-  modalSnackBar: snackBarMessage;
-  serverDiagnosticStatus: string;
-  distributedSetup: boolean;
-  siteReplicationInfo: SRInfoStateType;
-}
-
 export const USER_LOGGED = "USER_LOGGED";
 export const OPERATOR_MODE = "OPERATOR_MODE";
 export const MENU_OPEN = "MENU_OPEN";
@@ -129,19 +113,3 @@ interface SetLicenseInfo {
   type: typeof SET_LICENSE_INFO;
   licenseInfo: SubnetInfo;
 }
-
-export type SystemActionTypes =
-  | UserLoggedAction
-  | OperatorModeAction
-  | SetMenuOpenAction
-  | ServerNeedsRestartAction
-  | ServerIsLoading
-  | SetLoadingProgress
-  | SetServerDiagStat
-  | SetSnackBarMessage
-  | SetErrorSnackMessage
-  | SetModalSnackMessage
-  | SetModalErrorMessage
-  | SetDistributedSetup
-  | SetSiteReplicationInfo
-  | SetLicenseInfo;

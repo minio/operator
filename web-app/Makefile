@@ -15,3 +15,6 @@ prettify:
 	yarn prettier --write . --loglevel warn
 
 pretty: prettify
+
+find-deadcode:
+	./check-deadcode.sh
