@@ -1,3 +1,6 @@
+
+# Override the tenant namespace
+namespaceOverride: ""
 ## Secret with default environment variable configurations to be used by MinIO Tenant.
 ## Not recommended for production deployments! Create the secret manually instead.
 secrets:

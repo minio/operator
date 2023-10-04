@@ -3,6 +3,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: {{ dig "secrets" "name" "" (.Values | merge (dict)) }}
+  namespace: {{ template "minio-tenant.namespace" $ }}
 type: Opaque
 stringData:
   config.env: |-
