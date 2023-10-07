@@ -740,6 +740,18 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		// The Tenant resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
 			runtime.HandleError(fmt.Errorf("Tenant '%s' in work queue no longer exists", key))
+			// Try to delete PrometheusConfig.
+			// Can't use the tenant. That's nil for sure
+			err = c.deletePrometheusAddlConfig(ctx, &miniov2.Tenant{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tenantName,
+					Namespace: namespace,
+				},
+			})
+			if err != nil {
+				// Just output the error. Will not retry.
+				runtime.HandleError(fmt.Errorf("DeletePrometheusAddlConfig '%s/%s' error:%s", namespace, tenantName, err.Error()))
+			}
 			return WrapResult(Result{}, nil)
 		}
 		// will retry after 5sec
