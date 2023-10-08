@@ -25,7 +25,3 @@ export interface IStoragePVCs {
   age: string;
   tenant: string;
 }
-
-export interface IPVCsResponse {
-  pvcs: IStoragePVCs[];
-}

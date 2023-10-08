@@ -11,10 +11,20 @@ secrets:
 tenant:
   # Tenant name
   name: myminio
-  ## Registry location and Tag to download MinIO Server image
+  ### Registry location and Tag or Digest to download MinIO Server image, options:
+  ## Option 1: Image from tag (original behaviour):
+  # image:
+  #    repository: quay.io/minio/minio
+  #    tag: RELEASE.2023-09-07T02-05-02Z
+  #    pullPolicy: IfNotPresent
+  ## Option 2: Image from digest (added after original):
+  # image:
+  #    repository: quay.io/minio/minio@sha256
+  #    digest: 28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+  #    pullPolicy: IfNotPresent
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-06-23T20-26-00Z
+    tag: RELEASE.2023-09-07T02-05-02Z
     pullPolicy: IfNotPresent
   ## Customize any private registry image pull secret.
   ## currently only one secret registry is supported
@@ -37,6 +47,10 @@ tenant:
       ## size specifies the capacity per volume
       size: 10Gi
       ## storageClass specifies the storage class name to be used for this pool
+      ### If using Amazon Elastic Block Store (EBS) CSI driver
+      ### Please make sure to set xfs for "csi.storage.k8s.io/fstype" parameter
+      ### under StorageClass.parameters.
+      ### Docs: https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/parameters.md
       storageClassName: standard
       ## Used to specify annotations for pods
       annotations: {}
@@ -54,11 +68,15 @@ tenant:
       affinity: {}
       ## Configure resource requests and limits for MinIO containers
       resources: {}
-      ## Configure security context
+      ## Configure Pod's security context
+      ## We recommend to skip the recursive permission change by using
+      ## fsGroupChangePolicy as OnRootMismatch because it can be pretty
+      ## expensive for larger volumes with lots of small files.
       securityContext:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+        fsGroupChangePolicy: "OnRootMismatch"
         runAsNonRoot: true
       ## Configure container security context
       containerSecurityContext:
@@ -156,7 +174,19 @@ tenant:
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   #kes:
-  #  image: "" # minio/kes:2023-05-02T22-48-10Z
+  #  ### Image field:
+  #  ## Image from tag (original behaviour), for example:
+  #  # image:
+  #  #   repository: quay.io/minio/kes
+  #  #   tag: 2023-08-19T17-27-47Z
+  #  ## Image from digest (added after original behaviour), for example:
+  #  # image:
+  #  #   repository: quay.io/minio/kes@sha256
+  #  #   digest: fb15af611149892f357a8a99d1bcd8bf5dae713bd64c15e6eb27fbdb88fc208b
+  #  image:
+  #    repository: quay.io/minio/kes
+  #    tag: 2023-08-19T17-27-47Z
+  #    pullPolicy: IfNotPresent
   #  env: [ ]
   #  replicas: 2
   #  configuration: |-

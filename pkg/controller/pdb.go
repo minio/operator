@@ -16,21 +16,19 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
 
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/runtime"
 	v1 "k8s.io/api/policy/v1"
 	"k8s.io/api/policy/v1beta1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // DeletePDB - delete PDB for tenant
@@ -39,33 +37,39 @@ func (c *Controller) DeletePDB(ctx context.Context, t *v2.Tenant) (err error) {
 	if !available.Available() {
 		return nil
 	}
+	listOpt := &client.ListOptions{
+		Namespace: t.Namespace,
+	}
+	client.MatchingLabels{
+		v2.TenantLabel: t.Name,
+	}.ApplyToList(listOpt)
 	if available.V1Available() {
-		err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", v2.TenantLabel, t.Name),
-		})
+		pdbS := &v1.PodDisruptionBudgetList{}
+		err = c.k8sClient.List(ctx, pdbS, listOpt)
 		if err != nil {
-			// don't exist
-			if k8serrors.IsNotFound(err) {
-				return nil
-			}
-			klog.Errorf("Delete tenant %s's V1.PDB failed:%s", t.Name, err.Error())
 			return err
+		}
+		for _, item := range pdbS.Items {
+			err = c.k8sClient.Delete(ctx, &item)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if available.V1BetaAvailable() {
-		err := c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, metav1.ListOptions{
-			LabelSelector: fmt.Sprintf("%s=%s", v2.TenantLabel, t.Name),
-		})
+		pdbS := &v1beta1.PodDisruptionBudgetList{}
+		err = c.k8sClient.List(ctx, pdbS, listOpt)
 		if err != nil {
-			// don't exist
-			if k8serrors.IsNotFound(err) {
-				return nil
-			}
-			klog.Errorf("Delete tenant %s's V1Beta.PDB failed:%s", t.Name, err.Error())
 			return err
 		}
+		for _, item := range pdbS.Items {
+			err = c.k8sClient.Delete(ctx, &item)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	return nil
+	return err
 }
 
 // CreateOrUpdatePDB - hold PDB as expected
@@ -76,6 +80,10 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 	}
 	for _, pool := range t.Spec.Pools {
 		if strings.TrimSpace(pool.Name) == "" {
+			continue
+		}
+		// No PodDisruptionBudget for minAvailable equal server's numbers.
+		if pool.Servers == pool.Servers/2+1 {
 			continue
 		}
 		if available.Available() {
@@ -92,127 +100,48 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 				return nil
 			}
 		}
+		var pdbI client.Object
 		if available.V1Available() {
-			pdbName := t.Name + "-" + pool.Name
-			var pdb *v1.PodDisruptionBudget
-			var isCreate bool
-			pdb, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Get(ctx, pdbName, metav1.GetOptions{})
-			if err != nil {
-				if k8serrors.IsNotFound(err) {
-					pdb = &v1.PodDisruptionBudget{}
-					isCreate = true
-				} else {
-					return err
-				}
-			}
-			if !isCreate {
-				// exist and as expected
-				if pdb.Spec.MinAvailable != nil && pdb.Spec.MinAvailable.IntValue() == (int(pool.Servers/2)+1) {
-					continue
-				}
-			}
-			// set filed we expected
-			pdb.Name = pdbName
-			pdb.Namespace = t.Namespace
-			minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
-			pdb.Spec.MinAvailable = &minAvailable
-			pdb.Labels = map[string]string{
-				v2.TenantLabel: t.Name,
-				v2.PoolLabel:   pool.Name,
-			}
-			pdb.Spec.Selector = metav1.SetAsLabelSelector(labels.Set{
-				v2.TenantLabel: t.Name,
-				v2.PoolLabel:   pool.Name,
-			})
-			pdb.OwnerReferences = []metav1.OwnerReference{
-				*metav1.NewControllerRef(t, schema.GroupVersionKind{
-					Group:   v2.SchemeGroupVersion.Group,
-					Version: v2.SchemeGroupVersion.Version,
-					Kind:    v2.MinIOCRDResourceKind,
-				}),
-			}
-			if isCreate {
-				_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Create(ctx, pdb, metav1.CreateOptions{})
-				if err != nil {
-					return err
-				}
-			} else {
-				patchData := map[string]interface{}{
-					"spec": map[string]interface{}{
-						"minAvailable": pdb.Spec.MinAvailable,
-					},
-				}
-				pData, err := json.Marshal(patchData)
-				if err != nil {
-					return err
-				}
-				_, err = c.kubeClientSet.PolicyV1().PodDisruptionBudgets(t.Namespace).Patch(ctx, pdbName, types.MergePatchType, pData, metav1.PatchOptions{})
-				if err != nil {
-					return err
-				}
-			}
+			pdbI = &v1.PodDisruptionBudget{}
+		} else if available.V1BetaAvailable() {
+			pdbI = &v1beta1.PodDisruptionBudget{}
+		} else {
+			return nil
 		}
-		if available.V1BetaAvailable() {
-			pdbName := t.Name + "-" + pool.Name
-			var pdb *v1beta1.PodDisruptionBudget
-			var isCreate bool
-			pdb, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Get(ctx, pdbName, metav1.GetOptions{})
-			if err != nil {
-				if k8serrors.IsNotFound(err) {
-					pdb = &v1beta1.PodDisruptionBudget{}
-					isCreate = true
-				} else {
-					return err
+		pdbI.SetName(t.Name + "-" + pool.Name)
+		pdbI.SetNamespace(t.Namespace)
+		_, err := runtime.NewObjectSyncer(ctx, c.k8sClient, t, func() error {
+			if available.V1Available() {
+				pdb := pdbI.(*v1.PodDisruptionBudget)
+				minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
+				pdb.Spec.MinAvailable = &minAvailable
+				pdb.Labels = map[string]string{
+					v2.TenantLabel: t.Name,
+					v2.PoolLabel:   pool.Name,
 				}
+				pdb.Spec.Selector = metav1.SetAsLabelSelector(labels.Set{
+					v2.TenantLabel: t.Name,
+					v2.PoolLabel:   pool.Name,
+				})
 			}
-			if !isCreate {
-				// exist and as expected
-				if pdb.Spec.MinAvailable != nil && pdb.Spec.MinAvailable.IntValue() == (int(pool.Servers/2)+1) {
-					continue
+			if available.V1BetaAvailable() {
+				pdb := pdbI.(*v1beta1.PodDisruptionBudget)
+				minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
+				pdb.Spec.MinAvailable = &minAvailable
+				pdb.Labels = map[string]string{
+					v2.TenantLabel: t.Name,
+					v2.PoolLabel:   pool.Name,
 				}
+				pdb.Spec.Selector = metav1.SetAsLabelSelector(labels.Set{
+					v2.TenantLabel: t.Name,
+					v2.PoolLabel:   pool.Name,
+				})
 			}
-			// set filed we expected
-			pdb.Name = pdbName
-			pdb.Namespace = t.Namespace
-			minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
-			pdb.Spec.MinAvailable = &minAvailable
-			pdb.Labels = map[string]string{
-				v2.TenantLabel: t.Name,
-				v2.PoolLabel:   pool.Name,
-			}
-			pdb.Spec.Selector = metav1.SetAsLabelSelector(labels.Set{
-				v2.TenantLabel: t.Name,
-				v2.PoolLabel:   pool.Name,
-			})
-			pdb.OwnerReferences = []metav1.OwnerReference{
-				*metav1.NewControllerRef(t, schema.GroupVersionKind{
-					Group:   v2.SchemeGroupVersion.Group,
-					Version: v2.SchemeGroupVersion.Version,
-					Kind:    v2.MinIOCRDResourceKind,
-				}),
-			}
-			if isCreate {
-				_, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Create(ctx, pdb, metav1.CreateOptions{})
-				if err != nil {
-					return err
-				}
-			} else {
-				patchData := map[string]interface{}{
-					"spec": map[string]interface{}{
-						"minAvailable": pdb.Spec.MinAvailable,
-					},
-				}
-				pData, err := json.Marshal(patchData)
-				if err != nil {
-					return err
-				}
-				_, err = c.kubeClientSet.PolicyV1beta1().PodDisruptionBudgets(t.Namespace).Patch(ctx, pdbName, types.MergePatchType, pData, metav1.PatchOptions{})
-				if err != nil {
-					return err
-				}
-			}
+			return nil
+		}, pdbI, runtime.SyncTypeCreateOrUpdate).Sync(ctx)
+		if err != nil {
+			return err
 		}
-
 	}
 	if len(t.Spec.Pools) == 0 {
 		return fmt.Errorf("%s empty pools", t.Name)

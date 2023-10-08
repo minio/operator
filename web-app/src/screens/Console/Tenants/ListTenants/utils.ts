@@ -31,8 +31,6 @@ export interface IQuotas {
   name: string;
 }
 
-export const minMemReq = 2147483648;
-
 export interface KeyPair {
   id: string;
   encoded_cert: string;

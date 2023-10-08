@@ -16,65 +16,6 @@
 
 import { redirectRule } from "../screens/LoginPage/types";
 
-interface userInterface {
-  accessKey: string;
-}
-
-interface policyInterface {
-  name: string;
-}
-
-interface policyDetailsInterface {
-  policy: string;
-}
-
-export const usersSort = (a: userInterface, b: userInterface) => {
-  if (a.accessKey > b.accessKey) {
-    return 1;
-  }
-  if (a.accessKey < b.accessKey) {
-    return -1;
-  }
-  // a must be equal to b
-  return 0;
-};
-
-export const policySort = (a: policyInterface, b: policyInterface) => {
-  if (a.name > b.name) {
-    return 1;
-  }
-  if (a.name < b.name) {
-    return -1;
-  }
-  // a must be equal to b
-  return 0;
-};
-
-export const stringSort = (a: string, b: string) => {
-  if (a > b) {
-    return 1;
-  }
-  if (a < b) {
-    return -1;
-  }
-  // a must be equal to b
-  return 0;
-};
-
-export const policyDetailsSort = (
-  a: policyDetailsInterface,
-  b: policyDetailsInterface,
-) => {
-  if (a.policy > b.policy) {
-    return 1;
-  }
-  if (a.policy < b.policy) {
-    return -1;
-  }
-  // a must be equal to b
-  return 0;
-};
-
 export const redirectRules = (a: redirectRule, b: redirectRule) => {
   if (a.displayName > b.displayName) {
     return 1;

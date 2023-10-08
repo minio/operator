@@ -5,4 +5,4 @@ metadata:
   namespace: minio-tenant
 spec:
   log:
-    image: quay.io/minio/operator:noop
+    image: quay.io/minio/operator:latest

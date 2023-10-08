@@ -12,3 +12,42 @@ spec:
           env:
             - name: MINIO_OPERATOR_RUNTIME
               value: "OpenShift"
+            - name: MINIO_CONSOLE_TLS_ENABLE
+              value: "on"
+          volumeMounts:
+            - name: openshift-service-ca
+              mountPath: /tmp/service-ca
+            - name: openshift-csr-signer-ca
+              mountPath: /tmp/csr-signer-ca
+            - name: sts-tls
+              mountPath: /tmp/sts
+      volumes:
+        - name: sts-tls
+          projected:
+            defaultMode: 420
+            sources:
+              - secret:
+                  name: sts-tls
+                  items:
+                    - key: tls.crt
+                      path: public.crt
+                    - key: tls.key
+                      path: private.key
+                  optional: true
+        - name: openshift-service-ca
+          configMap:
+            name: openshift-service-ca.crt
+            items:
+              - key: service-ca.crt
+                path: service-ca.crt
+            optional: true
+        - name: openshift-csr-signer-ca
+          projected:
+            defaultMode: 420
+            sources:
+              - secret:
+                  name: openshift-csr-signer-ca
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                  optional: true

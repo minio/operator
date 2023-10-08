@@ -168,6 +168,18 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		return nil
 	}
 
+	// Add back "Usable Capacity" & "Internal" values in Tenant Status and in the UI
+	// How much is available: "Usable Capacity" in UI comes from "tenant.Status.Usage.Capacity"
+	// How much is used: "Internal" in UI comes from "tenant.Status.Usage.Usage"
+	UsedSpace := int64(0)      // How much is used
+	AvailableSpace := int64(0) // How much is available
+	for _, disk := range storageInfo.Disks {
+		UsedSpace = UsedSpace + int64(disk.UsedSpace)
+		AvailableSpace = AvailableSpace + int64(disk.AvailableSpace)
+	}
+	tenant.Status.Usage.Usage = UsedSpace
+	tenant.Status.Usage.Capacity = AvailableSpace
+
 	var rawUsage uint64
 
 	var onlineDisks int32
@@ -236,10 +248,6 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 			klog.Infof("'%s/%s' Can't update tenant status with tiers: %v", tenant.Namespace, tenant.Name, err)
 		}
 	}
-
-	// TODO: add usage and usableCapacity
-	// tenant.Status.Usage.Usage = metrics.Usage
-	// tenant.Status.Usage.Capacity = metrics.UsableCapacity
 
 	return nil
 }

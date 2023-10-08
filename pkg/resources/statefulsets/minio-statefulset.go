@@ -467,7 +467,7 @@ type NewPoolArgs struct {
 
 // NewPool creates a new StatefulSet for the given Cluster.
 func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
-	t := args.Tenant
+	t := args.Tenant.DeepCopy()
 	skipEnvVars := args.SkipEnvVars
 	pool := args.Pool
 	poolStatus := args.PoolStatus
@@ -873,6 +873,16 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	if len(t.Spec.InitContainers) != 0 {
 		ss.Spec.Template.Spec.InitContainers = append(ss.Spec.Template.Spec.InitContainers, t.Spec.InitContainers...)
 	}
+	// add customs VolumeMounts and Volumes.
+	if len(t.Spec.AdditionalVolumeMounts) != 0 && len(t.Spec.AdditionalVolumes) == len(t.Spec.AdditionalVolumeMounts) {
+		for i := range ss.Spec.Template.Spec.InitContainers {
+			ss.Spec.Template.Spec.InitContainers[i].VolumeMounts = append(ss.Spec.Template.Spec.InitContainers[i].VolumeMounts, t.Spec.AdditionalVolumeMounts...)
+		}
+		for i := range ss.Spec.Template.Spec.Containers {
+			ss.Spec.Template.Spec.Containers[i].VolumeMounts = append(ss.Spec.Template.Spec.Containers[i].VolumeMounts, t.Spec.AdditionalVolumeMounts...)
+		}
+		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, t.Spec.AdditionalVolumes...)
+	}
 	return ss
 }
 
@@ -895,6 +905,10 @@ func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Poo
 			CfgVolumeMount,
 		},
 		SecurityContext: poolContainerSecurityContext(pool),
+	}
+	// That's ok to use the sidecar's resource
+	if t.Spec.SideCars != nil && t.Spec.SideCars.Resources != nil {
+		initContainer.Resources = *t.Spec.SideCars.Resources
 	}
 	if t.HasConfigurationSecret() {
 		initContainer.VolumeMounts = append(initContainer.VolumeMounts, TmpCfgVolumeMount)
@@ -923,6 +937,9 @@ func getSideCarContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.
 			CfgVolumeMount,
 		},
 		SecurityContext: poolContainerSecurityContext(pool),
+	}
+	if t.Spec.SideCars != nil && t.Spec.SideCars.Resources != nil {
+		sidecarContainer.Resources = *t.Spec.SideCars.Resources
 	}
 	if t.HasConfigurationSecret() {
 		sidecarContainer.VolumeMounts = append(sidecarContainer.VolumeMounts, TmpCfgVolumeMount)

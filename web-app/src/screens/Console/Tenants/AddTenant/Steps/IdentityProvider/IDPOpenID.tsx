@@ -82,10 +82,6 @@ const IDPOpenID = () => {
     (state: AppState) =>
       state.createTenant.fields.identityProvider.openIDSecretID,
   );
-  const openIDCallbackURL = useSelector(
-    (state: AppState) =>
-      state.createTenant.fields.identityProvider.openIDCallbackURL,
-  );
   const openIDClaimName = useSelector(
     (state: AppState) =>
       state.createTenant.fields.identityProvider.openIDClaimName,
@@ -138,7 +134,7 @@ const IDPOpenID = () => {
         },
         {
           fieldKey: "openID_claimName",
-          required: true,
+          required: false,
           value: openIDClaimName,
         },
       ];
@@ -210,20 +206,6 @@ const IDPOpenID = () => {
       </Grid>
       <Grid item xs={12} className={classes.formFieldRow}>
         <InputBoxWrapper
-          id="openID_callbackURL"
-          name="openID_callbackURL"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("openIDCallbackURL", e.target.value);
-            cleanValidation("openID_callbackURL");
-          }}
-          label="Callback URL"
-          value={openIDCallbackURL}
-          placeholder="https://your-console-endpoint:9443/oauth_callback"
-          error={validationErrors["openID_callbackURL"] || ""}
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
           id="openID_claimName"
           name="openID_claimName"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,8 +214,8 @@ const IDPOpenID = () => {
           }}
           label="Claim Name"
           value={openIDClaimName}
+          placeholder="policy"
           error={validationErrors["openID_claimName"] || ""}
-          required
         />
       </Grid>
       <Grid item xs={12} className={classes.formFieldRow}>

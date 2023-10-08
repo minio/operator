@@ -117,7 +117,7 @@ const RegisterHelpBox = ({ hasMargin = true }: { hasMargin?: boolean }) => {
           icon={<ExtraFeaturesIcon />}
           description={
             <Link
-              href="https://min.io/signup?ref=con"
+              href="https://min.io/signup?ref=op"
               target="_blank"
               sx={{
                 color: "#2781B0",

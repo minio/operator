@@ -38,8 +38,3 @@ export const getLogoVar = (): LogoVar => {
   }
   return logoVar;
 };
-
-export const registeredCluster = (): boolean => {
-  const plan = getLogoVar();
-  return plan === "standard" || plan === "enterprise";
-};

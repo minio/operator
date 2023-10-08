@@ -30,7 +30,7 @@ builds:
       - CGO_ENABLED=0
     main: ./cmd/operator/
     ldflags:
-      - -s -w -X main.version={{.Tag}}
+      - -s -w -X github.com/minio/operator/pkg.ReleaseTag={{.Tag}} -X github.com/minio/operator/pkg.CommitID={{.FullCommit}} -X github.com/minio/operator/pkg.Version={{.Version}} -X github.com/minio/operator/pkg.ShortCommitID={{.ShortCommit}} -X github.com/minio/operator/pkg.ReleaseTime={{.Date}}
     flags:
       - -trimpath
     hooks:

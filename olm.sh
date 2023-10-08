@@ -7,15 +7,19 @@ OPERATOR_SDK_VERSION=v1.22.2
 TMP_BIN_DIR="$(mktemp -d)"
 
 function install_binaries() {
-  
-  echo "Installing temporary Binaries into: $TMP_BIN_DIR";
-  echo "Installing temporary operator-sdk binary: $OPERATOR_SDK_VERSION"
-  ARCH=`{ case "$(uname -m)" in "x86_64") echo -n "amd64";; "aarch64") echo -n "arm64";; *) echo -n "$(uname -m)";; esac; }`
-  OS=$(uname | awk '{print tolower($0)}')
-  OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION
-  curl -L ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH} -o ${TMP_BIN_DIR}/operator-sdk
-  OPERATOR_SDK_BIN=${TMP_BIN_DIR}/operator-sdk
-  chmod +x $OPERATOR_SDK_BIN
+
+  if ! operator-sdk version; then
+    echo "Installing temporary Binaries into: $TMP_BIN_DIR";
+    echo "Installing temporary operator-sdk binary: $OPERATOR_SDK_VERSION"
+    ARCH=`{ case "$(uname -m)" in "x86_64") echo -n "amd64";; "aarch64") echo -n "arm64";; *) echo -n "$(uname -m)";; esac; }`
+    OS=$(uname | awk '{print tolower($0)}')
+    OPERATOR_SDK_DL_URL=https://github.com/operator-framework/operator-sdk/releases/download/$OPERATOR_SDK_VERSION
+    curl -L ${OPERATOR_SDK_DL_URL}/operator-sdk_${OS}_${ARCH} -o ${TMP_BIN_DIR}/operator-sdk
+    OPERATOR_SDK_BIN=${TMP_BIN_DIR}/operator-sdk
+    chmod +x $OPERATOR_SDK_BIN
+  else
+    OPERATOR_SDK_BIN="$(which operator-sdk)"
+  fi
 }
 
 install_binaries
@@ -66,6 +70,14 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
+  # To provide channel for upgrade where we tell what versions can be replaced by the new version we offer
+  # You can read the documentation at link below:
+  # https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html/operators/understanding-the-operator-lifecycle-manager-olm#olm-upgrades_olm-understanding-olm
+  echo "To provide replacement for upgrading Operator..."
+  PREV_VERSION=$(curl -s "https://catalog.redhat.com/api/containers/v1/operators/bundles?channel_name=stable&package=${package}&organization=${catalog}&include=data.version,data.csv_name,data.ocp_version" | jq '.data | max_by(.version).csv_name' -r)
+  echo "replaces: $PREV_VERSION"
+  yq -i e ".spec.replaces |= \"${PREV_VERSION}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+
   # Now promote the latest release to the root of the repository
   rm -Rf manifests
   rm -Rf metadata
@@ -92,6 +104,7 @@ for catalog in "${redhatCatalogs[@]}"; do
     echo "  com.redhat.openshift.versions: v4.8-v4.13"
     echo "  # Annotation to add default bundle channel as potential is declared"
     echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
+    echo "  operatorframework.io/suggested-namespace: minio-operator"
   } >> bundles/$catalog/$RELEASE/metadata/annotations.yaml
 
   echo "clean root level annotations.yaml"

@@ -119,7 +119,7 @@ requirements of each PVC for the tenant to start correctly. For example, deployi
 18 (16 + 2). If each PVC requests 1TB capacity, then each PV must also provide *at least* 1TB of capacity.
 
 MinIO recommends using the [MinIO DirectPV Driver](https://github.com/minio/directpv) to automatically provision
-Persistent Volumes from locally attached drives. This procedure assumes MinIO DirectCSI is installed and configured.
+Persistent Volumes from locally attached drives. This procedure assumes MinIO DirectPV is installed and configured.
 
 For clusters which cannot deploy MinIO DirectPV,
 use [Local Persistent Volumes](https://kubernetes.io/docs/concepts/storage/volumes/#local). The following example YAML

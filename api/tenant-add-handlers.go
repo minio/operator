@@ -455,12 +455,10 @@ func setTenantOIDCConfig(tenantReq *models.CreateTenantRequest, tenantConfigurat
 	secretID := *tenantReq.Idp.Oidc.SecretID
 	claimName := *tenantReq.Idp.Oidc.ClaimName
 	scopes := tenantReq.Idp.Oidc.Scopes
-	callbackURL := tenantReq.Idp.Oidc.CallbackURL
 	tenantConfigurationENV["MINIO_IDENTITY_OPENID_CONFIG_URL"] = configurationURL
 	tenantConfigurationENV["MINIO_IDENTITY_OPENID_CLIENT_ID"] = clientID
 	tenantConfigurationENV["MINIO_IDENTITY_OPENID_CLIENT_SECRET"] = secretID
 	tenantConfigurationENV["MINIO_IDENTITY_OPENID_CLAIM_NAME"] = claimName
-	tenantConfigurationENV["MINIO_IDENTITY_OPENID_REDIRECT_URI"] = callbackURL
 	if scopes == "" {
 		scopes = "openid,profile,email"
 	}

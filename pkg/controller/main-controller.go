@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/utils"
+
 	"github.com/minio/madmin-go/v2"
 	"github.com/minio/operator/pkg/common"
 	xcerts "github.com/minio/pkg/certs"
@@ -59,6 +61,7 @@ import (
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	appslisters "k8s.io/client-go/listers/apps/v1"
 	corelisters "k8s.io/client-go/listers/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 
@@ -120,6 +123,8 @@ type Controller struct {
 	podName string
 	// namespacesToWatch restricts the action of the opreator to a list of namespaces
 	namespacesToWatch set.StringSet
+	// k8sClient is a kubernetes client
+	k8sClient client.Client
 	// kubeClientSet is a standard kubernetes clientset
 	kubeClientSet kubernetes.Interface
 	// minioClientSet is a clientset for our own API group
@@ -211,7 +216,7 @@ type EventNotification struct {
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, k8sClient client.Client, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -226,7 +231,7 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 	ns := miniov2.GetNSFromFile()
 	ctx := context.Background()
 	oprImg := DefaultOperatorImage
-	oprDep, err := kubeClientSet.AppsV1().Deployments(ns).Get(ctx, DefaultDeploymentName, metav1.GetOptions{})
+	oprDep, err := kubeClientSet.AppsV1().Deployments(ns).Get(ctx, getOperatorDeploymentName(), metav1.GetOptions{})
 	if err == nil && oprDep != nil {
 		// assume we are the first container, just in case they changed the default name
 		if len(oprDep.Spec.Template.Spec.Containers) > 0 {
@@ -244,6 +249,7 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		podName:                   podName,
 		namespacesToWatch:         namespacesToWatch,
 		kubeClientSet:             kubeClientSet,
+		k8sClient:                 k8sClient,
 		minioClientSet:            minioClientSet,
 		promClient:                promClient,
 		statefulSetLister:         statefulSetInformer.Lister(),
@@ -356,8 +362,13 @@ func (c *Controller) startUpgradeServer(ctx context.Context) <-chan error {
 // startUpgradeServer Starts the Upgrade tenant API server and notifies the start and stop via notificationChannel
 func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel chan<- *EventNotification) {
 	klog.Infof("Starting STS API server")
-	publicCertPath, publicKeyPath := c.waitSTSTLSCert()
-	certsManager, err := xcerts.NewManager(ctx, *publicCertPath, *publicKeyPath, LoadX509KeyPair)
+
+	publicCertPath := miniov2.GetPublicCertFilePath("sts")
+	privateKeyPath := miniov2.GetPrivateKeyFilePath("sts")
+	if utils.GetOperatorRuntime() != common.OperatorRuntimeOpenshift {
+		publicCertPath, privateKeyPath = c.waitSTSTLSCert()
+	}
+	certsManager, err := xcerts.NewManager(ctx, publicCertPath, privateKeyPath, LoadX509KeyPair)
 	if err != nil {
 		klog.Errorf("HTTPS STS API server failed to load CA certificate: %v", err)
 		notificationChannel <- &EventNotification{
@@ -367,6 +378,7 @@ func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel 
 	}
 	serverCertsManager = certsManager
 	c.sts.TLSConfig = c.createTLSConfig(serverCertsManager)
+
 	if err := c.sts.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
 		// only notify on server failure, on http.ErrServerClosed the channel should be already closed
 		notificationChannel <- &EventNotification{
@@ -410,15 +422,20 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	if isOperatorConsoleTLS() {
 		klog.Info("Waiting for Console TLS")
 		go func() {
-			klog.Infof("Console TLS is enabled, starting console TLS certificate setup")
-			err := c.recreateOperatorConsoleCertsIfRequired(ctx)
-			if err != nil {
-				panic(err)
-			}
-			klog.Infof("Restarting Console pods")
-			err = c.rolloutRestartDeployment(getConsoleDeploymentName())
-			if err != nil {
-				klog.Errorf("Console deployment didn't restart: %s", err)
+			if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+				klog.Infof("Console TLS is enabled, skipping TLS certificate generation on Openshift deployment")
+			} else {
+				klog.Infof("Console TLS is enabled, starting console TLS certificate setup")
+
+				err := c.recreateOperatorConsoleCertsIfRequired(ctx)
+				if err != nil {
+					panic(err)
+				}
+				klog.Infof("Restarting Console pods")
+				err = c.rolloutRestartDeployment(getConsoleDeploymentName())
+				if err != nil {
+					klog.Errorf("Console deployment didn't restart: %s", err)
+				}
 			}
 		}()
 	} else {
@@ -428,8 +445,12 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	// 2) we need to make sure we have STS API certificates (if enabled)
 	if IsSTSEnabled() {
 		go func() {
-			klog.Infof("STS is enabled, starting STS API certificate setup")
-			c.generateSTSTLSCert()
+			if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+				klog.Infof("STS is enabled, skipping TLS certificate generation on Openshift deployment")
+			} else {
+				klog.Infof("STS is enabled, starting API certificate setup")
+				c.generateSTSTLSCert()
+			}
 		}()
 	}
 
@@ -440,7 +461,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 				klog.Errorf("Upgrade Server stopped: %v, going to restart", err)
 				upgradeServerChannel = c.startUpgradeServer(ctx)
 			}
-			// webswerver was instructed to stop, do not attempt to restart
+			// webserver was instructed to stop, do not attempt to restart
 			continue
 		case <-stopCh:
 			return
@@ -706,12 +727,31 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 
 	namespace, tenantName := key2NamespaceName(key)
 
+	if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
+		err := c.checkOpenshiftSignerCACertInOperatorNamespace(ctx)
+		if err != nil {
+			klog.Errorf("Error checking openshift-csr-signer-ca secret, %#v", err)
+		}
+	}
+
 	// Get the Tenant resource with this namespace/name
 	tenant, err := c.minioClientSet.MinioV2().Tenants(namespace).Get(context.Background(), tenantName, metav1.GetOptions{})
 	if err != nil {
 		// The Tenant resource may no longer exist, in which case we stop processing.
 		if k8serrors.IsNotFound(err) {
 			runtime.HandleError(fmt.Errorf("Tenant '%s' in work queue no longer exists", key))
+			// Try to delete PrometheusConfig.
+			// Can't use the tenant. That's nil for sure
+			err = c.deletePrometheusAddlConfig(ctx, &miniov2.Tenant{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tenantName,
+					Namespace: namespace,
+				},
+			})
+			if err != nil {
+				// Just output the error. Will not retry.
+				runtime.HandleError(fmt.Errorf("DeletePrometheusAddlConfig '%s/%s' error:%s", namespace, tenantName, err.Error()))
+			}
 			return WrapResult(Result{}, nil)
 		}
 		// will retry after 5sec
@@ -924,7 +964,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	}
 
 	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
-	operatorCATLSExists, err := c.checkOperatorCaForTenant(ctx, tenant)
+	operatorCATLSExists, err := c.checkOperatorCAForTenant(ctx, tenant)
 	if err != nil {
 		return WrapResult(Result{}, err)
 	}

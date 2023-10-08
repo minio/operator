@@ -35,7 +35,7 @@ const LicenseFAQ = () => {
         Foundation and the Open Source Initiative. You can get a copy of the GNU
         AGPL v3 license with MinIO source code or at&nbsp;
         <a
-          href={"https://min.io/compliance?ref=con"}
+          href={"https://min.io/compliance?ref=op"}
           target={"_blank"}
           className={classes.linkText}
         >

@@ -4,8 +4,8 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-06-23T20-26-00Z]
-:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2023-05-02T22-48-10Z]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-09-07T02-05-02Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2023-08-19T17-27-47Z]
 
 
 [id="{anchor_prefix}-minio-min-io-v2"]
@@ -189,6 +189,10 @@ Features (`features`) - Object describing which MinIO features to enable/disable
 |*Optional* + 
  Specify a list of domains used to access MinIO and Console.
 
+|*`enableSFTP`* __boolean__ 
+|*Optional* + 
+ Starts minio server with SFTP support
+
 |===
 
 
@@ -226,7 +230,7 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |*Optional* + 
  The Docker image to use for deploying MinIO KES. Defaults to {kes-image}. +
 
-|*`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#pullpolicy-v1-core[$$PullPolicy$$]__ 
+|*`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#pullpolicy-v1-core[$$PullPolicy$$]__ 
 |*Optional* + 
  The pull policy for the MinIO Docker image. Specify one of the following: + 
  * `Always` + 
@@ -238,7 +242,7 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |*Optional* + 
  The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO KES pods created as part of the Tenant. +
 
-|*`kesSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
+|*`kesSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
 |*Required* + 
  Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] which contains environment variables to use for setting up the MinIO KES service. + 
  See the https://github.com/minio/operator/blob/master/examples/kes-secret.yaml[MinIO Operator `console-secret.yaml`] for an example.
@@ -261,11 +265,11 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 
 |*`gcpCredentialSecretName`* __string__ 
 |*Optional* + 
-  Specify the GCP default credentials to be used for KES to authenticate to GCP key store
+ Specify the GCP default credentials to be used for KES to authenticate to GCP key store
 
 |*`gcpWorkloadIdentityPool`* __string__ 
 |*Optional* + 
-  Specify the name of the workload identity pool (This is required for generating service account token)
+ Specify the name of the workload identity pool (This is required for generating service account token)
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 
@@ -275,7 +279,7 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |*Optional* + 
  If provided, use these labels for KES Object Meta labels
 
-|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
+|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
 |*Optional* + 
  Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits in the MinIO tenant. +
 
@@ -284,15 +288,15 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
  The filter for the Operator to apply when selecting which nodes on which to deploy MinIO KES pods. The Operator only selects those nodes whose labels match the specified selector. + 
  See the Kubernetes documentation on https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Assigning Pods to Nodes] for more information.
 
-|*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#toleration-v1-core[$$Toleration$$] array__ 
+|*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#toleration-v1-core[$$Toleration$$] array__ 
 |*Optional* + 
  Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to MinIO KES pods.
 
-|*`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#affinity-v1-core[$$Affinity$$]__ 
+|*`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#affinity-v1-core[$$Affinity$$]__ 
 |*Optional* + 
  Specify node affinity, pod affinity, and pod anti-affinity for the KES pods. +
 
-|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ 
+|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ 
 |*Optional* + 
  Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
 
@@ -300,7 +304,7 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 |*Optional* + 
  If provided, use this as the name of the key that KES creates on the KMS backend
 
-|*`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ 
+|*`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ 
 |Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of MinIO KES pods. The Operator supports only the following pod security fields: + 
  * `fsGroup` + 
  * `fsGroupChangePolicy` + 
@@ -309,7 +313,7 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
  * `runAsUser` + 
  * `seLinuxOptions` +
 
-|*`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#envvar-v1-core[$$EnvVar$$] array__ 
+|*`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#envvar-v1-core[$$EnvVar$$] array__ 
 |*Optional* + 
  If provided, the MinIO Operator adds the specified environment variables when deploying the KES resource.
 
@@ -397,11 +401,11 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
  The number of Persistent Volume Claims to generate for each MinIO server pod in the pool. + 
  The MinIO Operator requires a minimum of `4` volumes per pool. Specifically, the result of `pools.servers X pools.volumesPerServer` must be greater than `4`. +
 
-|*`volumeClaimTemplate`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$]__ 
+|*`volumeClaimTemplate`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$]__ 
 |*Required* + 
  Specify the configuration options for the MinIO Operator to use when generating Persistent Volume Claims for the MinIO tenant. +
 
-|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
+|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
 |*Optional* + 
  Object specification for specifying CPU and memory https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/[resource allocations] or limits in the MinIO tenant. +
 
@@ -410,19 +414,19 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
  The filter for the Operator to apply when selecting which nodes on which to deploy pods in the pool. The Operator only selects those nodes whose labels match the specified selector. + 
  See the Kubernetes documentation on https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Assigning Pods to Nodes] for more information.
 
-|*`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#affinity-v1-core[$$Affinity$$]__ 
+|*`affinity`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#affinity-v1-core[$$Affinity$$]__ 
 |*Optional* + 
  Specify node affinity, pod affinity, and pod anti-affinity for pods in the MinIO pool. +
 
-|*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#toleration-v1-core[$$Toleration$$] array__ 
+|*`tolerations`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#toleration-v1-core[$$Toleration$$] array__ 
 |*Optional* + 
  Specify one or more https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/[Kubernetes tolerations] to apply to pods deployed in the MinIO pool.
 
-|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ 
+|*`topologySpreadConstraints`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#topologyspreadconstraint-v1-core[$$TopologySpreadConstraint$$] array__ 
 |*Optional* + 
  Specify one or more https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints] to apply to pods deployed in the MinIO pool.
 
-|*`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ 
+|*`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ 
 |*Optional* + 
  Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of pods in the pool. The Operator supports only the following pod security fields: + 
  * `fsGroup` + 
@@ -431,7 +435,7 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
  * `runAsNonRoot` + 
  * `runAsUser` +
 
-|*`containerSecurityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#securitycontext-v1-core[$$SecurityContext$$]__ 
+|*`containerSecurityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#securitycontext-v1-core[$$SecurityContext$$]__ 
 |Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of containers in the pool. The Operator supports only the following container security fields: + 
  * `runAsGroup` + 
  * `runAsNonRoot` + 
@@ -538,17 +542,21 @@ SideCars (`sidecars`) defines a list of containers that the Operator attaches to
 |===
 | Field | Description
 
-|*`containers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#container-v1-core[$$Container$$] array__ 
+|*`containers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#container-v1-core[$$Container$$] array__ 
 |*Optional* + 
  List of containers to run inside the Pod
 
-|*`volumeClaimTemplates`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$] array__ 
+|*`volumeClaimTemplates`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$] array__ 
 |*Optional* + 
  volumeClaimTemplates is a list of claims that pods are allowed to reference. The StatefulSet controller is responsible for mapping network identities to claims in a way that maintains the identity of a pod. Every claim in this list must have at least one matching (by name) volumeMount in one container in the template. A claim in this list takes precedence over any volumes in the template, with the same name.
 
-|*`volumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#volume-v1-core[$$Volume$$] array__ 
+|*`volumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#volume-v1-core[$$Volume$$] array__ 
 |*Optional* + 
  List of volumes that can be mounted by containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes
+
+|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
+|*Optional* + 
+ sidecar's Resource, initcontainer will use that if set.
 
 |===
 
@@ -573,7 +581,7 @@ Tenant is a https://kubernetes.io/docs/concepts/overview/working-with-objects/ku
 |*`kind`* __string__ 
 |`Tenant`
 
-|*`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#objectmeta-v1-meta[$$ObjectMeta$$]__ 
+|*`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#objectmeta-v1-meta[$$ObjectMeta$$]__ 
 |Refer to Kubernetes API documentation for fields of `metadata`.
 
 
@@ -659,21 +667,21 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*Optional* + 
  The Docker image to use when deploying `minio` server pods. Defaults to {minio-image}. +
 
-|*`imagePullSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
+|*`imagePullSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
 |*Optional* + 
  Specify the secret key to use for pulling images from a private Docker repository. +
 
-|*`podManagementPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#podmanagementpolicytype-v1-apps[$$PodManagementPolicyType$$]__ 
+|*`podManagementPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#podmanagementpolicytype-v1-apps[$$PodManagementPolicyType$$]__ 
 |*Optional* + 
  Pod Management Policy for pod created by StatefulSet
 
-|*`credsSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
+|*`credsSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
 |*optional* + 
  Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] to use for setting the MinIO root access key and secret key. Specify the secret as `name: <secret>`. The Kubernetes secret must contain the following fields: + 
  * `data.accesskey` - The access key for the root credentials + 
  * `data.secretkey` - The secret key for the root credentials +
 
-|*`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#envvar-v1-core[$$EnvVar$$] array__ 
+|*`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#envvar-v1-core[$$EnvVar$$] array__ 
 |*Optional* + 
  If provided, the MinIO Operator adds the specified environment variables when deploying the Tenant resource.
 
@@ -707,8 +715,17 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 
 |*`externalClientCertSecrets`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-localcertificatereference[$$LocalCertificateReference$$] array__ 
 |*Optional* + 
- Provide support for mounting additional client certificate into MinIO Tenant pods Multiple client certificates will be mounted using the following folder structure: 
- 	certs 		| 		|			+ client.crt 		|			+ client.key 		|			+ client.crt 		|			+ client.key 		|			+ client.crt 		|			+ client.key 
+ Provide support for mounting additional client certificate into MinIO Tenant pods Multiple client certificates will be mounted using the following folder structure: + 
+ * certs + 
+ * * client-0 + 
+ * * * client.crt + 
+ * * * client.key + 
+ * * client-1 + 
+ * * * client.crt + 
+ * * * client.key + 
+ * * * client-2 + 
+ * * client.crt + 
+ * * *  client.key + 
  Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified certificate to every MinIO server pod in the tenant that later can be referenced using environment variables. The secret *must* contain the following fields: + 
  * `name` - The name of the Kubernetes secret containing the TLS certificate. + 
  * `type` - Specify `kubernetes.io/tls` +
@@ -729,13 +746,13 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  If `requestAutoCert` is set to `false` *and* `externalCertSecret` is omitted, the MinIO Tenant deploys *without* TLS enabled. 
  See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
 
-|*`liveness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#probe-v1-core[$$Probe$$]__ 
+|*`liveness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#probe-v1-core[$$Probe$$]__ 
 |Liveness Probe for container liveness. Container will be restarted if the probe fails.
 
-|*`readiness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#probe-v1-core[$$Probe$$]__ 
+|*`readiness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#probe-v1-core[$$Probe$$]__ 
 |Readiness Probe for container readiness. Container will be removed from service endpoints if the probe fails.
 
-|*`startup`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#probe-v1-core[$$Probe$$]__ 
+|*`startup`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#probe-v1-core[$$Probe$$]__ 
 |Startup Probe allows to configure a max grace period for a pod to start before getting traffic routed to it.
 
 |*`features`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-features[$$Features$$]__ 
@@ -763,7 +780,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
  Indicates the Pod priority and therefore importance of a Pod relative to other Pods in the cluster. This is applied to MinIO pods only. + 
  Refer Kubernetes https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass[Priority Class documentation] for more complete documentation.
 
-|*`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#pullpolicy-v1-core[$$PullPolicy$$]__ 
+|*`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#pullpolicy-v1-core[$$PullPolicy$$]__ 
 |*Optional* + 
  The pull policy for the MinIO Docker image. Specify one of the following: + 
  * `Always` + 
@@ -783,7 +800,7 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*Optional* + 
  Specify custom labels and annotations to append to the MinIO service and/or Console service.
 
-|*`users`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ 
+|*`users`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ 
 |*Optional* + 
  An array of https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secrets] to use for generating MinIO users during tenant provisioning. + 
  Each element in the array is an object consisting of a key-value pair `name: <string>`, where the `<string>` references an opaque Kubernetes secret. + 
@@ -800,9 +817,21 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*Optional* + 
  Enable JSON, Anonymous logging for MinIO tenants.
 
-|*`configuration`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.21/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
+|*`configuration`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
 |*Optional* + 
  Specify a secret that contains additional environment variable configurations to be used for the MinIO pools. The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
+
+|*`initContainers`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#container-v1-core[$$Container$$] array__ 
+|*Optional* + 
+ Add custom initContainers to StatefulSet
+
+|*`additionalVolumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#volume-v1-core[$$Volume$$] array__ 
+|*Optional* + 
+ If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
+
+|*`additionalVolumeMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#volumemount-v1-core[$$VolumeMount$$] array__ 
+|*Optional* + 
+ If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
 
 |===
 

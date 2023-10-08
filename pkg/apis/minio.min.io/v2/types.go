@@ -188,19 +188,27 @@ type TenantSpec struct {
 	// *Optional* +
 	//
 	// Provide support for mounting additional client certificate into MinIO Tenant pods
-	// Multiple client certificates will be mounted using the following folder structure:
+	// Multiple client certificates will be mounted using the following folder structure: +
 	//
-	//	certs
-	//		|
-	//		+ client-0
-	//		|			+ client.crt
-	//		|			+ client.key
-	//		+ client-1
-	//		|			+ client.crt
-	//		|			+ client.key
-	//		+ client-2
-	//		|			+ client.crt
-	//		|			+ client.key
+	//* certs +
+	//
+	//* * client-0 +
+	//
+	//* * * client.crt +
+	//
+	//* * * client.key +
+	//
+	//* * client-1 +
+	//
+	//* * * client.crt +
+	//
+	//* * * client.key +
+	//
+	//* * * client-2 +
+	//
+	//* * client.crt +
+	//
+	//* * *  client.key +
 	//
 	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes TLS secrets]. The MinIO Operator copies the specified certificate to every MinIO server pod in the tenant that later can be referenced using environment variables. The secret *must* contain the following fields: +
 	//
@@ -340,9 +348,19 @@ type TenantSpec struct {
 	Configuration *corev1.LocalObjectReference `json:"configuration,omitempty"`
 	// *Optional* +
 	//
-	// Add customs initContainers to StatefulSet
+	// Add custom initContainers to StatefulSet
 	// +optional
 	InitContainers []corev1.Container `json:"initContainers,omitempty"`
+	// *Optional* +
+	//
+	// If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
+	// +optional
+	AdditionalVolumes []corev1.Volume `json:"additionalVolumes,omitempty"`
+	// *Optional* +
+	//
+	// If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
+	// +optional
+	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
 }
 
 // Logging describes Logging for MinIO tenants.
@@ -877,4 +895,9 @@ type SideCars struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge,retainKeys
 	Volumes []corev1.Volume `json:"volumes,omitempty" patchStrategy:"merge,retainKeys" patchMergeKey:"name" protobuf:"bytes,1,rep,name=volumes"`
+	// *Optional* +
+	//
+	// sidecar's Resource, initcontainer will use that if set.
+	// +optional
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
 }

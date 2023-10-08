@@ -97,7 +97,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2023-06-23T20-26-00Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2023-09-07T02-05-02Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -135,7 +135,7 @@ const ConsoleAdminPolicyName = "consoleAdmin"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:2023-05-02T22-48-10Z"
+const DefaultKESImage = "minio/kes:2023-08-19T17-27-47Z"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"
@@ -205,6 +205,9 @@ const DefaultMonitoringInterval = 3
 
 // PrometheusNamespace is the namespace of the prometheus
 const PrometheusNamespace = "PROMETHEUS_NAMESPACE"
+
+// PrometheusName is the name of the prometheus
+const PrometheusName = "PROMETHEUS_NAME"
 
 // DefaultPrometheusNamespace is the default namespace for prometheus
 const DefaultPrometheusNamespace = "default"

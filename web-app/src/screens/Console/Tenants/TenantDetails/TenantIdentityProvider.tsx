@@ -164,7 +164,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
         },
         {
           fieldKey: "openID_claimName",
-          required: true,
+          required: false,
           value: openIDClaimName,
         },
       ];
@@ -433,20 +433,6 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
               </Grid>
               <Grid item xs={12} className={classes.formFieldRow}>
                 <InputBoxWrapper
-                  id="openID_callbackURL"
-                  name="openID_callbackURL"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    setOpenIDCallbackURL(e.target.value);
-                    cleanValidation("openID_callbackURL");
-                  }}
-                  label="Callback URL"
-                  value={openIDCallbackURL}
-                  placeholder="https://your-console-endpoint:9443/oauth_callback"
-                  error={validationErrors["openID_callbackURL"] || ""}
-                />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
                   id="openID_claimName"
                   name="openID_claimName"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -455,8 +441,8 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   }}
                   label="Claim Name"
                   value={openIDClaimName}
+                  placeholder="policy"
                   error={validationErrors["openID_claimName"] || ""}
-                  required
                 />
               </Grid>
               <Grid item xs={12} className={classes.formFieldRow}>
