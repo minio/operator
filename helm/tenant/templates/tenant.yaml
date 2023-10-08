@@ -19,7 +19,7 @@ scheduler:
   name: {{ dig "scheduler" "name" "" .tenant }}
 {{- end }}
 spec:
-  image: "{{ .image.repository }}:{{ .image.digest | default .image.tag }}"
+  image: "{{ .tenant.image.repository }}:{{ .tenant.image.digest | default .tenant.image.tag }}"
   imagePullPolicy: {{ dig "image" "pullPolicy" "IfNotPresent" .tenant }}
   {{- if dig "imagePullSecret" "name" "" .tenant }}
   imagePullSecret:
@@ -132,7 +132,7 @@ spec:
   {{- end }}
   {{- if dig "kes" "configuration" false .tenant }}
   kes:
-    image: "{{ .kes.image.repository }}:{{ .kes.image.digest | default .kes.image.tag }}"
+    image: "{{ .tenant.kes.image.repository }}:{{ .tenant.kes.image.digest | default .tenant.kes.image.tag }}"
     {{- with (dig "kes" "env" (list) .tenant) }}
     env: {{- toYaml . | nindent 4 }}
     {{- end }}
