@@ -68,6 +68,7 @@ operator:
       ephemeral-storage: 500Mi
 
 console:
+  enabled: true
   image:
     repository: quay.io/minio/operator
     tag: v5.0.9

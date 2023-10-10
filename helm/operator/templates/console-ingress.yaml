@@ -1,3 +1,4 @@
+{{- if .Values.console.enabled }}
 {{- if .Values.console.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -34,4 +35,5 @@ spec:
                 name: "console"
                 port:
                   name: http
+{{- end }}
 {{- end }}
