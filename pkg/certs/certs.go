@@ -173,11 +173,21 @@ func NewConfigDirFromCtx(ctx *cli.Context, option string, getDefaultDir func() s
 }
 
 func getPublicCertFile() string {
-	return filepath.Join(GlobalCertsDir.Get(), PublicCertFile)
+	publicCertFile := filepath.Join(GlobalCertsDir.Get(), PublicCertFile)
+	TLSCertFile := filepath.Join(GlobalCertsDir.Get(), TLSCertFile)
+	if isFile(publicCertFile) {
+		return publicCertFile
+	}
+	return TLSCertFile
 }
 
 func getPrivateKeyFile() string {
-	return filepath.Join(GlobalCertsDir.Get(), PrivateKeyFile)
+	privateKeyFile := filepath.Join(GlobalCertsDir.Get(), PrivateKeyFile)
+	TLSPrivateKey := filepath.Join(GlobalCertsDir.Get(), TLSKeyFile)
+	if isFile(privateKeyFile) {
+		return privateKeyFile
+	}
+	return TLSPrivateKey
 }
 
 // EnvCertPassword is the environment variable which contains the password used

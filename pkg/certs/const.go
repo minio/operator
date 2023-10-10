@@ -29,6 +29,12 @@ const (
 	// PublicCertFile Public certificate file for HTTPS.
 	PublicCertFile = "public.crt"
 
+	// TLSCertFile Public certificate file for HTTPS.
+	TLSCertFile = "tls.crt"
+
 	// PrivateKeyFile Private key file for HTTPS.
 	PrivateKeyFile = "private.key"
+
+	// TLSKeyFile Private key file for HTTPS.
+	TLSKeyFile = "tls.key"
 )
