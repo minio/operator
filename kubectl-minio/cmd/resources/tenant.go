@@ -36,6 +36,7 @@ type TenantOptions struct {
 	Capacity                string
 	NS                      string
 	Image                   string
+	KesImage                string
 	StorageClass            string
 	KmsSecret               string
 	ConsoleSecret           string
@@ -79,11 +80,11 @@ func tenantKESLabels(name string) map[string]string {
 	return m
 }
 
-func tenantKESConfig(tenant, secret string) *miniov2.KESConfig {
+func tenantKESConfig(tenant, secret, kesImage string) *miniov2.KESConfig {
 	if secret != "" {
 		return &miniov2.KESConfig{
 			Replicas: helpers.KESReplicas,
-			Image:    helpers.DefaultKESImage,
+			Image:    kesImage,
 			Configuration: &v1.LocalObjectReference{
 				Name: secret,
 			},
@@ -130,7 +131,7 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 			Pools:           []miniov2.Pool{Pool(opts, volumesPerServer, *capacityPerVolume)},
 			RequestAutoCert: &autoCert,
 			Mountpath:       helpers.MinIOMountPath,
-			KES:             tenantKESConfig(opts.Name, opts.KmsSecret),
+			KES:             tenantKESConfig(opts.Name, opts.KmsSecret, opts.KesImage),
 			ImagePullSecret: v1.LocalObjectReference{Name: opts.ImagePullSecret},
 			Users: []*v1.LocalObjectReference{
 				{
