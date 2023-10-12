@@ -210,12 +210,16 @@ jobs:
         go-version: [ 1.21.x ]
         os: [ ubuntu-latest ]
     steps:
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
         with:
-          root-reserve-mb: 512
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
