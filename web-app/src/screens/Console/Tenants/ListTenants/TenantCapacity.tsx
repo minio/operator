@@ -149,7 +149,7 @@ const TenantCapacity = ({
           transform: "translate(-50%, -50%)",
           fontWeight: "bold",
           color: "#000",
-          fontSize: 12,
+          fontSize: 11,
         }}
       >
         {!isNaN(totalUsedSpace) ? niceBytesInt(totalUsedSpace) : "N/A"}

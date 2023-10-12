@@ -18,13 +18,7 @@ import React, { Fragment, useEffect, useState } from "react";
 import { AddIcon, Button, HelpBox, RefreshIcon, TenantsIcon } from "mds";
 import Grid from "@mui/material/Grid";
 import { LinearProgress, SelectChangeEvent } from "@mui/material";
-import { Theme } from "@mui/material/styles";
 import { NewServiceAccount } from "../../Common/CredentialsPrompt/types";
-import {
-  actionsTray,
-  containerForHeader,
-  searchField,
-} from "../../Common/FormComponents/common/styleLibrary";
 import TenantListItem from "./TenantListItem";
 import AButton from "../../Common/AButton/AButton";
 
@@ -38,7 +32,6 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../../../store";
 import TooltipWrapper from "../../Common/TooltipWrapper/TooltipWrapper";
 import PageHeaderWrapper from "../../Common/PageHeaderWrapper/PageHeaderWrapper";
-import makeStyles from "@mui/styles/makeStyles";
 import { api } from "../../../../api";
 import {
   Error,
@@ -51,38 +44,9 @@ const CredentialsPrompt = withSuspense(
   React.lazy(() => import("../../Common/CredentialsPrompt/CredentialsPrompt")),
 );
 
-const useStyles = makeStyles((theme: Theme) => ({
-  ...actionsTray,
-  ...searchField,
-  ...containerForHeader,
-  tenantsList: {
-    height: "calc(100vh - 195px)",
-  },
-  sortByContainer: {
-    display: "flex",
-    justifyContent: "flex-end",
-    marginBottom: 10,
-  },
-  innerSort: {
-    maxWidth: 200,
-    width: "95%",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  sortByLabel: {
-    whiteSpace: "nowrap",
-    fontSize: 14,
-    color: "#838383",
-    fontWeight: "bold",
-    marginRight: 10,
-  },
-}));
-
 const ListTenants = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const classes = useStyles();
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [filterTenants, setFilterTenants] = useState<string>("");
@@ -263,15 +227,41 @@ const ListTenants = () => {
         }
       />
       <PageLayout>
-        <Grid item xs={12} className={classes.tenantsList}>
+        <Grid item xs={12} style={{ height: "calc(100vh - 195px)" }}>
           {isLoading && <LinearProgress />}
           {!isLoading && (
             <Fragment>
               {filteredRecords.length !== 0 && (
                 <Fragment>
-                  <Grid item xs={12} className={classes.sortByContainer}>
-                    <div className={classes.innerSort}>
-                      <span className={classes.sortByLabel}>Sort by</span>
+                  <Grid
+                    item
+                    xs={12}
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <div
+                      style={{
+                        maxWidth: 200,
+                        width: "95%",
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          whiteSpace: "nowrap",
+                          fontSize: 14,
+                          color: "#838383",
+                          fontWeight: "bold",
+                          marginRight: 10,
+                        }}
+                      >
+                        Sort by
+                      </span>
                       <SelectWrapper
                         id={"sort-by"}
                         label={""}
