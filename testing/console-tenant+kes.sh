@@ -120,7 +120,7 @@ function test_kes_tenant() {
 	sed -i -e 's/ROLE_ID/'"$ROLE_ID"'/g' "${SCRIPT_DIR}/kes-config.yaml"
 	sed -i -e 's/SECRET_ID/'"$SECRET_ID"'/g' "${SCRIPT_DIR}/kes-config.yaml"
 	cp "${SCRIPT_DIR}/kes-config.yaml" "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption/kes-configuration-secret.yaml"
-	yq e -i '.spec.kes.image = "minio/kes:2023-08-19T17-27-47Z"' "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption/tenant.yaml"
+	yq e -i '.spec.kes.image = "minio/kes:2023-10-03T00-48-37Z"' "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption/tenant.yaml"
 	kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption"
 
     echo "Check Tenant Status in tenant-kms-encrypted namespace for myminio:"
