@@ -875,7 +875,7 @@ type SideCars struct {
 	// List of containers to run inside the Pod
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	Containers []corev1.Container `json:"containers" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,2,rep,name=containers"`
+	Containers []corev1.Container `json:"containers,omitempty" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,2,rep,name=containers"`
 	// *Optional* +
 	//
 	// volumeClaimTemplates is a list of claims that pods are allowed to reference.
