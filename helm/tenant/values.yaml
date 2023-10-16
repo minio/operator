@@ -174,6 +174,10 @@ tenant:
   ## This is applied to MinIO pods only.
   ## Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/
   priorityClassName: ""
+  ## additionalVolumes allows adding additional volumes to MinIO pods
+  additionalVolumes: [ ]
+  ## additionalVolumeMounts allows mounting additional volumes to MinIO pods
+  additionalVolumeMounts: [ ]
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   #kes:
