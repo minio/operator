@@ -82,8 +82,8 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 		if strings.TrimSpace(pool.Name) == "" {
 			continue
 		}
-		// No PodDisruptionBudget for minAvailable equal server's numbers.
-		if pool.Servers == pool.Servers/2+1 {
+		// No PodDisruptionBudget for pools <= 2
+		if pool.Servers <= 2 {
 			continue
 		}
 		if available.Available() {
@@ -111,9 +111,17 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 		pdbI.SetName(t.Name + "-" + pool.Name)
 		pdbI.SetNamespace(t.Namespace)
 		_, err := runtime.NewObjectSyncer(ctx, c.k8sClient, t, func() error {
+			// EVEN number of nodes must be N - (N/2+1)
+			// odd will be just N - N/2
+			minminAvailableNumber := 0
+			if pool.Servers%2 == 0 {
+				minminAvailableNumber = int(pool.Servers) - int(pool.Servers/2) + 1
+			} else {
+				minminAvailableNumber = int(pool.Servers) - int(pool.Servers/2)
+			}
+			minAvailable := intstr.FromInt(minminAvailableNumber)
 			if available.V1Available() {
 				pdb := pdbI.(*v1.PodDisruptionBudget)
-				minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
 				pdb.Spec.MinAvailable = &minAvailable
 				pdb.Labels = map[string]string{
 					v2.TenantLabel: t.Name,
@@ -126,7 +134,6 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 			}
 			if available.V1BetaAvailable() {
 				pdb := pdbI.(*v1beta1.PodDisruptionBudget)
-				minAvailable := intstr.FromInt(int(pool.Servers/2) + 1)
 				pdb.Spec.MinAvailable = &minAvailable
 				pdb.Labels = map[string]string{
 					v2.TenantLabel: t.Name,
