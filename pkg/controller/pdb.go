@@ -82,8 +82,8 @@ func (c *Controller) CreateOrUpdatePDB(ctx context.Context, t *v2.Tenant) (err e
 		if strings.TrimSpace(pool.Name) == "" {
 			continue
 		}
-		// No PodDisruptionBudget for minAvailable equal server's numbers.
-		if pool.Servers == pool.Servers/2+1 {
+		// No PodDisruptionBudget for pools <= 2
+		if pool.Servers <= 2 {
 			continue
 		}
 		if available.Available() {
