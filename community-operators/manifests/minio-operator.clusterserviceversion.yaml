@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio@sha256:6fce70c2fd719603cb538e25ec3f58d77c12c1f5141e46240a850065c7ce4470",
+            "image": "quay.io/minio/minio@sha256:7e697b900f60d68e9edd2e8fc0dccd158e98938d924298612c5bbd294f2a1e65",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -80,17 +80,18 @@ metadata:
       ]
     capabilities: Full Lifecycle
     categories: AI/Machine Learning, Big Data, Cloud Provider, Storage
+    createdAt: "2023-10-12T17:54:27Z"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
       S3-compatible API. The MinIO Operator supports deploying MinIO Tenants
       onto any Kubernetes.
     k8sMinVersion: "1.18"
     operatorframework.io/suggested-namespace: minio-operator
-    operators.operatorframework.io/builder: operator-sdk-v1.22.2
+    operators.operatorframework.io/builder: operator-sdk-v1.32.0
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.9
-  name: minio-operator.v5.0.9
+    containerImage: quay.io/minio/operator:v5.0.10
+  name: minio-operator.v5.0.10
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -561,7 +562,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.9
+                    image: quay.io/minio/operator:v5.0.10
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -636,7 +637,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "off"
-                    image: quay.io/minio/operator:v5.0.9
+                    image: quay.io/minio/operator:v5.0.10
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -754,11 +755,11 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: minio/operator@sha256:3cde156eab8bdbd012350b21817e360f3d2e330f4c10ff8742cf85bd5c85fed0
+    - image: minio/operator@sha256:170b154d2c61c5a6f9dfbe4137e78815102a99fb9ab3aa6baf68750647e6261a
       name: console
-    - image: minio/operator@sha256:3cde156eab8bdbd012350b21817e360f3d2e330f4c10ff8742cf85bd5c85fed0
+    - image: minio/operator@sha256:170b154d2c61c5a6f9dfbe4137e78815102a99fb9ab3aa6baf68750647e6261a
       name: minio-operator
-    - image: quay.io/minio/minio@sha256:6fce70c2fd719603cb538e25ec3f58d77c12c1f5141e46240a850065c7ce4470
-      name: minio-6fce70c2fd719603cb538e25ec3f58d77c12c1f5141e46240a850065c7ce4470-annotation
-  version: 5.0.9
+    - image: quay.io/minio/minio@sha256:7e697b900f60d68e9edd2e8fc0dccd158e98938d924298612c5bbd294f2a1e65
+      name: minio-7e697b900f60d68e9edd2e8fc0dccd158e98938d924298612c5bbd294f2a1e65-annotation
+  version: 5.0.10
   replaces: "null"
