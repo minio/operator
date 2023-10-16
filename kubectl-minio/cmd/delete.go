@@ -47,6 +47,7 @@ type deleteCmd struct {
 	operatorOpts resources.OperatorOptions
 	force        bool
 	dangerous    bool
+	retainNS     bool
 }
 
 func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
@@ -82,6 +83,7 @@ func newDeleteCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVarP(&o.operatorOpts.Namespace, "namespace", "n", helpers.DefaultNamespace, "namespace scope for this request")
 	f.BoolVarP(&o.force, "force", "f", false, "allow without confirmation")
 	f.BoolVarP(&o.dangerous, "dangerous", "d", false, "confirm deletion")
+	f.BoolVarP(&o.retainNS, "retain-namespace", "r", false, "retain operator namespace")
 	return cmd
 }
 
@@ -131,6 +133,18 @@ func (o *deleteCmd) run(writer io.Writer) error {
 	m, err := k.Run(inMemSys, ".")
 	if err != nil {
 		return err
+	}
+
+	// Retain namespace if flag passed
+	if o.retainNS {
+		resources := m.Resources()
+		m.Clear()
+		for _, res := range resources {
+			if res.GetName() == o.operatorOpts.Namespace && res.GetKind() == "Namespace" {
+				continue
+			}
+			m.Append(res)
+		}
 	}
 
 	yml, err := m.AsYaml()
