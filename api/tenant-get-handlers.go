@@ -67,7 +67,8 @@ func getTenantDetailsResponse(session *models.Principal, params operator_api.Ten
 	oidcEnabled := tenantConfiguration["MINIO_IDENTITY_OPENID_CONFIG_URL"] != ""
 
 	// detect if encryption is enabled
-	info.EncryptionEnabled = minTenant.HasKESEnabled() || tenantConfiguration["MINIO_KMS_SECRET_KEY"] != ""
+	hasKmsSecret := tenantConfiguration["MINIO_KMS_SECRET_KEY"] != "" || tenantConfiguration["MINIO_KMS_SECRET_KEY_FILE"] != ""
+	info.EncryptionEnabled = minTenant.HasKESEnabled() || hasKmsSecret
 	info.IdpAdEnabled = ldapEnabled
 	info.IdpOidcEnabled = oidcEnabled
 	info.MinioTLS = minTenant.TLS()
