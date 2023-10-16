@@ -1,3 +1,4 @@
+{{- if .Values.console.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -5,3 +6,4 @@ metadata:
 data:
   CONSOLE_PORT: "9090"
   CONSOLE_TLS_PORT: "9443"
+{{- end }}
