@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # get the minio version
+RELEASE="$(sed -n 's/^.*DefaultOperatorImage = "minio\/operator:v\(.*\)"/\1/p' pkg/controller/operator.go)"
 minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '.spec.image' | tail -1)
 echo "minioVersionInExample: ${minioVersionInExample}"
 
