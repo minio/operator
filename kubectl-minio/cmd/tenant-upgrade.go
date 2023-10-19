@@ -146,7 +146,7 @@ func (u *upgradeCmd) upgradeTenant(client *operatorv1.Clientset, t *miniov2.Tena
 		fmt.Printf(Bold(fmt.Sprintf("\nUpgrading Tenant '%s/%s'\n\n", t.ObjectMeta.Name, t.ObjectMeta.Namespace)))
 		// update the image
 		t.Spec.Image = u.tenantOpts.Image
-		if _, err := client.MinioV2().Tenants(t.Namespace).Update(context.Background(), t, v1.UpdateOptions{}); err != nil {
+		if _, err := client.MinioV2().Tenants(t.Namespace).Update(context.Background(), t, v1.UpdateOptions{FieldValidation: "Ignore"}); err != nil {
 			return err
 		}
 	} else {
