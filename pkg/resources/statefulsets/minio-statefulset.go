@@ -34,8 +34,8 @@ import (
 
 const (
 	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
-	// StroageDeletionLabel - pvc with this label and the value is `true` means when tenant is being deleted the pvc will be deleted.
-	StroageDeletionLabel = "stroageDeletion"
+	// StorageDeletionLabel - pvc with this label and the value is `true` means when tenant is being deleted the pvc will be deleted.
+	StorageDeletionLabel = "storageDeletion"
 )
 
 // Returns the MinIO environment variables set in configuration.
@@ -860,7 +860,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 			if len(pvClaim.Labels) == 0 {
 				pvClaim.Labels = make(map[string]string)
 			}
-			pvClaim.Labels[StroageDeletionLabel] = "true"
+			pvClaim.Labels[StorageDeletionLabel] = "true"
 		}
 		name := pvClaim.Name
 		for i := 0; i < int(pool.VolumesPerServer); i++ {
