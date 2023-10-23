@@ -2868,6 +2868,8 @@ spec:
                     servers:
                       format: int32
                       type: integer
+                    stroageDeletion:
+                      type: boolean
                     tolerations:
                       items:
                         properties:

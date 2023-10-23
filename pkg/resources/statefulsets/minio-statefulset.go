@@ -33,7 +33,8 @@ import (
 )
 
 const (
-	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
+	bucketDNSEnv         = "MINIO_DNS_WEBHOOK_ENDPOINT"
+	StroageDeletionLabel = "stroageDeletion"
 )
 
 // Returns the MinIO environment variables set in configuration.
@@ -854,6 +855,12 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 
 	if pool.VolumeClaimTemplate != nil {
 		pvClaim := *pool.VolumeClaimTemplate
+		if pool.StorageDeletion != nil && *pool.StorageDeletion {
+			if len(pvClaim.Labels) == 0 {
+				pvClaim.Labels = make(map[string]string)
+			}
+			pvClaim.Labels[StroageDeletionLabel] = "true"
+		}
 		name := pvClaim.Name
 		for i := 0; i < int(pool.VolumesPerServer); i++ {
 			pvClaim.Name = name + strconv.Itoa(i)
