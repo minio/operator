@@ -2868,7 +2868,7 @@ spec:
                     servers:
                       format: int32
                       type: integer
-                    stroageDeletion:
+                    storageDeletion:
                       type: boolean
                     tolerations:
                       items:

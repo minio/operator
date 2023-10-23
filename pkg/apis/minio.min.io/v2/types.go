@@ -706,7 +706,7 @@ type Pool struct {
 	//
 	// If true. Will delete the stroage when tenant has been deleted.
 	// +optional
-	StorageDeletion *bool `json:"stroageDeletion,omitempty"`
+	StorageDeletion *bool `json:"storageDeletion,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same
