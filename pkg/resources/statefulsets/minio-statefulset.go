@@ -33,7 +33,8 @@ import (
 )
 
 const (
-	bucketDNSEnv         = "MINIO_DNS_WEBHOOK_ENDPOINT"
+	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
+	// StroageDeletionLabel - pvc with this label and the value is `true` means when tenant is being deleted the pvc will be deleted.
 	StroageDeletionLabel = "stroageDeletion"
 )
 
