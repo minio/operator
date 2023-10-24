@@ -704,7 +704,7 @@ type Pool struct {
 	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
 	// *Optional* +
 	//
-	// If true. Will delete the stroage when tenant has been deleted.
+	// If true. Will delete the storage when tenant has been deleted.
 	// +optional
 	StorageDeletion *bool `json:"storageDeletion,omitempty"`
 }
