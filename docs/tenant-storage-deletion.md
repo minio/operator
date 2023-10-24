@@ -4,7 +4,7 @@ There are times when we need to do tests, and once the tests are done, we need t
 
 ```$xslt
  - name: pool-0
-   storageDeletion: true
+   reclaimStorage: true
 ```
 
 When a tenant is deleted, the associated pvc is also deleted immediately.

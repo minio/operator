@@ -444,7 +444,7 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
 |*Optional* + 
  If provided, each pod on the Statefulset will run with the specified RuntimeClassName, for more info https://kubernetes.io/docs/concepts/containers/runtime-class/
 
-|*`storageDeletion`* __boolean__ 
+|*`reclaimStorage`* __boolean__ 
 |*Optional* + 
  If true. Will delete the storage when tenant has been deleted.
 

@@ -706,7 +706,7 @@ type Pool struct {
 	//
 	// If true. Will delete the storage when tenant has been deleted.
 	// +optional
-	StorageDeletion *bool `json:"storageDeletion,omitempty"`
+	ReclaimStorage *bool `json:"reclaimStorage,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same

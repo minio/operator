@@ -752,7 +752,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				// Just output the error. Will not retry.
 				runtime.HandleError(fmt.Errorf("DeletePrometheusAddlConfig '%s/%s' error:%s", namespace, tenantName, err.Error()))
 			}
-			// try to delete pvc if set StorageDeletionLabel:true
+			// try to delete pvc if set ReclaimStorageLabel:true
 			pvcList := corev1.PersistentVolumeClaimList{}
 			listOpt := client.ListOptions{
 				Namespace: namespace,
@@ -765,7 +765,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				runtime.HandleError(fmt.Errorf("PersistentVolumeClaimList  '%s/%s' error:%s", namespace, tenantName, err.Error()))
 			}
 			for _, pvc := range pvcList.Items {
-				if pvc.Labels[statefulsets.StorageDeletionLabel] == "true" {
+				if pvc.Labels[statefulsets.ReclaimStorageLabel] == "true" {
 					err := c.k8sClient.Delete(ctx, &pvc)
 					if err != nil {
 						runtime.HandleError(fmt.Errorf("Delete PersistentVolumeClaim '%s/%s/%s' error:%s", namespace, tenantName, pvc.Name, err.Error()))

@@ -2768,6 +2768,8 @@ spec:
                       additionalProperties:
                         type: string
                       type: object
+                    reclaimStorage:
+                      type: boolean
                     resources:
                       properties:
                         claims:
@@ -2868,8 +2870,6 @@ spec:
                     servers:
                       format: int32
                       type: integer
-                    storageDeletion:
-                      type: boolean
                     tolerations:
                       items:
                         properties:
