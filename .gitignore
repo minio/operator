@@ -17,3 +17,5 @@ examples/.DS_Store
 testing/openshift/bundle/*
 examples/**/obj/
 .idea
+operator.iml
+go_build_github_com_minio_operator_cmd_operator

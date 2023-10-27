@@ -23,8 +23,13 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	runetimetime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/remotecommand"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -316,6 +321,130 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	}
 
 	return err
+}
+
+func (c *Controller) verifyLDAPParams(ctx context.Context, tenant *miniov2.Tenant) (err error) {
+	// Verify there is a user
+	user := tenant.Spec.LDAPPolicyAttachToSingleUser.User
+	policy := tenant.Spec.LDAPPolicyAttachToSingleUser.Policy
+	if user != "" && policy != "" {
+		klog.Infof("Attach policy: %s to user: %user", policy, user)
+	} else {
+		klog.Errorf("User and Policy have to be provided")
+		return errors.New("User and Policy have to be provided")
+	}
+	return nil
+}
+
+func (c *Controller) ldapPolicyAttachToSingleUser(ctx context.Context, tenant *miniov2.Tenant) (err error) {
+	result := c.verifyLDAPParams(ctx, tenant)
+	if result != nil {
+		klog.Errorf("LDAP Params did not pass validation")
+		return err
+	}
+	klog.Info("Configuring LDAP in the Tenant")
+	tenantName := tenant.Name
+	tenantNamespace := tenant.Namespace
+	pool0Name := tenant.Spec.Pools[0].Name
+	podName := tenantName + "-" + pool0Name + "-0"
+	request := c.kubeClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(podName).Namespace(
+		tenantNamespace).SubResource("exec")
+	scheme := runetimetime.NewScheme()
+	if err := corev1.AddToScheme(scheme); err != nil {
+		klog.Error("There was an error trying to configure LDAP User")
+		return err
+	}
+	parameterCodec := runetimetime.NewParameterCodec(scheme)
+	LDAPPolicyAttachToSingleUser := tenant.Spec.LDAPPolicyAttachToSingleUser
+	User := LDAPPolicyAttachToSingleUser.User
+	Policy := LDAPPolicyAttachToSingleUser.Policy
+	MinIOServerEndpoint := tenant.MinIOServerEndpoint()
+	tenant.ConfigurationSecretName()
+	tenant.HasConfigurationSecret()
+	tenantSpecConfigName := tenant.Spec.Configuration.Name
+	secret, _ := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenantSpecConfigName, metav1.GetOptions{})
+	secretData := secret.Data
+	content := string(secretData["config.env"])
+	contents := strings.Split(content, "\n")
+	rootAccessKey := ""
+	rootSecretKey := ""
+	for i := range contents {
+		content := contents[i]
+		if strings.Contains(content, "MINIO_ROOT_USER") {
+			valor := strings.Split(content, "=")
+			user := valor[1]
+			plainUser := user[1 : len(user)-1]
+			rootAccessKey = plainUser
+		}
+		if strings.Contains(content, "MINIO_ROOT_PASSWORD") {
+			valor := strings.Split(content, "=")
+			password := valor[1]
+			plainPassword := password[1 : len(password)-1]
+			rootSecretKey = plainPassword
+		}
+	}
+	// export set HOME=/tmp is to allow mc to work when not using root user in security context to avoid
+	// mc: <ERROR> Unable to save new mc config. mkdir /.mc: permission denied.
+	alias := "export set HOME=/tmp; mc alias set myminio " + MinIOServerEndpoint + " " + rootAccessKey + " " + rootSecretKey
+	ldapCommand := "mc idp ldap policy attach myminio " + Policy + " --user=" + "'" + User + "'"
+	klog.Info(ldapCommand)
+	finalCommand := alias + "; " + ldapCommand
+	cmds := []string{
+		"sh",
+		"-c",
+		finalCommand,
+	}
+	request.VersionedParams(&corev1.PodExecOptions{
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       false,
+		Container: "minio",
+		Command:   cmds,
+	}, parameterCodec)
+	// Get a rest.Config from the kubeconfig file.  This will be passed into all
+	// the client objects we create.
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	restConfig, err := kubeconfig.ClientConfig()
+	if err != nil {
+		klog.Errorf("Error attaching LDAP Policy to user %s", err)
+		return err
+	}
+	exec, err := remotecommand.NewSPDYExecutor(restConfig, "POST", request.URL())
+	fmt.Println(exec)
+	if err != nil {
+		klog.Errorf("Error attaching LDAP Policy to user %s", err)
+		return err
+	}
+	var stdout, stderr bytes.Buffer
+	fmt.Println(stdout)
+	fmt.Println(stderr)
+	err = exec.Stream(remotecommand.StreamOptions{
+		Stdin:  nil,
+		Stdout: &stdout,
+		Stderr: &stderr,
+		Tty:    false,
+	})
+	if err != nil {
+		klog.Errorf("Error attaching LDAP Policy to user %s", err)
+		return err
+	}
+	actualOutput := stdout.String()
+	actualError := stderr.String()
+	klog.Infof("Output from pod: %v", actualOutput)
+	klog.Infof("Error from pod: %v", actualError)
+	// If expected output is contained by the actual output, it will be
+	// considered as a success.
+	if strings.Contains(actualError, "The specified policy change is already in effect") {
+		klog.Info("Command(s) succeeded, will not be executed again")
+		// By saving the command in the status, we guarantee that will not be re-executed.
+		if _, err = c.updateLDAPPolicyAttachToSingleUserStatus(ctx, tenant, true); err != nil {
+			klog.V(2).Infof(err.Error())
+		}
+	}
+	return nil
 }
 
 func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (err error) {

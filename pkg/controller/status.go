@@ -29,6 +29,33 @@ func (c *Controller) updateTenantStatus(ctx context.Context, tenant *miniov2.Ten
 	return c.updateTenantStatusWithRetry(ctx, tenant, currentState, availableReplicas, true)
 }
 
+func (c *Controller) updateLDAPPolicyAttachToSingleUserStatus(ctx context.Context, tenant *miniov2.Tenant, succeeded bool) (*miniov2.Tenant, error) {
+	return c.updateLDAPPolicyAttachToSingleUserWithRetry(ctx, tenant, succeeded, true)
+}
+
+func (c *Controller) updateLDAPPolicyAttachToSingleUserWithRetry(ctx context.Context, tenant *miniov2.Tenant, succeeded bool, retry bool) (
+	*miniov2.Tenant, error) {
+	tenantCopy := tenant.DeepCopy()
+	tenantCopy.Spec = miniov2.TenantSpec{}
+	tenantCopy.Status = *tenant.Status.DeepCopy()
+	tenantCopy.Status.LDAPPolicyAttachToSingleUser = succeeded
+	opts := metav1.UpdateOptions{}
+	t, err := c.minioClientSet.MinioV2().Tenants(tenant.Namespace).UpdateStatus(ctx, tenantCopy, opts)
+	t.EnsureDefaults()
+	if err != nil {
+		if k8serrors.IsConflict(err) && retry {
+			klog.Info("Hit conflict issue, getting latest version of tenant")
+			tenant, err = c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Get(ctx, tenant.Name, metav1.GetOptions{})
+			if err != nil {
+				return tenant, err
+			}
+			return c.updateLDAPPolicyAttachToSingleUserWithRetry(ctx, tenant, succeeded, false)
+		}
+		return t, err
+	}
+	return t, nil
+}
+
 func (c *Controller) updateTenantStatusWithRetry(ctx context.Context, tenant *miniov2.Tenant, currentState string, availableReplicas int32, retry bool) (*miniov2.Tenant, error) {
 	// If we are updating the tenant with the same status as before we are going to skip it as to avoid a resource number
 	// change and have the operator loop re-processing the tenant endlessly

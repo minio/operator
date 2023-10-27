@@ -804,6 +804,13 @@ spec:
                       type: string
                   type: object
                 type: array
+              ldapPolicyAttachToSingleUser:
+                type: object
+                properties:
+                  user:
+                    type: string
+                  policy:
+                    type: string
               certConfig:
                 properties:
                   commonName:
@@ -4937,6 +4944,8 @@ spec:
                 nullable: true
                 type: array
               provisionedBuckets:
+                type: boolean
+              ldapPolicyAttachToSingleUser:
                 type: boolean
               provisionedUsers:
                 type: boolean

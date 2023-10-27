@@ -19,14 +19,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/minio/operator/pkg/utils"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
-
-	"github.com/minio/operator/pkg/utils"
 
 	"github.com/minio/madmin-go/v2"
 	"github.com/minio/operator/pkg/common"
@@ -1384,6 +1383,16 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			}
 		} else {
 			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
+		}
+	}
+
+	// Section to attach LDAP Policy to a user.
+	if tenant.Status.LDAPPolicyAttachToSingleUser {
+		klog.Info("A user already got the LDAP policy attached")
+	} else if tenant.Spec.LDAPPolicyAttachToSingleUser != nil {
+		error := c.ldapPolicyAttachToSingleUser(ctx, tenant)
+		if error != nil {
+			klog.Errorf("There was an error configuring LDAP User in the tenant: %s", error)
 		}
 	}
 
