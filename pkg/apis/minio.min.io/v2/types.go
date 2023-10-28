@@ -254,6 +254,10 @@ type TenantSpec struct {
 	// +optional
 	Startup *corev1.Probe `json:"startup,omitempty"`
 
+	// Lifecycle hooks for container.
+	// +optional
+	Lifecycle *corev1.Lifecycle `json:"lifecycle,omitempty"`
+
 	// S3 related features can be disabled or enabled such as `bucketDNS` etc.
 	Features *Features `json:"features,omitempty"`
 	// *Optional* +

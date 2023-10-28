@@ -348,6 +348,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
 		StartupProbe:    t.Spec.Startup,
+		Lifecycle:       t.Spec.Lifecycle,
 		SecurityContext: poolContainerSecurityContext(pool),
 	}
 }

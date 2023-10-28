@@ -111,6 +111,9 @@ spec:
   {{- with (dig "startup" (dict) .) }}
   startup: {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with (dig "lifecycle" (dict) .) }}
+  lifecycle: {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- with (dig "exposeServices" (dict) .) }}
   exposeServices: {{- toYaml . | nindent 4 }}
   {{- end }}
