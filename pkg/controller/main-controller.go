@@ -1373,12 +1373,18 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// Ensure we are only creating the bucket
 	if len(tenant.Spec.Buckets) > 0 {
 		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
-			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
-			// retry after 5sec
-			return WrapResult(Result{RequeueAfter: time.Second * 5}, err)
+			switch {
+			case errors.Is(err, ErrBucketsAlreadyExist):
+				// do noting
+			default:
+				klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
+				c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
+				// retry after 5sec
+				return WrapResult(Result{RequeueAfter: time.Second * 5}, err)
+			}
+		} else {
+			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
 		}
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
 	}
 
 	// Finally, we update the status block of the Tenant resource to reflect the
