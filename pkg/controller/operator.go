@@ -65,6 +65,7 @@ const (
 )
 
 var (
+	// AllBucketsExist - all bucket exist.
 	AllBucketsExist = errors.New("all buckets exist")
 )
 
