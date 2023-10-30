@@ -64,10 +64,8 @@ const (
 	DefaultOperatorImage = "minio/operator:v5.0.10"
 )
 
-var (
-	// ErrAllBucketsExist - all bucket exist.
-	ErrAllBucketsExist = errors.New("all buckets exist")
-)
+// ErrAllBucketsExist - all bucket exist.
+var ErrAllBucketsExist = errors.New("all buckets exist")
 
 var serverCertsManager *xcerts.Manager
 
