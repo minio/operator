@@ -64,8 +64,8 @@ const (
 	DefaultOperatorImage = "minio/operator:v5.0.10"
 )
 
-// ErrAllBucketsExist - all buckets exist.
-var ErrAllBucketsExist = errors.New("all buckets exist")
+// ErrBucketsAlreadyExist - all buckets already exist.
+var ErrBucketsAlreadyExist = errors.New("all buckets already exist")
 
 var serverCertsManager *xcerts.Manager
 
@@ -349,7 +349,7 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 			return err
 		}
 	}
-	return ErrAllBucketsExist
+	return ErrBucketsAlreadyExist
 }
 
 // getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
