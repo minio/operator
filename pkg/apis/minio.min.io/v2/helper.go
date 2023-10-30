@@ -761,6 +761,26 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 	return nil
 }
 
+// CheckBucketsExist checks if the given buckets exist in the MinIO server
+func (t *Tenant) CheckBucketsExist(minioClient *minio.Client, buckets ...Bucket) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	defer cancel()
+	allBuckets, err := minioClient.ListBuckets(ctx)
+	if err != nil {
+		return err
+	}
+	allBucketsMap := make(map[string]bool)
+	for _, bucket := range allBuckets {
+		allBucketsMap[bucket.Name] = true
+	}
+	for _, bucket := range buckets {
+		if !allBucketsMap[bucket.Name] {
+			return fmt.Errorf("bucket %s not found", bucket.Name)
+		}
+	}
+	return nil
+}
+
 // CreateBuckets creates buckets and skips if bucket already present
 func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) error {
 	for _, bucket := range buckets {

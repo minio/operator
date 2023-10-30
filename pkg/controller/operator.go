@@ -21,6 +21,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -61,6 +62,10 @@ const (
 	DefaultDeploymentName = "minio-operator"
 	// DefaultOperatorImage is the version fo the operator being used
 	DefaultOperatorImage = "minio/operator:v5.0.10"
+)
+
+var (
+	AllBucketsExist = errors.New("all buckets exist")
 )
 
 var serverCertsManager *xcerts.Manager
@@ -328,10 +333,6 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 		return nil
 	}
 
-	if _, err := c.updateTenantStatus(ctx, tenant, StatusProvisioningDefaultBuckets, 0); err != nil {
-		return err
-	}
-
 	// get a new admin client
 	minioClient, err := tenant.NewMinIOUser(tenantConfiguration, c.getTransport())
 	if err != nil {
@@ -339,13 +340,17 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 		klog.Errorf("Error instantiating minio Client: %v ", err)
 		return err
 	}
-
-	if err := tenant.CreateBuckets(minioClient, tenantBuckets...); err != nil {
-		klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
-		return err
+	err = tenant.CheckBucketsExist(minioClient, tenantBuckets...)
+	if err != nil {
+		if _, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningDefaultBuckets, 0); err != nil {
+			return err
+		}
+		if err = tenant.CreateBuckets(minioClient, tenantBuckets...); err != nil {
+			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
+			return err
+		}
 	}
-
-	return nil
+	return AllBucketsExist
 }
 
 // getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
