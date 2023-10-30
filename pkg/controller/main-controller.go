@@ -1374,7 +1374,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	if len(tenant.Spec.Buckets) > 0 {
 		if err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
 			switch {
-			case errors.Is(err, AllBucketsExist):
+			case errors.Is(err, ErrAllBucketsExist):
 				// do noting
 			default:
 				klog.V(2).Infof("Unable to create MinIO buckets: %v", err)

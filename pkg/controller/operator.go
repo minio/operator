@@ -65,8 +65,8 @@ const (
 )
 
 var (
-	// AllBucketsExist - all bucket exist.
-	AllBucketsExist = errors.New("all buckets exist")
+	// ErrAllBucketsExist - all bucket exist.
+	ErrAllBucketsExist = errors.New("all buckets exist")
 )
 
 var serverCertsManager *xcerts.Manager
@@ -351,7 +351,7 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 			return err
 		}
 	}
-	return AllBucketsExist
+	return ErrAllBucketsExist
 }
 
 // getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
