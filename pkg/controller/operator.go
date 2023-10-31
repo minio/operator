@@ -21,7 +21,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -63,9 +62,6 @@ const (
 	// DefaultOperatorImage is the version fo the operator being used
 	DefaultOperatorImage = "minio/operator:v5.0.10"
 )
-
-// ErrBucketsAlreadyExist - all buckets already exist.
-var ErrBucketsAlreadyExist = errors.New("all buckets already exist")
 
 var serverCertsManager *xcerts.Manager
 
@@ -318,38 +314,32 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	return err
 }
 
-func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (err error) {
-	defer func() {
-		if err == nil {
-			if _, err = c.updateProvisionedBucketStatus(ctx, tenant, true); err != nil {
-				klog.V(2).Infof(err.Error())
-			}
-		}
-	}()
-
+func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, tenantConfiguration map[string][]byte) (create bool, err error) {
 	tenantBuckets := tenant.Spec.Buckets
 	if len(tenantBuckets) == 0 {
-		return nil
+		return false, nil
 	}
-
 	// get a new admin client
 	minioClient, err := tenant.NewMinIOUser(tenantConfiguration, c.getTransport())
 	if err != nil {
 		// show the error and continue
 		klog.Errorf("Error instantiating minio Client: %v ", err)
-		return err
+		return false, err
 	}
-	err = tenant.CheckBucketsExist(minioClient, tenantBuckets...)
+	create, err = tenant.CreateBuckets(minioClient, tenantBuckets...)
 	if err != nil {
-		if _, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningDefaultBuckets, 0); err != nil {
-			return err
+		klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
+		if _, terr := c.updateTenantStatus(ctx, tenant, StatusProvisioningDefaultBuckets, 0); terr != nil {
+			return false, err
 		}
-		if err = tenant.CreateBuckets(minioClient, tenantBuckets...); err != nil {
-			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
-			return err
+		return false, err
+	}
+	if create {
+		if _, err = c.updateProvisionedBucketStatus(ctx, tenant, true); err != nil {
+			klog.V(2).Infof(err.Error())
 		}
 	}
-	return ErrBucketsAlreadyExist
+	return create, err
 }
 
 // getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
