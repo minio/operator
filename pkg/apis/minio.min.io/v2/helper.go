@@ -761,7 +761,7 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 }
 
 // CreateBuckets creates buckets and skips if bucket already present
-func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) (create bool, err error) {
+func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) (created bool, err error) {
 	createBucketCount := 0
 	for _, bucket := range buckets {
 		// create each bucket with a 20 seconds timeout
