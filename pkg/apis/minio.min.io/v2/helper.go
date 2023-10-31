@@ -49,7 +49,6 @@ import (
 	"github.com/minio/madmin-go/v2"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio-go/v7/pkg/s3utils"
 )
 
 // Webhook API constants
@@ -765,9 +764,6 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) (create bool, err error) {
 	createBucketCount := 0
 	for _, bucket := range buckets {
-		if err = s3utils.CheckValidBucketNameStrict(bucket.Name); err != nil {
-			return false, err
-		}
 		// create each bucket with a 20 seconds timeout
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 		defer cancel()
