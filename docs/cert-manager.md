@@ -61,13 +61,13 @@ Then it creates a new tenant including the new `tenant-certmanager-tls` secret i
 Copy the cert-manager CA from the tenant certificate, this will allow Operator to trust the cert-manager CA and allow Operator to trust the Tenant certificate
 
 ```sh
-kubectl get secrets -n tenant-certmanager tenant-certmanager-tls -o=jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+kubectl get secrets -n tenant-certmanager tenant-certmanager-tls -o=jsonpath='{.data.tls\.crt}' | base64 -d > public.crt
 ```
 
 Create the secret
 
 ```sh
-kubectl create secret generic operator-ca-tls --from-file=ca.crt -n minio-operator
+kubectl create secret generic operator-ca-tls --from-file=public.crt -n minio-operator
 ```
 
 Restart the minio-operator
