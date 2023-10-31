@@ -49,7 +49,6 @@ import (
 	"github.com/minio/madmin-go/v2"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/minio/minio-go/v7/pkg/s3utils"
 )
 
 // Webhook API constants
@@ -761,36 +760,14 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 	return nil
 }
 
-// CheckBucketsExist checks if the given buckets exist in the MinIO server
-func (t *Tenant) CheckBucketsExist(minioClient *minio.Client, buckets ...Bucket) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
-	defer cancel()
-	allBuckets, err := minioClient.ListBuckets(ctx)
-	if err != nil {
-		return err
-	}
-	allBucketsMap := make(map[string]bool)
-	for _, bucket := range allBuckets {
-		allBucketsMap[bucket.Name] = true
-	}
-	for _, bucket := range buckets {
-		if !allBucketsMap[bucket.Name] {
-			return fmt.Errorf("bucket %s not found", bucket.Name)
-		}
-	}
-	return nil
-}
-
 // CreateBuckets creates buckets and skips if bucket already present
-func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) error {
+func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) (created bool, err error) {
+	createBucketCount := 0
 	for _, bucket := range buckets {
-		if err := s3utils.CheckValidBucketNameStrict(bucket.Name); err != nil {
-			return err
-		}
 		// create each bucket with a 20 seconds timeout
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 		defer cancel()
-		if err := minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{
+		if err = minioClient.MakeBucket(ctx, bucket.Name, minio.MakeBucketOptions{
 			Region:        bucket.Region,
 			ObjectLocking: bucket.ObjectLocking,
 		}); err != nil {
@@ -799,12 +776,13 @@ func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) err
 				klog.Infof(err.Error())
 				continue
 			default:
-				return err
+				return false, err
 			}
 		}
+		createBucketCount++
 		klog.Infof("Successfully created bucket %s", bucket.Name)
 	}
-	return nil
+	return createBucketCount > 0, nil
 }
 
 // Validate validate single pool as per MinIO deployment requirements
