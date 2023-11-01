@@ -101,16 +101,6 @@ CertificateStatus keeps track of all the certificates managed by the operator
 |===
 
 
-[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificateconfig"]
-==== CustomCertificateConfig 
-
-CustomCertificateConfig (`customCertificateConfig`) provides attributes associated of the TLS certificates manually added to the Operator as part of tenant creation. These fields contain no data if there are no custom TLS certificates.
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificates[$$CustomCertificates$$]
-****
-
 
 
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificates"]
@@ -453,6 +443,10 @@ Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a 
 |*`runtimeClassName`* __string__ 
 |*Optional* + 
  If provided, each pod on the Statefulset will run with the specified RuntimeClassName, for more info https://kubernetes.io/docs/concepts/containers/runtime-class/
+
+|*`reclaimStorage`* __boolean__ 
+|*Optional* + 
+ If true. Will delete the storage when tenant has been deleted.
 
 |===
 
