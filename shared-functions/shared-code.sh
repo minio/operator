@@ -59,6 +59,7 @@ function wait_for_resource_field_selector() {
   fi
 
   echo "Waiting for $resourcetype \"$fieldselector\" for \"$condition\" ($timeout timeout)"
+  echo "namespace: ${namespace}"
   kubectl wait -n "$namespace" "$resourcetype" \
     --for=$condition \
     --field-selector $fieldselector \
