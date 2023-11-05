@@ -69,7 +69,7 @@ v4.3.9 - v4.4.0
 ---
 Support for Prometheus ServiceMonitor is removed. Using ServiceMonitor to configure prometheus endpoints will lead to
 duplicate metrics. The alternate approach is to use
-Prometheus [AdditionalScrapeConfigs] https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/additional-scrape-config.md.
+Prometheus [AdditionalScrapeConfigs](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/additional-scrape-config.md).
 This can be enabled by setting `prometheusOperator: true` on the tenant.
 Once this is configured, MinIO Operator will create the additional configuration for the tenant.
 If the prometheus is running on a particular namespace, `PROMETHEUS_NAMESPACE` can be set accordingly.
