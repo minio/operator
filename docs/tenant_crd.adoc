@@ -255,11 +255,11 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 
 |*`gcpCredentialSecretName`* __string__ 
 |*Optional* + 
- Specify the GCP default credentials to be used for KES to authenticate to GCP key store
+  Specify the GCP default credentials to be used for KES to authenticate to GCP key store
 
 |*`gcpWorkloadIdentityPool`* __string__ 
 |*Optional* + 
- Specify the name of the workload identity pool (This is required for generating service account token)
+  Specify the name of the workload identity pool (This is required for generating service account token)
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 
@@ -748,6 +748,9 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 
 |*`startup`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#probe-v1-core[$$Probe$$]__ 
 |Startup Probe allows to configure a max grace period for a pod to start before getting traffic routed to it.
+
+|*`lifecycle`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#lifecycle-v1-core[$$Lifecycle$$]__ 
+|Lifecycle hooks for container.
 
 |*`features`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-features[$$Features$$]__ 
 |S3 related features can be disabled or enabled such as `bucketDNS` etc.
