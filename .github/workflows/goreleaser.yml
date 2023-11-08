@@ -23,12 +23,12 @@ jobs:
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Set up swagger
         run: |
           go install github.com/go-swagger/go-swagger/cmd/swagger@latest
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
-          args: release --skip-publish --rm-dist --snapshot
+          args: release --skip-publish --clean --snapshot
