@@ -1019,20 +1019,20 @@ func parsEnvEntry(envEntry string) (envKV, error) {
 			Skip: true,
 		}, nil
 	}
-	const envSeparator = "="
-	envTokens := strings.SplitN(strings.TrimSpace(strings.TrimPrefix(envEntry, "export")), envSeparator, 2)
-	if len(envTokens) != 2 {
-		return envKV{}, fmt.Errorf("envEntry malformed; %s, expected to be of form 'KEY=value'", envEntry)
-	}
-	key := envTokens[0]
-	val := envTokens[1]
-
-	if strings.HasPrefix(key, "#") {
+	if strings.HasPrefix(envEntry, "#") {
 		// Skip commented lines
 		return envKV{
 			Skip: true,
 		}, nil
 	}
+	const envSeparator = "="
+	envTokens := strings.SplitN(strings.TrimSpace(strings.TrimPrefix(envEntry, "export")), envSeparator, 2)
+	if len(envTokens) != 2 {
+		return envKV{}, fmt.Errorf("envEntry malformed; %s, expected to be of form 'KEY=value'", envEntry)
+	}
+
+	key := envTokens[0]
+	val := envTokens[1]
 
 	// Remove quotes from the value if found
 	if len(val) >= 2 {
@@ -1041,6 +1041,7 @@ func parsEnvEntry(envEntry string) (envKV, error) {
 			val = val[1 : len(val)-1]
 		}
 	}
+
 	return envKV{
 		Key:   key,
 		Value: val,
