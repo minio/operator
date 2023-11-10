@@ -333,7 +333,7 @@ tenant:
   #  # image:
   #  #   repository: quay.io/minio/kes
   #  #   tag: 2023-10-03T00-48-37Z
-  #  # Image from digest (added after original behaviour), for example:
+  #  # Image from digest (added after original behavior), for example:
   #  # image:
   #  #   repository: quay.io/minio/kes@sha256
   #  #   digest: fb15af611149892f357a8a99d1bcd8bf5dae713bd64c15e6eb27fbdb88fc208b
