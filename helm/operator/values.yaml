@@ -162,7 +162,7 @@ console:
   ###
   # Specify ``false`` to disable the Operator Console.
   #
-  # All management of Operator Tenants must occur via the Kubernetes API if the Console is disabled.
+  # If the Operator Console is disabled, all management of Operator Tenants must be done through the Kubernetes API.
   enabled: true
   ###
   # Specify the Operator Console container image to use for the deployment.
