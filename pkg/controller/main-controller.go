@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/minio/pkg/env"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,6 +34,7 @@ import (
 
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/minio/operator/pkg/controller/certificates"
+	"github.com/minio/pkg/env"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/klog/v2"
 
