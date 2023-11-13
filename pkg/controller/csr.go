@@ -118,7 +118,6 @@ func (c *Controller) DeleteCertificateSigningRequest(ctx context.Context, tenant
 		err := c.k8sClient.Delete(ctx, kubeCSR)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				err = nil
 				continue
 			}
 			return err
