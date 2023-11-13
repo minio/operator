@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/minio/pkg/env"
 	"net/http"
 	"os"
 	"os/signal"
@@ -244,6 +245,8 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 			}
 		}
 	}
+
+	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
 
 	controller := &Controller{
 		podName:                   podName,
