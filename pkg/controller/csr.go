@@ -43,6 +43,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -65,6 +66,65 @@ func isEqual(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+// DeleteCertificateSigningRequest is equivalent to kubectl delete <csr-name>
+func (c *Controller) DeleteCertificateSigningRequest(ctx context.Context, tenant *miniov2.Tenant) error {
+	var kubeCSRS []client.Object
+	if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
+		kubeCSRS = append(kubeCSRS, &certificatesV1.CertificateSigningRequest{
+			TypeMeta: v1.TypeMeta{
+				APIVersion: "certificates.k8s.io/v1",
+				Kind:       "CertificateSigningRequest",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name:      tenant.KESCSRName(),
+				Namespace: tenant.Namespace,
+			},
+		})
+		kubeCSRS = append(kubeCSRS, &certificatesV1.CertificateSigningRequest{
+			TypeMeta: v1.TypeMeta{
+				APIVersion: "certificates.k8s.io/v1",
+				Kind:       "CertificateSigningRequest",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name:      tenant.MinIOCSRName(),
+				Namespace: tenant.Namespace,
+			},
+		})
+	} else {
+		kubeCSRS = append(kubeCSRS, &certificatesV1beta1.CertificateSigningRequest{
+			TypeMeta: v1.TypeMeta{
+				APIVersion: "certificates.k8s.io/v1",
+				Kind:       "CertificateSigningRequest",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name:      tenant.KESCSRName(),
+				Namespace: tenant.Namespace,
+			},
+		})
+		kubeCSRS = append(kubeCSRS, &certificatesV1beta1.CertificateSigningRequest{
+			TypeMeta: v1.TypeMeta{
+				APIVersion: "certificates.k8s.io/v1",
+				Kind:       "CertificateSigningRequest",
+			},
+			ObjectMeta: v1.ObjectMeta{
+				Name:      tenant.MinIOCSRName(),
+				Namespace: tenant.Namespace,
+			},
+		})
+	}
+	for _, kubeCSR := range kubeCSRS {
+		err := c.k8sClient.Delete(ctx, kubeCSR)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				err = nil
+				continue
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 // createCertificateSigningRequest is equivalent to kubectl create <csr-name> and kubectl approve csr <csr-name>

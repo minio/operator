@@ -772,6 +772,16 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 					}
 				}
 			}
+			// try to delete csr
+			err = c.DeleteCertificateSigningRequest(ctx, &miniov2.Tenant{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      tenantName,
+					Namespace: namespace,
+				},
+			})
+			if err != nil {
+				runtime.HandleError(fmt.Errorf("DeleteCertificateSigningRequest  '%s/%s' error:%s", namespace, tenantName, err.Error()))
+			}
 			return WrapResult(Result{}, nil)
 		}
 		// will retry after 5sec
