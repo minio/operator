@@ -24,7 +24,9 @@ operator:
   #      value: "OpenShift" 
   #
   # See `Operator environment variables <https://github.com/minio/operator/blob/master/docs/env-variables.md>`__ for a list of all supported values.
-  env: [ ]
+  env:
+    - name: OPERATOR_STS_ENABLED
+      value: "on"
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag`` 
