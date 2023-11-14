@@ -40,7 +40,7 @@ spec:
             - name: MINIO_CONSOLE_TLS_ENABLE
               value: "off"
             - name: OPERATOR_STS_ENABLED
-              value: "off"
+              value: "on"
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
