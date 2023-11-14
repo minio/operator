@@ -391,7 +391,7 @@ func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token strin
 // **WARNING** This will change and will be default to "on" in operator v5
 func IsSTSEnabled() bool {
 	value, set := os.LookupEnv(STSEnabled)
-	return (set && value == "on")
+	return set && value == "on"
 }
 
 // generateConsoleTLSCert Issues the Operator Console TLS Certificate
