@@ -605,7 +605,6 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			return nil
 		}
 	}
-	return nil
 }
 
 // Stop is called to shutdown the controller
