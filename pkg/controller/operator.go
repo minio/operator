@@ -61,6 +61,8 @@ const (
 	DefaultDeploymentName = "minio-operator"
 	// DefaultOperatorImage is the version fo the operator being used
 	DefaultOperatorImage = "minio/operator:v5.0.10"
+	// DefaultOperatorImageEnv is the default image to minio instance
+	DefaultOperatorImageEnv = "MINIO_OPERATOR_IMAGE"
 )
 
 var serverCertsManager *xcerts.Manager

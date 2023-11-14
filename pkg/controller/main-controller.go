@@ -34,6 +34,7 @@ import (
 
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/minio/operator/pkg/controller/certificates"
+	"github.com/minio/pkg/env"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/klog/v2"
 
@@ -244,6 +245,8 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 			}
 		}
 	}
+
+	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
 
 	controller := &Controller{
 		podName:                   podName,
