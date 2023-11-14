@@ -589,15 +589,19 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			Err:  nil,
 		}
 	}()
-
-	for oerr := range notificationChannel {
-		switch oerr.Type {
-		case STSServerNotification:
-			if !errors.Is(oerr.Err, http.ErrServerClosed) {
-				klog.Errorf("STS API Server stopped: %v, going to restart", oerr.Err)
-				go c.startSTSAPIServer(ctx, notificationChannel)
+	for {
+		select {
+		case oerr := <-notificationChannel:
+			switch oerr.Type {
+			case STSServerNotification:
+				if !errors.Is(oerr.Err, http.ErrServerClosed) {
+					klog.Errorf("STS API Server stopped: %v, going to restart", oerr.Err)
+					go c.startSTSAPIServer(ctx, notificationChannel)
+				}
+			case LeaderElection:
+				return nil
 			}
-		case LeaderElection:
+		case <-stopCh:
 			return nil
 		}
 	}
