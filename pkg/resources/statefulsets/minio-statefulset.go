@@ -476,7 +476,6 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	serviceName := args.ServiceName
 	hostsTemplate := args.HostsTemplate
 	operatorVersion := args.OperatorVersion
-	operatorCATLS := args.OperatorCATLS
 	operatorImage := args.OperatorImage
 
 	var podVolumes []corev1.Volume
@@ -673,22 +672,6 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		})
 	}
 
-	if operatorCATLS {
-		// Mount Operator CA TLS certificate to MinIO ~/cert/CAs
-		operatorCATLSSecretName := "operator-ca-tls"
-		certVolumeSources = append(certVolumeSources, []corev1.VolumeProjection{
-			{
-				Secret: &corev1.SecretProjection{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: operatorCATLSSecretName,
-					},
-					Items: []corev1.KeyToPath{
-						{Key: "public.crt", Path: "CAs/operator-ca.crt"},
-					},
-				},
-			},
-		}...)
-	}
 	// If KES is enable mount TLS certificate secrets
 	if t.HasKESEnabled() {
 		// External Client certificates will have priority over AutoCert generated certificates
