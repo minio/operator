@@ -142,13 +142,25 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 			Name:  "MINIO_KMS_KES_ENDPOINT",
 			Value: t.KESServiceEndpoint(),
 		}
-		envVarsMap["MINIO_KMS_KES_CERT_FILE"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_CERT_FILE",
-			Value: miniov2.MinIOCertPath + "/client.crt",
+		// The API key supersedes the certificate.
+		// If MINIO_KMS_KES_API_KEY is set,
+		// MINIO_KMS_KES_KEY_FILE and MINIO_KMS_KES_CERT_FILE are unnecessary and mutually exclusive.
+		// You should either utilize the API Key or the Certificate, but not both simultaneously.
+		useCert := true
+		for _, variable := range t.GetEnvVars() {
+			if variable.Name == "MINIO_KMS_KES_API_KEY" {
+				useCert = false // KES API Key will be used
+			}
 		}
-		envVarsMap["MINIO_KMS_KES_KEY_FILE"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_KEY_FILE",
-			Value: miniov2.MinIOCertPath + "/client.key",
+		if useCert {
+			envVarsMap["MINIO_KMS_KES_CERT_FILE"] = corev1.EnvVar{
+				Name:  "MINIO_KMS_KES_CERT_FILE",
+				Value: miniov2.MinIOCertPath + "/client.crt",
+			}
+			envVarsMap["MINIO_KMS_KES_KEY_FILE"] = corev1.EnvVar{
+				Name:  "MINIO_KMS_KES_KEY_FILE",
+				Value: miniov2.MinIOCertPath + "/client.key",
+			}
 		}
 		envVarsMap["MINIO_KMS_KES_CA_PATH"] = corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_CA_PATH",
