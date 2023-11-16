@@ -304,6 +304,8 @@ spec:
           volumeMounts:
             - mountPath: /tmp/certs
               name: tls-certificates
+            - mountPath: /tmp/certs/CAs
+              name: tmp
       volumes:
         - name: tls-certificates
           projected:
@@ -324,4 +326,6 @@ spec:
                       path: tls.key
                   name: console-tls
                   optional: true
+        - name: tmp
+          emptyDir: {}
       serviceAccountName: console-sa
