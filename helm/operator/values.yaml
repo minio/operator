@@ -291,7 +291,9 @@ console:
   # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator Console can mount to pods.
   #
   # The volumes must exist *and* be accessible to the Console pods.
-  volumes: [ ]
+  volumes:
+    - name: tmp
+      emptyDir: {}
   ###
   # An array of volume mount points associated to each Operator Console container.
   # 
@@ -304,4 +306,7 @@ console:
   #      mountPath: /path/to/mount
   #
   # The ``name`` field must correspond to an entry in the ``volumes`` array.
-  volumeMounts: [ ]
+  volumeMounts:
+    - name: tmp
+      readOnly: false
+      mountPath: /tmp/certs/CAs
