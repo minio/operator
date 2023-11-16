@@ -125,6 +125,7 @@ func StartOperator(kubeconfig string) {
 
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
+
 	podName := os.Getenv(HostnameEnv)
 	if podName == "" {
 		klog.Infof("Could not determine %s, defaulting to pod name: operator-pod", HostnameEnv)
@@ -142,14 +143,23 @@ func StartOperator(kubeconfig string) {
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Core().V1().Pods(),
 		minioInformerFactory.Minio().V2().Tenants(),
+		minioInformerFactory.MinIOJobs().V1alpha1().MinIOJobs(),
 		minioInformerFactory.Sts().V1alpha1().PolicyBindings(),
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,
 		pkg.Version,
 	)
 
+	//bbb, nnn := mainController.workqueue.Get()
+	//fmt.Println(bbb)
+	//fmt.Println(nnn)
+
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
+
+	bbb, nnn := mainController.workqueue.Get()
+	fmt.Println(bbb)
+	fmt.Println(nnn)
 
 	if err = mainController.Start(2, stopCh); err != nil {
 		klog.Fatalf("Error running mainController: %s", err.Error())

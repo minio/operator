@@ -19,6 +19,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	minIOJobsInformers "github.com/minio/operator/pkg/client/informers/externalversions/miniojobs.min.io/v1alpha1"
+	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
 	"net/http"
 	"os"
 	"os/signal"
@@ -74,7 +76,6 @@ import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
-	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
@@ -150,6 +151,8 @@ type Controller struct {
 	// has synced at least once.
 	tenantsSynced cache.InformerSynced
 
+	minIOJobsSynced cache.InformerSynced
+
 	// serviceLister is able to list/get Services from a shared informer's
 	// store.
 	serviceLister corelisters.ServiceLister
@@ -217,7 +220,7 @@ type EventNotification struct {
 }
 
 // NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, k8sClient client.Client, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, k8sClient client.Client, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, minIOJobsInformer minIOJobsInformers.MinIOJobsInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -261,6 +264,7 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		deploymentLister:          deploymentInformer.Lister(),
 		deploymentListerSynced:    deploymentInformer.Informer().HasSynced,
 		tenantsSynced:             tenantInformer.Informer().HasSynced,
+		minIOJobsSynced:           minIOJobsInformer.Informer().HasSynced,
 		serviceLister:             serviceInformer.Lister(),
 		serviceListerSynced:       serviceInformer.Informer().HasSynced,
 		workqueue:                 queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
@@ -271,6 +275,12 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
 	}
+
+	workqueueinitial := controller.workqueue
+	fmt.Println(workqueueinitial)
+	//objecto, shutdown := controller.workqueue.Get()
+	//fmt.Println(objecto)
+	//fmt.Println(shutdown)
 
 	// Initialize operator HTTP upgrade server handlers
 	controller.us = configureHTTPUpgradeServer()
@@ -411,6 +421,9 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 
 	klog.Info("Starting workers")
 	// Launch two workers to process Tenant resources
+	aaa, bbb := c.workqueue.Get()
+	fmt.Println(aaa)
+	fmt.Println(bbb)
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
@@ -477,6 +490,11 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
+
+	bbb, nnn := c.workqueue.Get()
+	fmt.Println(bbb)
+	fmt.Println(nnn)
+
 	// use a Go context so we can tell the leaderelection code when we
 	// want to step down
 	ctx, cancel := context.WithCancel(context.Background())
@@ -504,6 +522,10 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	apiCsrVersion := certificates.GetCertificatesAPIVersion(c.kubeClientSet)
 	klog.Infof("Using Kubernetes CSR Version: %s", apiCsrVersion)
 
+	bbb, nnn = c.workqueue.Get()
+	fmt.Println(bbb)
+	fmt.Println(nnn)
+
 	// we use the Lease lock type since edits to Leases are less common
 	// and fewer objects in the cluster watch "all Leases".
 	lock := &resourcelock.LeaseLock{
@@ -517,6 +539,10 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 		},
 	}
 
+	bbb, nnn = c.workqueue.Get()
+	fmt.Println(bbb)
+	fmt.Println(nnn)
+
 	if IsSTSEnabled() {
 		// runSTS starts the STS API even if the pod is not the leader
 		klog.Info("Waiting for STS API to start")
@@ -524,6 +550,10 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 	} else {
 		klog.Info("STS Api server is not enabled, not starting")
 	}
+
+	bbb, nnn = c.workqueue.Get()
+	fmt.Println(bbb)
+	fmt.Println(nnn)
 
 	go func() {
 		// start the leader election code loop
@@ -541,6 +571,9 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			RetryPeriod:     5 * time.Second,
 			Callbacks: leaderelection.LeaderCallbacks{
 				OnStartedLeading: func(ctx context.Context) {
+					bbb, nnn := c.workqueue.Get()
+					fmt.Println(bbb)
+					fmt.Println(nnn)
 					// start the controller + API code
 					leaderRun(ctx, c, threadiness, stopCh)
 				},

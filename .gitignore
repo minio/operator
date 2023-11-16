@@ -20,3 +20,8 @@ examples/**/obj/
 public.crt
 go_build_operator_
 operator.iml
+pkg/.DS_Store
+pkg/apis/.DS_Store
+pkg/client/.DS_Store
+*DS_Store
+go_build_main_controller_go
