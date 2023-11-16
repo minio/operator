@@ -407,6 +407,11 @@ func (in *Pool) DeepCopyInto(out *Pool) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.ReclaimStorage != nil {
+		in, out := &in.ReclaimStorage, &out.ReclaimStorage
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 
@@ -503,6 +508,11 @@ func (in *SideCars) DeepCopyInto(out *SideCars) {
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
+	}
+	if in.Resources != nil {
+		in, out := &in.Resources, &out.Resources
+		*out = new(v1.ResourceRequirements)
+		(*in).DeepCopyInto(*out)
 	}
 	return
 }
@@ -756,6 +766,20 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 	if in.InitContainers != nil {
 		in, out := &in.InitContainers, &out.InitContainers
 		*out = make([]v1.Container, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.AdditionalVolumes != nil {
+		in, out := &in.AdditionalVolumes, &out.AdditionalVolumes
+		*out = make([]v1.Volume, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.AdditionalVolumeMounts != nil {
+		in, out := &in.AdditionalVolumeMounts, &out.AdditionalVolumeMounts
+		*out = make([]v1.VolumeMount, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

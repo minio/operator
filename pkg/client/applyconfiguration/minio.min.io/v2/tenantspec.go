@@ -57,6 +57,9 @@ type TenantSpecApplyConfiguration struct {
 	Buckets                   []BucketApplyConfiguration                   `json:"buckets,omitempty"`
 	Logging                   *LoggingApplyConfiguration                   `json:"logging,omitempty"`
 	Configuration             *v1.LocalObjectReference                     `json:"configuration,omitempty"`
+	InitContainers            []v1.Container                               `json:"initContainers,omitempty"`
+	AdditionalVolumes         []v1.Volume                                  `json:"additionalVolumes,omitempty"`
+	AdditionalVolumeMounts    []v1.VolumeMount                             `json:"additionalVolumeMounts,omitempty"`
 }
 
 // TenantSpecApplyConfiguration constructs an declarative configuration of the TenantSpec type for use with
@@ -334,5 +337,35 @@ func (b *TenantSpecApplyConfiguration) WithLogging(value *LoggingApplyConfigurat
 // If called multiple times, the Configuration field is set to the value of the last call.
 func (b *TenantSpecApplyConfiguration) WithConfiguration(value v1.LocalObjectReference) *TenantSpecApplyConfiguration {
 	b.Configuration = &value
+	return b
+}
+
+// WithInitContainers adds the given value to the InitContainers field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the InitContainers field.
+func (b *TenantSpecApplyConfiguration) WithInitContainers(values ...v1.Container) *TenantSpecApplyConfiguration {
+	for i := range values {
+		b.InitContainers = append(b.InitContainers, values[i])
+	}
+	return b
+}
+
+// WithAdditionalVolumes adds the given value to the AdditionalVolumes field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the AdditionalVolumes field.
+func (b *TenantSpecApplyConfiguration) WithAdditionalVolumes(values ...v1.Volume) *TenantSpecApplyConfiguration {
+	for i := range values {
+		b.AdditionalVolumes = append(b.AdditionalVolumes, values[i])
+	}
+	return b
+}
+
+// WithAdditionalVolumeMounts adds the given value to the AdditionalVolumeMounts field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the AdditionalVolumeMounts field.
+func (b *TenantSpecApplyConfiguration) WithAdditionalVolumeMounts(values ...v1.VolumeMount) *TenantSpecApplyConfiguration {
+	for i := range values {
+		b.AdditionalVolumeMounts = append(b.AdditionalVolumeMounts, values[i])
+	}
 	return b
 }
