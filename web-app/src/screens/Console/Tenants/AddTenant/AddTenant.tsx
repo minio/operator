@@ -39,14 +39,13 @@ import Security from "./Steps/Security";
 import Encryption from "./Steps/Encryption";
 import Affinity from "./Steps/Affinity";
 import Images from "./Steps/Images";
-import PageLayout from "../../Common/Layout/PageLayout";
 
 import TenantResources from "./Steps/TenantResources/TenantResources";
 import {
   IMkEnvs,
   resourcesConfigurations,
 } from "./Steps/TenantResources/utils";
-import { BackLink, HelpBox, StorageIcon } from "mds";
+import { BackLink, HelpBox, StorageIcon, PageLayout } from "mds";
 import { selFeatures } from "../../consoleSlice";
 import makeStyles from "@mui/styles/makeStyles";
 import { resetAddTenantForm } from "./createTenantSlice";

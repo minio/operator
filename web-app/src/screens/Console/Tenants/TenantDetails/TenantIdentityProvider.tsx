@@ -23,7 +23,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Theme } from "@mui/material/styles";
-import { Button, ConfirmModalIcon, Loader } from "mds";
+import { Button, ConfirmModalIcon, Loader, SectionTitle } from "mds";
 import Grid from "@mui/material/Grid";
 import createStyles from "@mui/styles/createStyles";
 import withStyles from "@mui/styles/withStyles";
@@ -65,7 +65,6 @@ import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
 import api from "../../../../common/api";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SectionTitle from "../../Common/SectionTitle";
 
 interface ITenantIdentityProvider {
   classes: any;

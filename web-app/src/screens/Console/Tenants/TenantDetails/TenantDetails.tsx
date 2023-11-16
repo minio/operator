@@ -25,6 +25,7 @@ import {
   RefreshIcon,
   TenantsIcon,
   TrashIcon,
+  PageLayout,
 } from "mds";
 import {
   Link,
@@ -47,7 +48,6 @@ import {
 import { AppState, useAppDispatch } from "../../../../store";
 import { niceBytes } from "../../../../common/utils";
 import ScreenTitle from "../../Common/ScreenTitle/ScreenTitle";
-import PageLayout from "../../Common/Layout/PageLayout";
 
 import VerticalTabs from "../../Common/VerticalTabs/VerticalTabs";
 import withSuspense from "../../Common/Components/withSuspense";
