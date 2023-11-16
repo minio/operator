@@ -45,14 +45,14 @@ tenant:
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.10 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.11 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
   # 
   #    image:
   #       repository: quay.io/minio/minio
-  #       tag: RELEASE.2023-10-07T15-07-38Z
+  #       tag: RELEASE.2023-11-15T20-43-25Z
   #       pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
@@ -67,7 +67,7 @@ tenant:
   #
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-10-07T15-07-38Z
+    tag: RELEASE.2023-11-15T20-43-25Z
     pullPolicy: IfNotPresent
   ###
   #
@@ -332,14 +332,14 @@ tenant:
   #  # Image from tag (original behavior), for example:
   #  # image:
   #  #   repository: quay.io/minio/kes
-  #  #   tag: 2023-10-03T00-48-37Z
+  #  #   tag: 2023-11-10T10-44-28Z
   #  # Image from digest (added after original behavior), for example:
   #  # image:
   #  #   repository: quay.io/minio/kes@sha256
   #  #   digest: fb15af611149892f357a8a99d1bcd8bf5dae713bd64c15e6eb27fbdb88fc208b
   #  image:
   #    repository: quay.io/minio/kes
-  #    tag: 2023-10-03T00-48-37Z
+  #    tag: 2023-11-10T10-44-28Z
   #    pullPolicy: IfNotPresent
   #  env: [ ]
   #  replicas: 2
