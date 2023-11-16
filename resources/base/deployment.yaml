@@ -41,6 +41,13 @@ spec:
               value: "off"
             - name: OPERATOR_STS_ENABLED
               value: "on"
+          volumeMounts:
+            - name: tmp
+              readOnly: false
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:

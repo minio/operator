@@ -94,7 +94,9 @@ operator:
   # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator can mount to pods.
   #
   # The volumes must exist *and* be accessible to the Operator pods.
-  volumes: [ ]
+  volumes:
+    - name: tmp
+      emptyDir: {}
   ###
   # An array of volume mount points associated to each Operator container.
   # 
@@ -107,7 +109,10 @@ operator:
   #      mountPath: /path/to/mount
   #
   # The ``name`` field must correspond to an entry in the ``volumes`` array.
-  volumeMounts: [ ]
+  volumeMounts:
+    - name: tmp
+      readOnly: false
+      mountPath: /tmp
   ###
   # Any `Node Selectors <https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/>`__ to apply to Operator pods.
   #

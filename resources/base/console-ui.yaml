@@ -322,6 +322,6 @@ spec:
                       path: CAs/tls.crt
                     - key: tls.key
                       path: tls.key
-                  name: operator-console-tls
+                  name: console-tls
                   optional: true
       serviceAccountName: console-sa
