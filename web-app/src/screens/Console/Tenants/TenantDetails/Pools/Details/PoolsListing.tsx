@@ -21,8 +21,7 @@ import { useNavigate } from "react-router-dom";
 import Grid from "@mui/material/Grid";
 import { TextField } from "@mui/material";
 import InputAdornment from "@mui/material/InputAdornment";
-import { AddIcon, Button, SearchIcon } from "mds";
-import TableWrapper from "../../../../Common/TableWrapper/TableWrapper";
+import { AddIcon, Button, DataTable, SearchIcon } from "mds";
 import { Theme } from "@mui/material/styles";
 import {
   actionsTray,
@@ -127,7 +126,7 @@ const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
         </TooltipWrapper>
       </Grid>
       <Grid item xs={12} className={classes.tableBlock}>
-        <TableWrapper
+        <DataTable
           itemActions={listActions}
           columns={[
             { label: "Name", elementKey: "name" },
@@ -150,6 +149,7 @@ const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
           entityName="Servers"
           idField="name"
           customEmptyMessage="No Pools found"
+          customPaperHeight={"calc(100vh - 400px)"}
         />
       </Grid>
     </Fragment>

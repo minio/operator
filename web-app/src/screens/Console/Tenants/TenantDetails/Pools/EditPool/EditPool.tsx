@@ -20,13 +20,17 @@ import { useNavigate } from "react-router-dom";
 import { Theme } from "@mui/material/styles";
 import createStyles from "@mui/styles/createStyles";
 import Grid from "@mui/material/Grid";
-import GenericWizard from "../../../../Common/GenericWizard/GenericWizard";
-import ScreenTitle from "../../../../Common/ScreenTitle/ScreenTitle";
-import { BackLink, TenantsIcon, PageLayout } from "mds";
+import {
+  BackLink,
+  TenantsIcon,
+  PageLayout,
+  ScreenTitle,
+  Wizard,
+  WizardElement,
+} from "mds";
 import EditPoolResources from "./EditPoolResources";
 import EditPoolConfiguration from "./EditPoolConfiguration";
 import EditPoolPlacement from "./EditPoolPlacement";
-import { IWizardElement } from "../../../../Common/GenericWizard/types";
 import { LinearProgress } from "@mui/material";
 import { niceBytes } from "../../../../../../common/utils";
 import {
@@ -114,7 +118,7 @@ const EditPool = () => {
 
   const cancelButton = {
     label: "Cancel",
-    type: "other",
+    type: "custom" as "to" | "custom" | "next" | "back",
     enabled: true,
     action: () => {
       dispatch(resetEditPoolForm());
@@ -126,7 +130,7 @@ const EditPool = () => {
     componentRender: <EditPoolButton />,
   };
 
-  const wizardSteps: IWizardElement[] = [
+  const wizardSteps: WizardElement[] = [
     {
       label: "Pool Resources",
       componentRender: <EditPoolResources />,
@@ -171,6 +175,7 @@ const EditPool = () => {
                   {tenant?.name || ""}
                 </Fragment>
               }
+              actions={null}
             />
           </Grid>
 
@@ -180,7 +185,7 @@ const EditPool = () => {
             </Grid>
           )}
           <Grid item xs={12} className={classes.pageBox}>
-            <GenericWizard wizardSteps={wizardSteps} />
+            <Wizard wizardSteps={wizardSteps} linearMode={false} />
           </Grid>
         </PageLayout>
       </Grid>

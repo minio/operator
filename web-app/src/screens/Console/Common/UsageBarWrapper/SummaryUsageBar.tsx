@@ -2,11 +2,10 @@ import React, { Fragment } from "react";
 import { Stack } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { CapacityValues, ValueUnit } from "../../Tenants/ListTenants/types";
-import { CircleIcon, Loader } from "mds";
+import { CircleIcon, Loader, ValuePair } from "mds";
 import { niceBytes, niceBytesInt } from "../../../../common/utils";
 import TenantCapacity from "../../Tenants/ListTenants/TenantCapacity";
 import ErrorBlock from "../../../shared/ErrorBlock";
-import LabelValuePair from "./LabelValuePair";
 import { Tenant } from "../../../../api/operatorApi";
 
 interface ISummaryUsageBar {
@@ -100,30 +99,30 @@ const SummaryUsageBar = ({
           >
             {(!tenant.tiers || tenant.tiers.length === 0) && (
               <Fragment>
-                <LabelValuePair
+                <ValuePair
                   label={"Internal:"}
-                  orientation={"row"}
+                  direction={"row"}
                   value={`${used.value} ${used.unit}`}
                 />
               </Fragment>
             )}
             {tenant.tiers && tenant.tiers.length > 0 && (
               <Fragment>
-                <LabelValuePair
+                <ValuePair
                   label={"Internal:"}
-                  orientation={"row"}
+                  direction={"row"}
                   value={`${localUse.value} ${localUse.unit}`}
                 />
-                <LabelValuePair
+                <ValuePair
                   label={"Tiered:"}
-                  orientation={"row"}
+                  direction={"row"}
                   value={`${tieredUse.value} ${tieredUse.unit}`}
                 />
               </Fragment>
             )}
             {healthStatus && (
-              <LabelValuePair
-                orientation={"row"}
+              <ValuePair
+                direction={"row"}
                 label={"Health:"}
                 value={
                   <span className={healthStatus}>

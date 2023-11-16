@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from "react";
-import { Box } from "@mui/material";
+import { Box, breakPoints, ValuePair } from "mds";
 import Grid from "@mui/material/Grid";
 import Chip from "@mui/material/Chip";
 import Table from "@mui/material/Table";
@@ -29,7 +29,6 @@ import TableContainer from "@mui/material/TableContainer";
 import Paper from "@mui/material/Paper";
 import { ErrorResponseHandler } from "../../../../../common/types";
 import api from "../../../../../common/api";
-import LabelValuePair from "../../../Common/UsageBarWrapper/LabelValuePair";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../store";
 import { setErrorSnackMessage } from "../../../../../systemSlice";
@@ -158,10 +157,14 @@ interface IPodDescribeTableProps {
 
 const twoColCssGridLayoutConfig = {
   display: "grid",
-  gridTemplateColumns: { xs: "1fr", sm: "2fr 1fr" },
-  gridAutoFlow: { xs: "dense", sm: "row" },
+  gridTemplateColumns: "2fr 1fr",
+  gridAutoFlow: "row",
   gap: 2,
   padding: "15px",
+  [`@media (max-width: ${breakPoints.sm}px)`]: {
+    gridTemplateColumns: "1fr",
+    gridAutoFlow: "dense",
+  },
 };
 
 const HeaderSection = ({ title }: { title: string }) => {
@@ -184,13 +187,13 @@ const PodDescribeSummary = ({ describeInfo }: IPodDescribeSummaryProps) => {
       <div id="pod-describe-summary-content">
         <HeaderSection title={"Summary"} />
         <Box sx={{ ...twoColCssGridLayoutConfig }}>
-          <LabelValuePair label={"Name"} value={describeInfo.name} />
-          <LabelValuePair label={"Namespace"} value={describeInfo.namespace} />
-          <LabelValuePair label={"Node"} value={describeInfo.nodeName} />
-          <LabelValuePair label={"Start time"} value={describeInfo.startTime} />
-          <LabelValuePair label={"Status"} value={describeInfo.phase} />
-          <LabelValuePair label={"QoS Class"} value={describeInfo.qosClass} />
-          <LabelValuePair label={"IP"} value={describeInfo.podIP} />
+          <ValuePair label={"Name"} value={describeInfo.name} />
+          <ValuePair label={"Namespace"} value={describeInfo.namespace} />
+          <ValuePair label={"Node"} value={describeInfo.nodeName} />
+          <ValuePair label={"Start time"} value={describeInfo.startTime} />
+          <ValuePair label={"Status"} value={describeInfo.phase} />
+          <ValuePair label={"QoS Class"} value={describeInfo.qosClass} />
+          <ValuePair label={"IP"} value={describeInfo.podIP} />
         </Box>
       </div>
     </React.Fragment>
@@ -275,11 +278,8 @@ const PodDescribeVolumes = ({ volumes }: IPodDescribeVolumesProps) => {
             <Box sx={{ ...twoColCssGridLayoutConfig }}>
               {volume.pvc && (
                 <React.Fragment>
-                  <LabelValuePair
-                    label={"Type"}
-                    value="Persistant Volume Claim"
-                  />
-                  <LabelValuePair
+                  <ValuePair label={"Type"} value="Persistant Volume Claim" />
+                  <ValuePair
                     label={"Claim Name"}
                     value={volume.pvc.claimName}
                   />
@@ -287,7 +287,7 @@ const PodDescribeVolumes = ({ volumes }: IPodDescribeVolumesProps) => {
               )}
               {/* TODO Add component to display projected data (Maybe change API response) */}
               {volume.projected && (
-                <LabelValuePair label={"Type"} value="Projected" />
+                <ValuePair label={"Type"} value="Projected" />
               )}
             </Box>
           </React.Fragment>
@@ -345,35 +345,26 @@ const PodDescribeContainers = ({ containers }: IPodDescribeContainersProps) => {
               style={{ wordBreak: "break-all" }}
               sx={{ ...twoColCssGridLayoutConfig }}
             >
-              <LabelValuePair label={"Image"} value={container.image} />
-              <LabelValuePair label={"Ready"} value={`${container.ready}`} />
-              <LabelValuePair
-                label={"Ports"}
-                value={container.ports.join(", ")}
-              />
-              <LabelValuePair
+              <ValuePair label={"Image"} value={container.image} />
+              <ValuePair label={"Ready"} value={`${container.ready}`} />
+              <ValuePair label={"Ports"} value={container.ports.join(", ")} />
+              <ValuePair
                 label={"Host Ports"}
                 value={container.hostPorts.join(", ")}
               />
-              <LabelValuePair
+              <ValuePair
                 label={"Arguments"}
                 value={container.args.join(", ")}
               />
-              <LabelValuePair
-                label={"Started"}
-                value={container.state?.started}
-              />
-              <LabelValuePair label={"State"} value={container.state?.state} />
+              <ValuePair label={"Started"} value={container.state?.started} />
+              <ValuePair label={"State"} value={container.state?.state} />
             </Box>
             <Box
               style={{ wordBreak: "break-all" }}
               sx={{ ...twoColCssGridLayoutConfig }}
             >
-              <LabelValuePair label={"Image ID"} value={container.imageID} />
-              <LabelValuePair
-                label={"Container ID"}
-                value={container.containerID}
-              />
+              <ValuePair label={"Image ID"} value={container.imageID} />
+              <ValuePair label={"Container ID"} value={container.containerID} />
             </Box>
             <PodDescribeTable
               title="Mounts"

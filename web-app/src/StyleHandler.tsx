@@ -48,18 +48,11 @@ const StyleHandler = ({ children }: IStyleHandler) => {
 
   let thm = theme;
   let globalBody: any = {};
-  let rowColor: any = { color: "#393939" };
-  let detailsListPanel: any = { backgroundColor: "#fff" };
 
   if (colorVariants) {
     thm = generateOverrideTheme(colorVariants);
 
     globalBody = { backgroundColor: colorVariants.backgroundColor };
-    rowColor = { color: colorVariants.fontColor };
-    detailsListPanel = {
-      backgroundColor: colorVariants.backgroundColor,
-      color: colorVariants.fontColor,
-    };
   }
 
   // Kept for Compatibility purposes. Once mds migration is complete then this will be removed
@@ -68,12 +61,6 @@ const StyleHandler = ({ children }: IStyleHandler) => {
     "@global": {
       body: {
         ...globalBody,
-      },
-      ".rowLine": {
-        ...rowColor,
-      },
-      ".detailsListPanel": {
-        ...detailsListPanel,
       },
     },
   })(() => null);

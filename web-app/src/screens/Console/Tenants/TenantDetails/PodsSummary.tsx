@@ -29,12 +29,11 @@ import { niceDays } from "../../../../common/utils";
 import { IPodListElement } from "../ListTenants/types";
 
 import api from "../../../../common/api";
-import TableWrapper from "../../Common/TableWrapper/TableWrapper";
 import { AppState, useAppDispatch } from "../../../../store";
 import { ErrorResponseHandler } from "../../../../common/types";
 import DeletePod from "./DeletePod";
 import { Grid, InputAdornment, TextField } from "@mui/material";
-import { SearchIcon, Button } from "mds";
+import { SearchIcon, Button, DataTable } from "mds";
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import TooltipWrapper from "../../Common/TooltipWrapper/TooltipWrapper";
 
@@ -244,7 +243,7 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
         />
       </Grid>
       <Grid item xs={12} className={classes.tableBlock}>
-        <TableWrapper
+        <DataTable
           columns={[
             { label: "Name", elementKey: "name", width: 200 },
             { label: "Status", elementKey: "status" },
@@ -264,6 +263,7 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
           itemActions={podTableActions}
           entityName="Pods"
           idField="name"
+          customPaperHeight={"calc(100vh - 400px)"}
         />
       </Grid>
     </Fragment>

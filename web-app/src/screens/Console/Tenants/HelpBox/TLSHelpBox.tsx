@@ -15,8 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import React from "react";
 import { useSelector } from "react-redux";
-import { Box } from "@mui/material";
-import { CertificateIcon } from "mds";
+import { CertificateIcon, Box, breakPoints } from "mds";
 import { useParams } from "react-router-dom";
 import { AppState } from "../../../../store";
 
@@ -82,8 +81,8 @@ const TLSHelpBox = () => {
         display: "flex",
         flexFlow: "column",
         padding: "20px",
-        marginTop: {
-          xs: "0px",
+        [`@media (max-width: ${breakPoints.sm}px)`]: {
+          marginTop: 0,
         },
       }}
     >
