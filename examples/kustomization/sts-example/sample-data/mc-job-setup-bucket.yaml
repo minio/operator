@@ -36,7 +36,7 @@ spec:
   template:
     spec:
       serviceAccountName: mc-job-sa
-      restartPolicy: Never
+      restartPolicy: OnFailure
       volumes:
         - name: start-config
           configMap:
