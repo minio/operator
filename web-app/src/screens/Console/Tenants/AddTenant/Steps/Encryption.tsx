@@ -15,30 +15,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { Paper, SelectChangeEvent } from "@mui/material";
-import Grid from "@mui/material/Grid";
-
 import {
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../Common/FormComponents/common/styleLibrary";
+  Box,
+  CodeEditor,
+  FileSelector,
+  FormLayout,
+  Grid,
+  InputBox,
+  RadioGroup,
+  Select,
+  SimpleHeader,
+  Switch,
+  Tabs,
+} from "mds";
+import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../store";
 import { clearValidationError } from "../../utils";
-import InputBoxWrapper from "../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import FormSwitchWrapper from "../../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import FileSelector from "../../../Common/FormComponents/FileSelector/FileSelector";
-import RadioGroupSelector from "../../../Common/FormComponents/RadioGroupSelector/RadioGroupSelector";
 import {
   commonFormValidation,
   IValidation,
 } from "../../../../../utils/validationFunctions";
-import SectionH1 from "../../../Common/SectionH1";
 import {
   addFileKESServerCert,
   addFileKMSCa,
@@ -52,43 +48,9 @@ import AzureKMSAdd from "./Encryption/AzureKMSAdd";
 import GCPKMSAdd from "./Encryption/GCPKMSAdd";
 import GemaltoKMSAdd from "./Encryption/GemaltoKMSAdd";
 import AWSKMSAdd from "./Encryption/AWSKMSAdd";
-import SelectWrapper from "../../../Common/FormComponents/SelectWrapper/SelectWrapper";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import CodeMirrorWrapper from "../../../Common/FormComponents/CodeMirrorWrapper/CodeMirrorWrapper";
-import FormHr from "../../../Common/FormHr";
+import H3Section from "../../../Common/H3Section";
 
-interface IEncryptionProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    encryptionTypeOptions: {
-      marginBottom: 15,
-    },
-    mutualTlsConfig: {
-      marginTop: 15,
-      "& fieldset": {
-        flex: 1,
-      },
-    },
-    rightSpacer: {
-      marginRight: 15,
-    },
-    responsiveContainer: {
-      "@media (max-width: 900px)": {
-        display: "flex",
-        flexFlow: "column",
-      },
-    },
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const Encryption = ({ classes }: IEncryptionProps) => {
+const Encryption = () => {
   const dispatch = useAppDispatch();
 
   const replicas = useSelector(
@@ -195,7 +157,7 @@ const Encryption = ({ classes }: IEncryptionProps) => {
       encryptionValidation = [
         {
           fieldKey: "rawConfiguration",
-          required: encryptionTab > 0,
+          required: encryptionTab === "kms-raw-configuration",
           value: rawConfiguration,
         },
         {
@@ -293,442 +255,446 @@ const Encryption = ({ classes }: IEncryptionProps) => {
   ]);
 
   return (
-    <Paper className={classes.paperWrapper}>
-      <Grid container alignItems={"center"}>
-        <Grid item xs>
-          <SectionH1>Encryption</SectionH1>
-        </Grid>
-        <Grid item xs={4} justifyContent={"end"} textAlign={"right"}>
-          <FormSwitchWrapper
-            label={""}
-            indicatorLabels={["Enabled", "Disabled"]}
-            checked={enableEncryption}
-            value={"tenant_encryption"}
-            id="tenant-encryption"
-            name="tenant-encryption"
+    <FormLayout
+      withBorders={false}
+      containerPadding={false}
+      sx={{
+        "& .tabs-container": { height: "inherit" },
+        "& .rightSpacer": {
+          marginRight: 15,
+        },
+        "& .responsiveContainer": {
+          "@media (max-width: 900px)": {
+            display: "flex",
+            flexFlow: "column",
+          },
+        },
+        "& .multiContainer": {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+        },
+      }}
+    >
+      <Box
+        className={"inputItem"}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <H3Section>Encryption</H3Section>
+        <Switch
+          label={""}
+          indicatorLabels={["Enabled", "Disabled"]}
+          checked={enableEncryption}
+          value={"tenant_encryption"}
+          id="tenant-encryption"
+          name="tenant-encryption"
+          onChange={(e) => {
+            const targetD = e.target;
+            const checked = targetD.checked;
+
+            updateField("enableEncryption", checked);
+          }}
+          description=""
+          disabled={!encryptionAvailable}
+        />
+      </Box>
+      <Box className={"muted inputItem"}>
+        MinIO Server-Side Encryption (SSE) protects objects as part of write
+        operations, allowing clients to take advantage of server processing
+        power to secure objects at the storage layer (encryption-at-rest). SSE
+        also provides key functionality to regulatory and compliance
+        requirements around secure locking and erasure.
+      </Box>
+      <hr />
+
+      {enableEncryption && (
+        <Fragment>
+          <Tabs
+            horizontal
+            currentTabOrPath={encryptionTab}
+            onTabClick={(value: string) => {
+              updateField("encryptionTab", value);
+            }}
+            sx={{
+              height: "initial",
+            }}
+            options={[
+              {
+                tabConfig: {
+                  label: "Options",
+                  id: "kms-options",
+                },
+                content: (
+                  <Fragment>
+                    <RadioGroup
+                      currentValue={encryptionType}
+                      id="encryptionType"
+                      name="encryptionType"
+                      label="KMS"
+                      onChange={(e) => {
+                        updateField("encryptionType", e.target.value);
+                      }}
+                      selectorOptions={[
+                        { label: "Vault", value: "vault" },
+                        { label: "AWS", value: "aws" },
+                        { label: "Gemalto", value: "gemalto" },
+                        { label: "GCP", value: "gcp" },
+                        { label: "Azure", value: "azure" },
+                      ]}
+                    />
+                    {encryptionType === "vault" && <VaultKMSAdd />}
+                    {encryptionType === "azure" && <AzureKMSAdd />}
+                    {encryptionType === "gcp" && <GCPKMSAdd />}
+                    {encryptionType === "aws" && <AWSKMSAdd />}
+                    {encryptionType === "gemalto" && <GemaltoKMSAdd />}
+                  </Fragment>
+                ),
+              },
+              {
+                tabConfig: {
+                  label: "Raw Edit",
+                  id: "kms-raw-configuration",
+                },
+                content: (
+                  <Fragment>
+                    <Grid item xs={12}>
+                      <CodeEditor
+                        value={rawConfiguration}
+                        mode={"yaml"}
+                        onChange={(value) => {
+                          updateField("rawConfiguration", value);
+                        }}
+                        editorHeight={"550px"}
+                      />
+                    </Grid>
+                  </Fragment>
+                ),
+              },
+            ]}
+          />
+          <SimpleHeader
+            label={"Additional Configurations"}
+            sx={{ margin: "0px 0px 10px" }}
+          />
+          <Switch
+            value="enableCustomCertsForKES"
+            id="enableCustomCertsForKES"
+            name="enableCustomCertsForKES"
+            checked={enableCustomCertsForKES || !enableAutoCert}
             onChange={(e) => {
               const targetD = e.target;
               const checked = targetD.checked;
 
-              updateField("enableEncryption", checked);
+              updateField("enableCustomCertsForKES", checked);
             }}
-            description=""
-            disabled={!encryptionAvailable}
+            label={"Custom Certificates"}
+            disabled={!enableAutoCert}
           />
-        </Grid>
-      </Grid>
-      <Grid container spacing={1}>
-        <Grid item xs={12}>
-          <span className={classes.descriptionText}>
-            MinIO Server-Side Encryption (SSE) protects objects as part of write
-            operations, allowing clients to take advantage of server processing
-            power to secure objects at the storage layer (encryption-at-rest).
-            SSE also provides key functionality to regulatory and compliance
-            requirements around secure locking and erasure.
-          </span>
-        </Grid>
-        <Grid xs={12}>
-          <FormHr />
-        </Grid>
+          {(enableCustomCertsForKES || !enableAutoCert) && (
+            <Fragment>
+              <fieldset className={"inputItem"}>
+                <legend>Encryption server certificates</legend>
+                <FileSelector
+                  onChange={(event, fileName, encodedValue) => {
+                    if (encodedValue) {
+                      dispatch(
+                        addFileKESServerCert({
+                          key: "key",
+                          fileName: fileName,
+                          value: encodedValue,
+                        }),
+                      );
+                      cleanValidation("serverKey");
+                    }
+                  }}
+                  accept=".key,.pem"
+                  id="serverKey"
+                  name="serverKey"
+                  label="Key"
+                  error={validationErrors["serverKey"] || ""}
+                  value={kesServerCertificate.key}
+                  required={!enableAutoCert}
+                  returnEncodedData
+                />
+                <FileSelector
+                  onChange={(event, fileName, encodedValue) => {
+                    if (encodedValue) {
+                      dispatch(
+                        addFileKESServerCert({
+                          key: "cert",
+                          fileName: fileName,
+                          value: encodedValue,
+                        }),
+                      );
+                      cleanValidation("serverCert");
+                    }
+                  }}
+                  accept=".cer,.crt,.cert,.pem"
+                  id="serverCert"
+                  name="serverCert"
+                  label="Cert"
+                  error={validationErrors["serverCert"] || ""}
+                  value={kesServerCertificate.cert}
+                  required={!enableAutoCert}
+                  returnEncodedData
+                />
+              </fieldset>
+              <fieldset className={"inputItem"}>
+                <legend>
+                  MinIO mTLS certificates (connection between MinIO and the
+                  Encryption server)
+                </legend>
+                <FileSelector
+                  onChange={(event, fileName, encodedValue) => {
+                    if (encodedValue) {
+                      dispatch(
+                        addFileMinIOMTLSCert({
+                          key: "key",
+                          fileName: fileName,
+                          value: encodedValue,
+                        }),
+                      );
+                      cleanValidation("clientKey");
+                    }
+                  }}
+                  accept=".key,.pem"
+                  id="clientKey"
+                  name="clientKey"
+                  label="Key"
+                  error={validationErrors["clientKey"] || ""}
+                  value={minioMTLSCertificate.key}
+                  required={!enableAutoCert}
+                  returnEncodedData
+                />
+                <FileSelector
+                  onChange={(event, fileName, encodedValue) => {
+                    if (encodedValue) {
+                      dispatch(
+                        addFileMinIOMTLSCert({
+                          key: "cert",
+                          fileName: fileName,
+                          value: encodedValue,
+                        }),
+                      );
+                      cleanValidation("clientCert");
+                    }
+                  }}
+                  accept=".cer,.crt,.cert,.pem"
+                  id="clientCert"
+                  name="clientCert"
+                  label="Cert"
+                  error={validationErrors["clientCert"] || ""}
+                  value={minioMTLSCertificate.cert}
+                  required={!enableAutoCert}
+                  returnEncodedData
+                />
+              </fieldset>
+              <fieldset className={"inputItem"}>
+                <legend>
+                  KMS mTLS certificates (connection between the Encryption
+                  server and the KMS)
+                </legend>
+                <FileSelector
+                  onChange={(event, fileName, encodedValue) => {
+                    if (encodedValue) {
+                      dispatch(
+                        addFileKMSMTLSCert({
+                          key: "key",
+                          fileName: fileName,
+                          value: encodedValue,
+                        }),
+                      );
+                      cleanValidation("vault_key");
+                    }
+                  }}
+                  accept=".key,.pem"
+                  id="vault_key"
+                  name="vault_key"
+                  label="Key"
+                  value={kmsMTLSCertificate.key}
+                  returnEncodedData
+                />
+                <FileSelector
+                  onChange={(event, fileName, encodedValue) => {
+                    if (encodedValue) {
+                      dispatch(
+                        addFileKMSMTLSCert({
+                          key: "cert",
+                          fileName: fileName,
+                          value: encodedValue,
+                        }),
+                      );
+                      cleanValidation("vault_cert");
+                    }
+                  }}
+                  accept=".cer,.crt,.cert,.pem"
+                  id="vault_cert"
+                  name="vault_cert"
+                  label="Cert"
+                  value={kmsMTLSCertificate.cert}
+                  returnEncodedData
+                />
+                <FileSelector
+                  onChange={(event, fileName, encodedValue) => {
+                    if (encodedValue) {
+                      dispatch(
+                        addFileKMSCa({
+                          fileName: fileName,
+                          value: encodedValue,
+                        }),
+                      );
+                      cleanValidation("vault_ca");
+                    }
+                  }}
+                  accept=".cer,.crt,.cert,.pem"
+                  id="vault_ca"
+                  name="vault_ca"
+                  label="CA"
+                  value={kmsCA.cert}
+                  returnEncodedData
+                />
+              </fieldset>
+            </Fragment>
+          )}
+          <InputBox
+            type="number"
+            min="1"
+            id="replicas"
+            name="replicas"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              updateField("replicas", e.target.value);
+              cleanValidation("replicas");
+            }}
+            label="Replicas"
+            value={replicas}
+            required
+            error={validationErrors["replicas"] || ""}
+            sx={{ marginBottom: 10 }}
+          />
 
-        {enableEncryption && (
-          <Fragment>
+          <fieldset className={"inputItem"}>
+            <legend>SecurityContext for KES pods</legend>
             <Grid item xs={12}>
-              <Tabs
-                value={encryptionTab}
-                onChange={(e: React.ChangeEvent<{}>, value: number) => {
-                  updateField("encryptionTab", value);
-                }}
-                indicatorColor="primary"
-                textColor="primary"
-                aria-label="cluster-tabs"
-                variant="scrollable"
-                scrollButtons="auto"
-              >
-                <Tab id="kms-options" label="Options" />
-                <Tab id="kms-raw-configuration" label="Raw Edit" />
-              </Tabs>
-            </Grid>
-
-            {encryptionTab ? (
-              <Fragment>
-                <Grid item xs={12}>
-                  <CodeMirrorWrapper
-                    value={rawConfiguration}
-                    mode={"yaml"}
-                    onBeforeChange={(editor, data, value) => {
-                      updateField("rawConfiguration", value);
+              <div className={`multiContainer responsiveContainer`}>
+                <div className={`rightSpacer`}>
+                  <InputBox
+                    type="number"
+                    id="kes_securityContext_runAsUser"
+                    name="kes_securityContext_runAsUser"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      updateField("kesSecurityContext", {
+                        ...kesSecurityContext,
+                        runAsUser: e.target.value,
+                      });
+                      cleanValidation("kes_securityContext_runAsUser");
                     }}
-                    editorHeight={"550px"}
+                    label="Run As User"
+                    value={kesSecurityContext.runAsUser}
+                    required
+                    error={
+                      validationErrors["kes_securityContext_runAsUser"] || ""
+                    }
+                    min="0"
                   />
-                </Grid>
-              </Fragment>
-            ) : (
-              <Fragment>
-                <Grid item xs={12} className={classes.encryptionTypeOptions}>
-                  <RadioGroupSelector
-                    currentSelection={encryptionType}
-                    id="encryptionType"
-                    name="encryptionType"
-                    label="KMS"
-                    onChange={(e) => {
-                      updateField("encryptionType", e.target.value);
+                </div>
+                <div className={`rightSpacer`}>
+                  <InputBox
+                    type="number"
+                    id="kes_securityContext_runAsGroup"
+                    name="kes_securityContext_runAsGroup"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      updateField("kesSecurityContext", {
+                        ...kesSecurityContext,
+                        runAsGroup: e.target.value,
+                      });
+                      cleanValidation("kes_securityContext_runAsGroup");
                     }}
-                    selectorOptions={[
-                      { label: "Vault", value: "vault" },
-                      { label: "AWS", value: "aws" },
-                      { label: "Gemalto", value: "gemalto" },
-                      { label: "GCP", value: "gcp" },
-                      { label: "Azure", value: "azure" },
+                    label="Run As Group"
+                    value={kesSecurityContext.runAsGroup}
+                    required
+                    error={
+                      validationErrors["kes_securityContext_runAsGroup"] || ""
+                    }
+                    min="0"
+                  />
+                </div>
+              </div>
+            </Grid>
+            <br />
+            <Grid item xs={12}>
+              <div className={`multiContainer responsiveContainer`}>
+                <div className={`rightSpacer`}>
+                  <InputBox
+                    type="number"
+                    id="kes_securityContext_fsGroup"
+                    name="kes_securityContext_fsGroup"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      updateField("kesSecurityContext", {
+                        ...kesSecurityContext,
+                        fsGroup: e.target.value,
+                      });
+                      cleanValidation("kes_securityContext_fsGroup");
+                    }}
+                    label="FsGroup"
+                    value={kesSecurityContext.fsGroup!}
+                    required
+                    error={
+                      validationErrors["kes_securityContext_fsGroup"] || ""
+                    }
+                    min="0"
+                  />
+                </div>
+                <div className={`rightSpacer`}>
+                  <Select
+                    label="FsGroupChangePolicy"
+                    id="securityContext_fsGroupChangePolicy"
+                    name="securityContext_fsGroupChangePolicy"
+                    value={kesSecurityContext.fsGroupChangePolicy!}
+                    onChange={(value) => {
+                      updateField("kesSecurityContext", {
+                        ...kesSecurityContext,
+                        fsGroupChangePolicy: value,
+                      });
+                    }}
+                    options={[
+                      {
+                        label: "Always",
+                        value: "Always",
+                      },
+                      {
+                        label: "OnRootMismatch",
+                        value: "OnRootMismatch",
+                      },
                     ]}
                   />
-                </Grid>
-                {encryptionType === "vault" && <VaultKMSAdd />}
-                {encryptionType === "azure" && <AzureKMSAdd />}
-                {encryptionType === "gcp" && <GCPKMSAdd />}
-                {encryptionType === "aws" && <AWSKMSAdd />}
-                {encryptionType === "gemalto" && <GemaltoKMSAdd />}
-              </Fragment>
-            )}
-
-            <div className={classes.headerElement}>
-              <h4 className={classes.h3Section}>Additional Configurations</h4>
-            </div>
-            <Grid item xs={12}>
-              <FormSwitchWrapper
-                value="enableCustomCertsForKES"
-                id="enableCustomCertsForKES"
-                name="enableCustomCertsForKES"
-                checked={enableCustomCertsForKES || !enableAutoCert}
-                onChange={(e) => {
-                  const targetD = e.target;
-                  const checked = targetD.checked;
-
-                  updateField("enableCustomCertsForKES", checked);
-                }}
-                label={"Custom Certificates"}
-                disabled={!enableAutoCert}
-              />
+                </div>
+              </div>
             </Grid>
-            {(enableCustomCertsForKES || !enableAutoCert) && (
-              <Fragment>
-                <Grid container>
-                  <Grid item xs={12} style={{ marginBottom: 15 }}>
-                    <fieldset className={classes.fieldGroup}>
-                      <legend className={classes.descriptionText}>
-                        Encryption server certificates
-                      </legend>
-                      <FileSelector
-                        onChange={(encodedValue, fileName) => {
-                          dispatch(
-                            addFileKESServerCert({
-                              key: "key",
-                              fileName: fileName,
-                              value: encodedValue,
-                            }),
-                          );
-                          cleanValidation("serverKey");
-                        }}
-                        accept=".key,.pem"
-                        id="serverKey"
-                        name="serverKey"
-                        label="Key"
-                        error={validationErrors["serverKey"] || ""}
-                        value={kesServerCertificate.key}
-                        required={!enableAutoCert}
-                      />
-                      <FileSelector
-                        onChange={(encodedValue, fileName) => {
-                          dispatch(
-                            addFileKESServerCert({
-                              key: "cert",
-                              fileName: fileName,
-                              value: encodedValue,
-                            }),
-                          );
-                          cleanValidation("serverCert");
-                        }}
-                        accept=".cer,.crt,.cert,.pem"
-                        id="serverCert"
-                        name="serverCert"
-                        label="Cert"
-                        error={validationErrors["serverCert"] || ""}
-                        value={kesServerCertificate.cert}
-                        required={!enableAutoCert}
-                      />
-                    </fieldset>
-                  </Grid>
-                </Grid>
-                <Grid container style={{ marginBottom: 15 }}>
-                  <Grid item xs={12}>
-                    <fieldset className={classes.fieldGroup}>
-                      <legend className={classes.descriptionText}>
-                        MinIO mTLS certificates (connection between MinIO and
-                        the Encryption server)
-                      </legend>
-                      <FileSelector
-                        onChange={(encodedValue, fileName) => {
-                          dispatch(
-                            addFileMinIOMTLSCert({
-                              key: "key",
-                              fileName: fileName,
-                              value: encodedValue,
-                            }),
-                          );
-                          cleanValidation("clientKey");
-                        }}
-                        accept=".key,.pem"
-                        id="clientKey"
-                        name="clientKey"
-                        label="Key"
-                        error={validationErrors["clientKey"] || ""}
-                        value={minioMTLSCertificate.key}
-                        required={!enableAutoCert}
-                      />
-                      <FileSelector
-                        onChange={(encodedValue, fileName) => {
-                          dispatch(
-                            addFileMinIOMTLSCert({
-                              key: "cert",
-                              fileName: fileName,
-                              value: encodedValue,
-                            }),
-                          );
-                          cleanValidation("clientCert");
-                        }}
-                        accept=".cer,.crt,.cert,.pem"
-                        id="clientCert"
-                        name="clientCert"
-                        label="Cert"
-                        error={validationErrors["clientCert"] || ""}
-                        value={minioMTLSCertificate.cert}
-                        required={!enableAutoCert}
-                      />
-                    </fieldset>
-                  </Grid>
-                </Grid>
-                <Grid container className={classes.mutualTlsConfig}>
-                  <fieldset className={classes.fieldGroup}>
-                    <legend className={classes.descriptionText}>
-                      KMS mTLS certificates (connection between the Encryption
-                      server and the KMS)
-                    </legend>
-                    <FileSelector
-                      onChange={(encodedValue, fileName) => {
-                        dispatch(
-                          addFileKMSMTLSCert({
-                            key: "key",
-                            fileName: fileName,
-                            value: encodedValue,
-                          }),
-                        );
-                        cleanValidation("vault_key");
-                      }}
-                      accept=".key,.pem"
-                      id="vault_key"
-                      name="vault_key"
-                      label="Key"
-                      value={kmsMTLSCertificate.key}
-                    />
-                    <FileSelector
-                      onChange={(encodedValue, fileName) => {
-                        dispatch(
-                          addFileKMSMTLSCert({
-                            key: "cert",
-                            fileName: fileName,
-                            value: encodedValue,
-                          }),
-                        );
-                        cleanValidation("vault_cert");
-                      }}
-                      accept=".cer,.crt,.cert,.pem"
-                      id="vault_cert"
-                      name="vault_cert"
-                      label="Cert"
-                      value={kmsMTLSCertificate.cert}
-                    />
-                    <FileSelector
-                      onChange={(encodedValue, fileName) => {
-                        dispatch(
-                          addFileKMSCa({
-                            fileName: fileName,
-                            value: encodedValue,
-                          }),
-                        );
-                        cleanValidation("vault_ca");
-                      }}
-                      accept=".cer,.crt,.cert,.pem"
-                      id="vault_ca"
-                      name="vault_ca"
-                      label="CA"
-                      value={kmsCA.cert}
-                    />
-                  </fieldset>
-                </Grid>
-              </Fragment>
-            )}
-            <Grid item xs={12}>
-              <Grid item xs={12} classes={classes.formFieldRow}>
-                <InputBoxWrapper
-                  type="number"
-                  min="1"
-                  id="replicas"
-                  name="replicas"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    updateField("replicas", e.target.value);
-                    cleanValidation("replicas");
-                  }}
-                  label="Replicas"
-                  value={replicas}
-                  required
-                  error={validationErrors["replicas"] || ""}
-                />
-              </Grid>
-
-              <fieldset
-                className={classes.fieldGroup}
-                style={{ marginTop: 15 }}
-              >
-                <legend className={classes.descriptionText}>
-                  SecurityContext for KES pods
-                </legend>
-                <Grid item xs={12} className={classes.kesSecurityContext}>
-                  <div
-                    className={`${classes.multiContainer} ${classes.responsiveContainer}`}
-                  >
-                    <div
-                      className={`${classes.formFieldRow} ${classes.rightSpacer}`}
-                    >
-                      <InputBoxWrapper
-                        type="number"
-                        id="kes_securityContext_runAsUser"
-                        name="kes_securityContext_runAsUser"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          updateField("kesSecurityContext", {
-                            ...kesSecurityContext,
-                            runAsUser: e.target.value,
-                          });
-                          cleanValidation("kes_securityContext_runAsUser");
-                        }}
-                        label="Run As User"
-                        value={kesSecurityContext.runAsUser}
-                        required
-                        error={
-                          validationErrors["kes_securityContext_runAsUser"] ||
-                          ""
-                        }
-                        min="0"
-                      />
-                    </div>
-                    <div
-                      className={`${classes.formFieldRow} ${classes.rightSpacer}`}
-                    >
-                      <InputBoxWrapper
-                        type="number"
-                        id="kes_securityContext_runAsGroup"
-                        name="kes_securityContext_runAsGroup"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          updateField("kesSecurityContext", {
-                            ...kesSecurityContext,
-                            runAsGroup: e.target.value,
-                          });
-                          cleanValidation("kes_securityContext_runAsGroup");
-                        }}
-                        label="Run As Group"
-                        value={kesSecurityContext.runAsGroup}
-                        required
-                        error={
-                          validationErrors["kes_securityContext_runAsGroup"] ||
-                          ""
-                        }
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </Grid>
-                <br />
-                <Grid item xs={12} className={classes.kesSecurityContext}>
-                  <div
-                    className={`${classes.multiContainer} ${classes.responsiveContainer}`}
-                  >
-                    <div
-                      className={`${classes.formFieldRow} ${classes.rightSpacer}`}
-                    >
-                      <InputBoxWrapper
-                        type="number"
-                        id="kes_securityContext_fsGroup"
-                        name="kes_securityContext_fsGroup"
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          updateField("kesSecurityContext", {
-                            ...kesSecurityContext,
-                            fsGroup: e.target.value,
-                          });
-                          cleanValidation("kes_securityContext_fsGroup");
-                        }}
-                        label="FsGroup"
-                        value={kesSecurityContext.fsGroup!}
-                        required
-                        error={
-                          validationErrors["kes_securityContext_fsGroup"] || ""
-                        }
-                        min="0"
-                      />
-                    </div>
-                    <div
-                      className={`${classes.formFieldRow} ${classes.rightSpacer}`}
-                    >
-                      <SelectWrapper
-                        label="FsGroupChangePolicy"
-                        id="securityContext_fsGroupChangePolicy"
-                        name="securityContext_fsGroupChangePolicy"
-                        value={kesSecurityContext.fsGroupChangePolicy!}
-                        onChange={(e: SelectChangeEvent<string>) => {
-                          updateField("kesSecurityContext", {
-                            ...kesSecurityContext,
-                            fsGroupChangePolicy: e.target.value,
-                          });
-                        }}
-                        options={[
-                          {
-                            label: "Always",
-                            value: "Always",
-                          },
-                          {
-                            label: "OnRootMismatch",
-                            value: "OnRootMismatch",
-                          },
-                        ]}
-                      />
-                    </div>
-                  </div>
-                </Grid>
-                <br />
-                <Grid item xs={12}>
-                  <div className={classes.multiContainer}>
-                    <FormSwitchWrapper
-                      value="kesSecurityContextRunAsNonRoot"
-                      id="kes_securityContext_runAsNonRoot"
-                      name="kes_securityContext_runAsNonRoot"
-                      checked={kesSecurityContext.runAsNonRoot}
-                      onChange={(e) => {
-                        const targetD = e.target;
-                        const checked = targetD.checked;
-                        updateField("kesSecurityContext", {
-                          ...kesSecurityContext,
-                          runAsNonRoot: checked,
-                        });
-                      }}
-                      label={"Do not run as Root"}
-                    />
-                  </div>
-                </Grid>
-              </fieldset>
-            </Grid>
-          </Fragment>
-        )}
-      </Grid>
-    </Paper>
+            <br />
+            <Switch
+              value="kesSecurityContextRunAsNonRoot"
+              id="kes_securityContext_runAsNonRoot"
+              name="kes_securityContext_runAsNonRoot"
+              checked={kesSecurityContext.runAsNonRoot}
+              onChange={(e) => {
+                const targetD = e.target;
+                const checked = targetD.checked;
+                updateField("kesSecurityContext", {
+                  ...kesSecurityContext,
+                  runAsNonRoot: checked,
+                });
+              }}
+              label={"Do not run as Root"}
+            />
+          </fieldset>
+        </Fragment>
+      )}
+    </FormLayout>
   );
 };
 
-export default withStyles(styles)(Encryption);
+export default Encryption;

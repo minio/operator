@@ -14,9 +14,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import styled from "@emotion/styled";
+import styled from "styled-components";
+import get from "lodash/get";
 
-const H3Section = styled("h3")`
-  margin: 0px;
-`;
+const H3Section = styled.h3(({ theme }) => ({
+  color: get(theme, "fontColor", "#000"),
+  margin: 0,
+}));
+
 export default H3Section;

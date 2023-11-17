@@ -15,23 +15,22 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { Grid, IconButton, Paper } from "@mui/material";
 import {
-  createTenantCommon,
-  modalBasic,
-  wizardCommon,
-} from "../../../Common/FormComponents/common/styleLibrary";
-
+  AddIcon,
+  Box,
+  breakPoints,
+  FileSelector,
+  FormLayout,
+  Grid,
+  IconButton,
+  RemoveIcon,
+  Switch,
+} from "mds";
+import { useSelector } from "react-redux";
+import get from "lodash/get";
+import styled from "styled-components";
 import { AppState, useAppDispatch } from "../../../../../store";
 import { KeyPair } from "../../ListTenants/utils";
-import FormSwitchWrapper from "../../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import FileSelector from "../../../Common/FormComponents/FileSelector/FileSelector";
-import AddIcon from "@mui/icons-material/Add";
-import { RemoveIcon } from "mds";
 import {
   addCaCertificate,
   addClientKeyPair,
@@ -48,79 +47,36 @@ import {
 import TLSHelpBox from "../../HelpBox/TLSHelpBox";
 import H3Section from "../../../Common/H3Section";
 
-interface ISecurityProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    minioCertificateRows: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      borderBottom: "1px solid #EAEAEA",
-      "&:last-child": {
-        borderBottom: 0,
-      },
-      "@media (max-width: 900px)": {
-        flex: 1,
+const CertificateRow = styled.div(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "flex-start",
+  padding: 8,
+  borderBottom: `1px solid ${get(theme, "borderColor", "#E2E2E2")}`,
+  "& .fileItem": {
+    display: "flex",
+    "& .inputItem:not(:last-of-type)": {
+      marginBottom: 0,
+    },
+    [`@media (max-width: ${breakPoints.md}px)`]: {
+      flexFlow: "column",
+      "& .inputItem:not(:last-of-type)": {
+        marginBottom: 10,
       },
     },
-    fileItem: {
-      marginRight: 10,
-      display: "flex",
-      "& div label": {
-        minWidth: 50,
-      },
-
-      "@media (max-width: 900px)": {
-        flexFlow: "column",
-      },
+  },
+  "& .rowActions": {
+    display: "flex",
+    justifyContent: "flex-end",
+    alignItems: "center",
+    gap: 10,
+    "@media (max-width: 900px)": {
+      flex: 1,
     },
-    minioCertsContainer: {
-      marginBottom: 15,
-    },
-    minioCACertsRow: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-start",
+  },
+}));
 
-      borderBottom: "1px solid #EAEAEA",
-      "&:last-child": {
-        borderBottom: 0,
-      },
-      "@media (max-width: 900px)": {
-        flex: 1,
-
-        "& div label": {
-          minWidth: 50,
-        },
-      },
-    },
-    rowActions: {
-      display: "flex",
-      justifyContent: "flex-end",
-      "@media (max-width: 900px)": {
-        flex: 1,
-      },
-    },
-    overlayAction: {
-      marginLeft: 10,
-      "& svg": {
-        maxWidth: 15,
-        maxHeight: 15,
-      },
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-
-    ...createTenantCommon,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const Security = ({ classes }: ISecurityProps) => {
+const Security = () => {
   const dispatch = useAppDispatch();
 
   const enableTLS = useSelector(
@@ -173,82 +129,68 @@ const Security = ({ classes }: ISecurityProps) => {
   }, [enableTLS, enableAutoCert, enableCustomCerts, dispatch]);
 
   return (
-    <Paper className={classes.paperWrapper}>
-      <div className={classes.headerElement}>
+    <FormLayout withBorders={false} containerPadding={false}>
+      <Box className={"inputItem"}>
         <H3Section>Security</H3Section>
-      </div>
-      <Grid container spacing={1}>
-        <Grid item xs={12}>
-          <FormSwitchWrapper
-            value="enableTLS"
-            id="enableTLS"
-            name="enableTLS"
-            checked={enableTLS}
+      </Box>
+      <Switch
+        value="enableTLS"
+        id="enableTLS"
+        name="enableTLS"
+        checked={enableTLS}
+        onChange={(e) => {
+          const targetD = e.target;
+          const checked = targetD.checked;
+
+          updateField("enableTLS", checked);
+        }}
+        label={"TLS"}
+        description={
+          "Securing all the traffic using TLS. This is required for Encryption Configuration"
+        }
+      />
+      {enableTLS && (
+        <Fragment>
+          <Switch
+            value="enableAutoCert"
+            id="enableAutoCert"
+            name="enableAutoCert"
+            checked={enableAutoCert}
             onChange={(e) => {
               const targetD = e.target;
               const checked = targetD.checked;
-
-              updateField("enableTLS", checked);
+              updateField("enableAutoCert", checked);
             }}
-            label={"TLS"}
+            label={"AutoCert"}
             description={
-              "Securing all the traffic using TLS. This is required for Encryption Configuration"
+              "The internode certificates will be generated and managed by MinIO Operator"
             }
           />
-        </Grid>
-        {enableTLS && (
-          <Fragment>
-            <Grid item xs={12}>
-              <FormSwitchWrapper
-                value="enableAutoCert"
-                id="enableAutoCert"
-                name="enableAutoCert"
-                checked={enableAutoCert}
-                onChange={(e) => {
-                  const targetD = e.target;
-                  const checked = targetD.checked;
-                  updateField("enableAutoCert", checked);
-                }}
-                label={"AutoCert"}
-                description={
-                  "The internode certificates will be generated and managed by MinIO Operator"
-                }
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormSwitchWrapper
-                value="enableCustomCerts"
-                id="enableCustomCerts"
-                name="enableCustomCerts"
-                checked={enableCustomCerts}
-                onChange={(e) => {
-                  const targetD = e.target;
-                  const checked = targetD.checked;
-                  updateField("enableCustomCerts", checked);
-                }}
-                label={"Custom Certificates"}
-                description={"Certificates used to terminated TLS at MinIO"}
-              />
-            </Grid>
-            {enableCustomCerts && (
-              <Fragment>
-                {!enableAutoCert && (
-                  <Grid item xs={12}>
-                    <TLSHelpBox />
-                  </Grid>
-                )}
-                <Grid item xs={12} className={classes.minioCertsContainer}>
-                  <h5>MinIO Server Certificates</h5>
-                  {minioCertificates.map((keyPair: KeyPair, index) => (
-                    <Grid
-                      item
-                      xs={12}
-                      key={`minio-certs-${keyPair.id}`}
-                      className={classes.minioCertificateRows}
-                    >
-                      <Grid item xs={10} className={classes.fileItem}>
-                        <FileSelector
-                          onChange={(encodedValue, fileName) => {
+          <Switch
+            value="enableCustomCerts"
+            id="enableCustomCerts"
+            name="enableCustomCerts"
+            checked={enableCustomCerts}
+            onChange={(e) => {
+              const targetD = e.target;
+              const checked = targetD.checked;
+              updateField("enableCustomCerts", checked);
+            }}
+            label={"Custom Certificates"}
+            description={"Certificates used to terminated TLS at MinIO"}
+          />
+          {enableCustomCerts && (
+            <Fragment>
+              {!enableAutoCert && <TLSHelpBox />}
+              <fieldset className="inputItem">
+                <legend>MinIO Server Certificates</legend>
+
+                {minioCertificates.map((keyPair: KeyPair, index) => (
+                  <CertificateRow key={`minio-certs-${keyPair.id}`}>
+                    <Grid item xs={10} className={"fileItem"}>
+                      <FileSelector
+                        onChange={(e, fileName, encodedValue) => {
+                          if (encodedValue) {
                             dispatch(
                               addFileToKeyPair({
                                 id: keyPair.id,
@@ -257,15 +199,18 @@ const Security = ({ classes }: ISecurityProps) => {
                                 value: encodedValue,
                               }),
                             );
-                          }}
-                          accept=".cer,.crt,.cert,.pem"
-                          id="tlsCert"
-                          name="tlsCert"
-                          label="Cert"
-                          value={keyPair.cert}
-                        />
-                        <FileSelector
-                          onChange={(encodedValue, fileName) => {
+                          }
+                        }}
+                        accept=".cer,.crt,.cert,.pem"
+                        id="tlsCert"
+                        name="tlsCert"
+                        label="Cert"
+                        value={keyPair.cert}
+                        returnEncodedData
+                      />
+                      <FileSelector
+                        onChange={(event, fileName, encodedValue) => {
+                          if (encodedValue) {
                             dispatch(
                               addFileToKeyPair({
                                 id: keyPair.id,
@@ -274,54 +219,48 @@ const Security = ({ classes }: ISecurityProps) => {
                                 value: encodedValue,
                               }),
                             );
-                          }}
-                          accept=".key,.pem"
-                          id="tlsKey"
-                          name="tlsKey"
-                          label="Key"
-                          value={keyPair.key}
-                        />
-                      </Grid>
-
-                      <Grid item xs={2} className={classes.rowActions}>
-                        <div className={classes.overlayAction}>
-                          <IconButton
-                            size={"small"}
-                            onClick={() => {
-                              dispatch(addKeyPair());
-                            }}
-                            disabled={index !== minioCertificates.length - 1}
-                          >
-                            <AddIcon />
-                          </IconButton>
-                        </div>
-                        <div className={classes.overlayAction}>
-                          <IconButton
-                            size={"small"}
-                            onClick={() => {
-                              dispatch(deleteKeyPair(keyPair.id));
-                            }}
-                            disabled={minioCertificates.length <= 1}
-                          >
-                            <RemoveIcon />
-                          </IconButton>
-                        </div>
-                      </Grid>
+                          }
+                        }}
+                        accept=".key,.pem"
+                        id="tlsKey"
+                        name="tlsKey"
+                        label="Key"
+                        value={keyPair.key}
+                        returnEncodedData
+                      />
                     </Grid>
-                  ))}
-                </Grid>
-                <Grid item xs={12} className={classes.minioCertsContainer}>
-                  <h5>MinIO Client Certificates</h5>
-                  {minioClientCertificates.map((keyPair: KeyPair, index) => (
-                    <Grid
-                      item
-                      xs={12}
-                      key={`minio-certs-${keyPair.id}`}
-                      className={classes.minioCertificateRows}
-                    >
-                      <Grid item xs={10} className={classes.fileItem}>
-                        <FileSelector
-                          onChange={(encodedValue, fileName) => {
+
+                    <Grid item xs={2} className={"rowActions"}>
+                      <IconButton
+                        size={"small"}
+                        onClick={() => {
+                          dispatch(addKeyPair());
+                        }}
+                        disabled={index !== minioCertificates.length - 1}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                      <IconButton
+                        size={"small"}
+                        onClick={() => {
+                          dispatch(deleteKeyPair(keyPair.id));
+                        }}
+                        disabled={minioCertificates.length <= 1}
+                      >
+                        <RemoveIcon />
+                      </IconButton>
+                    </Grid>
+                  </CertificateRow>
+                ))}
+              </fieldset>
+              <fieldset className="inputItem">
+                <legend>MinIO Client Certificates</legend>
+                {minioClientCertificates.map((keyPair: KeyPair, index) => (
+                  <CertificateRow key={`minio-certs-${keyPair.id}`}>
+                    <Grid item xs={10} className={"fileItem"}>
+                      <FileSelector
+                        onChange={(event, fileName, encodedValue) => {
+                          if (encodedValue) {
                             dispatch(
                               addFileToClientKeyPair({
                                 id: keyPair.id,
@@ -330,15 +269,18 @@ const Security = ({ classes }: ISecurityProps) => {
                                 value: encodedValue,
                               }),
                             );
-                          }}
-                          accept=".cer,.crt,.cert,.pem"
-                          id="tlsCert"
-                          name="tlsCert"
-                          label="Cert"
-                          value={keyPair.cert}
-                        />
-                        <FileSelector
-                          onChange={(encodedValue, fileName) => {
+                          }
+                        }}
+                        accept=".cer,.crt,.cert,.pem"
+                        id="tlsCert"
+                        name="tlsCert"
+                        label="Cert"
+                        value={keyPair.cert}
+                        returnEncodedData
+                      />
+                      <FileSelector
+                        onChange={(event, fileName, encodedValue) => {
+                          if (encodedValue) {
                             dispatch(
                               addFileToClientKeyPair({
                                 id: keyPair.id,
@@ -347,56 +289,48 @@ const Security = ({ classes }: ISecurityProps) => {
                                 value: encodedValue,
                               }),
                             );
-                          }}
-                          accept=".key,.pem"
-                          id="tlsKey"
-                          name="tlsKey"
-                          label="Key"
-                          value={keyPair.key}
-                        />
-                      </Grid>
-
-                      <Grid item xs={2} className={classes.rowActions}>
-                        <div className={classes.overlayAction}>
-                          <IconButton
-                            size={"small"}
-                            onClick={() => {
-                              dispatch(addClientKeyPair());
-                            }}
-                            disabled={
-                              index !== minioClientCertificates.length - 1
-                            }
-                          >
-                            <AddIcon />
-                          </IconButton>
-                        </div>
-                        <div className={classes.overlayAction}>
-                          <IconButton
-                            size={"small"}
-                            onClick={() => {
-                              dispatch(deleteClientKeyPair(keyPair.id));
-                            }}
-                            disabled={minioClientCertificates.length <= 1}
-                          >
-                            <RemoveIcon />
-                          </IconButton>
-                        </div>
-                      </Grid>
+                          }
+                        }}
+                        accept=".key,.pem"
+                        id="tlsKey"
+                        name="tlsKey"
+                        label="Key"
+                        value={keyPair.key}
+                        returnEncodedData
+                      />
                     </Grid>
-                  ))}
-                </Grid>
-                <Grid item xs={12} className={classes.minioCertsContainer}>
-                  <h5>MinIO CA Certificates</h5>
-                  {caCertificates.map((keyPair: KeyPair, index) => (
-                    <Grid
-                      item
-                      xs={12}
-                      key={`minio-CA-certs-${keyPair.id}`}
-                      className={classes.minioCACertsRow}
-                    >
-                      <Grid item xs={6}>
-                        <FileSelector
-                          onChange={(encodedValue, fileName) => {
+
+                    <Grid item xs={2} className={"rowActions"}>
+                      <IconButton
+                        size={"small"}
+                        onClick={() => {
+                          dispatch(addClientKeyPair());
+                        }}
+                        disabled={index !== minioClientCertificates.length - 1}
+                      >
+                        <AddIcon />
+                      </IconButton>
+                      <IconButton
+                        size={"small"}
+                        onClick={() => {
+                          dispatch(deleteClientKeyPair(keyPair.id));
+                        }}
+                        disabled={minioClientCertificates.length <= 1}
+                      >
+                        <RemoveIcon />
+                      </IconButton>
+                    </Grid>
+                  </CertificateRow>
+                ))}
+              </fieldset>
+              <fieldset className="inputItem">
+                <legend>MinIO CA Certificates</legend>
+                {caCertificates.map((keyPair: KeyPair, index) => (
+                  <CertificateRow key={`minio-CA-certs-${keyPair.id}`}>
+                    <Grid item xs={6} className={"fileItem"}>
+                      <FileSelector
+                        onChange={(event, fileName, encodedValue) => {
+                          if (encodedValue) {
                             dispatch(
                               addFileToCaCertificates({
                                 id: keyPair.id,
@@ -405,50 +339,47 @@ const Security = ({ classes }: ISecurityProps) => {
                                 value: encodedValue,
                               }),
                             );
-                          }}
-                          accept=".cer,.crt,.cert,.pem"
-                          id="tlsCert"
-                          name="tlsCert"
-                          label="Cert"
-                          value={keyPair.cert}
-                        />
-                      </Grid>
-                      <Grid item xs={6}>
-                        <div className={classes.rowActions}>
-                          <div className={classes.overlayAction}>
-                            <IconButton
-                              size={"small"}
-                              onClick={() => {
-                                dispatch(addCaCertificate());
-                              }}
-                              disabled={index !== caCertificates.length - 1}
-                            >
-                              <AddIcon />
-                            </IconButton>
-                          </div>
-                          <div className={classes.overlayAction}>
-                            <IconButton
-                              size={"small"}
-                              onClick={() => {
-                                dispatch(deleteCaCertificate(keyPair.id));
-                              }}
-                              disabled={caCertificates.length <= 1}
-                            >
-                              <RemoveIcon />
-                            </IconButton>
-                          </div>
-                        </div>
-                      </Grid>
+                          }
+                        }}
+                        accept=".cer,.crt,.cert,.pem"
+                        id="tlsCert"
+                        name="tlsCert"
+                        label="Cert"
+                        value={keyPair.cert}
+                        returnEncodedData
+                      />
                     </Grid>
-                  ))}
-                </Grid>
-              </Fragment>
-            )}
-          </Fragment>
-        )}
-      </Grid>
-    </Paper>
+                    <Grid item xs={6}>
+                      <div className={"rowActions"}>
+                        <IconButton
+                          size={"small"}
+                          onClick={() => {
+                            dispatch(addCaCertificate());
+                          }}
+                          disabled={index !== caCertificates.length - 1}
+                        >
+                          <AddIcon />
+                        </IconButton>
+                        <IconButton
+                          size={"small"}
+                          onClick={() => {
+                            dispatch(deleteCaCertificate(keyPair.id));
+                          }}
+                          disabled={caCertificates.length <= 1}
+                        >
+                          <RemoveIcon />
+                        </IconButton>
+                      </div>
+                    </Grid>
+                  </CertificateRow>
+                ))}
+              </fieldset>
+            </Fragment>
+          )}
+        </Fragment>
+      )}
+    </FormLayout>
   );
 };
 
-export default withStyles(styles)(Security);
+export default Security;

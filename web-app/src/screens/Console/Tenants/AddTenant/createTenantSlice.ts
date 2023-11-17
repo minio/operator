@@ -149,7 +149,7 @@ const initialState: ICreateTenant = {
     },
     encryption: {
       rawConfiguration: "",
-      encryptionTab: 0,
+      encryptionTab: "kms-options",
       enableEncryption: false,
       encryptionType: "vault",
       gemaltoEndpoint: "",

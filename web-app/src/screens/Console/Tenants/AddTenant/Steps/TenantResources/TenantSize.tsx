@@ -16,17 +16,8 @@
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import { SelectChangeEvent } from "@mui/material";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
+import { Box, InputBox, Select } from "mds";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import {
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
 import {
   calculateDistribution,
   erasureCodeCalc,
@@ -38,28 +29,18 @@ import { clearValidationError } from "../../../utils";
 import { ecListTransform } from "../../../ListTenants/utils";
 import { ICapacity } from "../../../../../../common/types";
 import { commonFormValidation } from "../../../../../../utils/validationFunctions";
-import api from "../../../../../../common/api";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import SelectWrapper from "../../../../Common/FormComponents/SelectWrapper/SelectWrapper";
-import TenantSizeResources from "./TenantSizeResources";
-import InputUnitMenu from "../../../../Common/FormComponents/InputUnitMenu/InputUnitMenu";
 import { IMkEnvs } from "./utils";
 import { isPageValid, updateAddField } from "../../createTenantSlice";
+import api from "../../../../../../common/api";
+import TenantSizeResources from "./TenantSizeResources";
+import InputUnitMenu from "../../../../Common/FormComponents/InputUnitMenu/InputUnitMenu";
 import H3Section from "../../../../Common/H3Section";
 
 interface ITenantSizeProps {
-  classes: any;
   formToRender?: IMkEnvs;
 }
 
-const styles = (theme: Theme) =>
-  createStyles({
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const TenantSize = ({ classes, formToRender }: ITenantSizeProps) => {
+const TenantSize = ({ formToRender }: ITenantSizeProps) => {
   const dispatch = useAppDispatch();
 
   const volumeSize = useSelector(
@@ -310,109 +291,92 @@ const TenantSize = ({ classes, formToRender }: ITenantSizeProps) => {
 
   return (
     <Fragment>
-      <Grid item xs={12}>
-        <div className={classes.headerElement}>
-          <H3Section>Capacity</H3Section>
-          <span className={classes.descriptionText}>
-            Please select the desired capacity
-          </span>
-        </div>
-      </Grid>
+      <Box className={"inputItem"}>
+        <H3Section>Capacity</H3Section>
+        <span className={"muted"}>Please select the desired capacity</span>
+      </Box>
       {distribution.error !== "" && (
-        <Grid item xs={12}>
-          <div className={classes.error}>{distribution.error}</div>
-        </Grid>
+        <Box className={"inputItem error"}>{distribution.error}</Box>
       )}
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="nodes"
-          name="nodes"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.validity.valid) {
-              updateField("nodes", e.target.value);
-              cleanValidation("nodes");
-            }
-          }}
-          label="Number of Servers"
-          disabled={selectedStorageClass === ""}
-          value={nodes}
-          min="4"
-          required
-          error={validationErrors["nodes"] || ""}
-          pattern={"[0-9]*"}
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="drivesps"
-          name="drivesps"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.validity.valid) {
-              updateField("drivesPerServer", e.target.value);
-              cleanValidation("drivesps");
-            }
-          }}
-          label="Drives per Server"
-          value={drivesPerServer}
-          disabled={selectedStorageClass === ""}
-          min="1"
-          required
-          error={validationErrors["drivesps"] || ""}
-          pattern={"[0-9]*"}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <div className={classes.formFieldRow}>
-          <InputBoxWrapper
-            type="number"
-            id="volume_size"
-            name="volume_size"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("volumeSize", e.target.value);
-              cleanValidation("volume_size");
+      <InputBox
+        id="nodes"
+        name="nodes"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          if (e.target.validity.valid) {
+            updateField("nodes", e.target.value);
+            cleanValidation("nodes");
+          }
+        }}
+        label="Number of Servers"
+        disabled={selectedStorageClass === ""}
+        value={nodes}
+        min="4"
+        required
+        error={validationErrors["nodes"] || ""}
+        pattern={"[0-9]*"}
+      />
+      <InputBox
+        id="drivesps"
+        name="drivesps"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          if (e.target.validity.valid) {
+            updateField("drivesPerServer", e.target.value);
+            cleanValidation("drivesps");
+          }
+        }}
+        label="Drives per Server"
+        value={drivesPerServer}
+        disabled={selectedStorageClass === ""}
+        min="1"
+        required
+        error={validationErrors["drivesps"] || ""}
+        pattern={"[0-9]*"}
+      />
+      <InputBox
+        type="number"
+        id="volume_size"
+        name="volume_size"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("volumeSize", e.target.value);
+          cleanValidation("volume_size");
+        }}
+        label="Total Size"
+        value={volumeSize}
+        disabled={selectedStorageClass === ""}
+        required
+        error={validationErrors["volume_size"] || ""}
+        min="0"
+        overlayObject={
+          <InputUnitMenu
+            id={"size-unit"}
+            onUnitChange={(newValue) => {
+              updateField("sizeFactor", newValue);
             }}
-            label="Total Size"
-            value={volumeSize}
+            unitSelected={sizeFactor}
+            unitsList={k8sScalarUnitsExcluding(["Ki", "Mi"])}
             disabled={selectedStorageClass === ""}
-            required
-            error={validationErrors["volume_size"] || ""}
-            min="0"
-            overlayObject={
-              <InputUnitMenu
-                id={"size-unit"}
-                onUnitChange={(newValue) => {
-                  updateField("sizeFactor", newValue);
-                }}
-                unitSelected={sizeFactor}
-                unitsList={k8sScalarUnitsExcluding(["Ki", "Mi"])}
-                disabled={selectedStorageClass === ""}
-              />
-            }
           />
-        </div>
-      </Grid>
-
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <SelectWrapper
-          id="ec_parity"
-          name="ec_parity"
-          onChange={(e: SelectChangeEvent<string>) => {
-            updateField("ecParity", e.target.value as string);
-          }}
-          label="Erasure Code Parity"
-          disabled={selectedStorageClass === ""}
-          value={ecParity}
-          options={ecParityChoices}
-        />
-        <span className={classes.descriptionText}>
-          Please select the desired parity. This setting will change the max
-          usable capacity in the cluster
-        </span>
-      </Grid>
+        }
+      />
+      <Select
+        id="ec_parity"
+        name="ec_parity"
+        onChange={(value) => {
+          updateField("ecParity", value);
+        }}
+        label="Erasure Code Parity"
+        disabled={selectedStorageClass === ""}
+        value={ecParity}
+        options={ecParityChoices}
+      />
+      <Box className={"muted inputItem"}>
+        Please select the desired parity. This setting will change the max
+        usable capacity in the cluster
+      </Box>
 
       <TenantSizeResources />
     </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantSize);
+export default TenantSize;

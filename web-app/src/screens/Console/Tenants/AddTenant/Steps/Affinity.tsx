@@ -15,30 +15,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { Grid, IconButton, Paper, SelectChangeEvent } from "@mui/material";
-import { AppState, useAppDispatch } from "../../../../../store";
-
 import {
-  modalBasic,
-  wizardCommon,
-} from "../../../Common/FormComponents/common/styleLibrary";
+  AddIcon,
+  RemoveIcon,
+  FormLayout,
+  Box,
+  InputLabel,
+  RadioGroup,
+  Switch,
+  Select,
+  InputBox,
+  IconButton,
+  Grid,
+} from "mds";
+import { useSelector } from "react-redux";
+import styled from "styled-components";
+import { AppState, useAppDispatch } from "../../../../../store";
 import {
   commonFormValidation,
   IValidation,
 } from "../../../../../utils/validationFunctions";
 import { ErrorResponseHandler } from "../../../../../common/types";
 import { LabelKeyPair } from "../../types";
-import RadioGroupSelector from "../../../Common/FormComponents/RadioGroupSelector/RadioGroupSelector";
-import FormSwitchWrapper from "../../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import api from "../../../../../common/api";
-import InputBoxWrapper from "../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import { AddIcon, RemoveIcon } from "mds";
-import SelectWrapper from "../../../Common/FormComponents/SelectWrapper/SelectWrapper";
-import TolerationSelector from "../../../Common/TolerationSelector/TolerationSelector";
 import { setModalErrorSnackMessage } from "../../../../../systemSlice";
 import {
   addNewToleration,
@@ -48,74 +46,51 @@ import {
   setTolerationInfo,
   updateAddField,
 } from "../createTenantSlice";
+import api from "../../../../../common/api";
+import TolerationSelector from "../../../Common/TolerationSelector/TolerationSelector";
 import H3Section from "../../../Common/H3Section";
 
-interface IAffinityProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    overlayAction: {
-      marginLeft: 10,
-      display: "flex",
-      alignItems: "center",
-      "& svg": {
-        maxWidth: 15,
-        maxHeight: 15,
-      },
-      "& button": {
-        background: "#EAEAEA",
-      },
+const AffinityContainer = styled.div(() => ({
+  "& .overlayAction": {
+    marginLeft: 10,
+    display: "flex",
+    alignItems: "center",
+  },
+  "& .affinityConfigField": {
+    display: "flex",
+  },
+  "& .affinityFieldLabel": {
+    display: "flex",
+    flexFlow: "column",
+    flex: 1,
+  },
+  "& .affinityLabelKey": {
+    "& div:first-child": {
+      marginBottom: 0,
     },
-    affinityConfigField: {
-      display: "flex",
+  },
+  "& .affinityLabelValue": {
+    marginLeft: 10,
+    "& div:first-child": {
+      marginBottom: 0,
     },
-    affinityFieldLabel: {
-      display: "flex",
-      flexFlow: "column",
-      flex: 1,
-    },
-    radioField: {
-      display: "flex",
-      alignItems: "flex-start",
-      marginTop: 10,
-      "& div:first-child": {
-        display: "flex",
-        flexFlow: "column",
-        alignItems: "baseline",
-        textAlign: "left !important",
-      },
-    },
-    affinityLabelKey: {
-      "& div:first-child": {
-        marginBottom: 0,
-      },
-    },
-    affinityLabelValue: {
-      marginLeft: 10,
-      "& div:first-child": {
-        marginBottom: 0,
-      },
-    },
-    rowActions: {
-      display: "flex",
-      alignItems: "center",
-    },
-    affinityRow: {
-      marginBottom: 10,
-      display: "flex",
-    },
-    ...modalBasic,
-    ...wizardCommon,
-  });
+  },
+  "& .rowActions": {
+    display: "flex",
+    alignItems: "center",
+  },
+  "& .affinityRow": {
+    marginBottom: 10,
+    display: "flex",
+  },
+}));
 
 interface OptionPair {
   label: string;
   value: string;
 }
 
-const Affinity = ({ classes }: IAffinityProps) => {
+const Affinity = () => {
   const dispatch = useAppDispatch();
 
   const podAffinity = useSelector(
@@ -254,44 +229,38 @@ const Affinity = ({ classes }: IAffinityProps) => {
   };
 
   return (
-    <Paper className={classes.paperWrapper}>
-      <div className={classes.headerElement}>
-        <H3Section>Pod Placement</H3Section>
-        <span className={classes.descriptionText}>
-          Configure how pods will be assigned to nodes
-        </span>
-      </div>
-      <Grid item xs={12} className={classes.affinityConfigField}>
-        <Grid item className={classes.affinityFieldLabel}>
-          <div className={classes.label}>Type</div>
-          <div
-            className={`${classes.descriptionText} ${classes.affinityHelpText}`}
-          >
-            MinIO supports multiple configurations for Pod Affinity
-          </div>
-          <Grid item className={classes.radioField}>
-            <RadioGroupSelector
-              currentSelection={podAffinity}
-              id="affinity-options"
-              name="affinity-options"
-              label={" "}
-              onChange={(e) => {
-                updateField("podAffinity", e.target.value);
-              }}
-              selectorOptions={[
-                { label: "None", value: "none" },
-                { label: "Default (Pod Anti-Affinity)", value: "default" },
-                { label: "Node Selector", value: "nodeSelector" },
-              ]}
-            />
-          </Grid>
-        </Grid>
-      </Grid>
-      {podAffinity === "nodeSelector" && (
-        <Fragment>
-          <br />
-          <Grid item xs={12}>
-            <FormSwitchWrapper
+    <AffinityContainer>
+      <FormLayout withBorders={false} containerPadding={false}>
+        <Box className={"inputItem"}>
+          <H3Section>Pod Placement</H3Section>
+          <span className={"muted"}>
+            Configure how pods will be assigned to nodes
+          </span>
+        </Box>
+        <Box>
+          <InputLabel>Type</InputLabel>
+        </Box>
+        <Box className={`muted inputItem`}>
+          MinIO supports multiple configurations for Pod Affinity
+        </Box>
+        <RadioGroup
+          currentValue={podAffinity}
+          id="affinity-options"
+          name="affinity-options"
+          label={" "}
+          onChange={(e) => {
+            updateField("podAffinity", e.target.value);
+          }}
+          selectorOptions={[
+            { label: "None", value: "none" },
+            { label: "Default (Pod Anti-Affinity)", value: "default" },
+            { label: "Node Selector", value: "nodeSelector" },
+          ]}
+          displayInColumn
+        />
+        {podAffinity === "nodeSelector" && (
+          <Fragment>
+            <Switch
               value="with_pod_anti_affinity"
               id="with_pod_anti_affinity"
               name="with_pod_anti_affinity"
@@ -304,216 +273,222 @@ const Affinity = ({ classes }: IAffinityProps) => {
               }}
               label={"With Pod Anti-Affinity"}
             />
-          </Grid>
-          <Grid item xs={12}>
-            <h3>Labels</h3>
-            <span className={classes.error}>{validationErrors["labels"]}</span>
+            <Box className={"inputBox"}>
+              <h3>Labels</h3>
+              <span className={"error"}>{validationErrors["labels"]}</span>
+              <Grid container>
+                {keyValuePairs &&
+                  keyValuePairs.map((kvp, i) => {
+                    return (
+                      <Grid
+                        item
+                        xs={12}
+                        className={"affinityRow"}
+                        key={`affinity-keyVal-${i.toString()}`}
+                      >
+                        <Grid item xs={5} className={"affinityLabelKey"}>
+                          {keyOptions.length > 0 && (
+                            <Select
+                              onChange={(value) => {
+                                const newKey = value;
+                                const newLKP: LabelKeyPair = {
+                                  key: newKey,
+                                  value: keyValueMap[newKey][0],
+                                };
+                                const arrCp: LabelKeyPair[] = [
+                                  ...keyValuePairs,
+                                ];
+                                arrCp[i] = newLKP;
+                                dispatch(setKeyValuePairs(arrCp));
+                              }}
+                              id="select-access-policy"
+                              name="select-access-policy"
+                              label={""}
+                              value={kvp.key}
+                              options={keyOptions}
+                            />
+                          )}
+                          {keyOptions.length === 0 && (
+                            <InputBox
+                              id={`nodeselector-key-${i.toString()}`}
+                              label={""}
+                              name={`nodeselector-${i.toString()}`}
+                              value={kvp.key}
+                              onChange={(e) => {
+                                const arrCp: LabelKeyPair[] = [
+                                  ...keyValuePairs,
+                                ];
+                                arrCp[i] = {
+                                  key: arrCp[i].key,
+                                  value: e.target.value as string,
+                                };
+                                dispatch(setKeyValuePairs(arrCp));
+                              }}
+                              index={i}
+                              placeholder={"Key"}
+                            />
+                          )}
+                        </Grid>
+                        <Grid item xs={5} className={"affinityLabelValue"}>
+                          {keyOptions.length > 0 && (
+                            <Select
+                              onChange={(value) => {
+                                const arrCp: LabelKeyPair[] = [
+                                  ...keyValuePairs,
+                                ];
+                                arrCp[i] = {
+                                  key: arrCp[i].key,
+                                  value: value,
+                                };
+                                dispatch(setKeyValuePairs(arrCp));
+                              }}
+                              id="select-access-policy"
+                              name="select-access-policy"
+                              label={""}
+                              value={kvp.value}
+                              options={
+                                keyValueMap[kvp.key]
+                                  ? keyValueMap[kvp.key].map((v) => {
+                                      return { label: v, value: v };
+                                    })
+                                  : []
+                              }
+                            />
+                          )}
+                          {keyOptions.length === 0 && (
+                            <InputBox
+                              id={`nodeselector-value-${i.toString()}`}
+                              label={""}
+                              name={`nodeselector-${i.toString()}`}
+                              value={kvp.value}
+                              onChange={(e) => {
+                                const arrCp: LabelKeyPair[] = [
+                                  ...keyValuePairs,
+                                ];
+                                arrCp[i] = {
+                                  key: arrCp[i].key,
+                                  value: e.target.value as string,
+                                };
+                                dispatch(setKeyValuePairs(arrCp));
+                              }}
+                              index={i}
+                              placeholder={"value"}
+                            />
+                          )}
+                        </Grid>
+                        <Grid item xs={2} className={"rowActions"}>
+                          <Box className={"overlayAction"}>
+                            <IconButton
+                              size={"small"}
+                              onClick={() => {
+                                const arrCp = [...keyValuePairs];
+                                if (keyOptions.length > 0) {
+                                  arrCp.push({
+                                    key: keyOptions[0].value,
+                                    value: keyValueMap[keyOptions[0].value][0],
+                                  });
+                                } else {
+                                  arrCp.push({ key: "", value: "" });
+                                }
+
+                                dispatch(setKeyValuePairs(arrCp));
+                              }}
+                              disabled={i !== keyValuePairs.length - 1}
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </Box>
+                          <Box className={"overlayAction"}>
+                            <IconButton
+                              size={"small"}
+                              onClick={() => {
+                                const arrCp = keyValuePairs.filter(
+                                  (item, index) => index !== i,
+                                );
+                                dispatch(setKeyValuePairs(arrCp));
+                              }}
+                              disabled={keyValuePairs.length <= 1}
+                            >
+                              <RemoveIcon />
+                            </IconButton>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    );
+                  })}
+              </Grid>
+            </Box>
+          </Fragment>
+        )}
+        <Grid item xs={12} className={"affinityConfigField"}>
+          <Grid item className={"affinityFieldLabel"}>
+            <h3>Tolerations</h3>
+            <span className={"error"}>{validationErrors["tolerations"]}</span>
             <Grid container>
-              {keyValuePairs &&
-                keyValuePairs.map((kvp, i) => {
+              {tolerations &&
+                tolerations.map((tol, i) => {
                   return (
                     <Grid
                       item
                       xs={12}
-                      className={classes.affinityRow}
+                      className={"affinityRow"}
                       key={`affinity-keyVal-${i.toString()}`}
                     >
-                      <Grid item xs={5} className={classes.affinityLabelKey}>
-                        {keyOptions.length > 0 && (
-                          <SelectWrapper
-                            onChange={(e: SelectChangeEvent<string>) => {
-                              const newKey = e.target.value as string;
-                              const newLKP: LabelKeyPair = {
-                                key: newKey,
-                                value: keyValueMap[newKey][0],
-                              };
-                              const arrCp: LabelKeyPair[] = [...keyValuePairs];
-                              arrCp[i] = newLKP;
-                              dispatch(setKeyValuePairs(arrCp));
-                            }}
-                            id="select-access-policy"
-                            name="select-access-policy"
-                            label={""}
-                            value={kvp.key}
-                            options={keyOptions}
-                          />
-                        )}
-                        {keyOptions.length === 0 && (
-                          <InputBoxWrapper
-                            id={`nodeselector-key-${i.toString()}`}
-                            label={""}
-                            name={`nodeselector-${i.toString()}`}
-                            value={kvp.key}
-                            onChange={(e) => {
-                              const arrCp: LabelKeyPair[] = [...keyValuePairs];
-                              arrCp[i] = {
-                                key: arrCp[i].key,
-                                value: e.target.value as string,
-                              };
-                              dispatch(setKeyValuePairs(arrCp));
-                            }}
-                            index={i}
-                            placeholder={"Key"}
-                          />
-                        )}
-                      </Grid>
-                      <Grid item xs={5} className={classes.affinityLabelValue}>
-                        {keyOptions.length > 0 && (
-                          <SelectWrapper
-                            onChange={(e: SelectChangeEvent<string>) => {
-                              const arrCp: LabelKeyPair[] = [...keyValuePairs];
-                              arrCp[i] = {
-                                key: arrCp[i].key,
-                                value: e.target.value as string,
-                              };
-                              dispatch(setKeyValuePairs(arrCp));
-                            }}
-                            id="select-access-policy"
-                            name="select-access-policy"
-                            label={""}
-                            value={kvp.value}
-                            options={
-                              keyValueMap[kvp.key]
-                                ? keyValueMap[kvp.key].map((v) => {
-                                    return { label: v, value: v };
-                                  })
-                                : []
-                            }
-                          />
-                        )}
-                        {keyOptions.length === 0 && (
-                          <InputBoxWrapper
-                            id={`nodeselector-value-${i.toString()}`}
-                            label={""}
-                            name={`nodeselector-${i.toString()}`}
-                            value={kvp.value}
-                            onChange={(e) => {
-                              const arrCp: LabelKeyPair[] = [...keyValuePairs];
-                              arrCp[i] = {
-                                key: arrCp[i].key,
-                                value: e.target.value as string,
-                              };
-                              dispatch(setKeyValuePairs(arrCp));
-                            }}
-                            index={i}
-                            placeholder={"value"}
-                          />
-                        )}
-                      </Grid>
-                      <Grid item xs={2} className={classes.rowActions}>
-                        <div className={classes.overlayAction}>
-                          <IconButton
-                            size={"small"}
-                            onClick={() => {
-                              const arrCp = [...keyValuePairs];
-                              if (keyOptions.length > 0) {
-                                arrCp.push({
-                                  key: keyOptions[0].value,
-                                  value: keyValueMap[keyOptions[0].value][0],
-                                });
-                              } else {
-                                arrCp.push({ key: "", value: "" });
-                              }
+                      <TolerationSelector
+                        effect={tol.effect}
+                        onEffectChange={(value) => {
+                          updateToleration(i, "effect", value);
+                        }}
+                        tolerationKey={tol.key}
+                        onTolerationKeyChange={(value) => {
+                          updateToleration(i, "key", value);
+                        }}
+                        operator={tol.operator}
+                        onOperatorChange={(value) => {
+                          updateToleration(i, "operator", value);
+                        }}
+                        value={tol.value}
+                        onValueChange={(value) => {
+                          updateToleration(i, "value", value);
+                        }}
+                        tolerationSeconds={tol.tolerationSeconds?.seconds || 0}
+                        onSecondsChange={(value) => {
+                          updateToleration(i, "tolerationSeconds", {
+                            seconds: value,
+                          });
+                        }}
+                        index={i}
+                      />
+                      <Box className={"overlayAction"}>
+                        <IconButton
+                          size={"small"}
+                          onClick={() => {
+                            dispatch(addNewToleration());
+                          }}
+                          disabled={i !== tolerations.length - 1}
+                        >
+                          <AddIcon />
+                        </IconButton>
+                      </Box>
 
-                              dispatch(setKeyValuePairs(arrCp));
-                            }}
-                            disabled={i !== keyValuePairs.length - 1}
-                          >
-                            <AddIcon />
-                          </IconButton>
-                        </div>
-                        <div className={classes.overlayAction}>
-                          <IconButton
-                            size={"small"}
-                            onClick={() => {
-                              const arrCp = keyValuePairs.filter(
-                                (item, index) => index !== i,
-                              );
-                              dispatch(setKeyValuePairs(arrCp));
-                            }}
-                            disabled={keyValuePairs.length <= 1}
-                          >
-                            <RemoveIcon />
-                          </IconButton>
-                        </div>
-                      </Grid>
+                      <Box className={"overlayAction"}>
+                        <IconButton
+                          size={"small"}
+                          onClick={() => dispatch(removeToleration(i))}
+                          disabled={tolerations.length <= 1}
+                        >
+                          <RemoveIcon />
+                        </IconButton>
+                      </Box>
                     </Grid>
                   );
                 })}
             </Grid>
           </Grid>
-        </Fragment>
-      )}
-      <Grid item xs={12} className={classes.affinityConfigField}>
-        <Grid item className={classes.affinityFieldLabel}>
-          <h3>Tolerations</h3>
-          <span className={classes.error}>
-            {validationErrors["tolerations"]}
-          </span>
-          <Grid container>
-            {tolerations &&
-              tolerations.map((tol, i) => {
-                return (
-                  <Grid
-                    item
-                    xs={12}
-                    className={classes.affinityRow}
-                    key={`affinity-keyVal-${i.toString()}`}
-                  >
-                    <TolerationSelector
-                      effect={tol.effect}
-                      onEffectChange={(value) => {
-                        updateToleration(i, "effect", value);
-                      }}
-                      tolerationKey={tol.key}
-                      onTolerationKeyChange={(value) => {
-                        updateToleration(i, "key", value);
-                      }}
-                      operator={tol.operator}
-                      onOperatorChange={(value) => {
-                        updateToleration(i, "operator", value);
-                      }}
-                      value={tol.value}
-                      onValueChange={(value) => {
-                        updateToleration(i, "value", value);
-                      }}
-                      tolerationSeconds={tol.tolerationSeconds?.seconds || 0}
-                      onSecondsChange={(value) => {
-                        updateToleration(i, "tolerationSeconds", {
-                          seconds: value,
-                        });
-                      }}
-                      index={i}
-                    />
-                    <div className={classes.overlayAction}>
-                      <IconButton
-                        size={"small"}
-                        onClick={() => {
-                          dispatch(addNewToleration());
-                        }}
-                        disabled={i !== tolerations.length - 1}
-                      >
-                        <AddIcon />
-                      </IconButton>
-                    </div>
-
-                    <div className={classes.overlayAction}>
-                      <IconButton
-                        size={"small"}
-                        onClick={() => dispatch(removeToleration(i))}
-                        disabled={tolerations.length <= 1}
-                      >
-                        <RemoveIcon />
-                      </IconButton>
-                    </div>
-                  </Grid>
-                );
-              })}
-          </Grid>
         </Grid>
-      </Grid>
-    </Paper>
+      </FormLayout>
+    </AffinityContainer>
   );
 };
 
-export default withStyles(styles)(Affinity);
+export default Affinity;

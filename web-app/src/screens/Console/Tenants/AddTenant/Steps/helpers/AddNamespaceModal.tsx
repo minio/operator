@@ -14,37 +14,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React from "react";
+import React, { Fragment } from "react";
 import { useSelector } from "react-redux";
-import { DialogContentText, LinearProgress } from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import {
-  deleteDialogStyles,
-  modalBasic,
-} from "../../../../Common/FormComponents/common/styleLibrary";
+import { ConfirmModalIcon, ProgressBar } from "mds";
 import ConfirmDialog from "../../../../Common/ModalWrapper/ConfirmDialog";
-import { ConfirmModalIcon } from "mds";
 import { AppState, useAppDispatch } from "../../../../../../store";
 import { closeAddNSModal } from "../../createTenantSlice";
-import makeStyles from "@mui/styles/makeStyles";
 import { createNamespaceAsync } from "../../thunks/namespaceThunks";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    wrapText: {
-      maxWidth: "200px",
-      whiteSpace: "normal",
-      wordWrap: "break-word",
-    },
-    ...modalBasic,
-    ...deleteDialogStyles,
-  }),
-);
 
 const AddNamespaceModal = () => {
   const dispatch = useAppDispatch();
-  const classes = useStyles();
 
   const namespace = useSelector(
     (state: AppState) => state.createTenant.fields.nameTenant.namespace,
@@ -73,14 +52,21 @@ const AddNamespaceModal = () => {
         dispatch(closeAddNSModal());
       }}
       confirmationContent={
-        <React.Fragment>
-          {addNamespaceLoading && <LinearProgress />}
-          <DialogContentText>
-            Are you sure you want to add a namespace called
-            <br />
-            <b className={classes.wrapText}>{namespace}</b>?
-          </DialogContentText>
-        </React.Fragment>
+        <Fragment>
+          {addNamespaceLoading && <ProgressBar />}
+          Are you sure you want to add a namespace called
+          <br />
+          <b
+            style={{
+              maxWidth: "200px",
+              whiteSpace: "normal",
+              wordWrap: "break-word",
+            }}
+          >
+            {namespace}
+          </b>
+          ?
+        </Fragment>
       }
     />
   );

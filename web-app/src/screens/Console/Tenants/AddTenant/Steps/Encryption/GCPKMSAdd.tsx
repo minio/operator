@@ -15,32 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback } from "react";
-import Grid from "@mui/material/Grid";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
+import { InputBox } from "mds";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import {
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import makeStyles from "@mui/styles/makeStyles";
 import { updateAddField } from "../../createTenantSlice";
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  }),
-);
-
 const GCPKMSAdd = () => {
-  const classes = useStyles();
   const dispatch = useAppDispatch();
 
   const gcpProjectID = useSelector(
@@ -74,83 +54,69 @@ const GCPKMSAdd = () => {
 
   return (
     <Fragment>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="gcp_project_id"
-          name="gcp_project_id"
+      <InputBox
+        id="gcp_project_id"
+        name="gcp_project_id"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("gcpProjectID", e.target.value);
+        }}
+        label="Project ID"
+        tooltip="ProjectID is the GCP project ID."
+        value={gcpProjectID}
+      />
+      <InputBox
+        id="gcp_endpoint"
+        name="gcp_endpoint"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("gcpEndpoint", e.target.value);
+        }}
+        label="Endpoint"
+        tooltip="Endpoint is the GCP project ID. If empty defaults to: secretmanager.googleapis.com:443"
+        value={gcpEndpoint}
+      />
+      <fieldset className={"inputItem"}>
+        <legend>Credentials</legend>
+        <InputBox
+          id="gcp_client_email"
+          name="gcp_client_email"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("gcpProjectID", e.target.value);
+            updateField("gcpClientEmail", e.target.value);
           }}
-          label="Project ID"
-          tooltip="ProjectID is the GCP project ID."
-          value={gcpProjectID}
+          label="Client Email"
+          tooltip="Is the Client email of the GCP service account used to access the SecretManager"
+          value={gcpClientEmail}
         />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="gcp_endpoint"
-          name="gcp_endpoint"
+        <InputBox
+          id="gcp_client_id"
+          name="gcp_client_id"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("gcpEndpoint", e.target.value);
+            updateField("gcpClientID", e.target.value);
           }}
-          label="Endpoint"
-          tooltip="Endpoint is the GCP project ID. If empty defaults to: secretmanager.googleapis.com:443"
-          value={gcpEndpoint}
+          label="Client ID"
+          tooltip="Is the Client ID of the GCP service account used to access the SecretManager"
+          value={gcpClientID}
         />
-      </Grid>
-      <Grid item xs={12}>
-        <fieldset className={classes.fieldGroup}>
-          <legend className={classes.descriptionText}>Credentials</legend>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="gcp_client_email"
-              name="gcp_client_email"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("gcpClientEmail", e.target.value);
-              }}
-              label="Client Email"
-              tooltip="Is the Client email of the GCP service account used to access the SecretManager"
-              value={gcpClientEmail}
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="gcp_client_id"
-              name="gcp_client_id"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("gcpClientID", e.target.value);
-              }}
-              label="Client ID"
-              tooltip="Is the Client ID of the GCP service account used to access the SecretManager"
-              value={gcpClientID}
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="gcp_private_key_id"
-              name="gcp_private_key_id"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("gcpPrivateKeyID", e.target.value);
-              }}
-              label="Private Key ID"
-              tooltip="Is the private key ID of the GCP service account used to access the SecretManager"
-              value={gcpPrivateKeyID}
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="gcp_private_key"
-              name="gcp_private_key"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("gcpPrivateKey", e.target.value);
-              }}
-              label="Private Key"
-              tooltip="Is the private key of the GCP service account used to access the SecretManager"
-              value={gcpPrivateKey}
-            />
-          </Grid>
-        </fieldset>
-      </Grid>
+        <InputBox
+          id="gcp_private_key_id"
+          name="gcp_private_key_id"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            updateField("gcpPrivateKeyID", e.target.value);
+          }}
+          label="Private Key ID"
+          tooltip="Is the private key ID of the GCP service account used to access the SecretManager"
+          value={gcpPrivateKeyID}
+        />
+        <InputBox
+          id="gcp_private_key"
+          name="gcp_private_key"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            updateField("gcpPrivateKey", e.target.value);
+          }}
+          label="Private Key"
+          tooltip="Is the private key of the GCP service account used to access the SecretManager"
+          value={gcpPrivateKey}
+        />
+      </fieldset>
     </Fragment>
   );
 };
