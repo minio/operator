@@ -734,27 +734,34 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
 	for _, secret := range userCredentialSecrets {
-		consoleAccessKey, ok := secret.Data["CONSOLE_ACCESS_KEY"]
+		accessKey, ok := secret.Data["ACCESS_KEY"]
 		if !ok {
-			return errors.New("CONSOLE_ACCESS_KEY not provided")
+			return errors.New("ACCESS_KEY not provided")
 		}
 		// remove spaces and line breaks from access key
-		userAccessKey := strings.TrimSpace(string(consoleAccessKey))
+		userAccessKey := strings.TrimSpace(string(accessKey))
 		// skipCreateUser handles the scenario of LDAP users that are
 		// not created in MinIO but still need to have a policy assigned
 		if !skipCreateUser {
-			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
+			secretKey, ok := secret.Data["SECRET_KEY"]
 			// remove spaces and line breaks from secret key
-			userSecretKey := strings.TrimSpace(string(consoleSecretKey))
+			userSecretKey := strings.TrimSpace(string(secretKey))
 			if !ok {
-				return errors.New("CONSOLE_SECRET_KEY not provided")
+				return errors.New("SECRET_KEY not provided")
 			}
 			if err := madmClnt.AddUser(ctx, userAccessKey, userSecretKey); err != nil {
 				return err
 			}
 		}
-		if err := madmClnt.SetPolicy(ctx, ConsoleAdminPolicyName, userAccessKey, false); err != nil {
-			return err
+
+		// create user policy if one was passed in
+		var userPolicy string
+		policy, ok := secret.Data["POLICY"]
+	        userPolicy = strings.TrimSpace(string(consolePolicy))
+                if ok {
+			if err := madmClnt.SetPolicy(ctx, userPolicy, userAccessKey, false); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
