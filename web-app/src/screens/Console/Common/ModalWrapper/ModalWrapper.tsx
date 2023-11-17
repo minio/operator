@@ -15,55 +15,32 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import IconButton from "@mui/material/IconButton";
-import Snackbar from "@mui/material/Snackbar";
-import { Dialog, DialogContent, DialogTitle } from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import {
-  deleteDialogStyles,
-  snackBarCommon,
-} from "../FormComponents/common/styleLibrary";
+import { ModalBox, Snackbar } from "mds";
+import { CSSObject } from "styled-components";
 import { AppState, useAppDispatch } from "../../../../store";
-import CloseIcon from "@mui/icons-material/Close";
-import MainError from "../MainError/MainError";
 import { setModalSnackMessage } from "../../../../systemSlice";
+import MainError from "../MainError/MainError";
 
 interface IModalProps {
-  classes: any;
   onClose: () => void;
   modalOpen: boolean;
   title: string | React.ReactNode;
   children: any;
   wideLimit?: boolean;
-  noContentPadding?: boolean;
   titleIcon?: React.ReactNode;
+  iconColor?: "default" | "delete" | "accept";
+  sx?: CSSObject;
 }
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...deleteDialogStyles,
-    content: {
-      padding: 25,
-      paddingBottom: 0,
-    },
-    customDialogSize: {
-      width: "100%",
-      maxWidth: 765,
-    },
-    ...snackBarCommon,
-  });
 
 const ModalWrapper = ({
   onClose,
   modalOpen,
   title,
   children,
-  classes,
   wideLimit = true,
-  noContentPadding,
   titleIcon = null,
+  iconColor = "default",
+  sx,
 }: IModalProps) => {
   const dispatch = useAppDispatch();
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
@@ -94,14 +71,6 @@ const ModalWrapper = ({
     dispatch(setModalSnackMessage(""));
   };
 
-  const customSize = wideLimit
-    ? {
-        classes: {
-          paper: classes.customDialogSize,
-        },
-      }
-    : { maxWidth: "lg" as const, fullWidth: true };
-
   let message = "";
 
   if (modalSnackMessage) {
@@ -115,60 +84,28 @@ const ModalWrapper = ({
   }
 
   return (
-    <Dialog
+    <ModalBox
+      onClose={onClose}
       open={modalOpen}
-      classes={classes}
-      {...customSize}
-      scroll={"paper"}
-      onClose={(event, reason) => {
-        if (reason !== "backdropClick") {
-          onClose(); // close on Esc but not on click outside
-        }
-      }}
-      className={classes.root}
+      title={title}
+      titleIcon={titleIcon}
+      widthLimit={wideLimit}
+      sx={sx}
+      iconColor={iconColor}
     >
-      <DialogTitle className={classes.title}>
-        <div className={classes.titleText}>
-          {titleIcon} {title}
-        </div>
-        <div className={classes.closeContainer}>
-          <IconButton
-            aria-label="close"
-            id={"close"}
-            className={classes.closeButton}
-            onClick={onClose}
-            disableRipple
-            size="small"
-          >
-            <CloseIcon />
-          </IconButton>
-        </div>
-      </DialogTitle>
-
       <MainError isModal={true} />
       <Snackbar
+        onClose={closeSnackBar}
         open={openSnackbar}
-        className={classes.snackBarModal}
-        onClose={() => {
-          closeSnackBar();
-        }}
         message={message}
-        ContentProps={{
-          className: `${classes.snackBar} ${
-            modalSnackMessage && modalSnackMessage.type === "error"
-              ? classes.errorSnackBar
-              : ""
-          }`,
-        }}
-        autoHideDuration={
-          modalSnackMessage && modalSnackMessage.type === "error" ? 10000 : 5000
-        }
+        mode={"inline"}
+        variant={modalSnackMessage.type === "error" ? "error" : "default"}
+        autoHideDuration={modalSnackMessage.type === "error" ? 10 : 5}
+        condensed
       />
-      <DialogContent className={noContentPadding ? "" : classes.content}>
-        {children}
-      </DialogContent>
-    </Dialog>
+      {children}
+    </ModalBox>
   );
 };
 
-export default withStyles(styles)(ModalWrapper);
+export default ModalWrapper;

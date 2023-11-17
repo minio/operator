@@ -16,6 +16,7 @@
 
 import React, { Fragment, useEffect, useState } from "react";
 import { connect } from "react-redux";
+import { Box, breakPoints, ValuePair } from "mds";
 import { Theme } from "@mui/material/styles";
 import createStyles from "@mui/styles/createStyles";
 import withStyles from "@mui/styles/withStyles";
@@ -23,7 +24,6 @@ import {
   actionsTray,
   searchField,
 } from "../../../Common/FormComponents/common/styleLibrary";
-import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import Chip from "@mui/material/Chip";
 import Tabs from "@mui/material/Tabs";
@@ -33,7 +33,6 @@ import { setErrorSnackMessage } from "../../../../../systemSlice";
 import { ErrorResponseHandler } from "../../../../../common/types";
 import api from "../../../../../common/api";
 import { AppState, useAppDispatch } from "../../../../../store";
-import LabelValuePair from "../../../Common/UsageBarWrapper/LabelValuePair";
 import {
   DescribeResponse,
   IPVCDescribeAnnotationsProps,
@@ -51,10 +50,14 @@ const styles = (theme: Theme) =>
 
 const twoColCssGridLayoutConfig = {
   display: "grid",
-  gridTemplateColumns: { xs: "1fr", sm: "2fr 1fr" },
-  gridAutoFlow: { xs: "dense", sm: "row" },
+  gridTemplateColumns: "2fr 1fr",
+  gridAutoFlow: "row",
   gap: 2,
-  padding: "15px",
+  padding: 15,
+  [`@media (max-width: ${breakPoints.sm}px)`]: {
+    gridTemplateColumns: "1fr",
+    gridAutoFlow: "dense",
+  },
 };
 
 const HeaderSection = ({ title }: { title: string }) => {
@@ -77,27 +80,24 @@ const PVCDescribeSummary = ({ describeInfo }: IPVCDescribeSummaryProps) => {
       <div id="pvc-describe-summary-content">
         <HeaderSection title={"Summary"} />
         <Box sx={{ ...twoColCssGridLayoutConfig }}>
-          <LabelValuePair label={"Name"} value={describeInfo.name} />
-          <LabelValuePair label={"Namespace"} value={describeInfo.namespace} />
-          <LabelValuePair label={"Capacity"} value={describeInfo.capacity} />
-          <LabelValuePair label={"Status"} value={describeInfo.status} />
-          <LabelValuePair
+          <ValuePair label={"Name"} value={describeInfo.name} />
+          <ValuePair label={"Namespace"} value={describeInfo.namespace} />
+          <ValuePair label={"Capacity"} value={describeInfo.capacity} />
+          <ValuePair label={"Status"} value={describeInfo.status} />
+          <ValuePair
             label={"Storage Class"}
             value={describeInfo.storageClass}
           />
-          <LabelValuePair
+          <ValuePair
             label={"Access Modes"}
             value={describeInfo.accessModes.join(", ")}
           />
-          <LabelValuePair
+          <ValuePair
             label={"Finalizers"}
             value={describeInfo.finalizers.join(", ")}
           />
-          <LabelValuePair label={"Volume"} value={describeInfo.volume} />
-          <LabelValuePair
-            label={"Volume Mode"}
-            value={describeInfo.volumeMode}
-          />
+          <ValuePair label={"Volume"} value={describeInfo.volume} />
+          <ValuePair label={"Volume Mode"} value={describeInfo.volumeMode} />
         </Box>
       </div>
     </Fragment>

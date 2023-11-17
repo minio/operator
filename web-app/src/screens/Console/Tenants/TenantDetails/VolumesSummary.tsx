@@ -29,8 +29,7 @@ import {
 import { IStoragePVCs } from "../../Storage/types";
 import { ErrorResponseHandler } from "../../../../common/types";
 import api from "../../../../common/api";
-import TableWrapper from "../../Common/TableWrapper/TableWrapper";
-import { SearchIcon } from "mds";
+import { DataTable, SearchIcon } from "mds";
 import { IPodListElement } from "../ListTenants/types";
 import withSuspense from "../../Common/Components/withSuspense";
 import { AppState, useAppDispatch } from "../../../../store";
@@ -150,7 +149,7 @@ const TenantVolumes = ({ classes }: ITenantVolumesProps) => {
           />
         </Grid>
         <Grid item xs={12} className={classes.tableBlock}>
-          <TableWrapper
+          <DataTable
             itemActions={[
               { type: "view", onClick: PVCViewAction },
               { type: "delete", onClick: confirmDeletePVC },
@@ -179,7 +178,7 @@ const TenantVolumes = ({ classes }: ITenantVolumesProps) => {
             records={filteredRecords}
             entityName="PVCs"
             idField="name"
-            customPaperHeight={classes.tableWrapper}
+            customPaperHeight={"calc(100vh - 400px)"}
           />
         </Grid>
       </Grid>

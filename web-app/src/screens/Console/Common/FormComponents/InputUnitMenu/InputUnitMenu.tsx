@@ -15,34 +15,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment } from "react";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { selectorTypes } from "../SelectWrapper/SelectWrapper";
-import { Menu, MenuItem } from "@mui/material";
+import { DropdownSelector, SelectorType } from "mds";
+import styled from "styled-components";
+import get from "lodash/get";
 
 interface IInputUnitBox {
-  classes: any;
   id: string;
   unitSelected: string;
-  unitsList: selectorTypes[];
+  unitsList: SelectorType[];
   disabled?: boolean;
   onUnitChange?: (newValue: string) => void;
 }
 
-const styles = (theme: Theme) =>
-  createStyles({
-    buttonTrigger: {
-      border: "#F0F2F2 1px solid",
-      borderRadius: 3,
-      color: "#838383",
-      backgroundColor: "#fff",
-      fontSize: 12,
-    },
-  });
+const UnitMenuButton = styled.button(({ theme }) => ({
+  border: `1px solid ${get(theme, "borderColor", "#E2E2E2")}`,
+  borderRadius: 3,
+  color: get(theme, "secondaryText", "#5B5C5C"),
+  backgroundColor: get(theme, "boxBackground", "#FBFAFA"),
+  fontSize: 12,
+}));
 
 const InputUnitMenu = ({
-  classes,
   id,
   unitSelected,
   unitsList,
@@ -63,46 +56,31 @@ const InputUnitMenu = ({
 
   return (
     <Fragment>
-      <button
+      <UnitMenuButton
         id={`${id}-button`}
         aria-controls={`${id}-menu`}
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
         onClick={handleClick}
-        className={classes.buttonTrigger}
         disabled={disabled}
         type={"button"}
       >
         {unitSelected}
-      </button>
-      <Menu
-        id={`${id}-menu`}
-        aria-labelledby={`${id}-button`}
-        anchorEl={anchorEl}
-        open={open}
-        onClose={() => {
+      </UnitMenuButton>
+      <DropdownSelector
+        id={"upload-main-menu"}
+        options={unitsList}
+        selectedOption={""}
+        onSelect={(value) => handleClose(value)}
+        hideTriggerAction={() => {
           handleClose("");
         }}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "center",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "center",
-        }}
-      >
-        {unitsList.map((unit) => (
-          <MenuItem
-            onClick={() => handleClose(unit.value)}
-            key={`itemUnit-${unit.value}-${unit.label}`}
-          >
-            {unit.label}
-          </MenuItem>
-        ))}
-      </Menu>
+        open={open}
+        anchorEl={anchorEl}
+        anchorOrigin={"end"}
+      />
     </Fragment>
   );
 };
 
-export default withStyles(styles)(InputUnitMenu);
+export default InputUnitMenu;

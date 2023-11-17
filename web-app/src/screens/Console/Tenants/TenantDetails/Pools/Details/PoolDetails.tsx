@@ -18,12 +18,16 @@ import React, { Fragment } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AppState } from "../../../../../../store";
-import { Box } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import LabelValuePair from "../../../../Common/UsageBarWrapper/LabelValuePair";
 import { niceBytesInt } from "../../../../../../common/utils";
-import StackRow from "../../../../Common/UsageBarWrapper/StackRow";
-import { Button, EditTenantIcon } from "mds";
+import {
+  Box,
+  breakPoints,
+  Button,
+  EditTenantIcon,
+  SectionTitle,
+  ValuePair,
+} from "mds";
 import { NodeSelectorTerm } from "../../../../../../api/operatorApi";
 
 const stylingLayout = {
@@ -35,10 +39,14 @@ const stylingLayout = {
 
 const twoColCssGridLayoutConfig = {
   display: "grid",
-  gridTemplateColumns: { xs: "1fr", sm: "2fr 1fr" },
-  gridAutoFlow: { xs: "dense", sm: "row" },
+  gridTemplateColumns: "2fr 1fr",
+  gridAutoFlow: "row",
   gap: 2,
   padding: "15px",
+  [`@media (max-width: ${breakPoints.sm}px)`]: {
+    gridTemplateColumns: "1fr",
+    gridAutoFlow: "dense",
+  },
 };
 
 const PoolDetails = () => {
@@ -69,49 +77,39 @@ const PoolDetails = () => {
     }
   }
 
-  const HeaderSection = ({ title }: { title: string }) => {
-    return (
-      <StackRow
-        sx={{
-          borderBottom: "1px solid #eaeaea",
-          margin: 0,
-          marginBottom: "20px",
-        }}
-      >
-        <h3>{title}</h3>
-      </StackRow>
-    );
-  };
-
   return (
     <Fragment>
       <Grid item xs={12} sx={{ ...stylingLayout }}>
-        <div style={{ position: "absolute", right: 20, top: 18 }}>
-          <Button
-            icon={<EditTenantIcon />}
-            onClick={() => {
-              navigate(
-                `/namespaces/${tenant?.namespace || ""}/tenants/${
-                  tenant?.name || ""
-                }/edit-pool`,
-              );
-            }}
-            label={"Edit Pool"}
-            id={"editPool"}
-          />
-        </div>
-        <HeaderSection title={"Pool Configuration"} />
+        <SectionTitle
+          separator
+          actions={
+            <Button
+              icon={<EditTenantIcon />}
+              onClick={() => {
+                navigate(
+                  `/namespaces/${tenant?.namespace || ""}/tenants/${
+                    tenant?.name || ""
+                  }/edit-pool`,
+                );
+              }}
+              label={"Edit Pool"}
+              id={"editPool"}
+            />
+          }
+        >
+          Pool Configuration
+        </SectionTitle>
         <Box sx={{ ...twoColCssGridLayoutConfig }}>
-          <LabelValuePair label={"Pool Name"} value={poolInformation.name} />
-          <LabelValuePair
+          <ValuePair label={"Pool Name"} value={poolInformation.name} />
+          <ValuePair
             label={"Total Volumes"}
             value={poolInformation.volumes_per_server}
           />
-          <LabelValuePair
+          <ValuePair
             label={"Volumes per server"}
             value={poolInformation.volumes_per_server}
           />
-          <LabelValuePair
+          <ValuePair
             label={"Capacity"}
             value={niceBytesInt(
               poolInformation.volumes_per_server *
@@ -119,20 +117,20 @@ const PoolDetails = () => {
                 poolInformation.volume_configuration.size,
             )}
           />
-          <LabelValuePair
+          <ValuePair
             label={"Runtime Class Name"}
             value={poolInformation.runtimeClassName}
           />
         </Box>
-        <HeaderSection title={"Resources"} />
+        <SectionTitle separator>Resources</SectionTitle>
         <Box sx={{ ...twoColCssGridLayoutConfig }}>
           {poolInformation.resources && (
             <Fragment>
-              <LabelValuePair
+              <ValuePair
                 label={"CPU"}
                 value={poolInformation.resources?.requests?.cpu}
               />
-              <LabelValuePair
+              <ValuePair
                 label={"Memory"}
                 value={niceBytesInt(
                   poolInformation.resources?.requests?.memory!,
@@ -140,11 +138,11 @@ const PoolDetails = () => {
               />
             </Fragment>
           )}
-          <LabelValuePair
+          <ValuePair
             label={"Volume Size"}
             value={niceBytesInt(poolInformation.volume_configuration.size)}
           />
-          <LabelValuePair
+          <ValuePair
             label={"Storage Class Name"}
             value={poolInformation.volume_configuration.storage_class_name}
           />
@@ -155,11 +153,11 @@ const PoolDetails = () => {
             poolInformation.securityContext.runAsGroup ||
             poolInformation.securityContext.fsGroup) && (
             <Fragment>
-              <HeaderSection title={"Security Context"} />
+              <SectionTitle separator>Security Context</SectionTitle>
               <Box>
                 {poolInformation.securityContext.runAsNonRoot !== null && (
                   <Box sx={{ ...twoColCssGridLayoutConfig }}>
-                    <LabelValuePair
+                    <ValuePair
                       label={"Run as Non Root"}
                       value={
                         poolInformation.securityContext.runAsNonRoot
@@ -171,28 +169,37 @@ const PoolDetails = () => {
                 )}
                 <Box
                   sx={{
-                    ...twoColCssGridLayoutConfig,
-                    gridTemplateColumns: {
-                      xs: "1fr",
-                      sm: "2fr 1fr",
-                      md: "1fr 1fr 1fr",
+                    display: "grid",
+                    gridTemplateColumns: "2fr 1fr",
+                    gridAutoFlow: "row",
+                    gap: 2,
+                    padding: "15px",
+                    [`@media (max-width: ${breakPoints.sm}px)`]: {
+                      gridTemplateColumns: "1fr",
+                      gridAutoFlow: "dense",
+                    },
+                    [`@media (max-width: ${breakPoints.md}px)`]: {
+                      gridTemplateColumns: "2fr 1fr",
+                    },
+                    [`@media (max-width: ${breakPoints.lg}px)`]: {
+                      gridTemplateColumns: "1fr 1fr 1fr",
                     },
                   }}
                 >
                   {poolInformation.securityContext.runAsUser && (
-                    <LabelValuePair
+                    <ValuePair
                       label={"Run as User"}
                       value={poolInformation.securityContext.runAsUser}
                     />
                   )}
                   {poolInformation.securityContext.runAsGroup && (
-                    <LabelValuePair
+                    <ValuePair
                       label={"Run as Group"}
                       value={poolInformation.securityContext.runAsGroup}
                     />
                   )}
                   {poolInformation.securityContext.fsGroup && (
-                    <LabelValuePair
+                    <ValuePair
                       label={"FsGroup"}
                       value={poolInformation.securityContext.fsGroup}
                     />
@@ -201,20 +208,20 @@ const PoolDetails = () => {
               </Box>
             </Fragment>
           )}
-        <HeaderSection title={"Affinity"} />
+        <SectionTitle separator>Affinity</SectionTitle>
         <Box>
           <Box sx={{ ...twoColCssGridLayoutConfig }}>
-            <LabelValuePair label={"Type"} value={affinityType} />
+            <ValuePair label={"Type"} value={affinityType} />
             {poolInformation.affinity?.nodeAffinity &&
             poolInformation.affinity?.podAntiAffinity ? (
-              <LabelValuePair label={"With Pod Anti affinity"} value={"Yes"} />
+              <ValuePair label={"With Pod Anti affinity"} value={"Yes"} />
             ) : (
               <span />
             )}
           </Box>
           {poolInformation.affinity?.nodeAffinity && (
             <Fragment>
-              <HeaderSection title={"Labels"} />
+              <SectionTitle separator>Labels</SectionTitle>
               <ul>
                 {poolInformation.affinity?.nodeAffinity?.requiredDuringSchedulingIgnoredDuringExecution?.nodeSelectorTerms.map(
                   (term: NodeSelectorTerm) => {
@@ -234,7 +241,7 @@ const PoolDetails = () => {
         {poolInformation.tolerations &&
           poolInformation.tolerations.length > 0 && (
             <Fragment>
-              <HeaderSection title={"Tolerations"} />
+              <SectionTitle separator>Tolerations</SectionTitle>
               <Box>
                 <ul>
                   {poolInformation.tolerations.map((tolItem) => {

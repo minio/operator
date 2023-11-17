@@ -28,7 +28,6 @@ import { Box, Grid } from "@mui/material";
 import UpdateTenantModal from "./UpdateTenantModal";
 import { AppState, useAppDispatch } from "../../../../store";
 import SummaryUsageBar from "../../Common/UsageBarWrapper/SummaryUsageBar";
-import LabelValuePair from "../../Common/UsageBarWrapper/LabelValuePair";
 import {
   ActionLink,
   Button,
@@ -36,6 +35,7 @@ import {
   EditIcon,
   TierOnlineIcon,
   SectionTitle,
+  ValuePair,
 } from "mds";
 import EditDomains from "./EditDomains";
 import { useParams } from "react-router-dom";
@@ -235,10 +235,10 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
       <Grid container>
         <Grid item xs={12} sm={12} md={8}>
           <Grid item xs={12}>
-            <LabelValuePair label={"State:"} value={tenant?.currentState} />
+            <ValuePair label={"State:"} value={tenant?.currentState} />
           </Grid>
           <Grid item xs={12}>
-            <LabelValuePair
+            <ValuePair
               label="MinIO:"
               value={
                 <ActionLink
@@ -270,7 +270,7 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
             </h3>
           </Grid>
           <Grid item xs={12}>
-            <LabelValuePair
+            <ValuePair
               label={"Console:"}
               value={
                 <Fragment>
@@ -310,7 +310,7 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
             />
           </Grid>
           <Grid item xs={12}>
-            <LabelValuePair
+            <ValuePair
               label={`MinIO Endpoint${
                 tenant?.endpoints?.minio &&
                 tenant?.endpoints?.minio.length === 1
@@ -359,32 +359,28 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
         </Grid>
         <Grid item xs={12} sm={12} md={4}>
           <Grid item xs={12}>
-            <LabelValuePair label={"Instances:"} value={instances} />
+            <ValuePair label={"Instances:"} value={instances} />
           </Grid>
           <Grid item xs={12}>
-            <LabelValuePair
+            <ValuePair
               label={"Clusters:"}
               value={poolCount}
-              stkProps={{
-                style: {
-                  marginRight: 47,
-                },
+              sx={{
+                marginRight: 47,
               }}
             />
           </Grid>
           <Grid item xs={12}>
-            <LabelValuePair
+            <ValuePair
               label="Total Drives:"
               value={volumes}
-              stkProps={{
-                style: {
-                  marginRight: 43,
-                },
+              sx={{
+                marginRight: 43,
               }}
             />
           </Grid>
           <Grid item xs={12}>
-            <LabelValuePair
+            <ValuePair
               label={"Write Quorum:"}
               value={
                 tenant?.status?.write_quorum ? tenant?.status?.write_quorum : 0
@@ -392,32 +388,28 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
             />
           </Grid>
           <Grid item xs={12}>
-            <LabelValuePair
+            <ValuePair
               label={"Drives Online:"}
               value={
                 tenant?.status?.drives_online
                   ? tenant?.status?.drives_online
                   : 0
               }
-              stkProps={{
-                style: {
-                  marginRight: 8,
-                },
+              sx={{
+                marginRight: 8,
               }}
             />
           </Grid>
           <Grid item xs={12}>
-            <LabelValuePair
+            <ValuePair
               label={"Drives Offline:"}
               value={
                 tenant?.status?.drives_offline
                   ? tenant?.status?.drives_offline
                   : 0
               }
-              stkProps={{
-                style: {
-                  marginRight: 7,
-                },
+              sx={{
+                marginRight: 7,
               }}
             />
           </Grid>
@@ -426,28 +418,28 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
 
       <SectionTitle>Features</SectionTitle>
       <Box sx={{ ...featureRowStyle }}>
-        <LabelValuePair
-          orientation="row"
+        <ValuePair
+          direction="row"
           label="MinIO TLS:"
           value={getToggle(minioTLS, "tenant-tls")}
           {...featureItemStyleProps}
         />
-        <LabelValuePair
-          orientation="row"
+        <ValuePair
+          direction="row"
           label={"AD/LDAP:"}
           value={getToggle(adEnabled, "tenant-sts")}
           {...featureItemStyleProps}
         />
-        <LabelValuePair
-          orientation="row"
+        <ValuePair
+          direction="row"
           label={"Encryption:"}
           value={getToggle(encryptionEnabled, "tenant-enc")}
           {...featureItemStyleProps}
         />
       </Box>
       <Box sx={{ ...featureRowStyle }}>
-        <LabelValuePair
-          orientation="row"
+        <ValuePair
+          direction="row"
           label={"OpenID:"}
           value={getToggle(oidcEnabled, "tenant-oidc")}
           {...featureItemStyleProps}

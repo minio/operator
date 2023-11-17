@@ -27,12 +27,11 @@ import {
 import ConfirmDialog from "../Common/ModalWrapper/ConfirmDialog";
 import useApi from "../Common/Hooks/useApi";
 import React, { useState } from "react";
-import { InfoIcon, UsersIcon } from "mds";
+import { InfoIcon, UsersIcon, Box } from "mds";
 import { ErrorResponseHandler } from "../../../common/types";
 import InputBoxWrapper from "../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
 import { useAppDispatch } from "../../../store";
 import { setErrorSnackMessage } from "../../../systemSlice";
-import { Box } from "@mui/material";
 
 const styles = (theme: Theme) =>
   createStyles({

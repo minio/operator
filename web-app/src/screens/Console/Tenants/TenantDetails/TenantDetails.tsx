@@ -18,17 +18,19 @@ import React, { Fragment, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
   BackLink,
+  Box,
   Button,
   CircleIcon,
   EditIcon,
   MinIOTierIconXs,
+  PageLayout,
   RefreshIcon,
+  ScreenTitle,
+  Tabs,
   TenantsIcon,
   TrashIcon,
-  PageLayout,
 } from "mds";
 import {
-  Link,
   Navigate,
   Route,
   Routes,
@@ -47,9 +49,6 @@ import {
 } from "../../Common/FormComponents/common/styleLibrary";
 import { AppState, useAppDispatch } from "../../../../store";
 import { niceBytes } from "../../../../common/utils";
-import ScreenTitle from "../../Common/ScreenTitle/ScreenTitle";
-
-import VerticalTabs from "../../Common/VerticalTabs/VerticalTabs";
 import withSuspense from "../../Common/Components/withSuspense";
 import { IAM_PAGES } from "../../../../common/SecureComponent/permissions";
 import { setSnackBarMessage } from "../../../../systemSlice";
@@ -191,19 +190,6 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
     tenantNamespace,
   ]);
 
-  const splitSections = pathname.split("/");
-
-  let highlightedTab = splitSections[splitSections.length - 1] || "summary";
-  if (highlightedTab === ":podName" || highlightedTab === "pods") {
-    // It has SUB Route
-    highlightedTab = "pods";
-  }
-  const [activeTab, setActiveTab] = useState(highlightedTab);
-
-  useEffect(() => {
-    setActiveTab(highlightedTab);
-  }, [highlightedTab]);
-
   const editYaml = () => {
     navigate(getRoutePath("summary/yaml"));
   };
@@ -289,7 +275,9 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
               </Fragment>
             }
             actions={
-              <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Box
+                sx={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
+              >
                 <TooltipWrapper tooltip={"Delete"}>
                   <Button
                     id={"delete-tenant"}
@@ -336,14 +324,15 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                     icon={<RefreshIcon />}
                   />
                 </TooltipWrapper>
-              </div>
+              </Box>
             }
           />
         </Grid>
 
-        <VerticalTabs
-          selectedTab={activeTab}
-          isRouteTabs
+        <Tabs
+          currentTabOrPath={pathname}
+          useRouteTabs
+          onTabClick={(route) => navigate(route)}
           routes={
             <div className={classes.contentSpacer}>
               <Routes>
@@ -380,106 +369,94 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
               </Routes>
             </div>
           }
-        >
-          {{
-            tabConfig: {
-              label: "Summary",
-              value: "summary",
-              component: Link,
-              to: getRoutePath("summary"),
+          options={[
+            {
+              tabConfig: {
+                label: "Summary",
+                id: `details-summary`,
+                to: getRoutePath("summary"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Configuration",
-              value: "configuration",
-              component: Link,
-              to: getRoutePath("configuration"),
+            {
+              tabConfig: {
+                label: "Configuration",
+                id: `details-configuration`,
+                to: getRoutePath("configuration"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Metrics",
-              value: "metrics",
-              component: Link,
-              to: getRoutePath("metrics"),
+            {
+              tabConfig: {
+                label: "Metrics",
+                id: `details-metrics`,
+                to: getRoutePath("metrics"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Identity Provider",
-              value: "identity-provider",
-              component: Link,
-              to: getRoutePath("identity-provider"),
+            {
+              tabConfig: {
+                label: "Identity Provider",
+                id: `details-idp`,
+                to: getRoutePath("identity-provider"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Security",
-              value: "security",
-              component: Link,
-              to: getRoutePath("security"),
+            {
+              tabConfig: {
+                label: "Security",
+                id: `details-security`,
+                to: getRoutePath("security"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Encryption",
-              value: "encryption",
-              component: Link,
-              to: getRoutePath("encryption"),
+            {
+              tabConfig: {
+                label: "Encryption",
+                id: `details-encryption`,
+                to: getRoutePath("encryption"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Pools",
-              value: "pools",
-              component: Link,
-              to: getRoutePath("pools"),
+            {
+              tabConfig: {
+                label: "Pools",
+                id: `details-pools`,
+                to: getRoutePath("pools"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Pods",
-              value: "pods",
-              component: Link,
-              id: "tenant-pod-tab",
-              to: getRoutePath("pods"),
+            {
+              tabConfig: {
+                label: "Pods",
+                id: "tenant-pod-tab",
+                to: getRoutePath("pods"),
+              },
             },
-          }}
 
-          {{
-            tabConfig: {
-              label: "Volumes",
-              value: "volumes",
-              component: Link,
-              to: getRoutePath("volumes"),
+            {
+              tabConfig: {
+                label: "Volumes",
+                id: `details-volumes`,
+                to: getRoutePath("volumes"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Events",
-              value: "events",
-              component: Link,
-              to: getRoutePath("events"),
+            {
+              tabConfig: {
+                label: "Events",
+                id: `details-events`,
+                to: getRoutePath("events"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "Certificate Requests",
-              value: "csr",
-              component: Link,
-              to: getRoutePath("csr"),
+            {
+              tabConfig: {
+                label: "Certificate Requests",
+                id: `details-csr`,
+                to: getRoutePath("csr"),
+              },
             },
-          }}
-          {{
-            tabConfig: {
-              label: "License",
-              value: "license",
-              component: Link,
-              to: getRoutePath("license"),
+            {
+              tabConfig: {
+                label: "License",
+                id: `details-license`,
+                to: getRoutePath("license"),
+              },
             },
-          }}
-        </VerticalTabs>
+          ]}
+        />
       </PageLayout>
     </Fragment>
   );

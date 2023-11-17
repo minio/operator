@@ -42,13 +42,3 @@ export interface ISessionResponse {
   envConstants?: IEnvironmentContants | null;
   serverEndPoint?: string | undefined;
 }
-
-export interface ButtonProps {
-  label?: string;
-  variant?: "regular" | "callAction" | "secondary";
-  icon?: React.ReactNode;
-  iconLocation?: "start" | "end";
-  fullWidth?: boolean;
-  disabled?: boolean;
-  onClick?: React.MouseEventHandler<HTMLButtonElement>;
-}

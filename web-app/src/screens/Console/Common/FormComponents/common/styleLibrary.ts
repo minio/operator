@@ -101,43 +101,6 @@ export const tooltipHelper = {
   },
 };
 
-const checkBoxBasic = {
-  width: 16,
-  height: 16,
-  borderRadius: 2,
-};
-
-export const checkboxIcons = {
-  unCheckedIcon: {
-    ...checkBoxBasic,
-    border: "1px solid #c3c3c3",
-    boxShadow: "inset 0px 1px 3px rgba(0,0,0,0.1)",
-  },
-  checkedIcon: {
-    ...checkBoxBasic,
-    border: "1px solid #FFFFFF",
-    backgroundColor: "#4CCB92",
-    boxShadow: "inset 0px 1px 3px rgba(0,0,0,0.1)",
-    width: 14,
-    height: 14,
-    marginLeft: 1,
-    "&:before": {
-      content: "''",
-      display: "block",
-      marginLeft: -2,
-      marginTop: -2,
-      width: 16,
-      height: 16,
-      top: 0,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      borderRadius: 2,
-      border: "1px solid #ccc",
-    },
-  },
-};
-
 const radioBasic = {
   width: 16,
   height: 16,
@@ -241,65 +204,6 @@ export const searchField = {
     "&:focus-within": {
       borderColor: "rgba(0, 0, 0, 0.87)",
     },
-  },
-};
-
-export const predefinedList = {
-  prefinedContainer: {
-    display: "flex",
-    width: "100%",
-    alignItems: "center" as const,
-    margin: "15px 0 0",
-  },
-  predefinedTitle: {
-    color: "rgba(0, 0, 0, 0.87)",
-    display: "flex" as const,
-    overflow: "hidden" as const,
-    fontSize: 14,
-    maxWidth: 160,
-    textAlign: "left" as const,
-    marginRight: 10,
-    flexGrow: 0,
-    fontWeight: "normal" as const,
-  },
-  predefinedList: {
-    backgroundColor: "#fbfafa",
-    border: "#e5e5e5 1px solid",
-    padding: "12px 10px",
-    color: "#696969",
-    fontSize: 12,
-    fontWeight: 600,
-    minHeight: 41,
-    borderRadius: 4,
-  },
-  innerContent: {
-    width: "100%",
-    overflowX: "auto" as const,
-    whiteSpace: "nowrap" as const,
-    scrollbarWidth: "none" as const,
-    "&::-webkit-scrollbar": {
-      display: "none",
-    },
-  },
-  innerContentMultiline: {
-    width: "100%",
-    maxHeight: 100,
-    overflowY: "auto" as const,
-    scrollbarWidth: "none" as const,
-    "&::-webkit-scrollbar": {
-      display: "none",
-    },
-  },
-  includesActionButton: {
-    paddingRight: 45,
-    position: "relative" as const,
-  },
-  overlayShareOption: {
-    position: "absolute" as const,
-    width: 45,
-    right: 0,
-    top: "50%",
-    transform: "translate(0, -50%)",
   },
 };
 
@@ -501,13 +405,6 @@ export const inputFieldStyles = {
   },
 };
 
-export const inlineCheckboxes = {
-  inlineCheckboxes: {
-    display: "flex",
-    justifyContent: "flex-start",
-  },
-};
-
 export const pageContentStyles = {
   contentSpacer: {
     padding: "2rem",
@@ -668,16 +565,5 @@ export const modalStyleUtils: any = {
     maxHeight: "calc(100vh - 300px)",
     overflowY: "auto",
     paddingTop: 10,
-  },
-};
-
-// These classes are meant to be used as React.CSSProperties for TableWrapper
-export const TableRowPredefStyles: any = {
-  deleted: {
-    color: "#707070",
-    backgroundColor: "#f1f0f0",
-    "&.selected": {
-      color: "#b2b2b2",
-    },
   },
 };
