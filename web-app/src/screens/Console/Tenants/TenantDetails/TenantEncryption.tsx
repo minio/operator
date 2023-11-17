@@ -1737,7 +1737,7 @@ const TenantEncryption = ({ classes }: ITenantEncryption) => {
                 }
                 label="Image"
                 tooltip="KES container image"
-                placeholder="minio/kes:2023-10-03T00-48-37Z"
+                placeholder="minio/kes:2023-11-10T10-44-28Z"
                 value={image}
               />
             </Grid>
