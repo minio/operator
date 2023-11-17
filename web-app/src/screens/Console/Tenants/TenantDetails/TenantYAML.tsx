@@ -19,7 +19,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { LinearProgress } from "@mui/material";
 import { Theme } from "@mui/material/styles";
-import { Button } from "mds";
+import { Button, SectionTitle } from "mds";
 import Grid from "@mui/material/Grid";
 import createStyles from "@mui/styles/createStyles";
 import withStyles from "@mui/styles/withStyles";
@@ -33,7 +33,6 @@ import CodeMirrorWrapper from "../../Common/FormComponents/CodeMirrorWrapper/Cod
 import { setModalErrorSnackMessage } from "../../../../systemSlice";
 import { AppState, useAppDispatch } from "../../../../store";
 import { getTenantAsync } from "../thunks/tenantDetailsAsync";
-import SectionTitle from "../../Common/SectionTitle";
 
 const styles = (theme: Theme) =>
   createStyles({

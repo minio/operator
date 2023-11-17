@@ -27,11 +27,16 @@ import {
 import { Box, Grid } from "@mui/material";
 import UpdateTenantModal from "./UpdateTenantModal";
 import { AppState, useAppDispatch } from "../../../../store";
-import AButton from "../../Common/AButton/AButton";
 import SummaryUsageBar from "../../Common/UsageBarWrapper/SummaryUsageBar";
 import LabelValuePair from "../../Common/UsageBarWrapper/LabelValuePair";
-import SectionTitle from "../../Common/SectionTitle";
-import { Button, DisableIcon, EditIcon, TierOnlineIcon } from "mds";
+import {
+  ActionLink,
+  Button,
+  DisableIcon,
+  EditIcon,
+  TierOnlineIcon,
+  SectionTitle,
+} from "mds";
 import EditDomains from "./EditDomains";
 import { useParams } from "react-router-dom";
 import { getTenantAsync } from "../thunks/tenantDetailsAsync";
@@ -236,8 +241,8 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
             <LabelValuePair
               label="MinIO:"
               value={
-                <AButton
-                  style={{
+                <ActionLink
+                  sx={{
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "normal",
@@ -248,7 +253,7 @@ const TenantSummary = ({ classes }: ITenantsSummary) => {
                   }}
                 >
                   {tenant ? tenant.image : ""}
-                </AButton>
+                </ActionLink>
               }
             />
           </Grid>

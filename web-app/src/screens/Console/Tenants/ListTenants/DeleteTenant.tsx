@@ -22,8 +22,7 @@ import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBo
 import Grid from "@mui/material/Grid";
 import useApi from "../../Common/Hooks/useApi";
 import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
-import { ConfirmDeleteIcon } from "mds";
-import WarningMessage from "../../Common/WarningMessage/WarningMessage";
+import { ConfirmDeleteIcon, InformativeMessage } from "mds";
 import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import { useAppDispatch } from "../../../../store";
@@ -83,9 +82,10 @@ const DeleteTenant = ({
         <DialogContentText>
           {deleteVolumes && (
             <Grid item xs={12}>
-              <WarningMessage
+              <InformativeMessage
+                variant={"error"}
                 title={"WARNING"}
-                label={
+                message={
                   "Delete Volumes: Data will be permanently deleted. Please proceed with caution."
                 }
               />

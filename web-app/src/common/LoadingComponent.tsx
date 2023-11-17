@@ -15,20 +15,25 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
-import { Grid } from "@mui/material";
-import { Loader } from "mds";
+import { Loader, Grid } from "mds";
 
 const LoadingComponent = () => {
   return (
     <Grid
       container
-      spacing={0}
-      direction="column"
-      alignItems="center"
-      justifyContent="center"
-      style={{ minHeight: "100vh" }}
+      sx={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     >
-      <Grid item xs={3} style={{ textAlign: "center" }}>
+      <Grid
+        item
+        xs={3}
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      >
         <Loader style={{ width: 35, height: 35 }} />
       </Grid>
     </Grid>

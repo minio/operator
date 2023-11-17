@@ -15,17 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import { AddIcon, Button, HelpBox, RefreshIcon, TenantsIcon } from "mds";
+import {
+  ActionLink,
+  AddIcon,
+  Button,
+  HelpBox,
+  RefreshIcon,
+  TenantsIcon,
+  PageLayout,
+} from "mds";
 import Grid from "@mui/material/Grid";
 import { LinearProgress, SelectChangeEvent } from "@mui/material";
 import { NewServiceAccount } from "../../Common/CredentialsPrompt/types";
 import TenantListItem from "./TenantListItem";
-import AButton from "../../Common/AButton/AButton";
 
 import withSuspense from "../../Common/Components/withSuspense";
 import VirtualizedList from "../../Common/VirtualizedList/VirtualizedList";
 import SearchBox from "../../Common/SearchBox";
-import PageLayout from "../../Common/Layout/PageLayout";
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import SelectWrapper from "../../Common/FormComponents/SelectWrapper/SelectWrapper";
 import { useNavigate } from "react-router-dom";
@@ -318,13 +324,13 @@ const ListTenants = () => {
                           <br />
                           <br />
                           To get started,&nbsp;
-                          <AButton
+                          <ActionLink
                             onClick={() => {
                               navigate("/tenants/add");
                             }}
                           >
                             Create a Tenant.
-                          </AButton>
+                          </ActionLink>
                         </Fragment>
                       }
                     />

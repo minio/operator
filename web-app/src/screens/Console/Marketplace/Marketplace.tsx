@@ -16,7 +16,7 @@
 
 import React, { Fragment, useEffect, useState } from "react";
 import SetEmailModal from "./SetEmailModal";
-import PageLayout from "../Common/Layout/PageLayout";
+import { PageLayout } from "mds";
 import { selFeatures } from "../consoleSlice";
 import { useSelector } from "react-redux";
 import { Navigate, useNavigate } from "react-router-dom";
