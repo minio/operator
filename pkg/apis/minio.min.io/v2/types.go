@@ -323,10 +323,12 @@ type TenantSpec struct {
 	//
 	// Each referenced Kubernetes secret must include the following fields: +
 	//
-	// * `CONSOLE_ACCESS_KEY` - The "Username" for the MinIO user +
+	// * `ACCESS_KEY` - The "Username" for the MinIO user +
 	//
-	// * `CONSOLE_SECRET_KEY` - The "Password" for the MinIO user +
+	// * `SECRET_KEY` - The "Password" for the MinIO user +
 	//
+        // * `POLICY` = The "Policy" for the MinIO user +
+        //
 	// The Operator creates each user with the `consoleAdmin` policy by default. You can change the assigned policy after the Tenant starts. +
 	// +optional
 	Users []*corev1.LocalObjectReference `json:"users,omitempty"`
