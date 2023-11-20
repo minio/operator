@@ -231,8 +231,8 @@ func NewController(
 	policyBindingInformer stsInformers.PolicyBindingInformer,
 	serviceInformer coreinformers.ServiceInformer,
 	hostsTemplate,
-	operatorVersion string) *Controller {
-
+	operatorVersion string,
+) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
