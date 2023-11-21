@@ -46,7 +46,7 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 			if err != nil {
 				return err
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "MinIO Service Created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "SvcCreated", "MinIO Service Created")
 		} else {
 			return err
 		}
@@ -85,7 +85,7 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 		if err != nil {
 			return err
 		}
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Updated", "MinIO Service Updated")
+		c.recorder.Event(tenant, corev1.EventTypeNormal, "Updated", "MinIO Service Updated")
 	}
 	return err
 }

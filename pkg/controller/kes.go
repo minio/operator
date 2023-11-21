@@ -101,13 +101,13 @@ func (c *Controller) createKESCSR(ctx context.Context, tenant *miniov2.Tenant) e
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
 		return err
 	}
-	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "CSRCreated", "KES CSR Created")
+	c.recorder.Event(tenant, corev1.EventTypeNormal, "CSRCreated", "KES CSR Created")
 
 	// fetch certificate from CSR
 	certbytes, err := c.fetchCertificate(ctx, tenant.KESCSRName())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.KESCSRName(), err)
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("KES CSR Failed to create: %s", err))
+		c.recorder.Event(tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("KES CSR Failed to create: %s", err))
 		return err
 	}
 
@@ -214,10 +214,10 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 				klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
 				svc = services.NewHeadlessForKES(tenant)
 				if _, err = c.kubeClientSet.CoreV1().Services(svc.Namespace).Create(ctx, svc, cOpts); err != nil {
-					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "SvcFailed", fmt.Sprintf("KES Headless Service failed to create: %s", err))
+					c.recorder.Event(tenant, corev1.EventTypeWarning, "SvcFailed", fmt.Sprintf("KES Headless Service failed to create: %s", err))
 					return err
 				}
-				c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "KES Headless Service created")
+				c.recorder.Event(tenant, corev1.EventTypeNormal, "SvcCreated", "KES Headless Service created")
 			} else {
 				return err
 			}
@@ -244,10 +244,10 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 				klog.V(2).Infof("Creating a new KES StatefulSet for %q", nsName)
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ks, cOpts); err != nil {
 					klog.V(2).Infof(err.Error())
-					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("KES Statefulset failed to create: %s", err))
+					c.recorder.Event(tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("KES Statefulset failed to create: %s", err))
 					return err
 				}
-				c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "StsCreated", "KES Statefulset Created")
+				c.recorder.Event(tenant, corev1.EventTypeNormal, "StsCreated", "KES Statefulset Created")
 			} else {
 				return err
 			}
@@ -265,10 +265,10 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 					return err
 				}
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ks, uOpts); err != nil {
-					c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("KES Statefulset failed to update: %s", err))
+					c.recorder.Event(tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("KES Statefulset failed to update: %s", err))
 					return err
 				}
-				c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "StsUpdated", "KES Statefulset Updated")
+				c.recorder.Event(tenant, corev1.EventTypeNormal, "StsUpdated", "KES Statefulset Updated")
 			}
 		}
 	}
@@ -286,7 +286,7 @@ func (c *Controller) checkAndCreateMinIOClientCertificates(ctx context.Context, 
 			klog.V(2).Infof("Creating a new Client Certificate for MinIO, cluster %q", nsName)
 			if err = c.createMinIOClientCertificates(ctx, tenant); err != nil {
 				// we want to re-queue this tenant so we can re-check for the health at a later stage
-				c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CertFailed", fmt.Sprintf("KES MinIO Client Certificate failed to create: %s", err))
+				c.recorder.Event(tenant, corev1.EventTypeWarning, "CertFailed", fmt.Sprintf("KES MinIO Client Certificate failed to create: %s", err))
 				return err
 			}
 			return errors.New("waiting for minio client cert")

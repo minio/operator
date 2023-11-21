@@ -57,7 +57,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 			if err != nil {
 				return err
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Console Service Created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "SvcCreated", "Console Service Created")
 		} else {
 			return err
 		}
@@ -94,7 +94,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 		if err != nil {
 			return err
 		}
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Updated", "Console Service Updated")
+		c.recorder.Event(tenant, corev1.EventTypeNormal, "Updated", "Console Service Updated")
 	}
 	return err
 }
