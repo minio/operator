@@ -158,11 +158,11 @@ ExposeServices (`exposeServices`) defines the exposure of the MinIO object stora
 
 |*`minio`* __boolean__ 
 |*Optional* + 
- Directs the Operator to expose the MinIO service. Defaults to `true`. +
+ Directs the Operator to expose the MinIO service. Defaults to `false`. +
 
 |*`console`* __boolean__ 
 |*Optional* + 
- Directs the Operator to expose the MinIO Console service. Defaults to `true`. +
+ Directs the Operator to expose the MinIO Console service. Defaults to `false`. +
 
 |===
 
