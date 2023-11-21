@@ -101,6 +101,16 @@ CertificateStatus keeps track of all the certificates managed by the operator
 |===
 
 
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificateconfig"]
+==== CustomCertificateConfig 
+
+CustomCertificateConfig (`customCertificateConfig`) provides attributes associated of the TLS certificates manually added to the Operator as part of tenant creation. These fields contain no data if there are no custom TLS certificates.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificates[$$CustomCertificates$$]
+****
+
 
 
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificates"]
@@ -255,11 +265,11 @@ KESConfig (`kes`) defines the configuration of the https://github.com/minio/kes[
 
 |*`gcpCredentialSecretName`* __string__ 
 |*Optional* + 
- Specify the GCP default credentials to be used for KES to authenticate to GCP key store
+  Specify the GCP default credentials to be used for KES to authenticate to GCP key store
 
 |*`gcpWorkloadIdentityPool`* __string__ 
 |*Optional* + 
- Specify the name of the workload identity pool (This is required for generating service account token)
+  Specify the name of the workload identity pool (This is required for generating service account token)
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* + 

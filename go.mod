@@ -50,7 +50,7 @@ require (
 	k8s.io/api v0.28.1
 	k8s.io/apimachinery v0.28.1
 	k8s.io/client-go v0.28.1
-	k8s.io/code-generator v0.28.0
+	k8s.io/code-generator v0.28.4
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/kubectl v0.25.4
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
@@ -184,7 +184,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20230525234035-dd9d682886f9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230525234030-28d5490b6b19 // indirect
 	google.golang.org/grpc v1.56.3 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/h2non/filetype.v1 v1.0.5 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

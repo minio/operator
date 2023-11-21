@@ -34,6 +34,7 @@ echo ">> Temporary output directory ${TEMP_DIR}"
 
 # Ensure we can execute.
 chmod +x ${CODEGEN_PKG}/generate-groups.sh
+chmod +x ${CODEGEN_PKG}/generate-internal-groups.sh
 
 # generate the code with:
 # --output-base    because this script should also be able to run inside the vendor dir of
