@@ -66,6 +66,7 @@ type MinIOJobSpec struct {
 	Commands []CommandSpec `json:"commands"`
 }
 
+// CommandSpec (`spec`) defines the configuration of a MinioClient Command.
 type CommandSpec struct {
 	// *Required* +
 	//
@@ -81,6 +82,7 @@ type CommandSpec struct {
 	DependsOn []string `json:"dependsOn,omitempty"`
 }
 
+// MinioJobTenantRef Is the reference to the target tenant of the jobs
 type MinioJobTenantRef struct {
 	// *Required* +
 	Name string `json:"name"`
@@ -88,6 +90,7 @@ type MinioJobTenantRef struct {
 	Namespace string `json:"namespace"`
 }
 
+// MinIOJobStatus Status of MinioJob resource
 type MinIOJobStatus struct {
 	// *Required* +
 	Phase string `json:"phase"`
@@ -95,6 +98,7 @@ type MinIOJobStatus struct {
 	Commands []CommandStatus `json:"commands"`
 }
 
+// CommandStatus Status of MinioJob command execution
 type CommandStatus struct {
 	// +optional
 	Name string `json:"name"`

@@ -19,7 +19,7 @@ MinIOJob is an automated InfrastructureAsCode integrated with Minio Operator STS
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-commandspec"]
 ==== CommandSpec 
 
-
+CommandSpec (`spec`) defines the configuration of a MinioClient Command.
 
 .Appears In:
 ****
@@ -46,7 +46,7 @@ MinIOJob is an automated InfrastructureAsCode integrated with Minio Operator STS
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-commandstatus"]
 ==== CommandStatus 
 
-
+CommandStatus Status of MinioJob command execution
 
 .Appears In:
 ****
@@ -136,7 +136,7 @@ MinIOJobSpec (`spec`) defines the configuration of a MinIOJob object. +
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojobtenantref"]
 ==== MinioJobTenantRef 
 
-
+MinioJobTenantRef Is the reference to the target tenant of the jobs
 
 .Appears In:
 ****
