@@ -42,9 +42,9 @@ func (c *Controller) checkAndCreateServiceAccount(ctx context.Context, tenant *m
 			if err != nil {
 				return err
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SACreated", "Service Account Created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "SACreated", "Service Account Created")
 		} else {
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "SAFailed", fmt.Sprintf("Service Account could not be created: %s", err.Error()))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "SAFailed", fmt.Sprintf("Service Account could not be created: %s", err.Error()))
 			return err
 		}
 	}
@@ -57,9 +57,9 @@ func (c *Controller) checkAndCreateServiceAccount(ctx context.Context, tenant *m
 			if err != nil {
 				return err
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "RoleCreated", "Role Created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "RoleCreated", "Role Created")
 		} else {
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "RoleFailed", fmt.Sprintf("Role could not be created: %s", err.Error()))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "RoleFailed", fmt.Sprintf("Role could not be created: %s", err.Error()))
 			return err
 		}
 	}
@@ -71,9 +71,9 @@ func (c *Controller) checkAndCreateServiceAccount(ctx context.Context, tenant *m
 			if err != nil {
 				return err
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BindingCreated", "Role Binding Created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "BindingCreated", "Role Binding Created")
 		} else {
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BindingFailed", fmt.Sprintf("Role Binding could not be created: %s", err.Error()))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "BindingFailed", fmt.Sprintf("Role Binding could not be created: %s", err.Error()))
 			return err
 		}
 	}

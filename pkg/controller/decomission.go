@@ -126,7 +126,7 @@ func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, t
 		}
 
 		for _, ssName := range poolNamesRemoved {
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolRemoved", fmt.Sprintf("Tenant pool %s removed", ssName))
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "PoolRemoved", fmt.Sprintf("Tenant pool %s removed", ssName))
 			if err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Delete(ctx, ssName, metav1.DeleteOptions{}); err != nil {
 				if k8serrors.IsNotFound(err) {
 					continue

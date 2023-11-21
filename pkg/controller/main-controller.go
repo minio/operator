@@ -799,7 +799,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			if _, err2 := c.updateTenantStatus(ctx, tenant, err.Error(), 0); err2 != nil {
 				klog.V(2).Infof(err2.Error())
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "MissingCreds", "Tenant is missing root credentials")
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "MissingCreds", "Tenant is missing root credentials")
 			return WrapResult(Result{}, nil)
 		}
 		return WrapResult(Result{}, err)
@@ -905,7 +905,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			if err != nil {
 				return WrapResult(Result{}, err)
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Headless Service created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "SvcCreated", "Headless Service created")
 		} else {
 			return WrapResult(Result{}, err)
 		}
@@ -1073,7 +1073,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			if err != nil {
 				return WrapResult(Result{}, err)
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
 			// Report the pool is properly created
 			tenant.Status.Pools[i].State = miniov2.PoolCreated
 			// mark we are adding a new pool to the next block can act accordingly
@@ -1234,7 +1234,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				// Update failed, nothing needs to be changed in the container
 				return WrapResult(Result{}, err)
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Inplace update is disabled, falling back to performing only statefulset update.", fmt.Sprintf("Tenant %s", tenant.Name))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "Inplace update is disabled, falling back to performing only statefulset update.", fmt.Sprintf("Tenant %s", tenant.Name))
 		}
 		if err == nil {
 			if us.CurrentVersion != us.UpdatedVersion {
@@ -1282,7 +1282,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return WrapResult(Result{}, err)
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolUpdated", fmt.Sprintf("Tenant pool %s updated", pool.Name))
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "PoolUpdated", fmt.Sprintf("Tenant pool %s updated", pool.Name))
 		}
 
 	}
@@ -1389,22 +1389,22 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	if !tenant.Status.ProvisionedUsers && len(tenant.Spec.Users) > 0 {
 		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO users: %v", err)
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "UsersCreatedFailed", fmt.Sprintf("Users creation failed: %s", err))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "UsersCreatedFailed", fmt.Sprintf("Users creation failed: %s", err))
 			// retry after 5sec
 			return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 		}
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "UsersCreated", "Users created")
+		c.recorder.Event(tenant, corev1.EventTypeNormal, "UsersCreated", "Users created")
 	}
 
 	// Ensure we are only creating the bucket
 	if len(tenant.Spec.Buckets) > 0 {
 		if create, err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
 			// retry after 5sec
 			return WrapResult(Result{RequeueAfter: time.Second * 5}, err)
 		} else if create {
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
 		}
 	}
 

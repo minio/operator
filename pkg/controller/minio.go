@@ -373,13 +373,13 @@ func (c *Controller) createMinIOCSR(ctx context.Context, tenant *miniov2.Tenant)
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
 		return err
 	}
-	c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "CSRCreated", "MinIO CSR Created")
+	c.recorder.Event(tenant, corev1.EventTypeNormal, "CSRCreated", "MinIO CSR Created")
 
 	// fetch certificate from CSR
 	certbytes, err := c.fetchCertificate(ctx, tenant.MinIOCSRName())
 	if err != nil {
 		klog.Errorf("Unexpected error during the creation of the csr/%s: %v", tenant.MinIOCSRName(), err)
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("MinIO CSR Failed to create: %s", err))
+		c.recorder.Event(tenant, corev1.EventTypeWarning, "CSRFailed", fmt.Sprintf("MinIO CSR Failed to create: %s", err))
 		return err
 	}
 
