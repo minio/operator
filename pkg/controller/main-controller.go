@@ -208,7 +208,7 @@ const (
 	LeaderElection
 )
 
-// EventNotification - structure to send messages trough a channel regarding a error event to be handled
+// EventNotification - structure to send messages through a channel regarding a error event to be handled
 type EventNotification struct {
 	// Err the error to handle if any, null when is just a message
 	Err error
@@ -216,8 +216,23 @@ type EventNotification struct {
 	Type EventType
 }
 
-// NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, k8sClient client.Client, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+// NewController returns a new Operator Controller
+func NewController(
+	podName string,
+	namespacesToWatch set.StringSet,
+	kubeClientSet kubernetes.Interface,
+	k8sClient client.Client,
+	minioClientSet clientset.Interface,
+	promClient promclientset.Interface,
+	statefulSetInformer appsinformers.StatefulSetInformer,
+	deploymentInformer appsinformers.DeploymentInformer,
+	podInformer coreinformers.PodInformer,
+	tenantInformer informers.TenantInformer,
+	policyBindingInformer stsInformers.PolicyBindingInformer,
+	serviceInformer coreinformers.ServiceInformer,
+	hostsTemplate,
+	operatorVersion string,
+) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
