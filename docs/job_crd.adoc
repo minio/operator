@@ -1,0 +1,158 @@
+// Generated documentation. Please do not edit.
+:anchor_prefix: k8s-api
+
+[id="{p}-api-reference"]
+== API Reference
+
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-11-15T20-43-25Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2023-11-10T10-44-28Z]
+
+
+[id="{anchor_prefix}-job-min-io-v1alpha1"]
+=== job.min.io/v1alpha1
+
+Package v1alpha1 - The following parameters are specific to the `job.min.io/v1alpha1` MinIOJob CRD API
+MinIOJob is an automated InfrastructureAsCode integrated with Minio Operator STS to configure MinIO Tenants.
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-commandspec"]
+==== CommandSpec 
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojobspec[$$MinIOJobSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`op`* __string__ 
+|*Required* + 
+ Operation is the MinioClient Action
+
+|*`args`* __string array__ 
+|Args Arguments to pass to the action
+
+|*`dependsOn`* __string array__ 
+|DependsOn List of named `command` in this MinioJob that have to be scheduled and executed before this command runs
+
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-commandstatus"]
+==== CommandStatus 
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojobstatus[$$MinIOJobStatus$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`name`* __string__ 
+|
+
+|*`result`* __string__ 
+|*Required* +
+
+|*`message`* __string__ 
+|
+
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojob"]
+==== MinIOJob 
+
+MinIOJob is a top-level type. A client is created for it
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojoblist[$$MinIOJobList$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`metadata`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#objectmeta-v1-meta[$$ObjectMeta$$]__ 
+|Refer to Kubernetes API documentation for fields of `metadata`.
+
+
+|*`spec`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojobspec[$$MinIOJobSpec$$]__ 
+|*Required* + 
+ The root field for the MinIOJob object.
+
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojobspec"]
+==== MinIOJobSpec 
+
+MinIOJobSpec (`spec`) defines the configuration of a MinIOJob object. +
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojob[$$MinIOJob$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`serviceAccountName`* __string__ 
+|*Required* + 
+ Service Account name for the jobs to run
+
+|*`tenant`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojobtenantref[$$MinioJobTenantRef$$]__ 
+|*Required* + 
+ TenantRef Reference for minio Tenant to eun the jobs against
+
+|*`execution`* __string__ 
+|Execution order of the jobs, either `parallel` or `sequential`. Defaults to `parallel` if not provided.
+
+|*`failureStrategy`* __string__ 
+|FailureStrategy is the forward plan in case of the failure of one or more MinioJob pods Either `stopOnFailure` or `continueOnFailure`, defaults to `continueOnFailure`.
+
+|*`commands`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-commandspec[$$CommandSpec$$] array__ 
+|*Required* + 
+ Commands List of MinioClient commands
+
+|===
+
+
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojobtenantref"]
+==== MinioJobTenantRef 
+
+
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-job-min-io-v1alpha1-miniojobspec[$$MinIOJobSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`name`* __string__ 
+|*Required* +
+
+|*`namespace`* __string__ 
+|*Required* +
+
+|===
+
+
