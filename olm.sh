@@ -101,7 +101,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # as well as the default.
   {
     echo "  # Annotations to specify OCP versions compatibility."
-    echo "  com.redhat.openshift.versions: v4.8-v4.13"
+    echo "  com.redhat.openshift.versions: v4.8-v4.14"
     echo "  # Annotation to add default bundle channel as potential is declared"
     echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
     echo "  operatorframework.io/suggested-namespace: minio-operator"

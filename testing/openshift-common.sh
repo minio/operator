@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License, version 3,
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-#OPERATOR_SDK_VERSION=v1.22.2
 ARCH=$(go env GOARCH)
 OS=$(uname | awk '{print tolower($0)}')
 # shellcheck disable=SC2155
@@ -59,16 +58,22 @@ function setup_crc() {
 	# crc_libvirt_4.13.6_amd64
 
 	bundle_version="$1"
+	virtualization="libvirt"
+
 	if [ -z "$bundle_version" ]; then
-		bundle_version="4.13.6"
+		die "missing bundle version"
 	fi
-	bundle="crc_libvirt_${bundle_version}_amd64.crcbundle"
+	if [ "$OS" == "darwin" ]; then
+	  virtualization="vfkit"
+	fi
+	bundle="crc_${virtualization}_${bundle_version}_${ARCH}.crcbundle"
+	bundle_url="https://mirror.openshift.com/pub/openshift-v4/clients/crc/bundles/openshift/4.14.1/${bundle}"
 	echo -e "\e[34mConfiguring crc\e[0m"
 	export PATH="$TMP_BIN_DIR:$PATH"
 	crc config set consent-telemetry no
 	crc config set skip-check-root-user true
 	crc config set kubeadmin-password "crclocal"
-	crc setup
+	crc setup -b $bundle_url
 	crc start -b $bundle -c 12 -m 20480
 	eval $(crc oc-env)
 	eval $(crc podman-env)

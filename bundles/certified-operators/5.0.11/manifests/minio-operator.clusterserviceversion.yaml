@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio@sha256:7c98dbaba9132bb804c73baeb43f70db20a0c746277c88a9c9c9d3dc188127bb",
+            "image": "quay.io/minio/minio@sha256:91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -89,7 +89,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.11
+    containerImage: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
   name: minio-operator.v5.0.11
   namespace: minio-operator
 spec:
@@ -562,7 +562,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.11
+                    image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -571,7 +571,6 @@ spec:
                       - containerPort: 9443
                         name: https
                     resources: {}
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/certs
                         name: tls-certificates
@@ -641,7 +640,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "on"
-                    image: quay.io/minio/operator:v5.0.11
+                    image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -649,7 +648,6 @@ spec:
                         cpu: 200m
                         ephemeral-storage: 500Mi
                         memory: 256Mi
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/service-ca
                         name: openshift-service-ca
@@ -759,11 +757,11 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: minio/operator@sha256:58c5114003fdc38877db2dc6ca45bc4b16572cc3e40c2fcc20702c5ccaa01caa
+    - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
       name: console
-    - image: minio/operator@sha256:58c5114003fdc38877db2dc6ca45bc4b16572cc3e40c2fcc20702c5ccaa01caa
+    - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
       name: minio-operator
-    - image: quay.io/minio/minio@sha256:7c98dbaba9132bb804c73baeb43f70db20a0c746277c88a9c9c9d3dc188127bb
-      name: minio-7c98dbaba9132bb804c73baeb43f70db20a0c746277c88a9c9c9d3dc188127bb-annotation
+    - image: quay.io/minio/minio@sha256:91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3
+      name: minio-91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3-annotation
   version: 5.0.11
   replaces: minio-operator.v5.0.9
