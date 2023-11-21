@@ -74,7 +74,7 @@ function setup_crc() {
 	crc config set skip-check-root-user true
 	crc config set kubeadmin-password "crclocal"
 	crc setup -b $bundle_url
-	crc start -b $bundle -c 12 -m 20480
+	crc start -c 12 -m 20480
 	eval $(crc oc-env)
 	eval $(crc podman-env)
 	# this creates a symlink "podman" from the "podman-remote", as a hack to solve the a issue with opm:
@@ -84,7 +84,7 @@ function setup_crc() {
 	ln -sf $ocpath/podman-remote $ocpath/podman
 	try crc version
 	echo "Waiting for podman vm come online (5m timeout)"
-	try timeout 600 bash -c -- 'while ! podman image ls 2> /dev/null; do sleep 1 && printf ".";done'
+	timeout 600 bash -c -- 'while ! podman image ls 2> /dev/null; do sleep 1 && printf ".";done'
 	oc login -u kubeadmin -p crclocal https://api.crc.testing:6443 --insecure-skip-tls-verify=true
 }
 
@@ -152,6 +152,7 @@ function create_marketplace_catalog() {
 	yq -i ".metadata.annotations.containerImage |= (\"${operatorrepotag}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
 	yq -i ".spec.install.spec.deployments.[0].spec.template.spec.containers.[0].image |= (\"${operatorrepotag}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
 	yq -i ".spec.install.spec.deployments.[1].spec.template.spec.containers.[0].image |= (\"${operatorrepotag}\")" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
+	yq -i "del(.spec.replaces)" ${SCRIPT_DIR}/openshift/bundle/manifests/$package.clusterserviceversion.yaml
 	yq -i ".annotations.\"operators.operatorframework.io.bundle.package.v1\" |= (\"${package}-noop\")" ${SCRIPT_DIR}/openshift/bundle/metadata/annotations.yaml
 	(cd "${SCRIPT_DIR}/.." && podman build --quiet --no-cache -t $bundleContainerImage -f ${SCRIPT_DIR}/openshift/bundle.Dockerfile ${SCRIPT_DIR}/openshift)
 	podman login -u $(oc whoami) -p $(oc whoami --show-token) $registry --tls-verify=false
@@ -164,7 +165,7 @@ function create_marketplace_catalog() {
 	try oc set image-lookup -n $marketplaceNamespace operator-bundle
 
 	echo "Compiling marketplace index"
-	opm index add --bundles $bundleContainerImage --tag $indexContainerImage --skip-tls-verify=true
+	opm index add --bundles $bundleContainerImage --tag $indexContainerImage --skip-tls-verify=true --pull-tool podman
 
 	echo "push minio-operator-index to crc registry"
 	podman push $indexContainerImage --tls-verify=false
