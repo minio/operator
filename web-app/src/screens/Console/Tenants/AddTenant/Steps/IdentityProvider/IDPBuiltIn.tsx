@@ -15,7 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
+import { IconButton, Tooltip, InputBox, AddIcon, RemoveIcon, Box } from "mds";
+import { useSelector } from "react-redux";
+import CasinoIcon from "@mui/icons-material/Casino"; // TODO: Implement this in mds
 import {
   addIDPNewKeyPair,
   isPageValid,
@@ -23,66 +25,15 @@ import {
   setIDPPwdAtIndex,
   setIDPUsrAtIndex,
 } from "../../createTenantSlice";
-import { IconButton, Tooltip } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import { RemoveIcon } from "mds";
 import { clearValidationError, getRandomString } from "../../../utils";
-import CasinoIcon from "@mui/icons-material/Casino";
-import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import makeStyles from "@mui/styles/makeStyles";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import {
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
 import {
   commonFormValidation,
   IValidation,
 } from "../../../../../../utils/validationFunctions";
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    buttonTray: {
-      marginLeft: 10,
-      display: "flex",
-      height: 38,
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    overlayAction: {
-      marginLeft: 10,
-      "& svg": {
-        maxWidth: 15,
-        maxHeight: 15,
-      },
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    shortened: {
-      gridTemplateColumns: "auto auto 50px 50px",
-      display: "grid",
-      gridGap: 15,
-      marginBottom: 10,
-      "& input": {
-        fontWeight: 400,
-      },
-    },
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  }),
-);
-
 const IDPBuiltIn = () => {
   const dispatch = useAppDispatch();
-  const classes = useStyles();
 
   const idpSelection = useSelector(
     (state: AppState) =>
@@ -143,8 +94,15 @@ const IDPBuiltIn = () => {
       {accessKeys.map((_, index) => {
         return (
           <Fragment key={`identityField-${index.toString()}`}>
-            <div className={classes.shortened}>
-              <InputBoxWrapper
+            <Box
+              sx={{
+                gridTemplateColumns: "auto auto 50px 50px",
+                display: "grid",
+                gap: 10,
+                marginBottom: 10,
+              }}
+            >
+              <InputBox
                 id={`accesskey-${index.toString()}`}
                 label={""}
                 placeholder={"Access Key"}
@@ -163,7 +121,7 @@ const IDPBuiltIn = () => {
                 key={`csv-accesskey-${index.toString()}`}
                 error={validationErrors[`accesskey-${index.toString()}`] || ""}
               />
-              <InputBoxWrapper
+              <InputBox
                 id={`secretkey-${index.toString()}`}
                 label={""}
                 placeholder={"Secret Key"}
@@ -182,54 +140,55 @@ const IDPBuiltIn = () => {
                 key={`csv-secretkey-${index.toString()}`}
                 error={validationErrors[`secretkey-${index.toString()}`] || ""}
               />
-              <div className={classes.buttonTray}>
-                <div className={classes.overlayAction}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  height: 38,
+                }}
+              >
+                <IconButton
+                  size={"small"}
+                  onClick={() => {
+                    dispatch(addIDPNewKeyPair());
+                  }}
+                  disabled={index !== accessKeys.length - 1}
+                >
+                  <AddIcon />
+                </IconButton>
+                <IconButton
+                  size={"small"}
+                  onClick={() => {
+                    dispatch(removeIDPKeyPairAtIndex(index));
+                  }}
+                  disabled={accessKeys.length <= 1}
+                >
+                  <RemoveIcon />
+                </IconButton>
+                <Tooltip tooltip="Randomize Credentials" aria-label="add">
                   <IconButton
-                    size={"small"}
                     onClick={() => {
-                      dispatch(addIDPNewKeyPair());
+                      dispatch(
+                        setIDPUsrAtIndex({
+                          index,
+                          accessKey: getRandomString(16),
+                        }),
+                      );
+                      dispatch(
+                        setIDPPwdAtIndex({
+                          index,
+                          secretKey: getRandomString(16),
+                        }),
+                      );
                     }}
-                    disabled={index !== accessKeys.length - 1}
-                  >
-                    <AddIcon />
-                  </IconButton>
-                </div>
-                <div className={classes.overlayAction}>
-                  <IconButton
                     size={"small"}
-                    onClick={() => {
-                      dispatch(removeIDPKeyPairAtIndex(index));
-                    }}
-                    disabled={accessKeys.length <= 1}
                   >
-                    <RemoveIcon />
+                    <CasinoIcon />
                   </IconButton>
-                </div>
-                <Tooltip title="Randomize Credentials" aria-label="add">
-                  <div className={classes.overlayAction}>
-                    <IconButton
-                      onClick={() => {
-                        dispatch(
-                          setIDPUsrAtIndex({
-                            index,
-                            accessKey: getRandomString(16),
-                          }),
-                        );
-                        dispatch(
-                          setIDPPwdAtIndex({
-                            index,
-                            secretKey: getRandomString(16),
-                          }),
-                        );
-                      }}
-                      size={"small"}
-                    >
-                      <CasinoIcon />
-                    </IconButton>
-                  </div>
                 </Tooltip>
-              </div>
-            </div>
+              </Box>
+            </Box>
           </Fragment>
         );
       })}

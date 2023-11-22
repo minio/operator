@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
+import { RadioGroup } from "mds";
 import { connect, useSelector } from "react-redux";
 import {
   DialogContentText,
@@ -23,7 +24,15 @@ import {
   Typography,
 } from "@mui/material";
 import { Theme } from "@mui/material/styles";
-import { Button, ConfirmModalIcon, Loader, SectionTitle } from "mds";
+import {
+  Button,
+  ConfirmModalIcon,
+  LDAPIcon,
+  Loader,
+  OIDCIcon,
+  SectionTitle,
+  UsersIcon,
+} from "mds";
 import Grid from "@mui/material/Grid";
 import createStyles from "@mui/styles/createStyles";
 import withStyles from "@mui/styles/withStyles";
@@ -42,11 +51,6 @@ import {
   ITenantIdentityProviderResponse,
   ITenantSetAdministratorsRequest,
 } from "../types";
-import {
-  BuiltInLogoElement,
-  LDAPLogoElement,
-  OIDCLogoElement,
-} from "../LogoComponents";
 import { clearValidationError } from "../utils";
 import {
   commonFormValidation,
@@ -58,7 +62,6 @@ import {
 } from "../../../../systemSlice";
 import { AppState, useAppDispatch } from "../../../../store";
 import { ErrorResponseHandler } from "../../../../common/types";
-import RadioGroupSelector from "../../Common/FormComponents/RadioGroupSelector/RadioGroupSelector";
 import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
 import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
 import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
@@ -360,8 +363,8 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
             className={classes.protocolRadioOptions}
             paddingBottom={1}
           >
-            <RadioGroupSelector
-              currentSelection={idpSelection}
+            <RadioGroup
+              currentValue={idpSelection}
               id="idp-options"
               name="idp-options"
               label="Protocol"
@@ -369,9 +372,13 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                 setIdpSelection(e.target.value);
               }}
               selectorOptions={[
-                { label: <BuiltInLogoElement />, value: "Built-in" },
-                { label: <OIDCLogoElement />, value: "OpenID" },
-                { label: <LDAPLogoElement />, value: "AD" },
+                { label: "Built-in", value: "Built-in", icon: <UsersIcon /> },
+                { label: "Open ID", value: "OpenID", icon: <OIDCIcon /> },
+                {
+                  label: "LDAP / Active Directory",
+                  value: "AD",
+                  icon: <LDAPIcon />,
+                },
               ]}
             />
           </Grid>

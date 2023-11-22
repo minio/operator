@@ -207,32 +207,6 @@ export const searchField = {
   },
 };
 
-// ** According to W3 spec, default minimum values for flex width flex-grow is "auto" (https://drafts.csswg.org/css-flexbox/#min-size-auto). So in this case we need to enforce the use of an absolute width.
-// "The preferred width of a box element child containing text content is currently the text without line breaks, leading to very unintuitive width and flex calculations → declare a width on a box element child with more than a few words (ever wonder why flexbox demos are all “1,2,3”?)"
-
-export const settingsCommon: any = {
-  settingsFormContainer: {
-    padding: 38,
-    overflowY: "auto" as const,
-    scrollbarWidth: "none" as const,
-    "&::-webkit-scrollbar": {
-      display: "none",
-    },
-  },
-  settingsButtonContainer: {
-    padding: "15px 38px",
-    display: "flex",
-    justifyContent: "flex-end",
-  },
-  settingsOptionsContainer: {
-    height: "calc(100vh - 244px)",
-    backgroundColor: "#fff",
-    border: "#EAEDEE 1px solid",
-    borderRadius: 3,
-    marginTop: 15,
-  },
-};
-
 export const snackBarCommon = {
   snackBar: {
     backgroundColor: "#081F44",
@@ -495,45 +469,6 @@ export const fileInputStyles = {
     alignItems: "center",
     justifyContent: "center",
     maxWidth: 300,
-  },
-};
-
-export const deleteDialogStyles: any = {
-  root: {
-    "& .MuiPaper-root": {
-      padding: "1rem 2rem 2rem 1rem",
-    },
-  },
-  title: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  titleText: {
-    fontSize: 20,
-    fontWeight: 600,
-    display: "flex",
-    alignItems: "center",
-    "& svg": {
-      marginRight: 10,
-    },
-    wordBreak: "break-all",
-    whiteSpace: "normal",
-  },
-  closeContainer: {
-    "& .MuiIconButton-root": {
-      top: -20,
-      left: 30,
-      position: "relative",
-      padding: 1,
-      "&:focus, &:hover": {
-        background: "#EAEAEA",
-      },
-    },
-    "& .min-icon": {
-      height: 16,
-      width: 16,
-    },
   },
 };
 

@@ -15,39 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import Grid from "@mui/material/Grid";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-
-import { isPageValid, updateAddField } from "../../createTenantSlice";
+import { InputBox } from "mds";
 import { useSelector } from "react-redux";
+import { isPageValid, updateAddField } from "../../createTenantSlice";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import {
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import makeStyles from "@mui/styles/makeStyles";
 import {
   commonFormValidation,
   IValidation,
 } from "../../../../../../utils/validationFunctions";
 import { clearValidationError } from "../../../utils";
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  }),
-);
-
 const VaultKMSAdd = () => {
   const dispatch = useAppDispatch();
-  const classes = useStyles();
 
   const encryptionTab = useSelector(
     (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
@@ -159,144 +138,118 @@ const VaultKMSAdd = () => {
 
   return (
     <Fragment>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="vault_endpoint"
-          name="vault_endpoint"
+      <InputBox
+        id="vault_endpoint"
+        name="vault_endpoint"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("vaultEndpoint", e.target.value);
+          cleanValidation("vault_endpoint");
+        }}
+        label="Endpoint"
+        tooltip="Endpoint is the Hashicorp Vault endpoint"
+        value={vaultEndpoint}
+        error={validationErrors["vault_endpoint"] || ""}
+        required
+      />
+      <InputBox
+        id="vault_engine"
+        name="vault_engine"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("vaultEngine", e.target.value);
+          cleanValidation("vault_engine");
+        }}
+        label="Engine"
+        tooltip="Engine is the Hashicorp Vault K/V engine path. If empty, defaults to 'kv'"
+        value={vaultEngine}
+      />
+      <InputBox
+        id="vault_namespace"
+        name="vault_namespace"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("vaultNamespace", e.target.value);
+        }}
+        label="Namespace"
+        tooltip="Namespace is an optional Hashicorp Vault namespace. An empty namespace means no particular namespace is used."
+        value={vaultNamespace}
+      />
+      <InputBox
+        id="vault_prefix"
+        name="vault_prefix"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("vaultPrefix", e.target.value);
+        }}
+        label="Prefix"
+        tooltip="Prefix is an optional prefix / directory within the K/V engine. If empty, keys will be stored at the K/V engine top level"
+        value={vaultPrefix}
+      />
+      <fieldset className={"inputItem"}>
+        <legend>App Role</legend>
+        <InputBox
+          id="vault_approle_engine"
+          name="vault_approle_engine"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("vaultEndpoint", e.target.value);
-            cleanValidation("vault_endpoint");
-          }}
-          label="Endpoint"
-          tooltip="Endpoint is the Hashicorp Vault endpoint"
-          value={vaultEndpoint}
-          error={validationErrors["vault_endpoint"] || ""}
-          required
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="vault_engine"
-          name="vault_engine"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("vaultEngine", e.target.value);
-            cleanValidation("vault_engine");
+            updateField("vaultAppRoleEngine", e.target.value);
           }}
           label="Engine"
-          tooltip="Engine is the Hashicorp Vault K/V engine path. If empty, defaults to 'kv'"
-          value={vaultEngine}
+          tooltip="AppRoleEngine is the AppRole authentication engine path. If empty, defaults to 'approle'"
+          value={vaultAppRoleEngine}
         />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="vault_namespace"
-          name="vault_namespace"
+        <InputBox
+          id="vault_id"
+          name="vault_id"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("vaultNamespace", e.target.value);
+            updateField("vaultId", e.target.value);
+            cleanValidation("vault_id");
           }}
-          label="Namespace"
-          tooltip="Namespace is an optional Hashicorp Vault namespace. An empty namespace means no particular namespace is used."
-          value={vaultNamespace}
+          label="AppRole ID"
+          tooltip="AppRoleSecret is the AppRole access secret for authenticating to Hashicorp Vault via the AppRole method"
+          value={vaultId}
+          error={validationErrors["vault_id"] || ""}
+          required
         />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="vault_prefix"
-          name="vault_prefix"
+        <InputBox
+          id="vault_secret"
+          name="vault_secret"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("vaultPrefix", e.target.value);
+            updateField("vaultSecret", e.target.value);
+            cleanValidation("vault_secret");
           }}
-          label="Prefix"
-          tooltip="Prefix is an optional prefix / directory within the K/V engine. If empty, keys will be stored at the K/V engine top level"
-          value={vaultPrefix}
+          label="AppRole Secret"
+          tooltip="AppRoleSecret is the AppRole access secret for authenticating to Hashicorp Vault via the AppRole method"
+          value={vaultSecret}
+          error={validationErrors["vault_secret"] || ""}
+          required
         />
-      </Grid>
-
-      <Grid item xs={12}>
-        <fieldset className={classes.fieldGroup}>
-          <legend className={classes.descriptionText}>App Role</legend>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="vault_approle_engine"
-              name="vault_approle_engine"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("vaultAppRoleEngine", e.target.value);
-              }}
-              label="Engine"
-              tooltip="AppRoleEngine is the AppRole authentication engine path. If empty, defaults to 'approle'"
-              value={vaultAppRoleEngine}
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="vault_id"
-              name="vault_id"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("vaultId", e.target.value);
-                cleanValidation("vault_id");
-              }}
-              label="AppRole ID"
-              tooltip="AppRoleSecret is the AppRole access secret for authenticating to Hashicorp Vault via the AppRole method"
-              value={vaultId}
-              error={validationErrors["vault_id"] || ""}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="vault_secret"
-              name="vault_secret"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("vaultSecret", e.target.value);
-                cleanValidation("vault_secret");
-              }}
-              label="AppRole Secret"
-              tooltip="AppRoleSecret is the AppRole access secret for authenticating to Hashicorp Vault via the AppRole method"
-              value={vaultSecret}
-              error={validationErrors["vault_secret"] || ""}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              type="number"
-              min="0"
-              id="vault_retry"
-              name="vault_retry"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("vaultRetry", e.target.value);
-                cleanValidation("vault_retry");
-              }}
-              label="Retry (Seconds)"
-              value={vaultRetry}
-              error={validationErrors["vault_retry"] || ""}
-            />
-          </Grid>
-        </fieldset>
-      </Grid>
-      <Grid
-        item
-        xs={12}
-        className={classes.formFieldRow}
-        style={{ marginTop: 15 }}
-      >
-        <fieldset className={classes.fieldGroup}>
-          <legend className={classes.descriptionText}>Status</legend>
-          <InputBoxWrapper
-            type="number"
-            min="0"
-            id="vault_ping"
-            name="vault_ping"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("vaultPing", e.target.value);
-              cleanValidation("vault_ping");
-            }}
-            label="Ping (Seconds)"
-            value={vaultPing}
-            error={validationErrors["vault_ping"] || ""}
-          />
-        </fieldset>
-      </Grid>
+        <InputBox
+          type="number"
+          min="0"
+          id="vault_retry"
+          name="vault_retry"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            updateField("vaultRetry", e.target.value);
+            cleanValidation("vault_retry");
+          }}
+          label="Retry (Seconds)"
+          value={vaultRetry}
+          error={validationErrors["vault_retry"] || ""}
+        />
+      </fieldset>
+      <fieldset className={"inputItem"}>
+        <legend>Status</legend>
+        <InputBox
+          type="number"
+          min="0"
+          id="vault_ping"
+          name="vault_ping"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            updateField("vaultPing", e.target.value);
+            cleanValidation("vault_ping");
+          }}
+          label="Ping (Seconds)"
+          value={vaultPing}
+          error={validationErrors["vault_ping"] || ""}
+        />
+      </fieldset>
     </Fragment>
   );
 };

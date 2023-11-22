@@ -14,18 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Grid } from "@mui/material";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import React, { Fragment, useCallback, useEffect, useState } from "react";
-import makeStyles from "@mui/styles/makeStyles";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import {
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
+import React, { useCallback, useEffect, useState } from "react";
+import { FormLayout, InputBox } from "mds";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../../store";
 import { isPageValid, updateAddField } from "../../createTenantSlice";
@@ -35,36 +25,8 @@ import {
   IValidation,
 } from "../../../../../../utils/validationFunctions";
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    buttonTray: {
-      marginLeft: 10,
-      display: "flex",
-      height: 38,
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    overlayAction: {
-      marginLeft: 10,
-      "& svg": {
-        maxWidth: 15,
-        maxHeight: 15,
-      },
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  }),
-);
-
 const IDPOpenID = () => {
   const dispatch = useAppDispatch();
-  const classes = useStyles();
 
   const idpSelection = useSelector(
     (state: AppState) =>
@@ -160,77 +122,67 @@ const IDPOpenID = () => {
   ]);
 
   return (
-    <Fragment>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="openID_CONFIGURATION_URL"
-          name="openID_CONFIGURATION_URL"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("openIDConfigurationURL", e.target.value);
-            cleanValidation("openID_CONFIGURATION_URL");
-          }}
-          label="Configuration URL"
-          value={openIDConfigurationURL}
-          placeholder="https://your-identity-provider.com/.well-known/openid-configuration"
-          error={validationErrors["openID_CONFIGURATION_URL"] || ""}
-          required
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="openID_clientID"
-          name="openID_clientID"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("openIDClientID", e.target.value);
-            cleanValidation("openID_clientID");
-          }}
-          label="Client ID"
-          value={openIDClientID}
-          error={validationErrors["openID_clientID"] || ""}
-          required
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="openID_secretID"
-          name="openID_secretID"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("openIDSecretID", e.target.value);
-            cleanValidation("openID_secretID");
-          }}
-          label="Secret ID"
-          value={openIDSecretID}
-          error={validationErrors["openID_secretID"] || ""}
-          required
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="openID_claimName"
-          name="openID_claimName"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("openIDClaimName", e.target.value);
-            cleanValidation("openID_claimName");
-          }}
-          label="Claim Name"
-          value={openIDClaimName}
-          placeholder="policy"
-          error={validationErrors["openID_claimName"] || ""}
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="openID_scopes"
-          name="openID_scopes"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("openIDScopes", e.target.value);
-            cleanValidation("openID_scopes");
-          }}
-          label="Scopes"
-          value={openIDScopes}
-        />
-      </Grid>
-    </Fragment>
+    <FormLayout withBorders={false} containerPadding={false}>
+      <InputBox
+        id="openID_CONFIGURATION_URL"
+        name="openID_CONFIGURATION_URL"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("openIDConfigurationURL", e.target.value);
+          cleanValidation("openID_CONFIGURATION_URL");
+        }}
+        label="Configuration URL"
+        value={openIDConfigurationURL}
+        placeholder="https://your-identity-provider.com/.well-known/openid-configuration"
+        error={validationErrors["openID_CONFIGURATION_URL"] || ""}
+        required
+      />
+      <InputBox
+        id="openID_clientID"
+        name="openID_clientID"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("openIDClientID", e.target.value);
+          cleanValidation("openID_clientID");
+        }}
+        label="Client ID"
+        value={openIDClientID}
+        error={validationErrors["openID_clientID"] || ""}
+        required
+      />
+      <InputBox
+        id="openID_secretID"
+        name="openID_secretID"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("openIDSecretID", e.target.value);
+          cleanValidation("openID_secretID");
+        }}
+        label="Secret ID"
+        value={openIDSecretID}
+        error={validationErrors["openID_secretID"] || ""}
+        required
+      />
+      <InputBox
+        id="openID_claimName"
+        name="openID_claimName"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("openIDClaimName", e.target.value);
+          cleanValidation("openID_claimName");
+        }}
+        label="Claim Name"
+        value={openIDClaimName}
+        placeholder="policy"
+        error={validationErrors["openID_claimName"] || ""}
+      />
+      <InputBox
+        id="openID_scopes"
+        name="openID_scopes"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("openIDScopes", e.target.value);
+          cleanValidation("openID_scopes");
+        }}
+        label="Scopes"
+        value={openIDScopes}
+      />
+    </FormLayout>
   );
 };
 

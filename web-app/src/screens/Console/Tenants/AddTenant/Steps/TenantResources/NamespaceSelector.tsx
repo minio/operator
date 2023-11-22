@@ -15,15 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useMemo } from "react";
-import { AddIcon } from "mds";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import { openAddNSModal, setNamespace } from "../../createTenantSlice";
-import { useSelector } from "react-redux";
-import { AppState, useAppDispatch } from "../../../../../../store";
-import AddNamespaceModal from "../helpers/AddNamespaceModal";
 import debounce from "lodash/debounce";
+import { AddIcon, InputBox } from "mds";
+import { useSelector } from "react-redux";
+import { openAddNSModal, setNamespace } from "../../createTenantSlice";
+import { AppState, useAppDispatch } from "../../../../../../store";
 import { IMkEnvs } from "./utils";
 import { validateNamespaceAsync } from "../../thunks/namespaceThunks";
+import AddNamespaceModal from "../helpers/AddNamespaceModal";
 
 const NamespaceSelector = ({ formToRender }: { formToRender?: IMkEnvs }) => {
   const dispatch = useAppDispatch();
@@ -66,7 +65,7 @@ const NamespaceSelector = ({ formToRender }: { formToRender?: IMkEnvs }) => {
   return (
     <Fragment>
       {openAddNSConfirm && <AddNamespaceModal />}
-      <InputBoxWrapper
+      <InputBox
         id="namespace"
         name="namespace"
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,7 +74,6 @@ const NamespaceSelector = ({ formToRender }: { formToRender?: IMkEnvs }) => {
         label="Namespace"
         value={namespace}
         error={namespaceError || ""}
-        overlayId={"add-namespace"}
         overlayIcon={showNSCreateButton ? <AddIcon /> : null}
         overlayAction={addNamespace}
         required

@@ -16,17 +16,26 @@
 
 import React, { Fragment, useEffect, useState } from "react";
 import get from "lodash/get";
-import { useSelector } from "react-redux";
-import Grid from "@mui/material/Grid";
-import { LinearProgress } from "@mui/material";
-
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
 import {
-  modalBasic,
-  settingsCommon,
-  wizardCommon,
-} from "../../Common/FormComponents/common/styleLibrary";
+  BackLink,
+  Box,
+  Grid,
+  HelpBox,
+  PageLayout,
+  ProgressBar,
+  StorageIcon,
+  Wizard,
+  WizardButton,
+  WizardElement,
+} from "mds";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import {
+  IMkEnvs,
+  resourcesConfigurations,
+} from "./Steps/TenantResources/utils";
+import { selFeatures } from "../../consoleSlice";
+import { resetAddTenantForm } from "./createTenantSlice";
 import { AppState, useAppDispatch } from "../../../../store";
 import Configure from "./Steps/Configure";
 import IdentityProvider from "./Steps/IdentityProvider";
@@ -34,44 +43,14 @@ import Security from "./Steps/Security";
 import Encryption from "./Steps/Encryption";
 import Affinity from "./Steps/Affinity";
 import Images from "./Steps/Images";
-
 import TenantResources from "./Steps/TenantResources/TenantResources";
-import {
-  IMkEnvs,
-  resourcesConfigurations,
-} from "./Steps/TenantResources/utils";
-import {
-  BackLink,
-  HelpBox,
-  StorageIcon,
-  PageLayout,
-  Wizard,
-  WizardElement,
-  WizardButton,
-} from "mds";
-import { selFeatures } from "../../consoleSlice";
-import makeStyles from "@mui/styles/makeStyles";
-import { resetAddTenantForm } from "./createTenantSlice";
 import CreateTenantButton from "./CreateTenantButton";
 import NewTenantCredentials from "./NewTenantCredentials";
-import { useNavigate } from "react-router-dom";
 import PageHeaderWrapper from "../../Common/PageHeaderWrapper/PageHeaderWrapper";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    pageBox: {
-      border: "1px solid #EAEAEA",
-    },
-    ...modalBasic,
-    ...wizardCommon,
-    ...settingsCommon,
-  }),
-);
 
 const AddTenant = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const classes = useStyles();
 
   const features = useSelector(selFeatures);
 
@@ -159,8 +138,6 @@ const AddTenant = () => {
     },
   ];
 
-  let filteredWizardSteps = wizardSteps;
-
   return (
     <Fragment>
       <NewTenantCredentials />
@@ -179,12 +156,16 @@ const AddTenant = () => {
       <PageLayout>
         {addSending && (
           <Grid item xs={12}>
-            <LinearProgress />
+            <ProgressBar />
           </Grid>
         )}
-        <Grid item xs={12} className={classes.pageBox}>
-          <Wizard wizardSteps={filteredWizardSteps} linearMode={false} />
-        </Grid>
+        <Box
+          withBorders
+          customBorderPadding={"0px"}
+          sx={{ "& .muted": { fontSize: 13 } }}
+        >
+          <Wizard wizardSteps={wizardSteps} linearMode={false} />
+        </Box>
         {formRender === IMkEnvs.aws && (
           <Grid item xs={12} style={{ marginTop: 16 }}>
             <HelpBox

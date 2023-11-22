@@ -16,36 +16,17 @@
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { Grid, Paper } from "@mui/material";
-import {
-  formFieldStyles,
-  wizardCommon,
-} from "../../../Common/FormComponents/common/styleLibrary";
+import { Box, FormLayout, InputBox, Switch } from "mds";
 import { AppState, useAppDispatch } from "../../../../../store";
 import { clearValidationError } from "../../utils";
 import {
   commonFormValidation,
   IValidation,
 } from "../../../../../utils/validationFunctions";
-import FormSwitchWrapper from "../../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import InputBoxWrapper from "../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
 import { isPageValid, updateAddField } from "../createTenantSlice";
 import H3Section from "../../../Common/H3Section";
 
-interface IImagesProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...formFieldStyles,
-    ...wizardCommon,
-  });
-
-const Images = ({ classes }: IImagesProps) => {
+const Images = () => {
   const dispatch = useAppDispatch();
 
   const customImage = useSelector(
@@ -160,114 +141,99 @@ const Images = ({ classes }: IImagesProps) => {
   };
 
   return (
-    <Paper className={classes.paperWrapper}>
-      <div className={classes.headerElement}>
+    <FormLayout withBorders={false} containerPadding={false}>
+      <Box className={"inputItem"}>
         <H3Section>Container Images</H3Section>
-        <span className={classes.descriptionText}>
+        <span className={"muted"}>
           Specify the container images used by the Tenant and its features.
         </span>
-      </div>
+      </Box>
 
-      <Fragment>
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <InputBoxWrapper
-            id="image"
-            name="image"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("imageName", e.target.value);
-              cleanValidation("image");
-            }}
-            label="MinIO"
-            value={imageName}
-            error={validationErrors["image"] || ""}
-            placeholder="minio/minio:RELEASE.2023-11-15T20-43-25Z"
-          />
-        </Grid>
-
-        <Grid item xs={12} className={classes.formFieldRow}>
-          <InputBoxWrapper
-            id="kesImage"
-            name="kesImage"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("kesImage", e.target.value);
-              cleanValidation("kesImage");
-            }}
-            label="KES"
-            value={kesImage}
-            error={validationErrors["kesImage"] || ""}
-            placeholder="minio/kes:2023-11-10T10-44-28Z"
-          />
-        </Grid>
-      </Fragment>
+      <InputBox
+        id="image"
+        name="image"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("imageName", e.target.value);
+          cleanValidation("image");
+        }}
+        label="MinIO"
+        value={imageName}
+        error={validationErrors["image"] || ""}
+        placeholder="minio/minio:RELEASE.2023-11-15T20-43-25Z"
+      />
+      <InputBox
+        id="kesImage"
+        name="kesImage"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("kesImage", e.target.value);
+          cleanValidation("kesImage");
+        }}
+        label="KES"
+        value={kesImage}
+        error={validationErrors["kesImage"] || ""}
+        placeholder="minio/kes:2023-11-10T10-44-28Z"
+      />
 
       {customImage && (
         <Fragment>
-          <Grid item xs={12} className={classes.formFieldRow}>
+          <Box className={"inputItem"}>
             <h4>Custom Container Registry</h4>
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <FormSwitchWrapper
-              value="custom_docker_hub"
-              id="custom_docker_hub"
-              name="custom_docker_hub"
-              checked={customDockerhub}
-              onChange={(e) => {
-                const targetD = e.target;
-                const checked = targetD.checked;
+          </Box>
+          <Switch
+            value="custom_docker_hub"
+            id="custom_docker_hub"
+            name="custom_docker_hub"
+            checked={customDockerhub}
+            onChange={(e) => {
+              const targetD = e.target;
+              const checked = targetD.checked;
 
-                updateField("customDockerhub", checked);
-              }}
-              label={"Use a private container registry"}
-            />
-          </Grid>
+              updateField("customDockerhub", checked);
+            }}
+            label={"Use a private container registry"}
+          />
         </Fragment>
       )}
       {customDockerhub && (
         <Fragment>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="registry"
-              name="registry"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("imageRegistry", e.target.value);
-              }}
-              label="Endpoint"
-              value={imageRegistry}
-              error={validationErrors["registry"] || ""}
-              placeholder="https://index.docker.io/v1/"
-              required
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="registryUsername"
-              name="registryUsername"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("imageRegistryUsername", e.target.value);
-              }}
-              label="Username"
-              value={imageRegistryUsername}
-              error={validationErrors["registryUsername"] || ""}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="registryPassword"
-              name="registryPassword"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("imageRegistryPassword", e.target.value);
-              }}
-              label="Password"
-              value={imageRegistryPassword}
-              error={validationErrors["registryPassword"] || ""}
-              required
-            />
-          </Grid>
+          <InputBox
+            id="registry"
+            name="registry"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              updateField("imageRegistry", e.target.value);
+            }}
+            label="Endpoint"
+            value={imageRegistry}
+            error={validationErrors["registry"] || ""}
+            placeholder="https://index.docker.io/v1/"
+            required
+          />
+          <InputBox
+            id="registryUsername"
+            name="registryUsername"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              updateField("imageRegistryUsername", e.target.value);
+            }}
+            label="Username"
+            value={imageRegistryUsername}
+            error={validationErrors["registryUsername"] || ""}
+            required
+          />
+          <InputBox
+            id="registryPassword"
+            name="registryPassword"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              updateField("imageRegistryPassword", e.target.value);
+            }}
+            label="Password"
+            value={imageRegistryPassword}
+            error={validationErrors["registryPassword"] || ""}
+            required
+          />
         </Fragment>
       )}
-    </Paper>
+    </FormLayout>
   );
 };
 
-export default withStyles(styles)(Images);
+export default Images;

@@ -193,7 +193,7 @@ export interface ISecurityFields {
 
 export interface IEncryptionFields {
   rawConfiguration: string;
-  encryptionTab: number;
+  encryptionTab: string;
   enableEncryption: boolean;
   encryptionType: string;
   gemaltoEndpoint: string;

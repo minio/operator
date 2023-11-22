@@ -15,34 +15,25 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
 import {
-  Divider,
+  Box,
+  FormLayout,
   Grid,
   IconButton,
-  Paper,
-  SelectChangeEvent,
-} from "@mui/material";
-import {
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../Common/FormComponents/common/styleLibrary";
-
+  InputBox,
+  RemoveIcon,
+  Select,
+  Switch,
+  AddIcon,
+} from "mds";
+import { useSelector } from "react-redux";
+import styled from "styled-components";
 import { AppState, useAppDispatch } from "../../../../../store";
 import { clearValidationError } from "../../utils";
 import {
   commonFormValidation,
   IValidation,
 } from "../../../../../utils/validationFunctions";
-import FormSwitchWrapper from "../../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import InputBoxWrapper from "../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import AddIcon from "@mui/icons-material/Add";
-import { RemoveIcon } from "mds";
 import {
   addNewMinIODomain,
   isPageValid,
@@ -50,100 +41,77 @@ import {
   setEnvVars,
   updateAddField,
 } from "../createTenantSlice";
-import SelectWrapper from "../../../Common/FormComponents/SelectWrapper/SelectWrapper";
 import H3Section from "../../../Common/H3Section";
 
-interface IConfigureProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    configSectionItem: {
-      marginRight: 15,
-      marginBottom: 15,
-
-      "& .multiContainer": {
-        border: "1px solid red",
-      },
-    },
-    tenantCustomizationFields: {
-      marginLeft: 30, // 2nd Level(15+15)
-      width: "88%",
-      margin: "auto",
-    },
-    containerItem: {
-      marginRight: 15,
-    },
-    fieldGroup: {
-      ...createTenantCommon.fieldGroup,
-      paddingTop: 15,
-      marginBottom: 25,
-    },
-    responsiveSectionItem: {
-      "@media (max-width: 900px)": {
-        flexFlow: "column",
-        alignItems: "flex-start",
-
-        "& div > div": {
-          marginBottom: 5,
-          marginRight: 0,
-        },
-      },
-    },
-    wrapperContainer: {
+const ConfigureMain = styled.div(() => ({
+  "& .configSectionItem": {
+    marginRight: 15,
+    marginBottom: 15,
+  },
+  "& .containerItem": {
+    marginRight: 15,
+  },
+  "& .responsiveSectionItem": {
+    "&.doubleElement": {
       display: "flex",
-      marginBottom: 15,
-    },
-    envVarRow: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      "&:last-child": {
-        borderBottom: 0,
+      "& div": {
+        flexGrow: 1,
       },
-      "@media (max-width: 900px)": {
-        flex: 1,
+    },
+    "@media (max-width: 900px)": {
+      flexFlow: "column",
+      alignItems: "flex-start",
 
-        "& div label": {
-          minWidth: 50,
-        },
+      "& div > div": {
+        marginBottom: 5,
+        marginRight: 0,
       },
     },
-    fileItem: {
-      marginRight: 10,
-      display: "flex",
+  },
+  "& .wrapperContainer": {
+    display: "flex",
+    alignItems: "center",
+  },
+  "& .envVarRow": {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    "&:last-child": {
+      borderBottom: 0,
+    },
+    "@media (max-width: 900px)": {
+      flex: 1,
+
       "& div label": {
         minWidth: 50,
       },
+    },
+  },
+  "& .fileItem": {
+    marginRight: 10,
+    display: "flex",
+    "& div label": {
+      minWidth: 50,
+    },
 
-      "@media (max-width: 900px)": {
-        flexFlow: "column",
-      },
+    "@media (max-width: 900px)": {
+      flexFlow: "column",
     },
-    rowActions: {
-      display: "flex",
-      justifyContent: "flex-end",
-      "@media (max-width: 900px)": {
-        flex: 1,
-      },
+  },
+  "& .rowActions": {
+    display: "flex",
+    justifyContent: "flex-end",
+    "@media (max-width: 900px)": {
+      flex: 1,
     },
-    overlayAction: {
-      marginLeft: 10,
-      "& svg": {
-        maxWidth: 15,
-        maxHeight: 15,
-      },
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    ...modalBasic,
-    ...wizardCommon,
-    ...formFieldStyles,
-  });
+  },
+  "& .overlayAction": {
+    marginLeft: 10,
+    marginBottom: 15,
+  },
+}));
 
-const Configure = ({ classes }: IConfigureProps) => {
+const Configure = () => {
   const dispatch = useAppDispatch();
 
   const exposeMinIO = useSelector(
@@ -286,22 +254,22 @@ const Configure = ({ classes }: IConfigureProps) => {
   };
 
   return (
-    <Paper className={classes.paperWrapper}>
-      <div className={classes.headerElement}>
-        <H3Section>Configure</H3Section>
-        <span className={classes.descriptionText}>
-          Basic configurations for tenant management
-        </span>
-      </div>
-      <div className={classes.headerElement}>
-        <h4 className={classes.h3Section}>Services</h4>
-        <span className={classes.descriptionText}>
-          Whether the tenant's services should request an external IP via
-          LoadBalancer service type.
-        </span>
-      </div>
-      <Grid item xs={12} className={classes.configSectionItem}>
-        <FormSwitchWrapper
+    <ConfigureMain>
+      <FormLayout withBorders={false} containerPadding={false}>
+        <Box className={"inputItem"}>
+          <H3Section>Configure</H3Section>
+          <span className={"muted"}>
+            Basic configurations for tenant management
+          </span>
+        </Box>
+        <Box className={"inputItem"}>
+          <h4 style={{ margin: "10px 0px 0px" }}>Services</h4>
+          <span className={"muted"}>
+            Whether the tenant's services should request an external IP via
+            LoadBalancer service type.
+          </span>
+        </Box>
+        <Switch
           value="expose_minio"
           id="expose_minio"
           name="expose_minio"
@@ -314,9 +282,7 @@ const Configure = ({ classes }: IConfigureProps) => {
           }}
           label={"Expose MinIO Service"}
         />
-      </Grid>
-      <Grid item xs={12} className={classes.configSectionItem}>
-        <FormSwitchWrapper
+        <Switch
           value="expose_console"
           id="expose_console"
           name="expose_console"
@@ -329,9 +295,7 @@ const Configure = ({ classes }: IConfigureProps) => {
           }}
           label={"Expose Console Service"}
         />
-      </Grid>
-      <Grid item xs={12} className={classes.configSectionItem}>
-        <FormSwitchWrapper
+        <Switch
           value="expose_sftp"
           id="expose_sftp"
           name="expose_sftp"
@@ -344,9 +308,7 @@ const Configure = ({ classes }: IConfigureProps) => {
           }}
           label={"Expose SFTP Service"}
         />
-      </Grid>
-      <Grid item xs={12} className={classes.configSectionItem}>
-        <FormSwitchWrapper
+        <Switch
           value="custom_domains"
           id="custom_domains"
           name="custom_domains"
@@ -359,87 +321,83 @@ const Configure = ({ classes }: IConfigureProps) => {
           }}
           label={"Set Custom Domains"}
         />
-      </Grid>
-      {setDomains && (
-        <Grid item xs={12} className={classes.tenantCustomizationFields}>
-          <fieldset className={classes.fieldGroup}>
-            <legend className={classes.descriptionText}>
-              Custom Domains for MinIO
-            </legend>
-            <Grid item xs={12} className={`${classes.configSectionItem}`}>
-              <div className={classes.containerItem}>
-                <InputBoxWrapper
-                  id="console_domain"
-                  name="console_domain"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    updateField("consoleDomain", e.target.value);
-                    cleanValidation("tenant_securityContext_runAsUser");
-                  }}
-                  label="Console Domain"
-                  value={consoleDomain}
-                  placeholder={
-                    "Eg. http://subdomain.domain:port/subpath1/subpath2"
-                  }
-                  error={validationErrors["console_domain"] || ""}
-                />
-              </div>
-              <div>
-                <h4>MinIO Domains</h4>
-                <div className={`${classes.responsiveSectionItem}`}>
-                  {minioDomains.map((domain, index) => {
-                    return (
-                      <div
-                        className={`${classes.containerItem} ${classes.wrapperContainer}`}
-                        key={`minio-domain-key-${index.toString()}`}
-                      >
-                        <InputBoxWrapper
-                          id={`minio-domain-${index.toString()}`}
-                          name={`minio-domain-${index.toString()}`}
-                          onChange={(
-                            e: React.ChangeEvent<HTMLInputElement>,
-                          ) => {
-                            updateMinIODomain(e.target.value, index);
-                          }}
-                          label={`MinIO Domain ${index + 1}`}
-                          value={domain}
-                          placeholder={"Eg. http://subdomain.domain"}
-                          error={
-                            validationErrors[
-                              `minio-domain-${index.toString()}`
-                            ] || ""
-                          }
-                        />
-                        <div className={classes.overlayAction}>
-                          <IconButton
-                            size={"small"}
-                            onClick={() => dispatch(addNewMinIODomain())}
-                            disabled={index !== minioDomains.length - 1}
-                          >
-                            <AddIcon />
-                          </IconButton>
-                        </div>
+        {setDomains && (
+          <Grid item xs={12} className={"inputItem"}>
+            <fieldset>
+              <legend>Custom Domains for MinIO</legend>
+              <Grid item xs={12} className={"configSectionItem"}>
+                <Box className={"inputItem"}>
+                  <InputBox
+                    id="console_domain"
+                    name="console_domain"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      updateField("consoleDomain", e.target.value);
+                      cleanValidation("tenant_securityContext_runAsUser");
+                    }}
+                    label="Console Domain"
+                    value={consoleDomain}
+                    placeholder={
+                      "Eg. http://subdomain.domain:port/subpath1/subpath2"
+                    }
+                    error={validationErrors["console_domain"] || ""}
+                  />
+                </Box>
+                <Box>
+                  <h4>MinIO Domains</h4>
+                  <Box className={"responsiveSectionItem"}>
+                    {minioDomains.map((domain, index) => {
+                      return (
+                        <Box
+                          className={`containerItem wrapperContainer`}
+                          key={`minio-domain-key-${index.toString()}`}
+                        >
+                          <InputBox
+                            id={`minio-domain-${index.toString()}`}
+                            name={`minio-domain-${index.toString()}`}
+                            onChange={(
+                              e: React.ChangeEvent<HTMLInputElement>,
+                            ) => {
+                              updateMinIODomain(e.target.value, index);
+                            }}
+                            label={`MinIO Domain ${index + 1}`}
+                            value={domain}
+                            placeholder={"Eg. http://subdomain.domain"}
+                            error={
+                              validationErrors[
+                                `minio-domain-${index.toString()}`
+                              ] || ""
+                            }
+                          />
+                          <Box className={"overlayAction"}>
+                            <IconButton
+                              size={"small"}
+                              onClick={() => dispatch(addNewMinIODomain())}
+                              disabled={index !== minioDomains.length - 1}
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </Box>
 
-                        <div className={classes.overlayAction}>
-                          <IconButton
-                            size={"small"}
-                            onClick={() => dispatch(removeMinIODomain(index))}
-                            disabled={minioDomains.length <= 1}
-                          >
-                            <RemoveIcon />
-                          </IconButton>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </Grid>
-          </fieldset>
-        </Grid>
-      )}
+                          <Box className={"overlayAction"}>
+                            <IconButton
+                              size={"small"}
+                              onClick={() => dispatch(removeMinIODomain(index))}
+                              disabled={minioDomains.length <= 1}
+                            >
+                              <RemoveIcon />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              </Grid>
+            </fieldset>
+          </Grid>
+        )}
 
-      <Grid item xs={12} className={classes.configSectionItem}>
-        <FormSwitchWrapper
+        <Switch
           value="tenantConfig"
           id="tenant_configuration"
           name="tenant_configuration"
@@ -452,99 +410,92 @@ const Configure = ({ classes }: IConfigureProps) => {
           }}
           label={"Security Context"}
         />
-      </Grid>
-      {tenantCustom && (
-        <Grid item xs={12} className={classes.tenantCustomizationFields}>
-          <fieldset className={classes.fieldGroup}>
-            <legend className={classes.descriptionText}>
-              SecurityContext for MinIO
-            </legend>
-            <Grid item xs={12} className={`${classes.configSectionItem}`}>
-              <div
-                className={`${classes.multiContainer} ${classes.responsiveSectionItem}`}
-              >
-                <div className={classes.containerItem}>
-                  <InputBoxWrapper
-                    type="number"
-                    id="tenant_securityContext_runAsUser"
-                    name="tenant_securityContext_runAsUser"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      updateField("tenantSecurityContext", {
-                        ...tenantSecurityContext,
-                        runAsUser: e.target.value,
-                      });
-                      cleanValidation("tenant_securityContext_runAsUser");
-                    }}
-                    label="Run As User"
-                    value={tenantSecurityContext.runAsUser}
-                    required
-                    error={
-                      validationErrors["tenant_securityContext_runAsUser"] || ""
-                    }
-                    min="0"
-                  />
-                </div>
-                <div className={classes.containerItem}>
-                  <InputBoxWrapper
-                    type="number"
-                    id="tenant_securityContext_runAsGroup"
-                    name="tenant_securityContext_runAsGroup"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      updateField("tenantSecurityContext", {
-                        ...tenantSecurityContext,
-                        runAsGroup: e.target.value,
-                      });
-                      cleanValidation("tenant_securityContext_runAsGroup");
-                    }}
-                    label="Run As Group"
-                    value={tenantSecurityContext.runAsGroup}
-                    required
-                    error={
-                      validationErrors["tenant_securityContext_runAsGroup"] ||
-                      ""
-                    }
-                    min="0"
-                  />
-                </div>
-              </div>
-            </Grid>
-            <br />
-            <Grid item xs={12} className={`${classes.configSectionItem}`}>
-              <div
-                className={`${classes.multiContainer} ${classes.responsiveSectionItem}`}
-              >
-                <div className={classes.containerItem}>
-                  <InputBoxWrapper
-                    type="number"
-                    id="tenant_securityContext_fsGroup"
-                    name="tenant_securityContext_fsGroup"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      updateField("tenantSecurityContext", {
-                        ...tenantSecurityContext,
-                        fsGroup: e.target.value,
-                      });
-                      cleanValidation("tenant_securityContext_fsGroup");
-                    }}
-                    label="FsGroup"
-                    value={tenantSecurityContext.fsGroup!}
-                    required
-                    error={
-                      validationErrors["tenant_securityContext_fsGroup"] || ""
-                    }
-                    min="0"
-                  />
-                </div>
-                <div className={classes.containerItem}>
-                  <div className={classes.configSectionItem}>
-                    <SelectWrapper
+        {tenantCustom && (
+          <Grid item xs={12} className={"inputItem"}>
+            <fieldset>
+              <legend>Security Context for MinIO</legend>
+              <Grid item xs={12} className={`configSectionItem`}>
+                <Box className={`responsiveSectionItem doubleElement`}>
+                  <Box className={"containerItem"}>
+                    <InputBox
+                      type="number"
+                      id="tenant_securityContext_runAsUser"
+                      name="tenant_securityContext_runAsUser"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        updateField("tenantSecurityContext", {
+                          ...tenantSecurityContext,
+                          runAsUser: e.target.value,
+                        });
+                        cleanValidation("tenant_securityContext_runAsUser");
+                      }}
+                      label="Run As User"
+                      value={tenantSecurityContext.runAsUser}
+                      required
+                      error={
+                        validationErrors["tenant_securityContext_runAsUser"] ||
+                        ""
+                      }
+                      min="0"
+                    />
+                  </Box>
+                  <Box className={"containerItem"}>
+                    <InputBox
+                      type="number"
+                      id="tenant_securityContext_runAsGroup"
+                      name="tenant_securityContext_runAsGroup"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        updateField("tenantSecurityContext", {
+                          ...tenantSecurityContext,
+                          runAsGroup: e.target.value,
+                        });
+                        cleanValidation("tenant_securityContext_runAsGroup");
+                      }}
+                      label="Run As Group"
+                      value={tenantSecurityContext.runAsGroup}
+                      required
+                      error={
+                        validationErrors["tenant_securityContext_runAsGroup"] ||
+                        ""
+                      }
+                      min="0"
+                    />
+                  </Box>
+                </Box>
+              </Grid>
+              <br />
+              <Grid item xs={12} className={`configSectionItem`}>
+                <Box className={`responsiveSectionItem doubleElement`}>
+                  <Box className={"containerItem"}>
+                    <InputBox
+                      type="number"
+                      id="tenant_securityContext_fsGroup"
+                      name="tenant_securityContext_fsGroup"
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        updateField("tenantSecurityContext", {
+                          ...tenantSecurityContext,
+                          fsGroup: e.target.value,
+                        });
+                        cleanValidation("tenant_securityContext_fsGroup");
+                      }}
+                      label="FsGroup"
+                      value={tenantSecurityContext.fsGroup!}
+                      required
+                      error={
+                        validationErrors["tenant_securityContext_fsGroup"] || ""
+                      }
+                      min="0"
+                    />
+                  </Box>
+                  <Box className={"containerItem"}>
+                    <Select
                       label="FsGroupChangePolicy"
                       id="securityContext_fsGroupChangePolicy"
                       name="securityContext_fsGroupChangePolicy"
                       value={tenantSecurityContext.fsGroupChangePolicy!}
-                      onChange={(e: SelectChangeEvent<string>) => {
+                      onChange={(value) => {
                         updateField("tenantSecurityContext", {
                           ...tenantSecurityContext,
-                          fsGroupChangePolicy: e.target.value,
+                          fsGroupChangePolicy: value,
                         });
                       }}
                       options={[
@@ -558,14 +509,12 @@ const Configure = ({ classes }: IConfigureProps) => {
                         },
                       ]}
                     />
-                  </div>
-                </div>
-              </div>
-            </Grid>
-            <br />
-            <Grid item xs={12} className={classes.configSectionItem}>
-              <div className={classes.multiContainer}>
-                <FormSwitchWrapper
+                  </Box>
+                </Box>
+              </Grid>
+              <br />
+              <Grid item xs={12} className={"configSectionItem"}>
+                <Switch
                   value="tenantSecurityContextRunAsNonRoot"
                   id="tenant_securityContext_runAsNonRoot"
                   name="tenant_securityContext_runAsNonRoot"
@@ -580,13 +529,11 @@ const Configure = ({ classes }: IConfigureProps) => {
                   }}
                   label={"Do not run as Root"}
                 />
-              </div>
-            </Grid>
-          </fieldset>
-        </Grid>
-      )}
-      <Grid item xs={12} className={classes.configSectionItem}>
-        <FormSwitchWrapper
+              </Grid>
+            </fieldset>
+          </Grid>
+        )}
+        <Switch
           value="customRuntime"
           id="tenant_custom_runtime"
           name="tenant_custom_runtime"
@@ -599,128 +546,123 @@ const Configure = ({ classes }: IConfigureProps) => {
           }}
           label={"Custom Runtime Configurations"}
         />
-      </Grid>
-      {customRuntime && (
-        <Grid item xs={12} className={classes.tenantCustomizationFields}>
-          <fieldset className={classes.fieldGroup}>
-            <legend className={classes.descriptionText}>
-              Custom Runtime Configurations
-            </legend>
-            <Grid item xs={12} className={`${classes.configSectionItem}`}>
-              <div className={classes.containerItem}>
-                <InputBoxWrapper
-                  id="tenant_runtime_runtimeClassName"
-                  name="tenant_runtime_runtimeClassName"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    updateField("runtimeClassName", e.target.value);
-                    cleanValidation("tenant_runtime_runtimeClassName");
-                  }}
-                  label="Runtime Class Name"
-                  value={runtimeClassName}
-                  error={
-                    validationErrors["tenant_runtime_runtimeClassName"] || ""
-                  }
-                />
-              </div>
-            </Grid>
-          </fieldset>
-        </Grid>
-      )}
-      <Divider />
-
-      <div className={classes.headerElement}>
-        <H3Section>Additional Environment Variables</H3Section>
-        <span className={classes.descriptionText}>
-          Define additional environment variables to be used by your MinIO pods
-        </span>
-      </div>
-      <Grid container>
-        {tenantEnvVars.map((envVar, index) => (
-          <Grid
-            item
-            xs={12}
-            className={`${classes.formFieldRow} ${classes.envVarRow}`}
-            key={`tenant-envVar-${index.toString()}`}
-          >
-            <Grid item xs={5} className={classes.fileItem}>
-              <InputBoxWrapper
-                id="env_var_key"
-                name="env_var_key"
-                label="Key"
-                value={envVar.key}
+        {customRuntime && (
+          <Grid item xs={12} className={"inputItem"}>
+            <fieldset>
+              <legend>Custom Runtime Configurations</legend>
+              <InputBox
+                id="tenant_runtime_runtimeClassName"
+                name="tenant_runtime_runtimeClassName"
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  const existingEnvVars = [...tenantEnvVars];
-                  dispatch(
-                    setEnvVars(
-                      existingEnvVars.map((keyPair, i) =>
-                        i === index
-                          ? { key: e.target.value, value: keyPair.value }
-                          : keyPair,
-                      ),
-                    ),
-                  );
+                  updateField("runtimeClassName", e.target.value);
+                  cleanValidation("tenant_runtime_runtimeClassName");
                 }}
-                index={index}
-                key={`env_var_key_${index.toString()}`}
+                label="Runtime Class Name"
+                value={runtimeClassName}
+                error={
+                  validationErrors["tenant_runtime_runtimeClassName"] || ""
+                }
               />
-            </Grid>
-            <Grid item xs={5} className={classes.fileItem}>
-              <InputBoxWrapper
-                id="env_var_value"
-                name="env_var_value"
-                label="Value"
-                value={envVar.value}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  const existingEnvVars = [...tenantEnvVars];
-                  dispatch(
-                    setEnvVars(
-                      existingEnvVars.map((keyPair, i) =>
-                        i === index
-                          ? { key: keyPair.key, value: e.target.value }
-                          : keyPair,
-                      ),
-                    ),
-                  );
-                }}
-                index={index}
-                key={`env_var_value_${index.toString()}`}
-              />
-            </Grid>
-            <Grid item xs={2} className={classes.rowActions}>
-              <div className={classes.overlayAction}>
-                <IconButton
-                  size={"small"}
-                  onClick={() => {
-                    const existingEnvVars = [...tenantEnvVars];
-                    existingEnvVars.push({ key: "", value: "" });
-
-                    dispatch(setEnvVars(existingEnvVars));
-                  }}
-                  disabled={index !== tenantEnvVars.length - 1}
-                >
-                  <AddIcon />
-                </IconButton>
-              </div>
-              <div className={classes.overlayAction}>
-                <IconButton
-                  size={"small"}
-                  onClick={() => {
-                    const existingEnvVars = tenantEnvVars.filter(
-                      (item, fIndex) => fIndex !== index,
-                    );
-                    dispatch(setEnvVars(existingEnvVars));
-                  }}
-                  disabled={tenantEnvVars.length <= 1}
-                >
-                  <RemoveIcon />
-                </IconButton>
-              </div>
-            </Grid>
+            </fieldset>
           </Grid>
-        ))}
-      </Grid>
-    </Paper>
+        )}
+        <hr />
+
+        <Box className={"inputItem"}>
+          <H3Section>Additional Environment Variables</H3Section>
+          <span className={"muted"}>
+            Define additional environment variables to be used by your MinIO
+            pods
+          </span>
+        </Box>
+        <Grid container>
+          {tenantEnvVars.map((envVar, index) => (
+            <Grid
+              item
+              xs={12}
+              className={`formFieldRow envVarRow`}
+              key={`tenant-envVar-${index.toString()}`}
+            >
+              <Grid item xs={5} className={"fileItem"}>
+                <InputBox
+                  id="env_var_key"
+                  name="env_var_key"
+                  label="Key"
+                  value={envVar.key}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const existingEnvVars = [...tenantEnvVars];
+                    dispatch(
+                      setEnvVars(
+                        existingEnvVars.map((keyPair, i) =>
+                          i === index
+                            ? { key: e.target.value, value: keyPair.value }
+                            : keyPair,
+                        ),
+                      ),
+                    );
+                  }}
+                  index={index}
+                  key={`env_var_key_${index.toString()}`}
+                />
+              </Grid>
+              <Grid item xs={5} className={"fileItem"}>
+                <InputBox
+                  id="env_var_value"
+                  name="env_var_value"
+                  label="Value"
+                  value={envVar.value}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    const existingEnvVars = [...tenantEnvVars];
+                    dispatch(
+                      setEnvVars(
+                        existingEnvVars.map((keyPair, i) =>
+                          i === index
+                            ? { key: keyPair.key, value: e.target.value }
+                            : keyPair,
+                        ),
+                      ),
+                    );
+                  }}
+                  index={index}
+                  key={`env_var_value_${index.toString()}`}
+                />
+              </Grid>
+              <Grid item xs={2} className={"rowActions"}>
+                <Box className={"overlayAction"}>
+                  <IconButton
+                    size={"small"}
+                    onClick={() => {
+                      const existingEnvVars = [...tenantEnvVars];
+                      existingEnvVars.push({ key: "", value: "" });
+
+                      dispatch(setEnvVars(existingEnvVars));
+                    }}
+                    disabled={index !== tenantEnvVars.length - 1}
+                  >
+                    <AddIcon />
+                  </IconButton>
+                </Box>
+                <Box className={"overlayAction"}>
+                  <IconButton
+                    size={"small"}
+                    onClick={() => {
+                      const existingEnvVars = tenantEnvVars.filter(
+                        (item, fIndex) => fIndex !== index,
+                      );
+                      dispatch(setEnvVars(existingEnvVars));
+                    }}
+                    disabled={tenantEnvVars.length <= 1}
+                  >
+                    <RemoveIcon />
+                  </IconButton>
+                </Box>
+              </Grid>
+            </Grid>
+          ))}
+        </Grid>
+      </FormLayout>
+    </ConfigureMain>
   );
 };
 
-export default withStyles(styles)(Configure);
+export default Configure;
