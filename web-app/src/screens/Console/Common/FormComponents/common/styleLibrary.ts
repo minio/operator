@@ -379,45 +379,6 @@ export const inputFieldStyles = {
   },
 };
 
-export const pageContentStyles = {
-  contentSpacer: {
-    padding: "2rem",
-  },
-};
-
-export const tableStyles: any = {
-  tableBlock: {
-    display: "flex",
-    flexDirection: "row",
-    "& .ReactVirtualized__Table__headerRow.rowLine, .ReactVirtualized__Table__row.rowLine":
-      {
-        borderBottom: "1px solid #EAEAEA",
-      },
-
-    "& .rowLine:hover:not(.ReactVirtualized__Table__headerRow)": {
-      backgroundColor: "#F8F8F8",
-    },
-    "& .ReactVirtualized__Table__row.rowLine": {
-      fontSize: ".8rem",
-    },
-    "& .optionsAlignment ": {
-      textAlign: "right",
-
-      "& .MuiButtonBase-root": {
-        backgroundColor: "#F8F8F8",
-      },
-
-      "&:hover": {
-        backgroundColor: "#E2E2E2",
-      },
-      "& .min-icon": {
-        width: 13,
-        margin: 3,
-      },
-    },
-  },
-};
-
 export const spacingUtils: any = {
   spacerRight: {
     marginRight: ".9rem",
@@ -439,36 +400,6 @@ export const formFieldStyles: any = {
     "& .MuiInputLabel-root": {
       fontWeight: "normal",
     },
-  },
-};
-
-export const fileInputStyles = {
-  fieldBottom: {
-    borderBottom: 0,
-  },
-  fileReselect: {
-    border: "1px solid #EAEAEA",
-    width: "100%",
-    paddingLeft: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    height: 36,
-    maxWidth: 300,
-  },
-  textBoxContainer: {
-    border: "1px solid #EAEAEA",
-    borderRadius: 3,
-    height: 36,
-    padding: 5,
-    "& input": {
-      width: "100%",
-      margin: "auto",
-    },
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    maxWidth: 300,
   },
 };
 

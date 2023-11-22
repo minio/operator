@@ -15,18 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment } from "react";
-import InputBoxWrapper from "../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import FormSwitchWrapper from "../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import SelectWrapper from "../Common/FormComponents/SelectWrapper/SelectWrapper";
-import { Grid, SelectChangeEvent } from "@mui/material";
+import { Box, Grid, InputBox, Select, Switch } from "mds";
 import { useDispatch } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
 import { fsGroupChangePolicyType } from "./types";
 
 interface IEditSecurityContextProps {
-  classes: any;
   runAsUser: string;
   runAsGroup: string;
   fsGroup: string;
@@ -39,19 +32,7 @@ interface IEditSecurityContextProps {
   setFSGroupChangePolicy: any;
 }
 
-const styles = (theme: Theme) =>
-  createStyles({
-    configSectionItem: {
-      marginRight: 15,
-      marginBottom: 15,
-      "& .multiContainer": {
-        border: "1px solid red",
-      },
-    },
-  });
-
 const SecurityContextSelector = ({
-  classes,
   runAsGroup,
   runAsUser,
   fsGroup,
@@ -66,84 +47,99 @@ const SecurityContextSelector = ({
   const dispatch = useDispatch();
   return (
     <Fragment>
-      <fieldset className={`${classes.fieldGroup} ${classes.fieldSpaceTop} `}>
-        <legend className={classes.descriptionText}>Security Context</legend>
-
-        <Grid item xs={12}>
-          <div className={`${classes.multiContainerStackNarrow} `}>
-            <div className={classes.configSectionItem}>
-              <InputBoxWrapper
-                type="number"
-                id="securityContext_runAsUser"
-                name="securityContext_runAsUser"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  dispatch(setRunAsUser(e.target.value));
-                }}
-                label="Run As User"
-                value={runAsUser}
-                required
-                min="0"
-              />
-            </div>
-            <div className={classes.configSectionItem}>
-              <InputBoxWrapper
-                type="number"
-                id="securityContext_runAsGroup"
-                name="securityContext_runAsGroup"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  dispatch(setRunAsGroup(e.target.value));
-                }}
-                label="Run As Group"
-                value={runAsGroup}
-                required
-                min="0"
-              />
-            </div>
-          </div>
-        </Grid>
-        <Grid item xs={12}>
-          <div className={`${classes.multiContainerStackNarrow} `}>
-            <div className={classes.configSectionItem}>
-              <InputBoxWrapper
-                type="number"
-                id="securityContext_fsGroup"
-                name="securityContext_fsGroup"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  dispatch(setFSGroup(e.target.value));
-                }}
-                label="FsGroup"
-                value={fsGroup}
-                required
-                min="0"
-              />
-            </div>
-
-            <div className={classes.configSectionItem}>
-              <SelectWrapper
-                label="FsGroupChangePolicy"
-                id="securityContext_fsGroupChangePolicy"
-                name="securityContext_fsGroupChangePolicy"
-                onChange={(e: SelectChangeEvent<string>) => {
-                  dispatch(setFSGroupChangePolicy(e.target.value));
-                }}
-                value={fsGroupChangePolicy}
-                options={[
-                  {
-                    label: "Always",
-                    value: "Always",
-                  },
-                  {
-                    label: "OnRootMismatch",
-                    value: "OnRootMismatch",
-                  },
-                ]}
-              />
-            </div>
-          </div>
-        </Grid>
-        <Grid item xs={12}>
-          <div className={classes.multiContainer}>
-            <FormSwitchWrapper
+      <fieldset className={`inputItem`}>
+        <legend>Security Context</legend>
+        <Box
+          sx={{
+            "& .multiContainerStackNarrow": {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: "8px",
+              "@media (max-width: 750px)": {
+                flexFlow: "column",
+                flexDirection: "column",
+              },
+            },
+            "& .configSectionItem": {
+              marginRight: 15,
+              marginBottom: 10,
+            },
+          }}
+        >
+          <Grid item xs={12}>
+            <Box className={`multiContainerStackNarrow`}>
+              <Box className={"configSectionItem"}>
+                <InputBox
+                  type="number"
+                  id="securityContext_runAsUser"
+                  name="securityContext_runAsUser"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    dispatch(setRunAsUser(e.target.value));
+                  }}
+                  label="Run As User"
+                  value={runAsUser}
+                  required
+                  min="0"
+                />
+              </Box>
+              <Box className={"configSectionItem"}>
+                <InputBox
+                  type="number"
+                  id="securityContext_runAsGroup"
+                  name="securityContext_runAsGroup"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    dispatch(setRunAsGroup(e.target.value));
+                  }}
+                  label="Run As Group"
+                  value={runAsGroup}
+                  required
+                  min="0"
+                />
+              </Box>
+            </Box>
+          </Grid>
+          <Grid item xs={12}>
+            <Box className={`multiContainerStackNarrow `}>
+              <Box className={"configSectionItem"}>
+                <InputBox
+                  type="number"
+                  id="securityContext_fsGroup"
+                  name="securityContext_fsGroup"
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    dispatch(setFSGroup(e.target.value));
+                  }}
+                  label="FsGroup"
+                  value={fsGroup}
+                  required
+                  min="0"
+                />
+              </Box>
+              <Box className={"configSectionItem"}>
+                <Select
+                  label="FsGroupChangePolicy"
+                  id="securityContext_fsGroupChangePolicy"
+                  name="securityContext_fsGroupChangePolicy"
+                  onChange={(value) => {
+                    dispatch(setFSGroupChangePolicy(value));
+                  }}
+                  value={fsGroupChangePolicy}
+                  options={[
+                    {
+                      label: "Always",
+                      value: "Always",
+                    },
+                    {
+                      label: "OnRootMismatch",
+                      value: "OnRootMismatch",
+                    },
+                  ]}
+                />
+              </Box>
+            </Box>
+          </Grid>
+          <Grid item xs={12}>
+            <Switch
               value="SecurityContextRunAsNonRoot"
               id="securityContext_runAsNonRoot"
               name="securityContext_runAsNonRoot"
@@ -153,11 +149,11 @@ const SecurityContextSelector = ({
               }}
               label={"Do not run as Root"}
             />
-          </div>
-        </Grid>
+          </Grid>
+        </Box>
       </fieldset>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(SecurityContextSelector);
+export default SecurityContextSelector;

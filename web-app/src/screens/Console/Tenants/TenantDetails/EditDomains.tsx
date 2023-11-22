@@ -15,28 +15,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from "react";
-import { Theme } from "@mui/material/styles";
-import { Button, RemoveIcon } from "mds";
-import { Grid, IconButton } from "@mui/material";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import AddIcon from "@mui/icons-material/Add";
 import {
-  formFieldStyles,
-  modalStyleUtils,
-} from "../../Common/FormComponents/common/styleLibrary";
+  AddIcon,
+  Box,
+  Button,
+  FormLayout,
+  IconButton,
+  InputBox,
+  RemoveIcon,
+} from "mds";
+import { modalStyleUtils } from "../../Common/FormComponents/common/styleLibrary";
 import {
   ErrorResponseHandler,
   IDomainsRequest,
 } from "../../../../common/types";
-import ModalWrapper from "../../Common/ModalWrapper/ModalWrapper";
-import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import api from "../../../../common/api";
 import {
   setModalErrorSnackMessage,
   setSnackBarMessage,
 } from "../../../../systemSlice";
 import { useAppDispatch } from "../../../../store";
+import ModalWrapper from "../../Common/ModalWrapper/ModalWrapper";
+import api from "../../../../common/api";
 
 interface IEditDomains {
   open: boolean;
@@ -44,30 +43,7 @@ interface IEditDomains {
   namespace: string;
   idTenant: string;
   domains: IDomainsRequest | null;
-  classes: any;
 }
-
-const styles = (theme: Theme) =>
-  createStyles({
-    domainInline: {
-      display: "flex",
-      marginBottom: 15,
-    },
-    overlayAction: {
-      marginLeft: 10,
-      display: "flex",
-      alignItems: "center",
-      "& svg": {
-        width: 15,
-        height: 15,
-      },
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    ...formFieldStyles,
-    ...modalStyleUtils,
-  });
 
 const EditDomains = ({
   open,
@@ -75,7 +51,6 @@ const EditDomains = ({
   namespace,
   idTenant,
   domains,
-  classes,
 }: IEditDomains) => {
   const dispatch = useAppDispatch();
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -200,114 +175,108 @@ const EditDomains = ({
       modalOpen={open}
       onClose={closeAction}
     >
-      <Grid container>
-        <Grid item xs={12} className={classes.modalFormScrollable}>
-          <Grid item xs={12} className={`${classes.configSectionItem}`}>
-            <div className={classes.containerItem}>
-              <InputBoxWrapper
-                id="console_domain"
-                name="console_domain"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  setConsoleDomain(e.target.value);
+      <Box sx={modalStyleUtils.modalFormScrollable}>
+        <FormLayout withBorders={false} containerPadding={false}>
+          <InputBox
+            id="console_domain"
+            name="console_domain"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setConsoleDomain(e.target.value);
 
-                  setConsoleDomainValid(e.target.validity.valid);
-                }}
-                label="Console Domain"
-                value={consoleDomain}
-                placeholder={
-                  "Eg. http://subdomain.domain:port/subpath1/subpath2"
-                }
-                pattern={
-                  "^(https?):\\/\\/([a-zA-Z0-9\\-.]+)(:[0-9]+)?(\\/[a-zA-Z0-9\\-.\\/]*)?$"
-                }
-                error={
-                  !consoleDomainValid
-                    ? "Domain format is incorrect (http|https://subdomain.domain:port/subpath1/subpath2)"
-                    : ""
-                }
-              />
-            </div>
-            <div>
-              <h4>MinIO Domains</h4>
-              <div>
-                {minioDomains.map((domain, index) => {
-                  return (
-                    <div
-                      className={`${classes.domainInline}`}
-                      key={`minio-domain-key-${index.toString()}`}
+              setConsoleDomainValid(e.target.validity.valid);
+            }}
+            label="Console Domain"
+            value={consoleDomain}
+            placeholder={"Eg. http://subdomain.domain:port/subpath1/subpath2"}
+            pattern={
+              "^(https?):\\/\\/([a-zA-Z0-9\\-.]+)(:[0-9]+)?(\\/[a-zA-Z0-9\\-.\\/]*)?$"
+            }
+            error={
+              !consoleDomainValid
+                ? "Domain format is incorrect (http|https://subdomain.domain:port/subpath1/subpath2)"
+                : ""
+            }
+          />
+          <h4>MinIO Domains</h4>
+          <div>
+            {minioDomains.map((domain, index) => {
+              return (
+                <Box
+                  key={`minio-domain-key-${index.toString()}`}
+                  sx={{
+                    display: "flex",
+                    gap: 10,
+                  }}
+                >
+                  <InputBox
+                    id={`minio-domain-${index.toString()}`}
+                    name={`minio-domain-${index.toString()}`}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      updateMinIODomain(e.target.value, index);
+                      setMinioDomainValidation(e.target.validity.valid, index);
+                    }}
+                    label={`MinIO Domain ${index + 1}`}
+                    value={domain}
+                    placeholder={"Eg. http://subdomain.domain"}
+                    pattern={"^(https?):\\/\\/([a-zA-Z0-9\\-.]+)(:[0-9]+)?$"}
+                    error={
+                      !minioDomainValid[index]
+                        ? "MinIO domain format is incorrect (http|https://subdomain.domain)"
+                        : ""
+                    }
+                  />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <IconButton
+                      size={"small"}
+                      onClick={addNewMinIODomain}
+                      disabled={index !== minioDomains.length - 1}
                     >
-                      <InputBoxWrapper
-                        id={`minio-domain-${index.toString()}`}
-                        name={`minio-domain-${index.toString()}`}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                          updateMinIODomain(e.target.value, index);
-                          setMinioDomainValidation(
-                            e.target.validity.valid,
-                            index,
-                          );
-                        }}
-                        label={`MinIO Domain ${index + 1}`}
-                        value={domain}
-                        placeholder={"Eg. http://subdomain.domain"}
-                        pattern={
-                          "^(https?):\\/\\/([a-zA-Z0-9\\-.]+)(:[0-9]+)?$"
-                        }
-                        error={
-                          !minioDomainValid[index]
-                            ? "MinIO domain format is incorrect (http|https://subdomain.domain)"
-                            : ""
-                        }
-                      />
-                      <div className={classes.overlayAction}>
-                        <IconButton
-                          size={"small"}
-                          onClick={addNewMinIODomain}
-                          disabled={index !== minioDomains.length - 1}
-                        >
-                          <AddIcon />
-                        </IconButton>
-                      </div>
-
-                      <div className={classes.overlayAction}>
-                        <IconButton
-                          size={"small"}
-                          onClick={() => removeMinIODomain(index)}
-                          disabled={minioDomains.length <= 1}
-                        >
-                          <RemoveIcon />
-                        </IconButton>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </Grid>
-          <Grid item xs={12} className={classes.modalButtonBar}>
-            <Button
-              id={"clear-edit-domain"}
-              type="button"
-              variant="regular"
-              onClick={resetForm}
-              label={"Clear"}
-            />
-            <Button
-              id={"save-domain"}
-              type="submit"
-              variant="callAction"
-              disabled={
-                isSending ||
-                !consoleDomainValid ||
-                minioDomainValid.filter((domain) => !domain).length > 0
-              }
-              onClick={updateDomainsList}
-              label={"Save"}
-            />
-          </Grid>
-        </Grid>
-      </Grid>
+                      <AddIcon />
+                    </IconButton>
+                    <IconButton
+                      size={"small"}
+                      onClick={() => removeMinIODomain(index)}
+                      disabled={minioDomains.length <= 1}
+                    >
+                      <RemoveIcon />
+                    </IconButton>
+                  </Box>
+                </Box>
+              );
+            })}
+          </div>
+        </FormLayout>
+        <Box sx={modalStyleUtils.modalButtonBar}>
+          <Button
+            id={"clear-edit-domain"}
+            type="button"
+            variant="regular"
+            onClick={resetForm}
+            label={"Clear"}
+          />
+          <Button
+            id={"save-domain"}
+            type="submit"
+            variant="callAction"
+            disabled={
+              isSending ||
+              !consoleDomainValid ||
+              minioDomainValid.filter((domain) => !domain).length > 0
+            }
+            onClick={updateDomainsList}
+            label={"Save"}
+          />
+        </Box>
+      </Box>
     </ModalWrapper>
   );
 };
 
-export default withStyles(styles)(EditDomains);
+export default EditDomains;

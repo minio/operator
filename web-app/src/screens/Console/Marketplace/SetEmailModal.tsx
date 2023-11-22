@@ -14,25 +14,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { containerForHeader } from "../Common/FormComponents/common/styleLibrary";
-import ConfirmDialog from "../Common/ModalWrapper/ConfirmDialog";
-import useApi from "../Common/Hooks/useApi";
 import React, { Fragment, useState } from "react";
+import { InfoIcon, InputBox } from "mds";
 import { ISetEmailModalProps } from "./types";
-import { InfoIcon } from "mds";
 import { ErrorResponseHandler } from "../../../common/types";
-import InputBoxWrapper from "../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
 import { setErrorSnackMessage, setSnackBarMessage } from "../../../systemSlice";
 import { useAppDispatch } from "../../../store";
 import { euTimezones } from "./euTimezones";
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...containerForHeader,
-  });
+import ConfirmDialog from "../Common/ModalWrapper/ConfirmDialog";
+import useApi from "../Common/Hooks/useApi";
 
 const reEmail =
   // eslint-disable-next-line
@@ -105,7 +95,7 @@ const SetEmailModal = ({ open, closeModal }: ISetEmailModalProps) => {
             To register later, contact{" "}
             <a href="mailto: support@min.io">support@min.io</a>.
           </p>
-          <InputBoxWrapper
+          <InputBox
             id="set-mp-email"
             name="set-mp-email"
             onChange={handleInputChange}
@@ -120,4 +110,4 @@ const SetEmailModal = ({ open, closeModal }: ISetEmailModalProps) => {
   ) : null;
 };
 
-export default withStyles(styles)(SetEmailModal);
+export default SetEmailModal;

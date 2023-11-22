@@ -15,18 +15,20 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useState } from "react";
-import { DialogContentText } from "@mui/material";
-
+import {
+  ConfirmDeleteIcon,
+  FormLayout,
+  InformativeMessage,
+  InputBox,
+  Switch,
+  Grid,
+} from "mds";
 import { ErrorResponseHandler } from "../../../../common/types";
-import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import Grid from "@mui/material/Grid";
-import useApi from "../../Common/Hooks/useApi";
-import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
-import { ConfirmDeleteIcon, InformativeMessage } from "mds";
-import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import { useAppDispatch } from "../../../../store";
 import { Tenant } from "../../../../api/operatorApi";
+import useApi from "../../Common/Hooks/useApi";
+import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
 
 interface IDeleteTenant {
   deleteOpen: boolean;
@@ -79,9 +81,9 @@ const DeleteTenant = ({
         disabled: retypeTenant !== selectedTenant.name || deleteLoading,
       }}
       confirmationContent={
-        <DialogContentText>
+        <FormLayout withBorders={false} containerPadding={false}>
           {deleteVolumes && (
-            <Grid item xs={12}>
+            <Grid item xs={12} className={"inputItem"}>
               <InformativeMessage
                 variant={"error"}
                 title={"WARNING"}
@@ -93,7 +95,7 @@ const DeleteTenant = ({
           )}
           To continue please type <b>{selectedTenant.name}</b> in the box.
           <Grid item xs={12}>
-            <InputBoxWrapper
+            <InputBox
               id="retype-tenant"
               name="retype-tenant"
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,8 +104,7 @@ const DeleteTenant = ({
               label=""
               value={retypeTenant}
             />
-            <br />
-            <FormSwitchWrapper
+            <Switch
               checked={deleteVolumes}
               id={`delete-volumes`}
               label={"Delete Volumes"}
@@ -111,10 +112,9 @@ const DeleteTenant = ({
               onChange={() => {
                 setDeleteVolumes(!deleteVolumes);
               }}
-              value={deleteVolumes}
             />
           </Grid>
-        </DialogContentText>
+        </FormLayout>
       }
     />
   );

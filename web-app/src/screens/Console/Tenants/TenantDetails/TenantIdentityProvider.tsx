@@ -15,38 +15,28 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { RadioGroup } from "mds";
-import { connect, useSelector } from "react-redux";
 import {
-  DialogContentText,
-  IconButton,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import {
+  AddIcon,
+  Box,
   Button,
   ConfirmModalIcon,
+  DeleteIcon,
+  FormLayout,
+  Grid,
+  IconButton,
+  InformativeMessage,
+  InputBox,
   LDAPIcon,
   Loader,
   OIDCIcon,
+  RadioGroup,
   SectionTitle,
+  Switch,
+  Tooltip,
   UsersIcon,
 } from "mds";
-import Grid from "@mui/material/Grid";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
-import {
-  containerForHeader,
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  spacingUtils,
-  tenantDetailsStyles,
-  wizardCommon,
-} from "../../Common/FormComponents/common/styleLibrary";
+import { useSelector } from "react-redux";
+import { modalStyleUtils } from "../../Common/FormComponents/common/styleLibrary";
 import {
   ITenantIdentityProviderResponse,
   ITenantSetAdministratorsRequest,
@@ -62,48 +52,10 @@ import {
 } from "../../../../systemSlice";
 import { AppState, useAppDispatch } from "../../../../store";
 import { ErrorResponseHandler } from "../../../../common/types";
-import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
 import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
 import api from "../../../../common/api";
-import AddIcon from "@mui/icons-material/Add";
-import DeleteIcon from "@mui/icons-material/Delete";
 
-interface ITenantIdentityProvider {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    adUserDnRows: {
-      display: "flex",
-      marginBottom: 10,
-    },
-    buttonTray: {
-      marginLeft: 10,
-      display: "flex",
-      height: 38,
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    ...tenantDetailsStyles,
-    ...spacingUtils,
-    loaderAlign: {
-      textAlign: "center",
-    },
-    ...containerForHeader,
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-function FormHr() {
-  return null;
-}
-
-const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
+const TenantIdentityProvider = () => {
   const dispatch = useAppDispatch();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
@@ -118,15 +70,12 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
     useState<string>("");
   const [openIDClientID, setOpenIDClientID] = useState<string>("");
   const [openIDSecretID, setOpenIDSecretID] = useState<string>("");
-  const [showOIDCSecretID, setShowOIDCSecretID] = useState<boolean>(false);
   const [openIDCallbackURL, setOpenIDCallbackURL] = useState<string>("");
   const [openIDClaimName, setOpenIDClaimName] = useState<string>("");
   const [openIDScopes, setOpenIDScopes] = useState<string>("");
   const [ADURL, setADURL] = useState<string>("");
   const [ADLookupBindDN, setADLookupBindDN] = useState<string>("");
   const [ADLookupBindPassword, setADLookupBindPassword] = useState<string>("");
-  const [showADLookupBindPassword, setShowADLookupBindPassword] =
-    useState<boolean>(false);
   const [ADUserDNSearchBaseDN, setADUserDNSearchBaseDN] = useState<string>("");
   const [ADUserDNSearchFilter, setADUserDNSearchFilter] = useState<string>("");
   const [ADGroupSearchBaseDN, setADGroupSearchBaseDN] = useState<string>("");
@@ -331,7 +280,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
   };
 
   return (
-    <React.Fragment>
+    <Fragment>
       <ConfirmDialog
         title={"Save and Restart"}
         confirmText={"Restart"}
@@ -342,27 +291,27 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
         isOpen={dialogOpen}
         onConfirm={updateTenantIdentityProvider}
         confirmationContent={
-          <DialogContentText>
+          <Fragment>
             Are you sure you want to save the changes and restart the service?
-          </DialogContentText>
+          </Fragment>
         }
       />
       {loadingTenant ? (
-        <div className={classes.loaderAlign}>
+        <Box
+          sx={{
+            textAlign: "center",
+          }}
+        >
           <Loader />
-        </div>
+        </Box>
       ) : (
         <Fragment>
-          <Grid item xs={12}>
-            <h1 className={classes.sectionTitle}>Identity Provider</h1>
-            <FormHr />
-          </Grid>
-          <Grid
-            item
-            xs={12}
-            className={classes.protocolRadioOptions}
-            paddingBottom={1}
-          >
+          <Box>
+            <SectionTitle separator sx={{ marginBottom: 15 }}>
+              Identity Provider
+            </SectionTitle>
+          </Box>
+          <FormLayout>
             <RadioGroup
               currentValue={idpSelection}
               id="idp-options"
@@ -381,12 +330,10 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                 },
               ]}
             />
-          </Grid>
 
-          {idpSelection === "OpenID" && (
-            <Fragment>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+            {idpSelection === "OpenID" && (
+              <Fragment>
+                <InputBox
                   id="openID_CONFIGURATION_URL"
                   name="openID_CONFIGURATION_URL"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -399,9 +346,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   error={validationErrors["openID_CONFIGURATION_URL"] || ""}
                   required
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+                <InputBox
                   id="openID_clientID"
                   name="openID_clientID"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -413,10 +358,8 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   error={validationErrors["openID_clientID"] || ""}
                   required
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
-                  type={showOIDCSecretID ? "text" : "password"}
+                <InputBox
+                  type={"password"}
                   id="openID_secretID"
                   name="openID_secretID"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -427,18 +370,8 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   value={openIDSecretID}
                   error={validationErrors["openID_secretID"] || ""}
                   required
-                  overlayIcon={
-                    showOIDCSecretID ? (
-                      <VisibilityOffIcon />
-                    ) : (
-                      <RemoveRedEyeIcon />
-                    )
-                  }
-                  overlayAction={() => setShowOIDCSecretID(!showOIDCSecretID)}
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+                <InputBox
                   id="openID_claimName"
                   name="openID_claimName"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -450,9 +383,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   placeholder="policy"
                   error={validationErrors["openID_claimName"] || ""}
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+                <InputBox
                   id="openID_scopes"
                   name="openID_scopes"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -462,14 +393,12 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   label="Scopes"
                   value={openIDScopes}
                 />
-              </Grid>
-            </Fragment>
-          )}
+              </Fragment>
+            )}
 
-          {idpSelection === "AD" && (
-            <Fragment>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+            {idpSelection === "AD" && (
+              <Fragment>
+                <InputBox
                   id="AD_URL"
                   name="AD_URL"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -482,9 +411,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   error={validationErrors["AD_URL"] || ""}
                   required
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <FormSwitchWrapper
+                <Switch
                   value="ad_skipTLS"
                   id="ad_skipTLS"
                   name="ad_skipTLS"
@@ -496,9 +423,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   }}
                   label={"Skip TLS Verification"}
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <FormSwitchWrapper
+                <Switch
                   value="ad_serverInsecure"
                   id="ad_serverInsecure"
                   name="ad_serverInsecure"
@@ -510,23 +435,18 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   }}
                   label={"Server Insecure"}
                 />
-              </Grid>
-              {ADServerInsecure ? (
-                <Grid item xs={12}>
-                  <Typography
-                    className={classes.error}
-                    variant="caption"
-                    display="block"
-                    gutterBottom
-                  >
-                    Warning: All traffic with Active Directory will be
-                    unencrypted
-                  </Typography>
-                  <br />
-                </Grid>
-              ) : null}
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <FormSwitchWrapper
+                {ADServerInsecure ? (
+                  <InformativeMessage
+                    title={"Warning"}
+                    message={
+                      "All traffic with Active Directory will be\n" +
+                      "                    unencrypted"
+                    }
+                    variant={"warning"}
+                    sx={{ marginBottom: 15 }}
+                  />
+                ) : null}
+                <Switch
                   value="ad_serverStartTLS"
                   id="ad_serverStartTLS"
                   name="ad_serverStartTLS"
@@ -538,9 +458,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   }}
                   label={"Start TLS connection to AD/LDAP server"}
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+                <InputBox
                   id="ad_lookupBindDN"
                   name="ad_lookupBindDN"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -553,10 +471,8 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   error={validationErrors["ad_lookupBindDN"] || ""}
                   required
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
-                  type={showADLookupBindPassword ? "text" : "password"}
+                <InputBox
+                  type={"password"}
                   id="ad_lookupBindPassword"
                   name="ad_lookupBindPassword"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -565,20 +481,8 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   label="Lookup Bind Password"
                   value={ADLookupBindPassword}
                   placeholder="admin"
-                  overlayIcon={
-                    showADLookupBindPassword ? (
-                      <VisibilityOffIcon />
-                    ) : (
-                      <RemoveRedEyeIcon />
-                    )
-                  }
-                  overlayAction={() =>
-                    setShowADLookupBindPassword(!showADLookupBindPassword)
-                  }
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+                <InputBox
                   id="ad_userDNSearchBaseDN"
                   name="ad_userDNSearchBaseDN"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -588,9 +492,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   value={ADUserDNSearchBaseDN}
                   placeholder="dc=min,dc=io"
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+                <InputBox
                   id="ad_userDNSearchFilter"
                   name="ad_userDNSearchFilter"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -600,9 +502,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   value={ADUserDNSearchFilter}
                   placeholder="(sAMAcountName=%s)"
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+                <InputBox
                   id="ad_groupSearchBaseDN"
                   name="ad_groupSearchBaseDN"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -612,9 +512,7 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   value={ADGroupSearchBaseDN}
                   placeholder="ou=hwengg,dc=min,dc=io;ou=swengg,dc=min,dc=io"
                 />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
+                <InputBox
                   id="ad_groupSearchFilter"
                   name="ad_groupSearchFilter"
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -624,183 +522,199 @@ const TenantIdentityProvider = ({ classes }: ITenantIdentityProvider) => {
                   value={ADGroupSearchFilter}
                   placeholder="(&(objectclass=groupOfNames)(member=%s))"
                 />
-              </Grid>
-            </Fragment>
-          )}
+              </Fragment>
+            )}
 
-          <Grid item xs={12} className={classes.buttonContainer}>
-            <Button
-              id={"save-idp"}
-              type="submit"
-              variant="callAction"
-              color="primary"
-              disabled={!isFormValid || isSending}
-              onClick={() => setDialogOpen(true)}
-              label={"Save"}
-            />
-          </Grid>
+            <Box sx={modalStyleUtils.modalButtonBar}>
+              <Button
+                id={"save-idp"}
+                type="submit"
+                variant="callAction"
+                color="primary"
+                disabled={!isFormValid || isSending}
+                onClick={() => setDialogOpen(true)}
+                label={"Save"}
+              />
+            </Box>
 
-          {idpSelection === "AD" && (
-            <Fragment>
-              <SectionTitle>User & Group management</SectionTitle>
-              <br />
-              <fieldset className={classes.fieldGroup}>
-                <legend className={classes.descriptionText}>
-                  List of user DNs (Distinguished Names) to be added as Tenant
-                  Administrators
-                </legend>
-                <Grid item xs={12}>
-                  {ADUserDNs.map((_, index) => {
-                    return (
-                      <Fragment key={`identityField-${index.toString()}`}>
-                        <div className={classes.adUserDnRows}>
-                          <InputBoxWrapper
-                            id={`ad-userdn-${index.toString()}`}
-                            label={""}
-                            placeholder=""
-                            name={`ad-userdn-${index.toString()}`}
-                            value={ADUserDNs[index]}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
-                            ) => {
-                              setADUserDNs(
-                                ADUserDNs.map((group, i) =>
-                                  i === index ? e.target.value : group,
-                                ),
-                              );
+            {idpSelection === "AD" && (
+              <Fragment>
+                <SectionTitle separator>User & Group management</SectionTitle>
+                <br />
+                <fieldset className={"inputItem"}>
+                  <legend>
+                    List of user DNs (Distinguished Names) to be added as Tenant
+                    Administrators
+                  </legend>
+                  <Grid item xs={12}>
+                    {ADUserDNs.map((_, index) => {
+                      return (
+                        <Fragment key={`identityField-${index.toString()}`}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              marginBottom: 10,
                             }}
-                            index={index}
-                            key={`csv-ad-userdn-${index.toString()}`}
-                            error={
-                              validationErrors[
-                                `ad-userdn-${index.toString()}`
-                              ] || ""
-                            }
-                          />
-                          <div className={classes.buttonTray}>
-                            <Tooltip title="Add User" aria-label="add">
-                              <IconButton
-                                size={"small"}
-                                onClick={() => {
-                                  setADUserDNs([...ADUserDNs, ""]);
-                                }}
-                              >
-                                <AddIcon />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Remove" aria-label="add">
-                              <IconButton
-                                size={"small"}
-                                style={{ marginLeft: 16 }}
-                                onClick={() => {
-                                  if (ADUserDNs.length > 1) {
-                                    setADUserDNs(
-                                      ADUserDNs.filter((_, i) => i !== index),
-                                    );
-                                  }
-                                }}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      </Fragment>
-                    );
-                  })}
-                </Grid>
-              </fieldset>
-              <fieldset className={classes.fieldGroup}>
-                <legend className={classes.descriptionText}>
-                  List of group DNs (Distinguished Names) to be added as Tenant
-                  Administrators
-                </legend>
-                <Grid item xs={12}>
-                  {ADGroupDNs.map((_, index) => {
-                    return (
-                      <Fragment key={`identityField-${index.toString()}`}>
-                        <div className={classes.adUserDnRows}>
-                          <InputBoxWrapper
-                            id={`ad-groupdn-${index.toString()}`}
-                            label={""}
-                            placeholder=""
-                            name={`ad-groupdn-${index.toString()}`}
-                            value={ADGroupDNs[index]}
-                            onChange={(
-                              e: React.ChangeEvent<HTMLInputElement>,
-                            ) => {
-                              setADGroupDNs(
-                                ADGroupDNs.map((group, i) =>
-                                  i === index ? e.target.value : group,
-                                ),
-                              );
+                          >
+                            <InputBox
+                              id={`ad-userdn-${index.toString()}`}
+                              label={""}
+                              placeholder=""
+                              name={`ad-userdn-${index.toString()}`}
+                              value={ADUserDNs[index]}
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                              ) => {
+                                setADUserDNs(
+                                  ADUserDNs.map((group, i) =>
+                                    i === index ? e.target.value : group,
+                                  ),
+                                );
+                              }}
+                              index={index}
+                              key={`csv-ad-userdn-${index.toString()}`}
+                              error={
+                                validationErrors[
+                                  `ad-userdn-${index.toString()}`
+                                ] || ""
+                              }
+                            />
+                            <Box
+                              sx={{
+                                marginLeft: 10,
+                                display: "flex",
+                                height: 38,
+                              }}
+                            >
+                              <Tooltip tooltip="Add User" aria-label="add">
+                                <IconButton
+                                  size={"small"}
+                                  onClick={() => {
+                                    setADUserDNs([...ADUserDNs, ""]);
+                                  }}
+                                >
+                                  <AddIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip tooltip="Remove" aria-label="add">
+                                <IconButton
+                                  size={"small"}
+                                  style={{ marginLeft: 16 }}
+                                  onClick={() => {
+                                    if (ADUserDNs.length > 1) {
+                                      setADUserDNs(
+                                        ADUserDNs.filter((_, i) => i !== index),
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </Box>
+                        </Fragment>
+                      );
+                    })}
+                  </Grid>
+                </fieldset>
+                <fieldset className={"inputItem"}>
+                  <legend>
+                    List of group DNs (Distinguished Names) to be added as
+                    Tenant Administrators
+                  </legend>
+                  <Grid item xs={12}>
+                    {ADGroupDNs.map((_, index) => {
+                      return (
+                        <Fragment key={`identityField-${index.toString()}`}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              marginBottom: 10,
                             }}
-                            index={index}
-                            key={`csv-ad-groupdn-${index.toString()}`}
-                            error={
-                              validationErrors[
-                                `ad-groupdn-${index.toString()}`
-                              ] || ""
-                            }
-                          />
-                          <div className={classes.buttonTray}>
-                            <Tooltip title="Add Group" aria-label="add">
-                              <IconButton
-                                size={"small"}
-                                onClick={() => {
-                                  setADGroupDNs([...ADGroupDNs, ""]);
-                                }}
-                              >
-                                <AddIcon />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Remove" aria-label="add">
-                              <IconButton
-                                size={"small"}
-                                style={{ marginLeft: 16 }}
-                                onClick={() => {
-                                  if (ADGroupDNs.length > 1) {
-                                    setADGroupDNs(
-                                      ADGroupDNs.filter((_, i) => i !== index),
-                                    );
-                                  }
-                                }}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </div>
-                        </div>
-                      </Fragment>
-                    );
-                  })}
-                </Grid>
-              </fieldset>
-              <br />
-              <Grid item xs={12} className={classes.buttonContainer}>
-                <Button
-                  id={"add-additional-dns"}
-                  type="submit"
-                  variant="callAction"
-                  disabled={!isFormValid || isSending}
-                  onClick={() => setAdministrators()}
-                  label={"Add additional DNs"}
-                />
-              </Grid>
-            </Fragment>
-          )}
+                          >
+                            <InputBox
+                              id={`ad-groupdn-${index.toString()}`}
+                              label={""}
+                              placeholder=""
+                              name={`ad-groupdn-${index.toString()}`}
+                              value={ADGroupDNs[index]}
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>,
+                              ) => {
+                                setADGroupDNs(
+                                  ADGroupDNs.map((group, i) =>
+                                    i === index ? e.target.value : group,
+                                  ),
+                                );
+                              }}
+                              index={index}
+                              key={`csv-ad-groupdn-${index.toString()}`}
+                              error={
+                                validationErrors[
+                                  `ad-groupdn-${index.toString()}`
+                                ] || ""
+                              }
+                            />
+                            <Box
+                              sx={{
+                                marginLeft: 10,
+                                display: "flex",
+                                height: 38,
+                              }}
+                            >
+                              <Tooltip tooltip="Add Group" aria-label="add">
+                                <IconButton
+                                  size={"small"}
+                                  onClick={() => {
+                                    setADGroupDNs([...ADGroupDNs, ""]);
+                                  }}
+                                >
+                                  <AddIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip tooltip="Remove" aria-label="add">
+                                <IconButton
+                                  size={"small"}
+                                  style={{ marginLeft: 16 }}
+                                  onClick={() => {
+                                    if (ADGroupDNs.length > 1) {
+                                      setADGroupDNs(
+                                        ADGroupDNs.filter(
+                                          (_, i) => i !== index,
+                                        ),
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </Box>
+                        </Fragment>
+                      );
+                    })}
+                  </Grid>
+                </fieldset>
+                <br />
+                <Box sx={modalStyleUtils.modalButtonBar}>
+                  <Button
+                    id={"add-additional-dns"}
+                    type="submit"
+                    variant="callAction"
+                    disabled={!isFormValid || isSending}
+                    onClick={() => setAdministrators()}
+                    label={"Add additional DNs"}
+                  />
+                </Box>
+              </Fragment>
+            )}
+          </FormLayout>
         </Fragment>
       )}
-    </React.Fragment>
+    </Fragment>
   );
 };
 
-const mapState = (state: AppState) => ({
-  loadingTenant: state.tenants.loadingTenant,
-  selectedTenant: state.tenants.currentTenant,
-  tenant: state.tenants.tenantInfo,
-});
-
-const connector = connect(mapState, null);
-
-export default withStyles(styles)(connector(TenantIdentityProvider));
+export default TenantIdentityProvider;
