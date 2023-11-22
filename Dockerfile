@@ -1,8 +1,8 @@
-FROM registry.access.redhat.com/ubi9/ubi-minimal:9.3 as build
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as build
 
 RUN microdnf update -y --nodocs && microdnf install ca-certificates -y --nodocs
 
-FROM registry.access.redhat.com/ubi9/ubi-micro:9.2
+FROM registry.access.redhat.com/ubi9/ubi-micro:latest
 
 ARG TAG
 
