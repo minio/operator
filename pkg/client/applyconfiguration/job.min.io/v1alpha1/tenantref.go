@@ -18,23 +18,23 @@
 
 package v1alpha1
 
-// MinioJobTenantRefApplyConfiguration represents an declarative configuration of the MinioJobTenantRef type for use
+// TenantRefApplyConfiguration represents an declarative configuration of the TenantRef type for use
 // with apply.
-type MinioJobTenantRefApplyConfiguration struct {
+type TenantRefApplyConfiguration struct {
 	Name      *string `json:"name,omitempty"`
 	Namespace *string `json:"namespace,omitempty"`
 }
 
-// MinioJobTenantRefApplyConfiguration constructs an declarative configuration of the MinioJobTenantRef type for use with
+// TenantRefApplyConfiguration constructs an declarative configuration of the TenantRef type for use with
 // apply.
-func MinioJobTenantRef() *MinioJobTenantRefApplyConfiguration {
-	return &MinioJobTenantRefApplyConfiguration{}
+func TenantRef() *TenantRefApplyConfiguration {
+	return &TenantRefApplyConfiguration{}
 }
 
 // WithName sets the Name field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Name field is set to the value of the last call.
-func (b *MinioJobTenantRefApplyConfiguration) WithName(value string) *MinioJobTenantRefApplyConfiguration {
+func (b *TenantRefApplyConfiguration) WithName(value string) *TenantRefApplyConfiguration {
 	b.Name = &value
 	return b
 }
@@ -42,7 +42,7 @@ func (b *MinioJobTenantRefApplyConfiguration) WithName(value string) *MinioJobTe
 // WithNamespace sets the Namespace field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Namespace field is set to the value of the last call.
-func (b *MinioJobTenantRefApplyConfiguration) WithNamespace(value string) *MinioJobTenantRefApplyConfiguration {
+func (b *TenantRefApplyConfiguration) WithNamespace(value string) *TenantRefApplyConfiguration {
 	b.Namespace = &value
 	return b
 }

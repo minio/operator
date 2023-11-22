@@ -15,7 +15,8 @@
 // +k8s:deepcopy-gen=package,register
 // go:generate controller-gen crd:trivialVersions=true paths=. output:dir=.
 
-// Package v1alpha1 - The following parameters are specific to the `job.min.io/v1alpha1` MinIOJob CRD API
+// Package v1alpha1 - The following parameters are specific to the `job.min.io/v1alpha1` MinIOJob CRD API.
+//
 // MinIOJob is an automated InfrastructureAsCode integrated with Minio Operator STS to configure MinIO Tenants.
 // +groupName=job.min.io
 // +versionName=v1alpha1

@@ -43,8 +43,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &jobminiov1alpha1.MinIOJobSpecApplyConfiguration{}
 	case v1alpha1.SchemeGroupVersion.WithKind("MinIOJobStatus"):
 		return &jobminiov1alpha1.MinIOJobStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("MinioJobTenantRef"):
-		return &jobminiov1alpha1.MinioJobTenantRefApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TenantRef"):
+		return &jobminiov1alpha1.TenantRefApplyConfiguration{}
 
 		// Group=minio.min.io, Version=v2
 	case v2.SchemeGroupVersion.WithKind("Bucket"):

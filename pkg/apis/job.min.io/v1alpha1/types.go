@@ -48,7 +48,7 @@ type MinIOJobSpec struct {
 	// *Required* +
 	//
 	// TenantRef Reference for minio Tenant to eun the jobs against
-	TenantRef MinioJobTenantRef `json:"tenant"`
+	TenantRef TenantRef `json:"tenant"`
 
 	// Execution order of the jobs, either `parallel` or `sequential`.
 	// Defaults to `parallel` if not provided.
@@ -82,8 +82,8 @@ type CommandSpec struct {
 	DependsOn []string `json:"dependsOn,omitempty"`
 }
 
-// MinioJobTenantRef Is the reference to the target tenant of the jobs
-type MinioJobTenantRef struct {
+// TenantRef Is the reference to the target tenant of the jobs
+type TenantRef struct {
 	// *Required* +
 	Name string `json:"name"`
 	// *Required* +

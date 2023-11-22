@@ -21,11 +21,11 @@ package v1alpha1
 // MinIOJobSpecApplyConfiguration represents an declarative configuration of the MinIOJobSpec type for use
 // with apply.
 type MinIOJobSpecApplyConfiguration struct {
-	ServiceAccountName *string                              `json:"serviceAccountName,omitempty"`
-	TenantRef          *MinioJobTenantRefApplyConfiguration `json:"tenant,omitempty"`
-	Execution          *string                              `json:"execution,omitempty"`
-	FailureStrategy    *string                              `json:"failureStrategy,omitempty"`
-	Commands           []CommandSpecApplyConfiguration      `json:"commands,omitempty"`
+	ServiceAccountName *string                         `json:"serviceAccountName,omitempty"`
+	TenantRef          *TenantRefApplyConfiguration    `json:"tenant,omitempty"`
+	Execution          *string                         `json:"execution,omitempty"`
+	FailureStrategy    *string                         `json:"failureStrategy,omitempty"`
+	Commands           []CommandSpecApplyConfiguration `json:"commands,omitempty"`
 }
 
 // MinIOJobSpecApplyConfiguration constructs an declarative configuration of the MinIOJobSpec type for use with
@@ -45,7 +45,7 @@ func (b *MinIOJobSpecApplyConfiguration) WithServiceAccountName(value string) *M
 // WithTenantRef sets the TenantRef field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the TenantRef field is set to the value of the last call.
-func (b *MinIOJobSpecApplyConfiguration) WithTenantRef(value *MinioJobTenantRefApplyConfiguration) *MinIOJobSpecApplyConfiguration {
+func (b *MinIOJobSpecApplyConfiguration) WithTenantRef(value *TenantRefApplyConfiguration) *MinIOJobSpecApplyConfiguration {
 	b.TenantRef = value
 	return b
 }
