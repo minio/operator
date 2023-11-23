@@ -21,8 +21,8 @@ package v1alpha1
 // MinIOJobStatusApplyConfiguration represents an declarative configuration of the MinIOJobStatus type for use
 // with apply.
 type MinIOJobStatusApplyConfiguration struct {
-	Phase    *string                           `json:"phase,omitempty"`
-	Commands []CommandStatusApplyConfiguration `json:"commands,omitempty"`
+	Phase          *string                           `json:"phase,omitempty"`
+	CommandsStatus []CommandStatusApplyConfiguration `json:"commands,omitempty"`
 }
 
 // MinIOJobStatusApplyConfiguration constructs an declarative configuration of the MinIOJobStatus type for use with
@@ -39,15 +39,15 @@ func (b *MinIOJobStatusApplyConfiguration) WithPhase(value string) *MinIOJobStat
 	return b
 }
 
-// WithCommands adds the given value to the Commands field in the declarative configuration
+// WithCommandsStatus adds the given value to the CommandsStatus field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Commands field.
-func (b *MinIOJobStatusApplyConfiguration) WithCommands(values ...*CommandStatusApplyConfiguration) *MinIOJobStatusApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the CommandsStatus field.
+func (b *MinIOJobStatusApplyConfiguration) WithCommandsStatus(values ...*CommandStatusApplyConfiguration) *MinIOJobStatusApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
-			panic("nil value passed to WithCommands")
+			panic("nil value passed to WithCommandsStatus")
 		}
-		b.Commands = append(b.Commands, *values[i])
+		b.CommandsStatus = append(b.CommandsStatus, *values[i])
 	}
 	return b
 }

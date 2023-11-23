@@ -53,11 +53,15 @@ type MinIOJobSpec struct {
 	// Execution order of the jobs, either `parallel` or `sequential`.
 	// Defaults to `parallel` if not provided.
 	// +optional
+	// +kubebuilder:default=parallel
+	// +kubebuilder:validation:Enum=parallel;sequential;
 	Execution string `json:"execution"`
 
 	// FailureStrategy is the forward plan in case of the failure of one or more MinioJob pods
 	// Either `stopOnFailure` or `continueOnFailure`, defaults to `continueOnFailure`.
 	// +optional
+	// +kubebuilder:default=continueOnFailure
+	// +kubebuilder:validation:Enum=continueOnFailure;stopOnFailure;
 	FailureStrategy string `json:"failureStrategy"`
 
 	// *Required* +
@@ -73,9 +77,13 @@ type CommandSpec struct {
 	// Operation is the MinioClient Action
 	Operation string `json:"op"`
 
+	// Name is the Command Name, optional, required if want to reference it with `DependsOn`
+	// +optional
+	Name string `json:"name,omitempty"`
+
 	// Args Arguments to pass to the action
 	// +optional
-	Args []string `json:"args,omitempty"`
+	Args map[string]string `json:"args,omitempty"`
 
 	// DependsOn List of named `command` in this MinioJob that have to be scheduled and executed before this command runs
 	// +optional
@@ -95,7 +103,7 @@ type MinIOJobStatus struct {
 	// *Required* +
 	Phase string `json:"phase"`
 	// *Required* +
-	Commands []CommandStatus `json:"commands"`
+	CommandsStatus []CommandStatus `json:"commands"`
 }
 
 // CommandStatus Status of MinioJob command execution

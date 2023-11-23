@@ -21,9 +21,10 @@ package v1alpha1
 // CommandSpecApplyConfiguration represents an declarative configuration of the CommandSpec type for use
 // with apply.
 type CommandSpecApplyConfiguration struct {
-	Operation *string  `json:"op,omitempty"`
-	Args      []string `json:"args,omitempty"`
-	DependsOn []string `json:"dependsOn,omitempty"`
+	Operation *string           `json:"op,omitempty"`
+	Name      *string           `json:"name,omitempty"`
+	Args      map[string]string `json:"args,omitempty"`
+	DependsOn []string          `json:"dependsOn,omitempty"`
 }
 
 // CommandSpecApplyConfiguration constructs an declarative configuration of the CommandSpec type for use with
@@ -40,12 +41,24 @@ func (b *CommandSpecApplyConfiguration) WithOperation(value string) *CommandSpec
 	return b
 }
 
-// WithArgs adds the given value to the Args field in the declarative configuration
+// WithName sets the Name field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Name field is set to the value of the last call.
+func (b *CommandSpecApplyConfiguration) WithName(value string) *CommandSpecApplyConfiguration {
+	b.Name = &value
+	return b
+}
+
+// WithArgs puts the entries into the Args field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the Args field.
-func (b *CommandSpecApplyConfiguration) WithArgs(values ...string) *CommandSpecApplyConfiguration {
-	for i := range values {
-		b.Args = append(b.Args, values[i])
+// If called multiple times, the entries provided by each call will be put on the Args field,
+// overwriting an existing map entries in Args field with the same key.
+func (b *CommandSpecApplyConfiguration) WithArgs(entries map[string]string) *CommandSpecApplyConfiguration {
+	if b.Args == nil && len(entries) > 0 {
+		b.Args = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.Args[k] = v
 	}
 	return b
 }

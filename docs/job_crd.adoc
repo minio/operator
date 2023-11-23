@@ -35,7 +35,10 @@ CommandSpec (`spec`) defines the configuration of a MinioClient Command.
 |*Required* + 
  Operation is the MinioClient Action
 
-|*`args`* __string array__ 
+|*`name`* __string__ 
+|Name is the Command Name, optional, required if want to reference it with `DependsOn`
+
+|*`args`* __object (keys:string, values:string)__ 
 |Args Arguments to pass to the action
 
 |*`dependsOn`* __string array__ 

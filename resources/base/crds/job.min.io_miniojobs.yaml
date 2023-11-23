@@ -40,13 +40,15 @@ spec:
                 items:
                   properties:
                     args:
-                      items:
+                      additionalProperties:
                         type: string
-                      type: array
+                      type: object
                     dependsOn:
                       items:
                         type: string
                       type: array
+                    name:
+                      type: string
                     op:
                       type: string
                   required:
@@ -54,8 +56,16 @@ spec:
                   type: object
                 type: array
               execution:
+                default: parallel
+                enum:
+                - parallel
+                - sequential
                 type: string
               failureStrategy:
+                default: continueOnFailure
+                enum:
+                - continueOnFailure
+                - stopOnFailure
                 type: string
               serviceAccountName:
                 type: string
