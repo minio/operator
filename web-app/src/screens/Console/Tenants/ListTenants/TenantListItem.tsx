@@ -15,105 +15,158 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment } from "react";
-
+import { breakPoints, DrivesIcon, Grid, Box } from "mds";
 import { useNavigate } from "react-router-dom";
-import { Theme } from "@mui/material/styles";
 import { CapacityValues, ValueUnit } from "./types";
 import { setTenantName } from "../tenantsSlice";
 import { getTenantAsync } from "../thunks/tenantDetailsAsync";
-import { DrivesIcon } from "mds";
 import { niceBytes, niceBytesInt } from "../../../../common/utils";
-import Grid from "@mui/material/Grid";
 import InformationItem from "./InformationItem";
 import TenantCapacity from "./TenantCapacity";
 import { useAppDispatch } from "../../../../store";
-import makeStyles from "@mui/styles/makeStyles";
 import { TenantList } from "../../../../api/operatorApi";
+import styled from "styled-components";
+import get from "lodash/get";
 
-const useStyles = makeStyles((theme: Theme) => ({
-  redState: {
-    color: theme.palette.error.main,
-    "& .min-icon": {
-      width: 16,
-      height: 16,
-      float: "left",
-      marginRight: 4,
-    },
+const TenantListItemMain = styled.div(({ theme }) => ({
+  border: `${get(theme, "borderColor", "#eaeaea")} 1px solid`,
+  borderRadius: 3,
+  padding: 15,
+  cursor: "pointer",
+  "&.disabled": {
+    backgroundColor: get(theme, "signalColors.danger", "red"),
   },
-  yellowState: {
-    color: theme.palette.warning.main,
-    "& .min-icon": {
-      width: 16,
-      height: 16,
-      float: "left",
-      marginRight: 4,
-    },
+  "&:hover": {
+    backgroundColor: get(theme, "boxBackground", "#FBFAFA"),
   },
-  greenState: {
-    color: theme.palette.success.main,
-    "& .min-icon": {
-      width: 16,
-      height: 16,
-      float: "left",
-      marginRight: 4,
-    },
-  },
-  greyState: {
-    color: "grey",
-    "& .min-icon": {
-      width: 16,
-      height: 16,
-      float: "left",
-      marginRight: 4,
-    },
-  },
-  tenantItem: {
-    border: "1px solid #EAEAEA",
-    marginBottom: 16,
-    padding: "15px 30px",
-    "&:hover": {
-      backgroundColor: "#FAFAFA",
-      cursor: "pointer",
-    },
-  },
-  titleContainer: {
+  "& .tenantTitle": {
     display: "flex",
+    alignItems: "center",
     justifyContent: "space-between",
-    width: "100%",
+    gap: 10,
+    "& h1": {
+      padding: 0,
+      margin: 0,
+      marginBottom: 5,
+      fontSize: 22,
+      color: get(theme, "screenTitle.iconColor", "#07193E"),
+      [`@media (max-width: ${breakPoints.md}px)`]: {
+        marginBottom: 0,
+      },
+    },
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
+  "& .tenantDetails": {
+    display: "flex",
+    gap: 40,
+    "& span": {
+      fontSize: 14,
+    },
+    [`@media (max-width: ${breakPoints.md}px)`]: {
+      flexFlow: "column-reverse",
+      gap: 5,
+    },
   },
-  namespaceLabel: {
+  "& .tenantMetrics": {
+    display: "flex",
+    alignItems: "center",
+    marginTop: 20,
+    gap: 25,
+    borderTop: `${get(theme, "borderColor", "#E2E2E2")} 1px solid`,
+    paddingTop: 20,
+    "& svg.tenantIcon": {
+      color: get(theme, "screenTitle.iconColor", "#07193E"),
+      fill: get(theme, "screenTitle.iconColor", "#07193E"),
+    },
+    "& .metric": {
+      "& .min-icon": {
+        color: get(theme, "fontColor", "#000"),
+        width: 13,
+        marginRight: 5,
+      },
+    },
+    "& .metricLabel": {
+      fontSize: 14,
+      fontWeight: "bold",
+      color: get(theme, "fontColor", "#000"),
+    },
+    "& .metricText": {
+      fontSize: 24,
+      fontWeight: "bold",
+    },
+    "& .unit": {
+      fontSize: 12,
+      fontWeight: "normal",
+    },
+    "& .status": {
+      fontSize: 12,
+      color: get(theme, "mutedText", "#87888d"),
+    },
+    [`@media (max-width: ${breakPoints.md}px)`]: {
+      marginTop: 8,
+      paddingTop: 8,
+    },
+  },
+  "& .namespaceLabel": {
     display: "inline-flex",
-    backgroundColor: "#EAEDEF",
+    color: get(theme, "signalColors.dark", "#000"),
+    backgroundColor: get(theme, "borderColor", "#E2E2E2"),
     borderRadius: 2,
     padding: "4px 8px",
     fontSize: 10,
     marginRight: 20,
   },
-  status: {
-    fontSize: 12,
-    color: "#8F9090",
+  "& .redState": {
+    color: get(theme, "signalColors.danger", "#C51B3F"),
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      float: "left",
+      marginRight: 4,
+    },
+  },
+  "& .yellowState": {
+    color: get(theme, "signalColors.warning", "#FFBD62"),
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      float: "left",
+      marginRight: 4,
+    },
+  },
+  "& .greenState": {
+    color: get(theme, "signalColors.good", "#4CCB92"),
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      float: "left",
+      marginRight: 4,
+    },
+  },
+  "& .greyState": {
+    color: get(theme, "signalColors.disabled", "#E6EBEB"),
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      float: "left",
+      marginRight: 4,
+    },
   },
 }));
 
 const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const classes = useStyles();
 
   const healthStatusToClass = (health_status: string) => {
     switch (health_status) {
       case "red":
-        return classes.redState;
+        return "redState";
       case "yellow":
-        return classes.yellowState;
+        return "yellowState";
       case "green":
-        return classes.greenState;
+        return "greenState";
       default:
-        return classes.greyState;
+        return "greyState";
     }
   };
 
@@ -186,21 +239,20 @@ const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
 
   return (
     <Fragment>
-      <div
-        className={classes.tenantItem}
+      <TenantListItemMain
         id={`list-tenant-${tenant.name}`}
         onClick={openTenantDetails}
       >
         <Grid container>
-          <Grid item xs={12} className={classes.titleContainer}>
-            <div className={classes.title}>
-              <span>{tenant.name}</span>
-            </div>
-            <div>
-              <span className={classes.namespaceLabel}>
+          <Grid item xs={12} className={"tenantTitle"}>
+            <Box>
+              <h1>{tenant.name}</h1>
+            </Box>
+            <Box>
+              <span className={"namespaceLabel"}>
                 Namespace:&nbsp;{tenant.namespace}
               </span>
-            </div>
+            </Box>
           </Grid>
           <Grid item xs={12} sx={{ marginTop: 2 }}>
             <Grid container>
@@ -211,7 +263,7 @@ const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
                   statusClass={healthStatusToClass(tenant.health_status!)}
                 />
               </Grid>
-              <Grid item xs>
+              <Grid item xs={7}>
                 <Grid
                   item
                   xs
@@ -235,7 +287,6 @@ const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
                   <InformationItem
                     label={"Pools"}
                     value={`${tenant.pool_count}`}
-                    variant={"faded"}
                   />
                 </Grid>
                 <Grid
@@ -243,86 +294,67 @@ const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
                   xs={12}
                   sx={{ paddingLeft: "20px", marginTop: "15px" }}
                 >
-                  <span className={classes.status}>
+                  <span className={"status"}>
                     <strong>State:</strong> {tenant.currentState}
                   </span>
                 </Grid>
               </Grid>
               <Grid item xs={3}>
                 <Fragment>
-                  <Grid container>
+                  <Grid container sx={{ gap: 20 }}>
                     <Grid
                       item
                       xs={2}
-                      textAlign={"center"}
-                      justifyContent={"center"}
-                      justifyItems={"center"}
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
                     >
-                      <DrivesIcon
-                        style={{ width: 25, color: "rgb(91,91,91)" }}
-                      />
-                      <div
-                        style={{
-                          color: "rgb(118, 118, 118)",
+                      <DrivesIcon className={"muted"} style={{ width: 25 }} />
+                      <Box
+                        className={"muted"}
+                        sx={{
                           fontSize: 12,
                           fontWeight: "400",
                         }}
                       >
                         Usage
-                      </div>
+                      </Box>
                     </Grid>
-                    <Grid item xs={1} />
-                    <Grid item style={{ paddingTop: 8 }}>
+                    <Grid item xs={9} sx={{ paddingTop: 8 }}>
                       {(!tenant.tiers || tenant.tiers.length === 0) && (
-                        <div
-                          style={{
+                        <Box
+                          sx={{
                             fontSize: 14,
                             fontWeight: 400,
                           }}
                         >
-                          <span
-                            style={{
-                              color: "rgb(62,62,62)",
-                            }}
-                          >
-                            Internal:{" "}
-                          </span>{" "}
+                          <span className={"muted"}>Internal: </span>{" "}
                           {`${used.value} ${used.unit}`}
-                        </div>
+                        </Box>
                       )}
 
                       {tenant.tiers && tenant.tiers.length > 0 && (
                         <Fragment>
-                          <div
-                            style={{
+                          <Box
+                            sx={{
                               fontSize: 14,
                               fontWeight: 400,
                             }}
                           >
-                            <span
-                              style={{
-                                color: "rgb(62,62,62)",
-                              }}
-                            >
-                              Internal:{" "}
-                            </span>{" "}
+                            <span className={"muted"}>Internal: </span>{" "}
                             {`${localUse.value} ${localUse.unit}`}
-                          </div>
-                          <div
-                            style={{
+                          </Box>
+                          <Box
+                            sx={{
                               fontSize: 14,
                               fontWeight: 400,
                             }}
                           >
-                            <span
-                              style={{
-                                color: "rgb(62,62,62)",
-                              }}
-                            >
-                              Tiered:{" "}
-                            </span>{" "}
+                            <span className={"muted"}>Tiered: </span>{" "}
                             {`${tieredUse.value} ${tieredUse.unit}`}
-                          </div>
+                          </Box>
                         </Fragment>
                       )}
                     </Grid>
@@ -332,7 +364,7 @@ const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
             </Grid>
           </Grid>
         </Grid>
-      </div>
+      </TenantListItemMain>
     </Fragment>
   );
 };

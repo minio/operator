@@ -15,8 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment } from "react";
-import Grid from "@mui/material/Grid";
-import { Box } from "mds";
+import { Box, Grid } from "mds";
 
 const getPolicyData = (policies: Record<string, any> = {}) => {
   const policyNames = Object.keys(policies);
@@ -74,7 +73,7 @@ const KMSPolicyInfo = ({
 }) => {
   const fmtPolicies = getPolicyData(policies);
   return fmtPolicies.length ? (
-    <Grid xs={12} marginBottom={"5px"}>
+    <Grid xs={12} sx={{ marginBottom: 5 }}>
       <h4>Policies</h4>
       <Box
         withBorders

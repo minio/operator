@@ -15,20 +15,17 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import clsx from "clsx";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   AGPLV3Logo,
+  Box,
+  breakPoints,
   Button,
+  CheckCircleIcon,
   ConsoleEnterprise,
   ConsoleStandard,
   LicenseDocIcon,
-  Box,
-  breakPoints,
 } from "mds";
-import { useTheme } from "@mui/material/styles";
 import { SubnetInfo } from "./types";
-import useMediaQuery from "@mui/material/useMediaQuery";
 import {
   COMMUNITY_PLAN_FEATURES,
   ENTERPRISE_PLAN_FEATURES,
@@ -38,6 +35,7 @@ import {
   PAID_PLANS,
   STANDARD_PLAN_FEATURES,
 } from "./utils";
+import clsx from "clsx";
 
 interface IRegisterStatus {
   activateProductModal: any;
@@ -207,8 +205,25 @@ const PricingFeatureItem = (props: {
 };
 
 const LicensePlans = ({ licenseInfo, operatorMode }: IRegisterStatus) => {
-  const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const [isSmallScreen, setIsSmallScreen] = useState<boolean>(
+    window.innerWidth >= breakPoints.sm,
+  );
+
+  useEffect(() => {
+    const handleWindowResize = () => {
+      let extMD = false;
+      if (window.innerWidth >= breakPoints.sm) {
+        extMD = true;
+      }
+      setIsSmallScreen(extMD);
+    };
+
+    window.addEventListener("resize", handleWindowResize);
+
+    return () => {
+      window.removeEventListener("resize", handleWindowResize);
+    };
+  }, []);
 
   let currentPlan = !licenseInfo
     ? "community"

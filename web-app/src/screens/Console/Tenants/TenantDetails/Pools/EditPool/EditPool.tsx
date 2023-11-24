@@ -15,11 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import Grid from "@mui/material/Grid";
 import {
   BackLink,
   TenantsIcon,
@@ -27,56 +22,24 @@ import {
   ScreenTitle,
   Wizard,
   WizardElement,
+  Grid,
+  ProgressBar,
+  Box,
 } from "mds";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import EditPoolResources from "./EditPoolResources";
 import EditPoolConfiguration from "./EditPoolConfiguration";
 import EditPoolPlacement from "./EditPoolPlacement";
-import { LinearProgress } from "@mui/material";
 import { niceBytes } from "../../../../../../common/utils";
-import {
-  formFieldStyles,
-  modalStyleUtils,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-
 import { AppState, useAppDispatch } from "../../../../../../store";
 import { resetEditPoolForm, setInitialPoolDetails } from "./editPoolSlice";
 import EditPoolButton from "./EditPoolButton";
-import makeStyles from "@mui/styles/makeStyles";
 import PageHeaderWrapper from "../../../../Common/PageHeaderWrapper/PageHeaderWrapper";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    bottomContainer: {
-      display: "flex",
-      flexGrow: 1,
-      alignItems: "center",
-      margin: "auto",
-      justifyContent: "center",
-      "& div": {
-        width: 150,
-        "@media (max-width: 900px)": {
-          flexFlow: "column",
-        },
-      },
-    },
-    pageBox: {
-      border: "1px solid #EAEAEA",
-      borderTop: 0,
-    },
-    editPoolTitle: {
-      border: "1px solid #EAEAEA",
-      borderBottom: 0,
-    },
-    ...formFieldStyles,
-    ...modalStyleUtils,
-  }),
-);
 
 const EditPool = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
-  const classes = useStyles();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const selectedPool = useSelector(
@@ -163,8 +126,8 @@ const EditPool = () => {
             </Fragment>
           }
         />
-        <PageLayout>
-          <Grid item xs={12} className={classes.editPoolTitle}>
+        <PageLayout variant={"constrained"}>
+          <Box withBorders sx={{ padding: 0, borderBottom: 0 }}>
             <ScreenTitle
               icon={<TenantsIcon />}
               title={`Edit Pool - ${selectedPool}`}
@@ -177,16 +140,18 @@ const EditPool = () => {
               }
               actions={null}
             />
-          </Grid>
-
+          </Box>
           {editSending && (
             <Grid item xs={12}>
-              <LinearProgress />
+              <ProgressBar />
             </Grid>
           )}
-          <Grid item xs={12} className={classes.pageBox}>
+          <Box
+            withBorders
+            sx={{ padding: 0, borderTop: 0, "& .muted": { fontSize: 13 } }}
+          >
             <Wizard wizardSteps={wizardSteps} linearMode={false} />
-          </Grid>
+          </Box>
         </PageLayout>
       </Grid>
     </Fragment>

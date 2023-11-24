@@ -14,10 +14,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React from "react";
+import React, { Fragment } from "react";
 import { Box, Button, Grid } from "mds";
 import styled from "styled-components";
-import { Typography } from "@mui/material";
 import { DateTime } from "luxon";
 import { Link } from "react-router-dom";
 import get from "lodash/get";
@@ -97,55 +96,25 @@ const SubnetLicenseTenant = ({
       className={tenant && tenant.subnet_license ? "licenseContainer" : ""}
     >
       {tenant && tenant.subnet_license ? (
-        <React.Fragment>
+        <Fragment>
           <Grid container className={"licenseInfo"}>
             <Grid item xs={6}>
-              <Typography
-                variant="button"
-                display="block"
-                gutterBottom
-                className={"licenseInfoTitle"}
-              >
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoTitle"}>
                 License
-              </Typography>
-              <Typography
-                variant="overline"
-                display="block"
-                gutterBottom
-                className={"licenseInfoValue"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoValue"}>
                 Commercial License
-              </Typography>
-              <Typography
-                variant="button"
-                display="block"
-                gutterBottom
-                className={"licenseInfoTitle"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoTitle"}>
                 Organization
-              </Typography>
-              <Typography
-                variant="overline"
-                display="block"
-                gutterBottom
-                className={"licenseInfoValue"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoValue"}>
                 {tenant.subnet_license.organization}
-              </Typography>
-              <Typography
-                variant="button"
-                display="block"
-                gutterBottom
-                className={"licenseInfoTitle"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoTitle"}>
                 Registered Capacity
-              </Typography>
-              <Typography
-                variant="overline"
-                display="block"
-                gutterBottom
-                className={"licenseInfoValue"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoValue"}>
                 {niceBytes(
                   (
                     (tenant.subnet_license?.storage_capacity || 0) *
@@ -153,57 +122,27 @@ const SubnetLicenseTenant = ({
                   ) // 1 Terabyte = 1099511627776 Bytes
                     .toString(10),
                 )}
-              </Typography>
-              <Typography
-                variant="button"
-                display="block"
-                gutterBottom
-                className={"licenseInfoTitle"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoTitle"}>
                 Expiry Date
-              </Typography>
-              <Typography
-                variant="overline"
-                display="block"
-                gutterBottom
-                className={"licenseInfoValue"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoValue"}>
                 {expiryTime.toFormat("yyyy-MM-dd")}
-              </Typography>
+              </Box>
             </Grid>
             <Grid item xs={6}>
-              <Typography
-                variant="button"
-                display="block"
-                gutterBottom
-                className={"licenseInfoTitle"}
-              >
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoTitle"}>
                 Subscription Plan
-              </Typography>
-              <Typography
-                variant="overline"
-                display="block"
-                gutterBottom
-                className={"licenseInfoValue"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoValue"}>
                 {tenant.subnet_license.plan}
-              </Typography>
-              <Typography
-                variant="button"
-                display="block"
-                gutterBottom
-                className={"licenseInfoTitle"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoTitle"}>
                 Requestor
-              </Typography>
-              <Typography
-                variant="overline"
-                display="block"
-                gutterBottom
-                className={"licenseInfoValue"}
-              >
+              </Box>
+              <Box sx={{ marginBottom: 12 }} className={"licenseInfoValue"}>
                 {tenant.subnet_license.email}
-              </Typography>
+              </Box>
             </Grid>
             <img
               className={"verifiedIcon"}
@@ -211,7 +150,7 @@ const SubnetLicenseTenant = ({
               alt="verified"
             />
           </Grid>
-        </React.Fragment>
+        </Fragment>
       ) : (
         !loadingLicenseInfo && (
           <Box

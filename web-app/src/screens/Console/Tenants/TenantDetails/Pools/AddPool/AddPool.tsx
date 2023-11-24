@@ -15,17 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect } from "react";
-import { Theme } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
-import createStyles from "@mui/styles/createStyles";
-import {
-  formFieldStyles,
-  modalStyleUtils,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
-import { niceBytes } from "../../../../../../common/utils";
-import { LinearProgress } from "@mui/material";
-import PoolResources from "./PoolResources";
 import {
   BackLink,
   TenantsIcon,
@@ -33,50 +22,24 @@ import {
   ScreenTitle,
   Wizard,
   WizardElement,
+  Box,
+  ProgressBar,
+  Grid,
 } from "mds";
-
-import { AppState, useAppDispatch } from "../../../../../../store";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { AppState, useAppDispatch } from "../../../../../../store";
+import { niceBytes } from "../../../../../../common/utils";
+import { resetPoolForm } from "./addPoolSlice";
+import PoolResources from "./PoolResources";
 import PoolConfiguration from "./PoolConfiguration";
 import PoolPodPlacement from "./PoolPodPlacement";
-
-import { resetPoolForm } from "./addPoolSlice";
 import AddPoolCreateButton from "./AddPoolCreateButton";
-import makeStyles from "@mui/styles/makeStyles";
 import PageHeaderWrapper from "../../../../Common/PageHeaderWrapper/PageHeaderWrapper";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    bottomContainer: {
-      display: "flex",
-      flexGrow: 1,
-      alignItems: "center",
-      margin: "auto",
-      justifyContent: "center",
-      "& div": {
-        width: 150,
-        "@media (max-width: 900px)": {
-          flexFlow: "column",
-        },
-      },
-    },
-    pageBox: {
-      border: "1px solid #EAEAEA",
-      borderTop: 0,
-    },
-    addPoolTitle: {
-      border: "1px solid #EAEAEA",
-      borderBottom: 0,
-    },
-    ...formFieldStyles,
-    ...modalStyleUtils,
-  }),
-);
 
 const AddPool = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const classes = useStyles();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const sending = useSelector((state: AppState) => state.addPool.sending);
@@ -141,8 +104,8 @@ const AddPool = () => {
             </Fragment>
           }
         />
-        <PageLayout>
-          <Grid item xs={12} className={classes.addPoolTitle}>
+        <PageLayout variant={"constrained"}>
+          <Box withBorders sx={{ padding: 0, borderBottom: 0 }}>
             <ScreenTitle
               icon={<TenantsIcon />}
               title={`Add New Pool to ${tenant?.name || ""}`}
@@ -154,15 +117,18 @@ const AddPool = () => {
               }
               actions={null}
             />
-          </Grid>
+          </Box>
           {sending && (
             <Grid item xs={12}>
-              <LinearProgress />
+              <ProgressBar />
             </Grid>
           )}
-          <Grid item xs={12} className={classes.pageBox}>
+          <Box
+            withBorders
+            sx={{ padding: 0, borderTop: 0, "& .muted": { fontSize: 13 } }}
+          >
             <Wizard wizardSteps={wizardSteps} linearMode={false} />
-          </Grid>
+          </Box>
         </PageLayout>
       </Grid>
     </Fragment>

@@ -15,15 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useEffect, useState } from "react";
+import { Grid } from "mds";
 import { useSelector } from "react-redux";
-import Grid from "@mui/material/Grid";
 import { IEvent } from "../../ListTenants/types";
 import { niceDays } from "../../../../../common/utils";
 import { ErrorResponseHandler } from "../../../../../common/types";
-import api from "../../../../../common/api";
 import { AppState, useAppDispatch } from "../../../../../store";
-import EventsList from "../events/EventsList";
 import { setErrorSnackMessage } from "../../../../../systemSlice";
+import api from "../../../../../common/api";
+import EventsList from "../events/EventsList";
 
 interface IPodEventsProps {
   tenant: string;

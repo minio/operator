@@ -14,51 +14,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import {
-  containerForHeader,
-  spacingUtils,
-} from "../Common/FormComponents/common/styleLibrary";
-import ConfirmDialog from "../Common/ModalWrapper/ConfirmDialog";
-import useApi from "../Common/Hooks/useApi";
 import React, { useState } from "react";
-import { InfoIcon, UsersIcon, Box } from "mds";
+import { Box, FormLayout, InfoIcon, InputBox, UsersIcon, LockIcon } from "mds";
 import { ErrorResponseHandler } from "../../../common/types";
-import InputBoxWrapper from "../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
 import { useAppDispatch } from "../../../store";
 import { setErrorSnackMessage } from "../../../systemSlice";
-
-const styles = (theme: Theme) =>
-  createStyles({
-    sizedLabel: {
-      minWidth: "75px",
-    },
-    ...containerForHeader,
-    ...spacingUtils,
-  });
+import ConfirmDialog from "../Common/ModalWrapper/ConfirmDialog";
+import useApi from "../Common/Hooks/useApi";
 
 interface IGetApiKeyModalProps {
   open: boolean;
   closeModal: () => void;
   onSet: (apiKey: string) => void;
-  classes: any;
 }
 
-const GetApiKeyModal = ({
-  open,
-  closeModal,
-  classes,
-  onSet,
-}: IGetApiKeyModalProps) => {
+const GetApiKeyModal = ({ open, closeModal, onSet }: IGetApiKeyModalProps) => {
   const dispatch = useAppDispatch();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [mfaToken, setMfaToken] = useState("");
   const [subnetOTP, setSubnetOTP] = useState("");
 
@@ -67,7 +40,6 @@ const GetApiKeyModal = ({
     closeModal();
     setEmail("");
     setPassword("");
-    setShowPassword(false);
     setMfaToken("");
     setSubnetOTP("");
   };
@@ -106,12 +78,8 @@ const GetApiKeyModal = ({
 
   const getCredentialsDialog = () => {
     return (
-      <Box sx={{ width: 500 }}>
-        <InputBoxWrapper
-          className={classes.spacerBottom}
-          classes={{
-            inputLabel: classes.sizedLabel,
-          }}
+      <FormLayout withBorders={false} containerPadding={false}>
+        <InputBox
           id="subnet-email"
           name="subnet-email"
           onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -121,25 +89,17 @@ const GetApiKeyModal = ({
           value={email}
           overlayIcon={<UsersIcon />}
         />
-        <InputBoxWrapper
-          className={classes.spacerBottom}
-          classes={{
-            inputLabel: classes.sizedLabel,
-          }}
+        <InputBox
           id="subnet-password"
           name="subnet-password"
           onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
             setPassword(event.target.value)
           }
           label="Password"
-          type={showPassword ? "text" : "password"}
+          type={"password"}
           value={password}
-          overlayIcon={
-            showPassword ? <VisibilityOffIcon /> : <RemoveRedEyeIcon />
-          }
-          overlayAction={() => setShowPassword(!showPassword)}
         />
-      </Box>
+      </FormLayout>
     );
   };
 
@@ -149,11 +109,11 @@ const GetApiKeyModal = ({
         <Box sx={{ display: "flex", flexFlow: "column", flex: "2" }}>
           <Box
             sx={{
-              fontSize: "16px",
+              fontSize: 14,
               display: "flex",
               flexFlow: "column",
-              marginTop: "30px",
-              marginBottom: "30px",
+              marginTop: 20,
+              marginBottom: 20,
             }}
           >
             Two-Factor Authentication
@@ -170,8 +130,8 @@ const GetApiKeyModal = ({
               marginTop: "30px",
             }}
           >
-            <InputBoxWrapper
-              overlayIcon={<LockOutlinedIcon />}
+            <InputBox
+              overlayIcon={<LockIcon />}
               id="subnet-otp"
               name="subnet-otp"
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -182,13 +142,6 @@ const GetApiKeyModal = ({
               value={subnetOTP}
             />
           </Box>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-            }}
-          ></Box>
         </Box>
       </Box>
     );
@@ -217,4 +170,4 @@ const GetApiKeyModal = ({
   ) : null;
 };
 
-export default withStyles(styles)(GetApiKeyModal);
+export default GetApiKeyModal;
