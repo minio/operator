@@ -17,43 +17,25 @@
 import React, { Fragment, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { LinearProgress } from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import { Button, SectionTitle } from "mds";
-import Grid from "@mui/material/Grid";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import api from "../../../../common/api";
 import {
-  fieldBasic,
-  modalStyleUtils,
-} from "../../Common/FormComponents/common/styleLibrary";
+  Button,
+  CodeEditor,
+  Grid,
+  InformativeMessage,
+  ProgressBar,
+  SectionTitle,
+} from "mds";
+import api from "../../../../common/api";
 import { ErrorResponseHandler } from "../../../../common/types";
-import CodeMirrorWrapper from "../../Common/FormComponents/CodeMirrorWrapper/CodeMirrorWrapper";
 import { setModalErrorSnackMessage } from "../../../../systemSlice";
 import { AppState, useAppDispatch } from "../../../../store";
 import { getTenantAsync } from "../thunks/tenantDetailsAsync";
-
-const styles = (theme: Theme) =>
-  createStyles({
-    errorState: {
-      color: "#b53b4b",
-      fontSize: 14,
-      fontWeight: "bold",
-    },
-    ...modalStyleUtils,
-    ...fieldBasic,
-  });
 
 interface ITenantYAML {
   yaml: string;
 }
 
-interface ITenantYAMLProps {
-  classes: any;
-}
-
-const TenantYAML = ({ classes }: ITenantYAMLProps) => {
+const TenantYAML = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -78,7 +60,7 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
       .invoke("PUT", `/api/v1/namespaces/${namespace}/tenants/${tenant}/yaml`, {
         yaml: tenantYaml,
       })
-      .then((res) => {
+      .then(() => {
         setAddLoading(false);
         dispatch(getTenantAsync());
         setErrorMessage("");
@@ -115,7 +97,7 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
       {addLoading ||
         (loading && (
           <Grid item xs={12}>
-            <LinearProgress />
+            <ProgressBar />
           </Grid>
         ))}
 
@@ -133,29 +115,19 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
               <SectionTitle>Tenant Specification</SectionTitle>
             </Grid>
             {errorMessage ? (
-              <Grid
-                item
-                xs={12}
-                sx={{
-                  marginTop: "5px",
-                  marginBottom: "2px",
-                  border: "1px solid #b53b4b",
-                  borderRadius: "2px",
-                  padding: "5px",
-                }}
-              >
-                <div className={classes.errorState}>{errorMessage}</div>
+              <Grid item xs={12}>
+                <InformativeMessage
+                  title={"Error"}
+                  message={errorMessage}
+                  variant={"error"}
+                />
               </Grid>
             ) : null}
-            <Grid
-              item
-              xs={12}
-              sx={errorMessage ? { border: "1px solid #b53b4b" } : {}}
-            >
-              <CodeMirrorWrapper
+            <Grid item xs={12}>
+              <CodeEditor
                 value={tenantYaml}
                 mode={"yaml"}
-                onBeforeChange={(editor, data, value) => {
+                onChange={(value) => {
                   setTenantYaml(value);
                 }}
                 editorHeight={"550px"}
@@ -198,4 +170,4 @@ const TenantYAML = ({ classes }: ITenantYAMLProps) => {
   );
 };
 
-export default withStyles(styles)(TenantYAML);
+export default TenantYAML;

@@ -15,40 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment } from "react";
+import { BackLink, SectionTitle, Box } from "mds";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
 import { useLocation, useNavigate } from "react-router-dom";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import {
-  actionsTray,
-  containerForHeader,
-  tableStyles,
-  tenantDetailsStyles,
-} from "../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
-
 import { AppState, useAppDispatch } from "../../../../store";
-
+import { setOpenPoolDetails } from "../tenantsSlice";
 import PoolsListing from "./Pools/Details/PoolsListing";
 import PoolDetails from "./Pools/Details/PoolDetails";
 
-import { setOpenPoolDetails } from "../tenantsSlice";
-import { BackLink } from "mds";
-
-interface IPoolsSummary {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    ...actionsTray,
-    ...tableStyles,
-    ...containerForHeader,
-  });
-
-const PoolsSummary = ({ classes }: IPoolsSummary) => {
+const PoolsSummary = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -64,7 +39,7 @@ const PoolsSummary = ({ classes }: IPoolsSummary) => {
   return (
     <Fragment>
       {poolDetailsOpen && (
-        <Grid item xs={12}>
+        <Box>
           <BackLink
             label={"Pools list"}
             onClick={() => {
@@ -72,12 +47,13 @@ const PoolsSummary = ({ classes }: IPoolsSummary) => {
               dispatch(setOpenPoolDetails(false));
             }}
           />
-        </Grid>
+        </Box>
       )}
-      <h1 className={classes.sectionTitle}>
+      <SectionTitle separator sx={{ marginBottom: 15 }}>
         {poolDetailsOpen ? `Pool Details - ${selectedPool || ""}` : "Pools"}
-      </h1>
-      <Grid container>
+      </SectionTitle>
+
+      <Box>
         {poolDetailsOpen ? (
           <PoolDetails />
         ) : (
@@ -87,9 +63,9 @@ const PoolsSummary = ({ classes }: IPoolsSummary) => {
             }}
           />
         )}
-      </Grid>
+      </Box>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(PoolsSummary);
+export default PoolsSummary;

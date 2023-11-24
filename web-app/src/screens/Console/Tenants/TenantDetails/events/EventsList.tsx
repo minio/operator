@@ -15,20 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
-import { LinearProgress } from "@mui/material";
+import {
+  ProgressBar,
+  Table,
+  TableBody,
+  TableHeadCell,
+  TableCell,
+  TableHead,
+  TableRow,
+  Box,
+  ExpandCaret,
+  CollapseCaret,
+} from "mds";
 import { IEvent } from "../../ListTenants/types";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
-import Typography from "@mui/material/Typography";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import TableContainer from "@mui/material/TableContainer";
-import Paper from "@mui/material/Paper";
 
 interface IEventsListProps {
   events: IEvent[];
@@ -41,38 +40,36 @@ const Event = (props: { event: IEvent }) => {
 
   return (
     <React.Fragment>
-      <TableRow sx={{ "& > *": { borderBottom: "unset" }, cursor: "pointer" }}>
-        <TableCell component="th" scope="row" onClick={() => setOpen(!open)}>
+      <TableRow sx={{ cursor: "pointer" }}>
+        <TableHeadCell
+          scope="row"
+          onClick={() => setOpen(!open)}
+          sx={{ borderBottom: 0 }}
+        >
           {event.event_type}
+        </TableHeadCell>
+        <TableCell onClick={() => setOpen(!open)} sx={{ borderBottom: 0 }}>
+          {event.reason}
         </TableCell>
-        <TableCell onClick={() => setOpen(!open)}>{event.reason}</TableCell>
-        <TableCell onClick={() => setOpen(!open)}>{event.seen}</TableCell>
-        <TableCell onClick={() => setOpen(!open)}>
+        <TableCell onClick={() => setOpen(!open)} sx={{ borderBottom: 0 }}>
+          {event.seen}
+        </TableCell>
+        <TableCell onClick={() => setOpen(!open)} sx={{ borderBottom: 0 }}>
           {event.message.length >= 30
             ? `${event.message.slice(0, 30)}...`
             : event.message}
         </TableCell>
-        <TableCell onClick={() => setOpen(!open)}>
-          {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+        <TableCell onClick={() => setOpen(!open)} sx={{ borderBottom: 0 }}>
+          {open ? <CollapseCaret /> : <ExpandCaret />}
         </TableCell>
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 1 }}>
-              <Typography
-                style={{
-                  background: "#efefef",
-                  border: "1px solid #dedede",
-                  padding: 4,
-                  fontSize: 14,
-                  color: "#666666",
-                }}
-              >
-                {event.message}
-              </Typography>
+          {open && (
+            <Box useBackground sx={{ padding: 10, marginBottom: 10 }}>
+              {event.message}
             </Box>
-          </Collapse>
+          )}
         </TableCell>
       </TableRow>
     </React.Fragment>
@@ -81,10 +78,10 @@ const Event = (props: { event: IEvent }) => {
 
 const EventsList = ({ events, loading }: IEventsListProps) => {
   if (loading) {
-    return <LinearProgress />;
+    return <ProgressBar />;
   }
   return (
-    <TableContainer component={Paper}>
+    <Box withBorders customBorderPadding={"0px"}>
       <Table aria-label="collapsible table">
         <TableHead>
           <TableRow>
@@ -101,7 +98,7 @@ const EventsList = ({ events, loading }: IEventsListProps) => {
           ))}
         </TableBody>
       </Table>
-    </TableContainer>
+    </Box>
   );
 };
 

@@ -4,6 +4,7 @@
   "homepage": ".",
   "private": true,
   "dependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/traverse": "7.23.3",
     "@emotion/react": "11.11.1",
     "@emotion/styled": "11.11.0",

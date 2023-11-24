@@ -22,8 +22,10 @@ import {
   Button,
   CircleIcon,
   EditIcon,
+  Grid,
   MinIOTierIconXs,
   PageLayout,
+  ProgressBar,
   RefreshIcon,
   ScreenTitle,
   Tabs,
@@ -38,33 +40,24 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import Grid from "@mui/material/Grid";
-import {
-  containerForHeader,
-  pageContentStyles,
-  tenantDetailsStyles,
-} from "../../Common/FormComponents/common/styleLibrary";
+import styled from "styled-components";
+import get from "lodash/get";
 import { AppState, useAppDispatch } from "../../../../store";
 import { niceBytes } from "../../../../common/utils";
-import withSuspense from "../../Common/Components/withSuspense";
 import { IAM_PAGES } from "../../../../common/SecureComponent/permissions";
 import { setSnackBarMessage } from "../../../../systemSlice";
 import { setTenantName } from "../tenantsSlice";
 import { getTenantAsync } from "../thunks/tenantDetailsAsync";
-import { LinearProgress } from "@mui/material";
+import { tenantIsOnline } from "./utils";
+import withSuspense from "../../Common/Components/withSuspense";
 import TooltipWrapper from "../../Common/TooltipWrapper/TooltipWrapper";
 import PageHeaderWrapper from "../../Common/PageHeaderWrapper/PageHeaderWrapper";
-import { tenantIsOnline } from "./utils";
 
 const TenantYAML = withSuspense(React.lazy(() => import("./TenantYAML")));
 const TenantSummary = withSuspense(React.lazy(() => import("./TenantSummary")));
 const TenantLicense = withSuspense(React.lazy(() => import("./TenantLicense")));
 const PoolsSummary = withSuspense(React.lazy(() => import("./PoolsSummary")));
 const PodsSummary = withSuspense(React.lazy(() => import("./PodsSummary")));
-
 const TenantEvents = withSuspense(React.lazy(() => import("./TenantEvents")));
 const TenantCSR = withSuspense(React.lazy(() => import("./TenantCSR")));
 const VolumesSummary = withSuspense(
@@ -93,61 +86,27 @@ const TenantConfiguration = withSuspense(
   React.lazy(() => import("./TenantConfiguration")),
 );
 
-interface ITenantDetailsProps {
-  classes: any;
-}
+const HealthsStatusIcon = styled.div(({ theme }) => ({
+  position: "relative",
+  fontSize: 10,
+  left: 26,
+  height: 10,
+  top: 4,
+  "& .statusIcon": {
+    color: get(theme, "signalColors.disabled", "#E6EBEB"),
+    "&.red": {
+      color: get(theme, "signalColors.danger", "#C51B3F"),
+    },
+    "&.yellow": {
+      color: get(theme, "signalColors.warning", "#FFBD62"),
+    },
+    "&.green": {
+      color: get(theme, "signalColors.good", "#4CCB92"),
+    },
+  },
+}));
 
-const styles = (theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    pageContainer: {
-      border: "1px solid #EAEAEA",
-      width: "100%",
-      height: "100%",
-    },
-    contentSpacer: {
-      ...pageContentStyles.contentSpacer,
-      minHeight: 400,
-    },
-    redState: {
-      color: theme.palette.error.main,
-      "& .min-icon": {
-        width: 16,
-        height: 16,
-      },
-    },
-    yellowState: {
-      color: theme.palette.warning.main,
-      "& .min-icon": {
-        width: 16,
-        height: 16,
-      },
-    },
-    greenState: {
-      color: theme.palette.success.main,
-      "& .min-icon": {
-        width: 16,
-        height: 16,
-      },
-    },
-    greyState: {
-      color: "grey",
-      "& .min-icon": {
-        width: 16,
-        height: 16,
-      },
-    },
-    healthStatusIcon: {
-      position: "relative",
-      fontSize: 10,
-      left: 26,
-      height: 10,
-      top: 4,
-    },
-    ...containerForHeader,
-  });
-
-const TenantDetails = ({ classes }: ITenantDetailsProps) => {
+const TenantDetails = () => {
   const dispatch = useAppDispatch();
   const params = useParams();
   const navigate = useNavigate();
@@ -211,16 +170,6 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
     }
   };
 
-  const healthStatusToClass = (health_status: string) => {
-    return health_status === "red"
-      ? classes.redState
-      : health_status === "yellow"
-        ? classes.yellowState
-        : health_status === "green"
-          ? classes.greenState
-          : classes.greyState;
-  };
-
   return (
     <Fragment>
       {deleteOpen && tenantInfo !== null && (
@@ -240,101 +189,100 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
             />
           </Fragment>
         }
-        actions={<React.Fragment />}
+        actions={<Fragment />}
       />
 
-      <PageLayout className={classes.pageContainer}>
-        {loadingTenant && (
+      <PageLayout variant={"constrained"}>
+        <Box withBorders={true} customBorderPadding={"0px"}>
+          {loadingTenant && (
+            <Grid item xs={12}>
+              <ProgressBar />
+            </Grid>
+          )}
           <Grid item xs={12}>
-            <LinearProgress />
+            <ScreenTitle
+              icon={
+                <Fragment>
+                  <HealthsStatusIcon>
+                    {tenantInfo && tenantInfo.status && (
+                      <span
+                        className={`statusIcon ${tenantInfo.status
+                          ?.health_status!}`}
+                      >
+                        <CircleIcon style={{ width: 15, height: 15 }} />
+                      </span>
+                    )}
+                  </HealthsStatusIcon>
+                  <TenantsIcon />
+                </Fragment>
+              }
+              title={tenantName}
+              subTitle={
+                <Fragment>
+                  Namespace: {tenantNamespace} / Capacity:{" "}
+                  {niceBytes((tenantInfo?.total_size || 0).toString(10))}
+                </Fragment>
+              }
+              actions={
+                <Box
+                  sx={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
+                >
+                  <TooltipWrapper tooltip={"Delete"}>
+                    <Button
+                      id={"delete-tenant"}
+                      variant="secondary"
+                      onClick={() => {
+                        confirmDeleteTenant();
+                      }}
+                      color="secondary"
+                      icon={<TrashIcon />}
+                    />
+                  </TooltipWrapper>
+                  <TooltipWrapper tooltip={"Edit YAML"}>
+                    <Button
+                      icon={<EditIcon />}
+                      id={"yaml_button"}
+                      variant="regular"
+                      aria-label="Edit YAML"
+                      onClick={() => {
+                        editYaml();
+                      }}
+                    />
+                  </TooltipWrapper>
+                  <TooltipWrapper tooltip={"Management Console"}>
+                    <Button
+                      id={"tenant-hop"}
+                      onClick={() => {
+                        navigate(
+                          `/namespaces/${tenantNamespace}/tenants/${tenantName}/hop`,
+                        );
+                      }}
+                      disabled={!tenantInfo || !tenantIsOnline(tenantInfo)}
+                      variant={"regular"}
+                      icon={<MinIOTierIconXs style={{ height: 16 }} />}
+                    />
+                  </TooltipWrapper>
+                  <TooltipWrapper tooltip={"Refresh"}>
+                    <Button
+                      id={"tenant-refresh"}
+                      variant="regular"
+                      aria-label="Refresh List"
+                      onClick={() => {
+                        dispatch(getTenantAsync());
+                      }}
+                      icon={<RefreshIcon />}
+                    />
+                  </TooltipWrapper>
+                </Box>
+              }
+            />
           </Grid>
-        )}
-        <Grid item xs={12}>
-          <ScreenTitle
-            icon={
-              <Fragment>
-                <div className={classes.healthStatusIcon}>
-                  {tenantInfo && tenantInfo.status && (
-                    <span
-                      className={healthStatusToClass(
-                        tenantInfo.status?.health_status!,
-                      )}
-                    >
-                      <CircleIcon />
-                    </span>
-                  )}
-                </div>
-                <TenantsIcon />
-              </Fragment>
-            }
-            title={tenantName}
-            subTitle={
-              <Fragment>
-                Namespace: {tenantNamespace} / Capacity:{" "}
-                {niceBytes((tenantInfo?.total_size || 0).toString(10))}
-              </Fragment>
-            }
-            actions={
-              <Box
-                sx={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
-              >
-                <TooltipWrapper tooltip={"Delete"}>
-                  <Button
-                    id={"delete-tenant"}
-                    variant="secondary"
-                    onClick={() => {
-                      confirmDeleteTenant();
-                    }}
-                    color="secondary"
-                    icon={<TrashIcon />}
-                  />
-                </TooltipWrapper>
-                <TooltipWrapper tooltip={"Edit YAML"}>
-                  <Button
-                    icon={<EditIcon />}
-                    id={"yaml_button"}
-                    variant="regular"
-                    aria-label="Edit YAML"
-                    onClick={() => {
-                      editYaml();
-                    }}
-                  />
-                </TooltipWrapper>
-                <TooltipWrapper tooltip={"Management Console"}>
-                  <Button
-                    id={"tenant-hop"}
-                    onClick={() => {
-                      navigate(
-                        `/namespaces/${tenantNamespace}/tenants/${tenantName}/hop`,
-                      );
-                    }}
-                    disabled={!tenantInfo || !tenantIsOnline(tenantInfo)}
-                    variant={"regular"}
-                    icon={<MinIOTierIconXs style={{ height: 16 }} />}
-                  />
-                </TooltipWrapper>
-                <TooltipWrapper tooltip={"Refresh"}>
-                  <Button
-                    id={"tenant-refresh"}
-                    variant="regular"
-                    aria-label="Refresh List"
-                    onClick={() => {
-                      dispatch(getTenantAsync());
-                    }}
-                    icon={<RefreshIcon />}
-                  />
-                </TooltipWrapper>
-              </Box>
-            }
-          />
-        </Grid>
 
-        <Tabs
-          currentTabOrPath={pathname}
-          useRouteTabs
-          onTabClick={(route) => navigate(route)}
-          routes={
-            <div className={classes.contentSpacer}>
+          <Tabs
+            currentTabOrPath={pathname}
+            useRouteTabs
+            onTabClick={(route) => navigate(route)}
+            routes={
               <Routes>
                 <Route path={"summary"} element={<TenantSummary />} />
                 <Route
@@ -367,99 +315,99 @@ const TenantDetails = ({ classes }: ITenantDetailsProps) => {
                   }
                 />
               </Routes>
-            </div>
-          }
-          options={[
-            {
-              tabConfig: {
-                label: "Summary",
-                id: `details-summary`,
-                to: getRoutePath("summary"),
+            }
+            options={[
+              {
+                tabConfig: {
+                  label: "Summary",
+                  id: `details-summary`,
+                  to: getRoutePath("summary"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Configuration",
-                id: `details-configuration`,
-                to: getRoutePath("configuration"),
+              {
+                tabConfig: {
+                  label: "Configuration",
+                  id: `details-configuration`,
+                  to: getRoutePath("configuration"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Metrics",
-                id: `details-metrics`,
-                to: getRoutePath("metrics"),
+              {
+                tabConfig: {
+                  label: "Metrics",
+                  id: `details-metrics`,
+                  to: getRoutePath("metrics"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Identity Provider",
-                id: `details-idp`,
-                to: getRoutePath("identity-provider"),
+              {
+                tabConfig: {
+                  label: "Identity Provider",
+                  id: `details-idp`,
+                  to: getRoutePath("identity-provider"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Security",
-                id: `details-security`,
-                to: getRoutePath("security"),
+              {
+                tabConfig: {
+                  label: "Security",
+                  id: `details-security`,
+                  to: getRoutePath("security"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Encryption",
-                id: `details-encryption`,
-                to: getRoutePath("encryption"),
+              {
+                tabConfig: {
+                  label: "Encryption",
+                  id: `details-encryption`,
+                  to: getRoutePath("encryption"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Pools",
-                id: `details-pools`,
-                to: getRoutePath("pools"),
+              {
+                tabConfig: {
+                  label: "Pools",
+                  id: `details-pools`,
+                  to: getRoutePath("pools"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Pods",
-                id: "tenant-pod-tab",
-                to: getRoutePath("pods"),
+              {
+                tabConfig: {
+                  label: "Pods",
+                  id: "tenant-pod-tab",
+                  to: getRoutePath("pods"),
+                },
               },
-            },
 
-            {
-              tabConfig: {
-                label: "Volumes",
-                id: `details-volumes`,
-                to: getRoutePath("volumes"),
+              {
+                tabConfig: {
+                  label: "Volumes",
+                  id: `details-volumes`,
+                  to: getRoutePath("volumes"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Events",
-                id: `details-events`,
-                to: getRoutePath("events"),
+              {
+                tabConfig: {
+                  label: "Events",
+                  id: `details-events`,
+                  to: getRoutePath("events"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "Certificate Requests",
-                id: `details-csr`,
-                to: getRoutePath("csr"),
+              {
+                tabConfig: {
+                  label: "Certificate Requests",
+                  id: `details-csr`,
+                  to: getRoutePath("csr"),
+                },
               },
-            },
-            {
-              tabConfig: {
-                label: "License",
-                id: `details-license`,
-                to: getRoutePath("license"),
+              {
+                tabConfig: {
+                  label: "License",
+                  id: `details-license`,
+                  to: getRoutePath("license"),
+                },
               },
-            },
-          ]}
-        />
+            ]}
+          />
+        </Box>
       </PageLayout>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantDetails);
+export default TenantDetails;

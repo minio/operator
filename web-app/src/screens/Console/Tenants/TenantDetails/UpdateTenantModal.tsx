@@ -15,49 +15,29 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { Button } from "mds";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { Grid } from "@mui/material";
-import {
-  formFieldStyles,
-  modalStyleUtils,
-} from "../../Common/FormComponents/common/styleLibrary";
+import { Box, Button, FormLayout, InputBox, Switch } from "mds";
+import { modalStyleUtils } from "../../Common/FormComponents/common/styleLibrary";
 import { ErrorResponseHandler } from "../../../../common/types";
-import ModalWrapper from "../../Common/ModalWrapper/ModalWrapper";
-import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import api from "../../../../common/api";
 import {
   setModalErrorSnackMessage,
   setSnackBarMessage,
 } from "../../../../systemSlice";
 import { useAppDispatch } from "../../../../store";
+import ModalWrapper from "../../Common/ModalWrapper/ModalWrapper";
+import api from "../../../../common/api";
 
 interface IUpdateTenantModal {
   open: boolean;
   closeModalAndRefresh: (update: boolean) => any;
   namespace: string;
   idTenant: string;
-  classes: any;
 }
-
-const styles = (theme: Theme) =>
-  createStyles({
-    infoText: {
-      fontSize: 14,
-    },
-    ...formFieldStyles,
-    ...modalStyleUtils,
-  });
 
 const UpdateTenantModal = ({
   open,
   closeModalAndRefresh,
   namespace,
   idTenant,
-  classes,
 }: IUpdateTenantModal) => {
   const dispatch = useAppDispatch();
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -144,106 +124,99 @@ const UpdateTenantModal = ({
       modalOpen={open}
       onClose={closeAction}
     >
-      <Grid container>
-        <Grid item xs={12} className={classes.modalFormScrollable}>
-          <div className={classes.infoText}>
+      <FormLayout withBorders={false} containerPadding={false}>
+        <Box>
+          <Box
+            sx={{
+              fontSize: 14,
+            }}
+          >
             Please enter the MinIO image from dockerhub to use. If blank, then
             latest build will be used.
-          </div>
+          </Box>
           <br />
-          <br />
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              value={minioImage}
-              label={"MinIO's Image"}
-              id={"minioImage"}
-              name={"minioImage"}
-              placeholder={"E.g. minio/minio:RELEASE.2022-02-26T02-54-46Z"}
-              onChange={(e) => {
-                setMinioImage(e.target.value);
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <FormSwitchWrapper
-              value="imageRegistry"
-              id="setImageRegistry"
-              name="setImageRegistry"
-              checked={imageRegistry}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setImageRegistry(!imageRegistry);
-              }}
-              label={"Set Custom Image Registry"}
-              indicatorLabels={["Yes", "No"]}
-            />
-          </Grid>
+          <InputBox
+            value={minioImage}
+            label={"MinIO's Image"}
+            id={"minioImage"}
+            name={"minioImage"}
+            placeholder={"E.g. minio/minio:RELEASE.2022-02-26T02-54-46Z"}
+            onChange={(e) => {
+              setMinioImage(e.target.value);
+            }}
+          />
+          <Switch
+            value="imageRegistry"
+            id="setImageRegistry"
+            name="setImageRegistry"
+            checked={imageRegistry}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setImageRegistry(!imageRegistry);
+            }}
+            label={"Set Custom Image Registry"}
+            indicatorLabels={["Yes", "No"]}
+          />
           {imageRegistry && (
             <Fragment>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
-                  value={imageRegistryEndpoint}
-                  label={"Endpoint"}
-                  id={"imageRegistry"}
-                  name={"imageRegistry"}
-                  placeholder={"E.g. https://index.docker.io/v1/"}
-                  onChange={(e) => {
-                    setImageRegistryEndpoint(e.target.value);
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
-                  value={imageRegistryUsername}
-                  label={"Username"}
-                  id={"imageRegistryUsername"}
-                  name={"imageRegistryUsername"}
-                  placeholder={"Enter image registry username"}
-                  onChange={(e) => {
-                    setImageRegistryUsername(e.target.value);
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <InputBoxWrapper
-                  value={imageRegistryPassword}
-                  label={"Password"}
-                  id={"imageRegistryPassword"}
-                  name={"imageRegistryPassword"}
-                  placeholder={"Enter image registry password"}
-                  onChange={(e) => {
-                    setImageRegistryPassword(e.target.value);
-                  }}
-                />
-              </Grid>
+              <InputBox
+                value={imageRegistryEndpoint}
+                label={"Endpoint"}
+                id={"imageRegistry"}
+                name={"imageRegistry"}
+                placeholder={"E.g. https://index.docker.io/v1/"}
+                onChange={(e) => {
+                  setImageRegistryEndpoint(e.target.value);
+                }}
+              />
+              <InputBox
+                value={imageRegistryUsername}
+                label={"Username"}
+                id={"imageRegistryUsername"}
+                name={"imageRegistryUsername"}
+                placeholder={"Enter image registry username"}
+                onChange={(e) => {
+                  setImageRegistryUsername(e.target.value);
+                }}
+              />
+              <InputBox
+                value={imageRegistryPassword}
+                label={"Password"}
+                id={"imageRegistryPassword"}
+                name={"imageRegistryPassword"}
+                placeholder={"Enter image registry password"}
+                onChange={(e) => {
+                  setImageRegistryPassword(e.target.value);
+                }}
+              />
             </Fragment>
           )}
-        </Grid>
-        <Grid item xs={12} className={classes.modalButtonBar}>
-          <Button
-            id={"clear"}
-            variant="regular"
-            onClick={resetForm}
-            label="Clear"
-          />
-          <Button
-            id={"save-tenant"}
-            type="submit"
-            variant="callAction"
-            disabled={
-              !validMinioImage ||
-              (imageRegistry &&
-                (imageRegistryEndpoint.trim() === "" ||
-                  imageRegistryUsername.trim() === "" ||
-                  imageRegistryPassword.trim() === "")) ||
-              isSending
-            }
-            onClick={updateMinIOImage}
-            label={"Save"}
-          />
-        </Grid>
-      </Grid>
+          <Box sx={modalStyleUtils.modalButtonBar}>
+            <Button
+              id={"clear"}
+              variant="regular"
+              onClick={resetForm}
+              label="Clear"
+            />
+            <Button
+              id={"save-tenant"}
+              type="submit"
+              variant="callAction"
+              disabled={
+                !validMinioImage ||
+                (imageRegistry &&
+                  (imageRegistryEndpoint.trim() === "" ||
+                    imageRegistryUsername.trim() === "" ||
+                    imageRegistryPassword.trim() === "")) ||
+                isSending
+              }
+              onClick={updateMinIOImage}
+              label={"Save"}
+            />
+          </Box>
+        </Box>
+      </FormLayout>
     </ModalWrapper>
   );
 };
 
-export default withStyles(styles)(UpdateTenantModal);
+export default UpdateTenantModal;

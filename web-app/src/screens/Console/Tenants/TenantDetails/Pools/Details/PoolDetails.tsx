@@ -18,7 +18,6 @@ import React, { Fragment } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AppState } from "../../../../../../store";
-import Grid from "@mui/material/Grid";
 import { niceBytesInt } from "../../../../../../common/utils";
 import {
   Box,
@@ -29,13 +28,6 @@ import {
   ValuePair,
 } from "mds";
 import { NodeSelectorTerm } from "../../../../../../api/operatorApi";
-
-const stylingLayout = {
-  border: "#EAEAEA 1px solid",
-  borderRadius: "3px",
-  padding: "0px 20px",
-  position: "relative",
-};
 
 const twoColCssGridLayoutConfig = {
   display: "grid",
@@ -79,7 +71,11 @@ const PoolDetails = () => {
 
   return (
     <Fragment>
-      <Grid item xs={12} sx={{ ...stylingLayout }}>
+      <Box
+        withBorders={true}
+        customBorderPadding={"0px"}
+        sx={{ width: "100%" }}
+      >
         <SectionTitle
           separator
           actions={
@@ -274,7 +270,7 @@ const PoolDetails = () => {
               </Box>
             </Fragment>
           )}
-      </Grid>
+      </Box>
     </Fragment>
   );
 };

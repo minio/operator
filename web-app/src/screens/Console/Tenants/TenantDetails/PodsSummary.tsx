@@ -17,38 +17,19 @@
 import React, { Fragment, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import {
-  containerForHeader,
-  tableStyles,
-  tenantDetailsStyles,
-} from "../../Common/FormComponents/common/styleLibrary";
+import { Button, DataTable, Grid, InformativeMessage, SectionTitle } from "mds";
+import { actionsTray } from "../../Common/FormComponents/common/styleLibrary";
 import { niceDays } from "../../../../common/utils";
 import { IPodListElement } from "../ListTenants/types";
-
-import api from "../../../../common/api";
 import { AppState, useAppDispatch } from "../../../../store";
 import { ErrorResponseHandler } from "../../../../common/types";
-import DeletePod from "./DeletePod";
-import { Grid, InputAdornment, TextField } from "@mui/material";
-import { SearchIcon, Button, DataTable } from "mds";
 import { setErrorSnackMessage } from "../../../../systemSlice";
+import api from "../../../../common/api";
+import DeletePod from "./DeletePod";
 import TooltipWrapper from "../../Common/TooltipWrapper/TooltipWrapper";
+import SearchBox from "../../Common/SearchBox";
 
-interface IPodsSummary {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    ...tableStyles,
-    ...containerForHeader,
-  });
-
-const PodsSummary = ({ classes }: IPodsSummary) => {
+const PodsSummary = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { tenantName, tenantNamespace } = useParams();
@@ -200,17 +181,10 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
           closeDeleteModalAndRefresh={closeDeleteModalAndRefresh}
         />
       )}
-      <Grid container>
-        <Grid item xs={4}>
-          <h1 className={classes.sectionTitle}>Pods</h1>
-        </Grid>
-        <Grid item xs={4}>
-          {downloadSuccess &&
-            !reportError &&
-            "Tenant report downloaded to " + filename}
-          {reportError && "There was a problem generating the report"}
-        </Grid>
-        <Grid item xs={4} display={"flex"} justifyContent={"flex-end"}>
+      <SectionTitle
+        separator
+        sx={{ marginBottom: 15 }}
+        actions={
           <TooltipWrapper tooltip="A report of all tenant logs will be generated as a .zip file and downloaded for analysis. This report can be uploaded to SUBNET to enable our team to best assist you in troubleshooting.">
             <Button
               id="log_report"
@@ -220,29 +194,48 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
               Download Log Report
             </Button>
           </TooltipWrapper>
-        </Grid>
+        }
+      >
+        Pods
+      </SectionTitle>
+      {downloadSuccess && !reportError && (
+        <InformativeMessage
+          title={"Success"}
+          message={"Tenant report downloaded to " + filename}
+          variant={"success"}
+        />
+      )}
+
+      {reportError && (
+        <InformativeMessage
+          title={"Error"}
+          message={"There was a problem generating the report"}
+          variant={"error"}
+        />
+      )}
+      <Grid container sx={{ marginBottom: 15 }}>
+        <Grid item xs={4} sx={{ display: "flex", alignItems: "center" }}></Grid>
+        <Grid
+          item
+          xs={4}
+          sx={{
+            display: "flex",
+            justifyContent: "flex-end",
+            alignItems: "center",
+          }}
+        ></Grid>
       </Grid>
-      <Grid item xs={12} className={classes.actionsTray}>
-        <TextField
-          placeholder="Search Pods"
-          className={classes.searchField}
+      <Grid item xs={12} sx={actionsTray.actionsTray}>
+        <SearchBox
+          value={filter}
+          onChange={(value) => {
+            setFilter(value);
+          }}
+          placeholder={"Search Pods"}
           id="search-resource"
-          label=""
-          InputProps={{
-            disableUnderline: true,
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          onChange={(e) => {
-            setFilter(e.target.value);
-          }}
-          variant="standard"
         />
       </Grid>
-      <Grid item xs={12} className={classes.tableBlock}>
+      <Grid item xs={12}>
         <DataTable
           columns={[
             { label: "Name", elementKey: "name", width: 200 },
@@ -270,4 +263,4 @@ const PodsSummary = ({ classes }: IPodsSummary) => {
   );
 };
 
-export default withStyles(styles)(PodsSummary);
+export default PodsSummary;
