@@ -21,18 +21,11 @@ import React, {
   useLayoutEffect,
   useState,
 } from "react";
-import { Theme } from "@mui/material/styles";
-import { MainContainer } from "mds";
+import { MainContainer, ProgressBar, Snackbar } from "mds";
 import debounce from "lodash/debounce";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { LinearProgress } from "@mui/material";
-import CssBaseline from "@mui/material/CssBaseline";
-import Snackbar from "@mui/material/Snackbar";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../store";
-import { snackBarCommon } from "./Common/FormComponents/common/styleLibrary";
 import AppMenu from "./Menu/AppMenu";
 import MainError from "./Common/MainError/MainError";
 import {
@@ -68,46 +61,7 @@ const AddPool = React.lazy(
   () => import("./Tenants/TenantDetails/Pools/AddPool/AddPool"),
 );
 
-const styles = (theme: Theme) =>
-  createStyles({
-    root: {
-      display: "flex",
-      "& .MuiPaper-root.MuiSnackbarContent-root": {
-        borderRadius: "0px 0px 5px 5px",
-        boxShadow: "none",
-      },
-    },
-    content: {
-      flexGrow: 1,
-      height: "100vh",
-      overflow: "auto",
-      position: "relative",
-    },
-    warningBar: {
-      background: theme.palette.primary.main,
-      color: "white",
-      heigh: "60px",
-      widht: "100%",
-      lineHeight: "60px",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      "& button": {
-        marginLeft: 8,
-      },
-    },
-    progress: {
-      height: "3px",
-      backgroundColor: "#eaeaea",
-    },
-    ...snackBarCommon,
-  });
-
-interface IConsoleProps {
-  classes: any;
-}
-
-const Console = ({ classes }: IConsoleProps) => {
+const Console = () => {
   const dispatch = useAppDispatch();
   const { pathname = "" } = useLocation();
   const open = useSelector((state: AppState) => state.system.sidebarOpen);
@@ -188,9 +142,7 @@ const Console = ({ classes }: IConsoleProps) => {
     },
   ];
 
-  let routes = operatorConsoleRoutes;
-
-  const allowedRoutes = routes.filter((route: any) =>
+  const allowedRoutes = operatorConsoleRoutes.filter((route: any) =>
     obOnly
       ? route.path.includes("buckets")
       : (route.forceDisplay ||
@@ -231,84 +183,69 @@ const Console = ({ classes }: IConsoleProps) => {
   return (
     <MainContainer menu={!hideMenu ? <AppMenu /> : <Fragment />}>
       {session && session.status === "ok" ? (
-        <div className={classes.root}>
-          <CssBaseline />
+        <Fragment>
+          {loadingProgress < 100 && (
+            <ProgressBar
+              barHeight={3}
+              variant="determinate"
+              value={loadingProgress}
+              sx={{ width: "100%", position: "absolute", top: 0, left: 0 }}
+            />
+          )}
+          <MainError />
+          <Snackbar
+            onClose={closeSnackBar}
+            open={openSnackbar}
+            message={snackBarMessage.message}
+            variant={snackBarMessage.type === "error" ? "error" : "default"}
+            autoHideDuration={snackBarMessage.type === "error" ? 10 : 5}
+            condensed
+          />
 
-          <main className={classes.content}>
-            {loadingProgress < 100 && (
-              <LinearProgress
-                className={classes.progress}
-                variant="determinate"
-                value={loadingProgress}
-              />
-            )}
-            <MainError />
-            <div className={classes.snackDiv}>
-              <Snackbar
-                open={openSnackbar}
-                onClose={() => {
-                  closeSnackBar();
-                }}
-                autoHideDuration={
-                  snackBarMessage.type === "error" ? 10000 : 5000
-                }
-                message={snackBarMessage.message}
-                className={classes.snackBarExternal}
-                ContentProps={{
-                  className: `${classes.snackBar} ${
-                    snackBarMessage.type === "error"
-                      ? classes.errorSnackBar
-                      : ""
-                  }`,
-                }}
-              />
-            </div>
-
-            <Routes>
-              {allowedRoutes.map((route: any) => (
-                <Route
-                  key={route.path}
-                  path={`${route.path}/*`}
-                  element={
-                    <Suspense fallback={<LoadingComponent />}>
-                      <route.component {...route.props} />
-                    </Suspense>
-                  }
-                />
-              ))}
+          <Routes>
+            {allowedRoutes.map((route: any) => (
               <Route
-                key={"icons"}
-                path={"icons"}
+                key={route.path}
+                path={`${route.path}/*`}
                 element={
                   <Suspense fallback={<LoadingComponent />}>
-                    <IconsScreen />
+                    <route.component {...route.props} />
                   </Suspense>
                 }
               />
-              <Route
-                key={"components"}
-                path={"components"}
-                element={
-                  <Suspense fallback={<LoadingComponent />}>
-                    <ComponentsScreen />
-                  </Suspense>
-                }
-              />
-              <Route
-                path={"*"}
-                element={
-                  <Fragment>
-                    {allowedRoutes.length > 0 ? (
-                      <Navigate to={allowedRoutes[0].path} />
-                    ) : (
-                      <Fragment />
-                    )}
-                  </Fragment>
-                }
-              />
-            </Routes>
-          </main>
-        </div>
+            ))}
+            <Route
+              key={"icons"}
+              path={"icons"}
+              element={
+                <Suspense fallback={<LoadingComponent />}>
+                  <IconsScreen />
+                </Suspense>
+              }
+            />
+            <Route
+              key={"components"}
+              path={"components"}
+              element={
+                <Suspense fallback={<LoadingComponent />}>
+                  <ComponentsScreen />
+                </Suspense>
+              }
+            />
+            <Route
+              path={"*"}
+              element={
+                <Fragment>
+                  {allowedRoutes.length > 0 ? (
+                    <Navigate to={allowedRoutes[0].path} />
+                  ) : (
+                    <Fragment />
+                  )}
+                </Fragment>
+              }
+            />
+          </Routes>
+        </Fragment>
       ) : (
         <Fragment />
       )}
@@ -316,4 +253,4 @@ const Console = ({ classes }: IConsoleProps) => {
   );
 };
 
-export default withStyles(styles)(Console);
+export default Console;

@@ -15,6 +15,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
+import clsx from "clsx";
 import {
   AGPLV3Logo,
   Box,
@@ -35,16 +36,262 @@ import {
   PAID_PLANS,
   STANDARD_PLAN_FEATURES,
 } from "./utils";
-import clsx from "clsx";
+import styled from "styled-components";
+import get from "lodash/get";
 
 interface IRegisterStatus {
   activateProductModal: any;
   closeModalAndFetchLicenseInfo: any;
   licenseInfo: SubnetInfo | undefined;
-  operatorMode: boolean;
   currentPlanID: number;
   setActivateProductModal: any;
 }
+
+const PlanListContainer = styled.div(({ theme }) => ({
+  display: "grid",
+
+  margin: "0 1.5rem 0 1.5rem",
+
+  gridTemplateColumns: "1fr 1fr 1fr 1fr",
+
+  [`@media (max-width: ${breakPoints.sm}px)`]: {
+    gridTemplateColumns: "1fr 1fr 1fr",
+  },
+
+  "&.paid-plans-only": {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+  },
+
+  "& .features-col": {
+    flex: 1,
+    minWidth: "260px",
+
+    "@media (max-width: 600px)": {
+      display: "none",
+    },
+  },
+
+  "& .xs-only": {
+    display: "none",
+  },
+
+  "& .button-box": {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "5px 0px 25px 0px",
+    borderLeft: `1px solid ${get(theme, "borderColor", "#EAEAEA")}`,
+  },
+  "& .plan-header": {
+    height: "99px",
+    borderBottom: `1px solid ${get(theme, "borderColor", "#EAEAEA")}`,
+  },
+  "& .feature-title": {
+    height: "25px",
+    paddingLeft: "26px",
+    fontSize: "14px",
+
+    background: get(theme, "signalColors.disabled", "#E5E5E5"),
+    color: get(theme, "signalColors.main", "#07193E"),
+
+    "@media (max-width: 600px)": {
+      "& .feature-title-info .xs-only": {
+        display: "block",
+      },
+    },
+  },
+  "& .feature-name": {
+    minHeight: "60px",
+    padding: "5px",
+    borderBottom: `1px solid ${get(theme, "borderColor", "#EAEAEA")}`,
+    display: "flex",
+    alignItems: "center",
+    paddingLeft: "26px",
+    fontSize: "14px",
+  },
+  "& .feature-item": {
+    display: "flex",
+    flexFlow: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: "60px",
+    padding: "0 15px 0 15px",
+    borderBottom: `1px solid ${get(theme, "borderColor", "#EAEAEA")}`,
+    borderLeft: `1px solid ${get(theme, "borderColor", "#EAEAEA")}`,
+    fontSize: "14px",
+    "& .link-text": {
+      color: "#2781B0",
+      cursor: "pointer",
+      textDecoration: "underline",
+    },
+
+    "&.icon-yes": {
+      width: "15px",
+      height: "15px",
+    },
+  },
+
+  "& .feature-item-info": {
+    flex: 1,
+    display: "flex",
+    flexFlow: "column",
+    alignItems: "center",
+    justifyContent: "space-around",
+    textAlign: "center",
+
+    "@media (max-width: 600px)": {
+      justifyContent: "space-evenly",
+      width: "100%",
+      "& .xs-only": {
+        display: "block",
+      },
+      "& .plan-feature": {
+        textAlign: "center",
+        paddingRight: "10px",
+      },
+    },
+  },
+
+  "& .plan-col": {
+    minWidth: "260px",
+    flex: 1,
+  },
+
+  "& .active-plan-col": {
+    background: `${get(
+      theme,
+      "boxBackground",
+      "#FDFDFD",
+    )} 0% 0% no-repeat padding-box`,
+    boxShadow: " 0px 3px 20px #00000038",
+
+    "& .plan-header": {
+      backgroundColor: get(theme, "signalColors.info", "#2781B0"),
+    },
+
+    "& .feature-title": {
+      background: get(theme, "signalColors.disabled", "#E5E5E5"),
+      color: get(theme, "fontColor", "#000"),
+    },
+  },
+}));
+
+const PlanHeaderContainer = styled.div(({ theme }) => ({
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "center",
+  flexFlow: "column",
+  borderLeft: `1px solid ${get(theme, "borderColor", "#EAEAEA")}`,
+  borderBottom: "0px !important",
+  "& .plan-header": {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexFlow: "column",
+  },
+
+  "& .title-block": {
+    display: "flex",
+    alignItems: "center",
+    flexFlow: "column",
+    width: "100%",
+    "& .title-main": {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flex: 1,
+    },
+    "& .iconContainer": {
+      "& .min-icon": {
+        minWidth: 140,
+        width: "100%",
+        maxHeight: 55,
+        height: "100%",
+      },
+    },
+  },
+
+  "& .open-source": {
+    fontSize: "14px",
+    display: "flex",
+    marginBottom: "5px",
+    alignItems: "center",
+    "& .min-icon": {
+      marginRight: "8px",
+      height: "12px",
+      width: "12px",
+    },
+  },
+
+  "& .cur-plan-text": {
+    fontSize: "12px",
+    textTransform: "uppercase",
+  },
+
+  "@media (max-width: 600px)": {
+    cursor: "pointer",
+    "& .title-block": {
+      "& .title": {
+        fontSize: "14px",
+        fontWeight: 600,
+      },
+    },
+  },
+
+  "&.active, &.active.xs-active": {
+    color: "#ffffff",
+    position: "relative",
+
+    "& .min-icon": {
+      fill: "#ffffff",
+    },
+
+    "&:before": {
+      content: "' '",
+      position: "absolute",
+      width: "100%",
+      height: "18px",
+      backgroundColor: get(theme, "signalColors.info", "#2781B0"),
+      display: "block",
+      top: -16,
+    },
+    "& .iconContainer": {
+      "& .min-icon": {
+        marginTop: "-12px",
+      },
+    },
+  },
+  "&.active": {
+    backgroundColor: get(theme, "signalColors.info", "#2781B0"),
+    color: "#ffffff",
+  },
+  "&.xs-active": {
+    background: "#eaeaea",
+  },
+}));
+
+const ListContainer = styled.div(({ theme }) => ({
+  border: `1px solid ${get(theme, "borderColor", "#EAEAEA")}`,
+  borderTop: "0px",
+  marginBottom: "45px",
+  "&::-webkit-scrollbar": {
+    width: "5px",
+    height: "5px",
+  },
+  "&::-webkit-scrollbar-track": {
+    background: "#F0F0F0",
+    borderRadius: 0,
+    boxShadow: "inset 0px 0px 0px 0px #F0F0F0",
+  },
+  "&::-webkit-scrollbar-thumb": {
+    background: "#777474",
+    borderRadius: 0,
+  },
+  "&::-webkit-scrollbar-thumb:hover": {
+    background: "#5A6375",
+  },
+}));
 
 const PlanHeader = ({
   isActive,
@@ -62,7 +309,7 @@ const PlanHeader = ({
 }) => {
   const plan = title.toLowerCase();
   return (
-    <Box
+    <PlanHeaderContainer
       className={clsx({
         "plan-header": true,
         active: isActive,
@@ -71,102 +318,9 @@ const PlanHeader = ({
       onClick={() => {
         onClick && onClick(plan);
       }}
-      sx={{
-        display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "center",
-        flexFlow: "column",
-        borderLeft: "1px solid #eaeaea",
-        borderBottom: "0px !important",
-        "& .plan-header": {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexFlow: "column",
-        },
-
-        "& .title-block": {
-          display: "flex",
-          alignItems: "center",
-          flexFlow: "column",
-          width: "100%",
-          "& .title-main": {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flex: 1,
-          },
-          "& .iconContainer": {
-            "& .min-icon": {
-              minWidth: 140,
-              width: "100%",
-              maxHeight: 55,
-              height: "100%",
-            },
-          },
-        },
-
-        "& .open-source": {
-          fontSize: "14px",
-          display: "flex",
-          marginBottom: "5px",
-          alignItems: "center",
-          "& .min-icon": {
-            marginRight: "8px",
-            height: "12px",
-            width: "12px",
-          },
-        },
-
-        "& .cur-plan-text": {
-          fontSize: "12px",
-          textTransform: "uppercase",
-        },
-
-        "@media (max-width: 600px)": {
-          cursor: "pointer",
-          "& .title-block": {
-            "& .title": {
-              fontSize: "14px",
-              fontWeight: 600,
-            },
-          },
-        },
-
-        "&.active, &.active.xs-active": {
-          color: "#ffffff",
-          position: "relative",
-
-          "& .min-icon": {
-            fill: "#ffffff",
-          },
-
-          "&:before": {
-            content: "' '",
-            position: "absolute",
-            width: "100%",
-            height: "18px",
-            backgroundColor: "#2781B0",
-            display: "block",
-            top: -16,
-          },
-          "& .iconContainer": {
-            "& .min-icon": {
-              marginTop: "-12px",
-            },
-          },
-        },
-        "&.active": {
-          background: "#2781B0",
-          color: "#ffffff",
-        },
-        "&.xs-active": {
-          background: "#eaeaea",
-        },
-      }}
     >
       {children}
-    </Box>
+    </PlanHeaderContainer>
   );
 };
 
@@ -204,7 +358,7 @@ const PricingFeatureItem = (props: {
   );
 };
 
-const LicensePlans = ({ licenseInfo, operatorMode }: IRegisterStatus) => {
+const LicensePlans = ({ licenseInfo }: IRegisterStatus) => {
   const [isSmallScreen, setIsSmallScreen] = useState<boolean>(
     window.innerWidth >= breakPoints.sm,
   );
@@ -323,10 +477,7 @@ const LicensePlans = ({ licenseInfo, operatorMode }: IRegisterStatus) => {
         onClick={(e) => {
           e.preventDefault();
 
-          window.open(
-            `${linkToNav}?ref=${operatorMode ? "op" : "con"}`,
-            "_blank",
-          );
+          window.open(`${linkToNav}?ref=op`, "_blank");
         }}
         label={btnText}
       />
@@ -348,29 +499,7 @@ const LicensePlans = ({ licenseInfo, operatorMode }: IRegisterStatus) => {
   const featureList = FEATURE_ITEMS;
   return (
     <Fragment>
-      <Box
-        sx={{
-          border: "1px solid #eaeaea",
-          borderTop: "0px",
-          marginBottom: "45px",
-          "&::-webkit-scrollbar": {
-            width: "5px",
-            height: "5px",
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "#F0F0F0",
-            borderRadius: 0,
-            boxShadow: "inset 0px 0px 0px 0px #F0F0F0",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: "#777474",
-            borderRadius: 0,
-          },
-          "&::-webkit-scrollbar-thumb:hover": {
-            background: "#5A6375",
-          },
-        }}
-      >
+      <ListContainer>
         <Box
           className={"title-blue-bar"}
           sx={{
@@ -378,132 +507,7 @@ const LicensePlans = ({ licenseInfo, operatorMode }: IRegisterStatus) => {
             borderBottom: "8px solid rgb(6 48 83)",
           }}
         />
-        <Box
-          className={isPaidPlan ? "paid-plans-only" : ""}
-          sx={{
-            display: "grid",
-
-            margin: "0 1.5rem 0 1.5rem",
-
-            gridTemplateColumns: "1fr 1fr 1fr 1fr",
-
-            [`@media (max-width: ${breakPoints.sm}px)`]: {
-              gridTemplateColumns: "1fr 1fr 1fr",
-            },
-
-            "&.paid-plans-only": {
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-            },
-
-            "& .features-col": {
-              flex: 1,
-              minWidth: "260px",
-
-              "@media (max-width: 600px)": {
-                display: "none",
-              },
-            },
-
-            "& .xs-only": {
-              display: "none",
-            },
-
-            "& .button-box": {
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "5px 0px 25px 0px",
-              borderLeft: "1px solid #eaeaea",
-            },
-            "& .plan-header": {
-              height: "99px",
-              borderBottom: "1px solid #eaeaea",
-            },
-            "& .feature-title": {
-              height: "25px",
-              paddingLeft: "26px",
-              fontSize: "14px",
-
-              background: "#E5E5E5",
-
-              "@media (max-width: 600px)": {
-                "& .feature-title-info .xs-only": {
-                  display: "block",
-                },
-              },
-            },
-            "& .feature-name": {
-              minHeight: "60px",
-              padding: "5px",
-              borderBottom: "1px solid #eaeaea",
-              display: "flex",
-              alignItems: "center",
-              paddingLeft: "26px",
-              fontSize: "14px",
-            },
-            "& .feature-item": {
-              display: "flex",
-              flexFlow: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: "60px",
-              padding: "0 15px 0 15px",
-              borderBottom: "1px solid #eaeaea",
-              borderLeft: " 1px solid #eaeaea",
-              fontSize: "14px",
-              "& .link-text": {
-                color: "#2781B0",
-                cursor: "pointer",
-                textDecoration: "underline",
-              },
-
-              "&.icon-yes": {
-                width: "15px",
-                height: "15px",
-              },
-            },
-
-            "& .feature-item-info": {
-              flex: 1,
-              display: "flex",
-              flexFlow: "column",
-              alignItems: "center",
-              justifyContent: "space-around",
-              textAlign: "center",
-
-              "@media (max-width: 600px)": {
-                justifyContent: "space-evenly",
-                width: "100%",
-                "& .xs-only": {
-                  display: "block",
-                },
-                "& .plan-feature": {
-                  textAlign: "center",
-                  paddingRight: "10px",
-                },
-              },
-            },
-
-            "& .plan-col": {
-              minWidth: "260px",
-              flex: 1,
-            },
-
-            "& .active-plan-col": {
-              background: "#FDFDFD 0% 0% no-repeat padding-box",
-              boxShadow: " 0px 3px 20px #00000038",
-
-              "& .plan-header": {
-                backgroundColor: "#2781B0",
-              },
-
-              "& .feature-title": {
-                background: "#F7F7F7",
-              },
-            },
-          }}
-        >
+        <PlanListContainer className={isPaidPlan ? "paid-plans-only" : ""}>
           <Box className="features-col">
             {featureList.map((fi) => {
               const featureTitleRow = fi.featureTitleRow;
@@ -736,8 +740,8 @@ const LicensePlans = ({ licenseInfo, operatorMode }: IRegisterStatus) => {
               )}
             </Box>
           </Box>
-        </Box>
-      </Box>
+        </PlanListContainer>
+      </ListContainer>
     </Fragment>
   );
 };
