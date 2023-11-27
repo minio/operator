@@ -349,13 +349,13 @@ function install_tenant() {
 }
 
 function setup_sts_bucket() {
-  echo "Installing setub bucket job"
+  echo "Installing setup bucket job"
   try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-data"
   namespace="minio-tenant-1"
   condition="condition=Complete"
   selector="metadata.name=setup-bucket"
   try wait_for_resource_field_selector $namespace job $condition $selector
-  echo "Installing setub bucket job: DONE"
+  echo "Installing setup bucket job: DONE"
 }
 
 function install_sts_client() {
