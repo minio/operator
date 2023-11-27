@@ -25,9 +25,6 @@ const MinIOServerName = "minio"
 // KESContainerName specifies the default container name for KES
 const KESContainerName = "kes"
 
-// InitContainerImage name for init container.
-const InitContainerImage = "busybox:1.33.1"
-
 // MinIO Related Names
 
 // MinIOStatefulSetNameForPool returns the name for MinIO StatefulSet
