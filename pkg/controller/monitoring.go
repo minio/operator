@@ -38,8 +38,6 @@ const (
 	HealthHealingMessage = "Healing"
 	// HealthReduceAvailabilityMessage some drives are offline
 	HealthReduceAvailabilityMessage = "Reduced Availability"
-	// HealthAboutToLoseQuorumMessage means we are close to losing write capabilities
-	HealthAboutToLoseQuorumMessage = "About to lose quorum"
 )
 
 // recurrentTenantStatusMonitor loop that checks every 3 minutes for tenants health
@@ -258,16 +256,6 @@ type HealthResult struct {
 	HealingDrives     int
 	WriteQuorumDrives int
 }
-
-// HealthMode type of query we want to perform to MinIO cluster health
-type HealthMode string
-
-const (
-	// MaintenanceMode query type for when we want to ask MinIO if we can take down 1 server
-	MaintenanceMode HealthMode = "MaintenanceMode"
-	// RegularMode query type for when we want to ask MinIO the current state of healing/health
-	RegularMode = "RegularMode"
-)
 
 // processNextHealthCheckItem will read a single work item off the workqueue and
 // attempt to process it, by calling the syncHandler.
