@@ -15,50 +15,33 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useState } from "react";
-import { Theme } from "@mui/material/styles";
+import { Box, IconButton, Loader, LoginIcon, RefreshIcon } from "mds";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { Box, IconButton } from "@mui/material";
-import { containerForHeader } from "../../../Common/FormComponents/common/styleLibrary";
-import ExitToAppIcon from "@mui/icons-material/ExitToApp";
-import { Loader, RefreshIcon } from "mds";
+import get from "lodash/get";
+import styled from "styled-components";
 import PageHeaderWrapper from "../../../Common/PageHeaderWrapper/PageHeaderWrapper";
 
-interface IHopSimple {
-  classes: any;
-}
+const HopContainer = styled.div(({ theme }) => ({
+  position: "absolute",
+  left: 0,
+  top: 80,
+  height: "calc(100vh - 81px)",
+  width: "100%",
+  borderTop: `1px solid ${get(theme, "borderColor", "#E2E2E2")}`,
+  "& .loader": {
+    width: 100,
+    margin: "auto",
+    marginTop: 80,
+  },
+  "& .iframeStyle": {
+    border: 0,
+    position: "absolute",
+    height: "calc(100vh - 77px)",
+    width: "100%",
+  },
+}));
 
-const styles = (theme: Theme) =>
-  createStyles({
-    breadcrumLink: {
-      textDecoration: "none",
-      color: "black",
-    },
-    iframeStyle: {
-      border: 0,
-      position: "absolute",
-      height: "calc(100vh - 77px)",
-      width: "100%",
-    },
-    divContainer: {
-      position: "absolute",
-      left: 0,
-      top: 80,
-      height: "calc(100vh - 81px)",
-      width: "100%",
-      borderTop: "1px solid #dedede",
-    },
-    loader: {
-      width: 100,
-      margin: "auto",
-      marginTop: 80,
-    },
-
-    ...containerForHeader,
-  });
-
-const Hop = ({ classes }: IHopSimple) => {
+const Hop = () => {
   const navigate = useNavigate();
   const params = useParams();
 
@@ -70,93 +53,78 @@ const Hop = ({ classes }: IHopSimple) => {
 
   return (
     <Fragment>
-      <Box>
-        <PageHeaderWrapper
-          label={
-            <Fragment>
-              <Link to={"/tenants"} className={classes.breadcrumLink}>
-                Tenants
-              </Link>
-              {` > `}
-              <Link
-                to={`/namespaces/${tenantNamespace}/tenants/${tenantName}`}
-                className={classes.breadcrumLink}
-              >
-                {tenantName}
-              </Link>
-              {` > Management`}
-            </Fragment>
-          }
-          actions={
-            <React.Fragment>
-              <IconButton
-                color="primary"
-                aria-label="Refresh List"
-                component="span"
-                onClick={() => {
-                  if (
-                    consoleFrame !== null &&
-                    consoleFrame.current !== null &&
-                    consoleFrame.current.contentDocument !== null
-                  ) {
-                    const loc =
-                      consoleFrame.current.contentDocument.location.toString();
+      <PageHeaderWrapper
+        label={
+          <Fragment>
+            <Link to={"/tenants"}>Tenants</Link>
+            {` > `}
+            <Link to={`/namespaces/${tenantNamespace}/tenants/${tenantName}`}>
+              {tenantName}
+            </Link>
+            {` > Management`}
+          </Fragment>
+        }
+        actions={
+          <React.Fragment>
+            <IconButton
+              onClick={() => {
+                if (
+                  consoleFrame !== null &&
+                  consoleFrame.current !== null &&
+                  consoleFrame.current.contentDocument !== null
+                ) {
+                  const loc =
+                    consoleFrame.current.contentDocument.location.toString();
 
-                    let add = "&";
+                  let add = "&";
 
-                    if (loc.indexOf("?") < 0) {
-                      add = `?`;
-                    }
-
-                    if (loc.indexOf("cp=y") < 0) {
-                      const next = `${loc}${add}cp=y`;
-                      consoleFrame.current.contentDocument.location.replace(
-                        next,
-                      );
-                    } else {
-                      consoleFrame.current.contentDocument.location.reload();
-                    }
+                  if (loc.indexOf("?") < 0) {
+                    add = `?`;
                   }
-                }}
-                size="large"
-              >
-                <RefreshIcon />
-              </IconButton>
-              <IconButton
-                color="primary"
-                aria-label="Refresh List"
-                component="span"
-                onClick={() => {
-                  navigate(
-                    `/namespaces/${tenantNamespace}/tenants/${tenantName}`,
-                  );
-                }}
-                size="large"
-              >
-                <ExitToAppIcon />
-              </IconButton>
-            </React.Fragment>
-          }
-        />
-      </Box>
-      <div className={classes.divContainer}>
+
+                  if (loc.indexOf("cp=y") < 0) {
+                    const next = `${loc}${add}cp=y`;
+                    consoleFrame.current.contentDocument.location.replace(next);
+                  } else {
+                    consoleFrame.current.contentDocument.location.reload();
+                  }
+                }
+              }}
+              size="large"
+            >
+              <RefreshIcon />
+            </IconButton>
+            <IconButton
+              onClick={() => {
+                navigate(
+                  `/namespaces/${tenantNamespace}/tenants/${tenantName}`,
+                );
+              }}
+              size="large"
+            >
+              <LoginIcon />
+            </IconButton>
+          </React.Fragment>
+        }
+      />
+      <HopContainer>
         {loading && (
-          <div className={classes.loader}>
+          <Box className={"loader"}>
             <Loader />
-          </div>
+          </Box>
         )}
         <iframe
           ref={consoleFrame}
-          className={classes.iframeStyle}
+          className={"iframeStyle"}
           title={"metrics"}
           src={`/api/hop/${tenantNamespace}/${tenantName}/?cp=y`}
           onLoad={(val) => {
             setLoading(false);
           }}
         />
-      </div>
+      </HopContainer>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(Hop);
+export default Hop;

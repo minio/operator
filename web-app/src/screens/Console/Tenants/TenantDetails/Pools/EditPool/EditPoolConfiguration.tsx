@@ -14,72 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useState } from "react";
+import { Box, FormLayout, Grid, InputBox, Switch } from "mds";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { Grid, Paper } from "@mui/material";
-import {
-  createTenantCommon,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-
 import { AppState, useAppDispatch } from "../../../../../../store";
 import { clearValidationError } from "../../../utils";
 import {
   commonFormValidation,
   IValidation,
 } from "../../../../../../utils/validationFunctions";
-import FormSwitchWrapper from "../../../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
 import { isEditPoolPageValid, setEditPoolField } from "./editPoolSlice";
 import H3Section from "../../../../Common/H3Section";
 
-interface IConfigureProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    configSectionItem: {
-      marginRight: 15,
-
-      "& .multiContainer": {
-        border: "1px solid red",
-      },
-    },
-    tenantCustomizationFields: {
-      marginLeft: 30, // 2nd Level(15+15)
-      width: "88%",
-      margin: "auto",
-    },
-    containerItem: {
-      marginRight: 15,
-    },
-    fieldGroup: {
-      ...createTenantCommon.fieldGroup,
-      paddingTop: 15,
-      marginBottom: 25,
-    },
-    responsiveSectionItem: {
-      "@media (max-width: 900px)": {
-        flexFlow: "column",
-        alignItems: "flex-start",
-
-        "& div > div": {
-          marginBottom: 5,
-          marginRight: 0,
-        },
-      },
-    },
-
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const PoolConfiguration = ({ classes }: IConfigureProps) => {
+const PoolConfiguration = () => {
   const dispatch = useAppDispatch();
 
   const securityContextEnabled = useSelector(
@@ -164,12 +111,12 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
   };
 
   return (
-    <Paper className={classes.paperWrapper}>
-      <div className={classes.headerElement}>
+    <Fragment>
+      <Box className={"inputItem"} sx={{ marginBottom: 12 }}>
         <H3Section>Configure</H3Section>
-      </div>
-      <Grid item xs={12} className={classes.configSectionItem}>
-        <FormSwitchWrapper
+      </Box>
+      <FormLayout withBorders={false} containerPadding={false}>
+        <Switch
           value="tenantConfig"
           id="pool_configuration"
           name="pool_configuration"
@@ -182,19 +129,40 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
           }}
           label={"Security Context"}
         />
-      </Grid>
-      {securityContextEnabled && (
-        <Grid item xs={12} className={classes.tenantCustomizationFields}>
-          <fieldset className={classes.fieldGroup}>
-            <legend className={classes.descriptionText}>
-              Pool's Security Context
-            </legend>
-            <Grid item xs={12} className={`${classes.configSectionItem}`}>
+        {securityContextEnabled && (
+          <fieldset className={"inputItem"} style={{ marginBottom: 15 }}>
+            <legend>Pool's Security Context</legend>
+            <Grid
+              item
+              xs={12}
+              sx={{
+                marginRight: 15,
+                "& .containerItem": {
+                  marginRight: 15,
+                },
+                "& .multiContainer": {
+                  display: "flex" as const,
+                  alignItems: "center" as const,
+                  justifyContent: "flex-start" as const,
+                },
+                "& .responsiveSectionItem": {
+                  "@media (max-width: 900px)": {
+                    flexFlow: "column",
+                    alignItems: "flex-start",
+
+                    "& div > div": {
+                      marginBottom: 5,
+                      marginRight: 0,
+                    },
+                  },
+                },
+              }}
+            >
               <div
-                className={`${classes.multiContainer} ${classes.responsiveSectionItem}`}
+                className={`${"multiContainer"} ${"responsiveSectionItem"} inputItem`}
               >
-                <div className={classes.containerItem}>
-                  <InputBoxWrapper
+                <div className={"containerItem"}>
+                  <InputBox
                     type="number"
                     id="pool_securityContext_runAsUser"
                     name="pool_securityContext_runAsUser"
@@ -214,8 +182,8 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
                     min="0"
                   />
                 </div>
-                <div className={classes.containerItem}>
-                  <InputBoxWrapper
+                <div className={"containerItem"}>
+                  <InputBox
                     type="number"
                     id="pool_securityContext_runAsGroup"
                     name="pool_securityContext_runAsGroup"
@@ -235,8 +203,12 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
                     min="0"
                   />
                 </div>
-                <div className={classes.containerItem}>
-                  <InputBoxWrapper
+              </div>
+              <div
+                className={`${"multiContainer"} ${"responsiveSectionItem"} inputItem`}
+              >
+                <div className={"containerItem"}>
+                  <InputBox
                     type="number"
                     id="pool_securityContext_fsGroup"
                     name="pool_securityContext_fsGroup"
@@ -259,35 +231,32 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
               </div>
             </Grid>
             <br />
-            <Grid item xs={12} className={classes.configSectionItem}>
-              <div className={classes.multiContainer}>
-                <FormSwitchWrapper
-                  value="securityContextRunAsNonRoot"
-                  id="pool_securityContext_runAsNonRoot"
-                  name="pool_securityContext_runAsNonRoot"
-                  checked={securityContext.runAsNonRoot}
-                  onChange={(e) => {
-                    const targetD = e.target;
-                    const checked = targetD.checked;
-                    updateField("securityContext", {
-                      ...securityContext,
-                      runAsNonRoot: checked,
-                    });
-                  }}
-                  label={"Do not run as Root"}
-                />
-              </div>
+            <Grid
+              item
+              xs={12}
+              sx={{
+                marginRight: 15,
+              }}
+            >
+              <Switch
+                value="securityContextRunAsNonRoot"
+                id="pool_securityContext_runAsNonRoot"
+                name="pool_securityContext_runAsNonRoot"
+                checked={securityContext.runAsNonRoot}
+                onChange={(e) => {
+                  const targetD = e.target;
+                  const checked = targetD.checked;
+                  updateField("securityContext", {
+                    ...securityContext,
+                    runAsNonRoot: checked,
+                  });
+                }}
+                label={"Do not run as Root"}
+              />
             </Grid>
           </fieldset>
-        </Grid>
-      )}
-      <Grid
-        item
-        xs={12}
-        className={classes.configSectionItem}
-        sx={{ marginTop: "10px" }}
-      >
-        <FormSwitchWrapper
+        )}
+        <Switch
           value="customRuntime"
           id="tenant_custom_runtime"
           name="tenant_custom_runtime"
@@ -300,35 +269,25 @@ const PoolConfiguration = ({ classes }: IConfigureProps) => {
           }}
           label={"Custom Runtime Configurations"}
         />
-      </Grid>
-      {customRuntime && (
-        <Grid item xs={12} className={classes.tenantCustomizationFields}>
-          <fieldset className={classes.fieldGroup}>
-            <legend className={classes.descriptionText}>
-              Custom Runtime Configurations
-            </legend>
-            <Grid item xs={12} className={`${classes.configSectionItem}`}>
-              <div className={classes.containerItem}>
-                <InputBoxWrapper
-                  id="tenant_runtime_runtimeClassName"
-                  name="tenant_runtime_runtimeClassName"
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    updateField("runtimeClassName", e.target.value);
-                    cleanValidation("tenant_runtime_runtimeClassName");
-                  }}
-                  label="Runtime Class Name"
-                  value={runtimeClassName}
-                  error={
-                    validationErrors["tenant_runtime_runtimeClassName"] || ""
-                  }
-                />
-              </div>
-            </Grid>
+        {customRuntime && (
+          <fieldset className={"inputItem"}>
+            <legend>Custom Runtime Configurations</legend>
+            <InputBox
+              id="tenant_runtime_runtimeClassName"
+              name="tenant_runtime_runtimeClassName"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                updateField("runtimeClassName", e.target.value);
+                cleanValidation("tenant_runtime_runtimeClassName");
+              }}
+              label="Runtime Class Name"
+              value={runtimeClassName}
+              error={validationErrors["tenant_runtime_runtimeClassName"] || ""}
+            />
           </fieldset>
-        </Grid>
-      )}
-    </Paper>
+        )}
+      </FormLayout>
+    </Fragment>
   );
 };
 
-export default withStyles(styles)(PoolConfiguration);
+export default PoolConfiguration;

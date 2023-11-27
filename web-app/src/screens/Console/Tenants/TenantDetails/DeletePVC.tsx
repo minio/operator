@@ -14,10 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useState } from "react";
-import { DialogContentText } from "@mui/material";
-import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import Grid from "@mui/material/Grid";
+import React, { useState, Fragment } from "react";
+import { Grid, InputBox } from "mds";
 
 import { ErrorResponseHandler } from "../../../../common/types";
 import useApi from "../../Common/Hooks/useApi";
@@ -77,10 +75,10 @@ const DeletePVC = ({
         disabled: retypePVC !== selectedPVC.name || deleteLoading,
       }}
       confirmationContent={
-        <DialogContentText>
+        <Fragment>
           To continue please type <b>{selectedPVC.name}</b> in the box.
-          <Grid item xs={12}>
-            <InputBoxWrapper
+          <Grid item xs={12} sx={{ marginTop: 15 }}>
+            <InputBox
               id="retype-PVC"
               name="retype-PVC"
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +88,7 @@ const DeletePVC = ({
               value={retypePVC}
             />
           </Grid>
-        </DialogContentText>
+        </Fragment>
       }
     />
   );

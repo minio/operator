@@ -15,20 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
+import { ArrowIcon, Button, PageLayout, ProgressBar, Grid } from "mds";
 import { useSelector } from "react-redux";
-import { LinearProgress } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import { SubnetInfo } from "./types";
-import api from "../../../common/api";
-import { ArrowIcon, Button, PageLayout } from "mds";
-import { IAM_PAGES } from "../../../common/SecureComponent/permissions";
-import LicensePlans from "./LicensePlans";
 import { useNavigate } from "react-router-dom";
-import RegistrationStatusBanner from "../Support/RegistrationStatusBanner";
+import { IAM_PAGES } from "../../../common/SecureComponent/permissions";
+import { SubnetInfo } from "./types";
 import { selOpMode } from "../../../systemSlice";
-import withSuspense from "../Common/Components/withSuspense";
 import { getLicenseConsent } from "./utils";
+import LicensePlans from "./LicensePlans";
+import RegistrationStatusBanner from "../Support/RegistrationStatusBanner";
+import withSuspense from "../Common/Components/withSuspense";
 import PageHeaderWrapper from "../Common/PageHeaderWrapper/PageHeaderWrapper";
+import api from "../../../common/api";
 
 const LicenseConsentModal = withSuspense(
   React.lazy(() => import("./LicenseConsentModal")),
@@ -111,7 +109,7 @@ const License = () => {
   if (loadingLicenseInfo) {
     return (
       <Grid item xs={12}>
-        <LinearProgress />
+        <ProgressBar />
       </Grid>
     );
   }
