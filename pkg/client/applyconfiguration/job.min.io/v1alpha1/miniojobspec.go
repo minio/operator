@@ -18,14 +18,18 @@
 
 package v1alpha1
 
+import (
+	jobminiov1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
+)
+
 // MinIOJobSpecApplyConfiguration represents an declarative configuration of the MinIOJobSpec type for use
 // with apply.
 type MinIOJobSpecApplyConfiguration struct {
-	ServiceAccountName *string                         `json:"serviceAccountName,omitempty"`
-	TenantRef          *TenantRefApplyConfiguration    `json:"tenant,omitempty"`
-	Execution          *string                         `json:"execution,omitempty"`
-	FailureStrategy    *string                         `json:"failureStrategy,omitempty"`
-	Commands           []CommandSpecApplyConfiguration `json:"commands,omitempty"`
+	ServiceAccountName *string                           `json:"serviceAccountName,omitempty"`
+	TenantRef          *TenantRefApplyConfiguration      `json:"tenant,omitempty"`
+	Execution          *jobminiov1alpha1.Execution       `json:"execution,omitempty"`
+	FailureStrategy    *jobminiov1alpha1.FailureStrategy `json:"failureStrategy,omitempty"`
+	Commands           []CommandSpecApplyConfiguration   `json:"commands,omitempty"`
 }
 
 // MinIOJobSpecApplyConfiguration constructs an declarative configuration of the MinIOJobSpec type for use with
@@ -53,7 +57,7 @@ func (b *MinIOJobSpecApplyConfiguration) WithTenantRef(value *TenantRefApplyConf
 // WithExecution sets the Execution field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Execution field is set to the value of the last call.
-func (b *MinIOJobSpecApplyConfiguration) WithExecution(value string) *MinIOJobSpecApplyConfiguration {
+func (b *MinIOJobSpecApplyConfiguration) WithExecution(value jobminiov1alpha1.Execution) *MinIOJobSpecApplyConfiguration {
 	b.Execution = &value
 	return b
 }
@@ -61,7 +65,7 @@ func (b *MinIOJobSpecApplyConfiguration) WithExecution(value string) *MinIOJobSp
 // WithFailureStrategy sets the FailureStrategy field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the FailureStrategy field is set to the value of the last call.
-func (b *MinIOJobSpecApplyConfiguration) WithFailureStrategy(value string) *MinIOJobSpecApplyConfiguration {
+func (b *MinIOJobSpecApplyConfiguration) WithFailureStrategy(value jobminiov1alpha1.FailureStrategy) *MinIOJobSpecApplyConfiguration {
 	b.FailureStrategy = &value
 	return b
 }
