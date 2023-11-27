@@ -4,6 +4,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Execution is the MinIO Job level execution policy
+type Execution string
+
+const (
+	// Parallel Run MC Jobs in parallel
+	Parallel Execution = "parallel"
+	// Sequential Run MC Jobs in sequential mode
+	Sequential Execution = "sequential"
+)
+
+// FailureStrategy is the failure strategy at MinIO Job level
+type FailureStrategy string
+
+const (
+	// ContinueOnFailure indicates to MinIO Job to continue execution of following commands even in the case of the
+	// failure of a command
+	ContinueOnFailure FailureStrategy = "continueOnFailure"
+
+	// StopOnFailure indicates to MinIO Job to stop execution of following commands even in the case of the failure
+	// of a command
+	StopOnFailure FailureStrategy = "stopOnFailure"
+)
+
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:defaulter-gen=true
@@ -55,14 +78,14 @@ type MinIOJobSpec struct {
 	// +optional
 	// +kubebuilder:default=parallel
 	// +kubebuilder:validation:Enum=parallel;sequential;
-	Execution string `json:"execution"`
+	Execution Execution `json:"execution"`
 
 	// FailureStrategy is the forward plan in case of the failure of one or more MinioJob pods
 	// Either `stopOnFailure` or `continueOnFailure`, defaults to `continueOnFailure`.
 	// +optional
 	// +kubebuilder:default=continueOnFailure
 	// +kubebuilder:validation:Enum=continueOnFailure;stopOnFailure;
-	FailureStrategy string `json:"failureStrategy"`
+	FailureStrategy FailureStrategy `json:"failureStrategy"`
 
 	// *Required* +
 	//
