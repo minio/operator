@@ -764,4 +764,3 @@ spec:
     - image: quay.io/minio/minio@sha256:91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3
       name: minio-91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3-annotation
   version: 5.0.11
-  replaces: minio-operator.v5.0.10
