@@ -133,7 +133,7 @@ func NewTenant(opts *TenantOptions, userSecret *v1.Secret) (*miniov2.Tenant, err
 			Mountpath:       helpers.MinIOMountPath,
 			KES:             tenantKESConfig(opts.Name, opts.KmsSecret, opts.KesImage),
 			ImagePullSecret: v1.LocalObjectReference{Name: opts.ImagePullSecret},
-			Users: []*v1.LocalObjectReference{
+			Users: []v1.LocalObjectReference{
 				{
 					Name: userSecret.Name,
 				},

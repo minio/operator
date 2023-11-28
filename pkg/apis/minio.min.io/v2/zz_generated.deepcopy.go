@@ -739,14 +739,8 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 	}
 	if in.Users != nil {
 		in, out := &in.Users, &out.Users
-		*out = make([]*v1.LocalObjectReference, len(*in))
-		for i := range *in {
-			if (*in)[i] != nil {
-				in, out := &(*in)[i], &(*out)[i]
-				*out = new(v1.LocalObjectReference)
-				**out = **in
-			}
-		}
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
 	}
 	if in.Buckets != nil {
 		in, out := &in.Buckets, &out.Buckets
