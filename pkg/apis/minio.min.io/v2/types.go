@@ -329,7 +329,7 @@ type TenantSpec struct {
 	//
 	// The Operator creates each user with the `consoleAdmin` policy by default. You can change the assigned policy after the Tenant starts. +
 	// +optional
-	Users []*corev1.LocalObjectReference `json:"users,omitempty"`
+	Users []corev1.LocalObjectReference `json:"users,omitempty"`
 	// *Optional* +
 	//
 	// Create buckets when creating a new tenant. Skip if bucket with given name already exists

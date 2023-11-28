@@ -54,7 +54,7 @@ func createTenant(ctx context.Context, params operator_api.CreateTenantParams, c
 
 	accessKey, secretKey := getTenantCredentials(tenantReq.AccessKey, tenantReq.SecretKey)
 	tenantName := *tenantReq.Name
-	var users []*corev1.LocalObjectReference
+	var users []corev1.LocalObjectReference
 
 	// delete secrets created if an errors occurred during tenant creation,
 	defer func() {
@@ -387,7 +387,7 @@ func deleteSecretsIfTenantCreationFails(ctx context.Context, mError *models.Erro
 	}
 }
 
-func setTenantActiveDirectoryConfig(ctx context.Context, clientSet K8sClientI, tenantReq *models.CreateTenantRequest, tenantConfigurationENV map[string]string, users []*corev1.LocalObjectReference) (map[string]string, []*corev1.LocalObjectReference, error) {
+func setTenantActiveDirectoryConfig(ctx context.Context, clientSet K8sClientI, tenantReq *models.CreateTenantRequest, tenantConfigurationENV map[string]string, users []corev1.LocalObjectReference) (map[string]string, []corev1.LocalObjectReference, error) {
 	imm := true
 	serverAddress := *tenantReq.Idp.ActiveDirectory.URL
 	tlsSkipVerify := tenantReq.Idp.ActiveDirectory.SkipTLSVerification
@@ -427,7 +427,7 @@ func setTenantActiveDirectoryConfig(ctx context.Context, clientSet K8sClientI, t
 	// Attach the list of LDAP user DNs that will be administrator for the Tenant
 	for i, userDN := range tenantReq.Idp.ActiveDirectory.UserDNS {
 		userSecretName := fmt.Sprintf("%s-user-%d", *tenantReq.Name, i)
-		users = append(users, &corev1.LocalObjectReference{Name: userSecretName})
+		users = append(users, corev1.LocalObjectReference{Name: userSecretName})
 
 		userSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -466,11 +466,11 @@ func setTenantOIDCConfig(tenantReq *models.CreateTenantRequest, tenantConfigurat
 	return tenantConfigurationENV
 }
 
-func setTenantBuiltInUsers(ctx context.Context, clientSet K8sClientI, tenantReq *models.CreateTenantRequest, users []*corev1.LocalObjectReference) ([]*corev1.LocalObjectReference, error) {
+func setTenantBuiltInUsers(ctx context.Context, clientSet K8sClientI, tenantReq *models.CreateTenantRequest, users []corev1.LocalObjectReference) ([]corev1.LocalObjectReference, error) {
 	imm := true
 	for i := 0; i < len(tenantReq.Idp.Keys); i++ {
 		userSecretName := fmt.Sprintf("%s-user-%d", *tenantReq.Name, i)
-		users = append(users, &corev1.LocalObjectReference{Name: userSecretName})
+		users = append(users, corev1.LocalObjectReference{Name: userSecretName})
 		userSecret := corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: userSecretName,

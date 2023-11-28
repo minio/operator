@@ -53,7 +53,7 @@ type TenantSpecApplyConfiguration struct {
 	SideCars                  *SideCarsApplyConfiguration                  `json:"sideCars,omitempty"`
 	ExposeServices            *ExposeServicesApplyConfiguration            `json:"exposeServices,omitempty"`
 	ServiceMetadata           *ServiceMetadataApplyConfiguration           `json:"serviceMetadata,omitempty"`
-	Users                     []*v1.LocalObjectReference                   `json:"users,omitempty"`
+	Users                     []v1.LocalObjectReference                    `json:"users,omitempty"`
 	Buckets                   []BucketApplyConfiguration                   `json:"buckets,omitempty"`
 	Logging                   *LoggingApplyConfiguration                   `json:"logging,omitempty"`
 	Configuration             *v1.LocalObjectReference                     `json:"configuration,omitempty"`
@@ -301,11 +301,8 @@ func (b *TenantSpecApplyConfiguration) WithServiceMetadata(value *ServiceMetadat
 // WithUsers adds the given value to the Users field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Users field.
-func (b *TenantSpecApplyConfiguration) WithUsers(values ...*v1.LocalObjectReference) *TenantSpecApplyConfiguration {
+func (b *TenantSpecApplyConfiguration) WithUsers(values ...v1.LocalObjectReference) *TenantSpecApplyConfiguration {
 	for i := range values {
-		if values[i] == nil {
-			panic("nil value passed to WithUsers")
-		}
 		b.Users = append(b.Users, values[i])
 	}
 	return b
