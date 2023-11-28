@@ -16,11 +16,9 @@
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
 import { ArrowIcon, Button, PageLayout, ProgressBar, Grid } from "mds";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { IAM_PAGES } from "../../../common/SecureComponent/permissions";
 import { SubnetInfo } from "./types";
-import { selOpMode } from "../../../systemSlice";
 import { getLicenseConsent } from "./utils";
 import LicensePlans from "./LicensePlans";
 import RegistrationStatusBanner from "../Support/RegistrationStatusBanner";
@@ -34,7 +32,6 @@ const LicenseConsentModal = withSuspense(
 
 const License = () => {
   const navigate = useNavigate();
-  const operatorMode = useSelector(selOpMode);
   const [activateProductModal, setActivateProductModal] =
     useState<boolean>(false);
 
@@ -151,7 +148,6 @@ const License = () => {
           activateProductModal={activateProductModal}
           closeModalAndFetchLicenseInfo={closeModalAndFetchLicenseInfo}
           licenseInfo={licenseInfo}
-          operatorMode={operatorMode}
           currentPlanID={currentPlanID}
           setActivateProductModal={setActivateProductModal}
         />

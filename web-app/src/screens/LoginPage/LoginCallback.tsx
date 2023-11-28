@@ -14,97 +14,51 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useEffect, useState } from "react"; // eslint-disable-line @typescript-eslint/no-unused-vars
+import React, { Fragment, useEffect, useState } from "react";
+import { Box, Button, LoginWrapper, WarnIcon } from "mds";
+import styled from "styled-components";
+import get from "lodash/get";
 import { useNavigate } from "react-router-dom";
 import api from "../../common/api";
-import withStyles from "@mui/styles/withStyles";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
 import { baseUrl } from "../../history";
-import { Paper } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
-import { Button } from "mds";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import { getLogoVar } from "../../config";
 
-const styles = (theme: Theme) =>
-  createStyles({
-    paper: {
-      borderRadius: 8,
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      width: 800,
-      height: 424,
-      margin: "auto",
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      marginLeft: -400,
-      marginTop: -212,
-      "&.MuiPaper-root": {
-        borderRadius: 8,
-      },
+const CallBackContainer = styled.div(({ theme }) => ({
+  "& .errorDescription": {
+    fontStyle: "italic",
+    transition: "all .2s ease-in-out",
+    padding: "0 15px",
+    marginTop: 5,
+    overflow: "auto",
+  },
+  "& .errorLabel": {
+    color: get(theme, "fontColor", "#000"),
+    fontSize: 18,
+    fontWeight: "bold",
+    marginLeft: 5,
+  },
+  "& .simpleError": {
+    marginTop: 5,
+    padding: "2px 5px",
+    fontSize: 16,
+    color: get(theme, "fontColor", "#000"),
+  },
+  "& .messageIcon": {
+    color: get(theme, "signalColors.danger", "#C72C48"),
+    display: "flex",
+    "& svg": {
+      width: 32,
+      height: 32,
     },
-    mainContainer: {
-      position: "relative",
-      height: 424,
-    },
-    theOcean: {
-      borderTopLeftRadius: 8,
-      borderBottomLeftRadius: 8,
-      background:
-        "transparent linear-gradient(to bottom, #073052 0%,#05122b 100%); 0% 0% no-repeat padding-box;",
-    },
-    oceanBg: {
-      backgroundImage: "url(/images/BG_Illustration.svg)",
-      backgroundRepeat: "no-repeat",
-      backgroundPosition: "bottom left",
-      height: "100%",
-      width: 324,
-    },
-    theLogin: {
-      padding: "40px 45px 20px 45px",
-    },
-    extraDetailsContainer: {
-      fontStyle: "italic",
-      color: "#9C9C9C",
-      transition: "all .2s ease-in-out",
-      padding: "0 5px",
-      marginTop: 5,
-      overflow: "auto",
-    },
-    errorLabel: {
-      color: "#000",
-      fontSize: 18,
-      fontWeight: 500,
-      marginLeft: 5,
-    },
-    simpleError: {
-      marginTop: 5,
-      padding: "2px 5px",
-      fontSize: 16,
-      color: "#000",
-    },
-    messageIcon: {
-      color: "#C72C48",
-      display: "flex",
-      "& svg": {
-        width: 32,
-        height: 32,
-      },
-    },
-    errorTitle: {
-      display: "flex",
-      alignItems: "center",
-    },
-  });
+  },
+  "& .errorTitle": {
+    display: "flex",
+    alignItems: "center",
+    borderBottom: 15,
+  },
+}));
 
-interface ILoginCallBackProps {
-  classes: any;
-}
-
-const LoginCallback = ({ classes }: ILoginCallBackProps) => {
+const LoginCallback = () => {
   const navigate = useNavigate();
 
   const [error, setError] = useState<string>("");
@@ -151,28 +105,19 @@ const LoginCallback = ({ classes }: ILoginCallBackProps) => {
     }
   }, [loading, navigate]);
   return error !== "" || errorDescription !== "" ? (
-    <React.Fragment>
-      <Paper className={classes.paper}>
-        <Grid container className={classes.mainContainer}>
-          <Grid item xs={7} className={classes.theOcean}>
-            <div className={classes.oceanBg} />
-          </Grid>
-          <Grid item xs={5} className={classes.theLogin}>
-            <div className={classes.errorTitle}>
-              <span className={classes.messageIcon}>
-                <ErrorOutlineIcon />
+    <Fragment>
+      <LoginWrapper
+        logoProps={{ applicationName: "operator", subVariant: getLogoVar() }}
+        form={
+          <CallBackContainer>
+            <div className={"errorTitle"}>
+              <span className={"messageIcon"}>
+                <WarnIcon />
               </span>
-              <span className={classes.errorLabel}>Error from IDP</span>
+              <span className={"errorLabel"}>Error from IDP</span>
             </div>
-            <div className={classes.simpleError}>{error}</div>
-            <Typography
-              variant="body1"
-              gutterBottom
-              component="div"
-              className={classes.extraDetailsContainer}
-            >
-              {errorDescription}
-            </Typography>
+            <div className={"simpleError"}>{error}</div>
+            <Box className={"errorDescription"}>{errorDescription}</Box>
             <Button
               id={"back-to-login"}
               onClick={() => {
@@ -184,11 +129,22 @@ const LoginCallback = ({ classes }: ILoginCallBackProps) => {
             >
               Back to Login
             </Button>
-          </Grid>
-        </Grid>
-      </Paper>
-    </React.Fragment>
+          </CallBackContainer>
+        }
+        promoHeader={<Fragment>Multi-Cloud Object&nbsp;Store</Fragment>}
+        promoInfo={
+          <Fragment>
+            MinIO's high-performance, Kubernetes-native object store is licensed
+            under GNU AGPL v3 and is available on every cloud - public, private
+            and edge. For more information on the terms of the license or to
+            learn more about commercial licensing options visit the{" "}
+            <a href={"https://min.io/pricing"}>pricing page</a>.
+          </Fragment>
+        }
+        backgroundAnimation={false}
+      />
+    </Fragment>
   ) : null;
 };
 
-export default withStyles(styles)(LoginCallback);
+export default LoginCallback;
