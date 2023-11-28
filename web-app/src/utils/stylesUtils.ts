@@ -14,8 +14,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import get from "lodash/get";
 import { IEmbeddedCustomStyles } from "../common/types";
-import { createTheme } from "@mui/material";
 
 export const getOverrideColorVariants: (
   customStyles: string,
@@ -28,125 +28,17 @@ export const getOverrideColorVariants: (
   }
 };
 
-export const generateOverrideTheme = (overrideVars: IEmbeddedCustomStyles) => {
-  const theme = createTheme({
-    palette: {
-      primary: {
-        light: overrideVars.buttonStyles.hoverColor || "#073052",
-        main: overrideVars.buttonStyles.backgroundColor || "#081C42",
-        dark: overrideVars.buttonStyles.activeColor || "#05122B",
-        contrastText: overrideVars.buttonStyles.textColor || "#fff",
-      },
-      secondary: {
-        light: "#ff7961",
-        main: "#f44336",
-        dark: "#ba000d",
-        contrastText: "#000",
-      },
-      background: {
-        default: overrideVars.backgroundColor,
-      },
-      success: {
-        main: "#4ccb92",
-      },
-      warning: {
-        main: "#FFBD62",
-      },
-      error: {
-        light: "#e03a48",
-        main: "#C83B51",
-        contrastText: "#fff",
-      },
-    },
-    typography: {
-      fontFamily: ["Inter", "sans-serif"].join(","),
-      h1: {
-        fontWeight: "bold",
-        color: overrideVars.fontColor,
-      },
-      h2: {
-        fontWeight: "bold",
-        color: overrideVars.fontColor,
-      },
-      h3: {
-        fontWeight: "bold",
-        color: overrideVars.fontColor,
-      },
-      h4: {
-        fontWeight: "bold",
-        color: overrideVars.fontColor,
-      },
-      h5: {
-        fontWeight: "bold",
-        color: overrideVars.fontColor,
-      },
-      h6: {
-        fontWeight: "bold",
-        color: overrideVars.fontColor,
-      },
-    },
-    components: {
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            textTransform: "none",
-            borderRadius: 3,
-            height: 40,
-            padding: "0 20px",
-            fontSize: 14,
-            fontWeight: 600,
-            boxShadow: "none",
-            "& .min-icon": {
-              maxHeight: 18,
-            },
-            "&.MuiButton-contained.Mui-disabled": {
-              backgroundColor: "#EAEDEE",
-              fontWeight: 600,
-              color: "#767676",
-            },
-            "& .MuiButton-iconSizeMedium > *:first-of-type": {
-              fontSize: 12,
-            },
-          },
-        },
-      },
-      MuiPaper: {
-        styleOverrides: {
-          root: {
-            backgroundColor: overrideVars.backgroundColor,
-            color: overrideVars.fontColor,
-          },
-          elevation1: {
-            boxShadow: "none",
-            border: "#EAEDEE 1px solid",
-            borderRadius: 3,
-          },
-        },
-      },
-      MuiListItem: {
-        styleOverrides: {
-          root: {
-            "&.MuiListItem-root.Mui-selected": {
-              background: "inherit",
-              "& .MuiTypography-root": {
-                fontWeight: "bold",
-              },
-            },
-          },
-        },
-      },
-      MuiTab: {
-        styleOverrides: {
-          root: {
-            textTransform: "none",
-          },
-        },
-      },
-    },
-    colors: {
-      link: "#2781B0",
-    },
-  });
+export const isDarkModeOn = () => {
+  const darkMode = localStorage.getItem("dark-mode");
 
-  return theme;
+  if (!darkMode) {
+    const systemDarkMode = window.matchMedia("(prefers-color-scheme: dark)");
+    return get(systemDarkMode, "matches", false);
+  }
+
+  return darkMode === "on";
+};
+
+export const storeDarkMode = (mode: "on" | "off") => {
+  localStorage.setItem("dark-mode", mode);
 };

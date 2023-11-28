@@ -15,14 +15,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
-import { AlertCloseIcon, Box, CertificateIcon, IconButton } from "mds";
+import {
+  AlertCloseIcon,
+  Box,
+  CertificateIcon,
+  IconButton,
+  TimeIcon,
+  LanguageIcon,
+  EventBusyIcon,
+} from "mds";
 import { DateTime, Duration } from "luxon";
 import styled from "styled-components";
 import get from "lodash/get";
 import { ICertificateInfo } from "../../Tenants/types";
-import LanguageIcon from "@mui/icons-material/Language";
-import EventBusyIcon from "@mui/icons-material/EventBusy";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 const CertificateContainer = styled.div(({ theme }) => ({
   position: "relative",
@@ -194,7 +199,7 @@ const TLSCertificate = ({
             <span>{expiry.toFormat("yyyy/MM/dd")}</span>
           </Box>
           <Box className={"certificateExpiry"}>
-            <AccessTimeIcon color="inherit" fontSize="small" />
+            <TimeIcon />
             &nbsp;
             <span className={"label"}>Expires in:&nbsp;</span>
             <span className={certificateExpiration}>{daysToExpiryHuman}</span>

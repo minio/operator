@@ -191,6 +191,7 @@ const PVCDescribe = ({
             },
           ]}
           horizontal
+          horizontalBarBackground={false}
         />
       )}
     </Fragment>

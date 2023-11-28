@@ -25,7 +25,7 @@ import PodDescribe from "./PodDescribe";
 const PodDetails = () => {
   const { tenantNamespace, tenantName, podName } = useParams();
 
-  const [curTab, setCurTab] = useState<string>("events-tab");
+  const [curTab, setCurTab] = useState<string>("simple-tab-0");
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ const PodDetails = () => {
       <Tabs
         options={[
           {
-            tabConfig: { id: "events-tab", label: "Events" },
+            tabConfig: { id: "simple-tab-0", label: "Events" },
             content: (
               <PodEvents
                 tenant={tenantName || ""}
@@ -60,7 +60,7 @@ const PodDetails = () => {
             ),
           },
           {
-            tabConfig: { id: "describe-tab", label: "Describe" },
+            tabConfig: { id: "simple-tab-1", label: "Describe" },
             content: (
               <PodDescribe
                 tenant={tenantName || ""}
@@ -71,7 +71,7 @@ const PodDetails = () => {
             ),
           },
           {
-            tabConfig: { id: "logs-tab", label: "Logs" },
+            tabConfig: { id: "simple-tab-2", label: "Logs" },
             content: (
               <PodLogs
                 tenant={tenantName || ""}

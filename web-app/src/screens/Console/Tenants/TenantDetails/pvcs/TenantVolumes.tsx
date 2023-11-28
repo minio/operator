@@ -30,7 +30,7 @@ const TenantVolumes = () => {
   const dispatch = useAppDispatch();
   const { tenantName, PVCName, tenantNamespace } = useParams();
 
-  const [curTab, setCurTab] = useState<string>("events-tab");
+  const [curTab, setCurTab] = useState<string>("simple-tab-0");
   const [loading, setLoading] = useState<boolean>(true);
   const [events, setEvents] = useState<IEvent[]>([]);
 
@@ -70,7 +70,7 @@ const TenantVolumes = () => {
       <Tabs
         options={[
           {
-            tabConfig: { id: "events-tab", label: "Events" },
+            tabConfig: { id: "simple-tab-0", label: "Events" },
             content: (
               <Fragment>
                 <SectionTitle separator sx={{ marginBottom: 15 }}>
@@ -81,7 +81,7 @@ const TenantVolumes = () => {
             ),
           },
           {
-            tabConfig: { id: "describe-tab", label: "Describe" },
+            tabConfig: { id: "simple-tab-1", label: "Describe" },
             content: (
               <PVCDescribe
                 tenant={tenantName || ""}

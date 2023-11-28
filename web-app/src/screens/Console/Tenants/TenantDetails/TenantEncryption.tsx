@@ -1727,6 +1727,19 @@ const TenantEncryption = () => {
                       min="0"
                     />
                   </Box>
+                </Box>
+                <Box
+                  sx={{
+                    display: "flex" as const,
+                    alignItems: "center" as const,
+                    justifyContent: "flex-start" as const,
+                    gap: 15,
+                    "@media (max-width: 900px)": {
+                      display: "flex",
+                      flexFlow: "column",
+                    },
+                  }}
+                >
                   <Box className={`inputItem`}>
                     <InputBox
                       type="number"
