@@ -111,6 +111,9 @@ tenant:
       # Docs: https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/parameters.md
       storageClassName: standard
       ###
+      # Specify `storageAnnotations <https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/>`__ to associate to PVCs.
+      storageAnnotations: { }
+      ###
       # Specify `annotations <https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/>`__ to associate to Tenant pods.
       annotations: { }
       ###
