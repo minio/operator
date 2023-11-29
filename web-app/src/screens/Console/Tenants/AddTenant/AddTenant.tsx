@@ -153,7 +153,7 @@ const AddTenant = () => {
         }
       />
 
-      <PageLayout>
+      <PageLayout variant={"constrained"}>
         {addSending && (
           <Grid item xs={12}>
             <ProgressBar />

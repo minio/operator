@@ -193,218 +193,217 @@ const TenantDetails = () => {
       />
 
       <PageLayout variant={"constrained"}>
-        <Box withBorders={true} customBorderPadding={"0px"}>
-          {loadingTenant && (
-            <Grid item xs={12}>
-              <ProgressBar />
-            </Grid>
-          )}
+        {loadingTenant && (
           <Grid item xs={12}>
-            <ScreenTitle
-              icon={
-                <Fragment>
-                  <HealthsStatusIcon>
-                    {tenantInfo && tenantInfo.status && (
-                      <span
-                        className={`statusIcon ${tenantInfo.status
-                          ?.health_status!}`}
-                      >
-                        <CircleIcon style={{ width: 15, height: 15 }} />
-                      </span>
-                    )}
-                  </HealthsStatusIcon>
-                  <TenantsIcon />
-                </Fragment>
-              }
-              title={tenantName}
-              subTitle={
-                <Fragment>
-                  Namespace: {tenantNamespace} / Capacity:{" "}
-                  {niceBytes((tenantInfo?.total_size || 0).toString(10))}
-                </Fragment>
-              }
-              actions={
-                <Box
-                  sx={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
-                >
-                  <TooltipWrapper tooltip={"Delete"}>
-                    <Button
-                      id={"delete-tenant"}
-                      variant="secondary"
-                      onClick={() => {
-                        confirmDeleteTenant();
-                      }}
-                      color="secondary"
-                      icon={<TrashIcon />}
-                    />
-                  </TooltipWrapper>
-                  <TooltipWrapper tooltip={"Edit YAML"}>
-                    <Button
-                      icon={<EditIcon />}
-                      id={"yaml_button"}
-                      variant="regular"
-                      aria-label="Edit YAML"
-                      onClick={() => {
-                        editYaml();
-                      }}
-                    />
-                  </TooltipWrapper>
-                  <TooltipWrapper tooltip={"Management Console"}>
-                    <Button
-                      id={"tenant-hop"}
-                      onClick={() => {
-                        navigate(
-                          `/namespaces/${tenantNamespace}/tenants/${tenantName}/hop`,
-                        );
-                      }}
-                      disabled={!tenantInfo || !tenantIsOnline(tenantInfo)}
-                      variant={"regular"}
-                      icon={<MinIOTierIconXs style={{ height: 16 }} />}
-                    />
-                  </TooltipWrapper>
-                  <TooltipWrapper tooltip={"Refresh"}>
-                    <Button
-                      id={"tenant-refresh"}
-                      variant="regular"
-                      aria-label="Refresh List"
-                      onClick={() => {
-                        dispatch(getTenantAsync());
-                      }}
-                      icon={<RefreshIcon />}
-                    />
-                  </TooltipWrapper>
-                </Box>
-              }
-            />
+            <ProgressBar />
           </Grid>
-
-          <Tabs
-            currentTabOrPath={pathname}
-            useRouteTabs
-            onTabClick={(route) => navigate(route)}
-            routes={
-              <Routes>
-                <Route path={"summary"} element={<TenantSummary />} />
-                <Route
-                  path={"configuration"}
-                  element={<TenantConfiguration />}
-                />
-                <Route path={`summary/yaml`} element={<TenantYAML />} />
-                <Route path={"metrics"} element={<TenantMetrics />} />
-                <Route path={"trace"} element={<TenantTrace />} />
-                <Route
-                  path={"identity-provider"}
-                  element={<TenantIdentityProvider />}
-                />
-                <Route path={"security"} element={<TenantSecurity />} />
-                <Route path={"encryption"} element={<TenantEncryption />} />
-                <Route path={"pools"} element={<PoolsSummary />} />
-                <Route path={"pods/:podName"} element={<PodDetails />} />
-                <Route path={"pods"} element={<PodsSummary />} />
-                <Route path={"pvcs/:PVCName"} element={<TenantVolumes />} />
-                <Route path={"volumes"} element={<VolumesSummary />} />
-                <Route path={"license"} element={<TenantLicense />} />
-                <Route path={"events"} element={<TenantEvents />} />
-                <Route path={"csr"} element={<TenantCSR />} />
-                <Route
-                  path={"/"}
-                  element={
-                    <Navigate
-                      to={`/namespaces/${tenantNamespace}/tenants/${tenantName}/summary`}
-                    />
-                  }
-                />
-              </Routes>
+        )}
+        <Box
+          withBorders={true}
+          customBorderPadding={"0px"}
+          sx={{ borderBottom: 0 }}
+        >
+          <ScreenTitle
+            icon={
+              <Fragment>
+                <HealthsStatusIcon>
+                  {tenantInfo && tenantInfo.status && (
+                    <span
+                      className={`statusIcon ${tenantInfo.status
+                        ?.health_status!}`}
+                    >
+                      <CircleIcon style={{ width: 15, height: 15 }} />
+                    </span>
+                  )}
+                </HealthsStatusIcon>
+                <TenantsIcon />
+              </Fragment>
             }
-            options={[
-              {
-                tabConfig: {
-                  label: "Summary",
-                  id: `details-summary`,
-                  to: getRoutePath("summary"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Configuration",
-                  id: `details-configuration`,
-                  to: getRoutePath("configuration"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Metrics",
-                  id: `details-metrics`,
-                  to: getRoutePath("metrics"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Identity Provider",
-                  id: `details-idp`,
-                  to: getRoutePath("identity-provider"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Security",
-                  id: `details-security`,
-                  to: getRoutePath("security"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Encryption",
-                  id: `details-encryption`,
-                  to: getRoutePath("encryption"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Pools",
-                  id: `details-pools`,
-                  to: getRoutePath("pools"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Pods",
-                  id: "tenant-pod-tab",
-                  to: getRoutePath("pods"),
-                },
-              },
-
-              {
-                tabConfig: {
-                  label: "Volumes",
-                  id: `details-volumes`,
-                  to: getRoutePath("volumes"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Events",
-                  id: `details-events`,
-                  to: getRoutePath("events"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "Certificate Requests",
-                  id: `details-csr`,
-                  to: getRoutePath("csr"),
-                },
-              },
-              {
-                tabConfig: {
-                  label: "License",
-                  id: `details-license`,
-                  to: getRoutePath("license"),
-                },
-              },
-            ]}
+            title={tenantName}
+            subTitle={
+              <Fragment>
+                Namespace: {tenantNamespace} / Capacity:{" "}
+                {niceBytes((tenantInfo?.total_size || 0).toString(10))}
+              </Fragment>
+            }
+            actions={
+              <Box
+                sx={{ display: "flex", justifyContent: "flex-end", gap: 10 }}
+              >
+                <TooltipWrapper tooltip={"Delete"}>
+                  <Button
+                    id={"delete-tenant"}
+                    variant="secondary"
+                    onClick={() => {
+                      confirmDeleteTenant();
+                    }}
+                    color="secondary"
+                    icon={<TrashIcon />}
+                  />
+                </TooltipWrapper>
+                <TooltipWrapper tooltip={"Edit YAML"}>
+                  <Button
+                    icon={<EditIcon />}
+                    id={"yaml_button"}
+                    variant="regular"
+                    aria-label="Edit YAML"
+                    onClick={() => {
+                      editYaml();
+                    }}
+                  />
+                </TooltipWrapper>
+                <TooltipWrapper tooltip={"Management Console"}>
+                  <Button
+                    id={"tenant-hop"}
+                    onClick={() => {
+                      navigate(
+                        `/namespaces/${tenantNamespace}/tenants/${tenantName}/hop`,
+                      );
+                    }}
+                    disabled={!tenantInfo || !tenantIsOnline(tenantInfo)}
+                    variant={"regular"}
+                    icon={<MinIOTierIconXs style={{ height: 16 }} />}
+                  />
+                </TooltipWrapper>
+                <TooltipWrapper tooltip={"Refresh"}>
+                  <Button
+                    id={"tenant-refresh"}
+                    variant="regular"
+                    aria-label="Refresh List"
+                    onClick={() => {
+                      dispatch(getTenantAsync());
+                    }}
+                    icon={<RefreshIcon />}
+                  />
+                </TooltipWrapper>
+              </Box>
+            }
           />
         </Box>
+
+        <Tabs
+          currentTabOrPath={pathname}
+          useRouteTabs
+          onTabClick={(route) => navigate(route)}
+          routes={
+            <Routes>
+              <Route path={"summary"} element={<TenantSummary />} />
+              <Route path={"configuration"} element={<TenantConfiguration />} />
+              <Route path={`summary/yaml`} element={<TenantYAML />} />
+              <Route path={"metrics"} element={<TenantMetrics />} />
+              <Route path={"trace"} element={<TenantTrace />} />
+              <Route
+                path={"identity-provider"}
+                element={<TenantIdentityProvider />}
+              />
+              <Route path={"security"} element={<TenantSecurity />} />
+              <Route path={"encryption"} element={<TenantEncryption />} />
+              <Route path={"pools"} element={<PoolsSummary />} />
+              <Route path={"pods/:podName"} element={<PodDetails />} />
+              <Route path={"pods"} element={<PodsSummary />} />
+              <Route path={"pvcs/:PVCName"} element={<TenantVolumes />} />
+              <Route path={"volumes"} element={<VolumesSummary />} />
+              <Route path={"license"} element={<TenantLicense />} />
+              <Route path={"events"} element={<TenantEvents />} />
+              <Route path={"csr"} element={<TenantCSR />} />
+              <Route
+                path={"/"}
+                element={
+                  <Navigate
+                    to={`/namespaces/${tenantNamespace}/tenants/${tenantName}/summary`}
+                  />
+                }
+              />
+            </Routes>
+          }
+          options={[
+            {
+              tabConfig: {
+                label: "Summary",
+                id: `details-summary`,
+                to: getRoutePath("summary"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Configuration",
+                id: `details-configuration`,
+                to: getRoutePath("configuration"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Metrics",
+                id: `details-metrics`,
+                to: getRoutePath("metrics"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Identity Provider",
+                id: `details-idp`,
+                to: getRoutePath("identity-provider"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Security",
+                id: `details-security`,
+                to: getRoutePath("security"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Encryption",
+                id: `details-encryption`,
+                to: getRoutePath("encryption"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Pools",
+                id: `details-pools`,
+                to: getRoutePath("pools"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Pods",
+                id: "tenant-pod-tab",
+                to: getRoutePath("pods"),
+              },
+            },
+
+            {
+              tabConfig: {
+                label: "Volumes",
+                id: `details-volumes`,
+                to: getRoutePath("volumes"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Events",
+                id: `details-events`,
+                to: getRoutePath("events"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "Certificate Requests",
+                id: `details-csr`,
+                to: getRoutePath("csr"),
+              },
+            },
+            {
+              tabConfig: {
+                label: "License",
+                id: `details-license`,
+                to: getRoutePath("license"),
+              },
+            },
+          ]}
+        />
       </PageLayout>
     </Fragment>
   );

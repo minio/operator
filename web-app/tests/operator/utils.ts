@@ -36,7 +36,7 @@ const fillTenantInformation = async (tenantName: string) => {
     .click("#create-tenant")
     .typeText("#tenant-name", tenantName)
     .typeText("#namespace", tenantName)
-    .click("#add-namespace")
+    .click(Selector("#namespace").sibling("div.overlayAction").child("button"))
     .click("#confirm-ok")
     .wait(1000);
 };
@@ -69,8 +69,9 @@ export const goToVolumesInTenant = async (tenantName: string) => {
 };
 
 export const goToPodsInTenant = async (tenantName: string) => {
+  await t.click("#refresh-tenant-list").wait(1000);
   await t.click(`#list-tenant-${tenantName}`).wait(2000);
-  await t.click(Selector(`a[href$="/pods"]`));
+  await t.click("#tenant-pod-tab");
 };
 
 export const goToPodInTenant = async (tenantName: string) => {
@@ -87,7 +88,7 @@ export const goToPodSection = async (index: number) => {
 
 export const goToPvcsInTenant = async (tenantName: string) => {
   await t.click(`#list-tenant-${tenantName}`).wait(2000);
-  await t.click(Selector(`a[href$="/volumes"]`));
+  await t.click("#details-volumes");
 };
 
 export const goToPvcInTenant = async (tenantName: string) => {

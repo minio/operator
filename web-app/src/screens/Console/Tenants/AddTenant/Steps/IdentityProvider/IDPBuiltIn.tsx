@@ -15,9 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import { IconButton, Tooltip, InputBox, AddIcon, RemoveIcon, Box } from "mds";
+import {
+  IconButton,
+  Tooltip,
+  InputBox,
+  AddIcon,
+  RemoveIcon,
+  Box,
+  ShuffleIcon,
+} from "mds";
 import { useSelector } from "react-redux";
-import CasinoIcon from "@mui/icons-material/Casino"; // TODO: Implement this in mds
 import {
   addIDPNewKeyPair,
   isPageValid,
@@ -184,7 +191,7 @@ const IDPBuiltIn = () => {
                     }}
                     size={"small"}
                   >
-                    <CasinoIcon />
+                    <ShuffleIcon />
                   </IconButton>
                 </Tooltip>
               </Box>
