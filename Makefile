@@ -38,7 +38,7 @@ binary:
 operator: assets binary
 
 docker: operator
-	@docker build --no-cache -t $(TAG) .
+	@docker buildx build --no-cache --platform linux/amd64,linux/arm64 -t $(TAG) .
 
 build: regen-crd verify plugin operator docker
 
