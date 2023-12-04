@@ -6,9 +6,9 @@ metadata:
 data:
   setup.sh: |
     #!/bin/bash
-    mc mb local/test-bucket -p && \
-    mc mb local/other-bucket -p && \
-    mc admin policy create local test-bucket-rw /start-config/bucket-policy.json
+    mc mb myminio/test-bucket -p && \
+    mc mb myminio/other-bucket -p && \
+    mc admin policy create myminio test-bucket-rw /start-config/bucket-policy.json
   bucket-policy.json: |
     {
       "Version": "2012-10-17",
@@ -50,9 +50,9 @@ spec:
             - name: start-config
               mountPath: /start-config/
           env:
-            - name: MC_HOST_local
+            - name: MC_HOST_myminio
               value: https://$(ACCESS_KEY):$(SECRET_KEY)@minio.minio-tenant-1.svc.cluster.local
-            - name: MC_STS_ENDPOINT
+            - name: MC_STS_ENDPOINT_myminio
               value: https://sts.minio-operator.svc.cluster.local:4223/sts/minio-tenant-1
-            - name: MC_WEB_IDENTITY_TOKEN_FILE
+            - name: MC_WEB_IDENTITY_TOKEN_FILE_myminio
               value: /var/run/secrets/kubernetes.io/serviceaccount/token
