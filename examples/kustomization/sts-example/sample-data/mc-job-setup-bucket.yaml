@@ -52,7 +52,7 @@ spec:
           env:
             - name: MC_HOST_local
               value: https://$(ACCESS_KEY):$(SECRET_KEY)@minio.minio-tenant-1.svc.cluster.local
-            - name: MC_STS_ENDPOINT
+            - name: MC_STS_ENDPOINT_local
               value: https://sts.minio-operator.svc.cluster.local:4223/sts/minio-tenant-1
-            - name: MC_WEB_IDENTITY_TOKEN_FILE
+            - name: MC_WEB_IDENTITY_TOKEN_FILE_local
               value: /var/run/secrets/kubernetes.io/serviceaccount/token
