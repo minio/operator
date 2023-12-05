@@ -39,6 +39,9 @@ spec:
       volumeClaimTemplate:
         metadata:
           name: data
+      {{- with (dig "storageAnnotations" (dict) .) }}
+          annotations: {{- toYaml . | nindent 12 }}
+      {{- end }}
         spec:
           storageClassName: {{ dig "storageClassName" "" . }}
           accessModes:

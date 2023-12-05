@@ -1292,6 +1292,7 @@ func parseTenantPool(pool *miniov2.Pool) *models.Pool {
 		VolumeConfiguration: &models.PoolVolumeConfiguration{
 			Size:             size,
 			StorageClassName: storageClassName,
+			Annotations:      pool.VolumeClaimTemplate.ObjectMeta.Annotations,
 		},
 		NodeSelector:     pool.NodeSelector,
 		Resources:        resources,
