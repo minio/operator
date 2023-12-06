@@ -1,0 +1,74 @@
+package controller
+
+import (
+	"context"
+	"fmt"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/resources/statefulsets"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+// TryToDeletePVCS - try to delete pvc if set ReclaimStorageLabel:true
+func (c *Controller) TryToDeletePVCS(ctx context.Context, namespace string, tenantName string) {
+	pvcList := corev1.PersistentVolumeClaimList{}
+	listOpt := client.ListOptions{
+		Namespace: namespace,
+	}
+	client.MatchingLabels{
+		"v1.min.io/tenant": tenantName,
+	}.ApplyToList(&listOpt)
+	err := c.k8sClient.List(ctx, &pvcList, &listOpt)
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("PersistentVolumeClaimList  '%s/%s' error:%s", namespace, tenantName, err.Error()))
+	}
+	for _, pvc := range pvcList.Items {
+		if pvc.Labels[statefulsets.ReclaimStorageLabel] == "true" {
+			err := c.k8sClient.Delete(ctx, &pvc)
+			if err != nil {
+				runtime.HandleError(fmt.Errorf("Delete PersistentVolumeClaim '%s/%s/%s' error:%s", namespace, tenantName, pvc.Name, err.Error()))
+			}
+		}
+	}
+}
+
+func (c *Controller) ResizePVCS(ctx context.Context, tenant *miniov2.Tenant) {
+	for _, pool := range tenant.Spec.Pools {
+		if pool.ExpansionStorage != nil {
+			q, err := resource.ParseQuantity(*pool.ExpansionStorage)
+			if err != nil {
+				// if parse error. Continue
+				continue
+			}
+			storageReqeset := pool.VolumeClaimTemplate.Spec.Resources.Requests.Storage()
+			if storageReqeset != nil {
+				q.Add(*storageReqeset)
+			}
+			pvcList := corev1.PersistentVolumeClaimList{}
+			listOpt := client.ListOptions{
+				Namespace: tenant.Namespace,
+			}
+			client.MatchingLabels{
+				"v1.min.io/tenant": tenant.Name,
+				"v1.min.io/pool":   pool.Name,
+			}.ApplyToList(&listOpt)
+			err = c.k8sClient.List(ctx, &pvcList, &listOpt)
+			if err != nil {
+				runtime.HandleError(fmt.Errorf("PersistentVolumeClaimList  '%s/%s/%s' error:%s", tenant.Namespace, tenant.Name, pool.Name, err.Error()))
+			}
+			for _, pvc := range pvcList.Items {
+				// if already resize the pvc to be a bigger or equal. do nothing.
+				if pvc.Spec.Resources.Requests.Storage().Cmp(q) != 1 {
+					continue
+				}
+				pvc.Spec.Resources.Requests[corev1.ResourceStorage] = q
+				err := c.k8sClient.Update(ctx, &pvc)
+				if err != nil {
+					runtime.HandleError(fmt.Errorf("Update PersistentVolumeClaim  '%s/%s' to %s error:%s", tenant.Namespace, pvc.Name, q.String(), err.Error()))
+				}
+			}
+		}
+	}
+}

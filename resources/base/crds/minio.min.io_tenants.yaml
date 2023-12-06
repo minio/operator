@@ -2758,6 +2758,8 @@ spec:
                               type: string
                           type: object
                       type: object
+                    expansionStorage:
+                      type: string
                     labels:
                       additionalProperties:
                         type: string

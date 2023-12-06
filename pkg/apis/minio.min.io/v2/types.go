@@ -707,6 +707,12 @@ type Pool struct {
 	// If true. Will delete the storage when tenant has been deleted.
 	// +optional
 	ReclaimStorage *bool `json:"reclaimStorage,omitempty"`
+	// *Optional* +
+	//
+	// If set. Operator will try to expansion storage. And statefulset will not restart. We just patch the pvc only.
+	// Total = Request + ExpansionStorage
+	// +optional
+	ExpansionStorage *string `json:"expansionStorage"`
 }
 
 // EqualImage returns true if config image and current input image are same
