@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/api/operations/operator_api"
 	"github.com/minio/operator/models"

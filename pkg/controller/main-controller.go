@@ -28,7 +28,7 @@ import (
 
 	"github.com/minio/operator/pkg/utils"
 
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/operator/pkg/common"
 	xcerts "github.com/minio/pkg/certs"
 

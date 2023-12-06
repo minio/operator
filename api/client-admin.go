@@ -26,7 +26,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	mcCmd "github.com/minio/mc/cmd"
 	"github.com/minio/mc/pkg/probe"
 	"github.com/minio/operator/pkg"
@@ -397,7 +397,7 @@ func (ac AdminClient) addRemoteBucket(ctx context.Context, bucket string, target
 
 // serverHealthInfo implements mc.ServerHealthInfo - Connect to a minio server and call Health Info Management API
 func (ac AdminClient) serverHealthInfo(ctx context.Context, healthDataTypes []madmin.HealthDataType, deadline time.Duration) (interface{}, string, error) {
-	resp, version, err := ac.Client.ServerHealthInfo(ctx, healthDataTypes, deadline)
+	resp, version, err := ac.Client.ServerHealthInfo(ctx, healthDataTypes, deadline, "")
 	if err != nil {
 		return nil, version, err
 	}
@@ -506,7 +506,7 @@ func (ac AdminClient) getSiteReplicationInfo(ctx context.Context) (*madmin.SiteR
 }
 
 func (ac AdminClient) addSiteReplicationInfo(ctx context.Context, sites []madmin.PeerSite) (*madmin.ReplicateAddStatus, error) {
-	res, err := ac.Client.SiteReplicationAdd(ctx, sites)
+	res, err := ac.Client.SiteReplicationAdd(ctx, sites, madmin.SRAddOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -520,7 +520,7 @@ func (ac AdminClient) addSiteReplicationInfo(ctx context.Context, sites []madmin
 }
 
 func (ac AdminClient) editSiteReplicationInfo(ctx context.Context, site madmin.PeerInfo) (*madmin.ReplicateEditStatus, error) {
-	res, err := ac.Client.SiteReplicationEdit(ctx, site)
+	res, err := ac.Client.SiteReplicationEdit(ctx, site, madmin.SREditOptions{})
 	if err != nil {
 		return nil, err
 	}
