@@ -35,6 +35,7 @@ func (c *Controller) TryToDeletePVCS(ctx context.Context, namespace string, tena
 	}
 }
 
+// ResizePVCS - try to resize pvc to Request+ExpansionStorage if set ExpansionStorage to pool
 func (c *Controller) ResizePVCS(ctx context.Context, tenant *miniov2.Tenant) {
 	for _, pool := range tenant.Spec.Pools {
 		if pool.ExpansionStorage != nil {
