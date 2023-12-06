@@ -105,7 +105,8 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest string, err 
 		return latest, err
 	}
 
-	keychain := authn.DefaultKeychain
+	var keychain authn.Keychain
+	keychain = authn.DefaultKeychain
 
 	// if the tenant has imagePullSecret use that for pulling the image, but if we fail to extract the secret or we
 	// can't find the expected registry in the secret we will continue with the default keychain. This is because the
