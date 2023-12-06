@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xhttp "github.com/minio/operator/pkg/internal"

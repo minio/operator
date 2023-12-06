@@ -30,7 +30,7 @@ import (
 
 	utils2 "github.com/minio/operator/pkg/http"
 
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 
 	"github.com/minio/operator/api/operations/operator_api"
 
