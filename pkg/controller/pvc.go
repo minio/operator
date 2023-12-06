@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 	corev1 "k8s.io/api/core/v1"
