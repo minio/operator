@@ -32,7 +32,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	mc "github.com/minio/mc/cmd"
 	"github.com/tidwall/gjson"
 	"golang.org/x/crypto/ssh/terminal"

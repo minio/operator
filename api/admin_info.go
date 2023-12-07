@@ -42,24 +42,9 @@ func GetAdminInfo(ctx context.Context, client MinioAdmin) (*UsageInfo, error) {
 	// we are trimming uint64 to int64 this will report an incorrect measurement for numbers greater than
 	// 9,223,372,036,854,775,807
 
-	var backendType string
-	var rrSCParity float64
-	var standardSCParity float64
-
-	if v, success := serverInfo.Backend.(map[string]interface{}); success {
-		bt, ok := v["backendType"]
-		if ok {
-			backendType = bt.(string)
-		}
-		rp, ok := v["rrSCParity"]
-		if ok {
-			rrSCParity = rp.(float64)
-		}
-		sp, ok := v["standardSCParity"]
-		if ok {
-			standardSCParity = sp.(float64)
-		}
-	}
+	backendType := string(serverInfo.Backend.Type)
+	rrSCParity := serverInfo.Backend.RRSCParity
+	standardSCParity := serverInfo.Backend.StandardSCParity
 
 	var usedSpace int64
 	// serverArray contains the serverProperties which describe the servers in the network
