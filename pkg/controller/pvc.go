@@ -44,9 +44,9 @@ func (c *Controller) ResizePVCS(ctx context.Context, tenant *miniov2.Tenant) {
 				// if parse error. Continue
 				continue
 			}
-			storageReqeset := pool.VolumeClaimTemplate.Spec.Resources.Requests.Storage()
-			if storageReqeset != nil {
-				q.Add(*storageReqeset)
+			storageRequest := pool.VolumeClaimTemplate.Spec.Resources.Requests.Storage()
+			if storageRequest != nil {
+				q.Add(*storageRequest)
 			}
 			pvcList := corev1.PersistentVolumeClaimList{}
 			listOpt := client.ListOptions{
@@ -58,17 +58,17 @@ func (c *Controller) ResizePVCS(ctx context.Context, tenant *miniov2.Tenant) {
 			}.ApplyToList(&listOpt)
 			err = c.k8sClient.List(ctx, &pvcList, &listOpt)
 			if err != nil {
-				runtime.HandleError(fmt.Errorf("PersistentVolumeClaimList  '%s/%s/%s' error:%s", tenant.Namespace, tenant.Name, pool.Name, err.Error()))
+				runtime.HandleError(fmt.Errorf("PersistentVolumeClaimList '%s/%s/%s' error:%s", tenant.Namespace, tenant.Name, pool.Name, err.Error()))
 			}
 			for _, pvc := range pvcList.Items {
-				// if already resize the pvc to be a bigger or equal. do nothing.
+				// if already resized with a bigger or equal size, do nothing
 				if pvc.Spec.Resources.Requests.Storage().Cmp(q) != 1 {
 					continue
 				}
 				pvc.Spec.Resources.Requests[corev1.ResourceStorage] = q
 				err := c.k8sClient.Update(ctx, &pvc)
 				if err != nil {
-					runtime.HandleError(fmt.Errorf("Update PersistentVolumeClaim  '%s/%s' to %s error:%s", tenant.Namespace, pvc.Name, q.String(), err.Error()))
+					runtime.HandleError(fmt.Errorf("Update PersistentVolumeClaim '%s/%s' to %s error:%s", tenant.Namespace, pvc.Name, q.String(), err.Error()))
 				}
 			}
 		}
