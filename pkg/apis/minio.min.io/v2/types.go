@@ -709,10 +709,10 @@ type Pool struct {
 	ReclaimStorage *bool `json:"reclaimStorage,omitempty"`
 	// *Optional* +
 	//
-	// If set. Operator will try to expansion storage. And statefulset will not restart. We just patch the pvc only.
-	// Total = Request + ExpansionStorage
+	// If set. Operator will try to expansion storage. And statefulset will not restart. We just update the pvc only.
+	// Total = Request + AdditionalStorage
 	// +optional
-	ExpansionStorage *string `json:"expansionStorage"`
+	AdditionalStorage *string `json:"additionalStorage"`
 }
 
 // EqualImage returns true if config image and current input image are same

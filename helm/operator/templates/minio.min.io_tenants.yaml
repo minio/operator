@@ -2328,6 +2328,8 @@ spec:
               pools:
                 items:
                   properties:
+                    additionalStorage:
+                      type: string
                     affinity:
                       properties:
                         nodeAffinity:
@@ -2758,8 +2760,6 @@ spec:
                               type: string
                           type: object
                       type: object
-                    expansionStorage:
-                      type: string
                     labels:
                       additionalProperties:
                         type: string
