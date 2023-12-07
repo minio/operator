@@ -62,7 +62,7 @@ func (c *Controller) ResizePVCS(ctx context.Context, tenant *miniov2.Tenant) {
 			}
 			for _, pvc := range pvcList.Items {
 				// if already resized with a bigger or equal size, do nothing
-				if pvc.Spec.Resources.Requests.Storage().Cmp(q) != 1 {
+				if pvc.Spec.Resources.Requests.Storage().Cmp(q) == 1 {
 					continue
 				}
 				pvc.Spec.Resources.Requests[corev1.ResourceStorage] = q
