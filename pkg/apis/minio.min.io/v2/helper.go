@@ -752,7 +752,7 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 	return nil
 }
 
-// UserCredential - stores user credentials and policies
+// UserConfig - stores user credentials and policies
 type UserConfig struct {
 	AccessKey string
 	SecretKey string
