@@ -802,7 +802,7 @@ func ParseUserWithPolicy(userCredentialSecrets []*corev1.Secret) (config map[str
 			return nil, fmt.Errorf("invalid user config")
 		}
 		if k == "CONSOLE" && v.Policy == "" {
-			v.Policy = "consoleAdmin"
+			v.Policy = ConsoleAdminPolicyName
 		}
 		valid := false
 		for _, p := range policy.DefaultPolicies {
