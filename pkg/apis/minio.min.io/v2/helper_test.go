@@ -528,6 +528,7 @@ func TestParseUserWithPolicy(t *testing.T) {
 	type args struct {
 		userCredentialSecrets []*corev1.Secret
 	}
+	defaultConsoleName := "CONSOLE"
 	tests := []struct {
 		name       string
 		args       args
@@ -551,7 +552,7 @@ func TestParseUserWithPolicy(t *testing.T) {
 				},
 			},
 			wantConfig: map[string]*UserConfig{
-				"CONSOLE": &UserConfig{
+				defaultConsoleName: &UserConfig{
 					AccessKey: "admin",
 					SecretKey: "password",
 					Policy:    "consoleAdmin",
@@ -576,7 +577,7 @@ func TestParseUserWithPolicy(t *testing.T) {
 				},
 			},
 			wantConfig: map[string]*UserConfig{
-				"CONSOLE": &UserConfig{
+				defaultConsoleName: &UserConfig{
 					AccessKey: "admin",
 					SecretKey: "password",
 					Policy:    "readonly",
@@ -603,7 +604,7 @@ func TestParseUserWithPolicy(t *testing.T) {
 				},
 			},
 			wantConfig: map[string]*UserConfig{
-				"CONSOLE": &UserConfig{
+				defaultConsoleName: &UserConfig{
 					AccessKey: "admin",
 					SecretKey: "password",
 					Policy:    "consoleAdmin",
