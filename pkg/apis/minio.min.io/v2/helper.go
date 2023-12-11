@@ -49,6 +49,7 @@ import (
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/pkg/v2/policy"
 )
 
 // Webhook API constants
@@ -733,31 +734,87 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 	// add user with a 20 seconds timeout
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
 	defer cancel()
-	for _, secret := range userCredentialSecrets {
-		consoleAccessKey, ok := secret.Data["CONSOLE_ACCESS_KEY"]
-		if !ok {
-			return errors.New("CONSOLE_ACCESS_KEY not provided")
-		}
-		// remove spaces and line breaks from access key
-		userAccessKey := strings.TrimSpace(string(consoleAccessKey))
-		// skipCreateUser handles the scenario of LDAP users that are
-		// not created in MinIO but still need to have a policy assigned
+
+	withPolicy, err := ParseUserWithPolicy(userCredentialSecrets)
+	if err != nil {
+		return err
+	}
+	for _, user := range withPolicy {
 		if !skipCreateUser {
-			consoleSecretKey, ok := secret.Data["CONSOLE_SECRET_KEY"]
-			// remove spaces and line breaks from secret key
-			userSecretKey := strings.TrimSpace(string(consoleSecretKey))
-			if !ok {
-				return errors.New("CONSOLE_SECRET_KEY not provided")
-			}
-			if err := madmClnt.AddUser(ctx, userAccessKey, userSecretKey); err != nil {
+			if err := madmClnt.AddUser(ctx, user.AccessKey, user.SecretKey); err != nil {
 				return err
 			}
 		}
-		if err := madmClnt.SetPolicy(ctx, ConsoleAdminPolicyName, userAccessKey, false); err != nil {
+		if err := madmClnt.SetPolicy(ctx, user.Policy, user.AccessKey, false); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// UserCredential - stores user credentials and policies
+type UserConfig struct {
+	AccessKey string
+	SecretKey string
+	Policy    string
+}
+
+// ParseUserWithPolicy - parses user credentials and policies
+// CONSOLE_ACCESS_KEY and CONSOLE_SECRET_KEY will add default consoleAdmin to the user if CONSOLE_POLICY do not set.
+func ParseUserWithPolicy(userCredentialSecrets []*corev1.Secret) (config map[string]*UserConfig, err error) {
+	config = make(map[string]*UserConfig)
+	for _, secret := range userCredentialSecrets {
+		for k, v := range secret.Data {
+			if strings.HasSuffix(k, "_ACCESS_KEY") {
+				name := strings.TrimSuffix(k, "_ACCESS_KEY")
+				if conf, ok := config[name]; ok {
+					conf.AccessKey = strings.TrimSpace(string(v))
+				} else {
+					config[name] = &UserConfig{
+						AccessKey: strings.TrimSpace(string(v)),
+					}
+				}
+			}
+			if strings.HasSuffix(k, "_SECRET_KEY") {
+				name := strings.TrimSuffix(k, "_SECRET_KEY")
+				if conf, ok := config[name]; ok {
+					conf.SecretKey = strings.TrimSpace(string(v))
+				} else {
+					config[name] = &UserConfig{
+						SecretKey: strings.TrimSpace(string(v)),
+					}
+				}
+			}
+			if strings.HasSuffix(k, "_POLICY") {
+				name := strings.TrimSuffix(k, "_POLICY")
+				if conf, ok := config[name]; ok {
+					conf.Policy = strings.TrimSpace(string(v))
+				} else {
+					config[name] = &UserConfig{
+						Policy: strings.TrimSpace(string(v)),
+					}
+				}
+			}
+		}
+	}
+	for k, v := range config {
+		if v.AccessKey == "" || v.SecretKey == "" {
+			return nil, fmt.Errorf("invalid user config")
+		}
+		if k == "CONSOLE" && v.Policy == "" {
+			v.Policy = "consoleAdmin"
+		}
+		valid := false
+		for _, p := range policy.DefaultPolicies {
+			if v.Policy == p.Name {
+				valid = true
+			}
+		}
+		if !valid {
+			return nil, fmt.Errorf("invalid policy [%s] config", v.Policy)
+		}
+	}
+	return config, nil
 }
 
 // CreateBuckets creates buckets and skips if bucket already present

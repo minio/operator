@@ -327,6 +327,13 @@ type TenantSpec struct {
 	//
 	// * `CONSOLE_SECRET_KEY` - The "Password" for the MinIO user +
 	//
+	// * You can set a built-in policy for `[*]_ACCESS_KEY/[*]_SECRET_KEY/[*]_POLICY`
+	// * policy: readwrite|readonly|writeonly|diagnostics|consoleAdmin
+	// Example:
+	//   MyUser_ACCESS_KEY: myadmin
+	//   MyUser_SECRET_KEY: password
+	//   MyUser_POLICY: readonly
+	//
 	// The Operator creates each user with the `consoleAdmin` policy by default. You can change the assigned policy after the Tenant starts. +
 	// +optional
 	Users []corev1.LocalObjectReference `json:"users,omitempty"`

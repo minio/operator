@@ -60,6 +60,7 @@ require (
 require (
 	github.com/go-test/deep v1.1.0
 	github.com/minio/kes-go v0.2.1
+	github.com/minio/pkg/v2 v2.0.4
 	golang.org/x/mod v0.14.0
 	sigs.k8s.io/controller-runtime v0.16.3
 )
@@ -133,7 +134,6 @@ require (
 	github.com/minio/colorjson v1.0.6 // indirect
 	github.com/minio/filepath v1.0.0 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
-	github.com/minio/pkg/v2 v2.0.4 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

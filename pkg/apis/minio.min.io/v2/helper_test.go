@@ -523,3 +523,108 @@ func TestTenant_ValidateDomains(t1 *testing.T) {
 		})
 	}
 }
+
+func TestParseUserWithPolicy(t *testing.T) {
+	type args struct {
+		userCredentialSecrets []*corev1.Secret
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantConfig map[string]*UserConfig
+		wantErr    bool
+	}{
+		{
+			name: "CONSOLE without policy",
+			args: args{
+				userCredentialSecrets: []*corev1.Secret{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "console-creds",
+							Namespace: "default",
+						},
+						Data: map[string][]byte{
+							"CONSOLE_ACCESS_KEY": []byte("admin"),
+							"CONSOLE_SECRET_KEY": []byte("password"),
+						},
+					},
+				},
+			},
+			wantConfig: map[string]*UserConfig{
+				"CONSOLE": &UserConfig{
+					AccessKey: "admin",
+					SecretKey: "password",
+					Policy:    "consoleAdmin",
+				},
+			},
+		},
+		{
+			name: "CONSOLE with policy",
+			args: args{
+				userCredentialSecrets: []*corev1.Secret{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "console-creds",
+							Namespace: "default",
+						},
+						Data: map[string][]byte{
+							"CONSOLE_ACCESS_KEY": []byte("admin"),
+							"CONSOLE_SECRET_KEY": []byte("password"),
+							"CONSOLE_POLICY":     []byte("readonly"),
+						},
+					},
+				},
+			},
+			wantConfig: map[string]*UserConfig{
+				"CONSOLE": &UserConfig{
+					AccessKey: "admin",
+					SecretKey: "password",
+					Policy:    "readonly",
+				},
+			},
+		},
+		{
+			name: "CONSOLE without policy and others",
+			args: args{
+				userCredentialSecrets: []*corev1.Secret{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "console-creds",
+							Namespace: "default",
+						},
+						Data: map[string][]byte{
+							"CONSOLE_ACCESS_KEY":  []byte("admin"),
+							"CONSOLE_SECRET_KEY":  []byte("password"),
+							"ReadOnly_ACCESS_KEY": []byte("admin"),
+							"ReadOnly_SECRET_KEY": []byte("password"),
+							"ReadOnly_POLICY":     []byte("readonly"),
+						},
+					},
+				},
+			},
+			wantConfig: map[string]*UserConfig{
+				"CONSOLE": &UserConfig{
+					AccessKey: "admin",
+					SecretKey: "password",
+					Policy:    "consoleAdmin",
+				},
+				"ReadOnly": &UserConfig{
+					AccessKey: "admin",
+					SecretKey: "password",
+					Policy:    "readonly",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotConfig, err := ParseUserWithPolicy(tt.args.userCredentialSecrets)
+			if tt.wantErr {
+				if err != nil {
+					assert.Failf(t, "Test %s did not return error", tt.name)
+				}
+			}
+			assert.Equalf(t, tt.wantConfig, gotConfig, "ParseUserWithPolicy(%v)", tt.args.userCredentialSecrets)
+		})
+	}
+}
