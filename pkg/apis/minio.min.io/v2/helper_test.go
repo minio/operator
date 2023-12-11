@@ -524,11 +524,11 @@ func TestTenant_ValidateDomains(t1 *testing.T) {
 	}
 }
 
+// nolint
 func TestParseUserWithPolicy(t *testing.T) {
 	type args struct {
 		userCredentialSecrets []*corev1.Secret
 	}
-	defaultConsoleName := "CONSOLE"
 	tests := []struct {
 		name       string
 		args       args
@@ -552,7 +552,7 @@ func TestParseUserWithPolicy(t *testing.T) {
 				},
 			},
 			wantConfig: map[string]*UserConfig{
-				defaultConsoleName: &UserConfig{
+				"CONSOLE": &UserConfig{
 					AccessKey: "admin",
 					SecretKey: "password",
 					Policy:    "consoleAdmin",
@@ -577,7 +577,7 @@ func TestParseUserWithPolicy(t *testing.T) {
 				},
 			},
 			wantConfig: map[string]*UserConfig{
-				defaultConsoleName: &UserConfig{
+				"CONSOLE": &UserConfig{
 					AccessKey: "admin",
 					SecretKey: "password",
 					Policy:    "readonly",
@@ -604,7 +604,7 @@ func TestParseUserWithPolicy(t *testing.T) {
 				},
 			},
 			wantConfig: map[string]*UserConfig{
-				defaultConsoleName: &UserConfig{
+				"CONSOLE": &UserConfig{
 					AccessKey: "admin",
 					SecretKey: "password",
 					Policy:    "consoleAdmin",
