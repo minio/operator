@@ -251,6 +251,12 @@ tenant:
   # Array of Kubernetes secrets from which the Operator generates MinIO users during tenant provisioning.
   #
   # Each secret should specify the ``CONSOLE_ACCESS_KEY`` and ``CONSOLE_SECRET_KEY`` as the access key and secret key for that user.
+  # You can set a built-in policy for `[*]_ACCESS_KEY/[*]_SECRET_KEY/[*]_POLICY`
+  # Example:
+  #   MyUser_ACCESS_KEY: myadmin
+  #   MyUser_SECRET_KEY: password
+  #   MyUser_POLICY: readonly
+  #
   users: [ ]
   ###
   # The `PodManagement <https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy>`__ policy for MinIO Tenant Pods. 
