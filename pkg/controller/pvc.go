@@ -37,7 +37,6 @@ func (c *Controller) TryToDeletePVCS(ctx context.Context, namespace string, tena
 
 // ResizePVCS - try to resize pvc to Request+AdditionalStorage if set AdditionalStorage to pool
 func (c *Controller) ResizePVCS(ctx context.Context, tenant *miniov2.Tenant) {
-	fmt.Println("try to resizePVC now")
 	for _, pool := range tenant.Spec.Pools {
 		if pool.AdditionalStorage != nil {
 			q, err := resource.ParseQuantity(*pool.AdditionalStorage)
@@ -62,23 +61,17 @@ func (c *Controller) ResizePVCS(ctx context.Context, tenant *miniov2.Tenant) {
 			if err != nil {
 				runtime.HandleError(fmt.Errorf("PersistentVolumeClaimList '%s/%s/%s' error:%s", tenant.Namespace, tenant.Name, pool.Name, err.Error()))
 			}
-			fmt.Println("Get pvc number:", len(pvcList.Items))
 			for _, pvc := range pvcList.Items {
 				// if already resized with a bigger or equal size, do nothing
 				if pvc.Spec.Resources.Requests.Storage().Cmp(q) != -1 {
-					fmt.Println("ignore to resize:")
 					continue
 				}
 				pvc.Spec.Resources.Requests[corev1.ResourceStorage] = q
 				err := c.k8sClient.Update(ctx, &pvc)
 				if err != nil {
 					runtime.HandleError(fmt.Errorf("Update PersistentVolumeClaim '%s/%s' to %s error:%s", tenant.Namespace, pvc.Name, q.String(), err.Error()))
-				} else {
-					fmt.Println("resize success")
 				}
 			}
-		} else {
-			fmt.Println("nothing to resize for ", pool.Name, " empty here")
 		}
 	}
 }

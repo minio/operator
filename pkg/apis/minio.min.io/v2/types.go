@@ -710,6 +710,7 @@ type Pool struct {
 	// *Optional* +
 	//
 	// If set. Operator will try to expansion storage. And statefulset will not restart. We just update the pvc only.
+	// Examples: 2Gi
 	// Total = Request + AdditionalStorage
 	// +optional
 	AdditionalStorage *string `json:"additionalStorage"`
