@@ -55,12 +55,12 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	c := &createCmd{out: out, errOut: errOut}
 
 	cmd := &cobra.Command{
-		Use:     "create <TENANTNAME> --pool <POOLNAME> --servers <NSERVERS> --volumes <NVOLUMES> --capacity <SIZE> --namespace <TENANTNS>",
+		Use:     "create <TENANTNAME> --pool <POOLNAME> --servers <NSERVERS> ( --volumes <NVOLUMES> | --volumes-per-server <NVOLUMESPERSERVER> ) --capacity <SIZE> --namespace <TENANTNS>",
 		Short:   "Create a MinIO tenant",
 		Long:    createDesc,
 		Example: createExample,
 		Args: func(cmd *cobra.Command, args []string) error {
-			// The disable-tls parameter default value is false, we cannot rely on the default value binded to the tenantOpts.DisableTLS variable
+			// The disable-tls parameter default value is false, we cannot rely on the default value bound to the tenantOpts.DisableTLS variable
 			// to identify if the parameter --disable-tls was actually set on the command line.
 			// regardless of which value is being set to the flag, if the flag and ONLY if the flag is present, then we disable TLS
 			c.tenantOpts.DisableTLS = cmd.Flags().Lookup("disable-tls").Changed
@@ -80,6 +80,7 @@ func newTenantCreateCmd(out io.Writer, errOut io.Writer) *cobra.Command {
 	f.StringVarP(&c.tenantOpts.PoolName, "pool", "p", "", "name for this pool")
 	f.Int32Var(&c.tenantOpts.Servers, "servers", 0, "total number of pods in MinIO tenant")
 	f.Int32Var(&c.tenantOpts.Volumes, "volumes", 0, "total number of volumes in the MinIO tenant")
+	f.Int32Var(&c.tenantOpts.VolumesPerServer, "volumes-per-server", 0, "number of volumes in each server in the MinIO tenant")
 	f.StringVar(&c.tenantOpts.Capacity, "capacity", "", "total raw capacity of MinIO tenant in this pool, e.g. 16Ti")
 	f.StringVarP(&c.tenantOpts.NS, "namespace", "n", "", "k8s namespace for this MinIO tenant")
 	f.StringVarP(&c.tenantOpts.StorageClass, "storage-class", "s", helpers.DefaultStorageclass, "storage class for this MinIO tenant")
@@ -182,7 +183,11 @@ func (c *createCmd) populateInteractiveTenant() error {
 	c.tenantOpts.Name = helpers.AskQuestion("Tenant name", helpers.CheckValidTenantName)
 	c.tenantOpts.ConfigurationSecretName = fmt.Sprintf("%s-env-configuration", c.tenantOpts.Name)
 	c.tenantOpts.Servers = int32(helpers.AskNumber("Total of servers", greaterThanZero))
-	c.tenantOpts.Volumes = int32(helpers.AskNumber("Total of volumes", greaterThanZero))
+	if helpers.Ask("Define 'Total of volumes'") {
+		c.tenantOpts.Volumes = int32(helpers.AskNumber("Total of volumes", greaterThanZero))
+	} else {
+		c.tenantOpts.VolumesPerServer = int32(helpers.AskNumber("Volumes per server", greaterThanZero))
+	}
 	c.tenantOpts.NS = helpers.AskQuestion("Namespace", validateEmptyInput)
 	c.tenantOpts.Capacity = helpers.AskQuestion("Capacity", validateCapacity)
 	if err := c.tenantOpts.Validate(); err != nil {
@@ -192,6 +197,7 @@ func (c *createCmd) populateInteractiveTenant() error {
 	c.tenantOpts.ExposeMinioService = helpers.Ask("Expose Minio Service")
 	c.tenantOpts.ExposeConsoleService = helpers.Ask("Expose Console Service")
 	c.tenantOpts.EnableSFTP = helpers.Ask("Enable SFTP")
+	c.tenantOpts.DisableAntiAffinity = helpers.Ask("Disable Anti-Affinity (unsupported in production environment)")
 	return nil
 }
 
@@ -206,7 +212,16 @@ func validateCapacity(value string) error {
 	if err := validateEmptyInput(value); err != nil {
 		return err
 	}
-	_, err := resource.ParseQuantity(value)
+	capacity, err := resource.ParseQuantity(value)
+	if err != nil {
+		if err == resource.ErrFormatWrong {
+			return errors.New("capacity flag is incorrectly formatted. Use a suffix like 'T' or 'Ti' only")
+		}
+		return err
+	}
+	if capacity.Sign() <= 0 {
+		return errors.New("capacity needs to be greater than zero")
+	}
 	return err
 }
 
