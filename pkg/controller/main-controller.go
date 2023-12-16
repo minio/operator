@@ -1420,6 +1420,8 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			return WrapResult(Result{RequeueAfter: time.Second * 5}, err)
 		} else if create {
 			c.recorder.Event(tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
+		} else {
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets already exist")
 		}
 	}
 
