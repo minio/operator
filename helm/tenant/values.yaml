@@ -32,8 +32,8 @@ secrets:
   #         export MINIO_ROOT_USER=ROOTUSERNAME
   #         export MINIO_ROOT_PASSWORD=ROOTUSERPASSWORD
   #
-  existingSecret:
-    name: myminio-env-configuration
+  #existingSecret:
+  #  name: myminio-env-configuration
 ###
 # Root key for MinIO Tenant Chart
 tenant:
