@@ -143,8 +143,8 @@ github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zk
 github.com/matttproud/golang_protobuf_extensions v1.0.4/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
 github.com/miekg/dns v1.1.57 h1:Jzi7ApEIzwEPLHWRcafCN9LZSBbqQpxjt/wpgvg7wcM=
 github.com/miekg/dns v1.1.57/go.mod h1:uqRjCRUuEAA6qsOiJvDd+CFo/vW+y5WR6SNmHE55hZk=
-github.com/minio/madmin-go/v3 v3.0.35 h1:cCo5ZZpHA+rlBQbsAcwFwiuh/uHJmjVoDDx1G4+zaho=
-github.com/minio/madmin-go/v3 v3.0.35/go.mod h1:4QN2NftLSV7MdlT50dkrenOMmNVHluxTvlqJou3hte8=
+github.com/minio/madmin-go/v3 v3.0.36 h1:Ewu/Rt7WVSs9slWW+SZHRc5RPQdYAGIdNZnRr+gyN4k=
+github.com/minio/madmin-go/v3 v3.0.36/go.mod h1:4QN2NftLSV7MdlT50dkrenOMmNVHluxTvlqJou3hte8=
 github.com/minio/md5-simd v1.1.2 h1:Gdi1DZK69+ZVMoNHRXJyNcxrMA4dSxoYHZSQbirFg34=
 github.com/minio/md5-simd v1.1.2/go.mod h1:MzdKDxYpY2BT9XQFocsiZf/NKVtR7nkE4RoEpN+20RM=
 github.com/minio/minio-go/v7 v7.0.65 h1:sOlB8T3nQK+TApTpuN3k4WD5KasvZIE3vVFzyyCa0go=
