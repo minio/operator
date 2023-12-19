@@ -25,7 +25,7 @@ require (
 	github.com/miekg/dns v1.1.57
 	github.com/minio/cli v1.24.2
 	github.com/minio/highwayhash v1.0.2
-	github.com/minio/madmin-go/v3 v3.0.35
+	github.com/minio/madmin-go/v3 v3.0.36
 	github.com/minio/mc v0.0.0-20231202112410-d920e2b34b22
 	github.com/minio/minio-go/v7 v7.0.65
 	github.com/minio/pkg v1.7.5
