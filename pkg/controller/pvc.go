@@ -41,8 +41,6 @@ func (c *Controller) ResizePVCS(ctx context.Context, tenant *miniov2.Tenant) {
 		if pool.AdditionalStorage != nil {
 			q, err := resource.ParseQuantity(*pool.AdditionalStorage)
 			if err != nil {
-				// if parse error. Continue
-				fmt.Printf("ParseQuantity %s error: %s \n", *pool.AdditionalStorage, err.Error())
 				continue
 			}
 			storageRequest := pool.VolumeClaimTemplate.Spec.Resources.Requests.Storage()
