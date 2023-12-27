@@ -162,13 +162,15 @@ func printTenantInfo(tenant miniov2.Tenant) {
 	}
 
 	t := helpers.GetTable()
-	t.SetHeader([]string{"Pool", "Servers", "Volumes(server)", "Capacity(volume)"})
+	t.SetHeader([]string{"Pool", "Servers", "Volumes per server", "Volumes", "Capacity per volume", "Capacity"})
 	for i, z := range tenant.Spec.Pools {
 		t.Append([]string{
 			strconv.Itoa(i),
 			strconv.Itoa(int(z.Servers)),
 			strconv.Itoa(int(z.VolumesPerServer)),
+			strconv.Itoa(int(z.VolumesPerServer) * int(z.Servers)),
 			humanize.IBytes(uint64(z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value())),
+			humanize.IBytes(uint64(z.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value()) * uint64(z.VolumesPerServer) * uint64(z.Servers)),
 		})
 	}
 	t.Render()
