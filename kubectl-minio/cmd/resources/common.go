@@ -85,11 +85,18 @@ func Pool(opts *TenantOptions, volumes int32, q resource.Quantity) miniov2.Pool 
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
 						LabelSelector: &metav1.LabelSelector{
-							MatchExpressions: []metav1.LabelSelectorRequirement{{
-								Key:      miniov2.TenantLabel,
-								Operator: "In",
-								Values:   []string{opts.Name},
-							}},
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      miniov2.TenantLabel,
+									Operator: "In",
+									Values:   []string{opts.Name},
+								},
+								{
+									Key:      miniov2.PoolLabel,
+									Operator: "In",
+									Values:   []string{opts.Name},
+								},
+							},
 						},
 						TopologyKey: "kubernetes.io/hostname",
 					},
