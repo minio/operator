@@ -1,3 +1,8 @@
+# If true, CRD resources will be installed as part of the Helm chart.
+# If enabled, when uninstalling CRD resources will be deleted causing
+# all installed custom resources to be DELETED.
+installCRDs: true
+
 ###
 # Root key for Operator Helm Chart
 operator:
