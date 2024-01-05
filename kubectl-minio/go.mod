@@ -67,6 +67,7 @@ require (
 	github.com/minio/madmin-go/v3 v3.0.38 // indirect
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/minio/minio-go/v7 v7.0.66 // indirect
+	github.com/minio/pkg/v2 v2.0.7 // indirect
 	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

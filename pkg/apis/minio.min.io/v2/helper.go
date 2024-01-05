@@ -748,6 +748,14 @@ func (t *Tenant) CreateUsers(madmClnt *madmin.AdminClient, userCredentialSecrets
 		if err := madmClnt.SetPolicy(ctx, user.Policy, user.AccessKey, false); err != nil {
 			return err
 		}
+		// make sure the user is created and the policy is set
+		useInfo, err := madmClnt.GetUserInfo(ctx, user.AccessKey)
+		if err != nil {
+			return err
+		}
+		if useInfo.PolicyName != user.Policy {
+			return fmt.Errorf("user %s policy mismatch %s!= %s", user.AccessKey, useInfo.PolicyName, user.Policy)
+		}
 	}
 	return nil
 }
