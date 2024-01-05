@@ -38,4 +38,20 @@ spec:
                   {{- else }}
                   name: http-minio
                   {{- end }}
+    {{- if .Values.tenant.features.bucketDNS }}
+    - host: "*.{{ .Values.ingress.api.host }}"
+      http:
+        paths:
+          - path: {{ .Values.ingress.api.path }}
+            pathType: {{ .Values.ingress.api.pathType }}
+            backend:
+              service:
+                name: minio
+                port:
+                  {{- if or .Values.tenant.certificate.requestAutoCert (not (empty .Values.tenant.certificate.externalCertSecret)) }}
+                  name: https-minio
+                  {{- else }}
+                  name: http-minio
+                  {{- end }}
+    {{- end }}
 {{- end }}
