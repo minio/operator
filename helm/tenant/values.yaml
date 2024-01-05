@@ -19,21 +19,21 @@ secrets:
   name: myminio-env-configuration
   accessKey: minio 
   secretKey: minio123
-###
-# The name of an existing Kubernetes secret to import to the MinIO Tenant
-# The secret must contain a key ``config.env``.
-# The values should be a series of export statements to set environment variables for the Tenant.
-# For example:
-#
-# .. code-block:: shell
-#
-#    stringData:
-#       config.env: | -
-#         export MINIO_ROOT_USER=ROOTUSERNAME
-#         export MINIO_ROOT_PASSWORD=ROOTUSERPASSWORD
-#
-existingSecret:
-  name: myminio-env-configuration
+  ###
+  # The name of an existing Kubernetes secret to import to the MinIO Tenant
+  # The secret must contain a key ``config.env``.
+  # The values should be a series of export statements to set environment variables for the Tenant.
+  # For example:
+  #
+  # .. code-block:: shell
+  #
+  #    stringData:
+  #       config.env: | -
+  #         export MINIO_ROOT_USER=ROOTUSERNAME
+  #         export MINIO_ROOT_PASSWORD=ROOTUSERPASSWORD
+  #
+  #existingSecret:
+  #  name: myminio-env-configuration
 ###
 # Root key for MinIO Tenant Chart
 tenant:

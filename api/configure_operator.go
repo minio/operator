@@ -181,10 +181,8 @@ func setupGlobalMiddleware(handler http.Handler) http.Handler {
 		BrowserXssFilter:                GetSecureBrowserXSSFilter(),
 		ContentSecurityPolicy:           GetSecureContentSecurityPolicy(),
 		ContentSecurityPolicyReportOnly: GetSecureContentSecurityPolicyReportOnly(),
-		PublicKey:                       GetSecurePublicKey(),
 		ReferrerPolicy:                  GetSecureReferrerPolicy(),
 		FeaturePolicy:                   GetSecureFeaturePolicy(),
-		ExpectCTHeader:                  GetSecureExpectCTHeader(),
 		IsDevelopment:                   false,
 	}
 	secureMiddleware := secure.New(secureOptions)
