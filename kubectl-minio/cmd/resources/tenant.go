@@ -17,6 +17,7 @@ package resources
 
 import (
 	"errors"
+
 	"github.com/minio/kubectl-minio/cmd/helpers"
 	operator "github.com/minio/operator/pkg/apis/minio.min.io"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
