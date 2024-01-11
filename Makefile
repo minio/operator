@@ -35,10 +35,10 @@ verify: getdeps govet lint
 binary:
 	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator ./cmd/operator
 
-operator: assets binary
+operator: binary
 
 docker: operator
-	@docker buildx build --no-cache --platform linux/amd64,linux/arm64 -t $(TAG) .
+	@docker buildx build --no-cache --load --platform linux/$(GOARCH) -t $(TAG) .
 
 build: regen-crd verify plugin operator docker
 
