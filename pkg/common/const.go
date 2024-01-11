@@ -28,6 +28,8 @@ const (
 const (
 	// OperatorRuntimeEnv tells us which runtime we have. (EKS, Rancher, OpenShift, etc...)
 	OperatorRuntimeEnv = "MINIO_OPERATOR_RUNTIME"
+	// BucketDNSEnv DNS webhook endpoint env variable name
+	BucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
 	// OperatorRuntimeK8s is the default runtime when no specific runtime is set
 	OperatorRuntimeK8s Runtime = "K8S"
 	// OperatorRuntimeEKS is the EKS runtime flag

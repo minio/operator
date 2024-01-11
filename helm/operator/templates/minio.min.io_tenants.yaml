@@ -5038,6 +5038,7 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
             required:
+            - configuration
             - pools
             type: object
           status:

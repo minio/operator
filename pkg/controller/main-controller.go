@@ -828,7 +828,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, err)
 	}
 	// get existing configuration from config.env
-	skipEnvVars, err := c.getTenantConfiguration(ctx, tenant)
+	err = c.saveTenantConfiguration(ctx, tenant)
 	if err != nil {
 		return WrapResult(Result{}, err)
 	}
@@ -1034,15 +1034,13 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				return WrapResult(Result{}, err)
 			}
 			ss = statefulsets.NewPool(&statefulsets.NewPoolArgs{
-				Tenant:          tenant,
-				SkipEnvVars:     skipEnvVars,
-				Pool:            &pool,
-				PoolStatus:      &tenant.Status.Pools[i],
-				ServiceName:     tenant.MinIOHLServiceName(),
-				HostsTemplate:   c.hostsTemplate,
-				OperatorVersion: c.operatorVersion,
-				OperatorCATLS:   operatorCATLSExists,
-				OperatorImage:   c.operatorImage,
+				Tenant:        tenant,
+				Pool:          &pool,
+				PoolStatus:    &tenant.Status.Pools[i],
+				ServiceName:   tenant.MinIOHLServiceName(),
+				HostsTemplate: c.hostsTemplate,
+				OperatorCATLS: operatorCATLSExists,
+				OperatorImage: c.operatorImage,
 			})
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
@@ -1244,15 +1242,13 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
 			ss := statefulsets.NewPool(&statefulsets.NewPoolArgs{
-				Tenant:          tenant,
-				SkipEnvVars:     skipEnvVars,
-				Pool:            &pool,
-				PoolStatus:      &tenant.Status.Pools[i],
-				ServiceName:     tenant.MinIOHLServiceName(),
-				HostsTemplate:   c.hostsTemplate,
-				OperatorVersion: c.operatorVersion,
-				OperatorCATLS:   operatorCATLSExists,
-				OperatorImage:   c.operatorImage,
+				Tenant:        tenant,
+				Pool:          &pool,
+				PoolStatus:    &tenant.Status.Pools[i],
+				ServiceName:   tenant.MinIOHLServiceName(),
+				HostsTemplate: c.hostsTemplate,
+				OperatorCATLS: operatorCATLSExists,
+				OperatorImage: c.operatorImage,
 			})
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return WrapResult(Result{}, err)
@@ -1294,15 +1290,13 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		}
 		// generated the expected StatefulSet based on the new tenant configuration
 		expectedStatefulSet := statefulsets.NewPool(&statefulsets.NewPoolArgs{
-			Tenant:          tenant,
-			SkipEnvVars:     skipEnvVars,
-			Pool:            &pool,
-			PoolStatus:      &tenant.Status.Pools[i],
-			ServiceName:     tenant.MinIOHLServiceName(),
-			HostsTemplate:   c.hostsTemplate,
-			OperatorVersion: c.operatorVersion,
-			OperatorCATLS:   operatorCATLSExists,
-			OperatorImage:   c.operatorImage,
+			Tenant:        tenant,
+			Pool:          &pool,
+			PoolStatus:    &tenant.Status.Pools[i],
+			ServiceName:   tenant.MinIOHLServiceName(),
+			HostsTemplate: c.hostsTemplate,
+			OperatorCATLS: operatorCATLSExists,
+			OperatorImage: c.operatorImage,
 		})
 		// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
 		poolMatchesSS, err := poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet)

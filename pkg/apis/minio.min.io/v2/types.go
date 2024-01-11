@@ -340,12 +340,12 @@ type TenantSpec struct {
 	// Enable JSON, Anonymous logging for MinIO tenants.
 	// +optional
 	Logging *Logging `json:"logging,omitempty"`
-	// *Optional* +
+	// *Required* +
 	//
 	// Specify a secret that contains additional environment variable configurations to be used for the MinIO pools.
 	// The secret is expected to have a key named config.env containing all exported environment variables for MinIO+
-	// +optional
-	Configuration *corev1.LocalObjectReference `json:"configuration,omitempty"`
+	// +Required
+	Configuration *corev1.LocalObjectReference `json:"configuration"`
 	// *Optional* +
 	//
 	// Add custom initContainers to StatefulSet

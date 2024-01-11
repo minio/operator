@@ -19,12 +19,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
-
-	"github.com/minio/operator/pkg/certs"
-	"github.com/minio/operator/pkg/common"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/certs"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -33,37 +30,14 @@ import (
 )
 
 const (
-	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
 	// ReclaimStorageLabel - pvc with this label and the value is `true` means when tenant is being deleted the pvc will be deleted.
 	ReclaimStorageLabel = "reclaimStorage"
 )
 
-// Returns the MinIO environment variables set in configuration.
-// If a user specifies a secret in the spec (for MinIO credentials) we use
-// that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
-func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVersion string) []corev1.EnvVar {
+// Returns the MinIO environment variables for the tenant pod
+func minioContainerEnvironmentVars(t *miniov2.Tenant) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
-	// Enable `mc admin update` style updates to MinIO binaries
-	// within the container, only operator is supposed to perform
-	// these operations.
-	envVarsMap := map[string]corev1.EnvVar{
-		"MINIO_UPDATE": {
-			Name:  "MINIO_UPDATE",
-			Value: "on",
-		},
-		"MINIO_UPDATE_MINISIGN_PUBKEY": {
-			Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
-			Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
-		},
-		"MINIO_OPERATOR_VERSION": {
-			Name:  "MINIO_OPERATOR_VERSION",
-			Value: opVersion,
-		},
-		"MINIO_PROMETHEUS_JOB_ID": {
-			Name:  "MINIO_PROMETHEUS_JOB_ID",
-			Value: t.PrometheusConfigJobName(),
-		},
-	}
+	envVarsMap := map[string]corev1.EnvVar{}
 	// Specific case of bug in runtimeClass crun where $HOME is not set
 	for _, pool := range t.Spec.Pools {
 		if pool.RuntimeClassName != nil && *pool.RuntimeClassName == "crun" {
@@ -75,91 +49,6 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 		}
 	}
 
-	var domains []string
-	// Enable Bucket DNS only if asked for by default turned off
-	if t.BucketDNS() {
-		domains = append(domains, t.MinIOBucketBaseDomain())
-		sidecarBucketURL := fmt.Sprintf("http://127.0.0.1:%s%s/%s/%s",
-			common.WebhookDefaultPort,
-			common.WebhookAPIBucketService,
-			t.Namespace,
-			t.Name)
-		envVarsMap[bucketDNSEnv] = corev1.EnvVar{
-			Name:  bucketDNSEnv,
-			Value: sidecarBucketURL,
-		}
-	}
-	// Check if any domains are configured
-	if t.HasMinIODomains() {
-		domains = append(domains, t.GetDomainHosts()...)
-	}
-	// tell MinIO about all the domains meant to hit it if they are not passed manually via .spec.env
-	if len(domains) > 0 {
-		envVarsMap[miniov2.MinIODomain] = corev1.EnvVar{
-			Name:  miniov2.MinIODomain,
-			Value: strings.Join(domains, ","),
-		}
-	}
-	// If no specific server URL is specified we will specify the internal k8s url, but if a list of domains was
-	// provided we will use the first domain.
-	serverURL := t.MinIOServerEndpoint()
-	if t.HasMinIODomains() {
-		// Infer schema from tenant TLS, if not explicit
-		if !strings.HasPrefix(t.Spec.Features.Domains.Minio[0], "http") {
-			useSchema := "http"
-			if t.TLS() {
-				useSchema = "https"
-			}
-			serverURL = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Minio[0])
-		} else {
-			serverURL = t.Spec.Features.Domains.Minio[0]
-		}
-	}
-	envVarsMap[miniov2.MinIOServerURL] = corev1.EnvVar{
-		Name:  miniov2.MinIOServerURL,
-		Value: serverURL,
-	}
-
-	// Set the redirect url for console
-	if t.HasConsoleDomains() {
-		consoleDomain := t.Spec.Features.Domains.Console
-		// Infer schema from tenant TLS, if not explicit
-		if !strings.HasPrefix(consoleDomain, "http") {
-			useSchema := "http"
-			if t.TLS() {
-				useSchema = "https"
-			}
-			consoleDomain = fmt.Sprintf("%s://%s", useSchema, consoleDomain)
-		}
-		envVarsMap[miniov2.MinIOBrowserRedirectURL] = corev1.EnvVar{
-			Name:  miniov2.MinIOBrowserRedirectURL,
-			Value: consoleDomain,
-		}
-	}
-
-	if t.HasKESEnabled() {
-		envVarsMap["MINIO_KMS_KES_ENDPOINT"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_ENDPOINT",
-			Value: t.KESServiceEndpoint(),
-		}
-		envVarsMap["MINIO_KMS_KES_CERT_FILE"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_CERT_FILE",
-			Value: miniov2.MinIOCertPath + "/client.crt",
-		}
-		envVarsMap["MINIO_KMS_KES_KEY_FILE"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_KEY_FILE",
-			Value: miniov2.MinIOCertPath + "/client.key",
-		}
-		envVarsMap["MINIO_KMS_KES_CA_PATH"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_CA_PATH",
-			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
-		}
-		envVarsMap["MINIO_KMS_KES_KEY_NAME"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_KEY_NAME",
-			Value: t.Spec.KES.KeyName,
-		}
-	}
-
 	if t.HasConfigurationSecret() {
 		envVarsMap["MINIO_CONFIG_ENV_FILE"] = corev1.EnvVar{
 			Name:  "MINIO_CONFIG_ENV_FILE",
@@ -167,17 +56,9 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 		}
 	}
 
-	// Add all the tenant.spec.env environment variables
-	// User defined environment variables will take precedence over default environment variables
-	for _, env := range t.GetEnvVars() {
-		envVarsMap[env.Name] = env
-	}
-
 	// transform map to array and skip configurations from config.env
 	for _, env := range envVarsMap {
-		if _, ok := skipEnvVars[env.Name]; !ok {
-			envVars = append(envVars, env)
-		}
+		envVars = append(envVars, env)
 	}
 	// sort the array to produce the same result everytime
 	sort.Slice(envVars, func(i, j int) bool {
@@ -290,7 +171,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, certVolumeSources []v1.
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, certVolumeSources []v1.VolumeProjection) v1.Container {
+func poolMinioServerContainer(t *miniov2.Tenant, pool *miniov2.Pool, certVolumeSources []v1.VolumeProjection) v1.Container {
 	consolePort := miniov2.ConsolePort
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
@@ -343,7 +224,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, pool, certVolumeSources),
 		Args:            args,
-		Env:             minioEnvironmentVars(t, skipEnvVars, opVersion),
+		Env:             minioContainerEnvironmentVars(t),
 		Resources:       pool.Resources,
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
@@ -456,26 +337,21 @@ const CfgVol = "cfg-vol"
 
 // NewPoolArgs arguments used to create a new pool
 type NewPoolArgs struct {
-	Tenant          *miniov2.Tenant
-	SkipEnvVars     map[string][]byte
-	Pool            *miniov2.Pool
-	PoolStatus      *miniov2.PoolStatus
-	ServiceName     string
-	HostsTemplate   string
-	OperatorVersion string
-	OperatorCATLS   bool
-	OperatorImage   string
+	Tenant        *miniov2.Tenant
+	Pool          *miniov2.Pool
+	PoolStatus    *miniov2.PoolStatus
+	ServiceName   string
+	HostsTemplate string
+	OperatorCATLS bool
+	OperatorImage string
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
 func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	t := args.Tenant.DeepCopy()
-	skipEnvVars := args.SkipEnvVars
 	pool := args.Pool
 	poolStatus := args.PoolStatus
 	serviceName := args.ServiceName
-	hostsTemplate := args.HostsTemplate
-	operatorVersion := args.OperatorVersion
 	operatorImage := args.OperatorImage
 
 	var podVolumes []corev1.Volume
@@ -791,7 +667,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	}
 
 	containers := []corev1.Container{
-		poolMinioServerContainer(t, skipEnvVars, pool, hostsTemplate, operatorVersion, certVolumeSources),
+		poolMinioServerContainer(t, pool, certVolumeSources),
 		getSideCarContainer(t, operatorImage, pool),
 	}
 

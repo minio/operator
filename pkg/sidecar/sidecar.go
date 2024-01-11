@@ -139,6 +139,11 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 	secretInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(old, new interface{}) {
 			oldSecret := old.(*corev1.Secret)
+
+			// ignore any secret in a different namespace
+			if oldSecret.Namespace != namespace {
+				return
+			}
 			// ignore anything that is not what we want
 			if oldSecret.Name != secretName {
 				return
@@ -151,23 +156,17 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 			}
 			data := newSecret.Data["config.env"]
 			// validate root creds in string
-			rootUserMissing := true
-			rootPassMissing := false
+			rootUserFound := false
+			rootPassFound := false
 
 			dataStr := string(data)
-			if !strings.Contains(dataStr, "MINIO_ROOT_USER") {
-				rootUserMissing = true
+			if strings.Contains(dataStr, "MINIO_ROOT_USER") || strings.Contains(dataStr, "MINIO_ACCESS_KEY") {
+				rootUserFound = true
 			}
-			if !strings.Contains(dataStr, "MINIO_ACCESS_KEY") {
-				rootUserMissing = true
+			if strings.Contains(dataStr, "MINIO_ROOT_PASSWORD") || strings.Contains(dataStr, "MINIO_SECRET_KEY") {
+				rootPassFound = true
 			}
-			if !strings.Contains(dataStr, "MINIO_ROOT_PASSWORD") {
-				rootPassMissing = true
-			}
-			if !strings.Contains(dataStr, "MINIO_SECRET_KEY") {
-				rootPassMissing = true
-			}
-			if rootUserMissing || rootPassMissing {
+			if !rootUserFound || !rootPassFound {
 				log.Println("Missing root credentials in the configuration.")
 				log.Println("MinIO won't start")
 				os.Exit(1)
