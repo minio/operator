@@ -982,6 +982,8 @@ spec:
                   enableSFTP:
                     type: boolean
                 type: object
+              hostNetwork:
+                type: boolean
               image:
                 type: string
               imagePullPolicy:

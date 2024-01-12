@@ -31,6 +31,7 @@ type TenantSpecApplyConfiguration struct {
 	Image                     *string                                      `json:"image,omitempty"`
 	ImagePullSecret           *v1.LocalObjectReference                     `json:"imagePullSecret,omitempty"`
 	PodManagementPolicy       *appsv1.PodManagementPolicyType              `json:"podManagementPolicy,omitempty"`
+	HostNetwork               *bool                                        `json:"hostNetwork,omitempty"`
 	CredsSecret               *v1.LocalObjectReference                     `json:"credsSecret,omitempty"`
 	Env                       []v1.EnvVar                                  `json:"env,omitempty"`
 	ExternalCertSecret        []*miniominiov2.LocalCertificateReference    `json:"externalCertSecret,omitempty"`
@@ -102,6 +103,14 @@ func (b *TenantSpecApplyConfiguration) WithImagePullSecret(value v1.LocalObjectR
 // If called multiple times, the PodManagementPolicy field is set to the value of the last call.
 func (b *TenantSpecApplyConfiguration) WithPodManagementPolicy(value appsv1.PodManagementPolicyType) *TenantSpecApplyConfiguration {
 	b.PodManagementPolicy = &value
+	return b
+}
+
+// WithHostNetwork sets the HostNetwork field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the HostNetwork field is set to the value of the last call.
+func (b *TenantSpecApplyConfiguration) WithHostNetwork(value bool) *TenantSpecApplyConfiguration {
+	b.HostNetwork = &value
 	return b
 }
 

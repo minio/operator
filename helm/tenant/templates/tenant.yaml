@@ -105,6 +105,7 @@ spec:
   certConfig: {{- toYaml . | nindent 4 }}
   {{- end }}
   podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" . }}
+  hostNetwork: {{ dig "hostNetwork" "false" . }}
   {{- with (dig "readiness" (dict) .) }}
   readiness: {{- toYaml . | nindent 4 }}
   {{- end }}
