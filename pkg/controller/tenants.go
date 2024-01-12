@@ -90,7 +90,7 @@ func (c *Controller) saveTenantConfiguration(ctx context.Context, tenant *miniov
 		tenantConfiguration[minioBrowserEnv] = string(prevConfiguration[minioBrowserEnv])
 	}
 
-	// Update credentials  based on the existing credsSecret, we will overwrite root credentials only when the fields
+	// Update credentials based on the existing credsSecret, we will overwrite root credentials only when the fields
 	// accesskey and secretkey are not empty
 	if tenant.HasCredsSecret() {
 		credsSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.Spec.CredsSecret.Name, metav1.GetOptions{})
@@ -120,7 +120,7 @@ func (c *Controller) saveTenantConfiguration(ctx context.Context, tenant *miniov
 	tenantConfiguration["MINIO_PROMETHEUS_JOB_ID"] = tenant.PrometheusConfigJobName()
 
 	var domains []string
-	// Enable Bucket DNS only if asked for by default turned off
+	// Set Bucket DNS domain only if enabled
 	if tenant.BucketDNS() {
 		domains = append(domains, tenant.MinIOBucketBaseDomain())
 		sidecarBucketURL := fmt.Sprintf("http://127.0.0.1:%s%s/%s/%s",
