@@ -42,7 +42,6 @@ const (
 	version45      = "v4.5"
 	version500     = "v5.0.0"
 	currentVersion = version500
-	version510     = "v5.1.0"
 )
 
 // Legacy const
@@ -62,7 +61,6 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		version430: c.upgrade430,
 		version45:  c.upgrade45,
 		version500: c.upgrade500,
-		version510: c.upgrade510,
 	}
 
 	// if tenant has no version we mark it with latest version upgrade released
@@ -85,7 +83,6 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 			version430,
 			version45,
 			version500,
-			version510,
 		}
 		for _, v := range versionsThatNeedUpgrades {
 			vp, _ := version.NewVersion(v)
@@ -415,15 +412,4 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 		}
 	}
 	return c.updateTenantSyncVersion(ctx, tenant, version500)
-}
-
-// Upgrades the sync version to v5.1.0
-// in this version we save most of the minio env variables in the config secret, except for the env variables needed
-// for k8s runtime
-func (c *Controller) upgrade510(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
-	err := c.saveTenantConfiguration(ctx, tenant)
-	if err != nil {
-		return tenant, err
-	}
-	return c.updateTenantSyncVersion(ctx, tenant, version510)
 }
