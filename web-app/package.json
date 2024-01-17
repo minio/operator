@@ -11,7 +11,7 @@
     "local-storage-fallback": "^4.1.1",
     "lodash": "^4.17.21",
     "luxon": "^3.3.0",
-    "mds": "https://github.com/minio/mds.git#v0.13.0",
+    "mds": "https://github.com/minio/mds.git#v0.15.0",
     "react": "^18.1.0",
     "react-copy-to-clipboard": "^5.0.2",
     "react-dom": "^18.1.0",
