@@ -209,6 +209,54 @@ const PrometheusNamespace = "PROMETHEUS_NAMESPACE"
 // PrometheusName is the name of the prometheus
 const PrometheusName = "PROMETHEUS_NAME"
 
+// RootUserEnv Env variable containing the root username
+const RootUserEnv = "MINIO_ROOT_USER"
+
+// RootUserPassword Env variable containing the root user password
+const RootUserPassword = "MINIO_ROOT_PASSWORD"
+
+// StorageClassEnv Env variable for erasure code parity
+const StorageClassEnv = "MINIO_STORAGE_CLASS_STANDARD"
+
+// AccessKeyEnv Env variable (deprecated) containing the root user access Key
+// See note https://min.io/docs/minio/kubernetes/upstream/administration/identity-access-management/minio-user-management.html#minio-root-user
+const AccessKeyEnv = "MINIO_ACCESS_KEY"
+
+// SecretKeyEnv  Env variable (deprecated) containing the root user secret Key
+// See note https://min.io/docs/minio/kubernetes/upstream/administration/identity-access-management/minio-user-management.html#minio-root-user
+const SecretKeyEnv = "MINIO_SECRET_KEY"
+
+// MinioArgsEnv Env variable for the start arguments of the command `minio server`
+const MinioArgsEnv = "MINIO_ARGS"
+
+// MinioUpdateEnv env variable enables `mc admin update` style updates to MinIO binaries
+// within the container, only operator is supposed to perform these operations.
+const MinioUpdateEnv = "MINIO_UPDATE"
+
+// MinioSignPubKey Public key to sign minio binaries env variable
+const MinioSignPubKey = "MINIO_UPDATE_MINISIGN_PUBKEY"
+
+// MinioOperatorVersionEnv Env variable that stores Operator version for the tenant
+const MinioOperatorVersionEnv = "MINIO_OPERATOR_VERSION"
+
+// MinioPrometheusJobIdEnv Env variable to set Prometheus job ID
+const MinioPrometheusJobIdEnv = "MINIO_PROMETHEUS_JOB_ID"
+
+// MinioKMSKESEndpointEnv Env variable to set KMS KES endpoint URL
+const MinioKMSKESEndpointEnv = "MINIO_KMS_KES_ENDPOINT"
+
+// MinioKMSKESCertFileEnv Env variable to contains KES client cert file path
+const MinioKMSKESCertFileEnv = "MINIO_KMS_KES_CERT_FILE"
+
+// MinioKMSKESKeyFileEnv Env variable contains KES client private key file path
+const MinioKMSKESKeyFileEnv = "MINIO_KMS_KES_KEY_FILE"
+
+// MinioKMSKESCAPathEnv Env variable contains KEY client CA public that issued the client certificate
+const MinioKMSKESCAPathEnv = "MINIO_KMS_KES_CA_PATH"
+
+// MinioKMSKESKeyNameEnv If provided, use this as the name of the key that KES creates on the KMS backend
+const MinioKMSKESKeyNameEnv = "MINIO_KMS_KES_KEY_NAME"
+
 // DefaultPrometheusNamespace is the default namespace for prometheus
 const DefaultPrometheusNamespace = "default"
 

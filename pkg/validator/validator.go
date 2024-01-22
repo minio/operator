@@ -19,6 +19,7 @@ package validator
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -35,7 +36,7 @@ import (
 // Validate checks the configuration on the seeded configuration and issues a valid one for MinIO to
 // start, however if root credentials are missing, it will exit with error
 func Validate(tenantName string) {
-	rootUserFound, rootPwdFound, fileContents, err := ReadTmpConfig()
+	fileContents, err := ReadTmpConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -64,13 +65,7 @@ func Validate(tenantName string) {
 		os.Exit(1)
 	}
 
-	fileContents = fileContents + fmt.Sprintf("export MINIO_ARGS=\"%s\"\n", args)
-
-	if !rootUserFound || !rootPwdFound {
-		log.Println("Missing root credentials in the configuration.")
-		log.Println("MinIO won't start")
-		os.Exit(1)
-	}
+	fileContents = fileContents + fmt.Sprintf("export %s=\"%s\"\n", miniov2.MinioArgsEnv, args)
 
 	err = os.WriteFile(miniov2.CfgFile, []byte(fileContents), 0o644)
 	if err != nil {
@@ -100,7 +95,7 @@ func GetTenantArgs(ctx context.Context, controllerClient *clientset.Clientset, t
 }
 
 // ReadTmpConfig reads the seeded configuration from a tmp location
-func ReadTmpConfig() (bool, bool, string, error) {
+func ReadTmpConfig() (string, error) {
 	file, err := os.Open("/tmp/minio-config/config.env")
 	if err != nil {
 		log.Fatal(err)
@@ -114,21 +109,21 @@ func ReadTmpConfig() (bool, bool, string, error) {
 	newFile := ""
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.Contains(line, "MINIO_ROOT_USER") {
+		if strings.Contains(line, miniov2.RootUserEnv) {
 			rootUserFound = true
 		}
-		if strings.Contains(line, "MINIO_ACCESS_KEY") {
+		if strings.Contains(line, miniov2.AccessKeyEnv) {
 			rootUserFound = true
 		}
-		if strings.Contains(line, "MINIO_ROOT_PASSWORD") {
+		if strings.Contains(line, miniov2.RootUserPassword) {
 			rootPwdFound = true
 		}
-		if strings.Contains(line, "MINIO_SECRET_KEY") {
+		if strings.Contains(line, miniov2.SecretKeyEnv) {
 			rootPwdFound = true
 		}
 		// We don't allow users to set MINIO_ARGS
-		if strings.Contains(line, "MINIO_ARGS") {
-			log.Println("MINIO_ARGS in config file found. It will be ignored.")
+		if strings.Contains(line, miniov2.MinioArgsEnv) {
+			log.Println(fmt.Sprintf("%s in config file found. It will be ignored.", miniov2.MinioArgsEnv))
 			continue
 		}
 		newFile = newFile + line + "\n"
@@ -136,5 +131,9 @@ func ReadTmpConfig() (bool, bool, string, error) {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	return rootUserFound, rootPwdFound, newFile, nil
+
+	if !rootUserFound || !rootPwdFound {
+		return "", errors.New("missing root credentials in the configuration.")
+	}
+	return newFile, nil
 }

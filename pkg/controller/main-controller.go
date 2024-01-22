@@ -827,8 +827,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		}
 		return WrapResult(Result{}, err)
 	}
-	// get existing configuration from config.env
-	err = c.saveTenantConfiguration(ctx, tenant)
+
 	if err != nil {
 		return WrapResult(Result{}, err)
 	}

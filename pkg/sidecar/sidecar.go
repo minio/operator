@@ -19,6 +19,7 @@ package sidecar
 import (
 	"context"
 	"fmt"
+	"github.com/minio/operator/pkg/common"
 	"log"
 	"net/http"
 	"os"
@@ -132,7 +133,7 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 				// Two different versions of the same Tenant will always have different RVs.
 				return
 			}
-			c.regenCfg(tenantName, namespace)
+			c.regenCfg(newTenant)
 		},
 	})
 
@@ -171,29 +172,50 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 				log.Println("MinIO won't start")
 				os.Exit(1)
 			}
+			tenant, err := tenantInformer.Lister().Tenants(namespace).Get(tenantName)
 
-			c.regenCfgWithCfg(tenantName, namespace, string(data))
+			c.regenCfg(tenantName, namespace, string(data))
 		},
 	})
 
 	return c
 }
 
-func (c Controller) regenCfg(tenantName string, namespace string) {
-	rootUserFound, rootPwdFound, fileContents, err := validator.ReadTmpConfig()
+func (c *Controller) regenCfg(tenant *v2.Tenant) {
+	ctx := context.Background()
+
+	fileContents, err := validator.ReadTmpConfig()
+	if err != nil {
+		log.Println(err)
+		log.Println("MinIO won't start")
+		os.Exit(1)
+	}
+
+	envVariables, err := c.GetTenantEnvVariables(tenant, fileContents)
+	if err != nil {
+		log.Println(err)
+		log.Println("MinIO won't start")
+		os.Exit(1)
+	}
+	args, err := validator.GetTenantArgs(ctx, c.controllerClient, tenant.Namespace, tenant.Namespace)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	if !rootUserFound || !rootPwdFound {
-		log.Println("Missing root credentials in the configuration.")
-		log.Println("MinIO won't start")
-		os.Exit(1)
+
+	envVariables[v2.MinioArgsEnv] = args
+
+	for key, val := range envVariables {
+		fileContents = fileContents + fmt.Sprintf("export %s=\"%s\"\n", key, val)
 	}
-	c.regenCfgWithCfg(tenantName, namespace, fileContents)
+
+	err = os.WriteFile(v2.CfgFile, []byte(fileContents), 0o644)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
-func (c Controller) regenCfgWithCfg(tenantName string, namespace string, fileContents string) {
+func (c *Controller) regenCfgWithCfg(tenantName string, namespace string, fileContents string) {
 	ctx := context.Background()
 
 	args, err := validator.GetTenantArgs(ctx, c.controllerClient, tenantName, namespace)
@@ -226,4 +248,89 @@ func (c *Controller) Run(stopCh chan struct{}) error {
 		return fmt.Errorf("Failed to sync")
 	}
 	return nil
+}
+
+func (c *Controller) GetTenantEnvVariables(tenant *v2.Tenant, fileContents string) (map[string]string, error) {
+
+	prevConfiguration := v2.ParseRawConfiguration([]byte(fileContents))
+
+	var tenantConfiguration map[string]string
+	for k, v := range prevConfiguration {
+		tenantConfiguration[k] = string(v)
+	}
+
+	// Enable `mc admin update` style updates to MinIO binaries
+	// within the container, only operator is supposed to perform
+	// these operations.
+	tenantConfiguration[v2.MinioUpdateEnv] = "on"
+	tenantConfiguration[v2.MinioSignPubKey] = "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav"
+	// tenantConfiguration[v2.MinioOperatorVersionEnv] = c.operatorVersion TODO:// determinate the source of truth of the Operator version, a constant?
+	tenantConfiguration[v2.MinioPrometheusJobIdEnv] = tenant.PrometheusConfigJobName()
+
+	var domains []string
+	// Set Bucket DNS domain only if enabled
+	if tenant.BucketDNS() {
+		domains = append(domains, tenant.MinIOBucketBaseDomain())
+		sidecarBucketURL := fmt.Sprintf("http://127.0.0.1:%s%s/%s/%s",
+			common.WebhookDefaultPort,
+			common.WebhookAPIBucketService,
+			tenant.Namespace,
+			tenant.Name)
+		tenantConfiguration[common.BucketDNSEnv] = sidecarBucketURL
+	}
+	// Check if any domains are configured
+	if tenant.HasMinIODomains() {
+		domains = append(domains, tenant.GetDomainHosts()...)
+	}
+	// tell MinIO about all the domains meant to hit it if they are not passed manually via .spec.env
+	if len(domains) > 0 {
+		tenantConfiguration[v2.MinIODomain] = strings.Join(domains, ",")
+	}
+	// If no specific server URL is specified we will specify the internal k8s url, but if a list of domains was
+	// provided we will use the first domain.
+	serverURL := tenant.MinIOServerEndpoint()
+	if tenant.HasMinIODomains() {
+		// Infer schema from tenant TLS, if not explicit
+		if !strings.HasPrefix(tenant.Spec.Features.Domains.Minio[0], "http") {
+			useSchema := "http"
+			if tenant.TLS() {
+				useSchema = "https"
+			}
+			serverURL = fmt.Sprintf("%s://%s", useSchema, tenant.Spec.Features.Domains.Minio[0])
+		} else {
+			serverURL = tenant.Spec.Features.Domains.Minio[0]
+		}
+	}
+	tenantConfiguration[v2.MinIOServerURL] = serverURL
+
+	// Set the redirect url for console
+	if tenant.HasConsoleDomains() {
+		consoleDomain := tenant.Spec.Features.Domains.Console
+		// Infer schema from tenant TLS, if not explicit
+		if !strings.HasPrefix(consoleDomain, "http") {
+			useSchema := "http"
+			if tenant.TLS() {
+				useSchema = "https"
+			}
+			consoleDomain = fmt.Sprintf("%s://%s", useSchema, consoleDomain)
+		}
+		tenantConfiguration[v2.MinIOBrowserRedirectURL] = consoleDomain
+	}
+
+	if tenant.HasKESEnabled() {
+		tenantConfiguration[v2.MinioKMSKESEndpointEnv] = tenant.KESServiceEndpoint()
+		tenantConfiguration[v2.MinioKMSKESCertFileEnv] = v2.MinIOCertPath + "/client.crt"
+		tenantConfiguration[v2.MinioKMSKESKeyFileEnv] = v2.MinIOCertPath + "/client.key"
+		tenantConfiguration[v2.MinioKMSKESCAPathEnv] = v2.MinIOCertPath + "/CAs/kes.crt"
+		tenantConfiguration[v2.MinioKMSKESKeyNameEnv] = tenant.Spec.KES.KeyName
+	}
+
+	// Set the env variables in the tenant.spec.env field
+	// User defined environment variables will take precedence over default environment variables
+	envVars := tenant.GetEnvVars()
+	for _, ev := range envVars {
+		tenantConfiguration[ev.Name] = ev.Value
+	}
+
+	return tenantConfiguration, nil
 }
