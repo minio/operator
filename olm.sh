@@ -42,6 +42,10 @@ echo "minioVersionDigest: ${minioVersionDigest}"
 
 redhatCatalogs=("certified-operators" "redhat-marketplace" "community-operators")
 
+# This constants are supported Openshift versions
+minOpenshiftVersion=4.8
+maxOpenshiftVersion=4.14
+
 for catalog in "${redhatCatalogs[@]}"; do
   echo " "
   echo $catalog
@@ -70,13 +74,24 @@ for catalog in "${redhatCatalogs[@]}"; do
   yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
-  # To provide channel for upgrade where we tell what versions can be replaced by the new version we offer
-  # You can read the documentation at link below:
-  # https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html/operators/understanding-the-operator-lifecycle-manager-olm#olm-upgrades_olm-understanding-olm
-  echo "To provide replacement for upgrading Operator..."
-  PREV_VERSION=$(curl -s "https://catalog.redhat.com/api/containers/v1/operators/bundles?channel_name=stable&package=${package}&organization=${catalog}&include=data.version,data.csv_name,data.ocp_version" | jq '.data |  max_by(.version | split(".") | map(tonumber)).csv_name' -r)
-  echo "replaces: $PREV_VERSION"
-  yq -i e ".spec.replaces |= \"${PREV_VERSION}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  # Will query if a previous version of the CSV was published to the catalog of the latest supported Openshift version.
+  # It will help to prevent add the `spec.replaces` annotation when there is no preexisting CSV in the catalog to replace.
+  # See support case https://connect.redhat.com/support/technology-partner/#/case/03671253
+  prev=$(curl -s "https://catalog.redhat.com/api/containers/v1/operators/bundles?channel_name=stable&package=${package}&organization=${catalog}&ocp_version=${maxOpenshiftVersion}&include=data.version,data.csv_name,data.ocp_version" | jq '.data | length' -r)
+
+  # only add `spec.replaces` if at least one version have been published to the catalog
+  if [ "$prev" -gt 0 ]; then
+    # To provide channel for upgrade where we tell what versions can be replaced by the new version we offer
+    # You can read the documentation at link below:
+    # https://access.redhat.com/documentation/en-us/openshift_container_platform/4.2/html/operators/understanding-the-operator-lifecycle-manager-olm#olm-upgrades_olm-understanding-olm
+    echo "To provide replacement for upgrading Operator..."
+    PREV_VERSION=$(curl -s "https://catalog.redhat.com/api/containers/v1/operators/bundles?channel_name=stable&package=${package}&organization=${catalog}&include=data.version,data.csv_name,data.ocp_version" | jq '.data | max_by(.version).csv_name' -r)
+    echo "replaces: $PREV_VERSION"
+    yq -i e ".spec.replaces |= \"${PREV_VERSION}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  else
+    echo "no previous published in catalog ${maxOpenshiftVersion}, removing spec.replaces"
+    yq -i "del(.spec.replaces) " bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  fi
 
   # Now promote the latest release to the root of the repository
   rm -Rf manifests
@@ -101,7 +116,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # as well as the default.
   {
     echo "  # Annotations to specify OCP versions compatibility."
-    echo "  com.redhat.openshift.versions: v4.8-v4.14"
+    echo "  com.redhat.openshift.versions: v${minOpenshiftVersion}-v${maxOpenshiftVersion}"
     echo "  # Annotation to add default bundle channel as potential is declared"
     echo "  operators.operatorframework.io.bundle.channel.default.v1: stable"
     echo "  operatorframework.io/suggested-namespace: minio-operator"

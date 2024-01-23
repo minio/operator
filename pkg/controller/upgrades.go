@@ -41,6 +41,8 @@ const (
 	version430 = "v4.3.0"
 	version45  = "v4.5"
 	version500 = "v5.0.0"
+	// currentVersion will point to the latest released update version
+	currentVersion = version500
 )
 
 // Legacy const
@@ -62,7 +64,13 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		version500: c.upgrade500,
 	}
 
-	// if the version is not empty, this is not a new tenant, upgrade accordingly
+	// if tenant has no version we mark it with latest version upgrade released
+	if tenant.Status.SyncVersion == "" {
+		tenant.Status.SyncVersion = currentVersion
+		return c.updateTenantSyncVersion(ctx, tenant, version500)
+	}
+
+	// if the version is empty, upgrades might not been applied, we apply them all
 	if tenant.Status.SyncVersion != "" {
 		currentSyncVersion, err := version.NewVersion(tenant.Status.SyncVersion)
 		if err != nil {

@@ -75,7 +75,6 @@ import (
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
 	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
-	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
 
@@ -896,59 +895,11 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, err)
 	}
 
-	// Handle the Internal Headless Service for Tenant StatefulSet
-	hlSvc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.MinIOHLServiceName())
+	// Check MinIO Headless Service used for internode communication
+	err = c.checkMinIOHLSvc(ctx, tenant, nsName)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningHLService, 0); err != nil {
-				return WrapResult(Result{}, err)
-			}
-			klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
-			// Create the headless service for the tenant
-			hlSvc = services.NewHeadlessForMinIO(tenant)
-			_, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Create(ctx, hlSvc, cOpts)
-			if err != nil {
-				return WrapResult(Result{}, err)
-			}
-			c.recorder.Event(tenant, corev1.EventTypeNormal, "SvcCreated", "Headless Service created")
-		} else {
-			return WrapResult(Result{}, err)
-		}
-	} else {
-		existingPorts := hlSvc.Spec.Ports
-		sftpPortFound := false
-		for _, port := range existingPorts {
-			if port.Name == miniov2.MinIOServiceSFTPPortName {
-				sftpPortFound = true
-				break
-			}
-		}
-		var newPorts []corev1.ServicePort
-		if tenant.Spec.Features != nil && tenant.Spec.Features.EnableSFTP != nil && *tenant.Spec.Features.EnableSFTP {
-			if !sftpPortFound {
-				newPorts = existingPorts
-				newPorts = append(newPorts, corev1.ServicePort{Port: miniov2.MinIOSFTPPort, Name: miniov2.MinIOServiceSFTPPortName})
-				hlSvc.Spec.Ports = newPorts
-				_, err := c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, hlSvc, metav1.UpdateOptions(cOpts))
-				if err != nil {
-					return WrapResult(Result{}, err)
-				}
-			}
-		} else {
-			if sftpPortFound {
-				for _, port := range existingPorts {
-					if port.Name == miniov2.MinIOServiceSFTPPortName {
-						continue
-					}
-					newPorts = append(newPorts, port)
-				}
-				hlSvc.Spec.Ports = newPorts
-				_, err := c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, hlSvc, metav1.UpdateOptions(cOpts))
-				if err != nil {
-					return WrapResult(Result{}, err)
-				}
-			}
-		}
+		klog.V(2).Infof("error consolidating headless service: %s", err.Error())
+		return WrapResult(Result{}, err)
 	}
 
 	// List all MinIO Tenants in this namespace.
@@ -1068,7 +1019,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				SkipEnvVars:     skipEnvVars,
 				Pool:            &pool,
 				PoolStatus:      &tenant.Status.Pools[i],
-				ServiceName:     hlSvc.Name,
+				ServiceName:     tenant.MinIOHLServiceName(),
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
 				OperatorCATLS:   operatorCATLSExists,
@@ -1278,7 +1229,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				SkipEnvVars:     skipEnvVars,
 				Pool:            &pool,
 				PoolStatus:      &tenant.Status.Pools[i],
-				ServiceName:     hlSvc.Name,
+				ServiceName:     tenant.MinIOHLServiceName(),
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
 				OperatorCATLS:   operatorCATLSExists,
@@ -1328,7 +1279,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			SkipEnvVars:     skipEnvVars,
 			Pool:            &pool,
 			PoolStatus:      &tenant.Status.Pools[i],
-			ServiceName:     hlSvc.Name,
+			ServiceName:     tenant.MinIOHLServiceName(),
 			HostsTemplate:   c.hostsTemplate,
 			OperatorVersion: c.operatorVersion,
 			OperatorCATLS:   operatorCATLSExists,

@@ -760,10 +760,9 @@ spec:
     url: https://min.io
   relatedImages:
     - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
-      name: console
-    - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
       name: minio-operator
     - image: quay.io/minio/minio@sha256:91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3
       name: minio-91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3-annotation
+    - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
+      name: console
   version: 5.0.11
-  replaces: minio-operator-rhmp.v5.0.10

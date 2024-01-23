@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
+	jobv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/job.min.io/v1alpha1"
 	miniov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2"
 	stsv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
@@ -31,6 +32,7 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
+	JobV1alpha1() jobv1alpha1.JobV1alpha1Interface
 	MinioV2() miniov2.MinioV2Interface
 	StsV1alpha1() stsv1alpha1.StsV1alpha1Interface
 }
@@ -38,8 +40,14 @@ type Interface interface {
 // Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
+	jobV1alpha1 *jobv1alpha1.JobV1alpha1Client
 	minioV2     *miniov2.MinioV2Client
 	stsV1alpha1 *stsv1alpha1.StsV1alpha1Client
+}
+
+// JobV1alpha1 retrieves the JobV1alpha1Client
+func (c *Clientset) JobV1alpha1() jobv1alpha1.JobV1alpha1Interface {
+	return c.jobV1alpha1
 }
 
 // MinioV2 retrieves the MinioV2Client
@@ -96,6 +104,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
+	cs.jobV1alpha1, err = jobv1alpha1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
 	cs.minioV2, err = miniov2.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
@@ -125,6 +137,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
+	cs.jobV1alpha1 = jobv1alpha1.New(c)
 	cs.minioV2 = miniov2.New(c)
 	cs.stsV1alpha1 = stsv1alpha1.New(c)
 
