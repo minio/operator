@@ -1,6 +1,6 @@
 # Operator Console SSO with OpenID
 
-Operator Console supports authentication with a Kubernetes Service Account Json Web Token (JWT) or OpenID. This guide explains how to configure OpenID authentication for Operator Console to using the [OpenID Authorization Code Flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth).
+Operator Console supports authentication with a Kubernetes Service Account Json Web Token (JWT) or OpenID. This guide explains how to configure OpenID authentication for Operator Console using the [OpenID Authorization Code Flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth).
 
 Note: only one authentication method can be enabled at the same time, either JWT or OpenID.
 
