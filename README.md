@@ -166,6 +166,7 @@ performance:
 ## Procedure
 
 ### 1) Install the MinIO Operator via Kustomization
+Follow the  [Install `kustomize`](https://kubectl.docs.kubernetes.io/installation/kustomize/)  guide for your host system before starting this procedure.
 
 ```sh
 VERSION=v5.0.11
