@@ -76,7 +76,7 @@ A Callback URL can also be constructed dynamically. To do this, set `CONSOLE_IDP
 The constructed URL resembles following: `$protocol://$host/oauth_callback`
 
 - `$protocol` is either `https` or `http`, depending on whether the Operator Console has TLS enabled.
-- `$host` is determined from the `HOST` header (URL) where the end user is sending the login request to Operator console. For example, for the login URL `https://operator.mydomain.com/login`, `$host` is `operator.mydomain.com`. 
+- `$host` is determined from the `HOST` header (URL) where the end user is sending the login request to Operator Console. For example, for the login URL `https://operator.mydomain.com/login`, `$host` is `operator.mydomain.com`. 
 
 Setting `CONSOLE_IDP_CALLBACK` can be useful if you need to specify a custom domain for the Operator Console, or if the Operator Console is behind a reverse proxy or load balancer and the `HOST` header is not available.
 The page located at `/oauth_callback` handles the redirect after a successful login.
