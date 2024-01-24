@@ -60,7 +60,7 @@ spec:
 
 ### Client credentials
 
-Operator console is a standalone application that identifies itself to the OpenID server using *client credentials*. The client credentials are set in the Operator Console with the following environment variables: 
+Operator Console is a standalone application that identifies itself to the OpenID server using *client credentials*. The client credentials are set in the Operator Console with the following environment variables: 
 - `CONSOLE_IDP_CLIENT_ID` (client id)
 - `CONSOLE_IDP_SECRET` (client secret)
 
