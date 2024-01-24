@@ -1,26 +1,22 @@
-# Operator Console SSO with Open ID
+# Operator Console SSO with OpenID
 
-Operator Console support authentication via Kubernetes Service Account Json Web Token (JWT), which is the default
-authentication method, as well Open ID. In this guide will be explained how to setup Operator Console to enable 
-authentication via OpenID.
+Operator Console supports authentication with a Kubernetes Service Account Json Web Token (JWT) or OpenID. This guide explains how to configure OpenID authentication for Operator Console to using the [OpenID Authorization Code Flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth).
 
-At this moment Operator Console only support Authentication with the Authorization Code Flow, see
-https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth
+Note: only one authentication method can be enabled at the same time, either JWT or OpenID.
 
-Must be considered that only one authentication method: JWT or Open ID can be used at the time.
+The `kustomization.yaml` file provided in this directory installs Operator and applies the basic configurations to enable OpenID authentication for Operator Console. Modify its environment variable values as needed for your deployment and provide the CA certificate in `console-deployment.yaml` and `console-tls-secret.yaml`.
 
-In this directory is a kustomization file, by executing it will install Operator and apply the basic configurations to
-enable OpenID in Operator console. Make sure to Modify the values in the env variables and provide the CA certificate
-in the files `console-deployment.yaml` and `console-tls-secret.yaml`
+```shell
+kubectl apply -k examples/kustomization/operator-external-idp-oid/
+```
 
 ### IDP Server
 
-Specify the OpenID server URL in the Operator Console Deployment, by setting the `CONSOLE_IDP_URL` environment variable.
-The value should point to the open id Endpoint configuration, for example:
-`https://your-extenal-idp.com/.well-known/openid-configuration`.
+Specify the OpenID server URL in the Operator Console Deployment by setting the `CONSOLE_IDP_URL` environment variable. This value should point to the appropriate OpenID Endpoint configuration, for example: `https://your-extenal-idp.com/.well-known/openid-configuration`.
 
-Also provide the Certificate Authority (CA) that signed the certificate the IDP server presents, a good way to present 
-it is by mounting a secret containing the certificate `ca.crt`, here is an example secret to create:
+Also provide the Certificate Authority (CA) that signed the certificate the IDP server presents. You can do this by mounting a secret containing the certificate `ca.crt`. For example:
+
+For a CA certificate resembling the following:
 
 ```yaml
 apiVersion: v1
@@ -34,7 +30,7 @@ stringData:
     <CA public certificate content in plain text here> 
 ```
 
-And could mount the secret in the Deployment as follows:
+Mount the secret in the Deployment as follows:
 
 ```yaml
 apiVersion: apps/v1
@@ -64,40 +60,30 @@ spec:
 
 ### Client credentials
 
-Operator console is a standalone application, to identify himself with the OpenID server requires *client credentials*.
-The client credentials are set in the Operator Console as environment variables in the deployment, 
-`CONSOLE_IDP_CLIENT_ID` (client id) and `CONSOLE_IDP_SECRET` (client secret)
+Operator console is a standalone application that identifies itself to the OpenID server using *client credentials*. The client credentials are set in the Operator Console with the following environment variables: 
+- `CONSOLE_IDP_CLIENT_ID` (client id)
+- `CONSOLE_IDP_SECRET` (client secret)
 
 ### Scopes:
 
-In Oauth2 scopes defines the specific actions that an application (client) is allowed to perform, if the `Client` has 
-assigned scopes to the OpenID server to allow login in Operator Console such scopes need to be set
-to Operator Console in the `CONSOLE_IDP_SCOPES` environment variable, which is a comma delimited string, if blank or not
-set the default value is `openid,profile,email`.
+In OAuth2, scopes defines the specific actions that an application (client) is allowed to perform. If the `Client` has assigned scopes to the OpenID server to allow login in Operator Console, such scopes need to be set to Operator Console in the `CONSOLE_IDP_SCOPES` environment variable. This value should be a comma delimited string. If no value is provided, the default is `openid,profile,email`.
 
 ### Callback URL
-Open ID will expect to be presented with a "call back" URL, where OpenID will redirect back once the authentication succeed
-this callback URL is set in Operator Console with the `CONSOLE_IDP_CALLBACK` environment variable.
+OpenID uses a "call back" URL to redirect back to the application once the authentication succeeds. This callback URL is set in Operator Console with the `CONSOLE_IDP_CALLBACK` environment variable.
 
-Callback url could also be build using on-the-fly, for that instead of set the `CONSOLE_IDP_CALBACK`, set the 
-`CONSOLE_IDP_CALLBACK_DYNAMIC=on` environment variable.
+A Callback URL can also be constructed dynamically. To do this, set `CONSOLE_IDP_CALLBACK_DYNAMIC` environment variable to `on` instead of setting a `CONSOLE_IDP_CALBACK`.
 
-The built URL will look like following: `$protocol://$host/oauth_callback`
+The constructed URL resembles following: `$protocol://$host/oauth_callback`
 
-The `$protocol` is deduced from whether if the Operator Console is running on TLS or not would be `https` or `http` if not.
+- `$protocol` is either `https` or `http`, depending on whether the Operator Console has TLS enabled.
+- `$host` is determined from the `HOST` header (URL) where the end user is sending the login request to Operator console. For example, for the login URL `https://operator.mydomain.com/login`, `$host` is `operator.mydomain.com`. 
 
-The `$host` part will be deduced from the `HOST` header (URL) where the end user is sending the login request to Operator console.
-For example, if the login page is being loaded in the browser on `https://operator.mydomain.com/login`,
-then the `$host` would be deduced as `operator.mydomain.com`.
+Setting `CONSOLE_IDP_CALLBACK` can be useful if you need to specify a custom domain for the Operator Console, or if the Operator Console is behind a reverse proxy or load balancer and the `HOST` header is not available.
+The page located at `/oauth_callback` handles the redirect after a successful login.
 
-Setting the `CONSOLE_IDP_CALLBACK` could be useful when want to specify a custom domain for the Operator Console, Operator
-Console is behind a reverse proxy or load balancer and the `HOST` header is not available.
-The Operator Console page have a designated page to handle the redirect after the successful login, that is `/oauth_callback`.
-
-Make sure that the `CONSOLE_IDP_CALLBACK` is presented with that path in the Url, ie: `https://minio-operator.mydomain.com/oauth_callback`.
-
+Make sure the `CONSOLE_IDP_CALLBACK` URL contains the correct path, for example `https://minio-operator.mydomain.com/oauth_callback`.
 
 ### Token expiration
 
-The default OpenID login token duration is 3600 seconds (1 hour), you can set a longer duration by setting the
-`CONSOLE_IDP_TOKEN_EXPIRATION` env variable.
+The default OpenID login token duration is 3600 seconds (1 hour). You can set a longer duration with the
+`CONSOLE_IDP_TOKEN_EXPIRATION` environment variable.
