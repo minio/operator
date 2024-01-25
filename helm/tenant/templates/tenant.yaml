@@ -106,12 +106,11 @@ spec:
   {{- end }}
   podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" . }}
   hostNetwork: {{ dig "hostNetwork" "false" . }}
-  {{- if dig "minioContainerPort" "" . }}
-  minioContainerPort: {{ dig "minioContainerPort" "" . }}
+  {{- if eq (dig "minioContainerPort" "9000" .) (dig "consoleContainerPort" "9090" .) }}
+    {{- fail "'tenant.s3.minioContainerPort' and 'tenant.s3.consoleContainerPort' can not use the same port number" }}
   {{- end }}
-  {{- if dig "consoleContainerPort" "" . }}
-  consoleContainerPort: {{ dig "consoleContainerPort" "" . }}
-  {{- end }}
+  minioContainerPort: {{ dig "minioContainerPort" "9000" . }}
+  consoleContainerPort: {{ dig "consoleContainerPort" "9090" . }}
   {{- with (dig "readiness" (dict) .) }}
   readiness: {{- toYaml . | nindent 4 }}
   {{- end }}

@@ -260,11 +260,11 @@ tenant:
   # Wether to use the `host network <https://kubernetes.io/docs/concepts/services-networking/network-policies/#networkpolicy-and-hostnetwork-pods>` for the tenant pods.
   hostNetwork: false
   ###
-  # Port to use for MinIO console in container. Useful for avoiding port conflicts if using host network.
-  consoleContainerPort: null
-  ###
   # Port to use for MinIO in container. Useful for avoiding port conflicts if using host network.
-  minioContainerPort: null
+  minioContainerPort: 9000
+  ###
+  # Port to use for MinIO console in container. Useful for avoiding port conflicts if using host network.
+  consoleContainerPort: 9090
   # The `Liveness Probe <https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes>`__ for monitoring Tenant pod liveness. 
   # Tenant pods will be restarted if the probe fails.
   liveness: { }
