@@ -106,6 +106,12 @@ spec:
   {{- end }}
   podManagementPolicy: {{ dig "podManagementPolicy" "Parallel" . }}
   hostNetwork: {{ dig "hostNetwork" "false" . }}
+  {{- if dig "minioContainerPort" "" . }}
+  minioContainerPort: {{ dig "minioContainerPort" "" . }}
+  {{- end }}
+  {{- if dig "consoleContainerPort" "" . }}
+  consoleContainerPort: {{ dig "consoleContainerPort" "" . }}
+  {{- end }}
   {{- with (dig "readiness" (dict) .) }}
   readiness: {{- toYaml . | nindent 4 }}
   {{- end }}

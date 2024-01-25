@@ -673,6 +673,14 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*Optional* + 
  Wether to use the host network for pod created by StatefulSet
 
+|*`minioContainerPort`* __integer__ 
+|*Optional* + 
+ Port to run MinIO on in the container. When using host networking this port will also be used on the host.
+
+|*`consoleContainerPort`* __integer__ 
+|*Optional* + 
+ Port to run MinIO console on in the container. When using host networking this port will also be used on the host.
+
 |*`credsSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
 |*optional* + 
  Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] to use for setting the MinIO root access key and secret key. Specify the secret as `name: <secret>`. The Kubernetes secret must contain the following fields: + 

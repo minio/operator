@@ -295,17 +295,27 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
 	}
+	if t.Spec.ConsoleContainerPort != 0 {
+		consolePort = t.Spec.ConsoleContainerPort
+	}
+	minioPort := miniov2.MinIOPort
+	if t.Spec.MinioContainerPort != 0 {
+		minioPort = t.Spec.MinioContainerPort
+	}
 	args := []string{
 		"server",
 		"--certs-dir", miniov2.MinIOCertPath,
 		"--console-address", ":" + strconv.Itoa(consolePort),
+		"--address", ":" + strconv.Itoa(minioPort),
 	}
 
 	containerPorts := []corev1.ContainerPort{
 		{
-			ContainerPort: miniov2.MinIOPort,
+			Name:          miniov2.MinIOContainerPortName,
+			ContainerPort: int32(minioPort),
 		},
 		{
+			Name:          miniov2.ConsoleContainerPortName,
 			ContainerPort: int32(consolePort),
 		},
 	}

@@ -847,6 +847,8 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              consoleContainerPort:
+                type: integer
               credsSecret:
                 properties:
                   name:
@@ -2405,6 +2407,8 @@ spec:
                   quiet:
                     type: boolean
                 type: object
+              minioContainerPort:
+                type: integer
               mountPath:
                 type: string
               podManagementPolicy:

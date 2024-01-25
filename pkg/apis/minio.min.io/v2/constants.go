@@ -78,6 +78,9 @@ const MinIOPortLoadBalancerSVC = 80
 // MinIOTLSPortLoadBalancerSVC specifies the default Service TLS port number for the load balancer service.
 const MinIOTLSPortLoadBalancerSVC = 443
 
+// MinIOContainerPortName specifies the default name of the MinIO container port.
+const MinIOContainerPortName = "minio"
+
 // MinIOServiceHTTPPortName specifies the default Service's http port name, e.g. for automatic protocol selection in Istio
 const MinIOServiceHTTPPortName = "http-minio"
 
@@ -125,6 +128,9 @@ const ConsoleTLSPort = 9443
 
 // ConsoleServiceTLSPortName specifies the default Console Service's port name.
 const ConsoleServiceTLSPortName = "https-console"
+
+// ConsoleContainerPortName specifies the default name of the MinIO console port.
+const ConsoleContainerPortName = "console"
 
 // ConsoleName specifies the default container name for Console
 const ConsoleName = "-console"

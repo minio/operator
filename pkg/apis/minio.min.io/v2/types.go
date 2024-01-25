@@ -122,9 +122,21 @@ type TenantSpec struct {
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 	// *Optional* +
 	//
-	//Wether to use the host network for pod created by StatefulSet
+	// Wether to use the host network for pod created by StatefulSet
 	// +optional
 	HostNetwork bool `json:"hostNetwork"`
+	// *Optional* +
+	//
+	// Port to run MinIO on in the container. When using host networking this port will also be
+	// used on the host.
+	// +optional
+	MinioContainerPort int `json:"minioContainerPort"`
+	// *Optional* +
+	//
+	// Port to run MinIO console on in the container. When using host networking this port will also
+	// be used on the host.
+	// +optional
+	ConsoleContainerPort int `json:"consoleContainerPort"`
 	// *optional* +
 	//
 	// Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] to use for setting the MinIO root access key and secret key. Specify the secret as `name: <secret>`. The Kubernetes secret must contain the following fields: +
