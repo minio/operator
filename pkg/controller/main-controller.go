@@ -73,6 +73,7 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
+	minioinformers "github.com/minio/operator/pkg/client/informers/externalversions"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
 	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -196,6 +197,11 @@ type Controller struct {
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
+
+	// controllers denotes the list of components controlled
+	// by the controller. Each component is itself
+	// a controller. This handle is for supporting the abstraction.
+	controllers []JobControllerInterface
 }
 
 // EventType is Event type to handle
@@ -231,6 +237,7 @@ func NewController(
 	serviceInformer coreinformers.ServiceInformer,
 	hostsTemplate,
 	operatorVersion string,
+	minioInformerFactory minioinformers.SharedInformerFactory,
 ) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -271,6 +278,14 @@ func NewController(
 
 	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
 
+	controllerConfig := controllerConfig{
+		serviceLister:     serviceInformer.Lister(),
+		kubeClientSet:     kubeClientSet,
+		statefulSetLister: statefulSetInformer.Lister(),
+		deploymentLister:  deploymentInformer.Lister(),
+		recorder:          recorder,
+	}
+
 	controller := &Controller{
 		podName:                   podName,
 		namespacesToWatch:         namespacesToWatch,
@@ -293,6 +308,9 @@ func NewController(
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
+		controllers: []JobControllerInterface{
+			newJobController(minioInformerFactory.Job().V1alpha1().MinIOJobs(), controllerConfig),
+		},
 	}
 
 	// Initialize operator HTTP upgrade server handlers
