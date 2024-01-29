@@ -64,6 +64,12 @@ Operator Console is a standalone application that identifies itself to the OpenI
 - `CONSOLE_IDP_CLIENT_ID` (client id)
 - `CONSOLE_IDP_SECRET` (client secret)
 
+### Access Management
+
+All users in the OIDC realm have access to the Operator Console upon successful authentication.
+
+To restrict access, create a new OIDC realm and use the client ID/Secret for that realm when configuring OIDC.
+
 ### Scopes:
 
 In OAuth2, scopes defines the specific actions that an application (client) is allowed to perform. If the `Client` has assigned scopes to the OpenID server to allow login in Operator Console, such scopes need to be set to Operator Console in the `CONSOLE_IDP_SCOPES` environment variable. This value should be a comma delimited string. If no value is provided, the default is `openid,profile,email`.
