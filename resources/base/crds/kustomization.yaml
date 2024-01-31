@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - minio.min.io_tenants.yaml
   - sts.min.io_policybindings.yaml
+  - job.min.io_miniojobs.yaml
