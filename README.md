@@ -1,4 +1,4 @@
-# MinIO Operator
+# MinIO Operator:
 
 ![build](https://github.com/minio/operator/workflows/Go/badge.svg) ![license](https://img.shields.io/badge/license-AGPL%20V3-blue)
 
