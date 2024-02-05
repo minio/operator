@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/minio/madmin-go/v3"
@@ -120,6 +121,18 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	if err != nil {
 		// show the error and continue
 		klog.Infof("'%s/%s' Failed to get cluster health: %v", tenant.Namespace, tenant.Name, err)
+		// If the certificate verification fails, and it is an external certificate,
+		// then alert the user. The operator should reload that certificate to re-establish
+		// trust in the tenant's certificate and retrieve its health status as stated in:
+		// https://github.com/minio/operator/blob/master/docs/cert-manager.md#create-operator-ca-tls-secret
+		// This typically happens when cert-manager issues a new certificate during the renewal process.
+		if strings.Contains(err.Error(), "failed to verify certificate") {
+			klog.Info("Failed to Verify Certificate, then looking into the external certificates")
+			externalCertSecret := tenant.Spec.ExternalCertSecret
+			if externalCertSecret != nil {
+				klog.Infof("Please update %s secret if external cert got renewed.", OperatorCATLSSecretName)
+			}
+		}
 		return nil
 	}
 
