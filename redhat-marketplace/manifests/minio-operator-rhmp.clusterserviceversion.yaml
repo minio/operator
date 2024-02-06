@@ -91,13 +91,16 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.11
-  name: minio-operator-rhmp.v5.0.11
+    containerImage: quay.io/minio/operator:v5.0.12
+  name: minio-operator-rhmp.v5.0.12
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+      - kind: MinIOJob
+        name: miniojobs.job.min.io
+        version: v1alpha1
       - kind: PolicyBinding
         name: policybindings.sts.min.io
         version: v1alpha1
@@ -365,6 +368,16 @@ spec:
           serviceAccountName: console-sa
         - rules:
             - apiGroups:
+                - job.min.io
+              resources:
+                - miniojobs
+              verbs:
+                - list
+                - get
+                - update
+                - delete
+                - watch
+            - apiGroups:
                 - apiextensions.k8s.io
               resources:
                 - customresourcedefinitions
@@ -564,7 +577,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
+                    image: quay.io/minio/operator:v5.0.12
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -643,7 +656,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "on"
-                    image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
+                    image: quay.io/minio/operator:v5.0.12
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -761,10 +774,11 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
+    - image: minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
+      name: console
+    - image: minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
       name: minio-operator
     - image: quay.io/minio/minio@sha256:91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3
       name: minio-91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3-annotation
-    - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
-      name: console
-  version: 5.0.11
+  version: 5.0.12
+  replaces: minio-operator-rhmp.v5.0.9
