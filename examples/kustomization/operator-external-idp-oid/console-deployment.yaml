@@ -17,8 +17,6 @@ spec:
             value: "" #Client secret in Open ID
           - name: CONSOLE_IDP_CALLBACK_DYNAMIC
             value: "on"
-#          - name: CONSOLE_IDP_SCOPES
-#            value: "operator" # Name of scope that client must have in order to authorize login
           volumeMounts:
             - mountPath: /tmp/certs/CAs
               name: idp-certificate
