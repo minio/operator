@@ -27,6 +27,8 @@ operator:
   env:
     - name: OPERATOR_STS_ENABLED
       value: "on"
+  # An array of additional annotations to be applied to the operator service account
+  serviceAccountAnnotations: []
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag`` 
