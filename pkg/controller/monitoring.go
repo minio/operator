@@ -120,6 +120,11 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	if err != nil {
 		// show the error and continue
 		klog.Infof("'%s/%s' Failed to get cluster health: %v", tenant.Namespace, tenant.Name, err)
+		err = c.renewExternalCerts(context.Background(), tenant, err)
+		if err != nil {
+			klog.Errorf("There was an error on certificate renewal %s", err)
+			return err
+		}
 		return nil
 	}
 
