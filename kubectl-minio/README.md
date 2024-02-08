@@ -87,7 +87,7 @@ Command: `kubectl minio tenant upgrade TENANT_NAME --image IMAGE_TAG [options]`
 
 Upgrade MinIO Docker image for the given MinIO Tenant.
 
-example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2024-02-04T22-36-13Z`
+example: `kubectl minio tenant upgrade tenant1 --image minio/minio:RELEASE.2024-02-06T21-36-22Z`
 
 Options:
 
