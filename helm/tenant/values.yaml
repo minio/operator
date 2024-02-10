@@ -52,7 +52,7 @@ tenant:
   # 
   #    image:
   #       repository: quay.io/minio/minio
-  #       tag: RELEASE.2024-02-06T21-36-22Z
+  #       tag: RELEASE.2024-02-09T21-25-16Z
   #       pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
@@ -67,7 +67,7 @@ tenant:
   #
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2024-02-06T21-36-22Z
+    tag: RELEASE.2024-02-09T21-25-16Z
     pullPolicy: IfNotPresent
   ###
   #
