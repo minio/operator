@@ -985,7 +985,8 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
 	operatorCATLSExists, err := c.checkOperatorCAForTenant(ctx, tenant)
 	if err != nil {
-		return WrapResult(Result{}, err)
+		// Don't return here as we get stuck when recreating the stateful set
+		klog.Infof("There was an error while updating the certificate %s", err)
 	}
 
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
