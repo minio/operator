@@ -146,7 +146,7 @@ func StartOperator(kubeconfig string) {
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,
 		pkg.Version,
-		minioInformerFactory,
+		minioInformerFactory.Job().V1alpha1().MinIOJobs(),
 	)
 
 	go kubeInformerFactory.Start(stopCh)

@@ -73,7 +73,7 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
-	minioinformers "github.com/minio/operator/pkg/client/informers/externalversions"
+	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
 	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -201,7 +201,7 @@ type Controller struct {
 	// controllers denotes the list of components controlled
 	// by the controller. Each component is itself
 	// a controller. This handle is for supporting the abstraction.
-	controllers []JobControllerInterface
+	controllers []*JobController
 }
 
 // EventType is Event type to handle
@@ -237,7 +237,7 @@ func NewController(
 	serviceInformer coreinformers.ServiceInformer,
 	hostsTemplate,
 	operatorVersion string,
-	minioInformerFactory minioinformers.SharedInformerFactory,
+	jobinformer jobinformers.MinIOJobInformer,
 ) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -278,13 +278,13 @@ func NewController(
 
 	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
 
-	controllerConfig := controllerConfig{
-		serviceLister:     serviceInformer.Lister(),
-		kubeClientSet:     kubeClientSet,
-		statefulSetLister: statefulSetInformer.Lister(),
-		deploymentLister:  deploymentInformer.Lister(),
-		recorder:          recorder,
-	}
+	//controllerConfig := controllerConfig{
+	//	serviceLister:     serviceInformer.Lister(),
+	//	kubeClientSet:     kubeClientSet,
+	//	statefulSetLister: statefulSetInformer.Lister(),
+	//	deploymentLister:  deploymentInformer.Lister(),
+	//	recorder:          recorder,
+	//}
 
 	controller := &Controller{
 		podName:                   podName,
@@ -308,8 +308,17 @@ func NewController(
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
-		controllers: []JobControllerInterface{
-			newJobController(minioInformerFactory.Job().V1alpha1().MinIOJobs(), controllerConfig),
+		controllers: []*JobController{
+			NewJobController(
+				jobinformer,
+				namespacesToWatch,
+				jobinformer.Lister(),
+				jobinformer.Informer().HasSynced,
+				kubeClientSet,
+				statefulSetInformer.Lister(),
+				recorder,
+				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
+			),
 		},
 	}
 
@@ -453,6 +462,15 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	klog.Info("Starting workers")
 	// Launch two workers to process Tenant resources
 	for i := 0; i < threadiness; i++ {
+		go wait.Until(c.runWorker, time.Second, stopCh)
+	}
+
+	klog.Info("Starting Job workers")
+	JobController := c.controllers[0]
+	// fmt.Println(controller.SyncHandler())
+	// Launch two workers to process Job resources
+	for i := 0; i < threadiness; i++ {
+		go wait.Until(JobController.runJobWorker, time.Second, stopCh)
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
@@ -762,6 +780,7 @@ func key2NamespaceName(key string) (namespace, name string) {
 // converge the two. It then updates the Status block of the Tenant resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(key string) (Result, error) {
+	klog.Info("MinIO Tenant Main loop!!!!")
 	ctx := context.Background()
 	cOpts := metav1.CreateOptions{}
 	uOpts := metav1.UpdateOptions{}
