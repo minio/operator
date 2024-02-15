@@ -524,6 +524,8 @@ export const niceDaysInt = (seconds: number, timeVariant: string = "s") => {
   }`;
 };
 
+export const EC0 = "EC:0";
+
 export const MinIOEnvVarsSettings: any = {
   MINIO_ACCESS_KEY: { secret: true },
   MINIO_ACCESS_KEY_OLD: { secret: true },

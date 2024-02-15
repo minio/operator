@@ -183,8 +183,6 @@ const TenantSizeResources = () => {
         updateField("maxMemorySize", 0);
         updateField("resourcesCPURequest", "");
         updateField("resourcesMemoryRequest", "");
-
-        console.error(err);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, updateField]);
