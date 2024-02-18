@@ -165,47 +165,14 @@ performance:
 
 ## Procedure
 
-### 1) Install the MinIO Operator
-
-Run the following commands to install the MinIO Operator and Plugin using the Kubernetes ``krew`` plugin manager:
-
-```sh
-kubectl krew update
-kubectl krew install minio
-```
-
-See the ``krew`` [installation documentation](https://krew.sigs.k8s.io/docs/user-guide/setup/install/) for instructions
-on installing ``krew``.
-
-Run the following command to verify installation of the plugin:
+### 1) Install the MinIO Operator via Kustomization
+Follow the  [Install `kustomize`](https://kubectl.docs.kubernetes.io/installation/kustomize/)  guide for your host system before starting this procedure.
 
 ```sh
-kubectl minio version
-```
-
-As an alternative to `krew`, you can download the `kubectl-minio` plugin from
-the [Operator Releases Page](https://github.com/minio/operator/releases). Download the `kubectl-minio` package
-appropriate for your operating system and extract the contents as `kubectl-minio`. Set the `kubectl-minio` binary to be
-executable (e.g. `chmod +x`) and place it in your system `PATH`.
-
-For example, the following code downloads the latest stable version of the MinIO Kubernetes Plugin and installs it to
-the system ``$PATH``. The example assumes a Linux operating system:
-
-```sh
-wget -qO- https://github.com/minio/operator/releases/latest/download/kubectl-minio_linux_amd64_v1.zip | sudo bsdtar -xvf- -C /usr/local/bin
-sudo chmod +x /usr/local/bin/kubectl-minio
-```
-
-Run the following command to verify installation of the plugin:
-
-```sh
-kubectl minio version
-```
-
-Run the following command to initialize the Operator:
-
-```sh
-kubectl minio init
+VERSION=v5.0.11
+TIMEOUT=120 # By default is 27, sometimes connection is slow, allow more time to fetch it.
+kustomize build "github.com/minio/operator/resources/?timeout=120&ref=${VERSION}" > operator.yaml
+kubectl apply -f operator.yaml
 ```
 
 Run the following command to verify the status of the Operator:
@@ -227,24 +194,46 @@ interface for creating and managing MinIO Tenants.
 
 The `minio-operator-*` pod runs the MinIO Operator itself.
 
-### 2) Access the Operator Console
+### 2) Access the Operator Console via NodePort
 
-Run the following command to create a local proxy to the MinIO Operator
-Console:
+Get the token:
 
 ```sh
-kubectl minio proxy -n minio-operator
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: console-sa-secret
+  namespace: minio-operator
+  annotations:
+    kubernetes.io/service-account.name: console-sa
+type: kubernetes.io/service-account-token
+EOF
+SA_TOKEN=$(kubectl -n minio-operator  get secret console-sa-secret -o jsonpath="{.data.token}" | base64 --decode)
+echo $SA_TOKEN
 ```
 
-The output resembles the following:
+Change the console service to use NodePort:
 
-```sh
-kubectl minio proxy
-Starting port forward of the Console UI.
-
-To connect open a browser and go to http://localhost:9090
-
-Current JWT to login: TOKENSTRING
+```yaml
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+      nodePort: 30080 <--------------- Using this port in the node
+    - name: https
+      protocol: TCP
+      port: 9443
+      targetPort: 9443
+      nodePort: 30869
+  selector:
+    app: console
+  clusterIP: 10.96.69.150
+  clusterIPs:
+    - 10.96.69.150
+  type: NodePort <-------------------- Using NodePort
 ```
 
 Open your browser to the provided address and use the JWT token to log in

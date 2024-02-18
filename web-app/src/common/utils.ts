@@ -453,7 +453,13 @@ export const erasureCodeCalc = (
 
 // Pool Name Generator
 export const generatePoolName = (pools: Pool[]) => {
-  const poolCounter = pools.length;
+  let poolCounter = 0;
+  const poolNames = pools.map((pool) => pool.name || "");
+  for (; poolCounter < pools.length; poolCounter++) {
+    if (!poolNames.includes(`pool-${poolCounter}`)) {
+      return `pool-${poolCounter}`;
+    }
+  }
   return `pool-${poolCounter}`;
 };
 

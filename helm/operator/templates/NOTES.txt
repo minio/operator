@@ -9,7 +9,7 @@ metadata:
     kubernetes.io/service-account.name: console-sa
 type: kubernetes.io/service-account-token
 EOF
-kubectl -n minio-operator  get secret console-sa-secret -o jsonpath="{.data.token}" | base64 --decode
+kubectl -n {{ .Release.Namespace }} get secret console-sa-secret -o jsonpath="{.data.token}" | base64 --decode
 
 2. Get the Operator Console URL by running these commands:
   kubectl --namespace {{ .Release.Namespace }} port-forward svc/console 9090:9090

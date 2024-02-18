@@ -4,6 +4,16 @@ metadata:
   name: minio-operator-role
 rules:
   - apiGroups:
+      - "job.min.io"
+    resources:
+      - miniojobs
+    verbs:
+      - list
+      - get
+      - update
+      - delete
+      - watch
+  - apiGroups:
       - "apiextensions.k8s.io"
     resources:
       - customresourcedefinitions

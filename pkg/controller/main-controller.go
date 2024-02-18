@@ -73,6 +73,7 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
+	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
 	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -196,6 +197,11 @@ type Controller struct {
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
+
+	// controllers denotes the list of components controlled
+	// by the controller. Each component is itself
+	// a controller. This handle is for supporting the abstraction.
+	controllers []*JobController
 }
 
 // EventType is Event type to handle
@@ -231,6 +237,7 @@ func NewController(
 	serviceInformer coreinformers.ServiceInformer,
 	hostsTemplate,
 	operatorVersion string,
+	jobinformer jobinformers.MinIOJobInformer,
 ) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -271,6 +278,14 @@ func NewController(
 
 	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
 
+	//controllerConfig := controllerConfig{
+	//	serviceLister:     serviceInformer.Lister(),
+	//	kubeClientSet:     kubeClientSet,
+	//	statefulSetLister: statefulSetInformer.Lister(),
+	//	deploymentLister:  deploymentInformer.Lister(),
+	//	recorder:          recorder,
+	//}
+
 	controller := &Controller{
 		podName:                   podName,
 		namespacesToWatch:         namespacesToWatch,
@@ -293,6 +308,18 @@ func NewController(
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
+		controllers: []*JobController{
+			NewJobController(
+				jobinformer,
+				namespacesToWatch,
+				jobinformer.Lister(),
+				jobinformer.Informer().HasSynced,
+				kubeClientSet,
+				statefulSetInformer.Lister(),
+				recorder,
+				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
+			),
+		},
 	}
 
 	// Initialize operator HTTP upgrade server handlers
@@ -435,6 +462,15 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	klog.Info("Starting workers")
 	// Launch two workers to process Tenant resources
 	for i := 0; i < threadiness; i++ {
+		go wait.Until(c.runWorker, time.Second, stopCh)
+	}
+
+	klog.Info("Starting Job workers")
+	JobController := c.controllers[0]
+	// fmt.Println(controller.SyncHandler())
+	// Launch two workers to process Job resources
+	for i := 0; i < threadiness; i++ {
+		go wait.Until(JobController.runJobWorker, time.Second, stopCh)
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
@@ -744,6 +780,7 @@ func key2NamespaceName(key string) (namespace, name string) {
 // converge the two. It then updates the Status block of the Tenant resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(key string) (Result, error) {
+	klog.Info("MinIO Tenant Main loop!!!!")
 	ctx := context.Background()
 	cOpts := metav1.CreateOptions{}
 	uOpts := metav1.UpdateOptions{}
@@ -948,7 +985,8 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
 	operatorCATLSExists, err := c.checkOperatorCAForTenant(ctx, tenant)
 	if err != nil {
-		return WrapResult(Result{}, err)
+		// Don't return here as we get stuck when recreating the stateful set
+		klog.Infof("There was an error while updating the certificate %s", err)
 	}
 
 	// consolidate the status of all pools. this is meant to cover for legacy tenants

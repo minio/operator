@@ -154,6 +154,10 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 			Name:  "MINIO_KMS_KES_CA_PATH",
 			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
 		}
+		envVarsMap["MINIO_KMS_KES_CAPATH"] = corev1.EnvVar{
+			Name:  "MINIO_KMS_KES_CAPATH",
+			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
+		}
 		envVarsMap["MINIO_KMS_KES_KEY_NAME"] = corev1.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
 			Value: t.Spec.KES.KeyName,

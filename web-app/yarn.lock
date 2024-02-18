@@ -7767,9 +7767,9 @@ mdn-data@2.0.4:
   resolved "https://registry.yarnpkg.com/mdn-data/-/mdn-data-2.0.4.tgz#699b3c38ac6f1d728091a64650b65d388502fd5b"
   integrity sha512-iV3XNKw06j5Q7mi6h+9vbx23Tv7JkjEVgKHW4pimwyDGWm0OIQntJJ+u1C6mg6mK1EaTv42XQ7w76yuzH7M2cA==
 
-"mds@https://github.com/minio/mds.git#v0.15.0":
-  version "0.15.0"
-  resolved "https://github.com/minio/mds.git#509338e926c86edd14422e3609fb843a9c2b539f"
+"mds@https://github.com/minio/mds.git#v0.16.0":
+  version "0.16.0"
+  resolved "https://github.com/minio/mds.git#a885a24ca1d51893137500616a015f60145d5887"
   dependencies:
     "@types/styled-components" "^5.1.34"
     "@uiw/react-textarea-code-editor" "^3.0.2"

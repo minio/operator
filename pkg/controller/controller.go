@@ -23,6 +23,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/pkg/env"
+
 	"github.com/minio/operator/pkg"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -79,8 +81,21 @@ func StartOperator(kubeconfig string) {
 		return
 	}
 
-	// Look for incluster config by default
-	cfg, err := rest.InClusterConfig()
+	var cfg *rest.Config
+	var err error
+
+	if token := env.Get("DEV_MODE", ""); token == "on" {
+		klog.Info("DEV_MODE present, running dev mode")
+		cfg = &rest.Config{
+			Host:            "http://localhost:8001",
+			TLSClientConfig: rest.TLSClientConfig{Insecure: true},
+			APIPath:         "/",
+			BearerToken:     "",
+		}
+	} else {
+		// Look for incluster config by default
+		cfg, err = rest.InClusterConfig()
+	}
 	// If config is passed as a flag use that instead
 	if kubeconfig != "" {
 		cfg, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
@@ -146,6 +161,7 @@ func StartOperator(kubeconfig string) {
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,
 		pkg.Version,
+		minioInformerFactory.Job().V1alpha1().MinIOJobs(),
 	)
 
 	go kubeInformerFactory.Start(stopCh)
