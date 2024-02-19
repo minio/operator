@@ -33,7 +33,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -78,7 +77,7 @@ func (suite *TenantTestSuite) TestCreateTenantHandlerWithError() {
 func (suite *TenantTestSuite) TestCreateTenantWithWrongECP() {
 	params, _ := suite.initCreateTenantRequest()
 	params.Body.ErasureCodingParity = 1
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return nil, nil
 	}
 	_, err := createTenant(context.Background(), params, suite.k8sclient, &models.Principal{})
@@ -100,7 +99,7 @@ func (suite *TenantTestSuite) TestCreateTenantWithWrongActiveDirectoryConfig() {
 			LookupBindDn:        &lookup,
 		},
 	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		if strings.HasPrefix(secret.Name, fmt.Sprintf("%s-user-", *params.Body.Name)) {
 			return nil, errors.New("mock-create-error")
 		}
@@ -123,7 +122,7 @@ func (suite *TenantTestSuite) TestCreateTenantWithWrongBuiltInUsers() {
 			},
 		},
 	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		if strings.HasPrefix(secret.Name, fmt.Sprintf("%s-user-", *params.Body.Name)) {
 			return nil, errors.New("mock-create-error")
 		}
@@ -191,7 +190,7 @@ func (suite *TenantTestSuite) TestCreateTenantWithWrongCAsCertificates() {
 	k8sClientDeleteSecretMock = func(ctx context.Context, namespace, name string, opts metav1.DeleteOptions) error {
 		return nil
 	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		if strings.HasPrefix(secret.Name, fmt.Sprintf("%s-ca-certificate-", *params.Body.Name)) {
 			return nil, errors.New("mock-create-error")
 		}
@@ -245,7 +244,7 @@ func (suite *TenantTestSuite) TestCreateTenantWithWrongPool() {
 	params, _ := suite.initCreateTenantRequest()
 	params.Body.Annotations = map[string]string{"mock": "mock"}
 	params.Body.Pools = []*models.Pool{{}}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return nil, nil
 	}
 	k8sClientDeleteSecretMock = func(ctx context.Context, namespace, name string, opts metav1.DeleteOptions) error {
@@ -267,7 +266,7 @@ func (suite *TenantTestSuite) TestCreateTenantWithImageRegistryCreateError() {
 		Password: &password,
 	}
 
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		if strings.HasPrefix(secret.Name, fmt.Sprintf("%s-secret", *params.Body.Name)) {
 			return nil, nil
 		}
@@ -290,14 +289,14 @@ func (suite *TenantTestSuite) TestCreateTenantWithImageRegistryUpdateError() {
 		Username: &username,
 		Password: &password,
 	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return nil, nil
 	}
-	k8sClientUpdateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.UpdateOptions) (*v1.Secret, error) {
+	k8sClientUpdateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.UpdateOptions) (*corev1.Secret, error) {
 		return nil, errors.New("mock-update-error")
 	}
 	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {
-		return &v1.Secret{}, nil
+		return &corev1.Secret{}, nil
 	}
 	_, err := createTenant(context.Background(), params, suite.k8sclient, &models.Principal{})
 	suite.assert.NotNil(err)
@@ -559,7 +558,7 @@ func (suite *TenantTestSuite) TestUpdateTenantSecurityWrongCASecretCertificates(
 			},
 		}, nil
 	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return nil, errors.New("mock-create-error")
 	}
 	params, _ := suite.initUpdateTenantSecurityRequest()
@@ -941,9 +940,9 @@ func (suite *TenantTestSuite) TestGetTenantLogReportWithError() {
 }
 
 func (suite *TenantTestSuite) TestGetTenantLogReportWithoutError() {
-	// fakePods := []v1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1"}}, {ObjectMeta: metav1.ObjectMeta{Name: "pod2"}}, {ObjectMeta: metav1.ObjectMeta{Name: "pod3"}}}
+	// fakePods := []corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "pod1"}}, {ObjectMeta: metav1.ObjectMeta{Name: "pod2"}}, {ObjectMeta: metav1.ObjectMeta{Name: "pod3"}}}
 	objs := []runtime.Object{
-		&v1.PodList{Items: []v1.Pod{
+		&corev1.PodList{Items: []corev1.Pod{
 			{
 				Status: corev1.PodStatus{
 					ContainerStatuses: []corev1.ContainerStatus{{}},

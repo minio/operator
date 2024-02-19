@@ -41,7 +41,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -80,11 +79,11 @@ func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels
 			certificatesV1.UsageServerAuth,
 		}
 		kubeCSR := &certificatesV1.CertificateSigningRequest{
-			TypeMeta: v1.TypeMeta{
+			TypeMeta: metav1.TypeMeta{
 				APIVersion: "certificates.k8s.io/v1",
 				Kind:       "CertificateSigningRequest",
 			},
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Labels:    labels,
 				Namespace: namespace,
@@ -129,11 +128,11 @@ func (c *Controller) createCertificateSigningRequest(ctx context.Context, labels
 			certificatesV1beta1.UsageClientAuth,
 		}
 		kubeCSR := &certificatesV1beta1.CertificateSigningRequest{
-			TypeMeta: v1.TypeMeta{
+			TypeMeta: metav1.TypeMeta{
 				APIVersion: "certificates.k8s.io/v1beta1",
 				Kind:       "CertificateSigningRequest",
 			},
-			ObjectMeta: v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Labels:    labels,
 				Namespace: namespace,
@@ -199,7 +198,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 
 		case <-tick.C:
 			if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
-				r, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
+				r, err := c.kubeClientSet.CertificatesV1().CertificateSigningRequests().Get(ctx, csrName, metav1.GetOptions{})
 				if err != nil {
 					klog.Errorf("Unexpected error during certificate fetching of csr/%s V1: %s", csrName, err)
 					return nil, err
@@ -216,7 +215,7 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 					}
 				}
 			} else {
-				r, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, csrName, v1.GetOptions{})
+				r, err := c.kubeClientSet.CertificatesV1beta1().CertificateSigningRequests().Get(ctx, csrName, metav1.GetOptions{})
 				if err != nil {
 					klog.Errorf("Unexpected error during certificate fetching of csr/%s V1beta1: %s", csrName, err)
 					return nil, err

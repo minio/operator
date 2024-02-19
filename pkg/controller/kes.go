@@ -33,7 +33,6 @@ import (
 	"github.com/minio/operator/pkg/resources/services"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -224,7 +223,7 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 		}
 
 		if tenant.HasGCPCredentialSecretForKES() {
-			kesSA, err := c.kubeClientSet.CoreV1().ServiceAccounts(tenant.Namespace).Get(ctx, tenant.Spec.KES.ServiceAccountName, v1.GetOptions{})
+			kesSA, err := c.kubeClientSet.CoreV1().ServiceAccounts(tenant.Namespace).Get(ctx, tenant.Spec.KES.ServiceAccountName, metav1.GetOptions{})
 			if err != nil {
 				klog.Errorf("unable to get the service account %s/%s: %v", tenant.Namespace, tenant.Spec.KES.ServiceAccountName, err)
 				return err

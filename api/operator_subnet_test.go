@@ -35,7 +35,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -62,7 +61,7 @@ func (suite *OperatorSubnetTestSuite) SetupSuite() {
 	suite.registerAPIKeyServer = httptest.NewServer(http.HandlerFunc(suite.registerAPIKeyHandler))
 	suite.k8sClient = k8sClientMock{}
 	suite.adminClient = AdminClientMock{}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return &corev1.Secret{}, nil
 	}
 	k8sclientGetSecretMock = func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error) {

@@ -18,7 +18,6 @@ package resources
 import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -39,7 +38,7 @@ func NewTenantConfigurationSecret(opts *TenantOptions) (*corev1.Secret, error) {
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
-			APIVersion: v1.SchemeGroupVersion.Version,
+			APIVersion: corev1.SchemeGroupVersion.Version,
 		},
 		Data: map[string][]byte{
 			"config.env": []byte(miniov2.GenerateTenantConfigurationFile(tenantConfiguration)),
@@ -60,7 +59,7 @@ func NewUserCredentialsSecret(opts *TenantOptions, secretName string) (*corev1.S
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
-			APIVersion: v1.SchemeGroupVersion.Version,
+			APIVersion: corev1.SchemeGroupVersion.Version,
 		},
 		Data: map[string][]byte{
 			"CONSOLE_ACCESS_KEY": []byte(accessKey),
