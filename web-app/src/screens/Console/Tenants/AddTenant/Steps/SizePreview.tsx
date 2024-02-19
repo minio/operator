@@ -18,7 +18,7 @@ import React, { Fragment } from "react";
 import { Box, SimpleHeader, Table, TableBody, TableCell, TableRow } from "mds";
 import { useSelector } from "react-redux";
 import { AppState } from "../../../../../store";
-import { niceBytes } from "../../../../../common/utils";
+import { niceBytes, EC0 } from "../../../../../common/utils";
 
 const SizePreview = () => {
   const nodes = useSelector(
@@ -139,7 +139,9 @@ const SizePreview = () => {
               <TableRow>
                 <TableCell scope="row">Usable Capacity</TableCell>
                 <TableCell sx={{ textAlign: "right" }}>
-                  {niceBytes(usableInformation.maxCapacity)}
+                  {ecParity === EC0
+                    ? niceBytes(ecParityCalc.rawCapacity)
+                    : niceBytes(usableInformation.maxCapacity)}
                 </TableCell>
               </TableRow>
               <TableRow>
@@ -150,12 +152,16 @@ const SizePreview = () => {
                   style={{ borderBottom: 0 }}
                   sx={{ textAlign: "right" }}
                 >
-                  {distribution
-                    ? Math.floor(
-                        usableInformation.maxFailureTolerations /
-                          distribution.disks,
-                      )
-                    : "-"}
+                  {ecParity === EC0
+                    ? 0
+                    : distribution &&
+                        distribution.disks > 0 &&
+                        usableInformation.maxFailureTolerations
+                      ? Math.floor(
+                          usableInformation.maxFailureTolerations /
+                            distribution.disks,
+                        )
+                      : "-"}
                 </TableCell>
               </TableRow>
             </TableBody>
