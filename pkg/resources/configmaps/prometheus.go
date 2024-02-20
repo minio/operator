@@ -25,7 +25,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
 type globalConfig struct {
@@ -83,14 +82,14 @@ func GetPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *Promet
 	// populate config
 	promConfig := &PrometheusConfig{
 		Global: globalConfig{
-			ScrapeInterval:     v2.MinIOPrometheusScrapeInterval,
+			ScrapeInterval:     miniov2.MinIOPrometheusScrapeInterval,
 			EvaluationInterval: 30 * time.Second,
 		},
 		ScrapeConfigs: []ScrapeConfig{
 			{
 				JobName:     t.PrometheusConfigJobName(),
 				BearerToken: bearerToken,
-				MetricsPath: v2.MinIOPrometheusPathCluster,
+				MetricsPath: miniov2.MinIOPrometheusPathCluster,
 				Scheme:      minioScheme,
 				TLSConfig: tlsConfig{
 					CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",

@@ -19,7 +19,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
-	queue "k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 )
 
@@ -31,7 +30,7 @@ type JobController struct {
 	kubeClientSet     kubernetes.Interface
 	statefulSetLister appslisters.StatefulSetLister
 	recorder          record.EventRecorder
-	workqueue         queue.RateLimitingInterface
+	workqueue         workqueue.RateLimitingInterface
 }
 
 // JobControllerInterface is an interface for the controller with the methods supported by it.
@@ -131,7 +130,7 @@ func NewJobController(
 	kubeClientSet kubernetes.Interface,
 	statefulSetLister appslisters.StatefulSetLister,
 	recorder record.EventRecorder,
-	workqueue queue.RateLimitingInterface,
+	workqueue workqueue.RateLimitingInterface,
 ) *JobController {
 	controller := &JobController{
 		namespacesToWatch: namespacesToWatch,

@@ -26,7 +26,6 @@ import (
 	"github.com/minio/operator/models"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -86,7 +85,7 @@ func (suite *TenantTestSuite) TestUpdateTenantIdentityProviderWithSecretCreation
 			},
 		}, nil
 	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return nil, errors.New("mock-create-error")
 	}
 	params, _ := suite.initUpdateTenantIdentityProviderRequest()
@@ -102,7 +101,7 @@ func (suite *TenantTestSuite) TestUpdateTenantIdentityProviderWithoutError() {
 	opClientTenantUpdateMock = func(ctx context.Context, tenant *miniov2.Tenant, opts metav1.UpdateOptions) (*miniov2.Tenant, error) {
 		return &miniov2.Tenant{}, nil
 	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return nil, nil
 	}
 	params, _ := suite.initUpdateTenantIdentityProviderRequest()

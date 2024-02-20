@@ -27,7 +27,6 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -257,7 +256,7 @@ var TmpCfgVolumeMount = corev1.VolumeMount{
 }
 
 // Builds the volume mounts for MinIO container.
-func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, certVolumeSources []v1.VolumeProjection) (mounts []v1.VolumeMount) {
+func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, certVolumeSources []corev1.VolumeProjection) (mounts []corev1.VolumeMount) {
 	// Default volume name, unless another one was provided
 	name := miniov2.MinIOVolumeName
 	if pool.VolumeClaimTemplate != nil {
@@ -294,7 +293,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, certVolumeSources []v1.
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, certVolumeSources []v1.VolumeProjection) v1.Container {
+func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, certVolumeSources []corev1.VolumeProjection) corev1.Container {
 	consolePort := miniov2.ConsolePort
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
@@ -320,7 +319,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 			"--sftp", fmt.Sprintf("address=:%d", miniov2.MinIOSFTPPort),
 			"--sftp", "ssh-private-key=" + pkFile,
 		}...)
-		containerPorts = append(containerPorts, v1.ContainerPort{
+		containerPorts = append(containerPorts, corev1.ContainerPort{
 			ContainerPort: miniov2.MinIOSFTPPort,
 		})
 	}
@@ -383,7 +382,7 @@ func poolTopologySpreadConstraints(z *miniov2.Pool) []corev1.TopologySpreadConst
 }
 
 // Builds the security context for a Pool
-func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.PodSecurityContext {
+func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *corev1.PodSecurityContext {
 	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
@@ -413,7 +412,7 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *v1.Pod
 }
 
 // Builds the security context for containers in a Pool
-func poolContainerSecurityContext(pool *miniov2.Pool) *v1.SecurityContext {
+func poolContainerSecurityContext(pool *miniov2.Pool) *corev1.SecurityContext {
 	// Default values:
 	// By default, values should be totally empty if not provided
 	// This is specially needed in OpenShift where Security Context Constraints restrict them
@@ -500,7 +499,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 
 	podVolumes = append(podVolumes, corev1.Volume{
 		Name: CfgVol,
-		VolumeSource: v1.VolumeSource{
+		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{},
 		},
 	})
@@ -881,7 +880,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	return ss
 }
 
-func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) v1.Container {
+func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) corev1.Container {
 	initContainer := corev1.Container{
 		Name:  "validate-arguments",
 		Image: operatorImage,
@@ -911,7 +910,7 @@ func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Poo
 	return initContainer
 }
 
-func getSideCarContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) v1.Container {
+func getSideCarContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) corev1.Container {
 	sidecarContainer := corev1.Container{
 		Name:  "sidecar",
 		Image: operatorImage,

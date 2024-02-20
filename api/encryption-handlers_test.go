@@ -30,7 +30,6 @@ import (
 	"github.com/minio/operator/pkg/kes"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -101,7 +100,7 @@ func (suite *TenantTestSuite) TestTenantUpdateEncryptionAWSWithoutError() {
 			},
 		},
 	}
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return nil, nil
 	}
 	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
@@ -201,7 +200,7 @@ func (suite *TenantTestSuite) TestTenantUpdateEncryptionAzureWithoutError() {
 }
 
 func (suite *TenantTestSuite) prepareEncryptionUpdateMocksNoError() {
-	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+	k8sClientCreateSecretMock = func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 		return nil, nil
 	}
 	opClientTenantGetMock = func(ctx context.Context, namespace string, tenantName string, options metav1.GetOptions) (*miniov2.Tenant, error) {
