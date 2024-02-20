@@ -24,7 +24,7 @@ spec:
       serviceAccountName: minio-operator
       containers:
         - name: minio-operator
-          image: minio/operator:v5.0.12
+          image: minio/operator:v5.0.13
           imagePullPolicy: IfNotPresent
           args:
             - controller

@@ -32,14 +32,14 @@ operator:
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.12 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.13 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
   # 
   #    image:
   #      repository: quay.io/minio/operator
-  #      tag: v5.0.12
+  #      tag: v5.0.13
   #      pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
@@ -53,7 +53,7 @@ operator:
   #
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.12
+    tag: v5.0.13
     pullPolicy: IfNotPresent
   ###
   #
@@ -171,14 +171,14 @@ console:
   ###
   # Specify the Operator Console container image to use for the deployment.
   # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.12 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.13 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
   # 
   #    image:
   #      repository: quay.io/minio/operator
-  #      tag: v5.0.12
+  #      tag: v5.0.13
   #      pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
@@ -193,7 +193,7 @@ console:
   # The specified values should match that of ``operator.image`` to ensure predictable operations.
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.12
+    tag: v5.0.13
     pullPolicy: IfNotPresent
   ###
   # An array of environment variables to pass to the Operator Console deployment.
