@@ -309,6 +309,7 @@ func NewController(
 				statefulSetInformer.Lister(),
 				recorder,
 				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
+				minioClientSet,
 			),
 		},
 	}
