@@ -391,6 +391,14 @@ func Test_GetConfigVersion(t *testing.T) {
 		{
 			name: "error unexpected KES config version",
 			args: args{
+				kesImage: "minio/kes:v0.23.0",
+			},
+			wantversion: KesConfigVersion3,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
 				kesImage: "minio/kes:v0.22.0",
 			},
 			wantversion: KesConfigVersion2,
@@ -409,7 +417,7 @@ func Test_GetConfigVersion(t *testing.T) {
 			args: args{
 				kesImage: "minio/kes:2023-02-15T14-54-37Z",
 			},
-			wantversion: KesConfigVersion2,
+			wantversion: KesConfigVersion1,
 			wantErr:     false,
 		},
 		{
@@ -439,6 +447,23 @@ func Test_GetConfigVersion(t *testing.T) {
 		{
 			name: "error unexpected KES config version",
 			args: args{
+				kesImage: "minio/kes:2023-11-09T17-35-47Z",
+			},
+			wantversion: KesConfigVersion3,
+			wantErr:     false,
+		},
+		{
+			name: "error unexpected KES config version",
+			args: args{
+				kesImage: "minio/kes:2023-11-09T17-35-47Z-arm64",
+			},
+			wantversion: KesConfigVersion3,
+			wantErr:     false,
+		},
+
+		{
+			name: "error unexpected KES config version",
+			args: args{
 				kesImage: "minio/kes:edge",
 			},
 			wantversion: KesConfigVersion2,
@@ -449,20 +474,20 @@ func Test_GetConfigVersion(t *testing.T) {
 			args: args{
 				kesImage: "minio/kes:latest",
 			},
-			wantversion: KesConfigVersion2,
+			wantversion: KesConfigVersion3,
 			wantErr:     false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getKesConfigVersion(tt.args.kesImage)
+			got, err := GetKesConfigVersion(tt.args.kesImage)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getKesConfigVersion() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetKesConfigVersion() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.wantversion) {
-				t.Errorf("getKesConfigVersion() got = %v, want %v", got, tt.wantversion)
+				t.Errorf("GetKesConfigVersion() got = %v, want %v", got, tt.wantversion)
 			}
 		})
 	}

@@ -17,6 +17,7 @@ package statefulsets
 import (
 	"sort"
 
+	operatorApi "github.com/minio/operator/api"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -94,7 +95,15 @@ func KESEnvironmentVars(t *miniov2.Tenant) []corev1.EnvVar {
 // KESServerContainer returns the KES container for a KES StatefulSet.
 func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 	// Args to start KES with config mounted at miniov2.KESConfigMountPath and require but don't verify mTLS authentication
-	args := []string{"server", "--config=" + miniov2.KESConfigMountPath + "/server-config.yaml", "--auth=off"}
+	args := []string{"server", "--config=" + miniov2.KESConfigMountPath + "/server-config.yaml"}
+
+	kesVersion, _ := operatorApi.GetKesConfigVersion(t.Spec.KES.Image)
+	// Add `--auth` flag only on config versions that are still compatible with it (v1 and v2).
+	// Starting KES 2023-11-09T17-35-47Z (v3) is no longer supported.
+	switch kesVersion {
+	case operatorApi.KesConfigVersion1, operatorApi.KesConfigVersion2:
+		args = append(args, "--auth=off")
+	}
 
 	return corev1.Container{
 		Name:  miniov2.KESContainerName,
