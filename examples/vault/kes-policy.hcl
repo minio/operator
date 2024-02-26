@@ -1,3 +1,3 @@
-path "kv/minio-tenant-1/*" {
+path "kv/my-minio/*" {
      capabilities = [ "create", "read", "delete", "list" ]
 }
