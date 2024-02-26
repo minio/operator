@@ -780,7 +780,6 @@ func key2NamespaceName(key string) (namespace, name string) {
 // converge the two. It then updates the Status block of the Tenant resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(key string) (Result, error) {
-	klog.Info("MinIO Tenant Main loop!!!!")
 	ctx := context.Background()
 	cOpts := metav1.CreateOptions{}
 	uOpts := metav1.UpdateOptions{}
