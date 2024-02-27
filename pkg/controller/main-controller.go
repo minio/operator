@@ -266,15 +266,6 @@ func NewController(
 			}
 		}
 	}
-	if len(oprImg) > 0 {
-		imageInfo := strings.Split(oprImg, ":")
-		if len(imageInfo) == 2 {
-			_, err = kubeClientSet.AppsV1().Deployments(ns).Patch(ctx, getOperatorDeploymentName(), types.MergePatchType, []byte(`{"metadata":{"annotations":{"min.io/operator":"`+imageInfo[1]+`"}}}`), metav1.PatchOptions{})
-			if err != nil {
-				klog.Errorf("Patch operator deployments annotations['min.io/operator':'%s'] err: %s", imageInfo[1], err)
-			}
-		}
-	}
 
 	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
 
