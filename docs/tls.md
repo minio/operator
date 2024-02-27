@@ -51,7 +51,7 @@ Once created, set the name of the Secret (in this example `tls-ssl-minio`) under
 [Certificate Manager](https://cert-manager.io) is a Kubernetes Operator capable of automatically issuing certificates from multiple Issuers. Integration with MinIO is simple. First, create a new certificate issuer; for this demonstration the issuer certificate will be self-signed:
 
 ```yaml
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: selfsigning-issuer
@@ -63,7 +63,7 @@ Now it's possible to issue the MinIO certificate using the above issuer:
 
 ```yaml
 ---
-apiVersion: cert-manager.io/v1alpha2
+apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: tls-minio
