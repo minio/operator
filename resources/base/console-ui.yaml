@@ -273,6 +273,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: minio-operator
     app.kubernetes.io/name: operator
+    min.io/operator: v5.0.12
 spec:
   replicas: 1
   selector:
@@ -327,5 +328,5 @@ spec:
                   name: console-tls
                   optional: true
         - name: tmp
-          emptyDir: {}
+          emptyDir: { }
       serviceAccountName: console-sa
