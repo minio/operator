@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio@sha256:68622c3e49dd98fbbcb8200729297207759d52e3b02d2ed908c1a7ff3b83f3f7",
+            "image": "quay.io/minio/minio:RELEASE.2024-02-17T01-15-57Z",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -91,8 +91,8 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.12
-  name: minio-operator-rhmp.v5.0.12
+    containerImage: quay.io/minio/operator:v5.0.13
+  name: minio-operator-rhmp.v5.0.13
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -577,7 +577,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.12
+                    image: quay.io/minio/operator:v5.0.13
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -656,7 +656,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "on"
-                    image: quay.io/minio/operator:v5.0.12
+                    image: quay.io/minio/operator:v5.0.13
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -773,12 +773,5 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  relatedImages:
-    - image: minio/operator@sha256:bf19ad5a3ba1bd2951e582cd13891073c5314d0d1d5c27fdca3a5ec85bbc7920
-      name: console
-    - image: minio/operator@sha256:bf19ad5a3ba1bd2951e582cd13891073c5314d0d1d5c27fdca3a5ec85bbc7920
-      name: minio-operator
-    - image: quay.io/minio/minio@sha256:68622c3e49dd98fbbcb8200729297207759d52e3b02d2ed908c1a7ff3b83f3f7
-      name: minio-68622c3e49dd98fbbcb8200729297207759d52e3b02d2ed908c1a7ff3b83f3f7-annotation
-  version: 5.0.12
-  replaces: minio-operator-rhmp.v5.0.11
+  version: 5.0.13
+  replaces: minio-operator-rhmp.v5.0.12

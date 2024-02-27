@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio@sha256:68622c3e49dd98fbbcb8200729297207759d52e3b02d2ed908c1a7ff3b83f3f7",
+            "image": "quay.io/minio/minio:RELEASE.2024-02-17T01-15-57Z",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -771,12 +771,5 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  relatedImages:
-    - image: minio/operator@sha256:bf19ad5a3ba1bd2951e582cd13891073c5314d0d1d5c27fdca3a5ec85bbc7920
-      name: minio-operator
-    - image: quay.io/minio/minio@sha256:68622c3e49dd98fbbcb8200729297207759d52e3b02d2ed908c1a7ff3b83f3f7
-      name: minio-68622c3e49dd98fbbcb8200729297207759d52e3b02d2ed908c1a7ff3b83f3f7-annotation
-    - image: minio/operator@sha256:bf19ad5a3ba1bd2951e582cd13891073c5314d0d1d5c27fdca3a5ec85bbc7920
-      name: console
   version: 5.0.13
-  replaces: minio-operator.v5.0.9
+  replaces: minio-operator.v5.0.12
