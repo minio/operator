@@ -34,11 +34,15 @@ import (
 
 	"k8s.io/klog/v2"
 
+	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
+	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,6 +74,9 @@ func init() {
 
 // StartOperator starts the MinIO Operator controller
 func StartOperator(kubeconfig string) {
+	_ = v2.AddToScheme(scheme.Scheme)
+	_ = v1alpha1.AddToScheme(scheme.Scheme)
+	_ = stsv1alpha1.AddToScheme(scheme.Scheme)
 	klog.Info("Starting MinIO Operator")
 	// set up signals, so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
