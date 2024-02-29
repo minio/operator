@@ -67,11 +67,17 @@ spec:
       {{- with (dig "resources" (dict) .) }}
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if hasKey . "securityContext" }}
+      securityContext: {{- if eq (len .securityContext) 0 }} {} {{- end }}
       {{- with (dig "securityContext" (dict) .) }}
-      securityContext: {{- toYaml . | nindent 8 }}
+      {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- end }}
+      {{- if hasKey . "containerSecurityContext" }}
+      containerSecurityContext: {{- if eq (len .containerSecurityContext) 0 }} {} {{- end }}
       {{- with (dig "containerSecurityContext" (dict) .) }}
-      containerSecurityContext: {{- toYaml . | nindent 8 }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- end }}
       {{- with (dig "topologySpreadConstraints" (list) .) }}
       topologySpreadConstraints: {{- toYaml . | nindent 8 }}
@@ -175,10 +181,11 @@ spec:
     labels: {{- toYaml . | nindent 4 }}
     {{- end }}
     serviceAccountName: {{ .kes.serviceAccountName | quote }}
-    securityContext:
-      runAsUser: {{ .kes.securityContext.runAsUser | int }}
-      runAsGroup: {{ .kes.securityContext.runAsGroup | int }}
-      runAsNonRoot: {{ .kes.securityContext.runAsNonRoot }}
-      fsGroup: {{ .kes.securityContext.fsGroup | int }}
+    {{- if hasKey .kes "securityContext" }}
+    securityContext: {{- if eq (len .kes.securityContext) 0 }} {} {{- end }}
+    {{- with (dig "kes" "securityContext" (dict) .) }}
+    {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- end }}
   {{- end }}
 {{- end }}
