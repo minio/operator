@@ -51,23 +51,25 @@ const (
 )
 
 var (
-	csrVersion               CSRVersion
-	certificateVersionOnce   sync.Once
-	defaultCsrSignerName     string
-	defaultCsrSignerNameOnce sync.Once
-	csrSignerName            string
-	csrSignerNameOnce        sync.Once
+	csrVersion                  CSRVersion
+	certificateVersionOnce      sync.Once
+	defaultCsrSignerName        string
+	defaultCsrSignerNameFromEnv bool
+	defaultCsrSignerNameOnce    sync.Once
+	csrSignerName               string
+	csrSignerNameOnce           sync.Once
 )
 
-func getDefaultCsrSignerName() string {
+func getDefaultCsrSignerName() (string, bool) {
 	defaultCsrSignerNameOnce.Do(func() {
 		if os.Getenv(CSRSignerName) != "" {
 			defaultCsrSignerName = os.Getenv(CSRSignerName)
+			defaultCsrSignerNameFromEnv = true
 			return
 		}
 		defaultCsrSignerName = certificatesV1.KubeletServingSignerName
 	})
-	return defaultCsrSignerName
+	return defaultCsrSignerName, defaultCsrSignerNameFromEnv
 }
 
 // GetCertificatesAPIVersion returns which certificates api version operator will use to generate certificates
@@ -109,7 +111,11 @@ func GetCertificatesAPIVersion(clientSet kubernetes.Interface) CSRVersion {
 func GetCSRSignerName(clientSet kubernetes.Interface) string {
 	csrSignerNameOnce.Do(func() {
 		// At the moment we will use kubernetes.io/kubelet-serving as the default
-		csrSignerName = getDefaultCsrSignerName()
+		var csrSignerNameFromEnv bool
+		csrSignerName, csrSignerNameFromEnv = getDefaultCsrSignerName()
+		if csrSignerNameFromEnv {
+			return
+		}
 		// only for csr api v1 we will try to detect if we are running inside an EKS cluster and switch to AWS's way to
 		// get certificates using their CSRSignerName https://docs.aws.amazon.com/eks/latest/userguide/cert-signing.html
 		if GetCertificatesAPIVersion(clientSet) == CSRV1 {
