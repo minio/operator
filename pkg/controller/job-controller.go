@@ -216,7 +216,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	}
 	err := c.k8sClient.Get(context.Background(), client.ObjectKeyFromObject(&jobCR), &jobCR)
 	if err != nil {
-		return WrapResult(Result{RequeueAfter: time.Second * 5}, err)
+		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
 	// Loop through the different supported operations.
 	for _, val := range jobCR.Spec.Commands {
