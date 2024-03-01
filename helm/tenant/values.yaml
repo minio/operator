@@ -348,7 +348,6 @@ tenant:
   #  replicas: 2
   #  configuration: |-
   #    address: :7373
-  #    root: _ # Effectively disabled since no root identity necessary.
   #    tls:
   #      key: /tmp/kes/server.key   # Path to the TLS private key
   #      cert: /tmp/kes/server.crt # Path to the TLS certificate
@@ -356,14 +355,8 @@ tenant:
   #        identities: []
   #        header:
   #          cert: X-Tls-Client-Cert
-  #    policy:
-  #      my-policy:
-  #        paths:
-  #        - /v1/key/create/*
-  #        - /v1/key/generate/*
-  #        - /v1/key/decrypt/*
-  #        identities:
-  #        - ${MINIO_KES_IDENTITY}
+  #    admin:
+  #      identity: ${MINIO_KES_IDENTITY}
   #    cache:
   #      expiry:
   #        any: 5m0s
@@ -371,7 +364,7 @@ tenant:
   #    log:
   #      error: on
   #      audit: off
-  #    keys:
+  #    keystore:
   #      # KES configured with fs (File System mode) doesn't work in Kubernetes environments and is not recommended
   #      # use a real KMS
   #      # fs:
