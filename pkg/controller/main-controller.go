@@ -310,6 +310,7 @@ func NewController(
 				recorder,
 				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
 				minioClientSet,
+				k8sClient,
 			),
 		},
 	}

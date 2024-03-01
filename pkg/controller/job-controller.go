@@ -11,6 +11,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/set"
 	"k8s.io/apimachinery/pkg/api/meta"
 
+	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	joblisters "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
@@ -22,6 +23,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // JobController struct watches the Kubernetes API for changes to Tenant resources
@@ -34,6 +36,7 @@ type JobController struct {
 	recorder          record.EventRecorder
 	workqueue         workqueue.RateLimitingInterface
 	minioClientSet    clientset.Interface
+	k8sClient         client.Client
 }
 
 // runWorker is a long-running function that will continually call the
@@ -144,6 +147,7 @@ func NewJobController(
 	recorder record.EventRecorder,
 	workqueue workqueue.RateLimitingInterface,
 	minioClientSet clientset.Interface,
+	k8sClient client.Client,
 ) *JobController {
 	controller := &JobController{
 		namespacesToWatch: namespacesToWatch,
@@ -154,6 +158,7 @@ func NewJobController(
 		recorder:          recorder,
 		workqueue:         workqueue,
 		minioClientSet:    minioClientSet,
+		k8sClient:         k8sClient,
 	}
 
 	// Set up an event handler for when resources change
@@ -203,7 +208,13 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, nil)
 	}
 	namespace, tenantName := key2NamespaceName(key)
-	jobCR, err := c.minioClientSet.JobV1alpha1().MinIOJobs(namespace).Get(context.Background(), tenantName, metav1.GetOptions{})
+	jobCR := v1alpha1.MinIOJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      tenantName,
+			Namespace: namespace,
+		},
+	}
+	err := c.k8sClient.Get(context.Background(), client.ObjectKeyFromObject(&jobCR), &jobCR)
 	if err != nil {
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
