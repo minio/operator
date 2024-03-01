@@ -452,13 +452,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 		panic("failed to wait for caches to sync")
 	}
 
-	klog.Info("Starting workers")
-	// Launch two workers to process Tenant resources
-	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
-	}
-
-	klog.Info("Starting Job workers")
+	klog.Info("Starting workers and Job workers")
 	JobController := c.controllers[0]
 	// fmt.Println(controller.SyncHandler())
 	// Launch two workers to process Job resources
