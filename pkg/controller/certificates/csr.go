@@ -16,7 +16,6 @@ package certificates
 
 import (
 	"context"
-	certificatesV1 "k8s.io/api/certificates/v1"
 	"os"
 	"strings"
 	"sync"
@@ -24,6 +23,7 @@ import (
 	"github.com/minio/operator/pkg/common"
 	"github.com/minio/operator/pkg/utils"
 
+	certificatesV1 "k8s.io/api/certificates/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
