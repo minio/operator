@@ -415,6 +415,11 @@ tenant:
   #    runAsGroup: 1000
   #    runAsNonRoot: true
   #    fsGroup: 1000
+  #  containerSecurityContext:
+  #    runAsUser: 1000
+  #    runAsGroup: 1000
+  #    runAsNonRoot: true
+  #    allowPrivilegeEscalation: false
 ###
 # Configures `Ingress <https://kubernetes.io/docs/concepts/services-networking/ingress/>`__ for the Tenant S3 API and Console.
 #
