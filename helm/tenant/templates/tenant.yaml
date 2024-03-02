@@ -188,10 +188,10 @@ spec:
     {{- end }}
     {{- end }}
     {{- if hasKey .kes "containerSecurityContext" }}
-      securityContext: {{- if eq (len .kes.containerSecurityContext) 0 }} { } {{- end }}
-        {{- with (dig "kes" "containerSecurityContext" (dict) .) }}
-        {{- toYaml . | nindent 6 }}
-        {{- end }}
-        {{- end }}
+    containerSecurityContext: {{- if eq (len .kes.containerSecurityContext) 0 }} { } {{- end }}
+      {{- with (dig "kes" "containerSecurityContext" (dict) .) }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- end }}
   {{- end }}
 {{- end }}
