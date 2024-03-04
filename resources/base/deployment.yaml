@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: minio-operator
     app.kubernetes.io/name: operator
-    min.io/operator: v5.0.12
+    min.io/operator: v5.0.13
 spec:
   replicas: 2
   selector:
@@ -24,7 +24,7 @@ spec:
       serviceAccountName: minio-operator
       containers:
         - name: minio-operator
-          image: minio/operator:v5.0.12
+          image: minio/operator:v5.0.13
           imagePullPolicy: IfNotPresent
           args:
             - controller
