@@ -94,8 +94,9 @@ generate-code:
 generate-openshift-manifests:
 	@./olm.sh
 
-release: assets generate-openshift-manifests
+release: assets
 	@./release.sh
+	@./olm.sh
 
 apply-gofmt:
 	@echo "Applying gofmt to all generated an existing files"
