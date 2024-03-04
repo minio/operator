@@ -156,7 +156,7 @@ func kesContainerSecurityContext(t *miniov2.Tenant) *corev1.SecurityContext {
 	poolSCSet := false
 
 	// Values from pool.SecurityContext ONLY if provided
-	if t.Spec.KES.SecurityContext != nil {
+	if t.Spec.KES != nil && t.Spec.KES.SecurityContext != nil {
 		if t.Spec.KES.SecurityContext.RunAsNonRoot != nil {
 			runAsNonRoot = *t.Spec.KES.SecurityContext.RunAsNonRoot
 			poolSCSet = true
