@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio:RELEASE.2024-02-17T01-15-57Z",
+            "image": "quay.io/minio/minio:RELEASE.2024-03-03T17-50-39Z",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -553,6 +553,7 @@ spec:
         - label:
             app.kubernetes.io/instance: minio-operator
             app.kubernetes.io/name: operator
+            min.io/operator: v5.0.13
           name: console
           spec:
             replicas: 1
@@ -615,6 +616,7 @@ spec:
         - label:
             app.kubernetes.io/instance: minio-operator
             app.kubernetes.io/name: operator
+            min.io/operator: v5.0.13
           name: minio-operator
           spec:
             replicas: 1

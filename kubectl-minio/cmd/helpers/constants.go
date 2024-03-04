@@ -39,10 +39,10 @@ const (
 	DefaultOperatorImage = "minio/operator:v5.0.13"
 
 	// DefaultTenantImage is the default MinIO image used while creating tenant
-	DefaultTenantImage = "minio/minio:RELEASE.2024-02-26T09-33-48Z"
+	DefaultTenantImage = "minio/minio:RELEASE.2024-03-03T17-50-39Z"
 
 	// DefaultKESImage is the default KES image used while creating tenant
-	DefaultKESImage = "minio/kes:2024-01-11T13-09-29Z"
+	DefaultKESImage = "minio/kes:2024-02-29T08-12-28Z"
 )
 
 // KESReplicas is the number of replicas for MinIO KES
