@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio:RELEASE.2024-03-05T04-48-44Z",
+            "image": "quay.io/minio/minio@sha256:ab5551aa2f7d8a950f83bf64c2bb53b7eae9e0b7ea906a5288d3bbf37fc3d320",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -84,12 +84,22 @@ metadata:
       MinIO is a Kubernetes-native high performance object store with an
       S3-compatible API. The MinIO Operator supports deploying MinIO Tenants
       onto any Kubernetes.
+    features.operators.openshift.io/cnf: "false"
+    features.operators.openshift.io/cni: "false"
+    features.operators.openshift.io/csi: "false"
+    features.operators.openshift.io/disconnected: "true"
+    features.operators.openshift.io/fips-compliant: "true"
+    features.operators.openshift.io/proxy-aware: "true"
+    features.operators.openshift.io/tls-profiles: "false"
+    features.operators.openshift.io/token-auth-aws: "false"
+    features.operators.openshift.io/token-auth-azure: "false"
+    features.operators.openshift.io/token-auth-gcp: "false"
     k8sMinVersion: "1.18"
     operatorframework.io/suggested-namespace: minio-operator
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.13
+    containerImage: quay.io/minio/operator@sha256:0a5688b6ac83800d61c32b3f8a19913278d9322ed8974f4e6b444074ecf3d3ee
   name: minio-operator.v5.0.13
   namespace: minio-operator
 spec:
@@ -576,7 +586,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.13
+                    image: quay.io/minio/operator@sha256:0a5688b6ac83800d61c32b3f8a19913278d9322ed8974f4e6b444074ecf3d3ee
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -585,7 +595,6 @@ spec:
                       - containerPort: 9443
                         name: https
                     resources: {}
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/certs
                         name: tls-certificates
@@ -656,7 +665,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "on"
-                    image: quay.io/minio/operator:v5.0.13
+                    image: quay.io/minio/operator@sha256:0a5688b6ac83800d61c32b3f8a19913278d9322ed8974f4e6b444074ecf3d3ee
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -664,7 +673,6 @@ spec:
                         cpu: 200m
                         ephemeral-storage: 500Mi
                         memory: 256Mi
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/service-ca
                         name: openshift-service-ca
@@ -773,4 +781,11 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
+  relatedImages:
+    - image: quay.io/minio/operator@sha256:0a5688b6ac83800d61c32b3f8a19913278d9322ed8974f4e6b444074ecf3d3ee
+      name: minio-operator
+    - image: quay.io/minio/minio@sha256:ab5551aa2f7d8a950f83bf64c2bb53b7eae9e0b7ea906a5288d3bbf37fc3d320
+      name: minio-ab5551aa2f7d8a950f83bf64c2bb53b7eae9e0b7ea906a5288d3bbf37fc3d320-annotation
+    - image: quay.io/minio/operator@sha256:0a5688b6ac83800d61c32b3f8a19913278d9322ed8974f4e6b444074ecf3d3ee
+      name: console
   version: 5.0.13
