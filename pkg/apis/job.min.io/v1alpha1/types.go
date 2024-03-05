@@ -123,10 +123,12 @@ type TenantRef struct {
 
 // MinIOJobStatus Status of MinioJob resource
 type MinIOJobStatus struct {
-	// *Required* +
+	// +optional
 	Phase string `json:"phase"`
-	// *Required* +
+	// +optional
 	CommandsStatus []CommandStatus `json:"commands"`
+	// +optional
+	Message string `json:"message"`
 }
 
 // CommandStatus Status of MinioJob command execution

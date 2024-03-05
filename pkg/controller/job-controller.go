@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/minio/minio-go/v7/pkg/set"
-	"k8s.io/apimachinery/pkg/api/meta"
-
 	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	joblisters "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -207,17 +208,40 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))
 		return WrapResult(Result{}, nil)
 	}
-	namespace, tenantName := key2NamespaceName(key)
+	namespace, jobName := key2NamespaceName(key)
+	ctx := context.Background()
 	jobCR := v1alpha1.MinIOJob{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      tenantName,
+			Name:      jobName,
 			Namespace: namespace,
 		},
 	}
-	err := c.k8sClient.Get(context.Background(), client.ObjectKeyFromObject(&jobCR), &jobCR)
+	err := c.k8sClient.Get(ctx, client.ObjectKeyFromObject(&jobCR), &jobCR)
 	if err != nil {
+		// job cr have gone
+		if errors.IsNotFound(err) {
+			return WrapResult(Result{}, nil)
+		}
+		return WrapResult(Result{}, err)
+	}
+	// get tenant
+	tenant := &miniov2.Tenant{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: jobCR.Spec.TenantRef.Namespace,
+			Name:      jobCR.Spec.TenantRef.Name,
+		},
+	}
+	err = c.k8sClient.Get(ctx, client.ObjectKeyFromObject(tenant), tenant)
+	if err != nil {
+		jobCR.Status.Phase = "Error"
+		jobCR.Status.Message = fmt.Sprintf("Get tenant %s/%s error:%v", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err)
+		err = c.updateJobStatus(ctx, &jobCR)
+		return WrapResult(Result{}, err)
+	}
+	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
+	fmt.Println("will do somthing next")
 	// Loop through the different supported operations.
 	for _, val := range jobCR.Spec.Commands {
 		operation := val.Operation
@@ -226,4 +250,8 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		}
 	}
 	return WrapResult(Result{}, err)
+}
+
+func (c *JobController) updateJobStatus(ctx context.Context, job *v1alpha1.MinIOJob) error {
+	return c.k8sClient.Status().Update(ctx, job)
 }
