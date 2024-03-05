@@ -1657,7 +1657,7 @@ const TenantEncryption = () => {
                   }
                   label="Image"
                   tooltip="KES container image"
-                  placeholder="minio/kes:2024-02-29T08-12-28Z"
+                  placeholder="minio/kes:2024-03-01T18-06-46Z"
                   value={image}
                 />
                 <InputBox

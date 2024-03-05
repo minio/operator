@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio:RELEASE.2024-03-03T17-50-39Z",
+            "image": "quay.io/minio/minio:RELEASE.2024-03-05T04-48-44Z",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
