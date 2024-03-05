@@ -187,5 +187,11 @@ spec:
     {{- toYaml . | nindent 6 }}
     {{- end }}
     {{- end }}
+    {{- if hasKey .kes "containerSecurityContext" }}
+    containerSecurityContext: {{- if eq (len .kes.containerSecurityContext) 0 }} { } {{- end }}
+      {{- with (dig "kes" "containerSecurityContext" (dict) .) }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- end }}
   {{- end }}
 {{- end }}

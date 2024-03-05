@@ -856,6 +856,8 @@ type KESConfig struct {
 	// * `seLinuxOptions` +
 	// +optional
 	SecurityContext *corev1.PodSecurityContext `json:"securityContext,omitempty"`
+	// Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of MinIO KES pods.
+	ContainerSecurityContext *corev1.SecurityContext `json:"containerSecurityContext,omitempty"`
 	// *Optional* +
 	//
 	// If provided, the MinIO Operator adds the specified environment variables when deploying the KES resource.

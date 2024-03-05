@@ -118,6 +118,7 @@ func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 		Args:            args,
 		Env:             KESEnvironmentVars(t),
 		Resources:       t.Spec.KES.Resources,
+		SecurityContext: kesContainerSecurityContext(t),
 	}
 }
 
@@ -140,6 +141,49 @@ func kesSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 		securityContext = *t.Spec.KES.SecurityContext
 	}
 	return &securityContext
+}
+
+// Builds the security context for kes containers
+func kesContainerSecurityContext(t *miniov2.Tenant) *corev1.SecurityContext {
+	// Default values:
+	// By default, values should be totally empty if not provided
+	// This is specially needed in OpenShift where Security Context Constraints restrict them
+	// if let empty then OCP can pick the values from the constraints defined.
+	containerSecurityContext := corev1.SecurityContext{}
+	runAsNonRoot := true
+	var runAsUser int64 = 1000
+	var runAsGroup int64 = 1000
+	poolSCSet := false
+
+	// Values from pool.SecurityContext ONLY if provided
+	if t.Spec.KES != nil && t.Spec.KES.SecurityContext != nil {
+		if t.Spec.KES.SecurityContext.RunAsNonRoot != nil {
+			runAsNonRoot = *t.Spec.KES.SecurityContext.RunAsNonRoot
+			poolSCSet = true
+		}
+		if t.Spec.KES.SecurityContext.RunAsUser != nil {
+			runAsUser = *t.Spec.KES.SecurityContext.RunAsUser
+			poolSCSet = true
+		}
+		if t.Spec.KES.SecurityContext.RunAsGroup != nil {
+			runAsGroup = *t.Spec.KES.SecurityContext.RunAsGroup
+			poolSCSet = true
+		}
+		if poolSCSet {
+			// Only set values if one of above is set otherwise let it empty
+			containerSecurityContext = corev1.SecurityContext{
+				RunAsNonRoot: &runAsNonRoot,
+				RunAsUser:    &runAsUser,
+				RunAsGroup:   &runAsGroup,
+			}
+		}
+	}
+
+	// Values from kes.ContainerSecurityContext if provided
+	if t.Spec.KES != nil && t.Spec.KES.ContainerSecurityContext != nil {
+		containerSecurityContext = *t.Spec.KES.ContainerSecurityContext
+	}
+	return &containerSecurityContext
 }
 
 // NewForKES creates a new KES StatefulSet for the given Cluster.
