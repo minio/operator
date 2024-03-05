@@ -241,6 +241,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
+	fmt.Println("will do somthing next")
 	// Loop through the different supported operations.
 	for _, val := range jobCR.Spec.Commands {
 		operation := val.Operation
