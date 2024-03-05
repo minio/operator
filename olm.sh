@@ -63,6 +63,7 @@ for catalog in "${redhatCatalogs[@]}"; do
     --output-dir bundles/$catalog/$RELEASE \
     --channels stable \
     --overwrite \
+    --use-image-digests \
     --kustomize-dir config/manifests
 
   # Set the version, later in olm-post-script.sh we change for Digest form.
