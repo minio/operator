@@ -164,10 +164,15 @@ func NewJobController(
 
 	// Set up an event handler for when resources change
 	jobinformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			controller.enqueueJob(obj)
-		},
+		AddFunc: controller.enqueueJob,
 		UpdateFunc: func(old, new interface{}) {
+			oldJob := old.(*v1alpha1.MinIOJob)
+			newJob := new.(*v1alpha1.MinIOJob)
+			if oldJob.ResourceVersion == newJob.ResourceVersion {
+				// Periodic resync will send update events for all known Tenants.
+				// Two different versions of the same Tenant will always have different RVs.
+				return
+			}
 			controller.enqueueJob(new)
 		},
 	})
