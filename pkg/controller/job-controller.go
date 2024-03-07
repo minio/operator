@@ -6,6 +6,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	v1alpha12 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	"time"
 
 	"github.com/minio/minio-go/v7/pkg/set"
@@ -246,7 +247,24 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
-	fmt.Println("will do somthing next")
+	// check sa
+	pbs := &v1alpha12.PolicyBindingList{}
+	err = c.k8sClient.List(ctx, pbs, client.InNamespace(namespace))
+	if err != nil {
+		return WrapResult(Result{}, err)
+	}
+	if len(pbs.Items) == 0 {
+		return WrapResult(Result{}, fmt.Errorf("no policybinding found"))
+	}
+	haveSa := false
+	for _, pb := range pbs.Items {
+		if pb.Spec.Application.Namespace == namespace && pb.Spec.Application.ServiceAccount == jobCR.Spec.ServiceAccountName {
+			haveSa = true
+		}
+	}
+	if !haveSa {
+		return WrapResult(Result{}, fmt.Errorf("no serviceaccount found"))
+	}
 	// Loop through the different supported operations.
 	for _, val := range jobCR.Spec.Commands {
 		operation := val.Operation
