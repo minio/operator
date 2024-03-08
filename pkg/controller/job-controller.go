@@ -11,7 +11,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	v1alpha12 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	joblisters "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
@@ -248,7 +248,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
 	// check sa
-	pbs := &v1alpha12.PolicyBindingList{}
+	pbs := &stsv1alpha1.PolicyBindingList{}
 	err = c.k8sClient.List(ctx, pbs, client.InNamespace(namespace))
 	if err != nil {
 		return WrapResult(Result{}, err)
@@ -256,13 +256,13 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	if len(pbs.Items) == 0 {
 		return WrapResult(Result{}, fmt.Errorf("no policybinding found"))
 	}
-	haveSa := false
+	saFound := false
 	for _, pb := range pbs.Items {
 		if pb.Spec.Application.Namespace == namespace && pb.Spec.Application.ServiceAccount == jobCR.Spec.ServiceAccountName {
-			haveSa = true
+			saFound = true
 		}
 	}
-	if !haveSa {
+	if !saFound {
 		return WrapResult(Result{}, fmt.Errorf("no serviceaccount found"))
 	}
 	// Loop through the different supported operations.
