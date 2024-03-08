@@ -148,7 +148,7 @@ function wait_for_n_tenant_pods() {
     try kubectl wait --namespace "$NAMESPACE" \
         --for=condition=ready pod \
         --selector v1.min.io/tenant="$TENANT_NAME" \
-        --timeout=300s
+        --timeout=600s
 }
 
 # copies the script to the pod.

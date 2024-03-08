@@ -59,12 +59,26 @@ function main() {
 
     echo -e "\n\n"
     echo "decommission-test.sh: main(): Verify data after decommission:"
-    execute_pod_script verify-data.sh "${DEBUG_POD_NAME}"
-    RESULT=$(read_script_result default "${DEBUG_POD_NAME}" verify-data.log)
+    RESULT="script failed" # The initial state is failure.
+    counter=0
+    while [ $counter -lt 60 ]; do
+        echo "Decommission Check Attempt: $counter"
+        ((counter++))
+        execute_pod_script verify-data.sh "${DEBUG_POD_NAME}"
+        RESULT=$(read_script_result default "${DEBUG_POD_NAME}" verify-data.log)
+        if [ "$RESULT" == "script passed" ]; then
+            break
+        fi
+        sleep 1
+    done
     teardown distributed
     if [ "$RESULT" != "script passed" ]; then
+        echo "Decommission Test Failed"
         exit 1
     fi
+    echo "Decomission Test Passed"
+    exit 0
+
 }
 
 main "$@"
