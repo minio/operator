@@ -15,15 +15,11 @@ spec:
   {{- with .Values.console.ingress.ingressClassName }}
   ingressClassName: {{ . }}
   {{- end }}
-  {{- if .Values.console.ingress.tls }}
+  {{- if .Values.console.ingress.tls.enabled }}
   tls:
-    {{- range .Values.console.ingress.tls }}
     - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
-    {{- end }}
+      - {{ .Values.console.ingress.host }}
+      secretName: {{ .Values.console.ingress.tls.secretName }}
   {{- end }}
   rules:
     - host: {{ .Values.console.ingress.host }}

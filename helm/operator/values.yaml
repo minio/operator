@@ -285,7 +285,9 @@ console:
     ingressClassName: ""
     labels: { }
     annotations: { }
-    tls: [ ]
+    tls:
+      enabled: false
+      secretName: ""
     host: console.local
     path: /
     pathType: Prefix

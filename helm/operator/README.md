@@ -32,6 +32,56 @@ helm install \
 
 The command deploys MinIO Operator on the Kubernetes cluster in the default configuration.
 
+Deploy Operator with Ingress controller enabled
+-----------------------------------------------
+
+**Expose HTTP route to operator `console` service**
+
+Install this chart using:
+
+```bash
+helm install \
+  --namespace minio-operator \
+  --create-namespace \
+  --set console.ingress.enabled="true" \
+  --set console.ingress.host="hostname" \
+  --set console.ingress.ingressClassName="class-name" \
+  minio-operator minio/operator
+```
+
+Replace `hostname` by the domain of your external load balancer to interface it with the ingress controller.
+
+Replace `class-name` by the ingress class name of the ingress controller intended to perform the routing (for example `nginx`).
+
+**Expose HTTPS route to operator `console` service**
+
+Install this chart using:
+
+```bash
+helm install \
+  --namespace minio-operator \
+  --create-namespace \
+  --set console.ingress.enabled="true" \
+  --set console.ingress.host="hostname" \
+  --set console.ingress.tls.enabled="true" \
+  --set console.ingress.tls.secretName="certificate-tls-secret-name" \
+  --set console.ingress.ingressClassName="class-name" \
+  minio-operator minio/operator
+```
+
+Replace `hostname` by the domain of your external load balancer to interface it with the ingress controller. The `hostname` must match either the Common Name (CN) in your CA certificate or any of the Subject Alternative Names (SANs) for the certificate to be considered valid.
+
+Replace `class-name` by the ingress class name of the ingress controller intended to perform the routing (for example `nginx`).
+
+To mount the CA certificate as a secret use:
+
+```bash
+kubectl create secret tls certificate-tls-secret-name \
+  --cert=/path/to/certificate.crt \
+  --key=/path/to/certificatePrivate.key \
+  --namespace minio-operator
+```
+
 Creating a Tenant
 -----------------
 
