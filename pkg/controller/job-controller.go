@@ -12,15 +12,16 @@ import (
 	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
-	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	joblisters "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
+	batchjobv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/runtime"
+	batchv1 "k8s.io/client-go/informers/batch/v1"
 	"k8s.io/client-go/kubernetes"
-	appslisters "k8s.io/client-go/listers/apps/v1"
+	k8sjoblisters "k8s.io/client-go/listers/batch/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
@@ -31,13 +32,12 @@ import (
 // JobController struct watches the Kubernetes API for changes to Tenant resources
 type JobController struct {
 	namespacesToWatch set.StringSet
-	lister            joblisters.MinIOJobLister
-	hasSynced         cache.InformerSynced
-	kubeClientSet     kubernetes.Interface
-	statefulSetLister appslisters.StatefulSetLister
+	minioJobLister    joblisters.MinIOJobLister
+	minioJobHasSynced cache.InformerSynced
+	jobLister         k8sjoblisters.JobLister
+	jobHasSynced      cache.InformerSynced
 	recorder          record.EventRecorder
 	workqueue         workqueue.RateLimitingInterface
-	minioClientSet    clientset.Interface
 	k8sClient         client.Client
 }
 
@@ -73,41 +73,46 @@ func (c *JobController) enqueueJob(obj interface{}) {
 
 // NewJobController returns a new Operator Controller
 func NewJobController(
-	jobinformer jobinformers.MinIOJobInformer,
+	minioJobInformer jobinformers.MinIOJobInformer,
+	jobInformer batchv1.JobInformer,
 	namespacesToWatch set.StringSet,
-	joblister joblisters.MinIOJobLister,
-	hasSynced cache.InformerSynced,
 	kubeClientSet kubernetes.Interface,
-	statefulSetLister appslisters.StatefulSetLister,
 	recorder record.EventRecorder,
 	workqueue workqueue.RateLimitingInterface,
-	minioClientSet clientset.Interface,
 	k8sClient client.Client,
 ) *JobController {
 	controller := &JobController{
 		namespacesToWatch: namespacesToWatch,
-		lister:            joblister,
-		hasSynced:         hasSynced,
-		kubeClientSet:     kubeClientSet,
-		statefulSetLister: statefulSetLister,
+		minioJobLister:    minioJobInformer.Lister(),
+		minioJobHasSynced: minioJobInformer.Informer().HasSynced,
+		jobLister:         jobInformer.Lister(),
+		jobHasSynced:      jobInformer.Informer().HasSynced,
 		recorder:          recorder,
 		workqueue:         workqueue,
-		minioClientSet:    minioClientSet,
 		k8sClient:         k8sClient,
 	}
 
 	// Set up an event handler for when resources change
-	jobinformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	minioJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueJob,
 		UpdateFunc: func(old, new interface{}) {
 			oldJob := old.(*v1alpha1.MinIOJob)
 			newJob := new.(*v1alpha1.MinIOJob)
 			if oldJob.ResourceVersion == newJob.ResourceVersion {
-				// Periodic resync will send update events for all known Tenants.
-				// Two different versions of the same Tenant will always have different RVs.
 				return
 			}
 			controller.enqueueJob(new)
+		},
+	})
+
+	jobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		UpdateFunc: func(old, new interface{}) {
+			oldJob := old.(*batchjobv1.Job)
+			newJob := new.(*batchjobv1.Job)
+			if oldJob.ResourceVersion == newJob.ResourceVersion {
+				return
+			}
+			// todo record the job status.
 		},
 	})
 	return controller
@@ -115,7 +120,7 @@ func NewJobController(
 
 // HasSynced is to determine if obj is synced
 func (c *JobController) HasSynced() cache.InformerSynced {
-	return c.hasSynced
+	return c.minioJobHasSynced
 }
 
 // HandleObject will take any resource implementing metav1.Object and attempt
@@ -125,7 +130,7 @@ func (c *JobController) HandleObject(obj metav1.Object) {
 	if ownerRef := metav1.GetControllerOf(obj); ownerRef != nil {
 		switch ownerRef.Kind {
 		case JobCRDResourceKind:
-			job, err := c.lister.MinIOJobs(obj.GetNamespace()).Get(ownerRef.Name)
+			job, err := c.minioJobLister.MinIOJobs(obj.GetNamespace()).Get(ownerRef.Name)
 			if err != nil {
 				klog.V(4).Info("Ignore orphaned object", "object", klog.KObj(job), JobCRDResourceKind, ownerRef.Name)
 				return
