@@ -56,6 +56,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
+	batchv1 "k8s.io/client-go/informers/batch/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -237,7 +238,8 @@ func NewController(
 	serviceInformer coreinformers.ServiceInformer,
 	hostsTemplate,
 	operatorVersion string,
-	jobinformer jobinformers.MinIOJobInformer,
+	minioJobinformer jobinformers.MinIOJobInformer,
+	jobInformer batchv1.JobInformer,
 ) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -301,15 +303,12 @@ func NewController(
 		operatorImage:             oprImg,
 		controllers: []*JobController{
 			NewJobController(
-				jobinformer,
+				minioJobinformer,
+				jobInformer,
 				namespacesToWatch,
-				jobinformer.Lister(),
-				jobinformer.Informer().HasSynced,
 				kubeClientSet,
-				statefulSetInformer.Lister(),
 				recorder,
-				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
-				minioClientSet,
+				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "MinioJobs"),
 				k8sClient,
 			),
 		},
@@ -450,6 +449,12 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	klog.Info("Waiting for informer caches to sync")
 	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
 		panic("failed to wait for caches to sync")
+	}
+	// Wait for the caches to be synced before starting workers
+	for _, jobController := range c.controllers {
+		if ok := cache.WaitForCacheSync(stopCh, jobController.minioJobHasSynced, jobController.jobHasSynced); !ok {
+			panic("failed to wait for caches to sync")
+		}
 	}
 
 	klog.Info("Starting workers and Job workers")
