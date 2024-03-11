@@ -361,6 +361,14 @@ type TenantSpec struct {
 	// If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
 	// +optional
 	AdditionalVolumeMounts []corev1.VolumeMount `json:"additionalVolumeMounts,omitempty"`
+	// *Optional* +
+	//
+	// If provided, will set the DNS config in the statefulset.
+	// This is applied to MinIO pods only. +
+	//
+	// Refer Kubernetes https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-config[Pod DNS config documentation] for more complete documentation.
+	// +optional
+	DNSConfig *corev1.PodDNSConfig `json:"dnsConfig,omitempty"`
 }
 
 // Logging describes Logging for MinIO tenants.

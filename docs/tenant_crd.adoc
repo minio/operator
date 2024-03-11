@@ -830,6 +830,11 @@ TenantSpec (`spec`) defines the configuration of a MinIO Tenant object. +
 |*Optional* + 
  If provided, statefulset will add these volumes. You should set the rules for the corresponding volumes and volume mounts. We will not test this rule, k8s will show the result.
 
+|*`dnsConfig`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#poddnsconfig-v1-core[$$PodDNSConfig$$]__ 
+|*Optional* + 
+ If provided, will set the DNS config in the statefulset. This is applied to MinIO pods only. + 
+ Refer Kubernetes https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-config[Pod DNS config documentation] for more complete documentation.
+
 |===
 
 
