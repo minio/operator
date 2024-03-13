@@ -20,7 +20,8 @@ secrets:
   accessKey: minio 
   secretKey: minio123
   ###
-  # The name of an existing Kubernetes secret to import to the MinIO Tenant
+  # If this variable is set, then enable the usage of an existing Kubernetes secret to set environment variables for the Tenant.
+  # The existing Kubernetes secret name must be placed under .tenant.configuration.name e.g. existing-minio-env-configuration
   # The secret must contain a key ``config.env``.
   # The values should be a series of export statements to set environment variables for the Tenant.
   # For example:
@@ -33,7 +34,7 @@ secrets:
   #         export MINIO_ROOT_PASSWORD=ROOTUSERPASSWORD
   #
   #existingSecret:
-  #  name: myminio-env-configuration
+  #  name: enabled
 ###
 # Root key for MinIO Tenant Chart
 tenant:
