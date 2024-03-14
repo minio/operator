@@ -66,6 +66,9 @@ spec:
                 - continueOnFailure
                 - stopOnFailure
                 type: string
+              mcImage:
+                default: minio/mc:latest
+                type: string
               serviceAccountName:
                 type: string
               tenant:
