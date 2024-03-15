@@ -91,6 +91,11 @@ type MinIOJobSpec struct {
 	//
 	// Commands List of MinioClient commands
 	Commands []CommandSpec `json:"commands"`
+
+	// mc job image
+	// +optional
+	// +kubebuilder:default="minio/mc:latest"
+	MCImage string `json:"mcImage,omitempty"`
 }
 
 // CommandSpec (`spec`) defines the configuration of a MinioClient Command.
