@@ -8,4 +8,5 @@ metadata:
     operator.min.io/authors: MinIO, Inc.
     operator.min.io/license: AGPLv3
     operator.min.io/support: https://subnet.min.io
+    operator.min.io/version: v5.0.14
   name: console-env

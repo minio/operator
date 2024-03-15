@@ -273,7 +273,6 @@ metadata:
   labels:
     app.kubernetes.io/instance: minio-operator
     app.kubernetes.io/name: operator
-    min.io/operator: v5.0.13
 spec:
   replicas: 1
   selector:
@@ -290,7 +289,7 @@ spec:
         - args:
             - ui
             - --certs-dir=/tmp/certs
-          image: minio/operator:v5.0.13
+          image: minio/operator:v5.0.14
           imagePullPolicy: IfNotPresent
           name: console
           securityContext:
