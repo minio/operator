@@ -1,0 +1,6 @@
+{{/* See https://github.com/minio/operator/pull/2034 */}}
+{{- if and .Values.tenant .Values.tenant.configuration }}
+{{- if .Values.tenant.configuration.name }}
+{{- fail "tenant.configuration.name is obsolete now." }}
+{{- end }}
+{{- end }}
