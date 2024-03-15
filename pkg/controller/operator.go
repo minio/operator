@@ -61,7 +61,7 @@ const (
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
 	// DefaultOperatorImage is the version fo the operator being used
-	DefaultOperatorImage = "minio/operator:v5.0.13"
+	DefaultOperatorImage = "minio/operator:v5.0.14"
 	// DefaultOperatorImageEnv is the default image to minio instance
 	DefaultOperatorImageEnv = "MINIO_OPERATOR_IMAGE"
 )

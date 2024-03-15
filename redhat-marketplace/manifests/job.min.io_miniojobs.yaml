@@ -6,6 +6,7 @@ metadata:
     operator.min.io/authors: MinIO, Inc.
     operator.min.io/license: AGPLv3
     operator.min.io/support: https://subnet.min.io
+    operator.min.io/version: v5.0.14
   creationTimestamp: null
   name: miniojobs.job.min.io
 spec:
@@ -69,6 +70,9 @@ spec:
                 - continueOnFailure
                 - stopOnFailure
                 type: string
+              mcImage:
+                default: minio/mc:latest
+                type: string
               serviceAccountName:
                 type: string
               tenant:
@@ -101,11 +105,10 @@ spec:
                   - result
                   type: object
                 type: array
+              message:
+                type: string
               phase:
                 type: string
-            required:
-            - commands
-            - phase
             type: object
         type: object
     served: true
