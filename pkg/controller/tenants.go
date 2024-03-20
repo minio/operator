@@ -153,6 +153,12 @@ func (c *Controller) getTenantCredentials(ctx context.Context, tenant *miniov2.T
 
 	for _, config := range tenant.GetEnvVars() {
 		tenantConfiguration[config.Name] = []byte(config.Value)
+		// Allow root credentials via Tenant.Spec.Env
+		if config.Name == "MINIO_ROOT_USER" || config.Name == "MINIO_ACCESS_KEY" {
+			tenantConfiguration["accesskey"] = tenantConfiguration["MINIO_ROOT_USER"]
+		} else if config.Name == "MINIO_ROOT_PASSWORD" || config.Name == "MINIO_SECRET_KEY" {
+			tenantConfiguration["secretkey"] = tenantConfiguration["MINIO_ROOT_PASSWORD"]
+		}
 	}
 
 	// Load tenant configuration from file
