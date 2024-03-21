@@ -1,4 +1,6 @@
 ###
+# WARNING: '.secrets' is deprecated since v5.0.15 and will be removed in next minor release (i.e. v5.1.0).
+# WARNING: Please use '.tenant.configSecret' instead.
 # Root key for dynamically creating a secret for use with configuring root MinIO User
 # Specify the ``name`` and then a list of environment variables. 
 #
@@ -20,7 +22,8 @@ secrets:
   accessKey: minio 
   secretKey: minio123
   ###
-  # The name of an existing Kubernetes secret to import to the MinIO Tenant
+  # If this variable is set, then enable the usage of an existing Kubernetes secret to set environment variables for the Tenant.
+  # The existing Kubernetes secret name must be placed under .tenant.configuration.name e.g. existing-minio-env-configuration
   # The secret must contain a key ``config.env``.
   # The values should be a series of export statements to set environment variables for the Tenant.
   # For example:
@@ -28,12 +31,12 @@ secrets:
   # .. code-block:: shell
   #
   #    stringData:
-  #       config.env: | -
+  #       config.env: |-
   #         export MINIO_ROOT_USER=ROOTUSERNAME
   #         export MINIO_ROOT_PASSWORD=ROOTUSERPASSWORD
   #
   #existingSecret:
-  #  name: myminio-env-configuration
+  #  name: enabled
 ###
 # Root key for MinIO Tenant Chart
 tenant:
@@ -84,6 +87,42 @@ tenant:
   # The secret is expected to have a key named config.env containing environment variables exports.
   configuration:
     name: myminio-env-configuration
+  ###
+  # Root key for dynamically creating a secret for use with configuring root MinIO User
+  # Specify the ``name`` and then a list of environment variables.
+  #
+  # .. important::
+  #
+  #    Do not use this in production environments.
+  #    This field is intended for use with rapid development or testing only.
+  #
+  # For example:
+  #
+  # .. code-block:: yaml
+  #
+  #    name: myminio-env-configuration
+  #    accessKey: minio
+  #    secretKey: minio123
+  #
+  # configSecret:
+  #   name: myminio-env-configuration
+  #   accessKey: minio
+  #   secretKey: minio123
+  ###
+  # If this variable is set to true, then enable the usage of an existing Kubernetes secret to set environment variables for the Tenant.
+  # The existing Kubernetes secret name must be placed under .tenant.configuration.name e.g. existing-minio-env-configuration
+  # The secret must contain a key ``config.env``.
+  # The values should be a series of export statements to set environment variables for the Tenant.
+  # For example:
+  #
+  # .. code-block:: shell
+  #
+  #    stringData:
+  #       config.env: |-
+  #         export MINIO_ROOT_USER=ROOTUSERNAME
+  #         export MINIO_ROOT_PASSWORD=ROOTUSERPASSWORD
+  #
+  #   existingSecret: false
   ###
   # Top level key for configuring MinIO Pool(s) in this Tenant.
   #
@@ -451,7 +490,7 @@ ingress:
 #    kind: Secret
 #    type: Opaque
 #    metadata:
-#      name: {{ dig "secrets" "existingSecret" "" (.Values | merge (dict)) }}
+#      name: {{ dig "tenant" "configSecret" "name" "" (.Values | merge (dict)) }}
 #    stringData:
 #      config.env: |-
 #        export MINIO_ROOT_USER='minio'
