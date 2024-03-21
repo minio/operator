@@ -174,9 +174,9 @@ func NewJobController(
 					if newJob.Status.Succeeded > 0 {
 						command.setStatus(true, "")
 					} else {
-						for _, condtion := range newJob.Status.Conditions {
-							if condtion.Type == batchjobv1.JobFailed {
-								command.setStatus(false, condtion.Message)
+						for _, condition := range newJob.Status.Conditions {
+							if condition.Type == batchjobv1.JobFailed {
+								command.setStatus(false, condition.Message)
 								break
 							}
 						}
@@ -293,8 +293,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, err)
 	}
 	// update status
-	status := intervalJob.getMinioJobStatus(ctx)
-	jobCR.Status = status
+	jobCR.Status = intervalJob.getMinioJobStatus(ctx)
 	err = c.updateJobStatus(ctx, &jobCR)
 	return WrapResult(Result{}, err)
 }
@@ -332,11 +331,11 @@ type MinIOIntervalJobCommandFile struct {
 
 // MinIOIntervalJobCommand - Job run command
 type MinIOIntervalJobCommand struct {
-	Locker      sync.RWMutex
+	mutex       sync.RWMutex
 	JobName     string
 	MCOperation string
 	Command     string
-	DepnedOn    []string
+	DepnedsOn   []string
 	Files       []MinIOIntervalJobCommandFile
 	Succeeded   bool
 	Message     string
@@ -347,18 +346,18 @@ func (jobCommand *MinIOIntervalJobCommand) setStatus(success bool, message strin
 	if jobCommand == nil {
 		return
 	}
-	jobCommand.Locker.Lock()
+	jobCommand.mutex.Lock()
 	jobCommand.Succeeded = success
 	jobCommand.Message = message
-	jobCommand.Locker.Unlock()
+	jobCommand.mutex.Unlock()
 }
 
 func (jobCommand *MinIOIntervalJobCommand) success() bool {
 	if jobCommand == nil {
 		return false
 	}
-	jobCommand.Locker.Lock()
-	defer jobCommand.Locker.Unlock()
+	jobCommand.mutex.Lock()
+	defer jobCommand.mutex.Unlock()
 	return jobCommand.Succeeded
 }
 
@@ -366,12 +365,12 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 	if jobCommand == nil {
 		return nil
 	}
-	jobCommand.Locker.RLock()
+	jobCommand.mutex.RLock()
 	if jobCommand.Created || jobCommand.Succeeded {
-		jobCommand.Locker.RUnlock()
+		jobCommand.mutex.RUnlock()
 		return nil
 	}
-	jobCommand.Locker.RUnlock()
+	jobCommand.mutex.RUnlock()
 	jobCommands := []string{}
 	commands := []string{"mc"}
 	commands = append(commands, strings.SplitN(jobCommand.MCOperation, "/", -1)...)
@@ -440,7 +439,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 	} else {
 		job.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 	}
-	if len(jobCommand.Files) != 0 {
+	if len(jobCommand.Files) > 0 {
 		cmName := fmt.Sprintf("%s-%s-cm", jobCR.Name, jobCommand.JobName)
 		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      "file-volume",
@@ -481,9 +480,9 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 			return err
 		}
 	}
-	jobCommand.Locker.Lock()
+	jobCommand.mutex.Lock()
 	jobCommand.Created = true
-	jobCommand.Locker.Unlock()
+	jobCommand.mutex.Unlock()
 	return nil
 }
 
@@ -491,7 +490,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 type MinIOIntervalJob struct {
 	// to see if that change
 	JobCR      *v1alpha1.MinIOJob
-	Locker     sync.Mutex
+	mutex      sync.Mutex
 	Command    []*MinIOIntervalJobCommand
 	CommandMap map[string]*MinIOIntervalJobCommand
 }
@@ -502,7 +501,7 @@ func (intervalJob *MinIOIntervalJob) getMinioJobStatus(ctx context.Context) v1al
 	running := false
 	message := ""
 	for _, command := range intervalJob.Command {
-		command.Locker.RLock()
+		command.mutex.RLock()
 		if command.Succeeded {
 			status.CommandsStatus = append(status.CommandsStatus, v1alpha1.CommandStatus{
 				Name:    command.JobName,
@@ -528,7 +527,7 @@ func (intervalJob *MinIOIntervalJob) getMinioJobStatus(ctx context.Context) v1al
 				})
 			}
 		}
-		command.Locker.RUnlock()
+		command.mutex.RUnlock()
 	}
 	if running {
 		status.Phase = MinioJobPhaseRunning
@@ -545,24 +544,24 @@ func (intervalJob *MinIOIntervalJob) getMinioJobStatus(ctx context.Context) v1al
 
 func (intervalJob *MinIOIntervalJob) createCommandJob(ctx context.Context, k8sClient client.Client) error {
 	for _, command := range intervalJob.Command {
-		if len(command.DepnedOn) == 0 {
+		if len(command.DepnedsOn) == 0 {
 			err := command.createJob(ctx, k8sClient, intervalJob.JobCR)
 			if err != nil {
 				return err
 			}
 		} else {
-			dependAllSucess := true
-			for _, dep := range command.DepnedOn {
+			allDepsSuccess := true
+			for _, dep := range command.DepnedsOn {
 				status, found := intervalJob.CommandMap[dep]
 				if !found {
-					return fmt.Errorf("depended job %s not found", dep)
+					return fmt.Errorf("dependent job %s not found", dep)
 				}
 				if !status.success() {
-					dependAllSucess = false
+					allDepsSuccess = false
 					break
 				}
 			}
-			if dependAllSucess {
+			if allDepsSuccess {
 				err := command.createJob(ctx, k8sClient, intervalJob.JobCR)
 				if err != nil {
 					return err
@@ -614,26 +613,26 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *MinIOIntervalJob, err
 		// [ALIAS]
 		command = strings.ReplaceAll(argsTpl, "[ALIAS]", "myminio")
 		flags := []string{}
-		for flagsName, flagsVal := range val.Args {
-			if strings.HasPrefix(flagsName, "-") {
+		for flagName, flagVal := range val.Args {
+			if strings.HasPrefix(flagName, "-") {
 				// args:
 				//   --with-locks: ""
 				//   --region: us-west-2
-				if flagsVal == "" {
-					flags = append(flags, flagsName)
+				if flagVal == "" {
+					flags = append(flags, flagName)
 				}
-				if strings.Contains(flagsVal, ",") {
-					for _, flagsVals := range strings.Split(flagsVal, ",") {
-						flags = append(flags, fmt.Sprintf("%s=%s", flagsName, flagsVals))
+				if strings.Contains(flagVal, ",") {
+					for _, flagsVals := range strings.Split(flagVal, ",") {
+						flags = append(flags, fmt.Sprintf("%s=%s", flagName, flagsVals))
 					}
 				}
 			} else {
 				// args:
 				// 	 users: user1,user2
-				if strings.Contains(flagsVal, ",") {
-					flagsVal = strings.ReplaceAll(flagsVal, ",", " ")
+				if strings.Contains(flagVal, ",") {
+					flagVal = strings.ReplaceAll(flagVal, ",", " ")
 				}
-				command = strings.ReplaceAll(command, fmt.Sprintf("{%s}", flagsName), flagsVal)
+				command = strings.ReplaceAll(command, fmt.Sprintf("{%s}", flagName), flagVal)
 			}
 		}
 
@@ -647,7 +646,7 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *MinIOIntervalJob, err
 			JobName:     val.Name,
 			MCOperation: mcCommand,
 			Command:     command,
-			DepnedOn:    val.DependsOn,
+			DepnedsOn:   val.DependsOn,
 			Files:       []MinIOIntervalJobCommandFile{},
 		}
 		// some commands need to have a empty name
@@ -655,10 +654,10 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *MinIOIntervalJob, err
 			jobCommand.JobName = fmt.Sprintf("command-%d", index)
 		}
 		var matchString, name, ext string
-		found = true
-		for found {
-			matchString, name, ext, found = getFileNameAndExt(command)
-			if found {
+		var cmdFound = true
+		for cmdFound {
+			matchString, name, ext, cmdFound = getFileNameAndExt(command)
+			if cmdFound {
 				if _, ok := val.Args[name]; !ok {
 					return intervalJob, fmt.Errorf("args %s not found", name)
 				}
@@ -678,10 +677,10 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *MinIOIntervalJob, err
 	}
 	// check all dependon
 	for _, command := range intervalJob.Command {
-		for _, dep := range command.DepnedOn {
+		for _, dep := range command.DepnedsOn {
 			_, found := intervalJob.CommandMap[dep]
 			if !found {
-				return intervalJob, fmt.Errorf("depended job %s not found", dep)
+				return intervalJob, fmt.Errorf("dependent job %s not found", dep)
 			}
 		}
 	}
