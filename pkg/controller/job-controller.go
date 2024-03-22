@@ -32,6 +32,7 @@ import (
 	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	joblisters "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
 	runtime2 "github.com/minio/operator/pkg/runtime"
+	"github.com/minio/operator/pkg/utils/miniojob"
 	batchjobv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -71,12 +72,11 @@ var operationAlias = map[string]string{
 	"admin/policy/add": "admin/policy/create",
 }
 
-// mc operator args...
-var jobOperation = map[string]string{
-	"mb":                  "[FLAGS] [ALIAS]/{name} --ignore-existing",
-	"admin/user/add":      "[ALIAS] {user} {password}",
-	"admin/policy/create": "[ALIAS] {name} [file(policy,json)]",
-	"admin/policy/attach": "[ALIAS] {policy} --user {user}",
+var jobOperation = map[string][]miniojob.FiledsFunc{
+	"mb":                  {miniojob.FLAGS(), miniojob.NoSpace(miniojob.ALIAS(), miniojob.Static("/"), miniojob.Key("name")), miniojob.Static("--ignore-existing")},
+	"admin/user/add":      {miniojob.ALIAS(), miniojob.Key("user"), miniojob.Key("password")},
+	"admin/policy/create": {miniojob.ALIAS(), miniojob.Key("name"), miniojob.File("policy", "json")},
+	"admin/policy/attach": {miniojob.ALIAS(), miniojob.Key("policy"), miniojob.OneOf(miniojob.KeyForamt("user", "--user"), miniojob.KeyForamt("group", "--group"))},
 }
 
 // JobController struct watches the Kubernetes API for changes to Tenant resources
@@ -604,72 +604,41 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *MinIOIntervalJob, err
 		if !found {
 			return intervalJob, fmt.Errorf("operation %s is not supported", val.Operation)
 		}
-		var command string
-		argsTpl, found := jobOperation[mcCommand]
+		commands := []string{}
+		files := []MinIOIntervalJobCommandFile{}
+		argsFuncs, found := jobOperation[mcCommand]
 		if !found {
 			return intervalJob, fmt.Errorf("operation %s is not supported", mcCommand)
 		}
-		// [ALIAS]
-		command = strings.ReplaceAll(argsTpl, "[ALIAS]", "myminio")
-		flags := []string{}
-		for flagName, flagVal := range val.Args {
-			if strings.HasPrefix(flagName, "-") {
-				// args:
-				//   --with-locks: ""
-				//   --region: us-west-2
-				if flagVal == "" {
-					flags = append(flags, flagName)
-				}
-				if strings.Contains(flagVal, ",") {
-					for _, flagsVals := range strings.Split(flagVal, ",") {
-						flags = append(flags, fmt.Sprintf("%s=%s", flagName, flagsVals))
-					}
-				}
-			} else {
-				// args:
-				// 	 users: user1,user2
-				if strings.Contains(flagVal, ",") {
-					flagVal = strings.ReplaceAll(flagVal, ",", " ")
-				}
-				command = strings.ReplaceAll(command, fmt.Sprintf("{%s}", flagName), flagVal)
+		for _, argsFunc := range argsFuncs {
+			jobArg, err := argsFunc(val.Args)
+			if err != nil {
+				return intervalJob, err
 			}
-		}
-
-		// [FLAGS]
-		command = strings.ReplaceAll(command, "[FLAGS]", strings.Join(flags, " "))
-		// should replace all template
-		if strings.Contains(command, "{") || strings.Contains(command, "}") {
-			return intervalJob, fmt.Errorf("invalid args for %s", val.Operation)
+			if jobArg.IsFile() {
+				files = append(files, MinIOIntervalJobCommandFile{
+					Name:    jobArg.FileName,
+					Ext:     jobArg.FileExt,
+					Dir:     commandFilePath,
+					Content: jobArg.FileContext,
+				})
+				commands = append(commands, fmt.Sprintf("%s/%s.%s", commandFilePath, jobArg.FileName, jobArg.FileExt))
+			} else {
+				if jobArg.Command != "" {
+					commands = append(commands, jobArg.Command)
+				}
+			}
 		}
 		jobCommand := MinIOIntervalJobCommand{
 			JobName:     val.Name,
 			MCOperation: mcCommand,
-			Command:     command,
+			Command:     strings.Join(commands, " "),
 			DepnedsOn:   val.DependsOn,
-			Files:       []MinIOIntervalJobCommandFile{},
+			Files:       files,
 		}
 		// some commands need to have a empty name
 		if jobCommand.JobName == "" {
 			jobCommand.JobName = fmt.Sprintf("command-%d", index)
-		}
-		var matchString, name, ext string
-		cmdFound := true
-		for cmdFound {
-			matchString, name, ext, cmdFound = getFileNameAndExt(command)
-			if cmdFound {
-				if _, ok := val.Args[name]; !ok {
-					return intervalJob, fmt.Errorf("args %s not found", name)
-				}
-				jobCommandFile := MinIOIntervalJobCommandFile{
-					Name:    name,
-					Ext:     ext,
-					Dir:     commandFilePath,
-					Content: val.Args[name],
-				}
-				command = strings.ReplaceAll(command, matchString, fmt.Sprintf("%s/%s.%s", commandFilePath, name, ext))
-				jobCommand.Command = command
-				jobCommand.Files = append(jobCommand.Files, jobCommandFile)
-			}
 		}
 		intervalJob.Command = append(intervalJob.Command, &jobCommand)
 		intervalJob.CommandMap[jobCommand.JobName] = &jobCommand

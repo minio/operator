@@ -1,0 +1,171 @@
+// This file is part of MinIO Operator
+// Copyright (c) 2024 MinIO, Inc.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package miniojob
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+)
+
+// MinioJobArg - parse the arg result
+type MinioJobArg struct {
+	Command     string
+	FileName    string
+	FileExt     string
+	FileContext string
+}
+
+// IsFile - if it is a file
+func (arg MinioJobArg) IsFile() bool {
+	return arg.FileName != ""
+}
+
+// FiledsFunc - alias function
+type FiledsFunc func(args map[string]string) (MinioJobArg, error)
+
+// Key - key=value
+func Key(key string) FiledsFunc {
+	return KeyForamt(key, "$0")
+}
+
+// FLAGS - --key=value|value1,value2,value3
+func FLAGS(igrnoreKeys ...string) FiledsFunc {
+	return prefixKeyForamt("-", igrnoreKeys...)
+}
+
+// ALIAS - myminio
+func ALIAS() FiledsFunc {
+	return Static("myminio")
+}
+
+// Static - some static value
+func Static(val string) FiledsFunc {
+	return func(args map[string]string) (MinioJobArg, error) {
+		return MinioJobArg{Command: val}, nil
+	}
+}
+
+// File - file key, ext
+func File(fkey string, ext string) FiledsFunc {
+	return func(args map[string]string) (out MinioJobArg, err error) {
+		if args == nil {
+			return out, fmt.Errorf("args is nil")
+		}
+		for key, val := range args {
+			if key == fkey {
+				if val == "" {
+					return out, fmt.Errorf("value is empty")
+				} else {
+					out.FileName = fkey
+					out.FileExt = ext
+					out.FileContext = strings.TrimSpace(val)
+					return out, nil
+				}
+			}
+		}
+		return out, fmt.Errorf("key %s not found", fkey)
+	}
+}
+
+// KeyForamt - key,outPut
+// if format not contain $0, will add $0 to the end
+func KeyForamt(key string, format string) FiledsFunc {
+	return func(args map[string]string) (out MinioJobArg, err error) {
+		if args == nil {
+			return out, fmt.Errorf("args is nil")
+		}
+		if !strings.Contains(format, "$0") {
+			format = fmt.Sprintf("%s %s", format, "$0")
+		}
+		if val, ok := args[key]; !ok {
+			return out, fmt.Errorf("key %s not found", key)
+		} else {
+			out.Command = strings.ReplaceAll(format, "$0", strings.ReplaceAll(val, ",", " "))
+			return out, nil
+		}
+	}
+}
+
+// OneOf - one of the funcs must be found
+func OneOf(funcs ...FiledsFunc) FiledsFunc {
+	return func(args map[string]string) (out MinioJobArg, err error) {
+		if args == nil {
+			return out, fmt.Errorf("args is nil")
+		}
+		for _, func1 := range funcs {
+			if out, err = func1(args); err == nil {
+				return out, nil
+			}
+		}
+		return out, fmt.Errorf("not found")
+	}
+}
+
+// NoSpace - no space for the command
+func NoSpace(funcs ...FiledsFunc) FiledsFunc {
+	return func(args map[string]string) (out MinioJobArg, err error) {
+		if args == nil {
+			return out, fmt.Errorf("args is nil")
+		}
+		commands := []string{}
+		for _, func1 := range funcs {
+			if out, err = func1(args); err != nil {
+				return out, err
+			}
+			if out.Command == "" {
+				return out, fmt.Errorf("command is empty")
+			}
+			commands = append(commands, out.Command)
+		}
+		return MinioJobArg{Command: strings.Join(commands, "")}, nil
+	}
+}
+
+var prefixKeyForamt = func(pkey string, igrnoreKeys ...string) FiledsFunc {
+	return func(args map[string]string) (out MinioJobArg, err error) {
+		if args == nil {
+			return out, fmt.Errorf("args is nil")
+		}
+		igrnoreKeyMap := make(map[string]bool)
+		for _, key := range igrnoreKeys {
+			if !strings.HasPrefix(key, pkey) {
+				key = fmt.Sprintf("%s%s%s", pkey, pkey, key)
+			}
+			igrnoreKeyMap[key] = true
+		}
+		data := []string{}
+		for key, val := range args {
+			if strings.HasPrefix(key, pkey) && !igrnoreKeyMap[key] {
+				if val == "" {
+					data = append(data, key)
+				} else {
+					for _, singalVal := range strings.Split(val, ",") {
+						if strings.TrimSpace(singalVal) != "" {
+							data = append(data, fmt.Sprintf("%s=%s", key, singalVal))
+						}
+					}
+				}
+			}
+		}
+		// avoid flags change the order
+		sort.Slice(data, func(i, j int) bool {
+			return data[i] > data[j]
+		})
+		return MinioJobArg{Command: strings.Join(data, " ")}, nil
+	}
+}
