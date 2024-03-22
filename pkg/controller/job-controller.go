@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -64,8 +63,6 @@ const (
 	// MinioJobPhaseFailed - failed
 	MinioJobPhaseFailed = "Failed"
 )
-
-var fileRegexp = regexp.MustCompile(`(\[file\([^)]+\)\])`)
 
 var operationAlias = map[string]string{
 	"make-bucket":      "mb",
@@ -654,26 +651,6 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *MinIOIntervalJob, err
 	}
 	globalIntervalJobStatus.Store(fmt.Sprintf("%s/%s", jobCR.Namespace, jobCR.Name), intervalJob)
 	return intervalJob, nil
-}
-
-func getFileNameAndExt(commond string) (matchString, name, ext string, found bool) {
-	match := fileRegexp.MatchString(commond)
-	if !match {
-		return "", "", "", false
-	}
-	matchStrings := fileRegexp.FindAllStringSubmatch(commond, -1)
-	for _, val := range matchStrings {
-		if len(val) == 2 {
-			// val[1] must be `[file(policy,json)]`
-			if strings.Contains(val[1], ",") {
-				args := strings.Replace(val[1], "[file(", "", 1)
-				args = strings.Replace(args, ")]", "", 1)
-				fileArgs := strings.SplitN(args, ",", 2)
-				return val[1], fileArgs[0], fileArgs[1], true
-			}
-		}
-	}
-	return "", "", "", false
 }
 
 var globalIntervalJobStatus = sync.Map{}

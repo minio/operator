@@ -22,8 +22,8 @@ import (
 	"strings"
 )
 
-// MinioJobArg - parse the arg result
-type MinioJobArg struct {
+// Arg - parse the arg result
+type Arg struct {
 	Command     string
 	FileName    string
 	FileExt     string
@@ -31,12 +31,12 @@ type MinioJobArg struct {
 }
 
 // IsFile - if it is a file
-func (arg MinioJobArg) IsFile() bool {
+func (arg Arg) IsFile() bool {
 	return arg.FileName != ""
 }
 
 // FiledsFunc - alias function
-type FiledsFunc func(args map[string]string) (MinioJobArg, error)
+type FiledsFunc func(args map[string]string) (Arg, error)
 
 // Key - key=value
 func Key(key string) FiledsFunc {
@@ -55,14 +55,14 @@ func ALIAS() FiledsFunc {
 
 // Static - some static value
 func Static(val string) FiledsFunc {
-	return func(args map[string]string) (MinioJobArg, error) {
-		return MinioJobArg{Command: val}, nil
+	return func(args map[string]string) (Arg, error) {
+		return Arg{Command: val}, nil
 	}
 }
 
 // File - file key, ext
 func File(fkey string, ext string) FiledsFunc {
-	return func(args map[string]string) (out MinioJobArg, err error) {
+	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
@@ -70,12 +70,11 @@ func File(fkey string, ext string) FiledsFunc {
 			if key == fkey {
 				if val == "" {
 					return out, fmt.Errorf("value is empty")
-				} else {
-					out.FileName = fkey
-					out.FileExt = ext
-					out.FileContext = strings.TrimSpace(val)
-					return out, nil
 				}
+				out.FileName = fkey
+				out.FileExt = ext
+				out.FileContext = strings.TrimSpace(val)
+				return out, nil
 			}
 		}
 		return out, fmt.Errorf("key %s not found", fkey)
@@ -85,25 +84,25 @@ func File(fkey string, ext string) FiledsFunc {
 // KeyForamt - key,outPut
 // if format not contain $0, will add $0 to the end
 func KeyForamt(key string, format string) FiledsFunc {
-	return func(args map[string]string) (out MinioJobArg, err error) {
+	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
 		if !strings.Contains(format, "$0") {
 			format = fmt.Sprintf("%s %s", format, "$0")
 		}
-		if val, ok := args[key]; !ok {
+		val, ok := args[key]
+		if !ok {
 			return out, fmt.Errorf("key %s not found", key)
-		} else {
-			out.Command = strings.ReplaceAll(format, "$0", strings.ReplaceAll(val, ",", " "))
-			return out, nil
 		}
+		out.Command = strings.ReplaceAll(format, "$0", strings.ReplaceAll(val, ",", " "))
+		return out, nil
 	}
 }
 
 // OneOf - one of the funcs must be found
 func OneOf(funcs ...FiledsFunc) FiledsFunc {
-	return func(args map[string]string) (out MinioJobArg, err error) {
+	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
@@ -118,7 +117,7 @@ func OneOf(funcs ...FiledsFunc) FiledsFunc {
 
 // NoSpace - no space for the command
 func NoSpace(funcs ...FiledsFunc) FiledsFunc {
-	return func(args map[string]string) (out MinioJobArg, err error) {
+	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
@@ -132,12 +131,12 @@ func NoSpace(funcs ...FiledsFunc) FiledsFunc {
 			}
 			commands = append(commands, out.Command)
 		}
-		return MinioJobArg{Command: strings.Join(commands, "")}, nil
+		return Arg{Command: strings.Join(commands, "")}, nil
 	}
 }
 
 var prefixKeyForamt = func(pkey string, igrnoreKeys ...string) FiledsFunc {
-	return func(args map[string]string) (out MinioJobArg, err error) {
+	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
@@ -166,6 +165,6 @@ var prefixKeyForamt = func(pkey string, igrnoreKeys ...string) FiledsFunc {
 		sort.Slice(data, func(i, j int) bool {
 			return data[i] > data[j]
 		})
-		return MinioJobArg{Command: strings.Join(data, " ")}, nil
+		return Arg{Command: strings.Join(data, " ")}, nil
 	}
 }
