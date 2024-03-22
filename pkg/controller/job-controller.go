@@ -240,7 +240,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		}
 		return WrapResult(Result{}, err)
 	}
-	// if job is success, do nothing
+	// if job cr is success, do nothing
 	if jobCR.Status.Phase == MinioJobPhaseSuccess {
 		// delete the job status
 		globalIntervalJobStatus.Delete(fmt.Sprintf("%s/%s", jobCR.Namespace, jobCR.Name))
