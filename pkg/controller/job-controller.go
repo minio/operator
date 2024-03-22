@@ -653,7 +653,7 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *MinIOIntervalJob, err
 			jobCommand.JobName = fmt.Sprintf("command-%d", index)
 		}
 		var matchString, name, ext string
-		var cmdFound = true
+		cmdFound := true
 		for cmdFound {
 			matchString, name, ext, cmdFound = getFileNameAndExt(command)
 			if cmdFound {
