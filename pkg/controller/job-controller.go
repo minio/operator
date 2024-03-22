@@ -490,7 +490,6 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 type MinIOIntervalJob struct {
 	// to see if that change
 	JobCR      *v1alpha1.MinIOJob
-	mutex      sync.Mutex
 	Command    []*MinIOIntervalJobCommand
 	CommandMap map[string]*MinIOIntervalJobCommand
 }
