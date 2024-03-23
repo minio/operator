@@ -120,7 +120,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 		Resources: []string{
 			"operator/",
 		},
-		PatchesJson6902: []types.Patch{},
+		Patches: []types.Patch{},
 	}
 
 	var operatorDepPatches []interface{}
@@ -243,7 +243,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	}
 	// attach the patches to the kustomization file
 	if len(operatorDepPatches) > 0 {
-		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
+		kustomizationYaml.Patches = append(kustomizationYaml.Patches, types.Patch{
 			Patch: o.serializeJSONPatchOps(operatorDepPatches),
 			Target: &types.Selector{
 				ResId: resid.ResId{
@@ -259,7 +259,7 @@ func (o *operatorInitCmd) run(writer io.Writer) error {
 	}
 
 	if len(consoleDepPatches) > 0 {
-		kustomizationYaml.PatchesJson6902 = append(kustomizationYaml.PatchesJson6902, types.Patch{
+		kustomizationYaml.Patches = append(kustomizationYaml.Patches, types.Patch{
 			Patch: o.serializeJSONPatchOps(consoleDepPatches),
 			Target: &types.Selector{
 				ResId: resid.ResId{

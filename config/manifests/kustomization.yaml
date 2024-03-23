@@ -12,7 +12,7 @@ patchesStrategicMerge:
   - overlay/console_v1_service.yaml
   - overlay/sts_v1_service.yaml
 
-patchesJson6902:
+patches:
   - target:
         group: apps
         version: v1
