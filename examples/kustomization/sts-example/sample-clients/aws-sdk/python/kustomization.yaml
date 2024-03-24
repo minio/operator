@@ -8,7 +8,7 @@ images:
   - name: miniodev/operator-sts-example
     newTag: aws-sdk-python
 
-patchesJson6902:
+patches:
   - target:
       group: batch
       version: v1
