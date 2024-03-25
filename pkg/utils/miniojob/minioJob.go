@@ -35,55 +35,55 @@ func (arg Arg) IsFile() bool {
 	return arg.FileName != ""
 }
 
-// FiledsFunc - alias function
-type FiledsFunc func(args map[string]string) (Arg, error)
+// FieldsFunc - alias function
+type FieldsFunc func(args map[string]string) (Arg, error)
 
 // Key - key=value
-func Key(key string) FiledsFunc {
+func Key(key string) FieldsFunc {
 	return KeyForamt(key, "$0")
 }
 
 // FLAGS - --key=value|value1,value2,value3
-func FLAGS(igrnoreKeys ...string) FiledsFunc {
-	return prefixKeyForamt("-", igrnoreKeys...)
+func FLAGS(ignoreKeys ...string) FieldsFunc {
+	return prefixKeyForamt("-", ignoreKeys...)
 }
 
 // ALIAS - myminio
-func ALIAS() FiledsFunc {
+func ALIAS() FieldsFunc {
 	return Static("myminio")
 }
 
 // Static - some static value
-func Static(val string) FiledsFunc {
+func Static(val string) FieldsFunc {
 	return func(args map[string]string) (Arg, error) {
 		return Arg{Command: val}, nil
 	}
 }
 
 // File - file key, ext
-func File(fkey string, ext string) FiledsFunc {
+func File(fName string, ext string) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
 		for key, val := range args {
-			if key == fkey {
+			if key == fName {
 				if val == "" {
 					return out, fmt.Errorf("value is empty")
 				}
-				out.FileName = fkey
+				out.FileName = fName
 				out.FileExt = ext
 				out.FileContext = strings.TrimSpace(val)
 				return out, nil
 			}
 		}
-		return out, fmt.Errorf("key %s not found", fkey)
+		return out, fmt.Errorf("file %s not found", fName)
 	}
 }
 
 // KeyForamt - key,outPut
 // if format not contain $0, will add $0 to the end
-func KeyForamt(key string, format string) FiledsFunc {
+func KeyForamt(key string, format string) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
@@ -101,13 +101,13 @@ func KeyForamt(key string, format string) FiledsFunc {
 }
 
 // OneOf - one of the funcs must be found
-func OneOf(funcs ...FiledsFunc) FiledsFunc {
+func OneOf(funcs ...FieldsFunc) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
-		for _, func1 := range funcs {
-			if out, err = func1(args); err == nil {
+		for _, fn := range funcs {
+			if out, err = fn(args); err == nil {
 				return out, nil
 			}
 		}
@@ -116,7 +116,7 @@ func OneOf(funcs ...FiledsFunc) FiledsFunc {
 }
 
 // NoSpace - no space for the command
-func NoSpace(funcs ...FiledsFunc) FiledsFunc {
+func NoSpace(funcs ...FieldsFunc) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
@@ -135,13 +135,13 @@ func NoSpace(funcs ...FiledsFunc) FiledsFunc {
 	}
 }
 
-var prefixKeyForamt = func(pkey string, igrnoreKeys ...string) FiledsFunc {
+var prefixKeyForamt = func(pkey string, ignoreKeys ...string) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
 		igrnoreKeyMap := make(map[string]bool)
-		for _, key := range igrnoreKeys {
+		for _, key := range ignoreKeys {
 			if !strings.HasPrefix(key, pkey) {
 				key = fmt.Sprintf("%s%s%s", pkey, pkey, key)
 			}

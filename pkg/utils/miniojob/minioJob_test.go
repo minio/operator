@@ -44,7 +44,7 @@ func TestParser(t *testing.T) {
 		"name": "mybucketName",
 	}
 	testCase := []struct {
-		command     FiledsFunc
+		command     FieldsFunc
 		args        map[string]string
 		expect      Arg
 		expectError bool
