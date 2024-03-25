@@ -38,12 +38,12 @@ func (arg Arg) IsFile() bool {
 // FieldsFunc - alias function
 type FieldsFunc func(args map[string]string) (Arg, error)
 
-// Key - key=value
+// Key - key=value|value1,value2,value3
 func Key(key string) FieldsFunc {
 	return KeyForamt(key, "$0")
 }
 
-// FLAGS - --key=value|value1,value2,value3
+// FLAGS - --key=""|value|value1,value2,value3
 func FLAGS(ignoreKeys ...string) FieldsFunc {
 	return prefixKeyForamt("-", ignoreKeys...)
 }
@@ -60,7 +60,7 @@ func Static(val string) FieldsFunc {
 	}
 }
 
-// File - file key, ext
+// File - fName is the the key, value is content, ext is the file ext
 func File(fName string, ext string) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
