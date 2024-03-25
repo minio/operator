@@ -81,7 +81,7 @@ func File(fName string, ext string) FieldsFunc {
 	}
 }
 
-// KeyForamt - key,outPut
+// KeyForamt - match key and get outPut to replace $0 to output the value
 // if format not contain $0, will add $0 to the end
 func KeyForamt(key string, format string) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
