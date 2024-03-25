@@ -70,7 +70,7 @@ var operationAlias = map[string]string{
 }
 
 var jobOperation = map[string][]miniojob.FieldsFunc{
-	"mb":                  {miniojob.FLAGS(), miniojob.NoSpace(miniojob.ALIAS(), miniojob.Static("/"), miniojob.Key("name")), miniojob.Static("--ignore-existing")},
+	"mb":                  {miniojob.FLAGS(), miniojob.Sanitize(miniojob.ALIAS(), miniojob.Static("/"), miniojob.Key("name")), miniojob.Static("--ignore-existing")},
 	"admin/user/add":      {miniojob.ALIAS(), miniojob.Key("user"), miniojob.Key("password")},
 	"admin/policy/create": {miniojob.ALIAS(), miniojob.Key("name"), miniojob.File("policy", "json")},
 	"admin/policy/attach": {miniojob.ALIAS(), miniojob.Key("policy"), miniojob.OneOf(miniojob.KeyForamt("user", "--user"), miniojob.KeyForamt("group", "--group"))},

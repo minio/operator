@@ -101,6 +101,7 @@ func KeyForamt(key string, format string) FieldsFunc {
 }
 
 // OneOf - one of the funcs must be found
+// mc admin policy attach OneOf(--user | --group) = mc admin policy attach --user user or mc admin policy attach --group group
 func OneOf(funcs ...FieldsFunc) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
@@ -115,8 +116,9 @@ func OneOf(funcs ...FieldsFunc) FieldsFunc {
 	}
 }
 
-// NoSpace - no space for the command
-func NoSpace(funcs ...FieldsFunc) FieldsFunc {
+// Sanitize - no space for the command
+// mc mb Sanitize(alias / bucketName) = mc mb alias/bucketName
+func Sanitize(funcs ...FieldsFunc) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")

@@ -134,7 +134,7 @@ func TestParser(t *testing.T) {
 			expectError: true,
 		},
 		{
-			command:     NoSpace(ALIAS(), Static("/"), Key("name")),
+			command:     Sanitize(ALIAS(), Static("/"), Key("name")),
 			args:        args,
 			expect:      Arg{Command: "myminio/mybucketName"},
 			expectError: false,
