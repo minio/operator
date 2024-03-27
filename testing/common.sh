@@ -602,17 +602,10 @@ function install_operator_version() {
     version=$(curl https://api.github.com/repos/minio/operator/releases/latest | jq --raw-output '.tag_name | "\(.[1:])"')
   fi
   echo "Target operator release: $version"
-  # Set OPERATOR_DEV_TEST to skip downloading these dependencies
-  if [[ -z "${DEV_TEST}" ]]; then
-    sudo curl -#L "https://github.com/minio/operator/releases/download/v${version}/kubectl-minio_${version}_${OS}_${ARCH}" -o /usr/local/bin/kubectl-minio
-    sudo chmod +x /usr/local/bin/kubectl-minio
-  fi
 
   # Initialize the MinIO Kubernetes Operator
-  kubectl minio init
+  kubectl apply -k "${SCRIPT_DIR}/../resources"
 
-  # Verify installation of the plugin
-  echo "Installed operator release: $(kubectl minio version)"
 
   if [ "$1" = "helm" ]; then
     echo "key, value for pod selector in helm test"
