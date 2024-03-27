@@ -33,32 +33,6 @@ builds:
       - -s -w -X github.com/minio/operator/pkg.ReleaseTag={{.Tag}} -X github.com/minio/operator/pkg.CommitID={{.FullCommit}} -X github.com/minio/operator/pkg.Version={{.Version}} -X github.com/minio/operator/pkg.ShortCommitID={{.ShortCommit}} -X github.com/minio/operator/pkg.ReleaseTime={{.Date}}
     flags:
       - -trimpath
-    hooks:
-      post: ./package.sh {{ .Path }}
-
-  - id: kubectl-minio
-    dir: kubectl-minio
-    binary: kubectl-minio
-    goos:
-      - linux
-      - darwin
-      - windows
-    goarch:
-      - amd64
-      - arm64
-      - ppc64le
-      - s390x
-    ignore:
-      - goos: windows
-        goarch: arm64
-    env:
-      - CGO_ENABLED=0
-    ldflags:
-      - -s -w -X github.com/minio/kubectl-minio/cmd.version={{.Tag}}
-    flags:
-      - -trimpath
-    hooks:
-      post: ./package.sh {{ .Path }}
 
 archives:
   - allow_different_binary_count: true

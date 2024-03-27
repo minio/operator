@@ -5,10 +5,8 @@ minio-operator
 !tenant/
 .idea/
 dist/
-kubectl-minio/kubectl-minio
 *.minisig
 *.zip
-kubectl-minio/crds
 *.log
 .vscode
 minio.yaml

@@ -7,24 +7,28 @@ This document explains how to enable KES with MinIO Operator.
 ### Prerequisites
 
 - MinIO Operator up and running as explained in the [document here](https://github.com/minio/operator#operator-setup).
-- Install [`kubectl minio` plugin](https://github.com/minio/operator/tree/master/kubectl-minio#install-plugin).
-- KES requires a KMS backend in [configuration](https://raw.githubusercontent.com/minio/operator/master/examples/kes-secret.yaml). Currently KES supports [AWS Secrets Manager](https://github.com/minio/kes/wiki/AWS-SecretsManager) and [Hashicorp Vault](https://github.com/minio/kes/wiki/Hashicorp-Vault-Keystore) as KMS backend for production.S Set up one of these as the KMS backend before setting up KES.
+- KES requires a KMS backend
+  in [configuration](https://raw.githubusercontent.com/minio/operator/master/examples/kes-secret.yaml). Currently KES
+  supports [AWS Secrets Manager](https://github.com/minio/kes/wiki/AWS-SecretsManager)
+  and [Hashicorp Vault](https://github.com/minio/kes/wiki/Hashicorp-Vault-Keystore) as KMS backend for production.S Set
+  up one of these as the KMS backend before setting up KES.
 
 ### Create MinIO Tenant
 
-Use `kubectl minio` plugin to create the MinIO tenant with console and encryption enabled:
+We have an example Tenant with KES encryption available
+at [examples/tenant-kes-encryption](../examples/tenant-kes-encryption).
 
-```
-kubectl create ns tenant1-ns
-kubectl create secret generic tenant1-secret --from-literal=accesskey=YOUR-ACCESS-KEY --from-literal=secretkey=YOUR-SECRET-KEY --namespace tenant1-ns
-kubectl create -f https://raw.githubusercontent.com/minio/operator/master/examples/console-secret.yaml --namespace tenant1-ns
-kubectl create -f https://raw.githubusercontent.com/minio/operator/master/examples/kes-secret.yaml --namespace tenant1-ns
-kubectl minio tenant create --name tenant1 --secret tenant1-secret --servers 4 --volumes 16 --capacity 16Ti --namespace tenant1-ns --console-secret console-secret --kes-secret kes-config
+You can install the example like:
+
+```shell
+kubectl apply -k github.com/minio/operator/examples/kustomization/tenant-kes-encryption
 ```
 
 ## KES Configuration
 
-KES Configuration is a part of Tenant yaml file. Check the sample file [available here](https://raw.githubusercontent.com/minio/operator/master/examples/kustomization/tenant-kes-encryption/tenant.yaml). The config offers below options
+KES Configuration is a part of Tenant yaml file. Check the sample
+file [available here](https://raw.githubusercontent.com/minio/operator/master/examples/kustomization/tenant-kes-encryption/tenant.yaml).
+The config offers below options
 
 ### KES Fields
 
