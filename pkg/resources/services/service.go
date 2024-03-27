@@ -89,6 +89,8 @@ func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
 	}
 	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceLabels != nil {
 		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.ConsoleServiceLabels)
+	} else {
+		labels = internalLabels
 	}
 
 	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceAnnotations != nil {
