@@ -847,6 +847,8 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
+              consoleContainerPort:
+                type: integer
               credsSecret:
                 properties:
                   name:
@@ -982,6 +984,8 @@ spec:
                   enableSFTP:
                     type: boolean
                 type: object
+              hostNetwork:
+                type: boolean
               image:
                 type: string
               imagePullPolicy:
@@ -2464,6 +2468,8 @@ spec:
                   quiet:
                     type: boolean
                 type: object
+              minioContainerPort:
+                type: integer
               mountPath:
                 type: string
               podManagementPolicy:

@@ -46,7 +46,7 @@ func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 	minioPort := corev1.ServicePort{
 		Port:       port,
 		Name:       name,
-		TargetPort: intstr.FromInt(miniov2.MinIOPort),
+		TargetPort: intstr.FromString(miniov2.MinIOContainerPortName),
 	}
 
 	svc := &corev1.Service{
@@ -77,13 +77,13 @@ func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
 
 	consolePort := corev1.ServicePort{
 		Port:       miniov2.ConsolePort,
-		TargetPort: intstr.FromInt(miniov2.ConsolePort),
+		TargetPort: intstr.FromString(miniov2.ConsoleContainerPortName),
 		Name:       miniov2.ConsoleServicePortName,
 	}
 	if t.TLS() {
 		consolePort = corev1.ServicePort{
 			Port:       miniov2.ConsoleTLSPort,
-			TargetPort: intstr.FromInt(miniov2.ConsoleTLSPort),
+			TargetPort: intstr.FromString(miniov2.ConsoleContainerPortName),
 			Name:       miniov2.ConsoleServiceTLSPortName,
 		}
 	}
@@ -130,7 +130,7 @@ func ServiceForBucket(t *miniov2.Tenant, bucket string) *corev1.Service {
 	minioPort := corev1.ServicePort{
 		Port:       port,
 		Name:       name,
-		TargetPort: intstr.FromInt(miniov2.MinIOPort),
+		TargetPort: intstr.FromString(miniov2.MinIOContainerPortName),
 	}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -149,7 +149,10 @@ func ServiceForBucket(t *miniov2.Tenant, bucket string) *corev1.Service {
 
 // NewHeadlessForMinIO will return a new headless Kubernetes service for a Tenant
 func NewHeadlessForMinIO(t *miniov2.Tenant) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: miniov2.MinIOPort, Name: miniov2.MinIOServiceHTTPPortName}
+	minioPort := corev1.ServicePort{Port: miniov2.MinIOPort,
+		Name:       miniov2.MinIOServiceHTTPPortName,
+		TargetPort: intstr.FromString(miniov2.MinIOContainerPortName),
+	}
 	ports := []corev1.ServicePort{minioPort}
 
 	if t.Spec.Features != nil && t.Spec.Features.EnableSFTP != nil && *t.Spec.Features.EnableSFTP {
