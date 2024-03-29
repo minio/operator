@@ -339,7 +339,7 @@ func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sCl
 	return nil
 }
 
-// MinIOIntervalJobCommand - MinIOIntervalJobCommand
+// GenerateMinIOIntervalJobCommand - generate command
 func GenerateMinIOIntervalJobCommand(mcCommand string, commandIndex int, dependsOn []string, jobName string, args map[string]string, argsFuncs []FieldsFunc) (*MinIOIntervalJobCommand, error) {
 	commands := []string{}
 	files := []MinIOIntervalJobCommandFile{}
