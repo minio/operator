@@ -22,17 +22,22 @@ import (
 	"strings"
 )
 
+// ArgType - arg type
+type ArgType int
+
+const (
+	ArgTypeKey ArgType = iota
+	ArgTypeFile
+	ArgTypeKeyFile
+)
+
 // Arg - parse the arg result
 type Arg struct {
 	Command     string
 	FileName    string
 	FileExt     string
 	FileContext string
-}
-
-// IsFile - if it is a file
-func (arg Arg) IsFile() bool {
-	return arg.FileName != ""
+	ArgType     ArgType
 }
 
 // FieldsFunc - alias function
@@ -74,10 +79,58 @@ func File(fName string, ext string) FieldsFunc {
 				out.FileName = fName
 				out.FileExt = ext
 				out.FileContext = strings.TrimSpace(val)
+				out.ArgType = ArgTypeFile
 				return out, nil
 			}
 		}
 		return out, fmt.Errorf("file %s not found", fName)
+	}
+}
+
+// KeyValue - match key and putout the key, like endpoint="https://webhook-1.example.net"
+func KeyValue(key string) FieldsFunc {
+	return func(args map[string]string) (out Arg, err error) {
+		if args == nil {
+			return out, fmt.Errorf("args is nil")
+		}
+		val, ok := args[key]
+		if !ok {
+			return out, fmt.Errorf("key %s not found", key)
+		}
+		out.Command = fmt.Sprintf(`%s="%s"`, key, val)
+		return out, fmt.Errorf("key %s not found", key)
+	}
+}
+
+// KeyFile - match key and putout the key, like client_cert="[here is content]"
+func KeyFile(key string, ext string) FieldsFunc {
+	return func(args map[string]string) (out Arg, err error) {
+		if args == nil {
+			return out, fmt.Errorf("args is nil")
+		}
+		val, ok := args[key]
+		if !ok {
+			return out, fmt.Errorf("key %s not found", key)
+		}
+		out.FileName = key
+		out.FileExt = ext
+		out.FileContext = strings.TrimSpace(val)
+		out.ArgType = ArgTypeKeyFile
+		return out, nil
+	}
+}
+
+// Option - ignore the error
+func Option(opt FieldsFunc) FieldsFunc {
+	return func(args map[string]string) (out Arg, err error) {
+		if args == nil {
+			return out, nil
+		}
+		out, err = opt(args)
+		if err != nil {
+			err = nil
+		}
+		return out, nil
 	}
 }
 
