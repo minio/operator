@@ -26,8 +26,11 @@ import (
 type ArgType int
 
 const (
+	// ArgTypeKey - key=value print value
 	ArgTypeKey ArgType = iota
+	// ArgTypeFile - key=value print /temp/value.ext
 	ArgTypeFile
+	// ArgTypeKeyFile - key=value print key="/temp/value.ext"
 	ArgTypeKeyFile
 )
 
@@ -126,10 +129,7 @@ func Option(opt FieldsFunc) FieldsFunc {
 		if args == nil {
 			return out, nil
 		}
-		out, err = opt(args)
-		if err != nil {
-			err = nil
-		}
+		out, _ = opt(args)
 		return out, nil
 	}
 }
