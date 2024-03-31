@@ -151,23 +151,23 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 			}
 			data := newSecret.Data["config.env"]
 			// validate root creds in string
-			rootUserMissing := true
-			rootPassMissing := false
+			rootUserFound := false
+			rootPwdFound := false
 
 			dataStr := string(data)
-			if !strings.Contains(dataStr, "MINIO_ROOT_USER") {
-				rootUserMissing = true
+			if strings.Contains(dataStr, "MINIO_ROOT_USER") {
+				rootUserFound = true
 			}
-			if !strings.Contains(dataStr, "MINIO_ACCESS_KEY") {
-				rootUserMissing = true
+			if strings.Contains(dataStr, "MINIO_ACCESS_KEY") {
+				rootUserFound = true
 			}
-			if !strings.Contains(dataStr, "MINIO_ROOT_PASSWORD") {
-				rootPassMissing = true
+			if strings.Contains(dataStr, "MINIO_ROOT_PASSWORD") {
+				rootPwdFound = true
 			}
-			if !strings.Contains(dataStr, "MINIO_SECRET_KEY") {
-				rootPassMissing = true
+			if strings.Contains(dataStr, "MINIO_SECRET_KEY") {
+				rootPwdFound = true
 			}
-			if rootUserMissing || rootPassMissing {
+			if !rootUserFound || !rootPwdFound {
 				log.Println("Missing root credentials in the configuration.")
 				log.Println("MinIO won't start")
 				os.Exit(1)
