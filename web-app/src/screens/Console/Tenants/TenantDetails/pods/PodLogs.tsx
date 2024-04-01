@@ -39,7 +39,7 @@ interface IPodLogsProps {
 }
 
 const LogsItem = styled.div(({ theme }) => ({
-  "& .highlighted": {
+  "&.highlighted": {
     "& span": {
       backgroundColor: get(theme, "signalColors.warning", "#FFBD62"),
     },
@@ -107,7 +107,7 @@ const PodLogs = ({
       return (
         <LogsItem
           key={index}
-          className={`${highlightedLine ? "highlight" : ""}`}
+          className={`${highlightedLine ? "highlighted" : ""}`}
         >
           <span className={"tab"}>{substr}</span>
         </LogsItem>
@@ -117,7 +117,7 @@ const PodLogs = ({
       return (
         <LogsItem
           key={index}
-          className={`${highlightedLine ? "highlight" : ""}`}
+          className={`${highlightedLine ? "highlighted" : ""}`}
         >
           <span className={"ansidefault"}>{substr}</span>
         </LogsItem>
