@@ -305,7 +305,7 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *miniojob.MinIOInterva
 		if !found {
 			return intervalJob, fmt.Errorf("operation %s is not supported", mcCommand)
 		}
-		jobCommand, err := miniojob.GenerateMinIOIntervalJobCommand(mcCommand, index, val.DependsOn, jobCR.Name, val.Args, argsFuncs)
+		jobCommand, err := miniojob.GenerateMinIOIntervalJobCommand(mcCommand, index, val.DependsOn, val.Name, val.Args, argsFuncs)
 		if err != nil {
 			return intervalJob, err
 		}
