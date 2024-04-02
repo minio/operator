@@ -101,7 +101,7 @@ func KeyValue(key string) FieldsFunc {
 			return out, fmt.Errorf("key %s not found", key)
 		}
 		out.Command = fmt.Sprintf(`%s="%s"`, key, val)
-		return out, fmt.Errorf("key %s not found", key)
+		return out, nil
 	}
 }
 
