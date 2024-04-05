@@ -24,9 +24,12 @@ operator:
   #      value: "OpenShift" 
   #
   # See `Operator environment variables <https://github.com/minio/operator/blob/master/docs/env-variables.md>`__ for a list of all supported values.
+  # If MINIO_CONSOLE_TLS_ENABLE is enabled, utilize port 9443 for console.ingress.number.
   env:
     - name: OPERATOR_STS_ENABLED
       value: "on"
+    - name: MINIO_CONSOLE_TLS_ENABLE
+      value: "off"
   # An array of additional annotations to be applied to the operator service account
   serviceAccountAnnotations: []
   ###
@@ -280,6 +283,8 @@ console:
   # Configures `Ingress <https://kubernetes.io/docs/concepts/services-networking/ingress/>`__ for the Operator Console.
   #
   # Set the keys to conform to the Ingress controller and configuration of your choice.
+  # Set console.ingress.number to any port. For example:
+  # You may choose port number 9443 for HTTPS or 9090 for HTTP, as desired.
   ingress:
     enabled: false
     ingressClassName: ""
@@ -289,6 +294,7 @@ console:
     host: console.local
     path: /
     pathType: Prefix
+    number: 9090
   ###
   # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator Console can mount to pods.
   #

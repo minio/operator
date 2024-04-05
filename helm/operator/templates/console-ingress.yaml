@@ -35,6 +35,6 @@ spec:
               service:
                 name: "console"
                 port:
-                  name: http
+                  number: {{ .Values.console.ingress.number }}
 {{- end }}
 {{- end }}
