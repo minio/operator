@@ -61,7 +61,7 @@ var JobOperation = map[string][]FieldsFunc{
 	"admin/user/add":      {ALIAS(), Key("user"), Key("password")},
 	"admin/policy/create": {ALIAS(), Key("name"), File("policy", "json")},
 	"admin/policy/attach": {ALIAS(), Key("policy"), OneOf(KeyForamt("user", "--user"), KeyForamt("group", "--group"))},
-	"admin/config/set":    {ALIAS(), Key("webhookName"), Option(KeyValue("endpoint")), Option(KeyValue("auth_token")), Option(KeyFile("client_key", "key")), Option(KeyFile("client_cert", "pem"))},
+	"admin/config/set":    {ALIAS(), Key("webhookName"), Option(KeyValue("endpoint")), Option(KeyFile("client_key", "key")), Option(KeyFile("client_cert", "pem")), OthersKeyValues()},
 }
 
 // OperationAliasToMC - convert operation to mc operation

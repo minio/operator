@@ -74,17 +74,16 @@ func File(fName string, ext string) FieldsFunc {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
 		}
-		for key, val := range args {
-			if key == fName {
-				if val == "" {
-					return out, fmt.Errorf("value is empty")
-				}
-				out.FileName = fName
-				out.FileExt = ext
-				out.FileContext = strings.TrimSpace(val)
-				out.ArgType = ArgTypeFile
-				return out, nil
+		if val, ok := args[fName]; ok {
+			if val == "" {
+				return out, fmt.Errorf("value is empty")
 			}
+			out.FileName = fName
+			out.FileExt = ext
+			out.FileContext = strings.TrimSpace(val)
+			out.ArgType = ArgTypeFile
+			delete(args, fName)
+			return out, nil
 		}
 		return out, fmt.Errorf("file %s not found", fName)
 	}
@@ -101,6 +100,7 @@ func KeyValue(key string) FieldsFunc {
 			return out, fmt.Errorf("key %s not found", key)
 		}
 		out.Command = fmt.Sprintf(`%s="%s"`, key, val)
+		delete(args, key)
 		return out, nil
 	}
 }
@@ -119,6 +119,7 @@ func KeyFile(key string, ext string) FieldsFunc {
 		out.FileExt = ext
 		out.FileContext = strings.TrimSpace(val)
 		out.ArgType = ArgTypeKeyFile
+		delete(args, key)
 		return out, nil
 	}
 }
@@ -149,7 +150,30 @@ func KeyForamt(key string, format string) FieldsFunc {
 			return out, fmt.Errorf("key %s not found", key)
 		}
 		out.Command = strings.ReplaceAll(format, "$0", strings.ReplaceAll(val, ",", " "))
+		delete(args, key)
 		return out, nil
+	}
+}
+
+// OthersKeyValues - get all the key values
+func OthersKeyValues(ignoreFileKeys ...string) FieldsFunc {
+	return func(args map[string]string) (out Arg, err error) {
+		if args == nil {
+			return out, fmt.Errorf("args is nil")
+		}
+		data := []string{}
+		for key, val := range args {
+			if val != "" {
+				data = append(data, fmt.Sprintf(`%s="%s"`, key, val))
+			} else {
+				data = append(data, key)
+			}
+			delete(args, key)
+		}
+		sort.Slice(data, func(i, j int) bool {
+			return data[i] < data[j]
+		})
+		return Arg{Command: strings.Join(data, " ")}, nil
 	}
 }
 
@@ -214,11 +238,12 @@ var prefixKeyForamt = func(pkey string, ignoreKeys ...string) FieldsFunc {
 						}
 					}
 				}
+				delete(args, key)
 			}
 		}
 		// avoid flags change the order
 		sort.Slice(data, func(i, j int) bool {
-			return data[i] > data[j]
+			return data[i] < data[j]
 		})
 		return Arg{Command: strings.Join(data, " ")}, nil
 	}
