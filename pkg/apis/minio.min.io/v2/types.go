@@ -98,6 +98,8 @@ type Features struct {
 // For more complete documentation on this object, see the https://min.io/docs/minio/kubernetes/upstream/operations/installation.html[MinIO Kubernetes Documentation]. +
 type TenantSpec struct {
 	// *Required* +
+	// +listType=map
+	// +listMapKey=name
 	//
 	// An array of objects describing each MinIO server pool deployed in the MinIO Tenant. Each pool consists of a set of MinIO server pods which "pool" their storage resources for supporting object storage and retrieval requests. Each server pool is independent of all others and supports horizontal scaling of available storage resources in the MinIO Tenant. +
 	//
@@ -609,11 +611,10 @@ type CustomCertificateConfig struct {
 //
 // See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#procedure-command-line[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation. +
 type Pool struct {
-	// *Optional* +
+	// *Required*
 	//
 	// Specify the name of the pool. The Operator automatically generates the pool name if this field is omitted.
-	// +optional
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// *Required*
 	//
 	// The number of MinIO server pods to deploy in the pool. The minimum value is `2`.

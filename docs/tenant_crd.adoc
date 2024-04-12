@@ -530,7 +530,7 @@ See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-
 | Field | Description
 
 |*`name`* __string__ 
-|*Optional* +
+|*Required*
 
 
 Specify the name of the pool. The Operator automatically generates the pool name if this field is omitted.
