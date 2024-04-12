@@ -608,6 +608,7 @@ type CustomCertificateConfig struct {
 // Pool (`pools`) defines a MinIO server pool on a Tenant. Each pool consists of a set of MinIO server pods which "pool" their storage resources for supporting object storage and retrieval requests. Each server pool is independent of all others and supports horizontal scaling of available storage resources in the MinIO Tenant. +
 //
 // See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#procedure-command-line[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation. +
+// +kubebuilder:validation:XValidation:rule="!has(oldSelf.volumesPerServer) || has(self.volumesPerServer)", message="volumesPerServer is required once set"
 type Pool struct {
 	// *Optional* +
 	//
@@ -625,6 +626,8 @@ type Pool struct {
 	// The number of Persistent Volume Claims to generate for each MinIO server pod in the pool. +
 	//
 	// The MinIO Operator requires a minimum of `4` volumes per pool. Specifically, the result of `pools.servers X pools.volumesPerServer` must be greater than `4`. +
+	// +kubebuilder:validation:Optional
+    // +kubebuilder:validation:XValidation:rule="self == oldSelf",message="VolumesPerServer is immutable"
 	VolumesPerServer int32 `json:"volumesPerServer"`
 	// *Required* +
 	//

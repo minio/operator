@@ -23,6 +23,7 @@ package v1alpha1
 type MinIOJobStatusApplyConfiguration struct {
 	Phase          *string                           `json:"phase,omitempty"`
 	CommandsStatus []CommandStatusApplyConfiguration `json:"commands,omitempty"`
+	Message        *string                           `json:"message,omitempty"`
 }
 
 // MinIOJobStatusApplyConfiguration constructs an declarative configuration of the MinIOJobStatus type for use with
@@ -49,5 +50,13 @@ func (b *MinIOJobStatusApplyConfiguration) WithCommandsStatus(values ...*Command
 		}
 		b.CommandsStatus = append(b.CommandsStatus, *values[i])
 	}
+	return b
+}
+
+// WithMessage sets the Message field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Message field is set to the value of the last call.
+func (b *MinIOJobStatusApplyConfiguration) WithMessage(value string) *MinIOJobStatusApplyConfiguration {
+	b.Message = &value
 	return b
 }
