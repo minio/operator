@@ -3300,15 +3300,13 @@ spec:
                       format: int32
                       type: integer
                       x-kubernetes-validations:
-                      - message: VolumesPerServer is immutable
+                      - message: volumesPerServer is immutable
                         rule: self == oldSelf
                   required:
                   - servers
                   - volumeClaimTemplate
+                  - volumesPerServer
                   type: object
-                  x-kubernetes-validations:
-                  - message: volumesPerServer is required once set
-                    rule: '!has(oldSelf.volumesPerServer) || has(self.volumesPerServer)'
                 type: array
               priorityClassName:
                 type: string
