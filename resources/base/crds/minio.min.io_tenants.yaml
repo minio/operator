@@ -3054,6 +3054,9 @@ spec:
                     servers:
                       format: int32
                       type: integer
+                      x-kubernetes-validations:
+                      - message: servers is immutable
+                        rule: self == oldSelf
                     tolerations:
                       items:
                         properties:

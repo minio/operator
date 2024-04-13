@@ -616,6 +616,7 @@ type Pool struct {
 	// Specify the name of the pool. The Operator automatically generates the pool name if this field is omitted.
 	Name string `json:"name"`
 	// *Required*
+	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="servers is immutable"
 	//
 	// The number of MinIO server pods to deploy in the pool. The minimum value is `2`.
 	//
