@@ -30,6 +30,7 @@ type MinIOJobSpecApplyConfiguration struct {
 	Execution          *jobminiov1alpha1.Execution       `json:"execution,omitempty"`
 	FailureStrategy    *jobminiov1alpha1.FailureStrategy `json:"failureStrategy,omitempty"`
 	Commands           []CommandSpecApplyConfiguration   `json:"commands,omitempty"`
+	MCImage            *string                           `json:"mcImage,omitempty"`
 }
 
 // MinIOJobSpecApplyConfiguration constructs an declarative configuration of the MinIOJobSpec type for use with
@@ -80,5 +81,13 @@ func (b *MinIOJobSpecApplyConfiguration) WithCommands(values ...*CommandSpecAppl
 		}
 		b.Commands = append(b.Commands, *values[i])
 	}
+	return b
+}
+
+// WithMCImage sets the MCImage field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the MCImage field is set to the value of the last call.
+func (b *MinIOJobSpecApplyConfiguration) WithMCImage(value string) *MinIOJobSpecApplyConfiguration {
+	b.MCImage = &value
 	return b
 }
