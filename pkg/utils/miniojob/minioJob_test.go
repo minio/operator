@@ -68,13 +68,13 @@ func TestParser(t *testing.T) {
 			expectError: false,
 		},
 		{
-			command:     KeyForamt("user", "--user $0"),
+			command:     KeyFormat("user", "--user $0"),
 			args:        copyArgs(args),
 			expect:      Arg{Command: "--user a b c d"},
 			expectError: false,
 		},
 		{
-			command:     KeyForamt("user", "--user"),
+			command:     KeyFormat("user", "--user"),
 			args:        copyArgs(args),
 			expect:      Arg{Command: "--user a b c d"},
 			expectError: false,
@@ -116,19 +116,19 @@ func TestParser(t *testing.T) {
 			expectError: false,
 		},
 		{
-			command:     OneOf(KeyForamt("user", "--user"), KeyForamt("group", "--group")),
+			command:     OneOf(KeyFormat("user", "--user"), KeyFormat("group", "--group")),
 			args:        copyArgs(args),
 			expect:      Arg{Command: "--user a b c d"},
 			expectError: false,
 		},
 		{
-			command:     OneOf(KeyForamt("miss_user", "--user"), KeyForamt("group", "--group")),
+			command:     OneOf(KeyFormat("miss_user", "--user"), KeyFormat("group", "--group")),
 			args:        copyArgs(args),
 			expect:      Arg{Command: "--group group1 group2 group3"},
 			expectError: false,
 		},
 		{
-			command:     OneOf(KeyForamt("miss_user", "--user"), KeyForamt("miss_group", "--group")),
+			command:     OneOf(KeyFormat("miss_user", "--user"), KeyFormat("miss_group", "--group")),
 			args:        copyArgs(args),
 			expect:      Arg{Command: "--group group1 group2 group3"},
 			expectError: true,

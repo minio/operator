@@ -48,12 +48,12 @@ type FieldsFunc func(args map[string]string) (Arg, error)
 
 // Key - key=value|value1,value2,value3
 func Key(key string) FieldsFunc {
-	return KeyForamt(key, "$0")
+	return KeyFormat(key, "$0")
 }
 
 // FLAGS - --key=""|value|value1,value2,value3
 func FLAGS(ignoreKeys ...string) FieldsFunc {
-	return prefixKeyForamt("-", ignoreKeys...)
+	return prefixKeyFormat("-", ignoreKeys...)
 }
 
 // ALIAS - myminio
@@ -135,9 +135,9 @@ func Option(opt FieldsFunc) FieldsFunc {
 	}
 }
 
-// KeyForamt - match key and get outPut to replace $0 to output the value
+// KeyFormat - match key and get outPut to replace $0 to output the value
 // if format not contain $0, will add $0 to the end
-func KeyForamt(key string, format string) FieldsFunc {
+func KeyFormat(key string, format string) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
@@ -214,7 +214,7 @@ func Sanitize(funcs ...FieldsFunc) FieldsFunc {
 	}
 }
 
-var prefixKeyForamt = func(pkey string, ignoreKeys ...string) FieldsFunc {
+var prefixKeyFormat = func(pkey string, ignoreKeys ...string) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")
