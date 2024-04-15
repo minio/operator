@@ -48,20 +48,20 @@ Common labels for operator. Does not include selectorLabels.
 */}}
 {{- define "minio-operator.labels-common" -}}
 helm.sh/chart: {{ include "minio-operator.chart" . }}
-{- range $key, $val :=  .Values.operator.additionalLabels }}
+{{- range $key, $val :=  .Values.operator.additionalLabels }}
 {{ $key }}: {{ $val | quote }}
 {{- end }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{- end -}
+{{- end -}}
 
 {{/*
 All labels for operator. Includes selectorLabels.
 */}}
 {{- define "minio-operator.labels-all" -}}
-{{ include "minio-operator.labels-common" }}
+{{ include "minio-operator.labels-common" . }}
 {{ include "minio-operator.selectorLabels" . }}
 {{- end -}}
 
@@ -91,7 +91,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 All labels for console. Combines minio-operator.console-labels-common and minio-operator.console-selectorLabels.
 */}}
 {{- define "minio-operator.console-labels-all" -}}
-{{ include "minio-operator.console-labels-common" }}
+{{ include "minio-operator.console-labels-common" . }}
 {{ include "minio-operator.console-selectorLabels" . }}
 {{- end -}}
 
