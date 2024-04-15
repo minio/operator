@@ -3,14 +3,14 @@ kind: Deployment
 metadata:
   name: minio-operator
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "minio-operator.labels" . | nindent 4 }}
+  labels: {{- include "minio-operator.labels-all" . | nindent 4 }}
 spec:
   replicas: {{ .Values.operator.replicaCount }}
   selector:
     matchLabels: {{- include "minio-operator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: {{- include "minio-operator.selectorLabels" . | nindent 8 }}
+      labels: {{- include "minio-operator.labels-all" . | nindent 8 }}
     spec:
       {{- with .Values.operator.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}

@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: operator
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "minio-operator.labels" . | nindent 4 }}
+  labels: {{- include "minio-operator.labels-commmon" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:

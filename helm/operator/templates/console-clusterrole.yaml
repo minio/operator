@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: console-sa-role
-  labels: {{- include "minio-operator.console-labels" . | nindent 4 }}
+  labels: {{- include "minio-operator.console-labels-common" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""

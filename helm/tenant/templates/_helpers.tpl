@@ -46,7 +46,7 @@ Create chart name and version as used by the chart label.
 {{/*
 Common labels for operator
 */}}
-{{- define "minio-operator.labels" -}}
+{{- define "minio-operator.labels-all" -}}
 helm.sh/chart: {{ include "minio-operator.chart" . }}
 {{ include "minio-operator.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
@@ -66,7 +66,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{/*
 Common labels for console
 */}}
-{{- define "minio-operator.console-labels" -}}
+{{- define "minio-operator.console-labels-all" -}}
 helm.sh/chart: {{ include "minio-operator.chart" . }}
 {{ include "minio-operator.console-selectorLabels" . }}
 {{- if .Chart.AppVersion }}
