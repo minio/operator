@@ -60,7 +60,7 @@ var JobOperation = map[string][]FieldsFunc{
 	"mb":                  {FLAGS(), Sanitize(ALIAS(), Static("/"), Key("name")), Static("--ignore-existing")},
 	"admin/user/add":      {ALIAS(), Key("user"), Key("password")},
 	"admin/policy/create": {ALIAS(), Key("name"), File("policy", "json")},
-	"admin/policy/attach": {ALIAS(), Key("policy"), OneOf(KeyForamt("user", "--user"), KeyForamt("group", "--group"))},
+	"admin/policy/attach": {ALIAS(), Key("policy"), OneOf(KeyFormat("user", "--user"), KeyFormat("group", "--group"))},
 	"admin/config/set":    {ALIAS(), Key("webhookName"), Option(KeyValue("endpoint")), Option(KeyFile("client_key", "key")), Option(KeyFile("client_cert", "pem")), OthersKeyValues()},
 }
 
