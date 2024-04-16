@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio:RELEASE.2024-03-15T01-07-19Z",
+            "image": "quay.io/minio/minio@sha256:ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -776,5 +776,12 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
+  relatedImages:
+    - image: minio/operator@sha256:91268142b22f88bef9fe74577930afffa9e877f48da84bf0a2b7303c74c1dd06
+      name: console
+    - image: minio/operator@sha256:91268142b22f88bef9fe74577930afffa9e877f48da84bf0a2b7303c74c1dd06
+      name: minio-operator
+    - image: quay.io/minio/minio@sha256:ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113
+      name: minio-ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113-annotation
   version: 5.0.14
   replaces: minio-operator-rhmp.v5.0.13

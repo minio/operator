@@ -44,7 +44,7 @@ redhatCatalogs=("certified-operators" "redhat-marketplace" "community-operators"
 
 # This constants are supported Openshift versions
 minOpenshiftVersion=4.8
-maxOpenshiftVersion=4.14
+maxOpenshiftVersion=4.15
 
 for catalog in "${redhatCatalogs[@]}"; do
   echo " "
@@ -63,6 +63,7 @@ for catalog in "${redhatCatalogs[@]}"; do
     --output-dir bundles/$catalog/$RELEASE \
     --channels stable \
     --overwrite \
+    --use-image-digests \
     --kustomize-dir config/manifests
 
   # Set the version, later in olm-post-script.sh we change for Digest form.
