@@ -278,12 +278,14 @@ console:
   # You may need to modify these values to meet your cluster's security and access settings.
   securityContext:
     runAsUser: 1000
+    runAsGroup: 1000
     runAsNonRoot: true
   ###
   # The Kubernetes `SecurityContext <https://kubernetes.io/docs/tasks/configure-pod-container/security-context/>`__ to use for deploying Operator Console containers.
   # You may need to modify these values to meet your cluster's security and access settings.
   containerSecurityContext:
     runAsUser: 1000
+    runAsGroup: 1000
     runAsNonRoot: true
     allowPrivilegeEscalation: false
     capabilities:
