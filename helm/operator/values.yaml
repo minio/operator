@@ -95,6 +95,12 @@ operator:
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   ###
   # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator can mount to pods.
   #
@@ -279,6 +285,12 @@ console:
   containerSecurityContext:
     runAsUser: 1000
     runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   ###
   # Configures `Ingress <https://kubernetes.io/docs/concepts/services-networking/ingress/>`__ for the Operator Console.
   #
