@@ -14,6 +14,7 @@ KES_RELEASE=$(get_latest_release minio/kes)
 KES_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/kes\:)([v]?.*)"/\2/p' pkg/apis/minio.min.io/v2/constants.go)
 
 files=(
+  "README.md"
   "api/consts.go"
   "docs/tenant_crd.adoc"
   "docs/policybinding_crd.adoc"
@@ -25,14 +26,10 @@ files=(
   "helm/operator/values.yaml"
   "helm/tenant/Chart.yaml"
   "helm/tenant/values.yaml"
-  "kubectl-minio/README.md"
-  "kubectl-minio/cmd/helpers/constants.go"
-  "kubectl-minio/cmd/tenant-upgrade.go"
   "pkg/apis/minio.min.io/v2/constants.go"
   "pkg/controller/operator.go"
   "resources/base/deployment.yaml"
   "resources/base/console-ui.yaml"
-  "update-operator-krew.py"
   "testing/console-tenant+kes.sh"
   "web-app/src/screens/Console/Tenants/AddTenant/Steps/Images.tsx"
   "web-app/src/screens/Console/Tenants/TenantDetails/TenantEncryption.tsx")

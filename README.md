@@ -47,15 +47,6 @@ status.
 For more complete documentation on using the MinIO Console, see the
 [MinIO Console Github Repository](https://github.com/minio/console).
 
-## MinIO Operator and `kubectl` Plugin
-
-The MinIO Operator extends the Kubernetes API to support deploying MinIO-specific
-resources as a Tenant in a Kubernetes cluster.
-
-The MinIO `kubectl minio` plugin wraps the Operator to provide a simplified interface
-for deploying and managing MinIO Tenants in a Kubernetes cluster through the
-`kubectl` command line tool.
-
 # Deploy the MinIO Operator and Create a Tenant
 
 This procedure installs the MinIO Operator and creates a 4-node MinIO Tenant for supporting object storage operations in
@@ -65,10 +56,12 @@ a Kubernetes cluster.
 
 ### Kubernetes 1.21 or Later
 
-Starting with Operator v5.0.0, MinIO requires Kubernetes version 1.21.0 or later. You must upgrade your Kubernetes cluster to 1.21.0 or later to use Operator
+Starting with Operator v5.0.0, MinIO requires Kubernetes version 1.21.0 or later. You must upgrade your Kubernetes
+cluster to 1.21.0 or later to use Operator
 v5.0.0+.
 
-Starting with Operator v4.0.0, MinIO requires Kubernetes version 1.19.0 or later.  Previous versions of the Operator supported Kubernetes 1.17.0 or later. You must upgrade your Kubernetes cluster to 1.19.0 or later to use Operator
+Starting with Operator v4.0.0, MinIO requires Kubernetes version 1.19.0 or later. Previous versions of the Operator
+supported Kubernetes 1.17.0 or later. You must upgrade your Kubernetes cluster to 1.19.0 or later to use Operator
 v4.0.0+.
 
 This procedure assumes the host machine has [`kubectl`](https://kubernetes.io/docs/tasks/tools) installed and configured
@@ -80,7 +73,7 @@ MinIO supports no more than *one* MinIO Tenant per Namespace. The following `kub
 for the MinIO Tenant.
 
 ```sh
-kubectl create namespace minio-tenant-1
+kubectl create namespace minio-tenant
 ```
 
 The MinIO Operator Console supports creating a namespace as part of the Tenant Creation procedure.
@@ -166,13 +159,13 @@ performance:
 ## Procedure
 
 ### 1) Install the MinIO Operator via Kustomization
-Follow the  [Install `kustomize`](https://kubectl.docs.kubernetes.io/installation/kustomize/)  guide for your host system before starting this procedure.
+
+The standard `kubectl` tool ships with support
+for [kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) out of the box, so you can
+use that to install MiniO Operator.
 
 ```sh
-VERSION=v5.0.11
-TIMEOUT=120 # By default is 27, sometimes connection is slow, allow more time to fetch it.
-kustomize build "github.com/minio/operator/resources/?timeout=120&ref=${VERSION}" > operator.yaml
-kubectl apply -f operator.yaml
+kubectl kustomize github.com/minio/operator\?ref=v5.0.14
 ```
 
 Run the following command to verify the status of the Operator:
