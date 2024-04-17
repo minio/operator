@@ -36,6 +36,13 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
             runAsNonRoot: true
+            securityContext:
+              allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: MINIO_CONSOLE_TLS_ENABLE
               value: "off"
