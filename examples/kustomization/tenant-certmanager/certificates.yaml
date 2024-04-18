@@ -1,10 +1,35 @@
 apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-root
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: tenant-certmanager-issuer
   namespace: minio-tenant
 spec:
   selfSigned: { }
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tenant-certmanager-ca-certificate
+  namespace: tenant-certmanager
+spec:
+  isCA: true
+  commonName: tenant-certmanager-ca
+  secretName: tenant-certmanager-ca-tls
+  duration: 70128h # 8y
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-root
+    kind: ClusterIssuer
+    group: cert-manager.io
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -23,6 +48,8 @@ spec:
   #     - jetstack
   # commonName: example.com
   dnsNames:
+    - "minio.tenant-certmanager"
+    - "minio.tenant-certmanager.svc"
     - "*.tenant-certmanager.svc.cluster.local"
     - "*.myminio.tenant-certmanager.svc.cluster.local"
     - "*.myminio-hl.tenant-certmanager.svc.cluster.local"
