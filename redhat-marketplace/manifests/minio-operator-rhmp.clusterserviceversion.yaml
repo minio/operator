@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio:RELEASE.2024-03-15T01-07-19Z",
+            "image": "quay.io/minio/minio:RELEASE.2024-04-18T19-09-19Z",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -80,6 +80,7 @@ metadata:
       ]
     capabilities: Full Lifecycle
     categories: AI/Machine Learning, Big Data, Cloud Provider, Storage
+    createdAt: "2024-04-18T21:54:55Z"
     description: |-
       MinIO is a Kubernetes-native high performance object store with an
       S3-compatible API. The MinIO Operator supports deploying MinIO Tenants
@@ -98,11 +99,11 @@ metadata:
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
     operatorframework.io/suggested-namespace: minio-operator
-    operators.operatorframework.io/builder: operator-sdk-v1.22.2
+    operators.operatorframework.io/builder: operator-sdk-v1.28.0-ocp
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.14
-  name: minio-operator-rhmp.v5.0.14
+    containerImage: quay.io/minio/operator:v5.0.15
+  name: minio-operator-rhmp.v5.0.15
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -569,7 +570,7 @@ spec:
                   operator.min.io/authors: MinIO, Inc.
                   operator.min.io/license: AGPLv3
                   operator.min.io/support: https://subnet.min.io
-                  operator.min.io/version: v5.0.14
+                  operator.min.io/version: v5.0.15
                 labels:
                   app: console
                   app.kubernetes.io/instance: minio-operator-console
@@ -579,7 +580,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator:v5.0.14
+                    image: quay.io/minio/operator:v5.0.15
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -633,7 +634,7 @@ spec:
                   operator.min.io/authors: MinIO, Inc.
                   operator.min.io/license: AGPLv3
                   operator.min.io/support: https://subnet.min.io
-                  operator.min.io/version: v5.0.14
+                  operator.min.io/version: v5.0.15
                 labels:
                   app.kubernetes.io/instance: minio-operator
                   app.kubernetes.io/name: operator
@@ -659,7 +660,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "on"
-                    image: quay.io/minio/operator:v5.0.14
+                    image: quay.io/minio/operator:v5.0.15
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -776,5 +777,5 @@ spec:
   provider:
     name: MinIO Inc
     url: https://min.io
-  version: 5.0.14
+  version: 5.0.15
   replaces: minio-operator-rhmp.v5.0.13

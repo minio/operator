@@ -7,7 +7,7 @@ spec:
   ## Define configuration for KES (stateless and distributed key-management system)
   ## Refer https://github.com/minio/kes
   kes:
-    image: "" # minio/kes:2024-03-13T17-52-13Z
+    image: "" # minio/kes:2024-04-12T13-50-00Z
     env: [ ]
     replicas: 2
     kesSecret:

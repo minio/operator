@@ -28,7 +28,7 @@ const (
 
 	// Image versions
 
-	KESImageVersion = "minio/kes:2024-03-13T17-52-13Z"
+	KESImageVersion = "minio/kes:2024-04-12T13-50-00Z"
 
 	// Constants for common configuration
 	MinioImage         = "OPERATOR_MINIO_IMAGE"

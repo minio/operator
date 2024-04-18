@@ -601,10 +601,10 @@ function install_operator_version() {
   if [ -z "$version" ]; then
     version=$(curl https://api.github.com/repos/minio/operator/releases/latest | jq --raw-output '.tag_name | "\(.[1:])"')
   fi
-  echo "Target operator release: $version"
+  echo "Target operator release: $version" # version value example is 5.0.14
 
-  # Initialize the MinIO Kubernetes Operator
-  kubectl apply -k "${SCRIPT_DIR}/../resources"
+  echo "Initialize the MinIO Kubernetes Operator from a particular version"
+  kubectl apply -k github.com/minio/operator/resources/\?ref=v"$version"
 
 
   if [ "$1" = "helm" ]; then
