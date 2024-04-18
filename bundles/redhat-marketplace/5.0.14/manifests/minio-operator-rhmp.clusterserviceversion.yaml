@@ -782,4 +782,5 @@ spec:
     - image: quay.io/minio/minio@sha256:ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113
       name: minio-ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113-annotation
   version: 5.0.14
-  replaces: minio-operator-rhmp.v5.0.13
+  skips:
+    - minio-operator-rhmp.v5.0.13
