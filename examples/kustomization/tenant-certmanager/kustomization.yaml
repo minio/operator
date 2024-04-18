@@ -4,7 +4,8 @@ kind: Kustomization
 namespace: tenant-certmanager
 
 resources:
-  - certificates.yaml
+  - ../cert-manager
+  - myminio-certificate.yaml
   - ../base
 
 patchesStrategicMerge:
