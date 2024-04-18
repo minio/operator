@@ -45,6 +45,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/utils/ptr"
 )
 
 type imageRegistry struct {
@@ -55,6 +56,14 @@ type imageRegistryCredentials struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Auth     string `json:"auth"`
+}
+
+var defaultSecurityContext = models.SecurityContext{
+	RunAsUser:           ptr.To("1000"),
+	RunAsGroup:          ptr.To("1000"),
+	FsGroup:             "1000",
+	FsGroupChangePolicy: string(corev1.FSGroupChangeOnRootMismatch),
+	RunAsNonRoot:        ptr.To(true),
 }
 
 func registerTenantHandlers(api *operations.OperatorAPI) {
@@ -1018,13 +1027,31 @@ func parseTenantPoolRequest(poolParams *models.Pool) (*miniov2.Pool, error) {
 		Tolerations:      tolerations,
 		RuntimeClassName: &poolParams.RuntimeClassName,
 	}
-	// if security context for Tenant is present, configure it.
-	if poolParams.SecurityContext != nil {
-		sc, err := convertModelSCToK8sSC(poolParams.SecurityContext)
-		if err != nil {
-			return nil, err
-		}
-		pool.SecurityContext = sc
+	// use default security context for Tenant if none is present
+	scp := poolParams.SecurityContext
+	if scp == nil {
+		scp = &defaultSecurityContext
+	}
+	var err error
+	pool.SecurityContext, err = convertModelSCToK8sSC(scp)
+	if err != nil {
+		return nil, err
+	}
+	pool.ContainerSecurityContext = &corev1.SecurityContext{
+		// use security context as the base for the container security context
+		RunAsUser:    pool.SecurityContext.RunAsUser,
+		RunAsGroup:   pool.SecurityContext.RunAsGroup,
+		RunAsNonRoot: pool.SecurityContext.RunAsNonRoot,
+
+		// allow running the tenant with restricted pod standards
+		// see https://kubernetes.io/docs/concepts/security/pod-security-standards
+		AllowPrivilegeEscalation: ptr.To(false),
+		Capabilities: &corev1.Capabilities{
+			Drop: []corev1.Capability{"ALL"},
+		},
+		SeccompProfile: &corev1.SeccompProfile{
+			Type: corev1.SeccompProfileTypeRuntimeDefault,
+		},
 	}
 	return pool, nil
 }
