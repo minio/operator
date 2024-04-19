@@ -93,9 +93,23 @@ for catalog in "${redhatCatalogs[@]}"; do
     PREV_VERSION=$(curl -s "https://catalog.redhat.com/api/containers/v1/operators/bundles?channel_name=stable&package=${package}&organization=${catalog}&ocp_version=${maxOpenshiftVersion}&include=data.version,data.csv_name,data.ocp_version" | jq '.data | max_by(.version).csv_name' -r)
     echo "replaces: $PREV_VERSION"
     yq -i e ".spec.replaces |= \"${PREV_VERSION}\"" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+    # We need to remove "skips" and only use "replaces"
+    yq -i "del(.spec.skips) " bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   else
-    echo "no previous published in catalog ${maxOpenshiftVersion}, removing spec.replaces"
+    # This procedure is needed when a new Index is released
+    # Having a new Index (ie Openshift 4.15) means that Operator haven't been published in it yet, so the "replaces" annotation fails.
+    # To prevent it we reached out to RedHat support and told us to use "skips" instead, that way we can keep the update
+    # graph and publish Operator in the new Index for the first time.
+    # https://connect.redhat.com/support/technology-partner/#/case/03793912
+    echo "no previous published in index ${maxOpenshiftVersion}, removing spec.replaces"
     yq -i "del(.spec.replaces) " bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+    echo "adding spec.skips for new index"
+    # Get the previous Openshift Index
+    previousOpenshiftVersion=$(curl -s "https://catalog.redhat.com/api/containers/v1/operators/indices?ocp_versions_range=${minOpenshiftVersion}-${maxOpenshiftVersion}&organization=${catalog}" | yq  '.data.[].ocp_version' | sort -V | tail -n2 | head -n1)
+    # Get the latest published operator in the previous Openshift Index
+    PREV_VERSION=$(curl -s "https://catalog.redhat.com/api/containers/v1/operators/bundles?channel_name=stable&package=${package}&organization=${catalog}&ocp_version=${previousOpenshiftVersion}&include=data.version,data.csv_name,data.ocp_version" | jq '.data | max_by(.version).csv_name' -r)
+    echo "skips: $PREV_VERSION"
+    yq -i e ".spec.skips += [\"${PREV_VERSION}\"]" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
   fi
 
   # Now promote the latest release to the root of the repository
