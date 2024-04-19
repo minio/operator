@@ -7,7 +7,7 @@ commonAnnotations:
   operator.min.io/support: "https://subnet.min.io"
   operator.min.io/version: v5.0.14
 commonLabels:
-  app.kubernetes.io/name: operator
+  app.kubernetes.io/name: minio-operator
 resources:
   - base/namespace.yaml
   - base/service-account.yaml
