@@ -18,7 +18,6 @@ HELM_TEMPLATES=$(HELM_HOME)/templates
 KUSTOMIZE_HOME=resources
 KUSTOMIZE_CRDS=$(KUSTOMIZE_HOME)/base/crds/
 
-PLUGIN_HOME=kubectl-minio
 
 all: build
 
@@ -42,7 +41,7 @@ operator: binary
 docker: operator
 	@docker buildx build --no-cache --load --platform linux/$(GOARCH) -t $(TAG) .
 
-build: regen-crd verify plugin operator docker
+build: regen-crd verify operator docker
 
 install: all
 
@@ -78,17 +77,6 @@ regen-crd-docs:
 	@${GOPATH}/bin/crd-ref-docs --source-path=./pkg/apis/minio.min.io/v2  --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/tenant_crd.adoc --templates-dir=docs/templates/asciidoctor/
 	@${GOPATH}/bin/crd-ref-docs --source-path=./pkg/apis/sts.min.io/v1alpha1  --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/policybinding_crd.adoc --templates-dir=docs/templates/asciidoctor/
 	@${GOPATH}/bin/crd-ref-docs --source-path=./pkg/apis/job.min.io/v1alpha1  --config=docs/templates/config.yaml --renderer=asciidoctor --output-path=docs/job_crd.adoc --templates-dir=docs/templates/asciidoctor/
-
-plugin: regen-crd
-	@echo "Building 'kubectl-minio' binary"
-	@(cd $(PLUGIN_HOME); \
-		go vet ./... && \
-		go test -race ./... && \
-		GO111MODULE=on ${GOPATH}/bin/golangci-lint cache clean && \
-		GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml)
-
-plugin-binary: plugin
-	@(cd $(PLUGIN_HOME) && CGO_ENABLED=0 go build -trimpath --ldflags $(LDFLAGS) -o kubectl-minio .)
 
 generate-code:
 	@./k8s/update-codegen.sh
