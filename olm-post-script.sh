@@ -1,14 +1,5 @@
 #!/bin/bash
 
-# get the minio version
-RELEASE="$(sed -n 's/^.*DefaultOperatorImage = "minio\/operator:v\(.*\)"/\1/p' pkg/controller/operator.go)"
-minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '.spec.image' | tail -1)
-echo "minioVersionInExample: ${minioVersionInExample}"
-
-# Get sha form of minio version
-minioVersionDigest=$(docker pull $minioVersionInExample | grep Digest | awk -F ' ' '{print $2}')
-minioVersionDigest="quay.io/minio/minio@${minioVersionDigest}"
-echo "minioVersionDigest: ${minioVersionDigest}"
 
 # There are 4 catalogs in Red Hat, we are interested in two of them:
 # https://docs.openshift.com/container-platform/4.7/operators/understanding/olm-rh-catalogs.html

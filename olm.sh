@@ -3,7 +3,7 @@
 set -e
 
 #binary versions
-OPERATOR_SDK_VERSION=v1.22.2
+OPERATOR_SDK_VERSION=v1.34.1
 TMP_BIN_DIR="$(mktemp -d)"
 
 function install_binaries() {
@@ -24,8 +24,10 @@ function install_binaries() {
 
 install_binaries
 
+RELEASE="$(sed -n 's/^.*DefaultOperatorImage = "minio\/operator:v\(.*\)"/\1/p' pkg/controller/operator.go)"
+
 # get the minio version
-minioVersionInExample=$(kustomize build examples/kustomization/tenant-openshift | yq eval-all '.spec.image' | tail -1)
+minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '.spec.image' | tail -1)
 echo "minioVersionInExample: ${minioVersionInExample}"
 
 # Get sha form of minio version
@@ -66,13 +68,16 @@ for catalog in "${redhatCatalogs[@]}"; do
     --use-image-digests \
     --kustomize-dir config/manifests
 
-  # Set the version, later in olm-post-script.sh we change for Digest form.
-  containerImage="quay.io/minio/operator:v${RELEASE}"
-  echo "containerImage: ${containerImage}"
-  operatorImageDigest="quay.io/minio/operator:v${RELEASE}"
-  yq -i ".metadata.annotations.containerImage |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-  yq -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-  yq -i ".spec.install.spec.deployments[1].spec.template.spec.containers[0].image |= (\"${operatorImageDigest}\")" bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  # https://connect.redhat.com/support/technology-partner/#/case/03206318
+  # If no securityContext is specified, the OLM will choose one that fits within
+  # the security context constraint either explicitly specified for the project under which the pod is run,
+  # or the default. If the SCC specifies a value that doesn't match the specified value in our files,
+  # the pods will not start properly and we can't be installed.
+  # Let the user select their own securityContext and don't hardcode values that can affect the ability
+  # to debug and deploy our Operator in OperatorHub.
+  echo "Removing securityContext from CSV"
+  yq -i eval 'del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
   # Will query if a previous version of the CSV was published to the catalog of the latest supported Openshift version.
   # It will help to prevent add the `spec.replaces` annotation when there is no preexisting CSV in the catalog to replace.
