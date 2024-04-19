@@ -95,6 +95,12 @@ operator:
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   ###
   # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator can mount to pods.
   #
@@ -272,13 +278,21 @@ console:
   # You may need to modify these values to meet your cluster's security and access settings.
   securityContext:
     runAsUser: 1000
+    runAsGroup: 1000
     runAsNonRoot: true
   ###
   # The Kubernetes `SecurityContext <https://kubernetes.io/docs/tasks/configure-pod-container/security-context/>`__ to use for deploying Operator Console containers.
   # You may need to modify these values to meet your cluster's security and access settings.
   containerSecurityContext:
     runAsUser: 1000
+    runAsGroup: 1000
     runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
 
   ###
   # Forbid write permissions

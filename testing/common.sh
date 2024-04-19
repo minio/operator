@@ -529,6 +529,22 @@ function load_kind_images() {
     load_kind_image "$CONSOLE_RELEASE"
 }
 
+function create_restricted_namespace() {
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "$1"
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+EOF
+}
+
 function install_operator() {
   # It requires compiled binary in minio-operator folder in order for docker build to work when copying this folder.
   # For that in the github actions you need to wait for operator test/step to get the binary.
@@ -550,9 +566,9 @@ function install_operator() {
     yq -i '.console.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.console.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     echo "Installing Current Operator via HELM"
+    create_restricted_namespace minio-operator
     helm install \
       --namespace minio-operator \
-      --create-namespace \
       minio-operator ./helm/operator
 
     echo "key, value for pod selector in helm test"
@@ -751,8 +767,9 @@ function install_tenant() {
     namespace=default
     key=v1.min.io/tenant
     value=myminio
+    create_restricted_namespace $namespace
     try helm install --namespace $namespace \
-      --create-namespace tenant ./helm/tenant
+      tenant ./helm/tenant
   elif [ "$1" = "logs" ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
