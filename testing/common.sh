@@ -604,7 +604,7 @@ function install_operator_version() {
   echo "Target operator release: $version"
 
   # Initialize the MinIO Kubernetes Operator
-  kubectl apply -k "${SCRIPT_DIR}/../resources"
+  kubectl apply -k github.com/minio/operator/resources/\?ref=v"$version"
 
 
   if [ "$1" = "helm" ]; then
