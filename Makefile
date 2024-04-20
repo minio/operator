@@ -84,6 +84,10 @@ generate-code:
 generate-openshift-manifests:
 	@./olm.sh
 
+helm-reindex:
+	@echo "Re-indexing helm chart release"
+	@./helm-reindex.sh
+
 release: assets
 	@./release.sh
 	@./olm.sh

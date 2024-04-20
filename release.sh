@@ -71,5 +71,3 @@ echo "clean -e files"
 rm -vf $(git ls-files --others | grep -e "-e$" | awk '{print $1}')
 git add .
 
-echo "Re-indexing helm chart releases for $RELEASE"
-./helm-reindex.sh
