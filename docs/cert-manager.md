@@ -202,7 +202,7 @@ x509: certificate signed by unknown authority
 
 ### Create `operator-ca-tls-tenant-1` secret
 
-Copy the cert-manager generated CA certificate into the minio-operator namespace, this will allow Operator to trust the cert-manager issued CA and it's derivatives.
+Copy the cert-manager generated CA certificate into the minio-operator namespace, this will allow Operator to trust the cert-manager issued CA and its derivatives.
 
 Get the CA into a `ca.crt` file in the filesystem.
 ```sh
