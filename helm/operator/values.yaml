@@ -4,7 +4,7 @@ operator:
   ###
   # An array of environment variables to pass to the Operator deployment.
   # Pass an empty array to start Operator with defaults.
-  # 
+  #
   # For example:
   #
   # .. code-block:: yaml
@@ -21,27 +21,34 @@ operator:
   #    - name: WATCHED_NAMESPACE
   #      value: ""
   #    - name: MINIO_OPERATOR_RUNTIME
-  #      value: "OpenShift" 
+  #      value: "OpenShift"
   #
   # See `Operator environment variables <https://github.com/minio/operator/blob/master/docs/env-variables.md>`__ for a list of all supported values.
+  # If MINIO_CONSOLE_TLS_ENABLE is enabled, utilize port 9443 for console.ingress.number.
   env:
     - name: OPERATOR_STS_ENABLED
       value: "on"
+    - name: MINIO_CONSOLE_TLS_ENABLE
+      value: "off"
+  # An array of additional annotations to be applied to the operator service account
+  serviceAccountAnnotations: []
+  # additional labels to be applied to operator resources
+  additionalLabels: {}
   ###
   # Specify the Operator container image to use for the deployment.
-  # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.11 tag.
+  # ``image.tag``
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.14 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
-  # 
+  #
   #    image:
   #      repository: quay.io/minio/operator
-  #      tag: v5.0.11
+  #      tag: v5.0.14
   #      pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
-  # 
+  #
   # .. code-block:: yaml
   #
   #    image:
@@ -51,7 +58,7 @@ operator:
   #
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.11
+    tag: v5.0.14
     pullPolicy: IfNotPresent
   ###
   #
@@ -90,6 +97,12 @@ operator:
     runAsUser: 1000
     runAsGroup: 1000
     runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   ###
   # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator can mount to pods.
   #
@@ -97,7 +110,7 @@ operator:
   volumes: [ ]
   ###
   # An array of volume mount points associated to each Operator container.
-  # 
+  #
   # Specify each item in the array as follows:
   #
   # .. code-block:: yaml
@@ -147,7 +160,7 @@ operator:
   # These settings determine the distribution of pods across worker nodes.
   topologySpreadConstraints: [ ]
   ###
-  # 
+  #
   # The `Requests or Limits <https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/>`__ for resources to associate to Operator pods.
   #
   # These settings can control the minimum and maximum resources requested for each pod.
@@ -166,21 +179,23 @@ console:
   #
   # If the Operator Console is disabled, all management of Operator Tenants must be done through the Kubernetes API.
   enabled: true
+  # additional labels to include for console resources
+  additionalLabels: {}
   ###
   # Specify the Operator Console container image to use for the deployment.
-  # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.11 tag.
+  # ``image.tag``
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.14 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
-  # 
+  #
   #    image:
   #      repository: quay.io/minio/operator
-  #      tag: v5.0.11
+  #      tag: v5.0.14
   #      pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
-  # 
+  #
   # .. code-block:: yaml
   #
   #    image:
@@ -191,7 +206,7 @@ console:
   # The specified values should match that of ``operator.image`` to ensure predictable operations.
   image:
     repository: quay.io/minio/operator
-    tag: v5.0.11
+    tag: v5.0.14
     pullPolicy: IfNotPresent
   ###
   # An array of environment variables to pass to the Operator Console deployment.
@@ -252,7 +267,7 @@ console:
   # These settings determine the distribution of pods across worker nodes.
   topologySpreadConstraints: [ ]
   ###
-  # 
+  #
   # The `Requests or Limits <https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/>`__ for resources to associate to Operator Console pods.
   #
   # These settings can control the minimum and maximum resources requested for each pod.
@@ -267,17 +282,32 @@ console:
   # You may need to modify these values to meet your cluster's security and access settings.
   securityContext:
     runAsUser: 1000
+    runAsGroup: 1000
     runAsNonRoot: true
   ###
   # The Kubernetes `SecurityContext <https://kubernetes.io/docs/tasks/configure-pod-container/security-context/>`__ to use for deploying Operator Console containers.
   # You may need to modify these values to meet your cluster's security and access settings.
   containerSecurityContext:
     runAsUser: 1000
+    runAsGroup: 1000
     runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+  ###
+  # Forbid write permissions
+  readOnly: false
+
   ###
   # Configures `Ingress <https://kubernetes.io/docs/concepts/services-networking/ingress/>`__ for the Operator Console.
   #
   # Set the keys to conform to the Ingress controller and configuration of your choice.
+  # Set console.ingress.number to any port. For example:
+  # You may choose port number 9443 for HTTPS or 9090 for HTTP, as desired.
   ingress:
     enabled: false
     ingressClassName: ""
@@ -287,6 +317,7 @@ console:
     host: console.local
     path: /
     pathType: Prefix
+    number: 9090
   ###
   # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator Console can mount to pods.
   #
@@ -296,7 +327,7 @@ console:
       emptyDir: {}
   ###
   # An array of volume mount points associated to each Operator Console container.
-  # 
+  #
   # Specify each item in the array as follows:
   #
   # .. code-block:: yaml

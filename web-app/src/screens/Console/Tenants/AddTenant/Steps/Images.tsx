@@ -159,7 +159,7 @@ const Images = () => {
         label="MinIO"
         value={imageName}
         error={validationErrors["image"] || ""}
-        placeholder="minio/minio:RELEASE.2023-11-15T20-43-25Z"
+        placeholder="minio/minio:RELEASE.2024-03-15T01-07-19Z"
       />
       <InputBox
         id="kesImage"
@@ -171,7 +171,7 @@ const Images = () => {
         label="KES"
         value={kesImage}
         error={validationErrors["kesImage"] || ""}
-        placeholder="minio/kes:2023-11-10T10-44-28Z"
+        placeholder="minio/kes:2024-03-13T17-52-13Z"
       />
 
       {customImage && (

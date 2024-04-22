@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
-import { Button, DarkModeIcon } from "mds";
+import { Button, DarkModeIcon, LightModeIcon } from "mds";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../store";
 import { storeDarkMode } from "../../../utils/stylesUtils";
@@ -38,7 +38,7 @@ const DarkModeActivator = () => {
     <TooltipWrapper tooltip={`${darkMode ? "Light" : "Dark"} Mode`}>
       <Button
         id={"dark-mode-activator"}
-        icon={<DarkModeIcon />}
+        icon={darkMode ? <LightModeIcon /> : <DarkModeIcon />}
         onClick={darkModeActivator}
       />
     </TooltipWrapper>

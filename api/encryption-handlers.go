@@ -56,15 +56,25 @@ const (
 
 const (
 	// KesConfigVersion1 identifier v1
+	// For KES releases before 2023-04-03T16-41-28Z and versions below v0.20.0
 	KesConfigVersion1 = "v1"
 	// KesConfigVersion2 identifier v2
+	// For KES releases after 2023-04-03T16-41-28Z and versions above v0.20.0
+	// This corresponds to the rename of the `keys` sections to `keystore` in the kes server-config.yaml and some more fields added.
+	// See https://github.com/minio/kes/pull/342
 	KesConfigVersion2 = "v2"
+	// KesConfigVersion3 identifier v3.
+	// For KES releases after 2023-11-09T17-35-47Z
+	// This corresponds to the deprecation of the `--key`, `--cert` and `--auth` kes command arguments.
+	// See https://github.com/minio/kes/pull/414
+	KesConfigVersion3 = "v3"
 )
 
 // KesConfigVersionsMap is a map of kes config version types
 var KesConfigVersionsMap = map[string]interface{}{
 	KesConfigVersion1: kes.ServerConfigV1{},
 	KesConfigVersion2: kes.ServerConfigV2{},
+	KesConfigVersion3: kes.ServerConfigV2{},
 }
 
 type configVersion func(clientCrtIdentity string, encryptionCfg *models.EncryptionConfiguration, mTLSCertificates map[string][]byte) ([]byte, error)
@@ -311,7 +321,7 @@ func tenantEncryptionInfo(ctx context.Context, operatorClient OperatorClientI, c
 				return nil, err
 			}
 			if rawConfiguration, ok := configSecret.Data["server-config.yaml"]; ok {
-				kesConfigVersion, err := getKesConfigVersion(encryptConfig.Image)
+				kesConfigVersion, err := GetKesConfigVersion(encryptConfig.Image)
 				if err != nil {
 					return nil, err
 				}
@@ -683,7 +693,7 @@ func createOrReplaceKesConfigurationSecrets(ctx context.Context, clientSet K8sCl
 		serverRawConfig = []byte(encryptionCfg.Raw)
 		// verify provided configuration is in valid YAML format
 
-		cv, err := getKesConfigVersion(image)
+		cv, err := GetKesConfigVersion(image)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1105,7 +1115,7 @@ func createKesConfigV2(clientCrtIdentity string, encryptionCfg *models.Encryptio
 
 // getKesConfigMethod identify the config method to use based from the KES image name
 func getKesConfigMethod(image string) (configVersion, error) {
-	version, err := getKesConfigVersion(image)
+	version, err := GetKesConfigVersion(image)
 	if err != nil {
 		return nil, err
 	}
@@ -1118,8 +1128,11 @@ func getKesConfigMethod(image string) (configVersion, error) {
 	}
 }
 
-func getKesConfigVersion(image string) (string, error) {
-	version := KesConfigVersion2
+// GetKesConfigVersion Identifies the "Operator level" KES config version by evaluating the KES container tag.
+// At some point KES versions were published using semantic versioning and date-time versioning later on,
+// this method takes that into consideration to determine the right config to apply to KES containers.
+func GetKesConfigVersion(image string) (string, error) {
+	version := KesConfigVersion3
 
 	imageStrings := strings.Split(image, ":")
 	var imageTag string
@@ -1134,7 +1147,7 @@ func getKesConfigVersion(image string) (string, error) {
 	}
 
 	if imageTag == "latest" {
-		return KesConfigVersion2, nil
+		return KesConfigVersion3, nil
 	}
 
 	// When the image tag is semantic version is config v1
@@ -1143,7 +1156,10 @@ func getKesConfigVersion(image string) (string, error) {
 		if semver.Compare(imageTag, "v0.22.0") < 0 {
 			return KesConfigVersion1, nil
 		}
-		return KesConfigVersion2, nil
+		if semver.Compare(imageTag, "v0.23.0") < 0 {
+			return KesConfigVersion2, nil
+		}
+		return KesConfigVersion3, nil
 	}
 
 	releaseTagNoArch := imageTag
@@ -1157,16 +1173,34 @@ func getKesConfigVersion(image string) (string, error) {
 	}
 
 	// v0.22.0 is the initial image version for Kes config v2, any time format came after and is v2
-	_, err := miniov2.ReleaseTagToReleaseTime(releaseTagNoArch)
+	// v0.23.0 deprecated `--key`, `--cert` and `--auth` flags, for this is v3 config
+	imageVersionTime, err := miniov2.ReleaseTagToReleaseTime(releaseTagNoArch)
 	if err != nil {
 		// could not parse semversion either, returning error
 		return "", fmt.Errorf("could not identify KES version from image TAG: %s", releaseTagNoArch)
 	}
 
-	// Leaving this snippet as comment as this will helpful to compare in future config versions
-	// kesv2ReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("2023-04-03T16-41-28Z")
-	// if imageVersionTime.Before(kesv2ReleaseTime) {
-	// 	version = kesConfigVersion2
-	// }
+	kesv2ReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("2023-04-03T16-41-28Z")
+	kesv3ReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("2023-11-09T17-35-47Z")
+
+	if imageVersionTime.Equal(kesv2ReleaseTime) {
+		return KesConfigVersion2, nil
+	}
+
+	if imageVersionTime.Equal(kesv3ReleaseTime) {
+		return KesConfigVersion3, nil
+	}
+
+	if imageVersionTime.Before(kesv2ReleaseTime) {
+		return KesConfigVersion1, nil
+	}
+
+	if imageVersionTime.Before(kesv3ReleaseTime) {
+		return KesConfigVersion2, nil
+	}
+
+	if imageVersionTime.After(kesv3ReleaseTime) {
+		return KesConfigVersion3, nil
+	}
 	return version, nil
 }

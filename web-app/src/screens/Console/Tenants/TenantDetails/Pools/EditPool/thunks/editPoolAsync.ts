@@ -23,11 +23,7 @@ import { getDefaultAffinity, getNodeSelector } from "../../../utils";
 import { resetEditPoolForm } from "../editPoolSlice";
 import { getTenantAsync } from "../../../../thunks/tenantDetailsAsync";
 import { api } from "../../../../../../../api";
-import {
-  Pool,
-  PoolUpdateRequest,
-  SecurityContext,
-} from "../../../../../../../api/operatorApi";
+import { Pool, PoolUpdateRequest } from "../../../../../../../api/operatorApi";
 
 export const editPoolAsync = createAsyncThunk(
   "editPool/editPoolAsync",
@@ -64,7 +60,7 @@ export const editPoolAsync = createAsyncThunk(
     switch (affinityType) {
       case "default":
         affinityObject = {
-          affinity: getDefaultAffinity(tenant.name!, poolName),
+          affinity: getDefaultAffinity(tenant.name!, selectedPool!),
         };
         break;
       case "nodeSelector":
@@ -73,7 +69,7 @@ export const editPoolAsync = createAsyncThunk(
             nodeSelectorLabels,
             withPodAntiAffinity,
             tenant.name!,
-            poolName,
+            selectedPool!,
           ),
         };
         break;
@@ -82,28 +78,31 @@ export const editPoolAsync = createAsyncThunk(
     const tolerationValues = tolerations.filter(
       (toleration) => toleration.key.trim() !== "",
     );
-
     const cleanPools = tenant?.pools
       ?.filter((pool) => pool.name !== selectedPool)
       .map((pool) => {
-        let securityContextOption: SecurityContext | null = null;
-
-        if (pool.securityContext) {
+        if (securityContextEnabled && pool.securityContext) {
           if (
-            !!pool.securityContext.runAsUser ||
-            !!pool.securityContext.runAsGroup ||
-            !!pool.securityContext.fsGroup
+            pool.securityContext.runAsUser ||
+            pool.securityContext.runAsGroup ||
+            pool.securityContext.fsGroup
           ) {
-            securityContextOption = { ...pool.securityContext };
+            return pool;
           }
         }
 
-        const request = pool;
-        if (securityContextOption) {
-          request.securityContext = securityContextOption!;
-        }
-
-        return request;
+        return {
+          name: pool.name,
+          servers: pool.servers,
+          volumes_per_server: pool.volumes_per_server,
+          volume_configuration: pool.volume_configuration,
+          resources: pool.resources,
+          node_selector: pool.node_selector,
+          affinity: pool.affinity,
+          runtimeClassName: pool.runtimeClassName,
+          tolerations: pool.tolerations,
+          securityContext: undefined,
+        };
       }) as Pool[];
 
     let runtimeClass = {};

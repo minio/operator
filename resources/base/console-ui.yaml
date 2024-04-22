@@ -289,13 +289,19 @@ spec:
         - args:
             - ui
             - --certs-dir=/tmp/certs
-          image: minio/operator:v5.0.11
+          image: minio/operator:v5.0.14
           imagePullPolicy: IfNotPresent
           name: console
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           ports:
             - containerPort: 9090
               name: http
@@ -327,5 +333,5 @@ spec:
                   name: console-tls
                   optional: true
         - name: tmp
-          emptyDir: {}
+          emptyDir: { }
       serviceAccountName: console-sa

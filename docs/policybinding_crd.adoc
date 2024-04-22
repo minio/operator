@@ -4,8 +4,8 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2023-11-15T20-43-25Z]
-:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2023-11-10T10-44-28Z]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2024-03-15T01-07-19Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2024-03-13T17-52-13Z]
 
 
 [id="{anchor_prefix}-sts-min-io-v1alpha1"]
@@ -61,8 +61,10 @@ PolicyBinding is a https://kubernetes.io/docs/concepts/overview/working-with-obj
 
 
 |*`spec`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1alpha1-policybindingspec[$$PolicyBindingSpec$$]__ 
-|*Required* + 
- The root field for the MinIO PolicyBinding object.
+|*Required* +
+
+
+The root field for the MinIO PolicyBinding object.
 
 |===
 
@@ -84,8 +86,10 @@ PolicyBindingSpec (`spec`) defines the configuration of a MinIO PolicyBinding ob
 | Field | Description
 
 |*`application`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1alpha1-application[$$Application$$]__ 
-|*Required* + 
- The Application Property identifies the namespace and service account that will be authorized
+|*Required* +
+
+
+The Application Property identifies the namespace and service account that will be authorized
 
 |*`policies`* __string array__ 
 |*Required* +

@@ -61,11 +61,7 @@ var (
 
 func getDefaultCsrSignerName() string {
 	defaultCsrSignerNameOnce.Do(func() {
-		if os.Getenv(CSRSignerName) != "" {
-			defaultCsrSignerName = os.Getenv(CSRSignerName)
-			return
-		}
-		defaultCsrSignerName = certificatesV1.KubeletServingSignerName
+		defaultCsrSignerName = os.Getenv(CSRSignerName)
 	})
 	return defaultCsrSignerName
 }
@@ -108,8 +104,10 @@ func GetCertificatesAPIVersion(clientSet kubernetes.Interface) CSRVersion {
 // GetCSRSignerName returns the signer to be used
 func GetCSRSignerName(clientSet kubernetes.Interface) string {
 	csrSignerNameOnce.Do(func() {
-		// At the moment we will use kubernetes.io/kubelet-serving as the default
 		csrSignerName = getDefaultCsrSignerName()
+		if csrSignerName != "" {
+			return
+		}
 		// only for csr api v1 we will try to detect if we are running inside an EKS cluster and switch to AWS's way to
 		// get certificates using their CSRSignerName https://docs.aws.amazon.com/eks/latest/userguide/cert-signing.html
 		if GetCertificatesAPIVersion(clientSet) == CSRV1 {
@@ -135,6 +133,10 @@ func GetCSRSignerName(clientSet kubernetes.Interface) string {
 					}
 				}
 			}
+		}
+		if csrSignerName == "" {
+			// At the moment we will use kubernetes.io/kubelet-serving as the default
+			csrSignerName = certificatesV1.KubeletServingSignerName
 		}
 	})
 	return csrSignerName

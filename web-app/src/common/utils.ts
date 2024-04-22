@@ -453,7 +453,13 @@ export const erasureCodeCalc = (
 
 // Pool Name Generator
 export const generatePoolName = (pools: Pool[]) => {
-  const poolCounter = pools.length;
+  let poolCounter = 0;
+  const poolNames = pools.map((pool) => pool.name || "");
+  for (; poolCounter < pools.length; poolCounter++) {
+    if (!poolNames.includes(`pool-${poolCounter}`)) {
+      return `pool-${poolCounter}`;
+    }
+  }
   return `pool-${poolCounter}`;
 };
 
@@ -517,6 +523,8 @@ export const niceDaysInt = (seconds: number, timeVariant: string = "s") => {
       : ""
   }`;
 };
+
+export const EC0 = "EC:0";
 
 export const MinIOEnvVarsSettings: any = {
   MINIO_ACCESS_KEY: { secret: true },

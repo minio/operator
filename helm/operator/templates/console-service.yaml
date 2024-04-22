@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: console
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "minio-operator.labels" . | nindent 4 }}
+  labels: {{- include "minio-operator.console-labels" . | nindent 4 }}
 spec:
   ports:
   - name: http

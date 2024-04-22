@@ -56,6 +56,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
+	batchv1 "k8s.io/client-go/informers/batch/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -73,6 +74,7 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
+	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
 	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -196,6 +198,11 @@ type Controller struct {
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
+
+	// controllers denotes the list of components controlled
+	// by the controller. Each component is itself
+	// a controller. This handle is for supporting the abstraction.
+	controllers []*JobController
 }
 
 // EventType is Event type to handle
@@ -231,6 +238,8 @@ func NewController(
 	serviceInformer coreinformers.ServiceInformer,
 	hostsTemplate,
 	operatorVersion string,
+	minioJobinformer jobinformers.MinIOJobInformer,
+	jobInformer batchv1.JobInformer,
 ) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -259,17 +268,16 @@ func NewController(
 			}
 		}
 	}
-	if len(oprImg) > 0 {
-		imageInfo := strings.Split(oprImg, ":")
-		if len(imageInfo) == 2 {
-			_, err = kubeClientSet.AppsV1().Deployments(ns).Patch(ctx, getOperatorDeploymentName(), types.MergePatchType, []byte(`{"metadata":{"annotations":{"min.io/operator":"`+imageInfo[1]+`"}}}`), metav1.PatchOptions{})
-			if err != nil {
-				klog.Errorf("Patch operator deployments annotations['min.io/operator':'%s'] err: %s", imageInfo[1], err)
-			}
-		}
-	}
 
 	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
+
+	//controllerConfig := controllerConfig{
+	//	serviceLister:     serviceInformer.Lister(),
+	//	kubeClientSet:     kubeClientSet,
+	//	statefulSetLister: statefulSetInformer.Lister(),
+	//	deploymentLister:  deploymentInformer.Lister(),
+	//	recorder:          recorder,
+	//}
 
 	controller := &Controller{
 		podName:                   podName,
@@ -293,6 +301,17 @@ func NewController(
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
+		controllers: []*JobController{
+			NewJobController(
+				minioJobinformer,
+				jobInformer,
+				namespacesToWatch,
+				kubeClientSet,
+				recorder,
+				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "MinioJobs"),
+				k8sClient,
+			),
+		},
 	}
 
 	// Initialize operator HTTP upgrade server handlers
@@ -431,10 +450,19 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
 		panic("failed to wait for caches to sync")
 	}
+	// Wait for the caches to be synced before starting workers
+	for _, jobController := range c.controllers {
+		if ok := cache.WaitForCacheSync(stopCh, jobController.minioJobHasSynced, jobController.jobHasSynced); !ok {
+			panic("failed to wait for caches to sync")
+		}
+	}
 
-	klog.Info("Starting workers")
-	// Launch two workers to process Tenant resources
+	klog.Info("Starting workers and Job workers")
+	JobController := c.controllers[0]
+	// fmt.Println(controller.SyncHandler())
+	// Launch two workers to process Job resources
 	for i := 0; i < threadiness; i++ {
+		go wait.Until(JobController.runJobWorker, time.Second, stopCh)
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
@@ -652,7 +680,7 @@ func (c *Controller) Stop() {
 // workqueue.
 func (c *Controller) runWorker() {
 	defer runtime.HandleCrash()
-	for c.processNextWorkItem() {
+	for processNextItem(c.workqueue, c.syncHandler) {
 	}
 }
 
@@ -661,72 +689,8 @@ func (c *Controller) runWorker() {
 // healthCheckQueue.
 func (c *Controller) runHealthCheckWorker() {
 	defer runtime.HandleCrash()
-	for c.processNextHealthCheckItem() {
+	for processNextItem(c.healthCheckQueue, c.syncHealthCheckHandler) {
 	}
-}
-
-// processNextWorkItem will read a single work item off the workqueue and
-// attempt to process it, by calling the syncHandler.
-func (c *Controller) processNextWorkItem() bool {
-	obj, shutdown := c.workqueue.Get()
-	if shutdown {
-		return false
-	}
-
-	// We wrap this block in a func so we can defer c.workqueue.Done.
-	processItem := func(obj interface{}) error {
-		// We call Done here so the workqueue knows we have finished
-		// processing this item. We also must remember to call Forget if we
-		// do not want this work item being re-queued. For example, we do
-		// not call Forget if a transient error occurs, instead the item is
-		// put back on the workqueue and attempted again after a back-off
-		// period.
-		defer c.workqueue.Done(obj)
-		var key string
-		var ok bool
-		// We expect strings to come off the workqueue. These are of the
-		// form namespace/name. We do this as the delayed nature of the
-		// workqueue means the items in the informer cache may actually be
-		// more up to date that when the item was initially put onto the
-		// workqueue.
-		if key, ok = obj.(string); !ok {
-			// As the item in the workqueue is actually invalid, we call
-			// Forget here else we'd go into a loop of attempting to
-			// process a work item that is invalid.
-			c.workqueue.Forget(obj)
-			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
-			return nil
-		}
-		klog.V(2).Infof("Key from workqueue: %s", key)
-
-		result, err := c.syncHandler(key)
-		switch {
-		case err != nil:
-			c.workqueue.AddRateLimited(key)
-			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
-		case result.RequeueAfter > 0:
-			// The result.RequeueAfter request will be lost, if it is returned
-			// along with a non-nil error. But this is intended as
-			// We need to drive to stable reconcile loops before queuing due
-			// to result.RequestAfter
-			c.workqueue.Forget(obj)
-			c.workqueue.AddAfter(key, result.RequeueAfter)
-		case result.Requeue:
-			c.workqueue.AddRateLimited(key)
-		default:
-			// Finally, if no error occurs we Forget this item so it does not
-			// get queued again until another change happens.
-			c.workqueue.Forget(obj)
-			klog.V(4).Infof("Successfully synced '%s'", key)
-		}
-		return nil
-	}
-
-	if err := processItem(obj); err != nil {
-		runtime.HandleError(err)
-		return true
-	}
-	return true
 }
 
 const slashSeparator = "/"
@@ -967,7 +931,8 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
 	operatorCATLSExists, err := c.checkOperatorCAForTenant(ctx, tenant)
 	if err != nil {
-		return WrapResult(Result{}, err)
+		// Don't return here as we get stuck when recreating the stateful set
+		klog.Infof("There was an error while updating the certificate %s", err)
 	}
 
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
@@ -1474,4 +1439,66 @@ type patchAnnotation struct {
 	Op    string `json:"op"`
 	Path  string `json:"path"`
 	Value string `json:"value"`
+}
+
+func processNextItem(workqueue queue.RateLimitingInterface, syncer func(key string) (Result, error)) bool {
+	obj, shutdown := workqueue.Get()
+	if shutdown {
+		return false
+	}
+
+	// We wrap this block in a func so we can defer c.workqueue.Done.
+	processItem := func(obj interface{}) error {
+		// We call Done here so the workqueue knows we have finished
+		// processing this item. We also must remember to call Forget if we
+		// do not want this work item being re-queued. For example, we do
+		// not call Forget if a transient error occurs, instead the item is
+		// put back on the workqueue and attempted again after a back-off
+		// period.
+		defer workqueue.Done(obj)
+		var key string
+		var ok bool
+		// We expect strings to come off the workqueue. These are of the
+		// form namespace/name. We do this as the delayed nature of the
+		// workqueue means the items in the informer cache may actually be
+		// more up to date that when the item was initially put onto the
+		// workqueue.
+		if key, ok = obj.(string); !ok {
+			// As the item in the workqueue is actually invalid, we call
+			// Forget here else we'd go into a loop of attempting to
+			// process a work item that is invalid.
+			workqueue.Forget(obj)
+			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
+			return nil
+		}
+		klog.V(2).Infof("Key from workqueue: %s", key)
+
+		result, err := syncer(key)
+		switch {
+		case err != nil:
+			workqueue.AddRateLimited(key)
+			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
+		case result.RequeueAfter > 0:
+			// The result.RequeueAfter request will be lost, if it is returned
+			// along with a non-nil error. But this is intended as
+			// We need to drive to stable reconcile loops before queuing due
+			// to result.RequestAfter
+			workqueue.Forget(obj)
+			workqueue.AddAfter(key, result.RequeueAfter)
+		case result.Requeue:
+			workqueue.AddRateLimited(key)
+		default:
+			// Finally, if no error occurs we Forget this item so it does not
+			// get queued again until another change happens.
+			workqueue.Forget(obj)
+			klog.V(4).Infof("Successfully synced '%s'", key)
+		}
+		return nil
+	}
+
+	if err := processItem(obj); err != nil {
+		runtime.HandleError(err)
+		return true
+	}
+	return true
 }

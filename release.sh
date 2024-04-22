@@ -14,6 +14,7 @@ KES_RELEASE=$(get_latest_release minio/kes)
 KES_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/kes\:)([v]?.*)"/\2/p' pkg/apis/minio.min.io/v2/constants.go)
 
 files=(
+  "README.md"
   "api/consts.go"
   "docs/tenant_crd.adoc"
   "docs/policybinding_crd.adoc"
@@ -25,14 +26,10 @@ files=(
   "helm/operator/values.yaml"
   "helm/tenant/Chart.yaml"
   "helm/tenant/values.yaml"
-  "kubectl-minio/README.md"
-  "kubectl-minio/cmd/helpers/constants.go"
-  "kubectl-minio/cmd/tenant-upgrade.go"
   "pkg/apis/minio.min.io/v2/constants.go"
   "pkg/controller/operator.go"
   "resources/base/deployment.yaml"
   "resources/base/console-ui.yaml"
-  "update-operator-krew.py"
   "testing/console-tenant+kes.sh"
   "web-app/src/screens/Console/Tenants/AddTenant/Steps/Images.tsx"
   "web-app/src/screens/Console/Tenants/TenantDetails/TenantEncryption.tsx")
@@ -55,11 +52,22 @@ for file in "${files[@]}"; do
   sed -i -e "s/${KES_CURRENT_RELEASE}/${KES_RELEASE}/g" "$file"
 done
 
-echo "Re-indexing helm chart releases for $RELEASE"
-./helm-reindex.sh
+annotations_files=(
+  "pkg/apis/job.min.io/v1alpha1/types.go"
+  "pkg/apis/minio.min.io/v2/types.go"
+  "pkg/apis/sts.min.io/v1alpha1/types.go"
+)
+
+for file in "${annotations_files[@]}"; do
+  sed -i -e "s~operator.min.io/version=.*~operator.min.io/version=v${RELEASE}~g" "$file"
+done
+
+# Update annotation in kustomization yaml
+sed -i -e "s~operator.min.io/version: .*~operator.min.io/version: v${RELEASE}~g" "resources/kustomization.yaml"
 
 # Add all the generated files to git
 
 echo "clean -e files"
 rm -vf $(git ls-files --others | grep -e "-e$" | awk '{print $1}')
 git add .
+

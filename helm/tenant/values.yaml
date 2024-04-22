@@ -1,4 +1,6 @@
 ###
+# WARNING: '.secrets' is deprecated since v5.0.15 and will be removed in next minor release (i.e. v5.1.0).
+# WARNING: Please use '.tenant.configSecret' instead.
 # Root key for dynamically creating a secret for use with configuring root MinIO User
 # Specify the ``name`` and then a list of environment variables. 
 #
@@ -20,7 +22,8 @@ secrets:
   accessKey: minio 
   secretKey: minio123
   ###
-  # The name of an existing Kubernetes secret to import to the MinIO Tenant
+  # If this variable is set, then enable the usage of an existing Kubernetes secret to set environment variables for the Tenant.
+  # The existing Kubernetes secret name must be placed under .tenant.configuration.name e.g. existing-minio-env-configuration
   # The secret must contain a key ``config.env``.
   # The values should be a series of export statements to set environment variables for the Tenant.
   # For example:
@@ -28,12 +31,12 @@ secrets:
   # .. code-block:: shell
   #
   #    stringData:
-  #       config.env: | -
+  #       config.env: |-
   #         export MINIO_ROOT_USER=ROOTUSERNAME
   #         export MINIO_ROOT_PASSWORD=ROOTUSERPASSWORD
   #
   #existingSecret:
-  #  name: myminio-env-configuration
+  #  name: enabled
 ###
 # Root key for MinIO Tenant Chart
 tenant:
@@ -45,14 +48,14 @@ tenant:
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.11 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.14 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
   # 
   #    image:
   #       repository: quay.io/minio/minio
-  #       tag: RELEASE.2023-11-15T20-43-25Z
+  #       tag: RELEASE.2024-03-15T01-07-19Z
   #       pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
@@ -67,7 +70,7 @@ tenant:
   #
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2023-11-15T20-43-25Z
+    tag: RELEASE.2024-03-15T01-07-19Z
     pullPolicy: IfNotPresent
   ###
   #
@@ -84,6 +87,42 @@ tenant:
   # The secret is expected to have a key named config.env containing environment variables exports.
   configuration:
     name: myminio-env-configuration
+  ###
+  # Root key for dynamically creating a secret for use with configuring root MinIO User
+  # Specify the ``name`` and then a list of environment variables.
+  #
+  # .. important::
+  #
+  #    Do not use this in production environments.
+  #    This field is intended for use with rapid development or testing only.
+  #
+  # For example:
+  #
+  # .. code-block:: yaml
+  #
+  #    name: myminio-env-configuration
+  #    accessKey: minio
+  #    secretKey: minio123
+  #
+  # configSecret:
+  #   name: myminio-env-configuration
+  #   accessKey: minio
+  #   secretKey: minio123
+  ###
+  # If this variable is set to true, then enable the usage of an existing Kubernetes secret to set environment variables for the Tenant.
+  # The existing Kubernetes secret name must be placed under .tenant.configuration.name e.g. existing-minio-env-configuration
+  # The secret must contain a key ``config.env``.
+  # The values should be a series of export statements to set environment variables for the Tenant.
+  # For example:
+  #
+  # .. code-block:: shell
+  #
+  #    stringData:
+  #       config.env: |-
+  #         export MINIO_ROOT_USER=ROOTUSERNAME
+  #         export MINIO_ROOT_PASSWORD=ROOTUSERPASSWORD
+  #
+  #   existingSecret: false
   ###
   # Top level key for configuring MinIO Pool(s) in this Tenant.
   #
@@ -164,6 +203,12 @@ tenant:
         runAsUser: 1000
         runAsGroup: 1000
         runAsNonRoot: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
       ###
       #
       # An array of `Topology Spread Constraints <https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/>`__ to associate to Operator Console pods.
@@ -344,20 +389,19 @@ tenant:
   #  # Image from tag (original behavior), for example:
   #  # image:
   #  #   repository: quay.io/minio/kes
-  #  #   tag: 2023-11-10T10-44-28Z
+  #  #   tag: 2024-03-13T17-52-13Z
   #  # Image from digest (added after original behavior), for example:
   #  # image:
   #  #   repository: quay.io/minio/kes@sha256
   #  #   digest: fb15af611149892f357a8a99d1bcd8bf5dae713bd64c15e6eb27fbdb88fc208b
   #  image:
   #    repository: quay.io/minio/kes
-  #    tag: 2023-11-10T10-44-28Z
+  #    tag: 2024-03-13T17-52-13Z
   #    pullPolicy: IfNotPresent
   #  env: [ ]
   #  replicas: 2
   #  configuration: |-
   #    address: :7373
-  #    root: _ # Effectively disabled since no root identity necessary.
   #    tls:
   #      key: /tmp/kes/server.key   # Path to the TLS private key
   #      cert: /tmp/kes/server.crt # Path to the TLS certificate
@@ -365,14 +409,8 @@ tenant:
   #        identities: []
   #        header:
   #          cert: X-Tls-Client-Cert
-  #    policy:
-  #      my-policy:
-  #        paths:
-  #        - /v1/key/create/*
-  #        - /v1/key/generate/*
-  #        - /v1/key/decrypt/*
-  #        identities:
-  #        - ${MINIO_KES_IDENTITY}
+  #    admin:
+  #      identity: ${MINIO_KES_IDENTITY}
   #    cache:
   #      expiry:
   #        any: 5m0s
@@ -380,7 +418,7 @@ tenant:
   #    log:
   #      error: on
   #      audit: off
-  #    keys:
+  #    keystore:
   #      # KES configured with fs (File System mode) doesn't work in Kubernetes environments and is not recommended
   #      # use a real KMS
   #      # fs:
@@ -431,6 +469,17 @@ tenant:
   #    runAsGroup: 1000
   #    runAsNonRoot: true
   #    fsGroup: 1000
+  #  containerSecurityContext:
+  #    runAsUser: 1000
+  #    runAsGroup: 1000
+  #    runAsNonRoot: true
+  #    allowPrivilegeEscalation: false
+  #    capabilities:
+  #      drop:
+  #        - ALL
+  #    seccompProfile:
+  #      type: RuntimeDefault
+
 ###
 # Configures `Ingress <https://kubernetes.io/docs/concepts/services-networking/ingress/>`__ for the Tenant S3 API and Console.
 #
@@ -462,7 +511,7 @@ ingress:
 #    kind: Secret
 #    type: Opaque
 #    metadata:
-#      name: {{ dig "secrets" "existingSecret" "" (.Values | merge (dict)) }}
+#      name: {{ dig "tenant" "configSecret" "name" "" (.Values | merge (dict)) }}
 #    stringData:
 #      config.env: |-
 #        export MINIO_ROOT_USER='minio'

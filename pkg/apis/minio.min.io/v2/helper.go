@@ -773,7 +773,6 @@ func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) (cr
 		}); err != nil {
 			switch minio.ToErrorResponse(err).Code {
 			case "BucketAlreadyOwnedByYou", "BucketAlreadyExists":
-				klog.Infof(err.Error())
 				continue
 			default:
 				return false, err

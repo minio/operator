@@ -21,7 +21,6 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/resources/services"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,9 +71,9 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 		// Only when ExposeServices is set an explicit value we do modifications to the service type
 		if tenant.Spec.ExposeServices != nil {
 			if tenant.Spec.ExposeServices.MinIO {
-				svc.Spec.Type = v1.ServiceTypeLoadBalancer
+				svc.Spec.Type = corev1.ServiceTypeLoadBalancer
 			} else {
-				svc.Spec.Type = v1.ServiceTypeClusterIP
+				svc.Spec.Type = corev1.ServiceTypeClusterIP
 			}
 		}
 
@@ -90,7 +89,7 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 	return err
 }
 
-func minioSvcMatchesSpecification(svc *v1.Service, expectedSvc *v1.Service) (bool, error) {
+func minioSvcMatchesSpecification(svc *corev1.Service, expectedSvc *corev1.Service) (bool, error) {
 	// expected labels match
 	for k, expVal := range expectedSvc.ObjectMeta.Labels {
 		if value, ok := svc.ObjectMeta.Labels[k]; !ok || value != expVal {

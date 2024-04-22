@@ -243,8 +243,8 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	durationInSeconds := 3600 // Default expiration
 	durationStr := r.Form.Get(stsDurationSeconds)
-	var durationInSeconds int
 	if durationStr != "" {
 		duration, err := strconv.Atoi(durationStr)
 		if err != nil {
@@ -271,6 +271,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 				AccessKey:    stsCredentials.AccessKeyID,
 				SecretKey:    stsCredentials.SecretAccessKey,
 				SessionToken: stsCredentials.SessionToken,
+				Expiration:   stsCredentials.Expiration,
 			},
 		},
 	}

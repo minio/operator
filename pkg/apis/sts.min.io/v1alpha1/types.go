@@ -25,6 +25,7 @@ import (
 // +kubebuilder:resource:scope=Namespaced,shortName=policybinding,singular=policybinding
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.currentState"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:metadata:annotations=operator.min.io/version=v5.0.14
 // +kubebuilder:storageversion
 
 // PolicyBinding is a https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/[Kubernetes object] describing a MinIO PolicyBinding.

@@ -8,7 +8,7 @@ images:
   - name: miniodev/operator-sts-example
     newTag: minio-sdk-dotnet
 
-patchesJson6902:
+patches:
   - target:
       group: batch
       version: v1

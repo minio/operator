@@ -10,7 +10,9 @@ spec:
     matchLabels: {{- include "minio-operator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: {{- include "minio-operator.selectorLabels" . | nindent 8 }}
+      labels:
+        {{- include "minio-operator.labels" . | nindent 8 }}
+        {{- include "minio-operator.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.operator.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}

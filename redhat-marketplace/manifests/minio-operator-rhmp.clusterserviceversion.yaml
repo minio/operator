@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio@sha256:91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3",
+            "image": "quay.io/minio/minio@sha256:ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -84,6 +84,16 @@ metadata:
       MinIO is a Kubernetes-native high performance object store with an
       S3-compatible API. The MinIO Operator supports deploying MinIO Tenants
       onto any Kubernetes.
+    features.operators.openshift.io/cnf: "false"
+    features.operators.openshift.io/cni: "false"
+    features.operators.openshift.io/csi: "false"
+    features.operators.openshift.io/disconnected: "true"
+    features.operators.openshift.io/fips-compliant: "true"
+    features.operators.openshift.io/proxy-aware: "true"
+    features.operators.openshift.io/tls-profiles: "false"
+    features.operators.openshift.io/token-auth-aws: "false"
+    features.operators.openshift.io/token-auth-azure: "false"
+    features.operators.openshift.io/token-auth-gcp: "false"
     k8sMinVersion: "1.18"
     marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/pricing?utm_source=openshift_console
     marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/minio-operator-rhmp/support?utm_source=openshift_console
@@ -91,13 +101,16 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.11
-  name: minio-operator-rhmp.v5.0.11
+    containerImage: quay.io/minio/operator:v5.0.14
+  name: minio-operator-rhmp.v5.0.14
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+      - kind: MinIOJob
+        name: miniojobs.job.min.io
+        version: v1alpha1
       - kind: PolicyBinding
         name: policybindings.sts.min.io
         version: v1alpha1
@@ -501,6 +514,7 @@ spec:
             - apiGroups:
                 - minio.min.io
                 - sts.min.io
+                - job.min.io
               resources:
                 - '*'
               verbs:
@@ -555,6 +569,7 @@ spec:
                   operator.min.io/authors: MinIO, Inc.
                   operator.min.io/license: AGPLv3
                   operator.min.io/support: https://subnet.min.io
+                  operator.min.io/version: v5.0.14
                 labels:
                   app: console
                   app.kubernetes.io/instance: minio-operator-console
@@ -564,7 +579,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
+                    image: quay.io/minio/operator@sha256:db47d598488f10daf6a4d26431ab2b65e24f3dffbae0edb76bc44f63c6daf500
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -618,6 +633,7 @@ spec:
                   operator.min.io/authors: MinIO, Inc.
                   operator.min.io/license: AGPLv3
                   operator.min.io/support: https://subnet.min.io
+                  operator.min.io/version: v5.0.14
                 labels:
                   app.kubernetes.io/instance: minio-operator
                   app.kubernetes.io/name: operator
@@ -643,7 +659,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "on"
-                    image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
+                    image: quay.io/minio/operator@sha256:db47d598488f10daf6a4d26431ab2b65e24f3dffbae0edb76bc44f63c6daf500
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -761,10 +777,11 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
-      name: minio-operator
-    - image: quay.io/minio/minio@sha256:91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3
-      name: minio-91866cdaad4cc11d2f86056b234f33f3768a44adc600ea37c225708c83076bc3-annotation
-    - image: quay.io/minio/operator@sha256:3ab501c476f269c4e4fc84017543ff7f6c8209ed474d77de472311472ba2e2ff
+    - image: quay.io/minio/operator@sha256:db47d598488f10daf6a4d26431ab2b65e24f3dffbae0edb76bc44f63c6daf500
       name: console
-  version: 5.0.11
+    - image: quay.io/minio/operator@sha256:db47d598488f10daf6a4d26431ab2b65e24f3dffbae0edb76bc44f63c6daf500
+      name: minio-operator
+    - image: quay.io/minio/minio@sha256:ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113
+      name: minio-ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113-annotation
+  version: 5.0.14
+  replaces: minio-operator-rhmp.v5.0.13

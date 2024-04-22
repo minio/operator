@@ -72,7 +72,10 @@ func poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet *appsv1.Stateful
 	if !equality.Semantic.DeepEqual(expectedMetadata.Labels, existingStatefulSet.ObjectMeta.Labels) {
 		return false, nil
 	}
-	expectedAnnotations := expectedMetadata.Annotations
+	expectedAnnotations := map[string]string{}
+	for k, v := range expectedMetadata.Annotations {
+		expectedAnnotations[k] = v
+	}
 	currentAnnotations := existingStatefulSet.ObjectMeta.Annotations
 	delete(expectedAnnotations, corev1.LastAppliedConfigAnnotation)
 	delete(currentAnnotations, corev1.LastAppliedConfigAnnotation)

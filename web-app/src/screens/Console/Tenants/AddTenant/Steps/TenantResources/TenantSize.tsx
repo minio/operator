@@ -24,6 +24,7 @@ import {
   getBytes,
   k8sScalarUnitsExcluding,
   niceBytes,
+  EC0,
 } from "../../../../../../common/utils";
 import { clearValidationError } from "../../../utils";
 import { ecListTransform } from "../../../ListTenants/utils";
@@ -89,6 +90,38 @@ const TenantSize = ({ formToRender }: ITenantSizeProps) => {
   const selectedStorageType = useSelector(
     (state: AppState) =>
       state.createTenant.fields.nameTenant.selectedStorageType,
+  );
+
+  const maxCPUsUse = useSelector(
+    (state: AppState) => state.createTenant.fields.tenantSize.maxCPUsUse,
+  );
+  const maxMemorySize = useSelector(
+    (state: AppState) => state.createTenant.fields.tenantSize.maxMemorySize,
+  );
+  const resourcesCPURequest = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesCPURequest,
+  );
+  const resourcesMemoryRequest = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesMemoryRequest,
+  );
+
+  const resourcesCPURequestError = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesCPURequestError,
+  );
+  const resourcesCPULimitError = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesCPULimitError,
+  );
+  const resourcesMemoryRequestError = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesMemoryRequestError,
+  );
+  const resourcesMemoryLimitError = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesMemoryLimitError,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -238,7 +271,11 @@ const TenantSize = ({ formToRender }: ITenantSizeProps) => {
           !("drivesps" in commonValidation) &&
           distribution.error === "" &&
           ecParityCalc.error === 0 &&
-          ecParity !== "",
+          ecParity !== "" &&
+          resourcesMemoryRequestError === "" &&
+          resourcesCPURequestError === "" &&
+          resourcesMemoryLimitError === "" &&
+          resourcesCPULimitError === "",
       }),
     );
 
@@ -258,9 +295,24 @@ const TenantSize = ({ formToRender }: ITenantSizeProps) => {
     nodeError,
     drivesPerServer,
     ecParity,
+    resourcesMemoryRequest,
+    resourcesCPURequest,
+    maxCPUsUse,
+    maxMemorySize,
+    resourcesMemoryRequestError,
+    resourcesCPURequestError,
+    resourcesMemoryLimitError,
+    resourcesCPULimitError,
   ]);
 
   useEffect(() => {
+    // Trivial case
+    if (nodes.trim() === "1") {
+      updateField("ecParity", EC0);
+      updateField("ecparityChoices", ecListTransform([EC0]));
+      updateField("cleanECChoices", [EC0]);
+      return;
+    }
     if (distribution.error === "") {
       // Get EC Value
       if (nodes.trim() !== "" && distribution.disks !== 0) {
@@ -365,13 +417,13 @@ const TenantSize = ({ formToRender }: ITenantSizeProps) => {
           updateField("ecParity", value);
         }}
         label="Erasure Code Parity"
-        disabled={selectedStorageClass === ""}
+        disabled={selectedStorageClass === "" || ecParity === ""}
         value={ecParity}
         options={ecParityChoices}
       />
       <Box className={"muted inputItem"}>
-        Please select the desired parity. This setting will change the max
-        usable capacity in the cluster
+        Please select the desired parity. This setting will change the maximum
+        usable capacity in the cluster.
       </Box>
 
       <TenantSizeResources />
