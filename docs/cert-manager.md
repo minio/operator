@@ -23,7 +23,7 @@ This cluster contains 4 namespaces:
 - other-namespace
 
 Each namespace contains pods and services. This environment requires a Cert Manager
-to issue certificates so the different services and pods can trust each others certificates. 
+to issue certificates so the different services and pods can trust each others' certificates. 
 To do this, create a global root issuer and an intermediary issuer in each tenant namespace:
 
 ![Cert-manager Issuers.png](images%2FCert-manager%20Issuers.png)
