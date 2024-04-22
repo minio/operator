@@ -196,7 +196,7 @@ Operator performs health checks from MinIO in the health cluster endpoint (see m
 Missing to instruct Operator to trust the MinIO Certificate (or it's CA) will cause an error log message in the Operator Pod logs as following:
 
 ```error
-Failed to get cluster health: Get "https://minio.tenant-lite.svc.cluster.local/minio/health/cluster":
+Failed to get cluster health: Get "https://minio.tenant-1.svc.cluster.local/minio/health/cluster":
 x509: certificate signed by unknown authority
 ```
 
