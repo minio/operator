@@ -314,6 +314,9 @@ tenant:
   # Refer 
   startup: { }
   ###
+  # The `Lifecycle hooks <https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/>`__ for container.
+  lifecycle: { }
+  ###
   # Directs the Operator to deploy the MinIO S3 API and Console services as LoadBalancer objects.
   #
   # If the Kubernetes cluster has a configured LoadBalancer, it can attempt to route traffic to those services automatically.
