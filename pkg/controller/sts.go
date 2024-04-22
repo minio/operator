@@ -43,6 +43,10 @@ const (
 	// STSEnabled Env variable name to turn on and off the STS Service is enabled, disabled by default
 	STSEnabled = "OPERATOR_STS_ENABLED"
 
+	// STSAutoTLSEnabled Env variable name to turn on and off generate the STS TLS automatically using CSR, if disable
+	// a certificate issued externally needs to be provided
+	STSAutoTLSEnabled = "OPERATOR_STS_AUTO_TLS_ENABLED"
+
 	// STSTLSSecretName is the name of secret created for the Operator STS TLS certs
 	STSTLSSecretName = "sts-tls"
 )
@@ -392,6 +396,15 @@ func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token strin
 // IsSTSEnabled Validates if the STS API is turned on, STS is enabled by default
 func IsSTSEnabled() bool {
 	value, set := os.LookupEnv(STSEnabled)
+	if set {
+		return value == "on"
+	}
+	return true
+}
+
+// IsSTSAutocertEnabled Validates if STS Autocert is turned on,  is enabled by default.
+func IsSTSAutocertEnabled() bool {
+	value, set := os.LookupEnv(STSAutoTLSEnabled)
 	if set {
 		return value == "on"
 	}

@@ -29,7 +29,7 @@ function main() {
 
     install_cert_manager
 
-    install_operator
+    install_operator certmanager
 
     install_cert_manager_tenant
 

@@ -2,6 +2,6 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   name: tenant-certmanager-issuer
-  namespace: minio-tenant
+  namespace: tenant-certmanager
 spec:
   selfSigned: { }

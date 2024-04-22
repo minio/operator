@@ -404,7 +404,7 @@ func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel 
 	}
 	certsManager, err := xcerts.NewManager(ctx, publicCertPath, privateKeyPath, LoadX509KeyPair)
 	if err != nil {
-		klog.Errorf("HTTPS STS API server failed to load CA certificate: %v", err)
+		klog.Errorf("HTTPS STS API server failed to load certificate: %v", err)
 		notificationChannel <- &EventNotification{
 			Type: STSServerNotification,
 			Err:  err,
@@ -490,8 +490,10 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 		go func() {
 			if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
 				klog.Infof("STS is enabled, skipping TLS certificate generation on Openshift deployment")
+			} else if IsSTSAutocertEnabled() {
+				klog.Infof("STS Autocert generation is disabled, skipping certificate generation")
 			} else {
-				klog.Infof("STS is enabled, starting API certificate setup")
+				klog.Infof("STS is enabled and STS Autocert enable, starting API certificate setup")
 				c.generateSTSTLSCert()
 			}
 		}()

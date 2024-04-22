@@ -2,7 +2,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: tenant-certmanager-cert
-  namespace: minio-tenant
+  namespace: tenant-certmanager
 spec:
   # If you see "Empty issuer DN not allowed in X509Certificates"
   # You will need to add spec.subject.organizations or spec.commonName

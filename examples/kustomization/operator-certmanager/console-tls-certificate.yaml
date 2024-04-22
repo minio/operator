@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: console-certmanager-cert
+  namespace: minio-operator
+spec:
+  dnsNames:
+    - console
+    - console.minio-operator.svc
+    - console.minio-operator.svc.cluster.local
+  secretName: console-tls
+  issuerRef:
+    name: minio-operator-ca-issuer
