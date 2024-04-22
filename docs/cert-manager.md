@@ -144,7 +144,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: tenant-certmanager-cert
-  namespace: tenant1
+  namespace: tenant-1
 spec:
   dnsNames:
     - "minio.tenant-1"
