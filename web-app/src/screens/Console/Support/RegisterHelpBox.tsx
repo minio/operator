@@ -15,14 +15,22 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
-import { Box, Link } from "@mui/material";
 import {
+  Box,
+  breakPoints,
   CallHomeFeatureIcon,
   DiagnosticsFeatureIcon,
   ExtraFeaturesIcon,
   HelpIconFilled,
   PerformanceFeatureIcon,
 } from "mds";
+import styled from "styled-components";
+import get from "lodash/get";
+
+const LinkElement = styled.a(({ theme }) => ({
+  color: get(theme, "linkColor", "#2781B0"),
+  fontWeight: 600,
+}));
 
 const FeatureItem = ({
   icon,
@@ -44,30 +52,29 @@ const FeatureItem = ({
       }}
     >
       {icon}{" "}
-      <div style={{ fontSize: "14px", fontStyle: "italic", color: "#5E5E5E" }}>
+      <Box className="muted" sx={{ fontSize: "14px", fontStyle: "italic" }}>
         {description}
-      </div>
+      </Box>
     </Box>
   );
 };
 const RegisterHelpBox = ({ hasMargin = true }: { hasMargin?: boolean }) => {
   return (
     <Box
+      withBorders
       sx={{
         flex: 1,
-        border: "1px solid #eaeaea",
-        borderRadius: "2px",
         display: "flex",
         flexFlow: "column",
         padding: "20px",
-        marginLeft: {
-          xs: "0px",
-          sm: "0px",
-          md: hasMargin ? "30px" : "",
+        marginLeft: hasMargin ? "30px" : "",
+        [`@media (max-width: ${breakPoints.sm}px)`]: {
+          marginLeft: 0,
+          marginTop: 0,
         },
-        marginTop: {
-          xs: "0px",
-          sm: hasMargin ? "30px" : "",
+        [`@media (max-width: ${breakPoints.md}px)`]: {
+          marginLeft: 0,
+          marginTop: hasMargin ? "30px" : "",
         },
       }}
     >
@@ -116,16 +123,9 @@ const RegisterHelpBox = ({ hasMargin = true }: { hasMargin?: boolean }) => {
         <FeatureItem
           icon={<ExtraFeaturesIcon />}
           description={
-            <Link
-              href="https://min.io/signup?ref=op"
-              target="_blank"
-              sx={{
-                color: "#2781B0",
-                cursor: "pointer",
-              }}
-            >
+            <LinkElement href="https://min.io/signup?ref=op" target="_blank">
               More Features
-            </Link>
+            </LinkElement>
           }
         />
       </Box>

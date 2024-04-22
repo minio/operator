@@ -14,103 +14,34 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useCallback, useEffect, useState } from "react";
-import { connect, useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import { DialogContentText, IconButton } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import { Button, ConfirmModalIcon, Loader, RemoveIcon } from "mds";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import Grid from "@mui/material/Grid";
+import React, { Fragment, useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import {
+  AddIcon,
+  Box,
+  Button,
+  ConfirmModalIcon,
+  Grid,
+  IconButton,
+  InputBox,
+  Loader,
+  RemoveIcon,
+  SectionTitle,
+  Switch,
+} from "mds";
 import {
   ITenantConfigurationRequest,
   ITenantConfigurationResponse,
   LabelKeyPair,
 } from "../types";
-import {
-  containerForHeader,
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  spacingUtils,
-  tenantDetailsStyles,
-  wizardCommon,
-} from "../../Common/FormComponents/common/styleLibrary";
-import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
 import { AppState, useAppDispatch } from "../../../../store";
 import { ErrorResponseHandler } from "../../../../common/types";
 import { setErrorSnackMessage } from "../../../../systemSlice";
+import { MinIOEnvVarsSettings } from "../../../../common/utils";
 import api from "../../../../common/api";
 import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
-import { MinIOEnvVarsSettings } from "../../../../common/utils";
-import FormHr from "../../Common/FormHr";
 
-interface ITenantConfiguration {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    ...spacingUtils,
-    envVarRow: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      "&:last-child": {
-        borderBottom: 0,
-      },
-      "@media (max-width: 900px)": {
-        flex: 1,
-
-        "& div label": {
-          minWidth: 50,
-        },
-      },
-    },
-    rowActions: {
-      display: "flex",
-      justifyContent: "flex-end",
-      "@media (max-width: 900px)": {
-        flex: 1,
-      },
-    },
-    overlayAction: {
-      marginLeft: 10,
-      "& svg": {
-        width: 15,
-        height: 15,
-        maxWidth: 15,
-        maxHeight: 15,
-      },
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    loaderAlign: {
-      textAlign: "center",
-    },
-    fileItem: {
-      marginRight: 10,
-      display: "flex",
-      "& div label": {
-        minWidth: 50,
-      },
-
-      "@media (max-width: 900px)": {
-        flexFlow: "column",
-      },
-    },
-    ...containerForHeader,
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
+const TenantConfiguration = () => {
   const dispatch = useAppDispatch();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
@@ -172,7 +103,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
   };
 
   return (
-    <React.Fragment>
+    <Fragment>
       <ConfirmDialog
         title={"Save and Restart"}
         confirmText={"Restart"}
@@ -183,31 +114,77 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
         isOpen={dialogOpen}
         onConfirm={updateTenantConfiguration}
         confirmationContent={
-          <DialogContentText>
+          <Fragment>
             Are you sure you want to save the changes and restart the service?
-          </DialogContentText>
+          </Fragment>
         }
       />
       {loadingTenant ? (
-        <div className={classes.loaderAlign}>
+        <Box
+          sx={{
+            textAlign: "center",
+          }}
+        >
           <Loader />
-        </div>
+        </Box>
       ) : (
-        <Grid container spacing={1}>
-          <Grid item xs={12}>
-            <h1 className={classes.sectionTitle}>Configuration</h1>
-            <FormHr />
-          </Grid>
-          <Grid container spacing={1}>
+        <Box>
+          <SectionTitle separator sx={{ marginBottom: 15 }}>
+            Configuration
+          </SectionTitle>
+          <Grid
+            container
+            sx={{
+              "& .envVarRow": {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                "&:last-child": {
+                  borderBottom: 0,
+                },
+                "@media (max-width: 900px)": {
+                  flex: 1,
+
+                  "& div label": {
+                    minWidth: 50,
+                  },
+                },
+              },
+              "& .rowActions": {
+                display: "flex",
+                justifyContent: "flex-end",
+                "@media (max-width: 900px)": {
+                  flex: 1,
+                },
+              },
+              "& .overlayAction": {
+                marginLeft: 10,
+              },
+              "& .rowItem": {
+                marginRight: 10,
+                display: "flex",
+                "& div label": {
+                  minWidth: 50,
+                },
+
+                "@media (max-width: 900px)": {
+                  flexFlow: "column",
+                },
+              },
+            }}
+          >
             {envVars.map((envVar, index) => (
               <Grid
                 item
                 xs={12}
-                className={`${classes.formFieldRow} ${classes.envVarRow}`}
+                className={`envVarRow`}
                 key={`tenant-envVar-${index.toString()}`}
+                sx={{
+                  marginBottom: 15,
+                }}
               >
-                <Grid item xs={5} className={classes.fileItem}>
-                  <InputBoxWrapper
+                <Grid item xs={5} className={"rowItem"}>
+                  <InputBox
                     id="env_var_key"
                     name="env_var_key"
                     label="Key"
@@ -227,8 +204,8 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                     key={`env_var_key_${index.toString()}`}
                   />
                 </Grid>
-                <Grid item xs={5} className={classes.fileItem}>
-                  <InputBoxWrapper
+                <Grid item xs={5} className={"rowItem"}>
+                  <InputBox
                     id="env_var_value"
                     name="env_var_value"
                     label="Value"
@@ -253,8 +230,8 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                     }
                   />
                 </Grid>
-                <Grid item xs={2} className={classes.rowActions}>
-                  <div className={classes.overlayAction}>
+                <Grid item xs={2} className={"rowActions"}>
+                  <div className={"overlayAction"}>
                     <IconButton
                       size={"small"}
                       onClick={() => {
@@ -268,7 +245,7 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
                       <AddIcon />
                     </IconButton>
                   </div>
-                  <div className={classes.overlayAction}>
+                  <div className={"overlayAction"}>
                     <IconButton
                       size={"small"}
                       onClick={() => {
@@ -290,15 +267,17 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
               </Grid>
             ))}
           </Grid>
-          <Grid container spacing={1}>
+          <Grid container>
             <Grid
               item
               xs={12}
-              justifyContent={"end"}
-              textAlign={"right"}
-              className={classes.configSectionItem}
+              sx={{
+                justifyContent: "end",
+                textAlign: "right",
+                marginBottom: 15,
+              }}
             >
-              <FormSwitchWrapper
+              <Switch
                 label={"SFTP"}
                 indicatorLabels={["Enabled", "Disabled"]}
                 checked={sftpExposed}
@@ -326,18 +305,10 @@ const TenantConfiguration = ({ classes }: ITenantConfiguration) => {
               label={"Save"}
             />
           </Grid>
-        </Grid>
+        </Box>
       )}
-    </React.Fragment>
+    </Fragment>
   );
 };
 
-const mapState = (state: AppState) => ({
-  loadingTenant: state.tenants.loadingTenant,
-  selectedTenant: state.tenants.currentTenant,
-  tenant: state.tenants.tenantInfo,
-});
-
-const connector = connect(mapState, null);
-
-export default withStyles(styles)(connector(TenantConfiguration));
+export default TenantConfiguration;

@@ -14,76 +14,43 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
+import { Box, Grid } from "mds";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
 import {
   AutoSizer,
   CellMeasurer,
   CellMeasurerCache,
   List,
 } from "react-virtualized";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { TextField } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import Paper from "@mui/material/Paper";
-import InputAdornment from "@mui/material/InputAdornment";
-import api from "../../../../../common/api";
-import { SearchIcon } from "mds";
-import {
-  actionsTray,
-  containerForHeader,
-  searchField,
-} from "../../../Common/FormComponents/common/styleLibrary";
+import styled from "styled-components";
+import get from "lodash/get";
 import { ErrorResponseHandler } from "../../../../../common/types";
 import { AppState, useAppDispatch } from "../../../../../store";
 import { setErrorSnackMessage } from "../../../../../systemSlice";
+import SearchBox from "../../../Common/SearchBox";
+import api from "../../../../../common/api";
 
 interface IPodLogsProps {
-  classes: any;
   tenant: string;
   namespace: string;
   podName: string;
   propLoading: boolean;
 }
 
-const styles = (theme: Theme) =>
-  createStyles({
-    logList: {
-      background: "#fff",
-      minHeight: 400,
-      height: "calc(100vh - 304px)",
-      overflow: "auto",
-      fontSize: 13,
-      padding: "25px 45px 0",
-      border: "1px solid #EAEDEE",
-      borderRadius: 4,
+const LogsItem = styled.div(({ theme }) => ({
+  "&.highlighted": {
+    "& span": {
+      backgroundColor: get(theme, "signalColors.warning", "#FFBD62"),
     },
-
-    ...searchField,
-    actionsTray: {
-      ...actionsTray.actionsTray,
-      padding: "15px 0 0",
-    },
-    logerror_tab: {
-      color: "#A52A2A",
-      paddingLeft: 25,
-    },
-    ansidefault: {
-      color: "#000",
-      lineHeight: "16px",
-    },
-    highlight: {
-      "& span": {
-        backgroundColor: "#082F5238",
-      },
-    },
-    ...containerForHeader,
-  });
+  },
+  "& .ansidefault": {
+    color: get(theme, "fontColor", "#000"),
+    lineHeight: "16px",
+  },
+}));
 
 const PodLogs = ({
-  classes,
   tenant,
   namespace,
   podName,
@@ -138,22 +105,22 @@ const PodLogs = ({
     // if starts with multiple spaces add padding
     if (substr.startsWith("   ")) {
       return (
-        <div
+        <LogsItem
           key={index}
-          className={`${highlightedLine ? classes.highlight : ""}`}
+          className={`${highlightedLine ? "highlighted" : ""}`}
         >
-          <span className={classes.tab}>{substr}</span>
-        </div>
+          <span className={"tab"}>{substr}</span>
+        </LogsItem>
       );
     } else {
       // for all remaining set default class
       return (
-        <div
+        <LogsItem
           key={index}
-          className={`${highlightedLine ? classes.highlight : ""}`}
+          className={`${highlightedLine ? "highlighted" : ""}`}
         >
-          <span className={classes.ansidefault}>{substr}</span>
-        </div>
+          <span className={"ansidefault"}>{substr}</span>
+        </LogsItem>
       );
     }
   };
@@ -198,54 +165,62 @@ const PodLogs = ({
   }
 
   return (
-    <React.Fragment>
-      <Grid item xs={12} className={classes.actionsTray}>
-        <TextField
+    <Fragment>
+      <Grid
+        item
+        xs={12}
+        sx={{
+          display: "flex" as const,
+          justifyContent: "space-between" as const,
+          marginBottom: "1rem",
+          alignItems: "center",
+          gap: 10,
+          "& button": {
+            flexGrow: 0,
+            marginLeft: 8,
+          },
+        }}
+      >
+        <SearchBox
+          value={highlight}
           placeholder="Highlight Line"
-          className={classes.searchField}
-          id="search-resource"
-          label=""
-          onChange={(val) => {
-            setHighlight(val.target.value);
+          onChange={(value) => {
+            setHighlight(value);
           }}
-          InputProps={{
-            disableUnderline: true,
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          variant="standard"
         />
       </Grid>
       <Grid item xs={12}>
-        <br />
+        <Box
+          sx={{
+            minHeight: 400,
+            height: "calc(100vh - 310px)",
+            overflow: "hidden",
+            fontSize: 13,
+            padding: "25px 45px 0",
+          }}
+          useBackground
+          withBorders
+        >
+          {logLines.length >= 1 && (
+            // @ts-ignore
+            <AutoSizer>
+              {({ width, height }) => (
+                // @ts-ignore
+                <List
+                  rowHeight={(item) => cache.rowHeight(item)}
+                  overscanRowCount={15}
+                  rowCount={logLines.length}
+                  rowRenderer={cellRenderer}
+                  width={width}
+                  height={height}
+                />
+              )}
+            </AutoSizer>
+          )}
+        </Box>
       </Grid>
-      <Grid item xs={12}>
-        <Paper>
-          <div className={classes.logList}>
-            {logLines.length >= 1 && (
-              // @ts-ignore
-              <AutoSizer>
-                {({ width, height }) => (
-                  // @ts-ignore
-                  <List
-                    rowHeight={(item) => cache.rowHeight(item)}
-                    overscanRowCount={15}
-                    rowCount={logLines.length}
-                    rowRenderer={cellRenderer}
-                    width={width}
-                    height={height}
-                  />
-                )}
-              </AutoSizer>
-            )}
-          </div>
-        </Paper>
-      </Grid>
-    </React.Fragment>
+    </Fragment>
   );
 };
 
-export default withStyles(styles)(PodLogs);
+export default PodLogs;

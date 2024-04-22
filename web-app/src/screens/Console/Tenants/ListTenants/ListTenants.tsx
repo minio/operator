@@ -15,21 +15,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import { AddIcon, Button, HelpBox, RefreshIcon, TenantsIcon } from "mds";
-import Grid from "@mui/material/Grid";
-import { LinearProgress, SelectChangeEvent } from "@mui/material";
+import {
+  ActionLink,
+  AddIcon,
+  Button,
+  HelpBox,
+  RefreshIcon,
+  TenantsIcon,
+  PageLayout,
+  Grid,
+  ProgressBar,
+  Select,
+} from "mds";
 import { NewServiceAccount } from "../../Common/CredentialsPrompt/types";
+import { setErrorSnackMessage } from "../../../../systemSlice";
+import { useNavigate } from "react-router-dom";
+import { useAppDispatch } from "../../../../store";
 import TenantListItem from "./TenantListItem";
-import AButton from "../../Common/AButton/AButton";
-
 import withSuspense from "../../Common/Components/withSuspense";
 import VirtualizedList from "../../Common/VirtualizedList/VirtualizedList";
 import SearchBox from "../../Common/SearchBox";
-import PageLayout from "../../Common/Layout/PageLayout";
-import { setErrorSnackMessage } from "../../../../systemSlice";
-import SelectWrapper from "../../Common/FormComponents/SelectWrapper/SelectWrapper";
-import { useNavigate } from "react-router-dom";
-import { useAppDispatch } from "../../../../store";
 import TooltipWrapper from "../../Common/TooltipWrapper/TooltipWrapper";
 import PageHeaderWrapper from "../../Common/PageHeaderWrapper/PageHeaderWrapper";
 import { api } from "../../../../api";
@@ -226,9 +231,9 @@ const ListTenants = () => {
           </Grid>
         }
       />
-      <PageLayout>
+      <PageLayout variant={"constrained"}>
         <Grid item xs={12} style={{ height: "calc(100vh - 195px)" }}>
-          {isLoading && <LinearProgress />}
+          {isLoading && <ProgressBar />}
           {!isLoading && (
             <Fragment>
               {filteredRecords.length !== 0 && (
@@ -251,23 +256,12 @@ const ListTenants = () => {
                         alignItems: "center",
                       }}
                     >
-                      <span
-                        style={{
-                          whiteSpace: "nowrap",
-                          fontSize: 14,
-                          color: "#838383",
-                          fontWeight: "bold",
-                          marginRight: 10,
-                        }}
-                      >
-                        Sort by
-                      </span>
-                      <SelectWrapper
+                      <Select
                         id={"sort-by"}
-                        label={""}
+                        label={"Sort by"}
                         value={sortValue}
-                        onChange={(e: SelectChangeEvent<string>) => {
-                          setSortValue(e.target.value as string);
+                        onChange={(value) => {
+                          setSortValue(value as string);
                         }}
                         name={"sort-by"}
                         options={[
@@ -289,6 +283,7 @@ const ListTenants = () => {
                             value: "failing_status",
                           },
                         ]}
+                        noLabelMinWidth
                       />
                     </div>
                   </Grid>
@@ -301,9 +296,11 @@ const ListTenants = () => {
               {filteredRecords.length === 0 && (
                 <Grid
                   container
-                  justifyContent={"center"}
-                  alignContent={"center"}
-                  alignItems={"center"}
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
                 >
                   <Grid item xs={8}>
                     <HelpBox
@@ -318,13 +315,13 @@ const ListTenants = () => {
                           <br />
                           <br />
                           To get started,&nbsp;
-                          <AButton
+                          <ActionLink
                             onClick={() => {
                               navigate("/tenants/add");
                             }}
                           >
                             Create a Tenant.
-                          </AButton>
+                          </ActionLink>
                         </Fragment>
                       }
                     />

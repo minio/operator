@@ -15,43 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/APIKeys/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import {
-  actionsTray,
-  containerForHeader,
-  searchField,
-  spacingUtils,
-} from "../Common/FormComponents/common/styleLibrary";
-import withStyles from "@mui/styles/withStyles";
-import { Box } from "@mui/material";
-import PageLayout from "../Common/Layout/PageLayout";
-import api from "../../../common/api";
-
+import { Box, PageLayout, Tabs } from "mds";
 import { ErrorResponseHandler } from "../../../common/types";
-
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import { TabPanel } from "../../shared/tabs";
 import { ClusterRegistered } from "./utils";
+import api from "../../../common/api";
 import ApiKeyRegister from "./ApiKeyRegister";
 import PageHeaderWrapper from "../Common/PageHeaderWrapper/PageHeaderWrapper";
 
-interface IRegister {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...actionsTray,
-    ...searchField,
-    ...spacingUtils,
-    ...containerForHeader,
-  });
-
-const RegisterOperator = ({ classes }: IRegister) => {
+const RegisterOperator = () => {
   const [apiKeyRegistered, setAPIKeyRegistered] = useState<boolean>(false);
-  const [curTab, setCurTab] = useState<number>(0);
+  const [curTab, setCurTab] = useState<string>("simple-tab-0");
 
   const fetchAPIKeyInfo = useCallback(() => {
     api
@@ -71,9 +44,8 @@ const RegisterOperator = ({ classes }: IRegister) => {
   const apiKeyRegistration = (
     <Fragment>
       <Box
+        withBorders
         sx={{
-          border: "1px solid #eaeaea",
-          borderRadius: "2px",
           display: "flex",
           flexFlow: "column",
           padding: "43px",
@@ -90,35 +62,25 @@ const RegisterOperator = ({ classes }: IRegister) => {
 
   return (
     <Fragment>
-      <PageHeaderWrapper
-        label="Register to MinIO Subscription Network"
-        actions={<React.Fragment />}
-      />
+      <PageHeaderWrapper label="Register to MinIO Subscription Network" />
 
       <PageLayout>
         <Tabs
-          value={curTab}
-          onChange={(e: React.ChangeEvent<{}>, newValue: number) => {
-            setCurTab(newValue);
+          currentTabOrPath={curTab}
+          onTabClick={(nvTab) => {
+            setCurTab(nvTab);
           }}
-          indicatorColor="primary"
-          textColor="primary"
-          aria-label="cluster-tabs"
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          <Tab
-            label="API Key"
-            id="simple-tab-0"
-            aria-controls="simple-tabpanel-1"
-          />
-        </Tabs>
-        <TabPanel index={0} value={curTab}>
-          {apiKeyRegistration}
-        </TabPanel>
+          options={[
+            {
+              tabConfig: { id: "simple-tab-0", label: "API Key" },
+              content: apiKeyRegistration,
+            },
+          ]}
+          horizontal
+        />
       </PageLayout>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(RegisterOperator);
+export default RegisterOperator;

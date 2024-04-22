@@ -20,7 +20,6 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,8 +27,8 @@ import (
 type k8sClientMock struct{}
 
 var (
-	k8sClientGetResourceQuotaMock func(ctx context.Context, namespace, resource string, opts metav1.GetOptions) (*v1.ResourceQuota, error)
-	k8sClientGetNameSpaceMock     func(ctx context.Context, name string, opts metav1.GetOptions) (*v1.Namespace, error)
+	k8sClientGetResourceQuotaMock func(ctx context.Context, namespace, resource string, opts metav1.GetOptions) (*corev1.ResourceQuota, error)
+	k8sClientGetNameSpaceMock     func(ctx context.Context, name string, opts metav1.GetOptions) (*corev1.Namespace, error)
 	k8sClientStorageClassesMock   func(ctx context.Context, opts metav1.ListOptions) (*storagev1.StorageClassList, error)
 
 	k8sClientGetConfigMapMock    func(ctx context.Context, namespace, configMap string, opts metav1.GetOptions) (*corev1.ConfigMap, error)
@@ -40,17 +39,17 @@ var (
 	k8sClientDeletePodCollectionMock     func(ctx context.Context, namespace string, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
 	k8sClientDeleteSecretMock            func(ctx context.Context, namespace string, name string, opts metav1.DeleteOptions) error
 	k8sClientDeleteSecretsCollectionMock func(ctx context.Context, namespace string, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
-	k8sClientCreateSecretMock            func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error)
-	k8sClientUpdateSecretMock            func(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.UpdateOptions) (*v1.Secret, error)
+	k8sClientCreateSecretMock            func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error)
+	k8sClientUpdateSecretMock            func(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.UpdateOptions) (*corev1.Secret, error)
 	k8sclientGetSecretMock               func(ctx context.Context, namespace, secretName string, opts metav1.GetOptions) (*corev1.Secret, error)
 	k8sclientGetServiceMock              func(ctx context.Context, namespace, serviceName string, opts metav1.GetOptions) (*corev1.Service, error)
 )
 
-func (c k8sClientMock) getResourceQuota(ctx context.Context, namespace, resource string, opts metav1.GetOptions) (*v1.ResourceQuota, error) {
+func (c k8sClientMock) getResourceQuota(ctx context.Context, namespace, resource string, opts metav1.GetOptions) (*corev1.ResourceQuota, error) {
 	return k8sClientGetResourceQuotaMock(ctx, namespace, resource, opts)
 }
 
-func (c k8sClientMock) getNamespace(ctx context.Context, name string, opts metav1.GetOptions) (*v1.Namespace, error) {
+func (c k8sClientMock) getNamespace(ctx context.Context, name string, opts metav1.GetOptions) (*corev1.Namespace, error) {
 	return k8sClientGetNameSpaceMock(ctx, name, opts)
 }
 
@@ -86,11 +85,11 @@ func (c k8sClientMock) deleteSecretsCollection(ctx context.Context, namespace st
 	return k8sClientDeleteSecretsCollectionMock(ctx, namespace, opts, listOpts)
 }
 
-func (c k8sClientMock) createSecret(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.CreateOptions) (*v1.Secret, error) {
+func (c k8sClientMock) createSecret(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.CreateOptions) (*corev1.Secret, error) {
 	return k8sClientCreateSecretMock(ctx, namespace, secret, opts)
 }
 
-func (c k8sClientMock) updateSecret(ctx context.Context, namespace string, secret *v1.Secret, opts metav1.UpdateOptions) (*v1.Secret, error) {
+func (c k8sClientMock) updateSecret(ctx context.Context, namespace string, secret *corev1.Secret, opts metav1.UpdateOptions) (*corev1.Secret, error) {
 	return k8sClientUpdateSecretMock(ctx, namespace, secret, opts)
 }
 

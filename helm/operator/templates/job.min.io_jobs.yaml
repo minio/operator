@@ -1,0 +1,114 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+    operator.min.io/version: v5.0.14
+  name: miniojobs.job.min.io
+spec:
+  group: job.min.io
+  names:
+    kind: MinIOJob
+    listKind: MinIOJobList
+    plural: miniojobs
+    shortNames:
+    - miniojob
+    singular: miniojob
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.tenant.name
+      name: Tenant
+      type: string
+    - jsonPath: .spec.status.phase
+      name: Phase
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              commands:
+                items:
+                  properties:
+                    args:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    dependsOn:
+                      items:
+                        type: string
+                      type: array
+                    name:
+                      type: string
+                    op:
+                      type: string
+                  required:
+                  - op
+                  type: object
+                type: array
+              execution:
+                default: parallel
+                enum:
+                - parallel
+                - sequential
+                type: string
+              failureStrategy:
+                default: continueOnFailure
+                enum:
+                - continueOnFailure
+                - stopOnFailure
+                type: string
+              mcImage:
+                default: minio/mc:latest
+                type: string
+              serviceAccountName:
+                type: string
+              tenant:
+                properties:
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - commands
+            - serviceAccountName
+            - tenant
+            type: object
+          status:
+            properties:
+              commands:
+                items:
+                  properties:
+                    message:
+                      type: string
+                    name:
+                      type: string
+                    result:
+                      type: string
+                  required:
+                  - result
+                  type: object
+                type: array
+              message:
+                type: string
+              phase:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

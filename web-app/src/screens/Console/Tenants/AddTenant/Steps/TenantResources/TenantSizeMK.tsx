@@ -15,52 +15,29 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
+import { Box, Grid, InputBox, Select } from "mds";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import { SelectChangeEvent } from "@mui/material";
 import get from "lodash/get";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import {
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
 import { erasureCodeCalc, getBytes } from "../../../../../../common/utils";
 import { clearValidationError } from "../../../utils";
 import { ecListTransform } from "../../../ListTenants/utils";
 import { IStorageDistribution } from "../../../../../../common/types";
 import { commonFormValidation } from "../../../../../../utils/validationFunctions";
-import api from "../../../../../../common/api";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import SelectWrapper from "../../../../Common/FormComponents/SelectWrapper/SelectWrapper";
 import {
   IMkEnvs,
   IntegrationConfiguration,
   mkPanelConfigurations,
 } from "./utils";
 import { isPageValid, updateAddField } from "../../createTenantSlice";
+import api from "../../../../../../common/api";
 import H3Section from "../../../../Common/H3Section";
 
 interface ITenantSizeAWSProps {
-  classes: any;
   formToRender?: IMkEnvs;
 }
 
-const styles = (theme: Theme) =>
-  createStyles({
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const TenantSizeMK = ({
-  classes,
-
-  formToRender,
-}: ITenantSizeAWSProps) => {
+const TenantSizeMK = ({ formToRender }: ITenantSizeAWSProps) => {
   const dispatch = useAppDispatch();
 
   const volumeSize = useSelector(
@@ -300,61 +277,55 @@ const TenantSizeMK = ({
   return (
     <Fragment>
       <Grid item xs={12}>
-        <div className={classes.headerElement}>
+        <Box className={"inputItem"}>
           <H3Section>Tenant Size</H3Section>
-          <span className={classes.descriptionText}>
-            Please select the desired capacity
-          </span>
-        </div>
+          <span className={"muted"}>Please select the desired capacity</span>
+        </Box>
       </Grid>
       {distribution.error !== "" && (
         <Grid item xs={12}>
-          <div className={classes.error}>{distribution.error}</div>
+          <div className={"error"}>{distribution.error}</div>
         </Grid>
       )}
       {resourcesSize.error !== "" && (
         <Grid item xs={12}>
-          <div className={classes.error}>{resourcesSize.error}</div>
+          <div className={"error"}>{resourcesSize.error}</div>
         </Grid>
       )}
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="nodes"
-          name="nodes"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.validity.valid) {
-              updateField("nodes", e.target.value);
-              cleanValidation("nodes");
-            }
-          }}
-          label="Number of Servers"
-          disabled={selectedStorageType === ""}
-          value={nodes}
-          min="4"
-          required
-          error={validationErrors["nodes"] || ""}
-          pattern={"[0-9]*"}
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <SelectWrapper
-          id="ec_parity"
-          name="ec_parity"
-          onChange={(e: SelectChangeEvent<string>) => {
-            updateField("ecParity", e.target.value as string);
-          }}
-          label="Erasure Code Parity"
-          disabled={selectedStorageType === ""}
-          value={ecParity}
-          options={ecParityChoices}
-        />
-        <span className={classes.descriptionText}>
-          Please select the desired parity. This setting will change the max
-          usable capacity in the cluster
-        </span>
-      </Grid>
+      <InputBox
+        id="nodes"
+        name="nodes"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          if (e.target.validity.valid) {
+            updateField("nodes", e.target.value);
+            cleanValidation("nodes");
+          }
+        }}
+        label="Number of Servers"
+        disabled={selectedStorageType === ""}
+        value={nodes}
+        min="4"
+        required
+        error={validationErrors["nodes"] || ""}
+        pattern={"[0-9]*"}
+      />
+      <Select
+        id="ec_parity"
+        name="ec_parity"
+        onChange={(value) => {
+          updateField("ecParity", value);
+        }}
+        label="Erasure Code Parity"
+        disabled={selectedStorageType === ""}
+        value={ecParity}
+        options={ecParityChoices}
+      />
+      <span className={"muted"}>
+        Please select the desired parity. This setting will change the max
+        usable capacity in the cluster
+      </span>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantSizeMK);
+export default TenantSizeMK;

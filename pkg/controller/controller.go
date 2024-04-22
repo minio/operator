@@ -23,6 +23,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/pkg/env"
+
 	"github.com/minio/operator/pkg"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,11 +34,15 @@ import (
 
 	"k8s.io/klog/v2"
 
+	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
+	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -68,6 +74,9 @@ func init() {
 
 // StartOperator starts the MinIO Operator controller
 func StartOperator(kubeconfig string) {
+	_ = v2.AddToScheme(scheme.Scheme)
+	_ = v1alpha1.AddToScheme(scheme.Scheme)
+	_ = stsv1alpha1.AddToScheme(scheme.Scheme)
 	klog.Info("Starting MinIO Operator")
 	// set up signals, so we handle the first shutdown signal gracefully
 	stopCh := setupSignalHandler()
@@ -79,8 +88,21 @@ func StartOperator(kubeconfig string) {
 		return
 	}
 
-	// Look for incluster config by default
-	cfg, err := rest.InClusterConfig()
+	var cfg *rest.Config
+	var err error
+
+	if token := env.Get("DEV_MODE", ""); token == "on" {
+		klog.Info("DEV_MODE present, running dev mode")
+		cfg = &rest.Config{
+			Host:            "http://localhost:8001",
+			TLSClientConfig: rest.TLSClientConfig{Insecure: true},
+			APIPath:         "/",
+			BearerToken:     "",
+		}
+	} else {
+		// Look for incluster config by default
+		cfg, err = rest.InClusterConfig()
+	}
 	// If config is passed as a flag use that instead
 	if kubeconfig != "" {
 		cfg, err = clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
@@ -146,6 +168,8 @@ func StartOperator(kubeconfig string) {
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,
 		pkg.Version,
+		minioInformerFactory.Job().V1alpha1().MinIOJobs(),
+		kubeInformerFactory.Batch().V1().Jobs(),
 	)
 
 	go kubeInformerFactory.Start(stopCh)

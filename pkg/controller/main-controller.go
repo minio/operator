@@ -28,7 +28,7 @@ import (
 
 	"github.com/minio/operator/pkg/utils"
 
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/operator/pkg/common"
 	xcerts "github.com/minio/pkg/certs"
 
@@ -56,6 +56,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
+	batchv1 "k8s.io/client-go/informers/batch/v1"
 	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -73,9 +74,9 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
+	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
 	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
-	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
 
@@ -197,6 +198,11 @@ type Controller struct {
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
+
+	// controllers denotes the list of components controlled
+	// by the controller. Each component is itself
+	// a controller. This handle is for supporting the abstraction.
+	controllers []*JobController
 }
 
 // EventType is Event type to handle
@@ -208,7 +214,7 @@ const (
 	LeaderElection
 )
 
-// EventNotification - structure to send messages trough a channel regarding a error event to be handled
+// EventNotification - structure to send messages through a channel regarding a error event to be handled
 type EventNotification struct {
 	// Err the error to handle if any, null when is just a message
 	Err error
@@ -216,8 +222,25 @@ type EventNotification struct {
 	Type EventType
 }
 
-// NewController returns a new sample controller
-func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSet kubernetes.Interface, k8sClient client.Client, minioClientSet clientset.Interface, promClient promclientset.Interface, statefulSetInformer appsinformers.StatefulSetInformer, deploymentInformer appsinformers.DeploymentInformer, podInformer coreinformers.PodInformer, tenantInformer informers.TenantInformer, policyBindingInformer stsInformers.PolicyBindingInformer, serviceInformer coreinformers.ServiceInformer, hostsTemplate, operatorVersion string) *Controller {
+// NewController returns a new Operator Controller
+func NewController(
+	podName string,
+	namespacesToWatch set.StringSet,
+	kubeClientSet kubernetes.Interface,
+	k8sClient client.Client,
+	minioClientSet clientset.Interface,
+	promClient promclientset.Interface,
+	statefulSetInformer appsinformers.StatefulSetInformer,
+	deploymentInformer appsinformers.DeploymentInformer,
+	podInformer coreinformers.PodInformer,
+	tenantInformer informers.TenantInformer,
+	policyBindingInformer stsInformers.PolicyBindingInformer,
+	serviceInformer coreinformers.ServiceInformer,
+	hostsTemplate,
+	operatorVersion string,
+	minioJobinformer jobinformers.MinIOJobInformer,
+	jobInformer batchv1.JobInformer,
+) *Controller {
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -248,6 +271,14 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 
 	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
 
+	//controllerConfig := controllerConfig{
+	//	serviceLister:     serviceInformer.Lister(),
+	//	kubeClientSet:     kubeClientSet,
+	//	statefulSetLister: statefulSetInformer.Lister(),
+	//	deploymentLister:  deploymentInformer.Lister(),
+	//	recorder:          recorder,
+	//}
+
 	controller := &Controller{
 		podName:                   podName,
 		namespacesToWatch:         namespacesToWatch,
@@ -270,6 +301,17 @@ func NewController(podName string, namespacesToWatch set.StringSet, kubeClientSe
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		operatorImage:             oprImg,
+		controllers: []*JobController{
+			NewJobController(
+				minioJobinformer,
+				jobInformer,
+				namespacesToWatch,
+				kubeClientSet,
+				recorder,
+				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "MinioJobs"),
+				k8sClient,
+			),
+		},
 	}
 
 	// Initialize operator HTTP upgrade server handlers
@@ -408,10 +450,19 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
 		panic("failed to wait for caches to sync")
 	}
+	// Wait for the caches to be synced before starting workers
+	for _, jobController := range c.controllers {
+		if ok := cache.WaitForCacheSync(stopCh, jobController.minioJobHasSynced, jobController.jobHasSynced); !ok {
+			panic("failed to wait for caches to sync")
+		}
+	}
 
-	klog.Info("Starting workers")
-	// Launch two workers to process Tenant resources
+	klog.Info("Starting workers and Job workers")
+	JobController := c.controllers[0]
+	// fmt.Println(controller.SyncHandler())
+	// Launch two workers to process Job resources
 	for i := 0; i < threadiness; i++ {
+		go wait.Until(JobController.runJobWorker, time.Second, stopCh)
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
@@ -629,7 +680,7 @@ func (c *Controller) Stop() {
 // workqueue.
 func (c *Controller) runWorker() {
 	defer runtime.HandleCrash()
-	for c.processNextWorkItem() {
+	for processNextItem(c.workqueue, c.syncHandler) {
 	}
 }
 
@@ -638,72 +689,8 @@ func (c *Controller) runWorker() {
 // healthCheckQueue.
 func (c *Controller) runHealthCheckWorker() {
 	defer runtime.HandleCrash()
-	for c.processNextHealthCheckItem() {
+	for processNextItem(c.healthCheckQueue, c.syncHealthCheckHandler) {
 	}
-}
-
-// processNextWorkItem will read a single work item off the workqueue and
-// attempt to process it, by calling the syncHandler.
-func (c *Controller) processNextWorkItem() bool {
-	obj, shutdown := c.workqueue.Get()
-	if shutdown {
-		return false
-	}
-
-	// We wrap this block in a func so we can defer c.workqueue.Done.
-	processItem := func(obj interface{}) error {
-		// We call Done here so the workqueue knows we have finished
-		// processing this item. We also must remember to call Forget if we
-		// do not want this work item being re-queued. For example, we do
-		// not call Forget if a transient error occurs, instead the item is
-		// put back on the workqueue and attempted again after a back-off
-		// period.
-		defer c.workqueue.Done(obj)
-		var key string
-		var ok bool
-		// We expect strings to come off the workqueue. These are of the
-		// form namespace/name. We do this as the delayed nature of the
-		// workqueue means the items in the informer cache may actually be
-		// more up to date that when the item was initially put onto the
-		// workqueue.
-		if key, ok = obj.(string); !ok {
-			// As the item in the workqueue is actually invalid, we call
-			// Forget here else we'd go into a loop of attempting to
-			// process a work item that is invalid.
-			c.workqueue.Forget(obj)
-			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
-			return nil
-		}
-		klog.V(2).Infof("Key from workqueue: %s", key)
-
-		result, err := c.syncHandler(key)
-		switch {
-		case err != nil:
-			c.workqueue.AddRateLimited(key)
-			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
-		case result.RequeueAfter > 0:
-			// The result.RequeueAfter request will be lost, if it is returned
-			// along with a non-nil error. But this is intended as
-			// We need to drive to stable reconcile loops before queuing due
-			// to result.RequestAfter
-			c.workqueue.Forget(obj)
-			c.workqueue.AddAfter(key, result.RequeueAfter)
-		case result.Requeue:
-			c.workqueue.AddRateLimited(key)
-		default:
-			// Finally, if no error occurs we Forget this item so it does not
-			// get queued again until another change happens.
-			c.workqueue.Forget(obj)
-			klog.V(4).Infof("Successfully synced '%s'", key)
-		}
-		return nil
-	}
-
-	if err := processItem(obj); err != nil {
-		runtime.HandleError(err)
-		return true
-	}
-	return true
 }
 
 const slashSeparator = "/"
@@ -799,7 +786,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			if _, err2 := c.updateTenantStatus(ctx, tenant, err.Error(), 0); err2 != nil {
 				klog.V(2).Infof(err2.Error())
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "MissingCreds", "Tenant is missing root credentials")
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "MissingCreds", "Tenant is missing root credentials")
 			return WrapResult(Result{}, nil)
 		}
 		return WrapResult(Result{}, err)
@@ -891,59 +878,11 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, err)
 	}
 
-	// Handle the Internal Headless Service for Tenant StatefulSet
-	hlSvc, err := c.serviceLister.Services(tenant.Namespace).Get(tenant.MinIOHLServiceName())
+	// Check MinIO Headless Service used for internode communication
+	err = c.checkMinIOHLSvc(ctx, tenant, nsName)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			if tenant, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningHLService, 0); err != nil {
-				return WrapResult(Result{}, err)
-			}
-			klog.V(2).Infof("Creating a new Headless Service for cluster %q", nsName)
-			// Create the headless service for the tenant
-			hlSvc = services.NewHeadlessForMinIO(tenant)
-			_, err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Create(ctx, hlSvc, cOpts)
-			if err != nil {
-				return WrapResult(Result{}, err)
-			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Headless Service created")
-		} else {
-			return WrapResult(Result{}, err)
-		}
-	} else {
-		existingPorts := hlSvc.Spec.Ports
-		sftpPortFound := false
-		for _, port := range existingPorts {
-			if port.Name == miniov2.MinIOServiceSFTPPortName {
-				sftpPortFound = true
-				break
-			}
-		}
-		var newPorts []corev1.ServicePort
-		if tenant.Spec.Features != nil && tenant.Spec.Features.EnableSFTP != nil && *tenant.Spec.Features.EnableSFTP {
-			if !sftpPortFound {
-				newPorts = existingPorts
-				newPorts = append(newPorts, corev1.ServicePort{Port: miniov2.MinIOSFTPPort, Name: miniov2.MinIOServiceSFTPPortName})
-				hlSvc.Spec.Ports = newPorts
-				_, err := c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, hlSvc, metav1.UpdateOptions(cOpts))
-				if err != nil {
-					return WrapResult(Result{}, err)
-				}
-			}
-		} else {
-			if sftpPortFound {
-				for _, port := range existingPorts {
-					if port.Name == miniov2.MinIOServiceSFTPPortName {
-						continue
-					}
-					newPorts = append(newPorts, port)
-				}
-				hlSvc.Spec.Ports = newPorts
-				_, err := c.kubeClientSet.CoreV1().Services(tenant.Namespace).Update(ctx, hlSvc, metav1.UpdateOptions(cOpts))
-				if err != nil {
-					return WrapResult(Result{}, err)
-				}
-			}
-		}
+		klog.V(2).Infof("error consolidating headless service: %s", err.Error())
+		return WrapResult(Result{}, err)
 	}
 
 	// List all MinIO Tenants in this namespace.
@@ -992,7 +931,8 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
 	operatorCATLSExists, err := c.checkOperatorCAForTenant(ctx, tenant)
 	if err != nil {
-		return WrapResult(Result{}, err)
+		// Don't return here as we get stuck when recreating the stateful set
+		klog.Infof("There was an error while updating the certificate %s", err)
 	}
 
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
@@ -1063,7 +1003,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				SkipEnvVars:     skipEnvVars,
 				Pool:            &pool,
 				PoolStatus:      &tenant.Status.Pools[i],
-				ServiceName:     hlSvc.Name,
+				ServiceName:     tenant.MinIOHLServiceName(),
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
 				OperatorCATLS:   operatorCATLSExists,
@@ -1073,7 +1013,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			if err != nil {
 				return WrapResult(Result{}, err)
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "PoolCreated", fmt.Sprintf("Tenant pool %s created", pool.Name))
 			// Report the pool is properly created
 			tenant.Status.Pools[i].State = miniov2.PoolCreated
 			// mark we are adding a new pool to the next block can act accordingly
@@ -1234,7 +1174,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				// Update failed, nothing needs to be changed in the container
 				return WrapResult(Result{}, err)
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "Inplace update is disabled, falling back to performing only statefulset update.", fmt.Sprintf("Tenant %s", tenant.Name))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "Inplace update is disabled, falling back to performing only statefulset update.", fmt.Sprintf("Tenant %s", tenant.Name))
 		}
 		if err == nil {
 			if us.CurrentVersion != us.UpdatedVersion {
@@ -1273,7 +1213,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				SkipEnvVars:     skipEnvVars,
 				Pool:            &pool,
 				PoolStatus:      &tenant.Status.Pools[i],
-				ServiceName:     hlSvc.Name,
+				ServiceName:     tenant.MinIOHLServiceName(),
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
 				OperatorCATLS:   operatorCATLSExists,
@@ -1282,7 +1222,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return WrapResult(Result{}, err)
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "PoolUpdated", fmt.Sprintf("Tenant pool %s updated", pool.Name))
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "PoolUpdated", fmt.Sprintf("Tenant pool %s updated", pool.Name))
 		}
 
 	}
@@ -1323,7 +1263,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			SkipEnvVars:     skipEnvVars,
 			Pool:            &pool,
 			PoolStatus:      &tenant.Status.Pools[i],
-			ServiceName:     hlSvc.Name,
+			ServiceName:     tenant.MinIOHLServiceName(),
 			HostsTemplate:   c.hostsTemplate,
 			OperatorVersion: c.operatorVersion,
 			OperatorCATLS:   operatorCATLSExists,
@@ -1389,22 +1329,22 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	if !tenant.Status.ProvisionedUsers && len(tenant.Spec.Users) > 0 {
 		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO users: %v", err)
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "UsersCreatedFailed", fmt.Sprintf("Users creation failed: %s", err))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "UsersCreatedFailed", fmt.Sprintf("Users creation failed: %s", err))
 			// retry after 5sec
 			return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 		}
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "UsersCreated", "Users created")
+		c.recorder.Event(tenant, corev1.EventTypeNormal, "UsersCreated", "Users created")
 	}
 
 	// Ensure we are only creating the bucket
 	if len(tenant.Spec.Buckets) > 0 {
 		if create, err := c.createBuckets(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO buckets: %v", err)
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "BucketsCreatedFailed", fmt.Sprintf("Buckets creation failed: %s", err))
 			// retry after 5sec
 			return WrapResult(Result{RequeueAfter: time.Second * 5}, err)
 		} else if create {
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "BucketsCreated", "Buckets created")
 		}
 	}
 
@@ -1499,4 +1439,66 @@ type patchAnnotation struct {
 	Op    string `json:"op"`
 	Path  string `json:"path"`
 	Value string `json:"value"`
+}
+
+func processNextItem(workqueue queue.RateLimitingInterface, syncer func(key string) (Result, error)) bool {
+	obj, shutdown := workqueue.Get()
+	if shutdown {
+		return false
+	}
+
+	// We wrap this block in a func so we can defer c.workqueue.Done.
+	processItem := func(obj interface{}) error {
+		// We call Done here so the workqueue knows we have finished
+		// processing this item. We also must remember to call Forget if we
+		// do not want this work item being re-queued. For example, we do
+		// not call Forget if a transient error occurs, instead the item is
+		// put back on the workqueue and attempted again after a back-off
+		// period.
+		defer workqueue.Done(obj)
+		var key string
+		var ok bool
+		// We expect strings to come off the workqueue. These are of the
+		// form namespace/name. We do this as the delayed nature of the
+		// workqueue means the items in the informer cache may actually be
+		// more up to date that when the item was initially put onto the
+		// workqueue.
+		if key, ok = obj.(string); !ok {
+			// As the item in the workqueue is actually invalid, we call
+			// Forget here else we'd go into a loop of attempting to
+			// process a work item that is invalid.
+			workqueue.Forget(obj)
+			runtime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
+			return nil
+		}
+		klog.V(2).Infof("Key from workqueue: %s", key)
+
+		result, err := syncer(key)
+		switch {
+		case err != nil:
+			workqueue.AddRateLimited(key)
+			return fmt.Errorf("error syncing '%s': %s", key, err.Error())
+		case result.RequeueAfter > 0:
+			// The result.RequeueAfter request will be lost, if it is returned
+			// along with a non-nil error. But this is intended as
+			// We need to drive to stable reconcile loops before queuing due
+			// to result.RequestAfter
+			workqueue.Forget(obj)
+			workqueue.AddAfter(key, result.RequeueAfter)
+		case result.Requeue:
+			workqueue.AddRateLimited(key)
+		default:
+			// Finally, if no error occurs we Forget this item so it does not
+			// get queued again until another change happens.
+			workqueue.Forget(obj)
+			klog.V(4).Infof("Successfully synced '%s'", key)
+		}
+		return nil
+	}
+
+	if err := processItem(obj); err != nil {
+		runtime.HandleError(err)
+		return true
+	}
+	return true
 }

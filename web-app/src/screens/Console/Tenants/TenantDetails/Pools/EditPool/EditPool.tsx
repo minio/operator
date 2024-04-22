@@ -15,65 +15,31 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect } from "react";
+import {
+  BackLink,
+  TenantsIcon,
+  PageLayout,
+  ScreenTitle,
+  Wizard,
+  WizardElement,
+  Grid,
+  ProgressBar,
+  Box,
+} from "mds";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import Grid from "@mui/material/Grid";
-import PageLayout from "../../../../Common/Layout/PageLayout";
-import GenericWizard from "../../../../Common/GenericWizard/GenericWizard";
-import ScreenTitle from "../../../../Common/ScreenTitle/ScreenTitle";
-import { BackLink, TenantsIcon } from "mds";
 import EditPoolResources from "./EditPoolResources";
 import EditPoolConfiguration from "./EditPoolConfiguration";
 import EditPoolPlacement from "./EditPoolPlacement";
-import { IWizardElement } from "../../../../Common/GenericWizard/types";
-import { LinearProgress } from "@mui/material";
 import { niceBytes } from "../../../../../../common/utils";
-import {
-  formFieldStyles,
-  modalStyleUtils,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-
 import { AppState, useAppDispatch } from "../../../../../../store";
 import { resetEditPoolForm, setInitialPoolDetails } from "./editPoolSlice";
 import EditPoolButton from "./EditPoolButton";
-import makeStyles from "@mui/styles/makeStyles";
 import PageHeaderWrapper from "../../../../Common/PageHeaderWrapper/PageHeaderWrapper";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    bottomContainer: {
-      display: "flex",
-      flexGrow: 1,
-      alignItems: "center",
-      margin: "auto",
-      justifyContent: "center",
-      "& div": {
-        width: 150,
-        "@media (max-width: 900px)": {
-          flexFlow: "column",
-        },
-      },
-    },
-    pageBox: {
-      border: "1px solid #EAEAEA",
-      borderTop: 0,
-    },
-    editPoolTitle: {
-      border: "1px solid #EAEAEA",
-      borderBottom: 0,
-    },
-    ...formFieldStyles,
-    ...modalStyleUtils,
-  }),
-);
 
 const EditPool = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
-  const classes = useStyles();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const selectedPool = useSelector(
@@ -115,7 +81,7 @@ const EditPool = () => {
 
   const cancelButton = {
     label: "Cancel",
-    type: "other",
+    type: "custom" as "to" | "custom" | "next" | "back",
     enabled: true,
     action: () => {
       dispatch(resetEditPoolForm());
@@ -127,7 +93,7 @@ const EditPool = () => {
     componentRender: <EditPoolButton />,
   };
 
-  const wizardSteps: IWizardElement[] = [
+  const wizardSteps: WizardElement[] = [
     {
       label: "Pool Resources",
       componentRender: <EditPoolResources />,
@@ -160,8 +126,8 @@ const EditPool = () => {
             </Fragment>
           }
         />
-        <PageLayout>
-          <Grid item xs={12} className={classes.editPoolTitle}>
+        <PageLayout variant={"constrained"}>
+          <Box withBorders sx={{ padding: 0, borderBottom: 0 }}>
             <ScreenTitle
               icon={<TenantsIcon />}
               title={`Edit Pool - ${selectedPool}`}
@@ -172,17 +138,20 @@ const EditPool = () => {
                   {tenant?.name || ""}
                 </Fragment>
               }
+              actions={null}
             />
-          </Grid>
-
+          </Box>
           {editSending && (
             <Grid item xs={12}>
-              <LinearProgress />
+              <ProgressBar />
             </Grid>
           )}
-          <Grid item xs={12} className={classes.pageBox}>
-            <GenericWizard wizardSteps={wizardSteps} />
-          </Grid>
+          <Box
+            withBorders
+            sx={{ padding: 0, borderTop: 0, "& .muted": { fontSize: 13 } }}
+          >
+            <Wizard wizardSteps={wizardSteps} linearMode={false} />
+          </Box>
         </PageLayout>
       </Grid>
     </Fragment>

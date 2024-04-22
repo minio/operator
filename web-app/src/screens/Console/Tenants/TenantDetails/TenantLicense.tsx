@@ -15,38 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
+import { Loader, SectionTitle, Box, Grid } from "mds";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import Grid from "@mui/material/Grid";
-import {
-  containerForHeader,
-  tenantDetailsStyles,
-} from "../../Common/FormComponents/common/styleLibrary";
 import { SubnetInfo } from "../../License/types";
 import { AppState, useAppDispatch } from "../../../../store";
 import { ErrorResponseHandler } from "../../../../common/types";
 import SubnetLicenseTenant from "./SubnetLicenseTenant";
 import api from "../../../../common/api";
-import { Loader } from "mds";
+
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import { setTenantDetailsLoad } from "../tenantsSlice";
 
-interface ITenantLicense {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    loaderAlign: {
-      textAlign: "center",
-    },
-    ...containerForHeader,
-  });
-
-const TenantLicense = ({ classes }: ITenantLicense) => {
+const TenantLicense = () => {
   const dispatch = useAppDispatch();
 
   const loadingTenant = useSelector(
@@ -97,11 +77,17 @@ const TenantLicense = ({ classes }: ITenantLicense) => {
 
   return (
     <Fragment>
-      <h1 className={classes.sectionTitle}>License</h1>
+      <SectionTitle separator sx={{ marginBottom: 15 }}>
+        License
+      </SectionTitle>
       {loadingTenant ? (
-        <div className={classes.loaderAlign}>
+        <Box
+          sx={{
+            textAlign: "center",
+          }}
+        >
           <Loader />
-        </div>
+        </Box>
       ) : (
         <Fragment>
           {tenant && (
@@ -123,4 +109,4 @@ const TenantLicense = ({ classes }: ITenantLicense) => {
   );
 };
 
-export default withStyles(styles)(TenantLicense);
+export default TenantLicense;

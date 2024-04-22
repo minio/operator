@@ -15,45 +15,24 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import { AppState, useAppDispatch } from "../../../../../../store";
+import { AddIcon, Button, DataTable, Grid } from "mds";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import Grid from "@mui/material/Grid";
-import { TextField } from "@mui/material";
-import InputAdornment from "@mui/material/InputAdornment";
-import { AddIcon, Button, SearchIcon } from "mds";
-import TableWrapper from "../../../../Common/TableWrapper/TableWrapper";
-import { Theme } from "@mui/material/styles";
-import {
-  actionsTray,
-  containerForHeader,
-  tableStyles,
-  tenantDetailsStyles,
-} from "../../../../Common/FormComponents/common/styleLibrary";
+import { AppState, useAppDispatch } from "../../../../../../store";
+import { actionsTray } from "../../../../Common/FormComponents/common/styleLibrary";
 import { setSelectedPool } from "../../../tenantsSlice";
-import TooltipWrapper from "../../../../Common/TooltipWrapper/TooltipWrapper";
 import { Pool } from "../../../../../../api/operatorApi";
-import makeStyles from "@mui/styles/makeStyles";
-import createStyles from "@mui/styles/createStyles";
 import { niceBytesInt } from "../../../../../../common/utils";
+import TooltipWrapper from "../../../../Common/TooltipWrapper/TooltipWrapper";
+import SearchBox from "../../../../Common/SearchBox";
 
 interface IPoolsSummary {
   setPoolDetailsView: () => void;
 }
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    ...actionsTray,
-    ...tableStyles,
-    ...containerForHeader,
-  }),
-);
-
 const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const classes = useStyles();
 
   const loadingTenant = useSelector(
     (state: AppState) => state.tenants.loadingTenant,
@@ -90,26 +69,15 @@ const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
 
   return (
     <Fragment>
-      <Grid item xs={12} className={classes.actionsTray}>
-        <TextField
-          placeholder="Filter"
-          className={classes.searchField}
+      <Grid item xs={12} sx={actionsTray.actionsTray}>
+        <SearchBox
+          value={filter}
+          onChange={(value) => {
+            setFilter(value);
+          }}
+          placeholder={"Filter"}
           id="search-resource"
-          label=""
-          onChange={(event) => {
-            setFilter(event.target.value);
-          }}
-          InputProps={{
-            disableUnderline: true,
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          variant="standard"
         />
-
         <TooltipWrapper tooltip={"Expand Tenant"}>
           <Button
             id={"expand-tenant"}
@@ -126,8 +94,8 @@ const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
           />
         </TooltipWrapper>
       </Grid>
-      <Grid item xs={12} className={classes.tableBlock}>
-        <TableWrapper
+      <Grid item xs={12}>
+        <DataTable
           itemActions={listActions}
           columns={[
             { label: "Name", elementKey: "name" },
@@ -150,6 +118,7 @@ const PoolsListing = ({ setPoolDetailsView }: IPoolsSummary) => {
           entityName="Servers"
           idField="name"
           customEmptyMessage="No Pools found"
+          customPaperHeight={"calc(100vh - 400px)"}
         />
       </Grid>
     </Fragment>

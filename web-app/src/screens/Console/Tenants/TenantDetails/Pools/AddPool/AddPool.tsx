@@ -15,65 +15,31 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect } from "react";
-import { Theme } from "@mui/material/styles";
-import { useNavigate } from "react-router-dom";
-import createStyles from "@mui/styles/createStyles";
 import {
-  formFieldStyles,
-  modalStyleUtils,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
-import { niceBytes } from "../../../../../../common/utils";
-import { LinearProgress } from "@mui/material";
-import PageLayout from "../../../../Common/Layout/PageLayout";
-import GenericWizard from "../../../../Common/GenericWizard/GenericWizard";
-import { IWizardElement } from "../../../../Common/GenericWizard/types";
-import PoolResources from "./PoolResources";
-import ScreenTitle from "../../../../Common/ScreenTitle/ScreenTitle";
-import { BackLink, TenantsIcon } from "mds";
-
-import { AppState, useAppDispatch } from "../../../../../../store";
+  BackLink,
+  TenantsIcon,
+  PageLayout,
+  ScreenTitle,
+  Wizard,
+  WizardElement,
+  Box,
+  ProgressBar,
+  Grid,
+} from "mds";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { AppState, useAppDispatch } from "../../../../../../store";
+import { niceBytes } from "../../../../../../common/utils";
+import { resetPoolForm } from "./addPoolSlice";
+import PoolResources from "./PoolResources";
 import PoolConfiguration from "./PoolConfiguration";
 import PoolPodPlacement from "./PoolPodPlacement";
-
-import { resetPoolForm } from "./addPoolSlice";
 import AddPoolCreateButton from "./AddPoolCreateButton";
-import makeStyles from "@mui/styles/makeStyles";
 import PageHeaderWrapper from "../../../../Common/PageHeaderWrapper/PageHeaderWrapper";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    bottomContainer: {
-      display: "flex",
-      flexGrow: 1,
-      alignItems: "center",
-      margin: "auto",
-      justifyContent: "center",
-      "& div": {
-        width: 150,
-        "@media (max-width: 900px)": {
-          flexFlow: "column",
-        },
-      },
-    },
-    pageBox: {
-      border: "1px solid #EAEAEA",
-      borderTop: 0,
-    },
-    addPoolTitle: {
-      border: "1px solid #EAEAEA",
-      borderBottom: 0,
-    },
-    ...formFieldStyles,
-    ...modalStyleUtils,
-  }),
-);
 
 const AddPool = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const classes = useStyles();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
   const sending = useSelector((state: AppState) => state.addPool.sending);
@@ -93,7 +59,7 @@ const AddPool = () => {
 
   const cancelButton = {
     label: "Cancel",
-    type: "other",
+    type: "custom" as "to" | "custom" | "next" | "back",
     enabled: true,
     action: () => {
       dispatch(resetPoolForm());
@@ -105,7 +71,7 @@ const AddPool = () => {
     componentRender: <AddPoolCreateButton key={"add-pool-crate"} />,
   };
 
-  const wizardSteps: IWizardElement[] = [
+  const wizardSteps: WizardElement[] = [
     {
       label: "Setup",
       componentRender: <PoolResources />,
@@ -138,8 +104,8 @@ const AddPool = () => {
             </Fragment>
           }
         />
-        <PageLayout>
-          <Grid item xs={12} className={classes.addPoolTitle}>
+        <PageLayout variant={"constrained"}>
+          <Box withBorders sx={{ padding: 0, borderBottom: 0 }}>
             <ScreenTitle
               icon={<TenantsIcon />}
               title={`Add New Pool to ${tenant?.name || ""}`}
@@ -149,16 +115,20 @@ const AddPool = () => {
                   {niceBytes((tenant?.total_size || 0).toString(10))}
                 </Fragment>
               }
+              actions={null}
             />
-          </Grid>
+          </Box>
           {sending && (
             <Grid item xs={12}>
-              <LinearProgress />
+              <ProgressBar />
             </Grid>
           )}
-          <Grid item xs={12} className={classes.pageBox}>
-            <GenericWizard wizardSteps={wizardSteps} />
-          </Grid>
+          <Box
+            withBorders
+            sx={{ padding: 0, borderTop: 0, "& .muted": { fontSize: 13 } }}
+          >
+            <Wizard wizardSteps={wizardSteps} linearMode={false} />
+          </Box>
         </PageLayout>
       </Grid>
     </Fragment>

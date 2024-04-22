@@ -15,19 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import Grid from "@mui/material/Grid";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
+import { InputBox } from "mds";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import {
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import makeStyles from "@mui/styles/makeStyles";
 import {
   commonFormValidation,
   IValidation,
@@ -35,18 +25,8 @@ import {
 import { isPageValid, updateAddField } from "../../createTenantSlice";
 import { clearValidationError } from "../../../utils";
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  }),
-);
-
 const AzureKMSAdd = () => {
   const dispatch = useAppDispatch();
-  const classes = useStyles();
 
   const encryptionTab = useSelector(
     (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
@@ -131,67 +111,57 @@ const AzureKMSAdd = () => {
 
   return (
     <Fragment>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="azure_endpoint"
-          name="azure_endpoint"
+      <InputBox
+        id="azure_endpoint"
+        name="azure_endpoint"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("azureEndpoint", e.target.value);
+          cleanValidation("azure_endpoint");
+        }}
+        label="Endpoint"
+        tooltip="Endpoint is the Azure KeyVault endpoint"
+        value={azureEndpoint}
+        error={validationErrors["azure_endpoint"] || ""}
+      />
+      <fieldset className={"inputItem"}>
+        <legend>Credentials</legend>
+        <InputBox
+          id="azure_tenant_id"
+          name="azure_tenant_id"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("azureEndpoint", e.target.value);
-            cleanValidation("azure_endpoint");
+            updateField("azureTenantID", e.target.value);
+            cleanValidation("azure_tenant_id");
           }}
-          label="Endpoint"
-          tooltip="Endpoint is the Azure KeyVault endpoint"
-          value={azureEndpoint}
-          error={validationErrors["azure_endpoint"] || ""}
+          label="Tenant ID"
+          tooltip="TenantID is the ID of the Azure KeyVault tenant"
+          value={azureTenantID}
+          error={validationErrors["azure_tenant_id"] || ""}
         />
-      </Grid>
-      <Grid item xs={12}>
-        <fieldset className={classes.fieldGroup}>
-          <legend className={classes.descriptionText}>Credentials</legend>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="azure_tenant_id"
-              name="azure_tenant_id"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("azureTenantID", e.target.value);
-                cleanValidation("azure_tenant_id");
-              }}
-              label="Tenant ID"
-              tooltip="TenantID is the ID of the Azure KeyVault tenant"
-              value={azureTenantID}
-              error={validationErrors["azure_tenant_id"] || ""}
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="azure_client_id"
-              name="azure_client_id"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("azureClientID", e.target.value);
-                cleanValidation("azure_client_id");
-              }}
-              label="Client ID"
-              tooltip="ClientID is the ID of the client accessing Azure KeyVault"
-              value={azureClientID}
-              error={validationErrors["azure_client_id"] || ""}
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="azure_client_secret"
-              name="azure_client_secret"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("azureClientSecret", e.target.value);
-                cleanValidation("azure_client_secret");
-              }}
-              label="Client Secret"
-              tooltip="ClientSecret is the client secret accessing the Azure KeyVault"
-              value={azureClientSecret}
-              error={validationErrors["azure_client_secret"] || ""}
-            />
-          </Grid>
-        </fieldset>
-      </Grid>
+        <InputBox
+          id="azure_client_id"
+          name="azure_client_id"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            updateField("azureClientID", e.target.value);
+            cleanValidation("azure_client_id");
+          }}
+          label="Client ID"
+          tooltip="ClientID is the ID of the client accessing Azure KeyVault"
+          value={azureClientID}
+          error={validationErrors["azure_client_id"] || ""}
+        />
+        <InputBox
+          id="azure_client_secret"
+          name="azure_client_secret"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            updateField("azureClientSecret", e.target.value);
+            cleanValidation("azure_client_secret");
+          }}
+          label="Client Secret"
+          tooltip="ClientSecret is the client secret accessing the Azure KeyVault"
+          value={azureClientSecret}
+          error={validationErrors["azure_client_secret"] || ""}
+        />
+      </fieldset>
     </Fragment>
   );
 };

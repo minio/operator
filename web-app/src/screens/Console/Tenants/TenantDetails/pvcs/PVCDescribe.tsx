@@ -15,25 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import { connect } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import {
-  actionsTray,
-  searchField,
-} from "../../../Common/FormComponents/common/styleLibrary";
-import { Box } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import Chip from "@mui/material/Chip";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-
+import { Box, breakPoints, Tabs, Tag, ValuePair } from "mds";
 import { setErrorSnackMessage } from "../../../../../systemSlice";
 import { ErrorResponseHandler } from "../../../../../common/types";
-import api from "../../../../../common/api";
-import { AppState, useAppDispatch } from "../../../../../store";
-import LabelValuePair from "../../../Common/UsageBarWrapper/LabelValuePair";
+import { useAppDispatch } from "../../../../../store";
 import {
   DescribeResponse,
   IPVCDescribeAnnotationsProps,
@@ -41,20 +26,18 @@ import {
   IPVCDescribeProps,
   IPVCDescribeSummaryProps,
 } from "./pvcTypes";
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...actionsTray,
-
-    ...searchField,
-  });
+import api from "../../../../../common/api";
 
 const twoColCssGridLayoutConfig = {
   display: "grid",
-  gridTemplateColumns: { xs: "1fr", sm: "2fr 1fr" },
-  gridAutoFlow: { xs: "dense", sm: "row" },
+  gridTemplateColumns: "2fr 1fr",
+  gridAutoFlow: "row",
   gap: 2,
-  padding: "15px",
+  padding: 15,
+  [`@media (max-width: ${breakPoints.sm}px)`]: {
+    gridTemplateColumns: "1fr",
+    gridAutoFlow: "dense",
+  },
 };
 
 const HeaderSection = ({ title }: { title: string }) => {
@@ -77,27 +60,24 @@ const PVCDescribeSummary = ({ describeInfo }: IPVCDescribeSummaryProps) => {
       <div id="pvc-describe-summary-content">
         <HeaderSection title={"Summary"} />
         <Box sx={{ ...twoColCssGridLayoutConfig }}>
-          <LabelValuePair label={"Name"} value={describeInfo.name} />
-          <LabelValuePair label={"Namespace"} value={describeInfo.namespace} />
-          <LabelValuePair label={"Capacity"} value={describeInfo.capacity} />
-          <LabelValuePair label={"Status"} value={describeInfo.status} />
-          <LabelValuePair
+          <ValuePair label={"Name"} value={describeInfo.name} />
+          <ValuePair label={"Namespace"} value={describeInfo.namespace} />
+          <ValuePair label={"Capacity"} value={describeInfo.capacity} />
+          <ValuePair label={"Status"} value={describeInfo.status} />
+          <ValuePair
             label={"Storage Class"}
             value={describeInfo.storageClass}
           />
-          <LabelValuePair
+          <ValuePair
             label={"Access Modes"}
             value={describeInfo.accessModes.join(", ")}
           />
-          <LabelValuePair
+          <ValuePair
             label={"Finalizers"}
             value={describeInfo.finalizers.join(", ")}
           />
-          <LabelValuePair label={"Volume"} value={describeInfo.volume} />
-          <LabelValuePair
-            label={"Volume Mode"}
-            value={describeInfo.volumeMode}
-          />
+          <ValuePair label={"Volume"} value={describeInfo.volume} />
+          <ValuePair label={"Volume Mode"} value={describeInfo.volumeMode} />
         </Box>
       </div>
     </Fragment>
@@ -113,8 +93,9 @@ const PVCDescribeAnnotations = ({
         <HeaderSection title={"Annotations"} />
         <Box>
           {annotations.map((annotation, index) => (
-            <Chip
-              style={{ margin: "0.5%" }}
+            <Tag
+              id={`${annotation.key}-${annotation.value}`}
+              sx={{ margin: "0.5%" }}
               label={`${annotation.key}: ${annotation.value}`}
               key={index}
             />
@@ -132,8 +113,9 @@ const PVCDescribeLabels = ({ labels }: IPVCDescribeLabelsProps) => {
         <HeaderSection title={"Labels"} />
         <Box>
           {labels.map((label, index) => (
-            <Chip
-              style={{ margin: "0.5%" }}
+            <Tag
+              id={`${label.key}-${label.value}`}
+              sx={{ margin: "0.5%" }}
               label={`${label.key}: ${label.value}`}
               key={index}
             />
@@ -152,7 +134,7 @@ const PVCDescribe = ({
 }: IPVCDescribeProps) => {
   const [describeInfo, setDescribeInfo] = useState<DescribeResponse>();
   const [loading, setLoading] = useState<boolean>(true);
-  const [curTab, setCurTab] = useState<number>(0);
+  const [curTab, setCurTab] = useState<string>("pvc-describe-summary");
   const dispatch = useAppDispatch();
 
   useEffect(() => {
@@ -179,48 +161,41 @@ const PVCDescribe = ({
     }
   }, [loading, pvcName, namespace, tenant, dispatch]);
 
-  const renderTabComponent = (index: number, info: DescribeResponse) => {
-    switch (index) {
-      case 0:
-        return <PVCDescribeSummary describeInfo={info} />;
-      case 1:
-        return <PVCDescribeAnnotations annotations={info.annotations} />;
-      case 2:
-        return <PVCDescribeLabels labels={info.labels} />;
-      default:
-        break;
-    }
-  };
   return (
     <Fragment>
       {describeInfo && (
-        <Grid item xs={12}>
-          <Tabs
-            value={curTab}
-            onChange={(e: React.ChangeEvent<{}>, newValue: number) => {
-              setCurTab(newValue);
-            }}
-            indicatorColor="primary"
-            textColor="primary"
-            aria-label="cluster-tabs"
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab id="pvc-describe-summary" label="Summary" />
-            <Tab id="pvc-describe-annotations" label="Annotations" />
-            <Tab id="pvc-describe-labels" label="Labels" />
-          </Tabs>
-          {renderTabComponent(curTab, describeInfo)}
-        </Grid>
+        <Tabs
+          currentTabOrPath={curTab}
+          onTabClick={(newValue) => {
+            setCurTab(newValue);
+          }}
+          options={[
+            {
+              tabConfig: { id: "pvc-describe-summary", label: "Summary" },
+              content: <PVCDescribeSummary describeInfo={describeInfo} />,
+            },
+            {
+              tabConfig: {
+                id: "pvc-describe-annotations",
+                label: "Annotations",
+              },
+              content: (
+                <PVCDescribeAnnotations
+                  annotations={describeInfo.annotations}
+                />
+              ),
+            },
+            {
+              tabConfig: { id: "pvc-describe-labels", label: "Labels" },
+              content: <PVCDescribeLabels labels={describeInfo.labels} />,
+            },
+          ]}
+          horizontal
+          horizontalBarBackground={false}
+        />
       )}
     </Fragment>
   );
 };
-const mapState = (state: AppState) => ({
-  loadingTenant: state.tenants.loadingTenant,
-});
-const connector = connect(mapState, {
-  setErrorSnackMessage,
-});
 
-export default withStyles(styles)(connector(PVCDescribe));
+export default PVCDescribe;

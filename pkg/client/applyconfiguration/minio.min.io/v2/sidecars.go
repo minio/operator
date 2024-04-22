@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -28,6 +28,7 @@ type SideCarsApplyConfiguration struct {
 	Containers           []v1.Container             `json:"containers,omitempty"`
 	VolumeClaimTemplates []v1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 	Volumes              []v1.Volume                `json:"volumes,omitempty"`
+	Resources            *v1.ResourceRequirements   `json:"resources,omitempty"`
 }
 
 // SideCarsApplyConfiguration constructs an declarative configuration of the SideCars type for use with
@@ -63,5 +64,13 @@ func (b *SideCarsApplyConfiguration) WithVolumes(values ...v1.Volume) *SideCarsA
 	for i := range values {
 		b.Volumes = append(b.Volumes, values[i])
 	}
+	return b
+}
+
+// WithResources sets the Resources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Resources field is set to the value of the last call.
+func (b *SideCarsApplyConfiguration) WithResources(value v1.ResourceRequirements) *SideCarsApplyConfiguration {
+	b.Resources = &value
 	return b
 }

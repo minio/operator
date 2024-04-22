@@ -16,22 +16,9 @@
 
 import React, { Fragment, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
+import { Box, FormLayout, Grid, InputBox, Select } from "mds";
 import get from "lodash/get";
-import Grid from "@mui/material/Grid";
-import {
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import SelectWrapper from "../../../../Common/FormComponents/SelectWrapper/SelectWrapper";
-import SizePreview from "../SizePreview";
-import TenantSize from "./TenantSize";
-import { Paper, SelectChangeEvent } from "@mui/material";
 import { IMkEnvs, mkPanelConfigurations } from "./utils";
 import {
   isPageValid,
@@ -40,22 +27,10 @@ import {
   updateAddField,
 } from "../../createTenantSlice";
 import { selFeatures } from "../../../../consoleSlice";
+import SizePreview from "../SizePreview";
+import TenantSize from "./TenantSize";
 import NamespaceSelector from "./NamespaceSelector";
 import H3Section from "../../../../Common/H3Section";
-
-const styles = (theme: Theme) =>
-  createStyles({
-    sizePreview: {
-      marginLeft: 10,
-      background: "#FFFFFF",
-      border: "1px solid #EAEAEA",
-      padding: 2,
-      marginTop: 20,
-    },
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
 
 const NameTenantField = () => {
   const dispatch = useAppDispatch();
@@ -68,7 +43,7 @@ const NameTenantField = () => {
   );
 
   return (
-    <InputBoxWrapper
+    <InputBox
       id="tenant-name"
       name="tenant-name"
       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,11 +58,10 @@ const NameTenantField = () => {
 };
 
 interface INameTenantMainScreen {
-  classes: any;
   formToRender?: IMkEnvs;
 }
 
-const NameTenantMain = ({ classes, formToRender }: INameTenantMainScreen) => {
+const NameTenantMain = ({ formToRender }: INameTenantMainScreen) => {
   const dispatch = useAppDispatch();
 
   const selectedStorageClass = useSelector(
@@ -124,67 +98,54 @@ const NameTenantMain = ({ classes, formToRender }: INameTenantMainScreen) => {
 
   return (
     <Fragment>
-      <Grid container>
+      <Grid container sx={{ justifyContent: "space-between" }}>
         <Grid item sx={{ width: "calc(100% - 320px)" }}>
-          <Paper className={classes.paperWrapper} sx={{ minHeight: 550 }}>
-            <Grid container>
-              <Grid item xs={12}>
-                <div className={classes.headerElement}>
-                  <H3Section>Name</H3Section>
-                  <span className={classes.descriptionText}>
-                    How would you like to name this new tenant?
-                  </span>
-                </div>
-                <div className={classes.formFieldRow}>
-                  <NameTenantField />
-                </div>
-              </Grid>
-              <Grid item xs={12} className={classes.formFieldRow}>
-                <NamespaceSelector formToRender={formToRender} />
-              </Grid>
+          <Box sx={{ minHeight: 550 }}>
+            <FormLayout withBorders={false} containerPadding={false}>
+              <Box className={"inputItem"}>
+                <H3Section>Name</H3Section>
+                <span className={"muted"}>
+                  How would you like to name this new tenant?
+                </span>
+              </Box>
+              <NameTenantField />
+              <NamespaceSelector formToRender={formToRender} />
               {formToRender === IMkEnvs.default ? (
-                <Grid item xs={12} className={classes.formFieldRow}>
-                  <SelectWrapper
-                    id="storage_class"
-                    name="storage_class"
-                    onChange={(e: SelectChangeEvent<string>) => {
-                      updateField(
-                        "selectedStorageClass",
-                        e.target.value as string,
-                      );
-                    }}
-                    label="Storage Class"
-                    value={selectedStorageClass}
-                    options={storageClasses}
-                    disabled={storageClasses.length < 1}
-                  />
-                </Grid>
+                <Select
+                  id="storage_class"
+                  name="storage_class"
+                  onChange={(value) => {
+                    updateField("selectedStorageClass", value);
+                  }}
+                  label="Storage Class"
+                  value={selectedStorageClass}
+                  options={storageClasses}
+                  disabled={storageClasses.length < 1}
+                />
               ) : (
-                <Grid item xs={12} className={classes.formFieldRow}>
-                  <SelectWrapper
-                    id="storage_type"
-                    name="storage_type"
-                    onChange={(e: SelectChangeEvent<string>) => {
-                      dispatch(
-                        setStorageType({
-                          storageType: e.target.value as string,
-                          features: features,
-                        }),
-                      );
-                    }}
-                    label={get(
-                      mkPanelConfigurations,
-                      `${formToRender}.variantSelectorLabel`,
-                      "Storage Type",
-                    )}
-                    value={selectedStorageType}
-                    options={get(
-                      mkPanelConfigurations,
-                      `${formToRender}.variantSelectorValues`,
-                      [],
-                    )}
-                  />
-                </Grid>
+                <Select
+                  id="storage_type"
+                  name="storage_type"
+                  onChange={(value) => {
+                    dispatch(
+                      setStorageType({
+                        storageType: value,
+                        features: features,
+                      }),
+                    );
+                  }}
+                  label={get(
+                    mkPanelConfigurations,
+                    `${formToRender}.variantSelectorLabel`,
+                    "Storage Type",
+                  )}
+                  value={selectedStorageType}
+                  options={get(
+                    mkPanelConfigurations,
+                    `${formToRender}.variantSelectorValues`,
+                    [],
+                  )}
+                />
               )}
               {formToRender === IMkEnvs.default ? (
                 <TenantSize />
@@ -195,17 +156,25 @@ const NameTenantMain = ({ classes, formToRender }: INameTenantMainScreen) => {
                   null,
                 )
               )}
-            </Grid>
-          </Paper>
+            </FormLayout>
+          </Box>
         </Grid>
-        <Grid item>
-          <div className={classes.sizePreview}>
+        <Grid item xs={"hidden"} sm={"hidden"}>
+          <Box
+            sx={{
+              marginLeft: 10,
+              padding: 2,
+              marginTop: 20,
+            }}
+            withBorders
+            useBackground
+          >
             <SizePreview />
-          </div>
+          </Box>
         </Grid>
       </Grid>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(NameTenantMain);
+export default NameTenantMain;

@@ -15,42 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { setErrorSnackMessage } from "../../../../systemSlice";
 import {
-  actionsTray,
-  containerForHeader,
-  searchField,
-  tableStyles,
-} from "../../Common/FormComponents/common/styleLibrary";
-import { ErrorResponseHandler } from "../../../../common/types";
-import api from "../../../../common/api";
-import TableContainer from "@mui/material/TableContainer";
-import Paper from "@mui/material/Paper";
-import Table from "@mui/material/Table";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import TableBody from "@mui/material/TableBody";
+  SectionTitle,
+  Box,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+} from "mds";
+import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
+import { setErrorSnackMessage } from "../../../../systemSlice";
+import { ErrorResponseHandler } from "../../../../common/types";
 import { AppState, useAppDispatch } from "../../../../store";
+import api from "../../../../common/api";
 
-interface ITenantCSRProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...actionsTray,
-    ...searchField,
-    ...tableStyles,
-    ...containerForHeader,
-  });
-
-const TenantCSR = ({ classes }: ITenantCSRProps) => {
+const TenantCSR = () => {
   const dispatch = useAppDispatch();
   const { tenantName, tenantNamespace } = useParams();
 
@@ -59,9 +40,9 @@ const TenantCSR = ({ classes }: ITenantCSRProps) => {
   );
 
   const [loading, setLoading] = useState<boolean>(true);
-  const [csrStatus] = useState([""]);
-  const [csrName] = useState([""]);
-  const [csrAnnotations] = useState([""]);
+  const [csrStatus] = useState<string[]>([""]);
+  const [csrName] = useState<string[]>([""]);
+  const [csrAnnotations] = useState<string[]>([""]);
 
   useEffect(() => {
     if (loadingTenant) {
@@ -103,15 +84,16 @@ const TenantCSR = ({ classes }: ITenantCSRProps) => {
 
   return (
     <Fragment>
-      <h1 className={classes.sectionTitle}>Certificate Signing Requests</h1>
-      <TableContainer component={Paper}>
+      <SectionTitle separator sx={{ marginBottom: 15 }}>
+        Certificate Signing Requests
+      </SectionTitle>
+      <Box>
         <Table aria-label="collapsible table">
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Annotation</TableCell>
-              <TableCell />
             </TableRow>
           </TableHead>
           <TableBody>
@@ -134,9 +116,9 @@ const TenantCSR = ({ classes }: ITenantCSRProps) => {
             </TableRow>
           </TableBody>
         </Table>
-      </TableContainer>
+      </Box>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantCSR);
+export default TenantCSR;

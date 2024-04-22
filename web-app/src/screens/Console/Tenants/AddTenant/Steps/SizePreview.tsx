@@ -15,42 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment } from "react";
+import { Box, SimpleHeader, Table, TableBody, TableCell, TableRow } from "mds";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
 import { AppState } from "../../../../../store";
-import {
-  modalBasic,
-  wizardCommon,
-} from "../../../Common/FormComponents/common/styleLibrary";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableRow from "@mui/material/TableRow";
-import { niceBytes } from "../../../../../common/utils";
+import { niceBytes, EC0 } from "../../../../../common/utils";
 
-import { Divider } from "@mui/material";
-
-interface ISizePreviewProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    root: {
-      margin: 4,
-    },
-    table: {
-      "& .MuiTableCell-root": {
-        fontSize: 13,
-      },
-    },
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const SizePreview = ({ classes }: ISizePreviewProps) => {
+const SizePreview = () => {
   const nodes = useSelector(
     (state: AppState) => state.createTenant.fields.tenantSize.nodes,
   );
@@ -83,14 +53,18 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
   );
 
   return (
-    <div className={classes.root}>
-      <h4>Resource Allocation</h4>
-      <Divider />
-      <Table className={classes.table} aria-label="simple table" size={"small"}>
+    <Box
+      sx={{ margin: 4, "& table": { fontSize: 13, "& td": { padding: 8 } } }}
+    >
+      <SimpleHeader
+        label={"Resource Allocation"}
+        sx={{ margin: 4, padding: "5px 0" }}
+      />
+      <Table>
         <TableBody>
           <TableRow>
             <TableCell scope="row">Number of Servers</TableCell>
-            <TableCell align="right">
+            <TableCell sx={{ textAlign: "right" }}>
               {parseInt(nodes) > 0 ? nodes : "-"}
             </TableCell>
           </TableRow>
@@ -99,13 +73,13 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
               <Fragment>
                 <TableRow>
                   <TableCell scope="row">Drives per Server</TableCell>
-                  <TableCell align="right">
+                  <TableCell sx={{ textAlign: "right" }}>
                     {distribution ? distribution.disks : "-"}
                   </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell scope="row">Drive Capacity</TableCell>
-                  <TableCell align="right">
+                  <TableCell sx={{ textAlign: "right" }}>
                     {distribution ? niceBytes(distribution.pvSize) : "-"}
                   </TableCell>
                 </TableRow>
@@ -114,7 +88,7 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
 
           <TableRow>
             <TableCell scope="row">Total Volumes</TableCell>
-            <TableCell align="right">
+            <TableCell sx={{ textAlign: "right" }}>
               {distribution ? distribution.persistentVolumes : "-"}
             </TableCell>
           </TableRow>
@@ -123,13 +97,18 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
               <Fragment>
                 <TableRow>
                   <TableCell scope="row">Memory per Node</TableCell>
-                  <TableCell align="right">{memoryNode} Gi</TableCell>
+                  <TableCell sx={{ textAlign: "right" }}>
+                    {memoryNode} Gi
+                  </TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell style={{ borderBottom: 0 }} scope="row">
                     CPU Selection
                   </TableCell>
-                  <TableCell style={{ borderBottom: 0 }} align="right">
+                  <TableCell
+                    style={{ borderBottom: 0 }}
+                    sx={{ textAlign: "right" }}
+                  >
                     {cpuToUse}
                   </TableCell>
                 </TableRow>
@@ -139,43 +118,50 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
       </Table>
       {ecParityCalc.error === 0 && usableInformation && (
         <Fragment>
-          <h4>Erasure Code Configuration</h4>
-          <Divider />
-          <Table
-            className={classes.table}
-            aria-label="simple table"
-            size={"small"}
-          >
+          <SimpleHeader
+            label={"Erasure Code Configuration"}
+            sx={{ margin: 4, padding: "5px 0" }}
+          />
+          <Table>
             <TableBody>
               <TableRow>
                 <TableCell scope="row">EC Parity</TableCell>
-                <TableCell align="right">
+                <TableCell sx={{ textAlign: "right" }}>
                   {ecParity !== "" ? ecParity : "-"}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell scope="row">Raw Capacity</TableCell>
-                <TableCell align="right">
+                <TableCell sx={{ textAlign: "right" }}>
                   {niceBytes(ecParityCalc.rawCapacity)}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell scope="row">Usable Capacity</TableCell>
-                <TableCell align="right">
-                  {niceBytes(usableInformation.maxCapacity)}
+                <TableCell sx={{ textAlign: "right" }}>
+                  {ecParity === EC0
+                    ? niceBytes(ecParityCalc.rawCapacity)
+                    : niceBytes(usableInformation.maxCapacity)}
                 </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell style={{ borderBottom: 0 }} scope="row">
                   Server Failures Tolerated
                 </TableCell>
-                <TableCell style={{ borderBottom: 0 }} align="right">
-                  {distribution
-                    ? Math.floor(
-                        usableInformation.maxFailureTolerations /
-                          distribution.disks,
-                      )
-                    : "-"}
+                <TableCell
+                  style={{ borderBottom: 0 }}
+                  sx={{ textAlign: "right" }}
+                >
+                  {ecParity === EC0
+                    ? 0
+                    : distribution &&
+                        distribution.disks > 0 &&
+                        usableInformation.maxFailureTolerations
+                      ? Math.floor(
+                          usableInformation.maxFailureTolerations /
+                            distribution.disks,
+                        )
+                      : "-"}
                 </TableCell>
               </TableRow>
             </TableBody>
@@ -185,17 +171,15 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
       {integrationSelection.typeSelection !== "" &&
         integrationSelection.storageClass !== "" && (
           <Fragment>
-            <h4>Single Instance Configuration</h4>
-            <Divider />
-            <Table
-              className={classes.table}
-              aria-label="simple table"
-              size={"small"}
-            >
+            <SimpleHeader
+              label={"Single Instance Configuration"}
+              sx={{ margin: 4, padding: "5px 0" }}
+            />
+            <Table>
               <TableBody>
                 <TableRow>
                   <TableCell scope="row">CPU</TableCell>
-                  <TableCell align="right">
+                  <TableCell sx={{ textAlign: "right" }}>
                     {integrationSelection.CPU !== 0
                       ? integrationSelection.CPU
                       : "-"}
@@ -203,7 +187,7 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
                 </TableRow>
                 <TableRow>
                   <TableCell scope="row">Memory</TableCell>
-                  <TableCell align="right">
+                  <TableCell sx={{ textAlign: "right" }}>
                     {integrationSelection.memory !== 0
                       ? `${integrationSelection.memory} Gi`
                       : "-"}
@@ -211,7 +195,7 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
                 </TableRow>
                 <TableRow>
                   <TableCell scope="row">Drives per Server</TableCell>
-                  <TableCell align="right">
+                  <TableCell sx={{ textAlign: "right" }}>
                     {integrationSelection.drivesPerServer !== 0
                       ? `${integrationSelection.drivesPerServer}`
                       : "-"}
@@ -221,7 +205,10 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
                   <TableCell style={{ borderBottom: 0 }} scope="row">
                     Drive Size
                   </TableCell>
-                  <TableCell style={{ borderBottom: 0 }} align="right">
+                  <TableCell
+                    style={{ borderBottom: 0 }}
+                    sx={{ textAlign: "right" }}
+                  >
                     {integrationSelection.driveSize.driveSize}
                     {integrationSelection.driveSize.sizeUnit}
                   </TableCell>
@@ -230,8 +217,8 @@ const SizePreview = ({ classes }: ISizePreviewProps) => {
             </Table>
           </Fragment>
         )}
-    </div>
+    </Box>
   );
 };
 
-export default withStyles(styles)(SizePreview);
+export default SizePreview;

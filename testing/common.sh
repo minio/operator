@@ -47,6 +47,7 @@ die() {
 try() { "$@" || die "cannot $*"; }
 
 function setup_kind() {
+  echo "setup_kind():"
   if [ "$TEST_FLOOR" = "true" ]; then
     try kind create cluster --config "${SCRIPT_DIR}/kind-config-floor.yaml"
   else
@@ -67,8 +68,487 @@ function install_cert_manager() {
     try kubectl wait -n cert-manager --for=condition=ready pod -l app=webhook --timeout=120s
 }
 
-function install_operator() {
+# removes the pool from the provided tenant.
+# usage: remove_decommissioned_pool <tenant-name> <tenant-ns>
+function remove_decommissioned_pool() {
 
+    TENANT_NAME=$1
+    NAMESPACE=$2
+
+    # While there is a conflict, let's retry
+    RESULT=1
+    while [ "$RESULT" == "1" ]; do
+        sleep 10 # wait for new tenant spec to be ready
+        get_tenant_spec "$TENANT_NAME" "$NAMESPACE"
+        # modify it
+        yq eval 'del(.spec.pools[0])' ~/tenant.yaml >~/new-tenant.yaml
+        # replace it
+        RESULT=$(kubectl_replace ~/new-tenant.yaml)
+    done
+
+}
+
+# waits for n resources to come up.
+# usage: wait_for_n_resources <namespace> <label-selector> <no-of-resources>
+function wait_for_n_resources() {
+    NUMBER_OF_RESOURCES=$3
+    waitdone=0
+    totalwait=0
+    DEFAULT_WAIT_TIME=300 # 300 SECONDS
+    if [ -z "$4" ]; then
+        echo "No requested waiting time hence using default value"
+    else
+        echo "Requested specific waiting time"
+        DEFAULT_WAIT_TIME=$4
+    fi
+    echo "* Waiting for ${NUMBER_OF_RESOURCES} pods to come up; wait_time: ${DEFAULT_WAIT_TIME};"
+    command_to_wait="kubectl -n $1 get pods --field-selector=status.phase=Running --no-headers --ignore-not-found=true"
+    if [ "$2" ]; then
+        command_to_wait="kubectl -n $1 get pods --field-selector=status.phase=Running --no-headers --ignore-not-found=true -l $2"
+    fi
+    echo "* Waiting on: $command_to_wait"
+
+    while true; do
+        # xargs to trim whitespaces from bash variable.
+        waitdone=$($command_to_wait | wc -l | xargs)
+
+        echo " "
+        echo " "
+        echo "##############################"
+        echo "To show visibility in all pods"
+        echo "##############################"
+        kubectl get pods -A
+        echo " "
+        echo " "
+        echo " "
+
+        if [ "$waitdone" -ne 0 ]; then
+            if [ "$NUMBER_OF_RESOURCES" == "$waitdone" ]; then
+                break
+            fi
+        fi
+        sleep 5
+        totalwait=$((totalwait + 10))
+        if [ "$totalwait" -gt "$DEFAULT_WAIT_TIME" ]; then
+            echo "* Unable to get resource after 10 minutes, exiting."
+            try false
+        fi
+    done
+}
+
+# waits for n tenant pods to come up.
+# usage: wait_for_n_tenant_pods <no-of-resources> <tenant-ns> <tenant-name>
+function wait_for_n_tenant_pods() {
+    NUMBER_OF_RESOURCES=$1
+    NAMESPACE=$2
+    TENANT_NAME=$3
+    echo "wait_for_n_tenant_pods(): * Waiting for ${NUMBER_OF_RESOURCES} '${TENANT_NAME}' tenant pods in ${NAMESPACE} namespace"
+    wait_for_n_resources "$NAMESPACE" "v1.min.io/tenant=$TENANT_NAME" "$NUMBER_OF_RESOURCES" 600
+    echo "Waiting for the tenant pods to be ready (5m timeout)"
+    try kubectl wait --namespace "$NAMESPACE" \
+        --for=condition=ready pod \
+        --selector v1.min.io/tenant="$TENANT_NAME" \
+        --timeout=600s
+}
+
+# copies the script to the pod.
+# usage: copy_script_to_pod <script> <pod-name>
+function copy_script_to_pod() {
+    SCRIPT=$1   # Example: mirror-script.sh
+    POD_NAME=$2 # Example: ubuntu-pod
+    echo -e "\n\n"
+    echo "Copy script to pod"
+    echo "From:"
+    echo "${GITHUB_WORKSPACE}/testing/$SCRIPT"
+    echo "To:"
+    echo "/root/$SCRIPT"
+    echo "In pod:"
+    echo "$POD_NAME"
+    echo -e "\n\n"
+    kubectl cp "${GITHUB_WORKSPACE}/testing/$SCRIPT" "$POD_NAME":"/root/$SCRIPT"
+}
+
+# executes the provided script inside the pod.
+# usage: execute_pod_script <script> <pod-name>
+function execute_pod_script() {
+    # Objective: Execute a script in a pod.
+    POD_NAME=$2
+    SCRIPT_NAME=$1
+    echo -e "\n\n"
+    echo "##############################"
+    echo "#                            #"
+    echo "# Execute pod's script       #"
+    echo "#                            #"
+    echo "##############################"
+    echo "* File: common.sh"
+    echo "* Function: execute_pod_script()"
+    echo "* Script: ${SCRIPT_NAME}"
+    echo "* Pod: ${POD_NAME}"
+    copy_script_to_pod "$SCRIPT_NAME" "$POD_NAME"
+    kubectl exec "$POD_NAME" -- /bin/bash -c "chmod 755 /root/$SCRIPT_NAME; export MC_HOT_FIX_REL=${MC_ENTERPRISE_TEST_WITH_HOTFIX_VERSION}; export MC_VER=${MC_VERSION}; source /root/$SCRIPT_NAME"
+    echo -e "\n\n"
+}
+
+# usage: install_minio
+function install_minio() {
+    echo -e "\n\n"
+    echo "################"
+    echo "Installing MinIO"
+    echo "################"
+    echo ""
+    rm -rf /usr/local/bin/minio
+    rm -rf ~/minio-installation
+    mkdir ~/minio-installation
+    cd ~/minio-installation || exit
+
+    DOWNLOAD_NAME="archive/minio.${MINIO_VERSION}"
+    MINIO_RELEASE_TYPE="release"
+    if [ -n "${MINIO_ENTERPRISE_TEST_WITH_HOTFIX_VERSION}" ] && [ -n "${MINIO_VERSION}" ]; then
+        MINIO_RELEASE_TYPE="hotfixes"
+    fi
+
+    if [ "${MINIO_VERSION}" == "latest" ] || [ -z "${MINIO_VERSION}" ]; then
+        DOWNLOAD_NAME="minio"
+    fi
+
+    RESULT=$(uname -a | grep Darwin | grep -c arm64 | awk -F' ' '{print $1}')
+    if [ "$RESULT" == "1" ]; then
+        curl --progress-bar -o minio https://dl.min.io/server/minio/"${MINIO_RELEASE_TYPE}"/darwin-amd64/"${DOWNLOAD_NAME}"
+    fi
+    RESULT=$(uname -a | grep Linux | grep -c x86_64 | awk -F' ' '{print $1}')
+    if [ "$RESULT" == "1" ]; then
+        wget -O minio https://dl.min.io/server/minio/"${MINIO_RELEASE_TYPE}"/linux-amd64/"${DOWNLOAD_NAME}"
+    fi
+    chmod +x minio
+    mv minio /usr/local/bin/minio || sudo mv minio /usr/local/bin/minio
+    minio --version
+}
+
+# usage: install_mc
+function install_mc() {
+    rm -rf /usr/local/bin/mc
+    rm -rf ~/mc-installation
+    mkdir ~/mc-installation
+    cd ~/mc-installation || exit
+
+    DOWNLOAD_NAME="archive/mc.${MC_VERSION}"
+    MC_RELEASE_TYPE="release"
+    if [ -n "${MC_ENTERPRISE_TEST_WITH_HOTFIX_VERSION}" ] && [ -n "${MC_VERSION}" ]; then
+        MC_RELEASE_TYPE="hotfixes"
+    fi
+
+    if [ "${MC_VERSION}" == "latest" ] || [ -z "${MC_VERSION}" ]; then
+        DOWNLOAD_NAME="mc"
+    fi
+
+    RESULT=$(uname -a | grep Darwin | grep -c arm64 | awk -F' ' '{print $1}')
+    if [ "$RESULT" == "1" ]; then
+        curl --progress-bar -o mc https://dl.min.io/client/mc/"${MC_RELEASE_TYPE}"/darwin-amd64/"${DOWNLOAD_NAME}"
+    fi
+    RESULT=$(uname -a | grep Linux | grep -c x86_64 | awk -F' ' '{print $1}')
+    if [ "$RESULT" == "1" ]; then
+        wget -O mc https://dl.min.io/client/mc/"${MC_RELEASE_TYPE}"/linux-amd64/"${DOWNLOAD_NAME}"
+    fi
+    chmod +x mc
+    mv mc /usr/local/bin/mc || sudo mv mc /usr/local/bin/mc
+    mc --version
+}
+
+# usage: get_minio_image_name <version>
+function get_minio_image_name() {
+  ### NOTE: DON'T PUT ECHO IN BETWEEN BECAUSE THAT IS WHAT WE RETURN AT THE END OF THE FUNCTION
+  VERSION=$1
+  IMG="quay.io/minio/minio:${VERSION}"
+  if [[ "${VERSION}" == *"hotfix"* ]]; then
+    IMG="docker.io/minio/minio:${VERSION}"
+  fi
+  echo "${IMG}"
+}
+
+# usage: setup_testbed
+function setup_testbed() {
+    echo "setup_testbed():"
+    DEPLOYMENT_TYPE=$1
+    case ${DEPLOYMENT_TYPE} in
+    baremetal)
+        install_minio
+        install_mc
+        ;;
+    distributed)
+        destroy_kind
+        setup_kind
+        install_operator ""
+        load_kind_images
+        deploy_debug_pod
+        ;;
+    *)
+        echo "unknown"
+        ;;
+    esac
+}
+
+# usage: get_latest_minio_version
+function get_latest_minio_version() {
+    version=$(curl -sL https://api.github.com/repos/minio/minio/tags | jq -r '.[1].name')
+    echo "$version"
+}
+
+# installs the tenant with the provided parameter values.
+# usage: install_tenant_with_minio_version <tenant-type> <tenant-name> <tenant-ns> <tenant-storage-class> <tenant-per-volume-size>
+function install_tenant_with_minio_version() {
+    TENANT_TYPE=$1
+    TENANT_NAME=$2
+    NS=$3
+    TENANT_SC=$4
+    echo "TENANT_SC: ${TENANT_SC}"
+    TENANT_VOLUME_SIZE=$5
+    echo "TENANT_VOLUME_SIZE: ${TENANT_VOLUME_SIZE}"
+    TENANT_YAML="${TENANT_NAME}".yaml
+    echo "TENANT_YAML: ${TENANT_YAML}"
+    VER=$(get_latest_minio_version)
+    echo "VER: ${VER}"
+    IMG=$(get_minio_image_name "${VER}")
+    echo "IMG: ${IMG}"
+
+    echo "================================================================"
+    echo "Installing MinIO Tenant"
+    echo "================================================================"
+    echo
+    echo "TYPE: ${TENANT_TYPE}"
+    echo "NAME: ${TENANT_NAME}"
+    echo "NS:   ${NS}"
+
+    echo "install_tenant_with_minio_version(): kustomize build github..."
+    kustomize build github.com/minio/operator/examples/kustomization/"${TENANT_TYPE}" >"${TENANT_YAML}"
+    sed -i "s/tenant-lite/${NS}/g" "${TENANT_YAML}"
+    sed -i "s/tenant-tiny/${NS}/g" "${TENANT_YAML}"
+    sed -i "s/myminio/${TENANT_NAME}/g" "${TENANT_YAML}"
+    yq -i e "select(.kind == \"Tenant\").spec.image = \"${IMG}\"" "${TENANT_YAML}"
+
+    echo " "
+    echo " "
+    echo " "
+    echo "######################"
+    echo "To display tenant spec"
+    echo "######################"
+    yq '.spec' "${TENANT_YAML}"
+    echo " "
+    echo " "
+    echo " "
+
+    if [ "${TENANT_SC}" ]; then
+        echo "SC:   ${TENANT_SC}"
+        yq -i e "select(.kind == \"Tenant\").spec.pools[].volumeClaimTemplate.spec.storageClassName = \"${TENANT_SC}\"" "${TENANT_YAML}"
+    fi
+
+    if [ "${TENANT_VOLUME_SIZE}" ]; then
+        echo "PER_VOLUME_SIZE: ${TENANT_VOLUME_SIZE}"
+        yq -i e "select(.kind == \"Tenant\").spec.pools[].volumeClaimTemplate.spec.resources.requests.storage = \"${TENANT_VOLUME_SIZE}\"" "${TENANT_YAML}"
+    fi
+
+    echo "install_tenant_with_minio_version(): kubectl apply -f..."
+    kubectl apply -f "${TENANT_YAML}"
+    rm -f "${TENANT_NAME}".yaml
+
+    echo "install_tenant_with_minio_version(): sleep 10..."
+    sleep 10
+}
+
+# checks if the tenant is ready by creating an alias.
+# usage: verify_tenant_is_ready
+function verify_tenant_is_ready() {
+    echo -e "\n\n"
+    echo "* Checking if the tenant is ready"
+    execute_pod_script create-alias.sh ubuntu-pod
+    check_script_result "default" "ubuntu-pod" "create-alias.log"
+    echo -e "\n\n"
+}
+
+# To get the Tenant Spec from a particular namespace
+# usage: get_tenant_spec <tenant-name> <tenant-ns>
+function get_tenant_spec() {
+    kubectl get tenants.minio.min.io "$1" -n "$2" -o yaml >~/tenant.yaml
+}
+
+# To replace an object and return 1 if it failed due to a conflict otherwise returns zero.
+# usage: kubectl_replace <file>
+function kubectl_replace() {
+    # if the object has been modified then
+    # please apply your changes to the latest version
+    kubectl replace -f "$1" >>~/kubectl-replace.log 2>&1
+    # if Conflict in kubectl-replace.log then return error for code to perform change again with new tenant.
+    RESULT=$(grep -c Conflict ~/kubectl-replace.log | awk -F' ' '{print $1}')
+    echo "$RESULT"
+}
+
+# installs the tenant with 2 pools.
+# usage: install_decommission_tenant <tenant-type> <tenant-ns> <tenant-name>
+function install_decommission_tenant() {
+    echo "* Installing tenant to test decommission"
+    TENANT_TYPE=$1
+    NAMESPACE=$2
+    TENANT_NAME=$3
+    NUMBER_OF_RESOURCES=4
+    echo "install_decommission_tenant(): Calling install_tenant_with_minio_version"
+    install_tenant_with_minio_version "$TENANT_TYPE" "$TENANT_NAME" "$NAMESPACE" "" ""
+
+    echo "install_decommission_tenant(): Calling wait_for_n_tenant_pods"
+    wait_for_n_tenant_pods $NUMBER_OF_RESOURCES "$NAMESPACE" "$TENANT_NAME"
+
+    echo "install_decommission_tenant(): Calling verify_tenant_is_ready"
+    verify_tenant_is_ready
+
+    NAMESPACE=$2 # Re-set NAMESPACE as script execution within debug pod would have set it to default
+    echo "* Adding another pool to ${TENANT_NAME} tenant to test decommissioning"
+    # While there is a conflict, let's retry
+    RESULT=1
+    while [ "$RESULT" == "1" ]; do
+        sleep 10 # wait for new tenant spec to be ready
+        get_tenant_spec "$TENANT_NAME" "${NAMESPACE}"
+        # modify it
+        yq '.spec.pools += {"name": "pool-1", "servers": 4, "volumesPerServer": 2, "volumeClaimTemplate": { "metadata": { "name": "data"  }, "spec": { "accessModes": ["ReadWriteOnce"], "resources": { "requests": { "storage": "2Gi"  } }  } }}' ~/tenant.yaml >~/new-tenant.yaml
+        # replace it
+        RESULT=$(kubectl_replace ~/new-tenant.yaml)
+    done
+
+    NUMBER_OF_RESOURCES=8
+    wait_for_n_tenant_pods $NUMBER_OF_RESOURCES "$NAMESPACE" "$TENANT_NAME"
+
+    verify_tenant_is_ready
+}
+
+# usage: read_script_result <namespace> <pod-name> >file>
+function read_script_result() {
+    NAMESPACE=$1
+    POD_NAME=$2
+    FILE=$3
+    rm -f "$FILE"
+    kubectl cp "$NAMESPACE"/"$POD_NAME":"$FILE" "$FILE"
+    grep "script passed" <"$FILE"
+}
+
+# usage: teardown <deployment-type> <data-dir> <minio-server-pid>
+function teardown() {
+    echo "Cleanup..."
+    DEPLOYMENT_TYPE=$1
+    DATA_DIR=$2
+    case ${DEPLOYMENT_TYPE} in
+    baremetal)
+        # Stop minio server instance
+        pkill -9 minio
+        # Remove data dir (if any)
+        rm -fr "${DATA_DIR}"
+        ;;
+    distributed)
+        # Destroy kind cluster
+        destroy_kind
+        ;;
+    *)
+        echo "unknown"
+        ;;
+    esac
+}
+
+# usage: check_script_result <namespace> <pod-name> <log-file-name>
+function check_script_result() {
+    # Manual testing: read_script_result default ubuntu-pod decommission.log
+    NAMESPACE=$1 # Example: default
+    POD_NAME=$2  # Example: ubuntu-pod
+    LOG_NAME=$3  # Example: decommission.log
+    echo "NAMESPACE: ${NAMESPACE}"
+    echo "POD_NAME: ${POD_NAME}"
+    echo "LOG_NAME: ${LOG_NAME}"
+    RESULT=$(read_script_result "$NAMESPACE" "$POD_NAME" "$LOG_NAME")
+    echo "RESULT: $RESULT"
+    if [ "$RESULT" == "script passed" ]; then
+        echo "Test Passed"
+    else
+        echo "#####################################################################"
+        echo " "
+        echo " "
+        echo "Test Failed"
+        echo " "
+        echo " "
+        echo "#####################################################################"
+        exit 1
+    fi
+}
+
+# deploys a debug pod in default namespace.
+# usage: deploy_debug_pod
+function deploy_debug_pod() {
+    # https://downey.io/notes/dev/ubuntu-sleep-pod-yaml/
+    echo "* Creating a Simple Kubernetes Debug Pod"
+    kubectl apply -f "${GITHUB_WORKSPACE}/testing/configurations/debug-pod.yaml"
+    wait_for_resource default ubuntu app
+    kubectl -n default get pods -l app=ubuntu --no-headers
+    echo "* Waiting for the ubuntu pod"
+    sleep 20
+    try kubectl wait --namespace default \
+        --for=condition=ready pod \
+        --selector=app=ubuntu \
+        --timeout=60s
+    execute_pod_script install-mc.sh ubuntu-pod
+    check_script_result default ubuntu-pod install-mc.log
+}
+
+# usage: get_latest_operator_version
+function get_latest_operator_version() {
+  ### NOTE: DON'T PUT ECHO IN BETWEEN BECAUSE THAT IS WHAT WE RETURN AT THE END OF THE FUNCTION
+  version=$(curl -sL https://api.github.com/repos/minio/operator/tags | jq -r '.[0].name')
+  echo "$version"
+}
+
+# usage: get_console_image
+function get_console_image() {
+  ### NOTE: DON'T PUT ECHO IN BETWEEN BECAUSE THAT IS WHAT WE RETURN AT THE END OF THE FUNCTION
+  if [ -z "$OPERATOR_VERSION" ] || [ "$OPERATOR_VERSION" == "latest" ]; then
+    operator_tag=$(get_latest_operator_version)
+  else
+    operator_tag=$OPERATOR_VERSION
+  fi
+  echo "minio/operator:$operator_tag"
+}
+
+# usage: load_kind_image <image>
+function load_kind_image() {
+  echo "load_kind_image():"
+  echo "* Loading image ${1}"
+  try docker pull "$1"
+  try kind load docker-image "$1"
+}
+
+# usage: load_kind_images
+function load_kind_images() {
+    echo "load_kind_images():"
+    MINIO_RELEASE=$(get_minio_image_name "latest")
+    CONSOLE_RELEASE=$(get_console_image)
+    echo "MINIO_RELEASE: ${MINIO_RELEASE}"
+    echo "CONSOLE_RELEASE: ${CONSOLE_RELEASE}"
+    load_kind_image "$MINIO_RELEASE"
+    load_kind_image "$CONSOLE_RELEASE"
+}
+
+function create_restricted_namespace() {
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "$1"
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+EOF
+}
+
+function install_operator() {
+  # It requires compiled binary in minio-operator folder in order for docker build to work when copying this folder.
+  # For that in the github actions you need to wait for operator test/step to get the binary.
+  echo "install_operator():"
   # To compile current branch
   echo "Compiling Current Branch Operator"
   TAG=minio/operator:noop
@@ -86,9 +566,9 @@ function install_operator() {
     yq -i '.console.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.console.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     echo "Installing Current Operator via HELM"
+    create_restricted_namespace minio-operator
     helm install \
       --namespace minio-operator \
-      --create-namespace \
       minio-operator ./helm/operator
 
     echo "key, value for pod selector in helm test"
@@ -138,17 +618,10 @@ function install_operator_version() {
     version=$(curl https://api.github.com/repos/minio/operator/releases/latest | jq --raw-output '.tag_name | "\(.[1:])"')
   fi
   echo "Target operator release: $version"
-  # Set OPERATOR_DEV_TEST to skip downloading these dependencies
-  if [[ -z "${DEV_TEST}" ]]; then
-    sudo curl -#L "https://github.com/minio/operator/releases/download/v${version}/kubectl-minio_${version}_${OS}_${ARCH}" -o /usr/local/bin/kubectl-minio
-    sudo chmod +x /usr/local/bin/kubectl-minio
-  fi
 
   # Initialize the MinIO Kubernetes Operator
-  kubectl minio init
+  kubectl apply -k github.com/minio/operator/resources/\?ref=v"$version"
 
-  # Verify installation of the plugin
-  echo "Installed operator release: $(kubectl minio version)"
 
   if [ "$1" = "helm" ]; then
     echo "key, value for pod selector in helm test"
@@ -187,6 +660,7 @@ function destroy_kind() {
   # `unset OPERATOR_DEV_TEST`
   # Use below statement to test and keep cluster alive at the end!:
   # `export OPERATOR_DEV_TEST="ON"`
+  echo "destroy_kind():"
   if [[ -z "${DEV_TEST}" ]]; then
     echo "Cluster not destroyed due to manual testing"
   else
@@ -293,8 +767,9 @@ function install_tenant() {
     namespace=default
     key=v1.min.io/tenant
     value=myminio
+    create_restricted_namespace $namespace
     try helm install --namespace $namespace \
-      --create-namespace tenant ./helm/tenant
+      tenant ./helm/tenant
   elif [ "$1" = "logs" ]; then
     namespace="tenant-lite"
     key=v1.min.io/tenant
@@ -349,13 +824,13 @@ function install_tenant() {
 }
 
 function setup_sts_bucket() {
-  echo "Installing setub bucket job"
+  echo "Installing setup bucket job"
   try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/sts-example/sample-data"
   namespace="minio-tenant-1"
   condition="condition=Complete"
   selector="metadata.name=setup-bucket"
   try wait_for_resource_field_selector $namespace job $condition $selector
-  echo "Installing setub bucket job: DONE"
+  echo "Installing setup bucket job: DONE"
 }
 
 function install_sts_client() {

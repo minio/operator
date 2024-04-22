@@ -1,3 +1,3 @@
 path "kv/my-minio/*" {
-     capabilities = [ "create", "read", "delete" ]
+     capabilities = [ "create", "read", "delete", "list" ]
 }

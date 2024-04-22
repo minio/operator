@@ -14,22 +14,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useEffect, useState } from "react";
-import { Box } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import Chip from "@mui/material/Chip";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import TableContainer from "@mui/material/TableContainer";
-import Paper from "@mui/material/Paper";
+import React, { Fragment, useEffect, useState } from "react";
+import {
+  Box,
+  breakPoints,
+  Grid,
+  SectionTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Tabs,
+  Tag,
+  ValuePair,
+} from "mds";
 import { ErrorResponseHandler } from "../../../../../common/types";
 import api from "../../../../../common/api";
-import LabelValuePair from "../../../Common/UsageBarWrapper/LabelValuePair";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../store";
 import { setErrorSnackMessage } from "../../../../../systemSlice";
@@ -158,23 +159,21 @@ interface IPodDescribeTableProps {
 
 const twoColCssGridLayoutConfig = {
   display: "grid",
-  gridTemplateColumns: { xs: "1fr", sm: "2fr 1fr" },
-  gridAutoFlow: { xs: "dense", sm: "row" },
+  gridTemplateColumns: "2fr 1fr",
+  gridAutoFlow: "row",
   gap: 2,
   padding: "15px",
+  [`@media (max-width: ${breakPoints.sm}px)`]: {
+    gridTemplateColumns: "1fr",
+    gridAutoFlow: "dense",
+  },
 };
 
 const HeaderSection = ({ title }: { title: string }) => {
   return (
-    <Box
-      sx={{
-        borderBottom: "1px solid #eaeaea",
-        margin: 0,
-        marginBottom: "20px",
-      }}
-    >
-      <h3>{title}</h3>
-    </Box>
+    <SectionTitle separator sx={{ marginBottom: 5 }}>
+      {title}
+    </SectionTitle>
   );
 };
 
@@ -184,13 +183,13 @@ const PodDescribeSummary = ({ describeInfo }: IPodDescribeSummaryProps) => {
       <div id="pod-describe-summary-content">
         <HeaderSection title={"Summary"} />
         <Box sx={{ ...twoColCssGridLayoutConfig }}>
-          <LabelValuePair label={"Name"} value={describeInfo.name} />
-          <LabelValuePair label={"Namespace"} value={describeInfo.namespace} />
-          <LabelValuePair label={"Node"} value={describeInfo.nodeName} />
-          <LabelValuePair label={"Start time"} value={describeInfo.startTime} />
-          <LabelValuePair label={"Status"} value={describeInfo.phase} />
-          <LabelValuePair label={"QoS Class"} value={describeInfo.qosClass} />
-          <LabelValuePair label={"IP"} value={describeInfo.podIP} />
+          <ValuePair label={"Name"} value={describeInfo.name} />
+          <ValuePair label={"Namespace"} value={describeInfo.namespace} />
+          <ValuePair label={"Node"} value={describeInfo.nodeName} />
+          <ValuePair label={"Start time"} value={describeInfo.startTime} />
+          <ValuePair label={"Status"} value={describeInfo.phase} />
+          <ValuePair label={"QoS Class"} value={describeInfo.qosClass} />
+          <ValuePair label={"IP"} value={describeInfo.podIP} />
         </Box>
       </div>
     </React.Fragment>
@@ -206,8 +205,9 @@ const PodDescribeAnnotations = ({
         <HeaderSection title={"Annotations"} />
         <Box>
           {annotations.map((annotation, index) => (
-            <Chip
-              style={{ margin: "0.5%" }}
+            <Tag
+              id={`${annotation.key}-${annotation.value}`}
+              sx={{ margin: "0.5%" }}
               label={`${annotation.key}: ${annotation.value}`}
               key={index}
             />
@@ -225,8 +225,9 @@ const PodDescribeLabels = ({ labels }: IPodDescribeLabelsProps) => {
         <HeaderSection title={"Labels"} />
         <Box>
           {labels.map((label, index) => (
-            <Chip
-              style={{ margin: "0.5%" }}
+            <Tag
+              id={`${label.key}-${label.value}`}
+              sx={{ margin: "0.5%" }}
               label={`${label.key}: ${label.value}`}
               key={index}
             />
@@ -275,11 +276,8 @@ const PodDescribeVolumes = ({ volumes }: IPodDescribeVolumesProps) => {
             <Box sx={{ ...twoColCssGridLayoutConfig }}>
               {volume.pvc && (
                 <React.Fragment>
-                  <LabelValuePair
-                    label={"Type"}
-                    value="Persistant Volume Claim"
-                  />
-                  <LabelValuePair
+                  <ValuePair label={"Type"} value="Persistant Volume Claim" />
+                  <ValuePair
                     label={"Claim Name"}
                     value={volume.pvc.claimName}
                   />
@@ -287,7 +285,7 @@ const PodDescribeVolumes = ({ volumes }: IPodDescribeVolumesProps) => {
               )}
               {/* TODO Add component to display projected data (Maybe change API response) */}
               {volume.projected && (
-                <LabelValuePair label={"Type"} value="Projected" />
+                <ValuePair label={"Type"} value="Projected" />
               )}
             </Box>
           </React.Fragment>
@@ -304,33 +302,31 @@ const PodDescribeTable = ({
   columnsLabels,
 }: IPodDescribeTableProps) => {
   return (
-    <React.Fragment>
+    <Fragment>
       <HeaderSection title={title} />
       <Box>
-        <TableContainer component={Paper}>
-          <Table aria-label="collapsible table">
-            <TableHead>
-              <TableRow>
-                {columnsLabels.map((label, index) => (
-                  <TableCell key={index}>{label}</TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {items.map((item, i) => {
-                return (
-                  <TableRow key={i}>
-                    {columns.map((column, j) => (
-                      <TableCell key={j}>{item[column]}</TableCell>
-                    ))}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <Table aria-label="collapsible table">
+          <TableHead>
+            <TableRow>
+              {columnsLabels.map((label, index) => (
+                <TableCell key={index}>{label}</TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {items.map((item, i) => {
+              return (
+                <TableRow key={i}>
+                  {columns.map((column, j) => (
+                    <TableCell key={j}>{item[column]}</TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </Box>
-    </React.Fragment>
+    </Fragment>
   );
 };
 
@@ -345,35 +341,26 @@ const PodDescribeContainers = ({ containers }: IPodDescribeContainersProps) => {
               style={{ wordBreak: "break-all" }}
               sx={{ ...twoColCssGridLayoutConfig }}
             >
-              <LabelValuePair label={"Image"} value={container.image} />
-              <LabelValuePair label={"Ready"} value={`${container.ready}`} />
-              <LabelValuePair
-                label={"Ports"}
-                value={container.ports.join(", ")}
-              />
-              <LabelValuePair
+              <ValuePair label={"Image"} value={container.image} />
+              <ValuePair label={"Ready"} value={`${container.ready}`} />
+              <ValuePair label={"Ports"} value={container.ports.join(", ")} />
+              <ValuePair
                 label={"Host Ports"}
                 value={container.hostPorts.join(", ")}
               />
-              <LabelValuePair
+              <ValuePair
                 label={"Arguments"}
                 value={container.args.join(", ")}
               />
-              <LabelValuePair
-                label={"Started"}
-                value={container.state?.started}
-              />
-              <LabelValuePair label={"State"} value={container.state?.state} />
+              <ValuePair label={"Started"} value={container.state?.started} />
+              <ValuePair label={"State"} value={container.state?.state} />
             </Box>
             <Box
               style={{ wordBreak: "break-all" }}
               sx={{ ...twoColCssGridLayoutConfig }}
             >
-              <LabelValuePair label={"Image ID"} value={container.imageID} />
-              <LabelValuePair
-                label={"Container ID"}
-                value={container.containerID}
-              />
+              <ValuePair label={"Image ID"} value={container.imageID} />
+              <ValuePair label={"Container ID"} value={container.containerID} />
             </Box>
             <PodDescribeTable
               title="Mounts"
@@ -407,7 +394,7 @@ const PodDescribe = ({
 
   const [describeInfo, setDescribeInfo] = useState<DescribeResponse>();
   const [loading, setLoading] = useState<boolean>(true);
-  const [curTab, setCurTab] = useState<number>(0);
+  const [curTab, setCurTab] = useState<string>("pod-describe-summary");
 
   useEffect(() => {
     if (propLoading) {
@@ -452,50 +439,71 @@ const PodDescribe = ({
     return res;
   };
 
-  const renderTabComponent = (index: number, info: DescribeResponse) => {
-    switch (index) {
-      case 0:
-        return <PodDescribeSummary describeInfo={info} />;
-      case 1:
-        return <PodDescribeAnnotations annotations={info.annotations} />;
-      case 2:
-        return <PodDescribeLabels labels={info.labels} />;
-      case 3:
-        return <PodDescribeConditions conditions={info.conditions} />;
-      case 4:
-        return <PodDescribeTolerations tolerations={info.tolerations} />;
-      case 5:
-        return <PodDescribeVolumes volumes={info.volumes} />;
-      case 6:
-        return <PodDescribeContainers containers={info.containers} />;
-      default:
-        break;
-    }
-  };
   return (
     <React.Fragment>
       {describeInfo && (
         <Grid item xs={12}>
           <Tabs
-            value={curTab}
-            onChange={(e: React.ChangeEvent<{}>, newValue: number) => {
+            currentTabOrPath={curTab}
+            onTabClick={(newValue) => {
               setCurTab(newValue);
             }}
-            indicatorColor="primary"
-            textColor="primary"
-            aria-label="cluster-tabs"
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab id="pod-describe-summary" label="Summary" />
-            <Tab id="pod-describe-annotations" label="Annotations" />
-            <Tab id="pod-describe-labels" label=" Labels" />
-            <Tab id="pod-describe-conditions" label="Conditions" />
-            <Tab id="pod-describe-tolerations" label="Tolerations" />
-            <Tab id="pod-describe-volumes" label="Volumes" />
-            <Tab id="pod-describe-containers" label="Containers" />
-          </Tabs>
-          {renderTabComponent(curTab, describeInfo)}
+            horizontal
+            options={[
+              {
+                tabConfig: { id: "pod-describe-summary", label: "Summary" },
+                content: <PodDescribeSummary describeInfo={describeInfo} />,
+              },
+              {
+                tabConfig: {
+                  id: "pod-describe-annotations",
+                  label: "Annotations",
+                },
+                content: (
+                  <PodDescribeAnnotations
+                    annotations={describeInfo.annotations}
+                  />
+                ),
+              },
+              {
+                tabConfig: { id: "pod-describe-labels", label: "Labels" },
+                content: <PodDescribeLabels labels={describeInfo.labels} />,
+              },
+              {
+                tabConfig: {
+                  id: "pod-describe-conditions",
+                  label: "Conditions",
+                },
+                content: (
+                  <PodDescribeConditions conditions={describeInfo.conditions} />
+                ),
+              },
+              {
+                tabConfig: {
+                  id: "pod-describe-tolerations",
+                  label: "Tolerations",
+                },
+                content: (
+                  <PodDescribeTolerations
+                    tolerations={describeInfo.tolerations}
+                  />
+                ),
+              },
+              {
+                tabConfig: { id: "pod-describe-volumes", label: "Volumes" },
+                content: <PodDescribeVolumes volumes={describeInfo.volumes} />,
+              },
+              {
+                tabConfig: {
+                  id: "pod-describe-containers",
+                  label: "Containers",
+                },
+                content: (
+                  <PodDescribeContainers containers={describeInfo.containers} />
+                ),
+              },
+            ]}
+          />
         </Grid>
       )}
     </React.Fragment>

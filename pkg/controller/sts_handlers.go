@@ -178,6 +178,13 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	info, err := adminClient.ServerInfo(ctx)
+	if err != nil {
+		writeSTSErrorResponse(w, true, ErrSTSInternalError, fmt.Errorf("Error communicating with tenant '%s': %s", tenant.Name, err))
+		return
+	}
+	region := info.Region
+
 	// Session Policy
 	sessionPolicyStr := r.Form.Get(stsPolicy)
 	var compactedSessionPolicy string
@@ -236,8 +243,8 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	durationInSeconds := 3600 // Default expiration
 	durationStr := r.Form.Get(stsDurationSeconds)
-	var durationInSeconds int
 	if durationStr != "" {
 		duration, err := strconv.Atoi(durationStr)
 		if err != nil {
@@ -252,7 +259,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		durationInSeconds = duration
 	}
 
-	stsCredentials, err := AssumeRole(ctx, c, &tenant, bfCompact, durationInSeconds)
+	stsCredentials, err := AssumeRole(ctx, c, &tenant, region, bfCompact, durationInSeconds)
 	if err != nil {
 		writeSTSErrorResponse(w, true, ErrSTSInternalError, err)
 		return
@@ -264,6 +271,7 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 				AccessKey:    stsCredentials.AccessKeyID,
 				SecretKey:    stsCredentials.SecretAccessKey,
 				SessionToken: stsCredentials.SessionToken,
+				Expiration:   stsCredentials.Expiration,
 			},
 		},
 	}

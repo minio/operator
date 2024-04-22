@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -60,7 +61,7 @@ const (
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
 	// DefaultOperatorImage is the version fo the operator being used
-	DefaultOperatorImage = "minio/operator:v5.0.10"
+	DefaultOperatorImage = "minio/operator:v5.0.14"
 	// DefaultOperatorImageEnv is the default image to minio instance
 	DefaultOperatorImageEnv = "MINIO_OPERATOR_IMAGE"
 )
@@ -172,6 +173,29 @@ func (c *Controller) fetchTransportCACertificates() (pool *x509.CertPool) {
 			rootCAs.AppendCertsFromPEM(val)
 		}
 	}
+
+	// Multi-tenancy support for external certificates
+	// One secret per tenant to allow for the automatic appending and renewal of certificates upon expiration.
+	secretsAvailableAtOperatorNS, _ := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).List(context.Background(), metav1.ListOptions{})
+	for _, secret := range secretsAvailableAtOperatorNS.Items {
+		// Check if secret starts with "operator-ca-tls-"
+		secretName := OperatorCATLSSecretName + "-"
+		if strings.HasPrefix(secret.Name, secretName) {
+			klog.Infof("External secret found: %s", secret.Name)
+			operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), secret.Name, metav1.GetOptions{})
+			if err == nil && operatorCATLSCert != nil {
+				if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
+					klog.Infof("Appending cert from %s secret", secret.Name)
+					rootCAs.AppendCertsFromPEM(val)
+				} else {
+					klog.Errorf("NOT appending %s secret, ok: %t", secret.Name, ok)
+				}
+			} else {
+				klog.Errorf("NOT appending %s secret, err: %s operatorCATLSCert: %s", secret.Name, err, operatorCATLSCert)
+			}
+		}
+	}
+
 	return rootCAs
 }
 

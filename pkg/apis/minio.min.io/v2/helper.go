@@ -46,7 +46,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
@@ -773,7 +773,6 @@ func (t *Tenant) CreateBuckets(minioClient *minio.Client, buckets ...Bucket) (cr
 		}); err != nil {
 			switch minio.ToErrorResponse(err).Code {
 			case "BucketAlreadyOwnedByYou", "BucketAlreadyExists":
-				klog.Infof(err.Error())
 				continue
 			default:
 				return false, err

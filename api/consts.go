@@ -24,15 +24,11 @@ const (
 
 	// Constants for prometheus annotations
 	prometheusPath   = "prometheus.io/path"
-	prometheusPort   = "prometheus.io/port"
 	prometheusScrape = "prometheus.io/scrape"
-
-	// Constants for DirectPV
-	DirectPVMode = "DIRECTPV_MODE"
 
 	// Image versions
 
-	KESImageVersion = "minio/kes:2023-10-03T00-48-37Z"
+	KESImageVersion = "minio/kes:2024-03-13T17-52-13Z"
 
 	// Constants for common configuration
 	MinioImage         = "OPERATOR_MINIO_IMAGE"

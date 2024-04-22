@@ -1,13 +1,35 @@
+// This file is part of MinIO Operator
+// Copyright (c) 2021 MinIO, Inc.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import React, { Fragment } from "react";
-import { Stack } from "@mui/material";
-import Grid from "@mui/material/Grid";
+import {
+  CircleIcon,
+  Loader,
+  ValuePair,
+  Grid,
+  Box,
+  breakPoints,
+  InformativeMessage,
+} from "mds";
+import get from "lodash/get";
+import styled from "styled-components";
 import { CapacityValues, ValueUnit } from "../../Tenants/ListTenants/types";
-import { CircleIcon, Loader } from "mds";
 import { niceBytes, niceBytesInt } from "../../../../common/utils";
-import TenantCapacity from "../../Tenants/ListTenants/TenantCapacity";
-import ErrorBlock from "../../../shared/ErrorBlock";
-import LabelValuePair from "./LabelValuePair";
 import { Tenant } from "../../../../api/operatorApi";
+import TenantCapacity from "../../Tenants/ListTenants/TenantCapacity";
 
 interface ISummaryUsageBar {
   tenant: Tenant;
@@ -17,6 +39,28 @@ interface ISummaryUsageBar {
   labels?: boolean;
   healthStatus?: string;
 }
+
+const TenantCapacityMain = styled.div(({ theme }) => ({
+  width: "100%",
+  "& .tenantStatus": {
+    marginTop: 2,
+    color: get(theme, "signalColors.disabled", "#E6EBEB"),
+    "& .min-icon": {
+      width: 16,
+      height: 16,
+      marginRight: 4,
+    },
+    "&.red": {
+      color: get(theme, "signalColors.danger", "#C51B3F"),
+    },
+    "&.yellow": {
+      color: get(theme, "signalColors.warning", "#FFBD62"),
+    },
+    "&.green": {
+      color: get(theme, "signalColors.good", "#4CCB92"),
+    },
+  },
+}));
 
 const SummaryUsageBar = ({
   tenant,
@@ -83,57 +127,67 @@ const SummaryUsageBar = ({
   const renderComponent = () => {
     if (!loading) {
       return error !== "" ? (
-        <ErrorBlock errorMessage={error} withBreak={false} />
+        <InformativeMessage title={"Error"} message={error} variant={"error"} />
       ) : (
-        <Grid item xs={12}>
+        <TenantCapacityMain>
           <TenantCapacity
             totalCapacity={tenant.status?.usage?.raw || 0}
             usedSpaceVariants={spaceVariants}
             statusClass={""}
             render={"bar"}
           />
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={{ xs: 1, sm: 2, md: 4 }}
-            alignItems={"stretch"}
-            margin={"0 0 15px 0"}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "stretch",
+              margin: "0 0 15px 0",
+              flexDirection: "row",
+              gap: 20,
+              [`@media (max-width: ${breakPoints.sm}px)`]: {
+                flexDirection: "column",
+                gap: 5,
+              },
+              [`@media (max-width: ${breakPoints.md}px)`]: {
+                gap: 15,
+              },
+            }}
           >
             {(!tenant.tiers || tenant.tiers.length === 0) && (
               <Fragment>
-                <LabelValuePair
+                <ValuePair
                   label={"Internal:"}
-                  orientation={"row"}
+                  direction={"row"}
                   value={`${used.value} ${used.unit}`}
                 />
               </Fragment>
             )}
             {tenant.tiers && tenant.tiers.length > 0 && (
               <Fragment>
-                <LabelValuePair
+                <ValuePair
                   label={"Internal:"}
-                  orientation={"row"}
+                  direction={"row"}
                   value={`${localUse.value} ${localUse.unit}`}
                 />
-                <LabelValuePair
+                <ValuePair
                   label={"Tiered:"}
-                  orientation={"row"}
+                  direction={"row"}
                   value={`${tieredUse.value} ${tieredUse.unit}`}
                 />
               </Fragment>
             )}
             {healthStatus && (
-              <LabelValuePair
-                orientation={"row"}
+              <ValuePair
+                direction={"row"}
                 label={"Health:"}
                 value={
-                  <span className={healthStatus}>
+                  <div className={`tenantStatus ${healthStatus}`}>
                     <CircleIcon />
-                  </span>
+                  </div>
                 }
               />
             )}
-          </Stack>
-        </Grid>
+          </Box>
+        </TenantCapacityMain>
       );
     }
 

@@ -3,6 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: console-sa-role
+  labels: {{- include "minio-operator.console-labels" . | nindent 4 }}
 rules:
   - apiGroups:
       - ""
@@ -10,13 +11,15 @@ rules:
       - secrets
     verbs:
       - get
-      - watch
-      - create
       - list
+      - watch
+      {{- if not .Values.console.readOnly }}
+      - create
       - patch
       - update
       - delete
       - deletecollection
+      {{- end }}
   - apiGroups:
       - ""
     resources:
@@ -27,42 +30,50 @@ rules:
       - nodes
     verbs:
       - get
-      - watch
-      - create
       - list
+      - watch
+      {{- if not .Values.console.readOnly }}
+      - create
       - patch
+      {{- end }}
   - apiGroups:
       - ""
     resources:
       - pods
     verbs:
       - get
-      - watch
-      - create
       - list
+      - watch
+      {{- if not .Values.console.readOnly }}
+      - create
       - patch
       - delete
       - deletecollection
+      {{- end }}
   - apiGroups:
       - ""
     resources:
       - persistentvolumeclaims
     verbs:
-      - deletecollection
-      - list
       - get
+      - list
       - watch
+      {{- if not .Values.console.readOnly }}
       - update
+      - deletecollection
+      {{- end }}
   - apiGroups:
       - storage.k8s.io
     resources:
       - storageclasses
     verbs:
       - get
-      - watch
-      - create
       - list
+      - watch
+      {{- if not .Values.console.readOnly }}
+      - create
       - patch
+      {{- end }}
   - apiGroups:
       - apps
     resources:
@@ -70,24 +81,28 @@ rules:
       - deployments
     verbs:
       - get
-      - create
       - list
-      - patch
       - watch
+      {{- if not .Values.console.readOnly }}
+      - create
+      - patch
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - batch
     resources:
       - jobs
     verbs:
       - get
-      - create
       - list
-      - patch
       - watch
+      {{- if not .Values.console.readOnly }}
+      - create
+      - patch
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - certificates.k8s.io
     resources:
@@ -95,11 +110,13 @@ rules:
       - certificatesigningrequests/approval
       - certificatesigningrequests/status
     verbs:
+      - get
+      - list
+      {{- if not .Values.console.readOnly }}
       - update
       - create
-      - get
       - delete
-      - list
+      {{- end }}
   - apiGroups:
       - minio.min.io
     resources:
@@ -111,7 +128,13 @@ rules:
     resources:
       - '*'
     verbs:
+      {{- if not .Values.console.readOnly }}
+      - get
+      - list
+      - watch
+      {{- else }}
       - '*'
+      {{- end }}
   - apiGroups:
       - ""
     resources:
@@ -120,8 +143,10 @@ rules:
       - get
       - list
       - watch
+      {{- if not .Values.console.readOnly }}
       - create
       - delete
+      {{- end }}
   - apiGroups:
       - ""
     resources:
@@ -130,17 +155,21 @@ rules:
       - get
       - list
       - watch
+      {{- if not .Values.console.readOnly }}
       - update
+      {{- end }}
   - apiGroups:
       - ""
     resources:
       - events
     verbs:
-      - create
       - list
       - watch
+      {{- if not .Values.console.readOnly }}
+      - create
       - update
       - patch
+      {{- end }}
   - apiGroups:
       - snapshot.storage.k8s.io
     resources:
@@ -179,9 +208,11 @@ rules:
       - get
       - list
       - watch
+      {{- if not .Values.console.readOnly }}
       - create
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - coordination.k8s.io
     resources:
@@ -190,9 +221,11 @@ rules:
       - get
       - list
       - watch
+      {{- if not .Values.console.readOnly }}
       - create
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - direct.csi.min.io
     resources:
@@ -201,9 +234,11 @@ rules:
       - get
       - list
       - watch
+      {{- if not .Values.console.readOnly }}
       - create
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - apiextensions.k8s.io
     resources:
@@ -212,9 +247,11 @@ rules:
       - get
       - list
       - watch
+      {{- if not .Values.console.readOnly }}
       - create
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - direct.csi.min.io
     resources:
@@ -224,9 +261,11 @@ rules:
       - get
       - list
       - watch
+      {{- if not .Values.console.readOnly }}
       - create
       - update
       - delete
+      {{- end }}
   - apiGroups:
       - ""
     resources:

@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -20,6 +20,8 @@ package fake
 
 import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
+	jobv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/job.min.io/v1alpha1"
+	fakejobv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/job.min.io/v1alpha1/fake"
 	miniov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2"
 	fakeminiov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2/fake"
 	stsv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1alpha1"
@@ -80,6 +82,11 @@ var (
 	_ clientset.Interface = &Clientset{}
 	_ testing.FakeClient  = &Clientset{}
 )
+
+// JobV1alpha1 retrieves the JobV1alpha1Client
+func (c *Clientset) JobV1alpha1() jobv1alpha1.JobV1alpha1Interface {
+	return &fakejobv1alpha1.FakeJobV1alpha1{Fake: &c.Fake}
+}
 
 // MinioV2 retrieves the MinioV2Client
 func (c *Clientset) MinioV2() miniov2.MinioV2Interface {

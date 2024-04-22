@@ -23,7 +23,7 @@ spec:
       serviceAccountName: minio-operator
       containers:
         - name: minio-operator
-          image: minio/operator:v5.0.10
+          image: minio/operator:v5.0.14
           imagePullPolicy: IfNotPresent
           args:
             - controller
@@ -36,6 +36,12 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
             runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           env:
             - name: MINIO_CONSOLE_TLS_ENABLE
               value: "off"

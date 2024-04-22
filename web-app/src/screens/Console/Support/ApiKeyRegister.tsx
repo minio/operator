@@ -15,38 +15,29 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { Box } from "@mui/material";
-import { Button, OnlineRegistrationIcon } from "mds";
+import {
+  Button,
+  OnlineRegistrationIcon,
+  Box,
+  breakPoints,
+  InputBox,
+} from "mds";
+import { useNavigate } from "react-router-dom";
 import { FormTitle } from "./utils";
-import InputBoxWrapper from "../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import GetApiKeyModal from "./GetApiKeyModal";
-import RegisterHelpBox from "./RegisterHelpBox";
 import { SubnetLoginRequest, SubnetLoginResponse } from "../License/types";
-import api from "../../../common/api";
 import { useAppDispatch } from "../../../store";
 import { setErrorSnackMessage } from "../../../systemSlice";
 import { ErrorResponseHandler } from "../../../common/types";
-import { spacingUtils } from "../Common/FormComponents/common/styleLibrary";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { useNavigate } from "react-router-dom";
 import { IAM_PAGES } from "../../../common/SecureComponent/permissions";
+import api from "../../../common/api";
+import GetApiKeyModal from "./GetApiKeyModal";
+import RegisterHelpBox from "./RegisterHelpBox";
 
 interface IApiKeyRegister {
-  classes: any;
   registerEndpoint: string;
 }
 
-const styles = (theme: Theme) =>
-  createStyles({
-    sizedLabel: {
-      minWidth: "75px",
-    },
-    ...spacingUtils,
-  });
-
-const ApiKeyRegister = ({ classes, registerEndpoint }: IApiKeyRegister) => {
+const ApiKeyRegister = ({ registerEndpoint }: IApiKeyRegister) => {
   const navigate = useNavigate();
 
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
@@ -105,9 +96,10 @@ const ApiKeyRegister = ({ classes, registerEndpoint }: IApiKeyRegister) => {
       <Box
         sx={{
           display: "flex",
-          flexFlow: {
-            xs: "column",
-            md: "row",
+          flexFlow: "row",
+
+          [`@media (max-width: ${breakPoints.sm}px)`]: {
+            flexFlow: "column",
           },
         }}
       >
@@ -120,11 +112,11 @@ const ApiKeyRegister = ({ classes, registerEndpoint }: IApiKeyRegister) => {
         >
           <Box
             sx={{
-              fontSize: "16px",
+              fontSize: 16,
               display: "flex",
               flexFlow: "column",
-              marginTop: "30px",
-              marginBottom: "30px",
+              marginTop: 30,
+              marginBottom: 30,
             }}
           >
             Use your MinIO Subscription Network API Key to register this
@@ -135,11 +127,7 @@ const ApiKeyRegister = ({ classes, registerEndpoint }: IApiKeyRegister) => {
               flex: "1",
             }}
           >
-            <InputBoxWrapper
-              className={classes.spacerBottom}
-              classes={{
-                inputLabel: classes.sizedLabel,
-              }}
+            <InputBox
               id="api-key"
               name="api-key"
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -147,6 +135,10 @@ const ApiKeyRegister = ({ classes, registerEndpoint }: IApiKeyRegister) => {
               }
               label="API Key"
               value={apiKey}
+              sx={{
+                minWidth: "75px",
+                marginBottom: 15,
+              }}
             />
 
             <Box
@@ -154,15 +146,12 @@ const ApiKeyRegister = ({ classes, registerEndpoint }: IApiKeyRegister) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "flex-end",
-                "& button": {
-                  marginLeft: "8px",
-                },
+                gap: 10,
               }}
             >
               <Button
                 id={"get-from-subnet"}
                 variant="regular"
-                className={classes.spacerRight}
                 disabled={loading}
                 onClick={() => setShowApiKeyModal(true)}
                 label={"Get from SUBNET"}
@@ -192,4 +181,4 @@ const ApiKeyRegister = ({ classes, registerEndpoint }: IApiKeyRegister) => {
   );
 };
 
-export default withStyles(styles)(ApiKeyRegister);
+export default ApiKeyRegister;

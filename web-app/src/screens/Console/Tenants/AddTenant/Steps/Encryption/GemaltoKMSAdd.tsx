@@ -15,19 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import Grid from "@mui/material/Grid";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
+import { InputBox } from "mds";
 import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import {
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import makeStyles from "@mui/styles/makeStyles";
 import { isPageValid, updateAddField } from "../../createTenantSlice";
 import {
   commonFormValidation,
@@ -35,18 +25,8 @@ import {
 } from "../../../../../../utils/validationFunctions";
 import { clearValidationError } from "../../../utils";
 
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  }),
-);
-
 const GemaltoKMSAdd = () => {
   const dispatch = useAppDispatch();
-  const classes = useStyles();
 
   const encryptionTab = useSelector(
     (state: AppState) => state.createTenant.fields.encryption.encryptionTab,
@@ -133,77 +113,61 @@ const GemaltoKMSAdd = () => {
 
   return (
     <Fragment>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="gemalto_endpoint"
-          name="gemalto_endpoint"
+      <InputBox
+        id="gemalto_endpoint"
+        name="gemalto_endpoint"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("gemaltoEndpoint", e.target.value);
+          cleanValidation("gemalto_endpoint");
+        }}
+        label="Endpoint"
+        tooltip="Endpoint is the endpoint to the KeySecure server"
+        value={gemaltoEndpoint}
+        error={validationErrors["gemalto_endpoint"] || ""}
+        required
+      />
+      <fieldset className={"inputItem"}>
+        <legend>Credentials</legend>
+        <InputBox
+          id="gemalto_token"
+          name="gemalto_token"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            updateField("gemaltoEndpoint", e.target.value);
-            cleanValidation("gemalto_endpoint");
+            updateField("gemaltoToken", e.target.value);
+            cleanValidation("gemalto_token");
           }}
-          label="Endpoint"
-          tooltip="Endpoint is the endpoint to the KeySecure server"
-          value={gemaltoEndpoint}
-          error={validationErrors["gemalto_endpoint"] || ""}
+          label="Token"
+          tooltip="Token is the refresh authentication token to access the KeySecure server"
+          value={gemaltoToken}
+          error={validationErrors["gemalto_token"] || ""}
           required
         />
-      </Grid>
-      <Grid
-        item
-        xs={12}
-        style={{
-          marginBottom: 15,
-        }}
-      >
-        <fieldset className={classes.fieldGroup}>
-          <legend className={classes.descriptionText}>Credentials</legend>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="gemalto_token"
-              name="gemalto_token"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("gemaltoToken", e.target.value);
-                cleanValidation("gemalto_token");
-              }}
-              label="Token"
-              tooltip="Token is the refresh authentication token to access the KeySecure server"
-              value={gemaltoToken}
-              error={validationErrors["gemalto_token"] || ""}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="gemalto_domain"
-              name="gemalto_domain"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("gemaltoDomain", e.target.value);
-                cleanValidation("gemalto_domain");
-              }}
-              label="Domain"
-              tooltip="Domain is the isolated namespace within the KeySecure server. If empty, defaults to the top-level / root domain"
-              value={gemaltoDomain}
-              error={validationErrors["gemalto_domain"] || ""}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              type="number"
-              min="0"
-              id="gemalto_retry"
-              name="gemalto_retry"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                updateField("gemaltoRetry", e.target.value);
-                cleanValidation("gemalto_retry");
-              }}
-              label="Retry (seconds)"
-              value={gemaltoRetry}
-              error={validationErrors["gemalto_retry"] || ""}
-            />
-          </Grid>
-        </fieldset>
-      </Grid>
+        <InputBox
+          id="gemalto_domain"
+          name="gemalto_domain"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            updateField("gemaltoDomain", e.target.value);
+            cleanValidation("gemalto_domain");
+          }}
+          label="Domain"
+          tooltip="Domain is the isolated namespace within the KeySecure server. If empty, defaults to the top-level / root domain"
+          value={gemaltoDomain}
+          error={validationErrors["gemalto_domain"] || ""}
+          required
+        />
+        <InputBox
+          type="number"
+          min="0"
+          id="gemalto_retry"
+          name="gemalto_retry"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            updateField("gemaltoRetry", e.target.value);
+            cleanValidation("gemalto_retry");
+          }}
+          label="Retry (seconds)"
+          value={gemaltoRetry}
+          error={validationErrors["gemalto_retry"] || ""}
+        />
+      </fieldset>
     </Fragment>
   );
 };

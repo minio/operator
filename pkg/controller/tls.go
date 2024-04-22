@@ -158,7 +158,7 @@ func (c *Controller) checkAndCreateCSR(ctx context.Context, deployment metav1.Ob
 	}
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			klog.V(2).Infof("Creating a new Certificate Signing Request for %s Server Certs, cluster %q", serviceName)
+			klog.V(2).Infof("Creating a new Certificate Signing Request for %s Server Certs.", serviceName)
 			if err = c.createAndStoreCSR(ctx, deployment, serviceName, csrName, secretName); err != nil {
 				return err
 			}

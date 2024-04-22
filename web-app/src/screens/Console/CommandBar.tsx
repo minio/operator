@@ -1,4 +1,4 @@
-//  This file is part of MinIO Console Server
+//  This file is part of MinIO Operator
 //  Copyright (c) 2022 MinIO, Inc.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -15,6 +15,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import * as React from "react";
 import { useEffect, useState } from "react";
+import { Box, MenuExpandedIcon } from "mds";
 import { useNavigate } from "react-router-dom";
 import {
   ActionId,
@@ -30,29 +31,10 @@ import {
   useRegisterActions,
 } from "kbar";
 import { Action } from "kbar/lib/types";
-import { Theme } from "@mui/material/styles";
-import makeStyles from "@mui/styles/makeStyles";
 import { routesAsKbarActions } from "./kbar-actions";
-import { Box } from "@mui/material";
-import { MenuExpandedIcon } from "mds";
 import { useSelector } from "react-redux";
 import { selFeatures } from "./consoleSlice";
 import { selOpMode } from "../../systemSlice";
-
-const useStyles = makeStyles((theme: Theme) => ({
-  resultItem: {
-    display: "flex",
-    gap: "8px",
-    alignItems: "center",
-    fontSize: 14,
-    flex: 1,
-    justifyContent: "space-between",
-    "& .min-icon": {
-      width: "17px",
-      height: "17px",
-    },
-  },
-}));
 
 const searchStyle = {
   padding: "12px 16px",
@@ -192,7 +174,6 @@ const ResultItem = React.forwardRef(
     },
     ref: React.Ref<HTMLDivElement>,
   ) => {
-    const classes = useStyles();
     const ancestors = React.useMemo(() => {
       if (!currentRootActionId) return action.ancestors;
       const index = action.ancestors.findIndex(
@@ -218,7 +199,20 @@ const ResultItem = React.forwardRef(
           cursor: "pointer",
         }}
       >
-        <div className={classes.resultItem}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: "8px",
+            alignItems: "center",
+            fontSize: 14,
+            flex: 1,
+            justifyContent: "space-between",
+            "& .min-icon": {
+              width: "17px",
+              height: "17px",
+            },
+          }}
+        >
           <Box sx={{ height: "15px", width: "15px", marginRight: "36px" }}>
             {action.icon && action.icon}
           </Box>
@@ -272,7 +266,7 @@ const ResultItem = React.forwardRef(
           >
             <MenuExpandedIcon />
           </Box>
-        </div>
+        </Box>
         {action.shortcut?.length ? (
           <div
             aria-hidden

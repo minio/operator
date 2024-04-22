@@ -15,111 +15,140 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
-import { DateTime, Duration } from "luxon";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { ICertificateInfo } from "../../Tenants/types";
-import LanguageIcon from "@mui/icons-material/Language";
-import Chip from "@mui/material/Chip";
 import {
+  AlertCloseIcon,
   Box,
-  Container,
-  Divider,
-  Grid,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Typography,
-} from "@mui/material";
-import EventBusyIcon from "@mui/icons-material/EventBusy";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import { CertificateIcon } from "mds";
+  CertificateIcon,
+  IconButton,
+  TimeIcon,
+  LanguageIcon,
+  EventBusyIcon,
+} from "mds";
+import { DateTime, Duration } from "luxon";
+import styled from "styled-components";
+import get from "lodash/get";
+import { ICertificateInfo } from "../../Tenants/types";
 
-const styles = (theme: Theme) =>
-  createStyles({
-    certificateIcon: {
-      float: "left",
-      paddingTop: "5px !important",
-      paddingRight: "10px !important",
+const CertificateContainer = styled.div(({ theme }) => ({
+  position: "relative",
+  margin: 0,
+  userSelect: "none",
+  appearance: "none",
+  maxWidth: "100%",
+  fontFamily: "'Inter', sans-serif",
+  fontSize: 13,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  border: `1px solid ${get(theme, "borderColor", "#E2E2E2")}`,
+  borderRadius: 3,
+  padding: "5px 10px",
+  "& .certificateName": {
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    fontWeight: "bold",
+    color: get(theme, "signalColors.main", "#07193E"),
+  },
+  "& .deleteTagButton": {
+    backgroundColor: "transparent",
+    border: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    cursor: "pointer",
+    opacity: 0.6,
+    "&:hover": {
+      opacity: 1,
     },
-    certificateInfo: { float: "right" },
-    certificateWrapper: {
-      height: "auto",
-      margin: 5,
-      border: "1px solid #E2E2E2",
-      userSelect: "text",
-      borderRadius: 4,
-      "& h6": {
-        fontWeight: "bold",
-      },
-      "& div": {
-        padding: 0,
-      },
+    "& svg": {
+      fill: get(theme, `tag.grey.background`, "#07193E"),
+      width: 10,
+      height: 10,
+      minWidth: 10,
+      minHeight: 10,
     },
-    certificateExpiry: {
-      color: "#616161",
+  },
+  "& .certificateContainer": {
+    margin: "5px 10px",
+  },
+  "& .certificateExpiry": {
+    color: get(theme, "secondaryText", "#5B5C5C"),
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginBottom: 5,
+    "& .label": {
+      fontWeight: "bold",
+    },
+  },
+  "& .certificateDomains": {
+    color: get(theme, "secondaryText", "#5B5C5C"),
+    "& .label": {
+      fontWeight: "bold",
+    },
+  },
+  "& .certificatesList": {
+    border: `1px solid ${get(theme, "borderColor", "#E2E2E2")}`,
+    borderRadius: 4,
+    color: get(theme, "secondaryText", "#5B5C5C"),
+    textTransform: "lowercase",
+    overflowY: "scroll",
+    maxHeight: 145,
+    marginTop: 3,
+    marginBottom: 5,
+    padding: 0,
+    "& li": {
+      listStyle: "none",
+      padding: "5px 10px",
+      margin: 0,
       display: "flex",
       alignItems: "center",
-      flexWrap: "wrap",
-      marginBottom: 5,
-      "& .label": {
-        fontWeight: "bold",
+      "&:before": {
+        content: "' '",
       },
     },
-    certificateDomains: {
-      color: "#616161",
-      "& .label": {
-        fontWeight: "bold",
-      },
+  },
+  "& .certificatesListItem": {
+    padding: "0px 16px",
+    borderBottom: `1px solid ${get(theme, "borderColor", "#E2E2E2")}`,
+    "& div": {
+      minWidth: 0,
     },
-    certificatesList: {
-      border: "1px solid #E2E2E2",
-      borderRadius: 4,
-      color: "#616161",
-      textTransform: "lowercase",
-      overflowY: "scroll",
-      maxHeight: 145,
-      marginBottom: 10,
+    "& svg": {
+      fontSize: 12,
+      marginRight: 10,
+      opacity: 0.5,
     },
-    certificatesListItem: {
-      padding: "0px 16px",
-      borderBottom: "1px solid #E2E2E2",
-      "& div": {
-        minWidth: 0,
-      },
-      "& svg": {
-        fontSize: 12,
-        marginRight: 10,
-        opacity: 0.5,
-      },
-      "& span": {
-        fontSize: 12,
-      },
+    "& span": {
+      fontSize: 12,
     },
-    certificateExpiring: {
-      color: "orange",
-      "& .label": {
-        fontWeight: "bold",
-      },
+  },
+  "& .certificateExpiring": {
+    color: get(theme, "signalColors.warning", "#FFBD62"),
+    "& .label": {
+      fontWeight: "bold",
     },
-    certificateExpired: {
-      color: "red",
-      "& .label": {
-        fontWeight: "bold",
-      },
+  },
+  "& .certificateExpired": {
+    color: get(theme, "signalColors.danger", "#C51B3F"),
+    "& .label": {
+      fontWeight: "bold",
     },
-  });
+  },
+  "& .closeIcon": {
+    transform: "scale(0.8)",
+  },
+}));
 
 interface ITLSCertificate {
-  classes: any;
   certificateInfo: ICertificateInfo;
   onDelete: any;
 }
 
 const TLSCertificate = ({
-  classes,
   certificateInfo,
   onDelete = () => {},
 }: ITLSCertificate) => {
@@ -139,10 +168,10 @@ const TLSCertificate = ({
       .shiftTo("days")
       .toHuman({ listStyle: "long", maximumFractionDigits: 0 });
     if (daysToExpiry >= 10 && daysToExpiry < 30) {
-      certificateExpiration = classes.certificateExpiring;
+      certificateExpiration = "certificateExpiring";
     }
     if (daysToExpiry < 10) {
-      certificateExpiration = classes.certificateExpired;
+      certificateExpiration = "certificateExpired";
       if (daysToExpiry < 2) {
         daysToExpiryHuman = durationToExpiry
           .minus(Duration.fromObject({ minutes: 1 }))
@@ -156,56 +185,44 @@ const TLSCertificate = ({
   }
 
   return (
-    <Chip
-      key={certificateInfo.name}
-      variant="outlined"
-      color="primary"
-      className={classes.certificateWrapper}
-      label={
-        <Container>
-          <Grid item xs={1} className={classes.certificateIcon}>
-            <CertificateIcon />
-          </Grid>
-          <Grid item xs={11} className={classes.certificateInfo}>
-            <Typography variant="subtitle1" display="block" gutterBottom>
-              {certificateInfo.name}
-            </Typography>
-            <Box className={classes.certificateExpiry}>
-              <EventBusyIcon color="inherit" fontSize="small" />
-              &nbsp;
-              <span className={"label"}>Expiry:&nbsp;</span>
-              <span>{expiry.toFormat("yyyy/MM/dd")}</span>
-            </Box>
-            <Box className={classes.certificateExpiry}>
-              <AccessTimeIcon color="inherit" fontSize="small" />
-              &nbsp;
-              <span className={"label"}>Expires in:&nbsp;</span>
-              <span className={certificateExpiration}>{daysToExpiryHuman}</span>
-            </Box>
-            <Divider />
-            <br />
-            <Box className={classes.certificateDomains}>
-              <span className="label">{`${certificates.length} Domain (s):`}</span>
-            </Box>
-            <List className={classes.certificatesList}>
-              {certificates.map((dom, index) => (
-                <ListItem
-                  key={`${dom}-${index}`}
-                  className={classes.certificatesListItem}
-                >
-                  <ListItemAvatar>
-                    <LanguageIcon />
-                  </ListItemAvatar>
-                  <ListItemText primary={dom} />
-                </ListItem>
-              ))}
-            </List>
-          </Grid>
-        </Container>
-      }
-      onDelete={onDelete}
-    />
+    <CertificateContainer>
+      <Box>
+        <Box className={"certificateName"}>
+          <CertificateIcon />
+          <span>{certificateInfo.name}</span>
+        </Box>
+        <Box className={"certificateContainer"}>
+          <Box className={"certificateExpiry"}>
+            <EventBusyIcon color="inherit" fontSize="small" />
+            &nbsp;
+            <span className={"label"}>Expiry:&nbsp;</span>
+            <span>{expiry.toFormat("yyyy/MM/dd")}</span>
+          </Box>
+          <Box className={"certificateExpiry"}>
+            <TimeIcon />
+            &nbsp;
+            <span className={"label"}>Expires in:&nbsp;</span>
+            <span className={certificateExpiration}>{daysToExpiryHuman}</span>
+          </Box>
+          <hr style={{ marginBottom: 12 }} />
+          <Box className={"certificateDomains"}>
+            <span className="label">{`${certificates.length} Domain (s):`}</span>
+          </Box>
+          <ul className={"certificatesList"}>
+            {certificates.map((dom, index) => (
+              <li key={`${dom}-${index}`} className={"certificatesListItem"}>
+                <LanguageIcon />
+                <span>{dom}</span>
+              </li>
+            ))}
+          </ul>
+        </Box>
+      </Box>
+      <IconButton size={"small"} onClick={onDelete} className={"closeIcon"}>
+        <AlertCloseIcon />
+      </IconButton>
+    </CertificateContainer>
   );
 };
 
-export default withStyles(styles)(TLSCertificate);
+export default TLSCertificate;

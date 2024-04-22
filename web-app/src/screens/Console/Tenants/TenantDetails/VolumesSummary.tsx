@@ -15,42 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import get from "lodash/get";
+import { Box, DataTable, Grid, SectionTitle } from "mds";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { Grid, InputAdornment, TextField } from "@mui/material";
-import {
-  containerForHeader,
-  tableStyles,
-  tenantDetailsStyles,
-} from "../../Common/FormComponents/common/styleLibrary";
+import get from "lodash/get";
+import { actionsTray } from "../../Common/FormComponents/common/styleLibrary";
 import { IStoragePVCs } from "../../Storage/types";
 import { ErrorResponseHandler } from "../../../../common/types";
-import api from "../../../../common/api";
-import TableWrapper from "../../Common/TableWrapper/TableWrapper";
-import { SearchIcon } from "mds";
 import { IPodListElement } from "../ListTenants/types";
-import withSuspense from "../../Common/Components/withSuspense";
 import { AppState, useAppDispatch } from "../../../../store";
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import { useNavigate, useParams } from "react-router-dom";
+import api from "../../../../common/api";
+import withSuspense from "../../Common/Components/withSuspense";
+import SearchBox from "../../Common/SearchBox";
 
 const DeletePVC = withSuspense(React.lazy(() => import("./DeletePVC")));
 
-interface ITenantVolumesProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    ...tableStyles,
-    ...containerForHeader,
-  });
-
-const TenantVolumes = ({ classes }: ITenantVolumesProps) => {
+const TenantVolumes = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { tenantName, tenantNamespace } = useParams();
@@ -127,30 +108,22 @@ const TenantVolumes = ({ classes }: ITenantVolumesProps) => {
           closeDeleteModalAndRefresh={closeDeleteModalAndRefresh}
         />
       )}
-      <Grid container spacing={1}>
-        <h1 className={classes.sectionTitle}>Volumes</h1>
-        <Grid item xs={12}>
-          <TextField
-            placeholder="Search Volumes (PVCs)"
-            className={classes.searchField}
+      <Box>
+        <SectionTitle separator sx={{ marginBottom: 15 }}>
+          Volumes
+        </SectionTitle>
+        <Grid item xs={12} sx={actionsTray.actionsTray}>
+          <SearchBox
+            value={filter}
+            onChange={(value) => {
+              setFilter(value);
+            }}
+            placeholder={"Search Volumes (PVCs)"}
             id="search-resource"
-            label=""
-            InputProps={{
-              disableUnderline: true,
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-            onChange={(e) => {
-              setFilter(e.target.value);
-            }}
-            variant="standard"
           />
         </Grid>
-        <Grid item xs={12} className={classes.tableBlock}>
-          <TableWrapper
+        <Grid item xs={12}>
+          <DataTable
             itemActions={[
               { type: "view", onClick: PVCViewAction },
               { type: "delete", onClick: confirmDeletePVC },
@@ -179,12 +152,12 @@ const TenantVolumes = ({ classes }: ITenantVolumesProps) => {
             records={filteredRecords}
             entityName="PVCs"
             idField="name"
-            customPaperHeight={classes.tableWrapper}
+            customPaperHeight={"calc(100vh - 400px)"}
           />
         </Grid>
-      </Grid>
+      </Box>
     </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantVolumes);
+export default TenantVolumes;

@@ -1,4 +1,4 @@
-//  This file is part of MinIO Console Server
+//  This file is part of MinIO Operator
 //  Copyright (c) 2022 MinIO, Inc.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -14,6 +14,7 @@
 //  You should have received a copy of the GNU Affero General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import "../../../utils/matchMedia";
 import hasPermission from "../accessControl";
 import { store } from "../../../store";
 import { IAM_PAGES, IAM_PAGES_PERMISSIONS, IAM_SCOPES } from "../permissions";

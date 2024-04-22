@@ -14,18 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useState } from "react";
-import { DialogContentText } from "@mui/material";
+import React, { useState, Fragment } from "react";
+import { ConfirmDeleteIcon, Box, InputBox } from "mds";
 import { IPodListElement } from "../ListTenants/types";
-import InputBoxWrapper from "../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import Grid from "@mui/material/Grid";
-
 import { ErrorResponseHandler } from "../../../../common/types";
-import useApi from "../../Common/Hooks/useApi";
-import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
-import { ConfirmDeleteIcon } from "mds";
 import { setErrorSnackMessage } from "../../../../systemSlice";
 import { useAppDispatch } from "../../../../store";
+import useApi from "../../Common/Hooks/useApi";
+import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
 
 interface IDeletePod {
   deleteOpen: boolean;
@@ -75,10 +71,10 @@ const DeletePod = ({
         disabled: retypePod !== selectedPod.name || deleteLoading,
       }}
       confirmationContent={
-        <DialogContentText>
+        <Fragment>
           To continue please type <b>{selectedPod.name}</b> in the box.
-          <Grid item xs={12}>
-            <InputBoxWrapper
+          <Box sx={{ marginTop: 15 }}>
+            <InputBox
               id="retype-pod"
               name="retype-pod"
               onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,8 +83,8 @@ const DeletePod = ({
               label=""
               value={retypePod}
             />
-          </Grid>
-        </DialogContentText>
+          </Box>
+        </Fragment>
       }
     />
   );

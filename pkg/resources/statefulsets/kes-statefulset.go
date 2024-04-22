@@ -17,6 +17,7 @@ package statefulsets
 import (
 	"sort"
 
+	operatorApi "github.com/minio/operator/api"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -94,7 +95,15 @@ func KESEnvironmentVars(t *miniov2.Tenant) []corev1.EnvVar {
 // KESServerContainer returns the KES container for a KES StatefulSet.
 func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 	// Args to start KES with config mounted at miniov2.KESConfigMountPath and require but don't verify mTLS authentication
-	args := []string{"server", "--config=" + miniov2.KESConfigMountPath + "/server-config.yaml", "--auth=off"}
+	args := []string{"server", "--config=" + miniov2.KESConfigMountPath + "/server-config.yaml"}
+
+	kesVersion, _ := operatorApi.GetKesConfigVersion(t.Spec.KES.Image)
+	// Add `--auth` flag only on config versions that are still compatible with it (v1 and v2).
+	// Starting KES 2023-11-09T17-35-47Z (v3) is no longer supported.
+	switch kesVersion {
+	case operatorApi.KesConfigVersion1, operatorApi.KesConfigVersion2:
+		args = append(args, "--auth=off")
+	}
 
 	return corev1.Container{
 		Name:  miniov2.KESContainerName,
@@ -109,6 +118,7 @@ func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 		Args:            args,
 		Env:             KESEnvironmentVars(t),
 		Resources:       t.Spec.KES.Resources,
+		SecurityContext: kesContainerSecurityContext(t),
 	}
 }
 
@@ -131,6 +141,49 @@ func kesSecurityContext(t *miniov2.Tenant) *corev1.PodSecurityContext {
 		securityContext = *t.Spec.KES.SecurityContext
 	}
 	return &securityContext
+}
+
+// Builds the security context for kes containers
+func kesContainerSecurityContext(t *miniov2.Tenant) *corev1.SecurityContext {
+	// Default values:
+	// By default, values should be totally empty if not provided
+	// This is specially needed in OpenShift where Security Context Constraints restrict them
+	// if let empty then OCP can pick the values from the constraints defined.
+	containerSecurityContext := corev1.SecurityContext{}
+	runAsNonRoot := true
+	var runAsUser int64 = 1000
+	var runAsGroup int64 = 1000
+	poolSCSet := false
+
+	// Values from pool.SecurityContext ONLY if provided
+	if t.Spec.KES != nil && t.Spec.KES.SecurityContext != nil {
+		if t.Spec.KES.SecurityContext.RunAsNonRoot != nil {
+			runAsNonRoot = *t.Spec.KES.SecurityContext.RunAsNonRoot
+			poolSCSet = true
+		}
+		if t.Spec.KES.SecurityContext.RunAsUser != nil {
+			runAsUser = *t.Spec.KES.SecurityContext.RunAsUser
+			poolSCSet = true
+		}
+		if t.Spec.KES.SecurityContext.RunAsGroup != nil {
+			runAsGroup = *t.Spec.KES.SecurityContext.RunAsGroup
+			poolSCSet = true
+		}
+		if poolSCSet {
+			// Only set values if one of above is set otherwise let it empty
+			containerSecurityContext = corev1.SecurityContext{
+				RunAsNonRoot: &runAsNonRoot,
+				RunAsUser:    &runAsUser,
+				RunAsGroup:   &runAsGroup,
+			}
+		}
+	}
+
+	// Values from kes.ContainerSecurityContext if provided
+	if t.Spec.KES != nil && t.Spec.KES.ContainerSecurityContext != nil {
+		containerSecurityContext = *t.Spec.KES.ContainerSecurityContext
+	}
+	return &containerSecurityContext
 }
 
 // NewForKES creates a new KES StatefulSet for the given Cluster.

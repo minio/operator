@@ -15,21 +15,16 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { LinearProgress } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import { SubnetInfo } from "./types";
-import api from "../../../common/api";
-import { ArrowIcon, Button } from "mds";
-import { IAM_PAGES } from "../../../common/SecureComponent/permissions";
-import LicensePlans from "./LicensePlans";
+import { ArrowIcon, Button, PageLayout, ProgressBar, Grid } from "mds";
 import { useNavigate } from "react-router-dom";
-import PageLayout from "../Common/Layout/PageLayout";
-import RegistrationStatusBanner from "../Support/RegistrationStatusBanner";
-import { selOpMode } from "../../../systemSlice";
-import withSuspense from "../Common/Components/withSuspense";
+import { IAM_PAGES } from "../../../common/SecureComponent/permissions";
+import { SubnetInfo } from "./types";
 import { getLicenseConsent } from "./utils";
+import LicensePlans from "./LicensePlans";
+import RegistrationStatusBanner from "../Support/RegistrationStatusBanner";
+import withSuspense from "../Common/Components/withSuspense";
 import PageHeaderWrapper from "../Common/PageHeaderWrapper/PageHeaderWrapper";
+import api from "../../../common/api";
 
 const LicenseConsentModal = withSuspense(
   React.lazy(() => import("./LicenseConsentModal")),
@@ -37,7 +32,6 @@ const LicenseConsentModal = withSuspense(
 
 const License = () => {
   const navigate = useNavigate();
-  const operatorMode = useSelector(selOpMode);
   const [activateProductModal, setActivateProductModal] =
     useState<boolean>(false);
 
@@ -112,7 +106,7 @@ const License = () => {
   if (loadingLicenseInfo) {
     return (
       <Grid item xs={12}>
-        <LinearProgress />
+        <ProgressBar />
       </Grid>
     );
   }
@@ -154,7 +148,6 @@ const License = () => {
           activateProductModal={activateProductModal}
           closeModalAndFetchLicenseInfo={closeModalAndFetchLicenseInfo}
           licenseInfo={licenseInfo}
-          operatorMode={operatorMode}
           currentPlanID={currentPlanID}
           setActivateProductModal={setActivateProductModal}
         />

@@ -15,64 +15,42 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
-import InputAdornment from "@mui/material/InputAdornment";
-import { SearchIcon } from "mds";
-import TextField from "@mui/material/TextField";
-import withStyles from "@mui/styles/withStyles";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import { searchField } from "./FormComponents/common/styleLibrary";
-
-const styles = (theme: Theme) =>
-  createStyles({
-    searchField: {
-      ...searchField.searchField,
-    },
-    adornment: {},
-  });
+import { InputBox, SearchIcon } from "mds";
+import { CSSObject } from "styled-components";
 
 type SearchBoxProps = {
   placeholder?: string;
   value: string;
-  classes: any;
   onChange: (value: string) => void;
-  adornmentPosition?: "start" | "end";
   overrideClass?: any;
+  id?: string;
+  label?: string;
+  sx?: CSSObject;
 };
 
 const SearchBox = ({
   placeholder = "",
-  classes,
   onChange,
-  adornmentPosition = "end",
   overrideClass,
   value,
+  id = "search-resource",
+  label = "",
+  sx,
 }: SearchBoxProps) => {
-  const inputProps = {
-    disableUnderline: true,
-    [`${adornmentPosition}Adornment`]: (
-      <InputAdornment
-        position={adornmentPosition}
-        className={classes.adornment}
-      >
-        <SearchIcon />
-      </InputAdornment>
-    ),
-  };
   return (
-    <TextField
+    <InputBox
       placeholder={placeholder}
-      className={overrideClass ? overrideClass : classes.searchField}
-      id="search-resource"
-      label=""
-      InputProps={inputProps}
+      className={overrideClass ? overrideClass : ""}
+      id={id}
+      label={label}
       onChange={(e) => {
         onChange(e.target.value);
       }}
-      variant="standard"
       value={value}
+      startIcon={<SearchIcon />}
+      sx={sx}
     />
   );
 };
 
-export default withStyles(styles)(SearchBox);
+export default SearchBox;

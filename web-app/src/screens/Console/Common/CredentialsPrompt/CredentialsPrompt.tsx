@@ -14,62 +14,37 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React from "react";
+import React, { Fragment } from "react";
 import get from "lodash/get";
-import { Theme } from "@mui/material/styles";
+import styled from "styled-components";
 import {
+  Box,
   Button,
   DownloadIcon,
   ServiceAccountCredentialsIcon,
   WarnIcon,
+  Grid,
 } from "mds";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
 import { NewServiceAccount } from "./types";
 import ModalWrapper from "../ModalWrapper/ModalWrapper";
-import Grid from "@mui/material/Grid";
 import CredentialItem from "./CredentialItem";
 import TooltipWrapper from "../TooltipWrapper/TooltipWrapper";
+import { modalStyleUtils } from "../FormComponents/common/styleLibrary";
 
-const styles = (theme: Theme) =>
-  createStyles({
-    warningBlock: {
-      color: "red",
-      fontSize: ".85rem",
-      margin: ".5rem 0 .5rem 0",
-      display: "flex",
-      alignItems: "center",
-      "& svg ": {
-        marginRight: ".3rem",
-        height: 16,
-        width: 16,
-      },
-    },
-    credentialTitle: {
-      padding: ".8rem 0 0 0",
-      fontWeight: 600,
-      fontSize: ".9rem",
-    },
-    buttonContainer: {
-      display: "flex",
-      justifyContent: "flex-end",
-      marginTop: "1rem",
-    },
-    credentialsPanel: {
-      overflowY: "auto",
-      maxHeight: 350,
-    },
-    promptTitle: {
-      display: "flex",
-      alignItems: "center",
-    },
-    buttonSpacer: {
-      marginRight: ".9rem",
-    },
-  });
+const WarningBlock = styled.div(({ theme }) => ({
+  color: get(theme, "signalColors.danger", "#C51B3F"),
+  fontSize: ".85rem",
+  margin: ".5rem 0 .5rem 0",
+  display: "flex",
+  alignItems: "center",
+  "& svg ": {
+    marginRight: ".3rem",
+    height: 16,
+    width: 16,
+  },
+}));
 
 interface ICredentialsPromptProps {
-  classes: any;
   newServiceAccount: NewServiceAccount | null;
   open: boolean;
   entity: string;
@@ -89,7 +64,6 @@ const download = (filename: string, text: string) => {
 };
 
 const CredentialsPrompt = ({
-  classes,
   newServiceAccount,
   open,
   closeModal,
@@ -172,26 +146,35 @@ const CredentialsPrompt = ({
       onClose={() => {
         closeModal();
       }}
-      title={
-        <div className={classes.promptTitle}>
-          <div>New {entity} Created</div>
-        </div>
-      }
+      title={`New ${entity} Created`}
       titleIcon={<ServiceAccountCredentialsIcon />}
     >
       <Grid container>
-        <Grid item xs={12} className={classes.formScrollable}>
+        <Grid item xs={12}>
           A new {entity} has been created with the following details:
           {!idp && consoleCreds && (
-            <React.Fragment>
-              <Grid item xs={12} className={classes.credentialsPanel}>
-                <div className={classes.credentialTitle}>
+            <Fragment>
+              <Grid
+                item
+                xs={12}
+                sx={{
+                  overflowY: "auto",
+                  maxHeight: 350,
+                }}
+              >
+                <Box
+                  sx={{
+                    padding: ".8rem 0 0 0",
+                    fontWeight: 600,
+                    fontSize: ".9rem",
+                  }}
+                >
                   Console Credentials
-                </div>
+                </Box>
                 {Array.isArray(consoleCreds) &&
                   consoleCreds.map((credentialsPair, index) => {
                     return (
-                      <>
+                      <Fragment>
                         <CredentialItem
                           label="Access Key"
                           value={credentialsPair.accessKey}
@@ -200,11 +183,11 @@ const CredentialsPrompt = ({
                           label="Secret Key"
                           value={credentialsPair.secretKey}
                         />
-                      </>
+                      </Fragment>
                     );
                   })}
                 {!Array.isArray(consoleCreds) && (
-                  <>
+                  <Fragment>
                     <CredentialItem
                       label="Access Key"
                       value={consoleCreds.accessKey}
@@ -213,10 +196,10 @@ const CredentialsPrompt = ({
                       label="Secret Key"
                       value={consoleCreds.secretKey}
                     />
-                  </>
+                  </Fragment>
                 )}
               </Grid>
-            </React.Fragment>
+            </Fragment>
           )}
           {(consoleCreds === null || consoleCreds === undefined) && (
             <>
@@ -231,22 +214,22 @@ const CredentialsPrompt = ({
             </>
           )}
           {idp ? (
-            <div className={classes.warningBlock}>
+            <WarningBlock>
               Please Login via the configured external identity provider.
-            </div>
+            </WarningBlock>
           ) : (
-            <div className={classes.warningBlock}>
+            <WarningBlock>
               <WarnIcon />
               <span>
                 Write these down, as this is the only time the secret will be
                 displayed.
               </span>
-            </div>
+            </WarningBlock>
           )}
         </Grid>
-        <Grid item xs={12} className={classes.buttonContainer}>
+        <Grid item xs={12} sx={{ ...modalStyleUtils.modalButtonBar }}>
           {!idp && (
-            <>
+            <Fragment>
               <TooltipWrapper
                 tooltip={
                   "Download credentials in a JSON file formatted for import using mc alias import. This will only include the default login credentials."
@@ -255,7 +238,6 @@ const CredentialsPrompt = ({
                 <Button
                   id={"download-button"}
                   label={"Download for import"}
-                  className={classes.buttonSpacer}
                   onClick={downloadImport}
                   icon={<DownloadIcon />}
                   variant="callAction"
@@ -271,7 +253,6 @@ const CredentialsPrompt = ({
                   <Button
                     id={"download-all-button"}
                     label={"Download all access credentials"}
-                    className={classes.buttonSpacer}
                     onClick={downloaddAllCredentials}
                     icon={<DownloadIcon />}
                     variant="callAction"
@@ -279,7 +260,7 @@ const CredentialsPrompt = ({
                   />
                 </TooltipWrapper>
               )}
-            </>
+            </Fragment>
           )}
         </Grid>
       </Grid>
@@ -287,4 +268,4 @@ const CredentialsPrompt = ({
   );
 };
 
-export default withStyles(styles)(CredentialsPrompt);
+export default CredentialsPrompt;

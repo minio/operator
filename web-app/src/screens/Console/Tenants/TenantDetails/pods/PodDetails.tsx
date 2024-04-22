@@ -15,44 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import { Theme } from "@mui/material/styles";
+import { SectionTitle, Tabs } from "mds";
 import { Link, useParams } from "react-router-dom";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { containerForHeader } from "../../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
 
 import PodLogs from "./PodLogs";
 import PodEvents from "./PodEvents";
 import PodDescribe from "./PodDescribe";
 
-interface IPodDetailsProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    breadcrumLink: {
-      textDecoration: "none",
-      color: "black",
-    },
-    ...containerForHeader,
-  });
-
-const PodDetails = ({ classes }: IPodDetailsProps) => {
+const PodDetails = () => {
   const { tenantNamespace, tenantName, podName } = useParams();
 
-  const [curTab, setCurTab] = useState<number>(0);
+  const [curTab, setCurTab] = useState<string>("simple-tab-0");
   const [loading, setLoading] = useState<boolean>(true);
-
-  function a11yProps(index: any) {
-    return {
-      id: `simple-tab-${index}`,
-      "aria-controls": `simple-tabpanel-${index}`,
-    };
-  }
 
   useEffect(() => {
     if (loading) {
@@ -62,64 +36,60 @@ const PodDetails = ({ classes }: IPodDetailsProps) => {
 
   return (
     <Fragment>
-      <Grid item xs={12}>
-        <h1 className={classes.sectionTitle}>
-          <Link
-            to={`/namespaces/${tenantNamespace || ""}/tenants/${
-              tenantName || ""
-            }/pods`}
-            className={classes.breadcrumLink}
-          >
-            Pods
-          </Link>{" "}
-          &gt; {podName}
-        </h1>
-      </Grid>
-      <Grid container>
-        <Grid item xs={9}>
-          <Tabs
-            value={curTab}
-            onChange={(e: React.ChangeEvent<{}>, newValue: number) => {
-              setCurTab(newValue);
-            }}
-            indicatorColor="primary"
-            textColor="primary"
-            aria-label="cluster-tabs"
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab label="Events" {...a11yProps(0)} />
-            <Tab label="Describe" {...a11yProps(1)} />
-            <Tab label="Logs" {...a11yProps(2)} />
-          </Tabs>
-        </Grid>
-        {curTab === 0 && (
-          <PodEvents
-            tenant={tenantName || ""}
-            namespace={tenantNamespace || ""}
-            podName={podName || ""}
-            propLoading={loading}
-          />
-        )}
-        {curTab === 1 && (
-          <PodDescribe
-            tenant={tenantName || ""}
-            namespace={tenantNamespace || ""}
-            podName={podName || ""}
-            propLoading={loading}
-          />
-        )}
-        {curTab === 2 && (
-          <PodLogs
-            tenant={tenantName || ""}
-            namespace={tenantNamespace || ""}
-            podName={podName || ""}
-            propLoading={loading}
-          />
-        )}
-      </Grid>
+      <SectionTitle separator sx={{ marginBottom: 15 }}>
+        <Link
+          to={`/namespaces/${tenantNamespace || ""}/tenants/${
+            tenantName || ""
+          }/pods`}
+        >
+          Pods
+        </Link>{" "}
+        &gt; {podName}
+      </SectionTitle>
+      <Tabs
+        options={[
+          {
+            tabConfig: { id: "simple-tab-0", label: "Events" },
+            content: (
+              <PodEvents
+                tenant={tenantName || ""}
+                namespace={tenantNamespace || ""}
+                podName={podName || ""}
+                propLoading={loading}
+              />
+            ),
+          },
+          {
+            tabConfig: { id: "simple-tab-1", label: "Describe" },
+            content: (
+              <PodDescribe
+                tenant={tenantName || ""}
+                namespace={tenantNamespace || ""}
+                podName={podName || ""}
+                propLoading={loading}
+              />
+            ),
+          },
+          {
+            tabConfig: { id: "simple-tab-2", label: "Logs" },
+            content: (
+              <PodLogs
+                tenant={tenantName || ""}
+                namespace={tenantNamespace || ""}
+                podName={podName || ""}
+                propLoading={loading}
+              />
+            ),
+          },
+        ]}
+        currentTabOrPath={curTab}
+        onTabClick={(tab) => {
+          setCurTab(tab);
+        }}
+        horizontal
+      />
     </Fragment>
   );
 };
 
-export default withStyles(styles)(PodDetails);
+export default PodDetails;

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xhttp "github.com/minio/operator/pkg/internal"
@@ -314,7 +314,7 @@ func GetPolicy(ctx context.Context, adminClient *madmin.AdminClient, policyName 
 }
 
 // AssumeRole invokes the AssumeRole method in the Minio Tenant
-func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sessionPolicy string, duration int) (*credentials.Value, error) {
+func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, region string, sessionPolicy string, duration int) (*credentials.Value, error) {
 	client, accessKey, secretKey, err := getTenantClient(ctx, c, tenant)
 	if err != nil {
 		return nil, err
@@ -330,6 +330,7 @@ func AssumeRole(ctx context.Context, c *Controller, tenant *miniov2.Tenant, sess
 		SecretKey:       secretKey,
 		Policy:          sessionPolicy,
 		DurationSeconds: duration,
+		Location:        region,
 	}
 
 	stsAssumeRole := &credentials.STSAssumeRole{

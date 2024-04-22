@@ -1,6 +1,6 @@
 swagger: "2.0"
 info:
-  title: MinIO Console Server
+  title: MinIO Operator
   version: 0.1.0
 consumes:
   - application/json

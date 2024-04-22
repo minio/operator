@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -25,6 +25,7 @@ import (
 
 	versioned "github.com/minio/operator/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/minio/operator/pkg/client/informers/externalversions/internalinterfaces"
+	jobminio "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io"
 	miniominio "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io"
 	stsminio "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,7 @@ type sharedInformerFactory struct {
 	lock             sync.Mutex
 	defaultResync    time.Duration
 	customResync     map[reflect.Type]time.Duration
+	transform        cache.TransformFunc
 
 	informers map[reflect.Type]cache.SharedIndexInformer
 	// startedInformers is used for tracking which informers have been started.
@@ -77,6 +79,14 @@ func WithTweakListOptions(tweakListOptions internalinterfaces.TweakListOptionsFu
 func WithNamespace(namespace string) SharedInformerOption {
 	return func(factory *sharedInformerFactory) *sharedInformerFactory {
 		factory.namespace = namespace
+		return factory
+	}
+}
+
+// WithTransform sets a transform on all informers.
+func WithTransform(transform cache.TransformFunc) SharedInformerOption {
+	return func(factory *sharedInformerFactory) *sharedInformerFactory {
+		factory.transform = transform
 		return factory
 	}
 }
@@ -167,7 +177,7 @@ func (f *sharedInformerFactory) WaitForCacheSync(stopCh <-chan struct{}) map[ref
 	return res
 }
 
-// InternalInformerFor returns the SharedIndexInformer for obj using an internal
+// InformerFor returns the SharedIndexInformer for obj using an internal
 // client.
 func (f *sharedInformerFactory) InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer {
 	f.lock.Lock()
@@ -185,6 +195,7 @@ func (f *sharedInformerFactory) InformerFor(obj runtime.Object, newFunc internal
 	}
 
 	informer = newFunc(f.client, resyncPeriod)
+	informer.SetTransform(f.transform)
 	f.informers[informerType] = informer
 
 	return informer
@@ -240,12 +251,17 @@ type SharedInformerFactory interface {
 	// ForResource gives generic access to a shared informer of the matching type.
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 
-	// InternalInformerFor returns the SharedIndexInformer for obj using an internal
+	// InformerFor returns the SharedIndexInformer for obj using an internal
 	// client.
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
+	Job() jobminio.Interface
 	Minio() miniominio.Interface
 	Sts() stsminio.Interface
+}
+
+func (f *sharedInformerFactory) Job() jobminio.Interface {
+	return jobminio.New(f, f.namespace, f.tweakListOptions)
 }
 
 func (f *sharedInformerFactory) Minio() miniominio.Interface {

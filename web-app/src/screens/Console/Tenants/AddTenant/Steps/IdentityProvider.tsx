@@ -15,55 +15,25 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
-import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import { Grid, Paper } from "@mui/material";
 import {
-  createTenantCommon,
-  modalBasic,
-  wizardCommon,
-} from "../../../Common/FormComponents/common/styleLibrary";
+  Box,
+  FormLayout,
+  Grid,
+  LDAPIcon,
+  OIDCIcon,
+  RadioGroup,
+  UsersIcon,
+} from "mds";
+import { useSelector } from "react-redux";
 import { AppState, useAppDispatch } from "../../../../../store";
-import RadioGroupSelector from "../../../Common/FormComponents/RadioGroupSelector/RadioGroupSelector";
 import { setIDP } from "../createTenantSlice";
 import IDPActiveDirectory from "./IdentityProvider/IDPActiveDirectory";
 import IDPOpenID from "./IdentityProvider/IDPOpenID";
-import makeStyles from "@mui/styles/makeStyles";
 import IDPBuiltIn from "./IdentityProvider/IDPBuiltIn";
-import {
-  BuiltInLogoElement,
-  LDAPLogoElement,
-  OIDCLogoElement,
-} from "../../LogoComponents";
 import H3Section from "../../../Common/H3Section";
-
-const useStyles = makeStyles((theme: Theme) =>
-  createStyles({
-    protocolRadioOptions: {
-      display: "flex",
-      flexFlow: "column",
-      marginBottom: 10,
-
-      "& label": {
-        fontSize: 16,
-        fontWeight: 600,
-      },
-      "& div": {
-        display: "flex",
-        flexFlow: "row",
-        alignItems: "top",
-      },
-    },
-    ...createTenantCommon,
-    ...modalBasic,
-    ...wizardCommon,
-  }),
-);
 
 const IdentityProvider = () => {
   const dispatch = useAppDispatch();
-  const classes = useStyles();
 
   const idpSelection = useSelector(
     (state: AppState) =>
@@ -71,17 +41,17 @@ const IdentityProvider = () => {
   );
 
   return (
-    <Paper className={classes.paperWrapper}>
-      <div className={classes.headerElement}>
+    <FormLayout withBorders={false} containerPadding={false}>
+      <Box className={"inputItem"}>
         <H3Section>Identity Provider</H3Section>
-        <span className={classes.descriptionText}>
+        <span className={"muted"}>
           Access to the tenant can be controlled via an external Identity
           Manager.
         </span>
-      </div>
-      <Grid item xs={12} padding="10px">
-        <RadioGroupSelector
-          currentSelection={idpSelection}
+      </Box>
+      <Grid item xs={12} sx={{ padding: 10 }}>
+        <RadioGroup
+          currentValue={idpSelection}
           id="idp-options"
           name="idp-options"
           label="Protocol"
@@ -89,16 +59,20 @@ const IdentityProvider = () => {
             dispatch(setIDP(e.target.value));
           }}
           selectorOptions={[
-            { label: <BuiltInLogoElement />, value: "Built-in" },
-            { label: <OIDCLogoElement />, value: "OpenID" },
-            { label: <LDAPLogoElement />, value: "AD" },
+            { label: "Built-in", value: "Built-in", icon: <UsersIcon /> },
+            { label: "Open ID", value: "OpenID", icon: <OIDCIcon /> },
+            {
+              label: "LDAP / Active Directory",
+              value: "AD",
+              icon: <LDAPIcon />,
+            },
           ]}
         />
       </Grid>
       {idpSelection === "Built-in" && <IDPBuiltIn />}
       {idpSelection === "OpenID" && <IDPOpenID />}
       {idpSelection === "AD" && <IDPActiveDirectory />}
-    </Paper>
+    </FormLayout>
   );
 };
 

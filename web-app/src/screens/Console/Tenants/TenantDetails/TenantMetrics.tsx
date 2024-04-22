@@ -14,49 +14,35 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useState } from "react";
-import { Theme } from "@mui/material/styles";
+import React, { Fragment, useState } from "react";
+import { SectionTitle, ProgressBar } from "mds";
+import styled from "styled-components";
 import { useParams } from "react-router-dom";
-import { LinearProgress } from "@mui/material";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import {
-  containerForHeader,
-  tenantDetailsStyles,
-} from "../../Common/FormComponents/common/styleLibrary";
 import { IAM_PAGES } from "../../../../common/SecureComponent/permissions";
 
-interface ITenantMetrics {
-  classes: any;
-}
+const IFrameContainer = styled.iframe(() => ({
+  border: "0px",
+  flex: "1 1 auto",
+  minHeight: "800px",
+  width: "100%",
+}));
 
-const styles = (theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    iframeStyle: {
-      border: "0px",
-      flex: "1 1 auto",
-      minHeight: "800px",
-      width: "100%",
-    },
-    ...containerForHeader,
-  });
-
-const TenantMetrics = ({ classes }: ITenantMetrics) => {
+const TenantMetrics = () => {
   const { tenantName, tenantNamespace } = useParams();
 
   const [loading, setLoading] = useState<boolean>(true);
 
   return (
-    <React.Fragment>
-      <h1 className={classes.sectionTitle}>Metrics</h1>
+    <Fragment>
+      <SectionTitle separator sx={{ marginBottom: 15 }}>
+        Metrics
+      </SectionTitle>
       {loading && (
         <div style={{ marginTop: "80px" }}>
-          <LinearProgress />
+          <ProgressBar />
         </div>
       )}
-      <iframe
-        className={classes.iframeStyle}
+      <IFrameContainer
         title={"metrics"}
         src={`/api/proxy/${tenantNamespace || ""}/${tenantName || ""}${
           IAM_PAGES.DASHBOARD
@@ -65,8 +51,8 @@ const TenantMetrics = ({ classes }: ITenantMetrics) => {
           setLoading(false);
         }}
       />
-    </React.Fragment>
+    </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantMetrics);
+export default TenantMetrics;

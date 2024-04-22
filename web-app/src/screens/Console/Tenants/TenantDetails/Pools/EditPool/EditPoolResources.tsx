@@ -14,77 +14,28 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Fragment } from "react";
+import { Box, FormLayout, Select, InputBox } from "mds";
+import { useSelector } from "react-redux";
 import get from "lodash/get";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import {
-  formFieldStyles,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import Grid from "@mui/material/Grid";
 import { niceBytes } from "../../../../../../common/utils";
-import { Paper, SelectChangeEvent } from "@mui/material";
-import api from "../../../../../../common/api";
 import { ErrorResponseHandler } from "../../../../../../common/types";
-import SelectWrapper from "../../../../Common/FormComponents/SelectWrapper/SelectWrapper";
 import { IQuotaElement, IQuotas } from "../../../ListTenants/utils";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import { useSelector } from "react-redux";
-
 import {
   commonFormValidation,
   IValidation,
 } from "../../../../../../utils/validationFunctions";
-import InputUnitMenu from "../../../../Common/FormComponents/InputUnitMenu/InputUnitMenu";
 import {
   isEditPoolPageValid,
   setEditPoolField,
   setEditPoolStorageClasses,
 } from "./editPoolSlice";
+import InputUnitMenu from "../../../../Common/FormComponents/InputUnitMenu/InputUnitMenu";
+import api from "../../../../../../common/api";
 import H3Section from "../../../../Common/H3Section";
 
-interface IPoolResourcesProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    bottomContainer: {
-      display: "flex",
-      flexGrow: 1,
-      alignItems: "center",
-      margin: "auto",
-      justifyContent: "center",
-      "& div": {
-        width: 200,
-        "@media (max-width: 900px)": {
-          flexFlow: "column",
-        },
-      },
-    },
-    factorElements: {
-      display: "flex",
-      justifyContent: "flex-start",
-      marginLeft: 30,
-    },
-    sizeNumber: {
-      fontSize: 35,
-      fontWeight: 700,
-      textAlign: "center",
-    },
-    sizeDescription: {
-      fontSize: 14,
-      color: "#777",
-      textAlign: "center",
-    },
-    ...formFieldStyles,
-    ...wizardCommon,
-  });
-
-const PoolResources = ({ classes }: IPoolResourcesProps) => {
+const PoolResources = () => {
   const dispatch = useAppDispatch();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
@@ -196,13 +147,12 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
   };
 
   return (
-    <Paper className={classes.paperWrapper}>
-      <div className={classes.headerElement}>
+    <Fragment>
+      <Box className={"inputItem"} sx={{ marginBottom: 12 }}>
         <H3Section>Pool Resources</H3Section>
-      </div>
-
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
+      </Box>
+      <FormLayout withBorders={false} containerPadding={false}>
+        <InputBox
           id="number_of_nodes"
           name="number_of_nodes"
           onChange={() => {}}
@@ -211,9 +161,7 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
           error={validationErrors["number_of_nodes"] || ""}
           disabled
         />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
+        <InputBox
           id="volumes_per_sever"
           name="volumes_per_sever"
           onChange={() => {}}
@@ -222,9 +170,7 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
           error={validationErrors["volumes_per_server"] || ""}
           disabled
         />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
+        <InputBox
           id="pool_size"
           name="pool_size"
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -250,39 +196,51 @@ const PoolResources = ({ classes }: IPoolResourcesProps) => {
             />
           }
         />
-      </Grid>
-
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <SelectWrapper
+        <Select
           id="storage_class"
           name="storage_class"
-          onChange={(e: SelectChangeEvent<string>) => {
-            setFieldInfo("storageClass", e.target.value as string);
+          onChange={(value) => {
+            setFieldInfo("storageClass", value);
           }}
           label="Storage Class"
           value={storageClass}
           options={storageClasses}
           disabled={storageClasses.length < 1}
         />
-      </Grid>
-      <Grid item xs={12} className={classes.bottomContainer}>
-        <div className={classes.factorElements}>
-          <div>
-            <div className={classes.sizeNumber}>
+
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            marginLeft: 30,
+            gap: 25,
+            "& .sizeNumber": {
+              fontSize: 35,
+              fontWeight: 700,
+              textAlign: "center",
+            },
+            "& .sizeDescription": {
+              fontSize: 14,
+              textAlign: "center",
+            },
+          }}
+        >
+          <Box>
+            <Box className={"sizeNumber"}>
               {niceBytes(instanceCapacity.toString(10))}
-            </div>
-            <div className={classes.sizeDescription}>Instance Capacity</div>
-          </div>
-          <div>
-            <div className={classes.sizeNumber}>
+            </Box>
+            <Box className={"sizeDescription muted"}>Instance Capacity</Box>
+          </Box>
+          <Box>
+            <Box className={"sizeNumber"}>
               {niceBytes(totalCapacity.toString(10))}
-            </div>
-            <div className={classes.sizeDescription}>Total Capacity</div>
-          </div>
-        </div>
-      </Grid>
-    </Paper>
+            </Box>
+            <Box className={"sizeDescription muted"}>Total Capacity</Box>
+          </Box>
+        </Box>
+      </FormLayout>
+    </Fragment>
   );
 };
 
-export default withStyles(styles)(PoolResources);
+export default PoolResources;

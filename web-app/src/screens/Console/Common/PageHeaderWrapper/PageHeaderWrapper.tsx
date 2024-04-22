@@ -16,6 +16,7 @@
 
 import React, { Fragment } from "react";
 import { PageHeader } from "mds";
+import DarkModeActivator from "../DarkModeActivator";
 
 interface IPageHeaderWrapper {
   label: React.ReactNode;
@@ -31,7 +32,12 @@ const PageHeaderWrapper = ({
   return (
     <PageHeader
       label={label}
-      actions={<Fragment>{actions}</Fragment>}
+      actions={
+        <Fragment>
+          {actions}
+          <DarkModeActivator />
+        </Fragment>
+      }
       middleComponent={middleComponent}
     />
   );

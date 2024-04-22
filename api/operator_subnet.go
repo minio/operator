@@ -27,7 +27,6 @@ import (
 	"github.com/minio/operator/api/operations/operator_api"
 	"github.com/minio/operator/models"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xhttp "github.com/minio/operator/pkg/http"
 	"github.com/minio/operator/pkg/subnet"
 	corev1 "k8s.io/api/core/v1"
@@ -154,7 +153,7 @@ func getTenantsToRegister(ctx context.Context, session *models.Principal, k8sCli
 	if err != nil {
 		return nil, err
 	}
-	tenantStructs := make([]tenantInterface, len(tenantList.Items))
+	var tenantStructs []tenantInterface
 	for _, tenant := range tenantList.Items {
 		svcURL := tenant.GetTenantServiceURL()
 		mAdmin, err := getTenantAdminClient(ctx, k8sClient, &tenant, svcURL)
@@ -168,7 +167,7 @@ func getTenantsToRegister(ctx context.Context, session *models.Principal, k8sCli
 
 func registerTenants(ctx context.Context, k8sClient K8sClientI, tenants []tenantInterface, apiKey string) (*models.OperatorSubnetRegisterAPIKeyResponse, *models.Error) {
 	for _, tenant := range tenants {
-		if err := registerTenant(ctx, k8sClient, tenant.mAdminClient, tenant.tenant, apiKey); err != nil {
+		if err := registerTenant(ctx, tenant.mAdminClient, apiKey); err != nil {
 			return nil, ErrorWithContext(ctx, err)
 		}
 	}
@@ -202,7 +201,7 @@ func SubnetRegisterWithAPIKey(ctx context.Context, minioClient MinioAdmin, apiKe
 	return true, nil
 }
 
-func registerTenant(ctx context.Context, k8sClient K8sClientI, adminClient MinioAdmin, tenant v2.Tenant, apiKey string) error {
+func registerTenant(ctx context.Context, adminClient MinioAdmin, apiKey string) error {
 	_, err := SubnetRegisterWithAPIKey(ctx, adminClient, apiKey)
 	return err
 }

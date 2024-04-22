@@ -18,6 +18,7 @@ import { snackBarMessage, SRInfoStateType } from "./types";
 import { ErrorResponseHandler, IEmbeddedCustomStyles } from "./common/types";
 import { AppState } from "./store";
 import { SubnetInfo } from "./screens/Console/License/types";
+import { isDarkModeOn } from "./utils/stylesUtils";
 
 // determine whether we have the sidebar state stored on localstorage
 const initSideBarOpen = localStorage.getItem("sidebarOpen")
@@ -44,6 +45,7 @@ export interface SystemState {
   licenseInfo: null | SubnetInfo;
   overrideStyles: null | IEmbeddedCustomStyles;
   anonymousMode: boolean;
+  darkMode: boolean;
 }
 
 const initialState: SystemState = {
@@ -74,6 +76,7 @@ const initialState: SystemState = {
   licenseInfo: null,
   overrideStyles: null,
   anonymousMode: false,
+  darkMode: isDarkModeOn(),
 };
 
 export const systemSlice = createSlice({
@@ -165,6 +168,9 @@ export const systemSlice = createSlice({
       state.anonymousMode = true;
       state.loggedIn = true;
     },
+    setDarkMode: (state, action: PayloadAction<boolean>) => {
+      state.darkMode = action.payload;
+    },
     resetSystem: () => {
       return initialState;
     },
@@ -192,6 +198,7 @@ export const {
   setAnonymousMode,
   resetSystem,
   configurationIsLoading,
+  setDarkMode,
 } = systemSlice.actions;
 
 export const selOpMode = (state: AppState) => state.system.operatorMode;

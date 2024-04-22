@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -21,8 +21,9 @@ package externalversions
 import (
 	"fmt"
 
+	v1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	v1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	stsminiov1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -53,12 +54,16 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=minio.min.io, Version=v2
+	// Group=job.min.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithResource("miniojobs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Job().V1alpha1().MinIOJobs().Informer()}, nil
+
+		// Group=minio.min.io, Version=v2
 	case v2.SchemeGroupVersion.WithResource("tenants"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Minio().V2().Tenants().Informer()}, nil
 
 		// Group=sts.min.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("policybindings"):
+	case stsminiov1alpha1.SchemeGroupVersion.WithResource("policybindings"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Sts().V1alpha1().PolicyBindings().Informer()}, nil
 
 	}

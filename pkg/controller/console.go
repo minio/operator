@@ -24,7 +24,6 @@ import (
 	"github.com/minio/operator/pkg/resources/services"
 	"github.com/minio/pkg/env"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -57,7 +56,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 			if err != nil {
 				return err
 			}
-			c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "SvcCreated", "Console Service Created")
+			c.recorder.Event(tenant, corev1.EventTypeNormal, "SvcCreated", "Console Service Created")
 		} else {
 			return err
 		}
@@ -81,9 +80,9 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 		// Only when ExposeServices is set an explicit value we do modifications to the service type
 		if tenant.Spec.ExposeServices != nil {
 			if tenant.Spec.ExposeServices.Console {
-				svc.Spec.Type = v1.ServiceTypeLoadBalancer
+				svc.Spec.Type = corev1.ServiceTypeLoadBalancer
 			} else {
-				svc.Spec.Type = v1.ServiceTypeClusterIP
+				svc.Spec.Type = corev1.ServiceTypeClusterIP
 			}
 		}
 
@@ -94,7 +93,7 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 		if err != nil {
 			return err
 		}
-		c.RegisterEvent(ctx, tenant, corev1.EventTypeNormal, "Updated", "Console Service Updated")
+		c.recorder.Event(tenant, corev1.EventTypeNormal, "Updated", "Console Service Updated")
 	}
 	return err
 }

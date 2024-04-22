@@ -140,6 +140,7 @@ rules:
   - apiGroups:
       - minio.min.io
       - sts.min.io
+      - job.min.io
     resources:
       - "*"
     verbs:

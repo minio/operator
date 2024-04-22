@@ -15,44 +15,18 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect } from "react";
+import { Box, InputBox, Switch } from "mds";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
+import floor from "lodash/floor";
 import get from "lodash/get";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import {
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
 import { AllocableResourcesResponse } from "../../../types";
-import api from "../../../../../../common/api";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import FormSwitchWrapper from "../../../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import { floor } from "lodash";
-import InputUnitMenu from "../../../../Common/FormComponents/InputUnitMenu/InputUnitMenu";
 import { isPageValid, updateAddField } from "../../createTenantSlice";
+import api from "../../../../../../common/api";
+import InputUnitMenu from "../../../../Common/FormComponents/InputUnitMenu/InputUnitMenu";
 import H3Section from "../../../../Common/H3Section";
 
-interface ITenantSizeResourcesProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const TenantSizeResources = ({
-  classes,
-}: // updateAddField,
-// isPageValid,
-
-ITenantSizeResourcesProps) => {
+const TenantSizeResources = () => {
   const dispatch = useAppDispatch();
 
   const nodes = useSelector(
@@ -209,8 +183,6 @@ ITenantSizeResourcesProps) => {
         updateField("maxMemorySize", 0);
         updateField("resourcesCPURequest", "");
         updateField("resourcesMemoryRequest", "");
-
-        console.error(err);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, updateField]);
@@ -219,186 +191,162 @@ ITenantSizeResourcesProps) => {
 
   return (
     <Fragment>
-      <Grid item xs={12}>
-        <div className={classes.headerElement}>
-          <H3Section>Resources</H3Section>
-          <span className={classes.descriptionText}>
-            You may specify the amount of CPU and Memory that MinIO servers
-            should reserve on each node.
-          </span>
-        </div>
-      </Grid>
+      <Box className={"inputItem"}>
+        <H3Section>Resources</H3Section>
+        <span className={"muted"}>
+          You may specify the amount of CPU and Memory that MinIO servers should
+          reserve on each node.
+        </span>
+      </Box>
       {resourcesSize.error !== "" && (
-        <Grid item xs={12}>
-          <div className={classes.error}>{resourcesSize.error}</div>
-        </Grid>
+        <Box className={"inputItem error"}>{resourcesSize.error}</Box>
       )}
-
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          label={"CPU Request"}
-          id={"resourcesCPURequest"}
-          name={"resourcesCPURequest"}
-          onChange={(e) => {
-            let value = parseInt(e.target.value);
-            if (e.target.value === "") {
-              updateField("resourcesCPURequestError", "");
-            } else if (isNaN(value)) {
-              updateField("resourcesCPURequestError", "Invalid number");
-            } else if (value > parseInt(maxCPUsUse)) {
-              updateField(
-                "resourcesCPURequestError",
-                `Request exceeds available cores (${maxCPUsUse})`,
-              );
-            } else if (e.target.validity.valid) {
-              updateField("resourcesCPURequestError", "");
-            } else {
-              updateField("resourcesCPURequestError", "Invalid configuration");
-            }
-            updateField("resourcesCPURequest", e.target.value);
-          }}
-          value={resourcesCPURequest}
-          disabled={selectedStorageClass === ""}
-          max={maxCPUsUse}
-          error={resourcesCPURequestError}
-          pattern={"[0-9]*"}
-        />
-      </Grid>
-
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="resourcesMemoryRequest"
-          name="resourcesMemoryRequest"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            let value = parseInt(e.target.value);
-            if (e.target.value === "") {
-              updateField("resourcesMemoryRequestError", "");
-            } else if (isNaN(value)) {
-              updateField("resourcesMemoryRequestError", "Invalid number");
-            } else if (value > parseInt(maxMemorySize)) {
-              updateField(
-                "resourcesMemoryRequestError",
-                `Request exceeds available memory across ${nodes} nodes (${maxMemorySize}Gi)`,
-              );
-            } else if (value < 2) {
-              updateField(
-                "resourcesMemoryRequestError",
-                "At least 2Gi must be requested",
-              );
-            } else if (e.target.validity.valid) {
-              updateField("resourcesMemoryRequestError", "");
-            } else {
-              updateField(
-                "resourcesMemoryRequestError",
-                "Invalid configuration",
-              );
-            }
-            updateField("resourcesMemoryRequest", e.target.value);
-          }}
-          label="Memory Request"
-          overlayObject={
-            <InputUnitMenu
-              id={"size-unit"}
-              onUnitChange={() => {}}
-              unitSelected={"Gi"}
-              unitsList={[{ label: "Gi", value: "Gi" }]}
-              disabled={true}
-            />
+      <InputBox
+        label={"CPU Request"}
+        id={"resourcesCPURequest"}
+        name={"resourcesCPURequest"}
+        onChange={(e) => {
+          let value = parseInt(e.target.value);
+          if (e.target.value === "") {
+            updateField("resourcesCPURequestError", "");
+          } else if (isNaN(value)) {
+            updateField("resourcesCPURequestError", "Invalid number");
+          } else if (value > parseInt(maxCPUsUse)) {
+            updateField(
+              "resourcesCPURequestError",
+              `Request exceeds available cores (${maxCPUsUse})`,
+            );
+          } else if (e.target.validity.valid) {
+            updateField("resourcesCPURequestError", "");
+          } else {
+            updateField("resourcesCPURequestError", "Invalid configuration");
           }
-          value={resourcesMemoryRequest}
-          disabled={selectedStorageClass === ""}
-          error={resourcesMemoryRequestError}
-          pattern={"[0-9]*"}
-        />
-      </Grid>
+          updateField("resourcesCPURequest", e.target.value);
+        }}
+        value={resourcesCPURequest}
+        disabled={selectedStorageClass === ""}
+        max={maxCPUsUse}
+        error={resourcesCPURequestError}
+        pattern={"[0-9]*"}
+      />
+      <InputBox
+        id="resourcesMemoryRequest"
+        name="resourcesMemoryRequest"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          let value = parseInt(e.target.value);
+          if (e.target.value === "") {
+            updateField("resourcesMemoryRequestError", "");
+          } else if (isNaN(value)) {
+            updateField("resourcesMemoryRequestError", "Invalid number");
+          } else if (value > parseInt(maxMemorySize)) {
+            updateField(
+              "resourcesMemoryRequestError",
+              `Request exceeds available memory across ${nodes} nodes (${maxMemorySize}Gi)`,
+            );
+          } else if (value < 2) {
+            updateField(
+              "resourcesMemoryRequestError",
+              "At least 2Gi must be requested",
+            );
+          } else if (e.target.validity.valid) {
+            updateField("resourcesMemoryRequestError", "");
+          } else {
+            updateField("resourcesMemoryRequestError", "Invalid configuration");
+          }
+          updateField("resourcesMemoryRequest", e.target.value);
+        }}
+        label="Memory Request"
+        overlayObject={
+          <InputUnitMenu
+            id={"size-unit"}
+            onUnitChange={() => {}}
+            unitSelected={"Gi"}
+            unitsList={[{ label: "Gi", value: "Gi" }]}
+            disabled={true}
+          />
+        }
+        value={resourcesMemoryRequest}
+        disabled={selectedStorageClass === ""}
+        error={resourcesMemoryRequestError}
+        pattern={"[0-9]*"}
+      />
+      <Switch
+        value="resourcesSpecifyLimit"
+        id="resourcesSpecifyLimit"
+        name="resourcesSpecifyLimit"
+        checked={resourcesSpecifyLimit}
+        onChange={(e) => {
+          const targetD = e.target;
+          const checked = targetD.checked;
 
-      <Grid item xs={12}>
-        <FormSwitchWrapper
-          value="resourcesSpecifyLimit"
-          id="resourcesSpecifyLimit"
-          name="resourcesSpecifyLimit"
-          checked={resourcesSpecifyLimit}
-          onChange={(e) => {
-            const targetD = e.target;
-            const checked = targetD.checked;
-
-            updateField("resourcesSpecifyLimit", checked);
-          }}
-          label={"Specify Limit"}
-        />
-      </Grid>
+          updateField("resourcesSpecifyLimit", checked);
+        }}
+        label={"Specify Limit"}
+      />
 
       {resourcesSpecifyLimit && (
         <Fragment>
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              label={"CPU Limit"}
-              id={"resourcesCPULimit"}
-              name={"resourcesCPULimit"}
-              onChange={(e) => {
-                let value = parseInt(e.target.value);
-                if (e.target.value === "") {
-                  updateField("resourcesCPULimitError", "");
-                } else if (isNaN(value)) {
-                  updateField("resourcesCPULimitError", "Invalid number");
-                } else if (e.target.validity.valid) {
-                  updateField("resourcesCPULimitError", "");
-                } else {
-                  updateField(
-                    "resourcesCPULimitError",
-                    "Invalid configuration",
-                  );
-                }
-                updateField("resourcesCPULimit", e.target.value);
-              }}
-              value={resourcesCPULimit}
-              disabled={selectedStorageClass === ""}
-              max={maxCPUsUse}
-              error={resourcesCPULimitError}
-              pattern={"[0-9]*"}
-            />
-          </Grid>
-
-          <Grid item xs={12} className={classes.formFieldRow}>
-            <InputBoxWrapper
-              id="resourcesMemoryLimit"
-              name="resourcesMemoryLimit"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                let value = parseInt(e.target.value);
-                if (e.target.value === "") {
-                  updateField("resourcesMemoryLimitError", "");
-                } else if (isNaN(value)) {
-                  updateField("resourcesMemoryLimitError", "Invalid number");
-                } else if (e.target.validity.valid) {
-                  updateField("resourcesMemoryLimitError", "");
-                } else {
-                  updateField(
-                    "resourcesMemoryLimitError",
-                    "Invalid configuration",
-                  );
-                }
-                updateField("resourcesMemoryLimit", e.target.value);
-              }}
-              label="Memory Limit"
-              overlayObject={
-                <InputUnitMenu
-                  id={"size-unit"}
-                  onUnitChange={() => {}}
-                  unitSelected={"Gi"}
-                  unitsList={[{ label: "Gi", value: "Gi" }]}
-                  disabled={true}
-                />
+          <InputBox
+            label={"CPU Limit"}
+            id={"resourcesCPULimit"}
+            name={"resourcesCPULimit"}
+            onChange={(e) => {
+              let value = parseInt(e.target.value);
+              if (e.target.value === "") {
+                updateField("resourcesCPULimitError", "");
+              } else if (isNaN(value)) {
+                updateField("resourcesCPULimitError", "Invalid number");
+              } else if (e.target.validity.valid) {
+                updateField("resourcesCPULimitError", "");
+              } else {
+                updateField("resourcesCPULimitError", "Invalid configuration");
               }
-              value={resourcesMemoryLimit}
-              disabled={selectedStorageClass === ""}
-              error={resourcesMemoryLimitError}
-              pattern={"[0-9]*"}
-            />
-          </Grid>
+              updateField("resourcesCPULimit", e.target.value);
+            }}
+            value={resourcesCPULimit}
+            disabled={selectedStorageClass === ""}
+            max={maxCPUsUse}
+            error={resourcesCPULimitError}
+            pattern={"[0-9]*"}
+          />
+          <InputBox
+            id="resourcesMemoryLimit"
+            name="resourcesMemoryLimit"
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              let value = parseInt(e.target.value);
+              if (e.target.value === "") {
+                updateField("resourcesMemoryLimitError", "");
+              } else if (isNaN(value)) {
+                updateField("resourcesMemoryLimitError", "Invalid number");
+              } else if (e.target.validity.valid) {
+                updateField("resourcesMemoryLimitError", "");
+              } else {
+                updateField(
+                  "resourcesMemoryLimitError",
+                  "Invalid configuration",
+                );
+              }
+              updateField("resourcesMemoryLimit", e.target.value);
+            }}
+            label="Memory Limit"
+            overlayObject={
+              <InputUnitMenu
+                id={"size-unit"}
+                onUnitChange={() => {}}
+                unitSelected={"Gi"}
+                unitsList={[{ label: "Gi", value: "Gi" }]}
+                disabled={true}
+              />
+            }
+            value={resourcesMemoryLimit}
+            disabled={selectedStorageClass === ""}
+            error={resourcesMemoryLimitError}
+            pattern={"[0-9]*"}
+          />
         </Fragment>
       )}
     </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantSizeResources);
+export default TenantSizeResources;

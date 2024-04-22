@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -39,6 +39,7 @@ type PoolApplyConfiguration struct {
 	Annotations               map[string]string             `json:"annotations,omitempty"`
 	Labels                    map[string]string             `json:"labels,omitempty"`
 	RuntimeClassName          *string                       `json:"runtimeClassName,omitempty"`
+	ReclaimStorage            *bool                         `json:"reclaimStorage,omitempty"`
 }
 
 // PoolApplyConfiguration constructs an declarative configuration of the Pool type for use with
@@ -178,5 +179,13 @@ func (b *PoolApplyConfiguration) WithLabels(entries map[string]string) *PoolAppl
 // If called multiple times, the RuntimeClassName field is set to the value of the last call.
 func (b *PoolApplyConfiguration) WithRuntimeClassName(value string) *PoolApplyConfiguration {
 	b.RuntimeClassName = &value
+	return b
+}
+
+// WithReclaimStorage sets the ReclaimStorage field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ReclaimStorage field is set to the value of the last call.
+func (b *PoolApplyConfiguration) WithReclaimStorage(value bool) *PoolApplyConfiguration {
+	b.ReclaimStorage = &value
 	return b
 }

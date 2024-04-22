@@ -15,6 +15,35 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment } from "react";
+import { Box } from "mds";
+import styled from "styled-components";
+import get from "lodash/get";
+
+const InformationItemMain = styled.div(({ theme }) => ({
+  margin: "0px 20px",
+  "& .value": {
+    fontSize: 18,
+    color: get(theme, "mutedText", "#87888d"),
+    fontWeight: 400,
+    "&.normal": {
+      color: get(theme, "fontColor", "#000"),
+    },
+  },
+  "& .unit": {
+    fontSize: 12,
+    color: get(theme, "secondaryText", "#5B5C5C"),
+    fontWeight: "bold",
+  },
+  "& .label": {
+    textAlign: "center",
+    color: get(theme, "mutedText", "#87888d"),
+    fontSize: 12,
+    whiteSpace: "nowrap",
+    "&.normal": {
+      color: get(theme, "secondaryText", "#5B5C5C"),
+    },
+  },
+}));
 
 interface IInformationItemProps {
   label: string;
@@ -30,39 +59,18 @@ const InformationItem = ({
   variant = "normal",
 }: IInformationItemProps) => {
   return (
-    <div style={{ margin: "0px 20px" }}>
-      <div style={{ textAlign: "center" }}>
-        <span
-          style={{
-            fontSize: 18,
-            color: variant === "normal" ? "#000" : "#999",
-            fontWeight: 400,
-          }}
-        >
-          {value}
-        </span>
+    <InformationItemMain>
+      <Box style={{ textAlign: "center" }}>
+        <span className={`value ${variant}`}>{value}</span>
         {unit && (
           <Fragment>
             {" "}
-            <span
-              style={{ fontSize: 12, color: "#8F9090", fontWeight: "bold" }}
-            >
-              {unit}
-            </span>
+            <span className={"unit"}>{unit}</span>
           </Fragment>
         )}
-      </div>
-      <div
-        style={{
-          textAlign: "center",
-          color: variant === "normal" ? "#767676" : "#bababa",
-          fontSize: 12,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {label}
-      </div>
-    </div>
+      </Box>
+      <Box className={"label"}>{label}</Box>
+    </InformationItemMain>
   );
 };
 

@@ -15,8 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import React from "react";
 import { useSelector } from "react-redux";
-import { Box } from "@mui/material";
-import { CertificateIcon } from "mds";
+import { CertificateIcon, Box, breakPoints } from "mds";
 import { useParams } from "react-router-dom";
 import { AppState } from "../../../../store";
 
@@ -40,9 +39,9 @@ const FeatureItem = ({
       }}
     >
       {icon}{" "}
-      <div style={{ fontSize: "14px", fontStyle: "italic", color: "#5E5E5E" }}>
+      <Box className="muted" sx={{ fontSize: "14px", fontStyle: "italic" }}>
         {description}
-      </div>
+      </Box>
     </Box>
   );
 };
@@ -51,7 +50,7 @@ const TLSHelpBox = () => {
   const tenantNameParam = params.tenantName || "";
   const tenantNamespaceParam = params.tenantNamespace || "";
   const namespace = useSelector((state: AppState) => {
-    var defaultNamespace = "<namespace>";
+    let defaultNamespace = "<namespace>";
     if (tenantNamespaceParam !== "") {
       return tenantNamespaceParam;
     }
@@ -62,7 +61,7 @@ const TLSHelpBox = () => {
   });
 
   const tenantName = useSelector((state: AppState) => {
-    var defaultTenantName = "<tenant-name>";
+    let defaultTenantName = "<tenant-name>";
     if (tenantNameParam !== "") {
       return tenantNameParam;
     }
@@ -82,8 +81,8 @@ const TLSHelpBox = () => {
         display: "flex",
         flexFlow: "column",
         padding: "20px",
-        marginTop: {
-          xs: "0px",
+        [`@media (max-width: ${breakPoints.sm}px)`]: {
+          marginTop: 0,
         },
       }}
     >
@@ -105,8 +104,9 @@ const TLSHelpBox = () => {
           they are valid for the following internode hostnames, i.e.:
           <br />
           <br />
-          <div
-            style={{ fontSize: "14px", fontStyle: "italic", color: "#5E5E5E" }}
+          <Box
+            sx={{ fontSize: "14px", fontStyle: "italic" }}
+            className={"muted"}
           >
             minio.{namespace}
             <br />
@@ -117,7 +117,7 @@ const TLSHelpBox = () => {
             *.{tenantName}-hl.{namespace}.svc.&#x3C;cluster domain&#x3E;
             <br />
             *.{namespace}.svc.&#x3C;cluster domain&#x3E;
-          </div>
+          </Box>
           <br />
           Replace <em>&#x3C;tenant-name&#x3E;</em>,{" "}
           <em>&#x3C;namespace&#x3E;</em> and

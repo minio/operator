@@ -15,11 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React from "react";
+import { CircleIcon } from "mds";
 import { Cell, Pie, PieChart } from "recharts";
 import { CapacityValue, CapacityValues } from "./types";
 import { niceBytesInt } from "../../../../common/utils";
-import { CircleIcon } from "mds";
 import UsageBar, { ISizeBarItem } from "../../Common/UsageBar/UsageBar";
+import { useTheme } from "styled-components";
+import get from "lodash/get";
 
 interface ITenantCapacity {
   totalCapacity: number;
@@ -47,7 +49,9 @@ const TenantCapacity = ({
     "#2781B0",
   ];
 
-  const BGColor = "#ededed";
+  const theme = useTheme();
+
+  const BGColor = `${get(theme, "borderColor", "#ededed")}70`;
 
   const totalUsedSpace = usedSpaceVariants.reduce((acc, currValue) => {
     return acc + currValue.value;
@@ -82,14 +86,14 @@ const TenantCapacity = ({
       });
   }
 
-  let standardTierColor = "#07193E";
+  let standardTierColor = get(theme, "signalColors.main", "#07193E");
 
   const usedPercentage = (standardTier.value * 100) / totalCapacity;
 
   if (usedPercentage >= 90) {
-    standardTierColor = "#C83B51";
+    standardTierColor = get(theme, "signalColors.danger", "#C83B51");
   } else if (usedPercentage >= 75) {
-    standardTierColor = "#FFAB0F";
+    standardTierColor = get(theme, "signalColors.warning", "#FFAB0F");
   }
 
   const plotValues: CapacityValue[] = [
@@ -148,7 +152,6 @@ const TenantCapacity = ({
           left: "50%",
           transform: "translate(-50%, -50%)",
           fontWeight: "bold",
-          color: "#000",
           fontSize: 11,
         }}
       >

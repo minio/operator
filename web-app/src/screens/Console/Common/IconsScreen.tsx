@@ -15,75 +15,56 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { useState } from "react";
-import { containerForHeader } from "../Common/FormComponents/common/styleLibrary";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import clsx from "clsx";
-import {
-  FormControl,
-  FormControlLabel,
-  FormLabel,
-  Grid,
-  Radio,
-  RadioGroup,
-} from "@mui/material";
-
 import * as cicons from "mds";
 import * as micons from "mds";
-import { Loader } from "mds";
+import { Box, Grid, Loader, RadioGroup } from "mds";
 
-interface IIconsScreenSimple {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...containerForHeader,
-    root: {
-      fontSize: 12,
-      wordWrap: "break-word",
-      "& .min-loader": {
-        width: 45,
-        height: 45,
-      },
-    },
-    red: {
-      "& .min-icon": {
-        color: "red",
-      },
-    },
-  });
-
-const IconsScreen = ({ classes }: IIconsScreenSimple) => {
+const IconsScreen = () => {
   const [color, setColor] = useState<string>("default");
   return (
-    <div className={classes.container}>
+    <Box
+      sx={{
+        position: "relative" as const,
+        padding: "20px 35px 0",
+        "& h6": {
+          color: "#777777",
+          fontSize: 30,
+        },
+        "& p": {
+          "& span:not(*[class*='smallUnit'])": {
+            fontSize: 16,
+          },
+        },
+      }}
+    >
       <Grid container>
-        <FormControl>
-          <FormLabel id="demo-radio-buttons-group-label">Color</FormLabel>
-          <RadioGroup
-            row
-            aria-labelledby="demo-radio-buttons-group-label"
-            defaultValue="default"
-            name="radio-buttons-group"
-            onChange={(c) => {
-              setColor(c.target.value);
-            }}
-          >
-            <FormControlLabel value="def" control={<Radio />} label="Default" />
-            <FormControlLabel value="red" control={<Radio />} label="Color" />
-          </RadioGroup>
-        </FormControl>
+        <RadioGroup
+          selectorOptions={[
+            { value: "def", label: "Default" },
+            { value: "red", label: "Color" },
+          ]}
+          currentValue={color}
+          id={"color-selector"}
+          name={"color-selector"}
+          onChange={(c) => {
+            setColor(c.target.value);
+          }}
+        />
       </Grid>
       <h1>Logos</h1>
       <Grid
         container
-        spacing={4}
-        textAlign={"center"}
-        className={clsx(classes.root, {
-          [classes.red]: color === "red",
-        })}
+        sx={{
+          fontSize: 12,
+          wordWrap: "break-word",
+          "& .min-loader": {
+            width: 45,
+            height: 45,
+          },
+          "& .min-icon": {
+            color: color === "red" ? "red" : "black",
+          },
+        }}
       >
         <Grid item xs={3}>
           <cicons.ThemedLogo />
@@ -94,11 +75,17 @@ const IconsScreen = ({ classes }: IIconsScreenSimple) => {
       <h1>Loaders</h1>
       <Grid
         container
-        spacing={4}
-        textAlign={"center"}
-        className={clsx(classes.root, {
-          [classes.red]: color === "red",
-        })}
+        sx={{
+          fontSize: 12,
+          wordWrap: "break-word",
+          "& .min-loader": {
+            width: 45,
+            height: 45,
+          },
+          "& .min-icon": {
+            color: color === "red" ? "red" : "black",
+          },
+        }}
       >
         <Grid item xs={3}>
           <Loader />
@@ -109,11 +96,17 @@ const IconsScreen = ({ classes }: IIconsScreenSimple) => {
       <h1>Icons</h1>
       <Grid
         container
-        spacing={4}
-        textAlign={"center"}
-        className={clsx(classes.root, {
-          [classes.red]: color === "red",
-        })}
+        sx={{
+          fontSize: 12,
+          wordWrap: "break-word",
+          "& .min-loader": {
+            width: 45,
+            height: 45,
+          },
+          "& .min-icon": {
+            color: color === "red" ? "red" : "black",
+          },
+        }}
       >
         <Grid item xs={3} sm={2} md={1}>
           <cicons.AccountIcon />
@@ -1160,11 +1153,17 @@ const IconsScreen = ({ classes }: IIconsScreenSimple) => {
       <h1>Menu Icons</h1>
       <Grid
         container
-        spacing={4}
-        textAlign={"center"}
-        className={clsx(classes.root, {
-          [classes.red]: color === "red",
-        })}
+        sx={{
+          fontSize: 12,
+          wordWrap: "break-word",
+          "& .min-loader": {
+            width: 45,
+            height: 45,
+          },
+          "& .min-icon": {
+            color: color === "red" ? "red" : "black",
+          },
+        }}
       >
         <Grid item xs={3} sm={2} md={1}>
           <micons.AccessMenuIcon />
@@ -1298,8 +1297,8 @@ const IconsScreen = ({ classes }: IIconsScreenSimple) => {
           UsersMenuIcon
         </Grid>
       </Grid>
-    </div>
+    </Box>
   );
 };
 
-export default withStyles(styles)(IconsScreen);
+export default IconsScreen;

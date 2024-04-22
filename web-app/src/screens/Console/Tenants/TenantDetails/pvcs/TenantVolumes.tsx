@@ -1,4 +1,4 @@
-//  This file is part of MinIO Console Server
+//  This file is part of MinIO Operator
 //  Copyright (c) 2022 MinIO, Inc.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -15,43 +15,22 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useEffect, useState } from "react";
-import { Theme } from "@mui/material/styles";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import { containerForHeader } from "../../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
+import { Tabs, SectionTitle } from "mds";
 import { Link, useParams } from "react-router-dom";
-
-import api from "../../../../../common/api";
+import { setErrorSnackMessage } from "../../../../../systemSlice";
+import { useAppDispatch } from "../../../../../store";
 import { IEvent } from "../../ListTenants/types";
 import { niceDays } from "../../../../../common/utils";
 import { ErrorResponseHandler } from "../../../../../common/types";
 import EventsList from "../events/EventsList";
 import PVCDescribe from "./PVCDescribe";
+import api from "../../../../../common/api";
 
-import { setErrorSnackMessage } from "../../../../../systemSlice";
-import { useAppDispatch } from "../../../../../store";
-
-interface IPVCDetailsProps {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    breadcrumLink: {
-      textDecoration: "none",
-      color: "black",
-    },
-    ...containerForHeader,
-  });
-
-const TenantVolumes = ({ classes }: IPVCDetailsProps) => {
+const TenantVolumes = () => {
   const dispatch = useAppDispatch();
   const { tenantName, PVCName, tenantNamespace } = useParams();
 
-  const [curTab, setCurTab] = useState<number>(0);
+  const [curTab, setCurTab] = useState<string>("simple-tab-0");
   const [loading, setLoading] = useState<boolean>(true);
   const [events, setEvents] = useState<IEvent[]>([]);
 
@@ -80,51 +59,47 @@ const TenantVolumes = ({ classes }: IPVCDetailsProps) => {
 
   return (
     <Fragment>
-      <Grid item xs={12}>
-        <h1 className={classes.sectionTitle}>
-          <Link
-            to={`/namespaces/${tenantNamespace}/tenants/${tenantName}/volumes`}
-            className={classes.breadcrumLink}
-          >
-            PVCs
-          </Link>{" "}
-          &gt; {PVCName}
-        </h1>
-      </Grid>
-      <Grid container>
-        <Grid item xs={12}>
-          <Tabs
-            value={curTab}
-            onChange={(e: React.ChangeEvent<{}>, newValue: number) => {
-              setCurTab(newValue);
-            }}
-            indicatorColor="primary"
-            textColor="primary"
-            aria-label="cluster-tabs"
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab label="Events" id="simple-tab-0" />
-            <Tab label="Describe" id="simple-tab-1" />
-          </Tabs>
-        </Grid>
-        {curTab === 0 && (
-          <React.Fragment>
-            <h1 className={classes.sectionTitle}>Events</h1>
-            <EventsList events={events} loading={loading} />
-          </React.Fragment>
-        )}
-        {curTab === 1 && (
-          <PVCDescribe
-            tenant={tenantName || ""}
-            namespace={tenantNamespace || ""}
-            pvcName={PVCName || ""}
-            propLoading={loading}
-          />
-        )}
-      </Grid>
+      <SectionTitle separator sx={{ marginBottom: 15 }}>
+        <Link
+          to={`/namespaces/${tenantNamespace}/tenants/${tenantName}/volumes`}
+        >
+          PVCs
+        </Link>{" "}
+        &gt; {PVCName}
+      </SectionTitle>
+      <Tabs
+        options={[
+          {
+            tabConfig: { id: "simple-tab-0", label: "Events" },
+            content: (
+              <Fragment>
+                <SectionTitle separator sx={{ marginBottom: 15 }}>
+                  Events
+                </SectionTitle>
+                <EventsList events={events} loading={loading} />
+              </Fragment>
+            ),
+          },
+          {
+            tabConfig: { id: "simple-tab-1", label: "Describe" },
+            content: (
+              <PVCDescribe
+                tenant={tenantName || ""}
+                namespace={tenantNamespace || ""}
+                pvcName={PVCName || ""}
+                propLoading={loading}
+              />
+            ),
+          },
+        ]}
+        currentTabOrPath={curTab}
+        onTabClick={(tab) => {
+          setCurTab(tab);
+        }}
+        horizontal
+      />
     </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantVolumes);
+export default TenantVolumes;

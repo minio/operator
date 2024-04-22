@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -19,10 +19,12 @@
 package applyconfiguration
 
 import (
+	v1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	v1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	stsminiov1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	jobminiov1alpha1 "github.com/minio/operator/pkg/client/applyconfiguration/job.min.io/v1alpha1"
 	miniominiov2 "github.com/minio/operator/pkg/client/applyconfiguration/minio.min.io/v2"
-	stsminiov1alpha1 "github.com/minio/operator/pkg/client/applyconfiguration/sts.min.io/v1alpha1"
+	applyconfigurationstsminiov1alpha1 "github.com/minio/operator/pkg/client/applyconfiguration/sts.min.io/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -30,7 +32,21 @@ import (
 // apply configuration type exists for the given GroupVersionKind.
 func ForKind(kind schema.GroupVersionKind) interface{} {
 	switch kind {
-	// Group=minio.min.io, Version=v2
+	// Group=job.min.io, Version=v1alpha1
+	case v1alpha1.SchemeGroupVersion.WithKind("CommandSpec"):
+		return &jobminiov1alpha1.CommandSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("CommandStatus"):
+		return &jobminiov1alpha1.CommandStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("MinIOJob"):
+		return &jobminiov1alpha1.MinIOJobApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("MinIOJobSpec"):
+		return &jobminiov1alpha1.MinIOJobSpecApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("MinIOJobStatus"):
+		return &jobminiov1alpha1.MinIOJobStatusApplyConfiguration{}
+	case v1alpha1.SchemeGroupVersion.WithKind("TenantRef"):
+		return &jobminiov1alpha1.TenantRefApplyConfiguration{}
+
+		// Group=minio.min.io, Version=v2
 	case v2.SchemeGroupVersion.WithKind("Bucket"):
 		return &miniominiov2.BucketApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("CertificateConfig"):
@@ -75,16 +91,16 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &miniominiov2.TierUsageApplyConfiguration{}
 
 		// Group=sts.min.io, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithKind("Application"):
-		return &stsminiov1alpha1.ApplicationApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("PolicyBinding"):
-		return &stsminiov1alpha1.PolicyBindingApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("PolicyBindingSpec"):
-		return &stsminiov1alpha1.PolicyBindingSpecApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("PolicyBindingStatus"):
-		return &stsminiov1alpha1.PolicyBindingStatusApplyConfiguration{}
-	case v1alpha1.SchemeGroupVersion.WithKind("PolicyBindingUsage"):
-		return &stsminiov1alpha1.PolicyBindingUsageApplyConfiguration{}
+	case stsminiov1alpha1.SchemeGroupVersion.WithKind("Application"):
+		return &applyconfigurationstsminiov1alpha1.ApplicationApplyConfiguration{}
+	case stsminiov1alpha1.SchemeGroupVersion.WithKind("PolicyBinding"):
+		return &applyconfigurationstsminiov1alpha1.PolicyBindingApplyConfiguration{}
+	case stsminiov1alpha1.SchemeGroupVersion.WithKind("PolicyBindingSpec"):
+		return &applyconfigurationstsminiov1alpha1.PolicyBindingSpecApplyConfiguration{}
+	case stsminiov1alpha1.SchemeGroupVersion.WithKind("PolicyBindingStatus"):
+		return &applyconfigurationstsminiov1alpha1.PolicyBindingStatusApplyConfiguration{}
+	case stsminiov1alpha1.SchemeGroupVersion.WithKind("PolicyBindingUsage"):
+		return &applyconfigurationstsminiov1alpha1.PolicyBindingUsageApplyConfiguration{}
 
 	}
 	return nil

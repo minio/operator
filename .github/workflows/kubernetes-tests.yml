@@ -255,7 +255,6 @@ jobs:
       - name: Test PolicyBinding CRD and sts call on kind
         run: |
           "${GITHUB_WORKSPACE}/testing/test-policy-binding.sh"
-
   helm:
     timeout-minutes: 30
     # The type of runner that the job will run on
@@ -321,3 +320,4 @@ jobs:
           chmod +x kubectl
           mv kubectl /usr/local/bin
           "${GITHUB_WORKSPACE}/testing/check-helm.sh"
+

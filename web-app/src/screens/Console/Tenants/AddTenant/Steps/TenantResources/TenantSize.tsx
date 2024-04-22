@@ -16,50 +16,32 @@
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import { SelectChangeEvent } from "@mui/material";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
+import { Box, InputBox, Select } from "mds";
 import { AppState, useAppDispatch } from "../../../../../../store";
-import {
-  formFieldStyles,
-  modalBasic,
-  wizardCommon,
-} from "../../../../Common/FormComponents/common/styleLibrary";
-import Grid from "@mui/material/Grid";
 import {
   calculateDistribution,
   erasureCodeCalc,
   getBytes,
   k8sScalarUnitsExcluding,
   niceBytes,
+  EC0,
 } from "../../../../../../common/utils";
 import { clearValidationError } from "../../../utils";
 import { ecListTransform } from "../../../ListTenants/utils";
 import { ICapacity } from "../../../../../../common/types";
 import { commonFormValidation } from "../../../../../../utils/validationFunctions";
-import api from "../../../../../../common/api";
-import InputBoxWrapper from "../../../../Common/FormComponents/InputBoxWrapper/InputBoxWrapper";
-import SelectWrapper from "../../../../Common/FormComponents/SelectWrapper/SelectWrapper";
-import TenantSizeResources from "./TenantSizeResources";
-import InputUnitMenu from "../../../../Common/FormComponents/InputUnitMenu/InputUnitMenu";
 import { IMkEnvs } from "./utils";
 import { isPageValid, updateAddField } from "../../createTenantSlice";
+import api from "../../../../../../common/api";
+import TenantSizeResources from "./TenantSizeResources";
+import InputUnitMenu from "../../../../Common/FormComponents/InputUnitMenu/InputUnitMenu";
 import H3Section from "../../../../Common/H3Section";
 
 interface ITenantSizeProps {
-  classes: any;
   formToRender?: IMkEnvs;
 }
 
-const styles = (theme: Theme) =>
-  createStyles({
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const TenantSize = ({ classes, formToRender }: ITenantSizeProps) => {
+const TenantSize = ({ formToRender }: ITenantSizeProps) => {
   const dispatch = useAppDispatch();
 
   const volumeSize = useSelector(
@@ -108,6 +90,38 @@ const TenantSize = ({ classes, formToRender }: ITenantSizeProps) => {
   const selectedStorageType = useSelector(
     (state: AppState) =>
       state.createTenant.fields.nameTenant.selectedStorageType,
+  );
+
+  const maxCPUsUse = useSelector(
+    (state: AppState) => state.createTenant.fields.tenantSize.maxCPUsUse,
+  );
+  const maxMemorySize = useSelector(
+    (state: AppState) => state.createTenant.fields.tenantSize.maxMemorySize,
+  );
+  const resourcesCPURequest = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesCPURequest,
+  );
+  const resourcesMemoryRequest = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesMemoryRequest,
+  );
+
+  const resourcesCPURequestError = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesCPURequestError,
+  );
+  const resourcesCPULimitError = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesCPULimitError,
+  );
+  const resourcesMemoryRequestError = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesMemoryRequestError,
+  );
+  const resourcesMemoryLimitError = useSelector(
+    (state: AppState) =>
+      state.createTenant.fields.tenantSize.resourcesMemoryLimitError,
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
@@ -257,7 +271,11 @@ const TenantSize = ({ classes, formToRender }: ITenantSizeProps) => {
           !("drivesps" in commonValidation) &&
           distribution.error === "" &&
           ecParityCalc.error === 0 &&
-          ecParity !== "",
+          ecParity !== "" &&
+          resourcesMemoryRequestError === "" &&
+          resourcesCPURequestError === "" &&
+          resourcesMemoryLimitError === "" &&
+          resourcesCPULimitError === "",
       }),
     );
 
@@ -277,9 +295,24 @@ const TenantSize = ({ classes, formToRender }: ITenantSizeProps) => {
     nodeError,
     drivesPerServer,
     ecParity,
+    resourcesMemoryRequest,
+    resourcesCPURequest,
+    maxCPUsUse,
+    maxMemorySize,
+    resourcesMemoryRequestError,
+    resourcesCPURequestError,
+    resourcesMemoryLimitError,
+    resourcesCPULimitError,
   ]);
 
   useEffect(() => {
+    // Trivial case
+    if (nodes.trim() === "1") {
+      updateField("ecParity", EC0);
+      updateField("ecparityChoices", ecListTransform([EC0]));
+      updateField("cleanECChoices", [EC0]);
+      return;
+    }
     if (distribution.error === "") {
       // Get EC Value
       if (nodes.trim() !== "" && distribution.disks !== 0) {
@@ -310,109 +343,92 @@ const TenantSize = ({ classes, formToRender }: ITenantSizeProps) => {
 
   return (
     <Fragment>
-      <Grid item xs={12}>
-        <div className={classes.headerElement}>
-          <H3Section>Capacity</H3Section>
-          <span className={classes.descriptionText}>
-            Please select the desired capacity
-          </span>
-        </div>
-      </Grid>
+      <Box className={"inputItem"}>
+        <H3Section>Capacity</H3Section>
+        <span className={"muted"}>Please select the desired capacity</span>
+      </Box>
       {distribution.error !== "" && (
-        <Grid item xs={12}>
-          <div className={classes.error}>{distribution.error}</div>
-        </Grid>
+        <Box className={"inputItem error"}>{distribution.error}</Box>
       )}
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="nodes"
-          name="nodes"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.validity.valid) {
-              updateField("nodes", e.target.value);
-              cleanValidation("nodes");
-            }
-          }}
-          label="Number of Servers"
-          disabled={selectedStorageClass === ""}
-          value={nodes}
-          min="4"
-          required
-          error={validationErrors["nodes"] || ""}
-          pattern={"[0-9]*"}
-        />
-      </Grid>
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <InputBoxWrapper
-          id="drivesps"
-          name="drivesps"
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            if (e.target.validity.valid) {
-              updateField("drivesPerServer", e.target.value);
-              cleanValidation("drivesps");
-            }
-          }}
-          label="Drives per Server"
-          value={drivesPerServer}
-          disabled={selectedStorageClass === ""}
-          min="1"
-          required
-          error={validationErrors["drivesps"] || ""}
-          pattern={"[0-9]*"}
-        />
-      </Grid>
-      <Grid item xs={12}>
-        <div className={classes.formFieldRow}>
-          <InputBoxWrapper
-            type="number"
-            id="volume_size"
-            name="volume_size"
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              updateField("volumeSize", e.target.value);
-              cleanValidation("volume_size");
+      <InputBox
+        id="nodes"
+        name="nodes"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          if (e.target.validity.valid) {
+            updateField("nodes", e.target.value);
+            cleanValidation("nodes");
+          }
+        }}
+        label="Number of Servers"
+        disabled={selectedStorageClass === ""}
+        value={nodes}
+        min="4"
+        required
+        error={validationErrors["nodes"] || ""}
+        pattern={"[0-9]*"}
+      />
+      <InputBox
+        id="drivesps"
+        name="drivesps"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          if (e.target.validity.valid) {
+            updateField("drivesPerServer", e.target.value);
+            cleanValidation("drivesps");
+          }
+        }}
+        label="Drives per Server"
+        value={drivesPerServer}
+        disabled={selectedStorageClass === ""}
+        min="1"
+        required
+        error={validationErrors["drivesps"] || ""}
+        pattern={"[0-9]*"}
+      />
+      <InputBox
+        type="number"
+        id="volume_size"
+        name="volume_size"
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          updateField("volumeSize", e.target.value);
+          cleanValidation("volume_size");
+        }}
+        label="Total Size"
+        value={volumeSize}
+        disabled={selectedStorageClass === ""}
+        required
+        error={validationErrors["volume_size"] || ""}
+        min="0"
+        overlayObject={
+          <InputUnitMenu
+            id={"size-unit"}
+            onUnitChange={(newValue) => {
+              updateField("sizeFactor", newValue);
             }}
-            label="Total Size"
-            value={volumeSize}
+            unitSelected={sizeFactor}
+            unitsList={k8sScalarUnitsExcluding(["Ki", "Mi"])}
             disabled={selectedStorageClass === ""}
-            required
-            error={validationErrors["volume_size"] || ""}
-            min="0"
-            overlayObject={
-              <InputUnitMenu
-                id={"size-unit"}
-                onUnitChange={(newValue) => {
-                  updateField("sizeFactor", newValue);
-                }}
-                unitSelected={sizeFactor}
-                unitsList={k8sScalarUnitsExcluding(["Ki", "Mi"])}
-                disabled={selectedStorageClass === ""}
-              />
-            }
           />
-        </div>
-      </Grid>
-
-      <Grid item xs={12} className={classes.formFieldRow}>
-        <SelectWrapper
-          id="ec_parity"
-          name="ec_parity"
-          onChange={(e: SelectChangeEvent<string>) => {
-            updateField("ecParity", e.target.value as string);
-          }}
-          label="Erasure Code Parity"
-          disabled={selectedStorageClass === ""}
-          value={ecParity}
-          options={ecParityChoices}
-        />
-        <span className={classes.descriptionText}>
-          Please select the desired parity. This setting will change the max
-          usable capacity in the cluster
-        </span>
-      </Grid>
+        }
+      />
+      <Select
+        id="ec_parity"
+        name="ec_parity"
+        onChange={(value) => {
+          updateField("ecParity", value);
+        }}
+        label="Erasure Code Parity"
+        disabled={selectedStorageClass === "" || ecParity === ""}
+        value={ecParity}
+        options={ecParityChoices}
+      />
+      <Box className={"muted inputItem"}>
+        Please select the desired parity. This setting will change the maximum
+        usable capacity in the cluster.
+      </Box>
 
       <TenantSizeResources />
     </Fragment>
   );
 };
 
-export default withStyles(styles)(TenantSize);
+export default TenantSize;

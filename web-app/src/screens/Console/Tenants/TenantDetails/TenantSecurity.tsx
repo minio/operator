@@ -15,34 +15,32 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, useCallback, useEffect, useState } from "react";
-import { connect, useSelector } from "react-redux";
-import { Theme } from "@mui/material/styles";
-import { DialogContentText, IconButton } from "@mui/material";
-import { AddIcon, Button, ConfirmModalIcon, Loader, RemoveIcon } from "mds";
-import createStyles from "@mui/styles/createStyles";
-import withStyles from "@mui/styles/withStyles";
-import Grid from "@mui/material/Grid";
+import { useSelector } from "react-redux";
+import {
+  AddIcon,
+  Box,
+  Button,
+  ConfirmModalIcon,
+  FileSelector,
+  FormLayout,
+  Grid,
+  IconButton,
+  Loader,
+  RemoveIcon,
+  SectionTitle,
+  Switch,
+} from "mds";
 import {
   fsGroupChangePolicyType,
   ICertificateInfo,
   ITenantSecurityResponse,
 } from "../types";
-import {
-  containerForHeader,
-  createTenantCommon,
-  formFieldStyles,
-  modalBasic,
-  spacingUtils,
-  tenantDetailsStyles,
-  wizardCommon,
-} from "../../Common/FormComponents/common/styleLibrary";
+import { modalStyleUtils } from "../../Common/FormComponents/common/styleLibrary";
 
 import { KeyPair } from "../ListTenants/utils";
 import { AppState, useAppDispatch } from "../../../../store";
 import { ErrorResponseHandler } from "../../../../common/types";
 import { setErrorSnackMessage } from "../../../../systemSlice";
-import FormSwitchWrapper from "../../Common/FormComponents/FormSwitchWrapper/FormSwitchWrapper";
-import FileSelector from "../../Common/FormComponents/FileSelector/FileSelector";
 import api from "../../../../common/api";
 import ConfirmDialog from "../../Common/ModalWrapper/ConfirmDialog";
 import TLSCertificate from "../../Common/TLSCertificate/TLSCertificate";
@@ -55,84 +53,8 @@ import {
   setRunAsUser,
 } from "../tenantSecurityContextSlice";
 import TLSHelpBox from "../HelpBox/TLSHelpBox";
-import FormHr from "../../Common/FormHr";
 
-interface ITenantSecurity {
-  classes: any;
-}
-
-const styles = (theme: Theme) =>
-  createStyles({
-    ...tenantDetailsStyles,
-    ...spacingUtils,
-    minioCertificateRows: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-start",
-      borderBottom: "1px solid #EAEAEA",
-      "&:last-child": {
-        borderBottom: 0,
-      },
-      "@media (max-width: 900px)": {
-        flex: 1,
-      },
-    },
-    minioCACertsRow: {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "flex-start",
-
-      borderBottom: "1px solid #EAEAEA",
-      "&:last-child": {
-        borderBottom: 0,
-      },
-      "@media (max-width: 900px)": {
-        flex: 1,
-
-        "& div label": {
-          minWidth: 50,
-        },
-      },
-    },
-    rowActions: {
-      display: "flex",
-      justifyContent: "flex-end",
-      "@media (max-width: 900px)": {
-        flex: 1,
-      },
-    },
-    overlayAction: {
-      marginLeft: 10,
-      "& svg": {
-        maxWidth: 15,
-        maxHeight: 15,
-      },
-      "& button": {
-        background: "#EAEAEA",
-      },
-    },
-    loaderAlign: {
-      textAlign: "center",
-    },
-    fileItem: {
-      marginRight: 10,
-      display: "flex",
-      "& div label": {
-        minWidth: 50,
-      },
-
-      "@media (max-width: 900px)": {
-        flexFlow: "column",
-      },
-    },
-    ...containerForHeader,
-    ...createTenantCommon,
-    ...formFieldStyles,
-    ...modalBasic,
-    ...wizardCommon,
-  });
-
-const TenantSecurity = ({ classes }: ITenantSecurity) => {
+const TenantSecurity = () => {
   const dispatch = useAppDispatch();
 
   const tenant = useSelector((state: AppState) => state.tenants.tenantInfo);
@@ -482,73 +404,102 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
         isOpen={dialogOpen}
         onConfirm={updateTenantSecurity}
         confirmationContent={
-          <DialogContentText>
+          <Fragment>
             Are you sure you want to save the changes and restart the service?
-          </DialogContentText>
+          </Fragment>
         }
       />
       {loadingTenant ? (
-        <div className={classes.loaderAlign}>
+        <Box
+          sx={{
+            textAlign: "center",
+          }}
+        >
           <Loader />
-        </div>
+        </Box>
       ) : (
-        <Grid container spacing={1}>
-          <Grid item xs={12}>
-            <h1 className={classes.sectionTitle}>Security</h1>
-            <FormHr />
-          </Grid>
-          <Grid container spacing={1}>
-            <Grid item xs={12}>
-              <FormSwitchWrapper
-                value="enableTLS"
-                id="enableTLS"
-                name="enableTLS"
-                checked={enableTLS}
-                onChange={(e) => {
-                  const targetD = e.target;
-                  const checked = targetD.checked;
-                  setEnableTLS(checked);
-                }}
-                label={"TLS"}
-                description={
-                  "Securing all the traffic using TLS. This is required for Encryption Configuration"
-                }
-              />
-            </Grid>
+        <Fragment>
+          <Box>
+            <SectionTitle separator sx={{ marginBottom: 15 }}>
+              Security
+            </SectionTitle>
+          </Box>
+          <FormLayout
+            withBorders={false}
+            containerPadding={false}
+            sx={{
+              "& .minioCertificateRows": {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                padding: 5,
+                "& .inputItem": {
+                  marginBottom: 0,
+                },
+                "&:last-child": {
+                  borderBottom: 0,
+                },
+                "@media (max-width: 900px)": {
+                  flex: 1,
+                },
+              },
+              "& .overlayAction": {
+                marginLeft: 10,
+              },
+              "& .rowActions": {
+                display: "flex",
+                justifyContent: "flex-end",
+                "@media (max-width: 900px)": {
+                  flex: 1,
+                },
+              },
+            }}
+          >
+            <Switch
+              value="enableTLS"
+              id="enableTLS"
+              name="enableTLS"
+              checked={enableTLS}
+              onChange={(e) => {
+                const targetD = e.target;
+                const checked = targetD.checked;
+                setEnableTLS(checked);
+              }}
+              label={"TLS"}
+              description={
+                "Securing all the traffic using TLS. This is required for Encryption Configuration"
+              }
+            />
             {enableTLS && (
               <Fragment>
-                <Grid item xs={12} className={classes.formFieldRow}>
-                  <FormSwitchWrapper
-                    value="enableAutoCert"
-                    id="enableAutoCert"
-                    name="enableAutoCert"
-                    checked={enableAutoCert}
-                    onChange={(e) => {
-                      const targetD = e.target;
-                      const checked = targetD.checked;
-                      setEnableAutoCert(checked);
-                    }}
-                    label={"AutoCert"}
-                    description={
-                      "The internode certificates will be generated and managed by MinIO Operator"
-                    }
-                  />
-                </Grid>
-                <Grid item xs={12} className={classes.formFieldRow}>
-                  <FormSwitchWrapper
-                    value="enableCustomCerts"
-                    id="enableCustomCerts"
-                    name="enableCustomCerts"
-                    checked={enableCustomCerts}
-                    onChange={(e) => {
-                      const targetD = e.target;
-                      const checked = targetD.checked;
-                      setEnableCustomCerts(checked);
-                    }}
-                    label={"Custom Certificates"}
-                    description={"Certificates used to terminated TLS at MinIO"}
-                  />
-                </Grid>
+                <Switch
+                  value="enableAutoCert"
+                  id="enableAutoCert"
+                  name="enableAutoCert"
+                  checked={enableAutoCert}
+                  onChange={(e) => {
+                    const targetD = e.target;
+                    const checked = targetD.checked;
+                    setEnableAutoCert(checked);
+                  }}
+                  label={"AutoCert"}
+                  description={
+                    "The internode certificates will be generated and managed by MinIO Operator"
+                  }
+                />
+                <Switch
+                  value="enableCustomCerts"
+                  id="enableCustomCerts"
+                  name="enableCustomCerts"
+                  checked={enableCustomCerts}
+                  onChange={(e) => {
+                    const targetD = e.target;
+                    const checked = targetD.checked;
+                    setEnableCustomCerts(checked);
+                  }}
+                  label={"Custom Certificates"}
+                  description={"Certificates used to terminated TLS at MinIO"}
+                />
 
                 {enableCustomCerts && (
                   <Fragment>
@@ -557,7 +508,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                         <TLSHelpBox />
                       </Grid>
                     )}
-                    <Grid item xs={12} className={classes.formFieldRow}>
+                    <Grid item xs={12} className={"inputItem"}>
                       <h5>MinIO Server Certificates</h5>
                     </Grid>
                     <Grid item xs={12}>
@@ -570,50 +521,54 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                         ),
                       )}
                     </Grid>
-                    <Grid item xs={12} className={classes.formFieldRow}>
+                    <Grid item xs={12}>
                       {minioServerCertificates.map((keyPair, index) => (
                         <Grid
                           item
                           xs={12}
                           key={keyPair.id}
-                          className={classes.minioCertificateRows}
+                          className={"minioCertificateRows"}
                         >
-                          <Grid item xs={10} className={classes.fileItem}>
-                            <FileSelector
-                              onChange={(encodedValue, fileName) =>
+                          <FileSelector
+                            onChange={(event, fileName, encodedValue) => {
+                              if (encodedValue) {
                                 addFileToKeyPair(
                                   "minio",
                                   keyPair.id,
                                   "cert",
                                   fileName,
                                   encodedValue,
-                                )
+                                );
                               }
-                              accept=".cer,.crt,.cert,.pem"
-                              id="tlsCert"
-                              name="tlsCert"
-                              label="Cert"
-                              value={keyPair.cert}
-                            />
-                            <FileSelector
-                              onChange={(encodedValue, fileName) =>
+                            }}
+                            accept=".cer,.crt,.cert,.pem"
+                            id="tlsCert"
+                            name="tlsCert"
+                            label="Cert"
+                            value={keyPair.cert}
+                            returnEncodedData
+                          />
+                          <FileSelector
+                            onChange={(event, fileName, encodedValue) => {
+                              if (encodedValue) {
                                 addFileToKeyPair(
                                   "minio",
                                   keyPair.id,
                                   "key",
                                   fileName,
                                   encodedValue,
-                                )
+                                );
                               }
-                              accept=".key,.pem"
-                              id="tlsKey"
-                              name="tlsKey"
-                              label="Key"
-                              value={keyPair.key}
-                            />
-                          </Grid>
-                          <Grid item xs={2} className={classes.rowActions}>
-                            <div className={classes.overlayAction}>
+                            }}
+                            accept=".key,.pem"
+                            id="tlsKey"
+                            name="tlsKey"
+                            label="Key"
+                            value={keyPair.key}
+                            returnEncodedData
+                          />
+                          <Grid item xs={2} className={"rowActions"}>
+                            <div className={"overlayAction"}>
                               <IconButton
                                 size={"small"}
                                 onClick={() => addKeyPair("minio")}
@@ -624,7 +579,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                                 <AddIcon />
                               </IconButton>
                             </div>
-                            <div className={classes.overlayAction}>
+                            <div className={"overlayAction"}>
                               <IconButton
                                 size={"small"}
                                 onClick={() =>
@@ -640,7 +595,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                       ))}
                     </Grid>
 
-                    <Grid item xs={12} className={classes.formFieldRow}>
+                    <Grid item xs={12} className={"inputItem"}>
                       <h5>MinIO Client Certificates</h5>
                     </Grid>
                     <Grid item xs={12}>
@@ -653,50 +608,54 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                         ),
                       )}
                     </Grid>
-                    <Grid item xs={12} className={classes.formFieldRow}>
+                    <Grid item xs={12} className={"inputItem"}>
                       {minioClientCertificates.map((keyPair, index) => (
                         <Grid
                           item
                           xs={12}
                           key={keyPair.id}
-                          className={classes.minioCertificateRows}
+                          className={"minioCertificateRows"}
                         >
-                          <Grid item xs={10} className={classes.fileItem}>
-                            <FileSelector
-                              onChange={(encodedValue, fileName) =>
+                          <FileSelector
+                            onChange={(event, fileName, encodedValue) => {
+                              if (encodedValue) {
                                 addFileToKeyPair(
                                   "client",
                                   keyPair.id,
                                   "cert",
                                   fileName,
                                   encodedValue,
-                                )
+                                );
                               }
-                              accept=".cer,.crt,.cert,.pem"
-                              id="tlsCert"
-                              name="tlsCert"
-                              label="Cert"
-                              value={keyPair.cert}
-                            />
-                            <FileSelector
-                              onChange={(encodedValue, fileName) =>
+                            }}
+                            accept=".cer,.crt,.cert,.pem"
+                            id="tlsCert"
+                            name="tlsCert"
+                            label="Cert"
+                            value={keyPair.cert}
+                            returnEncodedData
+                          />
+                          <FileSelector
+                            onChange={(event, fileName, encodedValue) => {
+                              if (encodedValue) {
                                 addFileToKeyPair(
                                   "client",
                                   keyPair.id,
                                   "key",
                                   fileName,
                                   encodedValue,
-                                )
+                                );
                               }
-                              accept=".key,.pem"
-                              id="tlsKey"
-                              name="tlsKey"
-                              label="Key"
-                              value={keyPair.key}
-                            />
-                          </Grid>
-                          <Grid item xs={2} className={classes.rowActions}>
-                            <div className={classes.overlayAction}>
+                            }}
+                            accept=".key,.pem"
+                            id="tlsKey"
+                            name="tlsKey"
+                            label="Key"
+                            value={keyPair.key}
+                            returnEncodedData
+                          />
+                          <Grid item xs={2} className={"rowActions"}>
+                            <div className={"overlayAction"}>
                               <IconButton
                                 size={"small"}
                                 onClick={() => addKeyPair("client")}
@@ -707,7 +666,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                                 <AddIcon />
                               </IconButton>
                             </div>
-                            <div className={classes.overlayAction}>
+                            <div className={"overlayAction"}>
                               <IconButton
                                 size={"small"}
                                 onClick={() =>
@@ -742,29 +701,32 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                           item
                           xs={12}
                           key={keyPair.id}
-                          className={classes.minioCACertsRow}
+                          className={"minioCertificateRows"}
                         >
                           <Grid item xs={10}>
                             <FileSelector
-                              onChange={(encodedValue, fileName) =>
-                                addFileToKeyPair(
-                                  "minioCAs",
-                                  keyPair.id,
-                                  "cert",
-                                  fileName,
-                                  encodedValue,
-                                )
-                              }
+                              onChange={(event, fileName, encodedValue) => {
+                                if (encodedValue) {
+                                  addFileToKeyPair(
+                                    "minioCAs",
+                                    keyPair.id,
+                                    "cert",
+                                    fileName,
+                                    encodedValue,
+                                  );
+                                }
+                              }}
                               accept=".cer,.crt,.cert,.pem"
                               id="tlsCert"
                               name="tlsCert"
                               label="Cert"
                               value={keyPair.cert}
+                              returnEncodedData
                             />
                           </Grid>
                           <Grid item xs={2}>
-                            <div className={classes.rowActions}>
-                              <div className={classes.overlayAction}>
+                            <div className={"rowActions"}>
+                              <div className={"overlayAction"}>
                                 <IconButton
                                   size={"small"}
                                   onClick={() => addKeyPair("minioCAs")}
@@ -775,7 +737,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                                   <AddIcon />
                                 </IconButton>
                               </div>
-                              <div className={classes.overlayAction}>
+                              <div className={"overlayAction"}>
                                 <IconButton
                                   size={"small"}
                                   onClick={() =>
@@ -795,13 +757,11 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                 )}
               </Fragment>
             )}
-            <Grid item xs={12} className={classes.formFieldRow}>
-              <h1 className={classes.sectionTitle}>Security Context</h1>
-              <FormHr />
+            <Grid item xs={12} className={"inputItem"}>
+              <SectionTitle separator>Security Context</SectionTitle>
             </Grid>
-            <Grid item xs={12} className={classes.formFieldRow}>
+            <Grid item xs={12} className={"inputItem"}>
               <SecurityContextSelector
-                classes={classes}
                 runAsGroup={runAsGroup}
                 runAsUser={runAsUser}
                 fsGroup={fsGroup}
@@ -820,11 +780,7 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                 }
               />
             </Grid>
-            <Grid
-              item
-              xs={12}
-              sx={{ display: "flex", justifyContent: "flex-end" }}
-            >
+            <Grid item xs={12} sx={modalStyleUtils.modalButtonBar}>
               <Button
                 id={"save-security"}
                 type="submit"
@@ -834,19 +790,11 @@ const TenantSecurity = ({ classes }: ITenantSecurity) => {
                 label={"Save"}
               />
             </Grid>
-          </Grid>
-        </Grid>
+          </FormLayout>
+        </Fragment>
       )}
     </React.Fragment>
   );
 };
 
-const mapState = (state: AppState) => ({
-  loadingTenant: state.tenants.loadingTenant,
-  selectedTenant: state.tenants.currentTenant,
-  tenant: state.tenants.tenantInfo,
-});
-
-const connector = connect(mapState, null);
-
-export default withStyles(styles)(connector(TenantSecurity));
+export default TenantSecurity;

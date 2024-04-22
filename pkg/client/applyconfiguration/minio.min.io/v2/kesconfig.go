@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2021 MinIO, Inc.
+// Copyright (c) 2023 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -43,6 +43,7 @@ type KESConfigApplyConfiguration struct {
 	TopologySpreadConstraints []v1.TopologySpreadConstraint                `json:"topologySpreadConstraints,omitempty"`
 	KeyName                   *string                                      `json:"keyName,omitempty"`
 	SecurityContext           *v1.PodSecurityContext                       `json:"securityContext,omitempty"`
+	ContainerSecurityContext  *v1.SecurityContext                          `json:"containerSecurityContext,omitempty"`
 	Env                       []v1.EnvVar                                  `json:"env,omitempty"`
 }
 
@@ -215,6 +216,14 @@ func (b *KESConfigApplyConfiguration) WithKeyName(value string) *KESConfigApplyC
 // If called multiple times, the SecurityContext field is set to the value of the last call.
 func (b *KESConfigApplyConfiguration) WithSecurityContext(value v1.PodSecurityContext) *KESConfigApplyConfiguration {
 	b.SecurityContext = &value
+	return b
+}
+
+// WithContainerSecurityContext sets the ContainerSecurityContext field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ContainerSecurityContext field is set to the value of the last call.
+func (b *KESConfigApplyConfiguration) WithContainerSecurityContext(value v1.SecurityContext) *KESConfigApplyConfiguration {
+	b.ContainerSecurityContext = &value
 	return b
 }
 

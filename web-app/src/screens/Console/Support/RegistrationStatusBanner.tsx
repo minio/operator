@@ -1,6 +1,5 @@
 import React from "react";
-import { Box } from "@mui/material";
-import { VerifiedIcon } from "mds";
+import { VerifiedIcon, Box, breakPoints } from "mds";
 
 const RegistrationStatusBanner = ({ email = "" }: { email?: string }) => {
   return (
@@ -51,9 +50,10 @@ const RegistrationStatusBanner = ({ email = "" }: { email?: string }) => {
         sx={{
           alignItems: "center",
           justifyContent: "flex-start",
-          display: {
-            sm: "flex",
-            xs: "none",
+          display: "flex",
+
+          [`@media (max-width: ${breakPoints.sm}px)`]: {
+            display: "none",
           },
         }}
       >
