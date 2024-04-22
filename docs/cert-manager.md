@@ -187,7 +187,7 @@ spec:
 
 ## Trust CA in MinIO Operator
 
-MinIO Operator can trust as much CA certificates as provided, just create a secret with the prefix `operator-ca-tls-` 
+MinIO Operator can trust as many CA certificates as provided, just create a secret with the prefix `operator-ca-tls-` 
 followed by an identifier in the `minio-operator` namespace, in this example the secret name will be `operator-ca-tls-tenant-1`.
 
 MinIO Operator is going to mount and trust all certificates issued by the provided CA's, this is specially needed because
