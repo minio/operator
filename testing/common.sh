@@ -583,7 +583,7 @@ function install_operator() {
   else
     echo "Installing Current Operator"
     echo "When coming from the upgrade test, the operator is already installed."
-    operator_deployment=$(kubectl get deployment minio-operator -n minio-operator | grep -c minio-operator | xargs)
+    operator_deployment=$(kubectl get deployment minio-operator -n minio-operator | grep -c minio-operator)
     echo "Check whether we should reinstall it or simply change the images."
     if [ "$operator_deployment" != 1 ]; then
         echo "operator is not installed, will be installed"
