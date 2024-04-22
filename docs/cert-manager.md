@@ -97,7 +97,7 @@ spec:
 kubectl apply -f tenant-1-ca-issuer.yaml
 ```
 
-Next, request a Certificate with `isCA: true` specified. This is our intermediary CA.
+Next, request a Certificate with `spec.isCA: true` specified. This is our intermediary CA.
 
 ```yaml
 # tenant-1-ca-certificate.yaml
