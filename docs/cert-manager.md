@@ -52,7 +52,7 @@ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/
 ```
 
 ### Create Cluster Self-signed root Issuer
-The root Issuer is the root level on certificate all other certificates are derived from. 
+The root Issuer is the root level certificate all other certificates are derived from. 
 Request Cert Manager to generate this by creating a `ClusterIssuer` resource:
 
 ```yaml
