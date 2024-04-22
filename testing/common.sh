@@ -582,8 +582,20 @@ function install_operator() {
     value=minio-operator
   else
     echo "Installing Current Operator"
-    # Created an overlay to use that image version from dev folder
-    try kubectl apply -k "${SCRIPT_DIR}/../testing/dev"
+    echo "When coming from the upgrade test, the operator is already installed."
+    operator_deployment=$(kubectl get deployment minio-operator -n minio-operator | grep -c minio-operator)
+    echo "Check whether we should reinstall it or simply change the images."
+    if [ "$operator_deployment" != 1 ]; then
+        echo "operator is not installed, will be installed"
+        try kubectl apply -k "${SCRIPT_DIR}/../resources" # we maintain just one spot, no new overlays
+    else
+        echo "Operator is not re-installed as is already installed"
+    fi
+
+    # and then we change the images, no need to have more overlays in different folders.
+    echo "changing images for console and minio-operator deployments"
+    try kubectl -n minio-operator set image deployment/minio-operator minio-operator="$TAG"
+    try kubectl -n minio-operator set image deployment/console console="$TAG"
 
     echo "key, value for pod selector in kustomize test"
     key=name
