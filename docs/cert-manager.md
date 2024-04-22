@@ -193,7 +193,7 @@ followed by an identifier in the `minio-operator` namespace, in this example the
 MinIO Operator is going to mount and trust all certificates issued by the provided CA's. This is specifically needed because
 Operator performs health checks from MinIO in the health cluster endpoint (see more in docs https://min.io/docs/minio/kubernetes/upstream/operations/monitoring/healthcheck-probe.html#cluster-write-quorum).
 
-Missing to instruct Operator to trust the MinIO Certificate (or it's CA) will cause an error log message in the Operator Pod logs as following:
+Not instructing Operator to trust the MinIO Certificate (or its CA) will cause an error log message in the Operator Pod logs as follows:
 
 ```error
 Failed to get cluster health: Get "https://minio.tenant-1.svc.cluster.local/minio/health/cluster":
