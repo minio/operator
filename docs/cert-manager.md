@@ -5,7 +5,7 @@ using a self-signed issuer.
 
 On a Kubernetes cluster, Certificate Manager requires a global level `Cluster Issuer` to generate intermediary Issuers and certificates. 
 
-At the namespace level, Cert Manager issues certificates derivative of a `Issuer`.
+At the namespace level, Cert Manager issues certificates derived from an `Issuer`.
 
 The main difference between a `Cluster Issuer` and a `Issuer` is that `Cluster Issuer` can Issue certificates for several namespaces and an `Issuer` can only issue them in a single namespace.
 
@@ -28,7 +28,11 @@ To do this, create a global root issuer and an intermediary issuer in each tenan
 
 ![Cert-manager Issuers.png](images%2FCert-manager%20Issuers.png)
 
-Cert Manager is installed in the `cert-manager` namespace, as per the Root Issuer, it is created in the default namespace. Each namespace also requires a local Issuer, as does the minio-operator namespace.
+Cert Manager is installed in the `cert-manager` namespace. 
+
+Root Issuer is created in the default namespace.
+
+Is recommended to create a local `Issuer` in each tenant namespace, and as well in the minio-operator namespace.
 
 > [!NOTE]  
 > This guide uses a self-signed Cluster Issuer. You can also use [other Issuers supported by Cert Manager](https://cert-manager.io/docs/configuration/issuers/).
