@@ -191,7 +191,7 @@ MinIO Operator can trust as many CA certificates as provided, just create a secr
 followed by an identifier in the `minio-operator` namespace, in this example the secret name will be `operator-ca-tls-tenant-1`.
 
 MinIO Operator is going to mount and trust all certificates issued by the provided CA's. This is specifically needed because
-Operator performs health checks from MinIO in the health cluster endpoint (see more in docs https://min.io/docs/minio/kubernetes/upstream/operations/monitoring/healthcheck-probe.html#cluster-write-quorum).
+Operator performs health checks from MinIO using the health cluster endpoint (see more in docs https://min.io/docs/minio/kubernetes/upstream/operations/monitoring/healthcheck-probe.html#cluster-write-quorum).
 
 Not instructing Operator to trust the MinIO Certificate (or its CA) will cause an error log message in the Operator Pod logs as follows:
 
