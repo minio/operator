@@ -76,8 +76,7 @@ for catalog in "${redhatCatalogs[@]}"; do
   # Let the user select their own securityContext and don't hardcode values that can affect the ability
   # to debug and deploy our Operator in OperatorHub.
   echo "Removing securityContext from CSV"
-  yq -i eval 'del(.spec.install.spec.deployments[0].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
-  yq -i eval 'del(.spec.install.spec.deployments[1].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
+  yq -i eval 'del(.spec.install.spec.deployments[].spec.template.spec.containers[0].securityContext)' bundles/$catalog/$RELEASE/manifests/$package.clusterserviceversion.yaml
 
   # Will query if a previous version of the CSV was published to the catalog of the latest supported Openshift version.
   # It will help to prevent add the `spec.replaces` annotation when there is no preexisting CSV in the catalog to replace.
