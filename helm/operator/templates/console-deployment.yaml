@@ -4,14 +4,16 @@ kind: Deployment
 metadata:
   name: console
   namespace: {{ .Release.Namespace }}
-  labels: {{- include "minio-operator.labels" . | nindent 4 }}
+  labels: {{- include "minio-operator.console-labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.console.replicaCount }}
   selector:
     matchLabels: {{- include "minio-operator.console-selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      labels: {{- include "minio-operator.console-selectorLabels" . | nindent 8 }}
+      labels:
+        {{- include "minio-operator.console-labels" . | nindent 8 }}
+        {{- include "minio-operator.console-selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.console.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}

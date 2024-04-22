@@ -32,6 +32,8 @@ operator:
       value: "off"
   # An array of additional annotations to be applied to the operator service account
   serviceAccountAnnotations: []
+  # additional labels to be applied to operator resources
+  additionalLabels: {}
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag``
@@ -177,6 +179,8 @@ console:
   #
   # If the Operator Console is disabled, all management of Operator Tenants must be done through the Kubernetes API.
   enabled: true
+  # additional labels to include for console resources
+  additionalLabels: {}
   ###
   # Specify the Operator Console container image to use for the deployment.
   # ``image.tag``
