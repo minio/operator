@@ -750,9 +750,15 @@ function check_tenant_status() {
     # Content: s3.bucketDNS: false
     echo "In helm values by default bucketDNS.s3 is disabled, skipping mc validation on helm test"
   else
-    kubectl run admin-mc -i --tty --image quay.io/minio/mc \
+    kubectl run --restart=Never admin-mc --image quay.io/minio/mc \
       --env="MC_HOST_minio=https://${USER}:${PASSWORD}@minio.${1}.svc.cluster.local" \
       --command -- bash -c "until (mc admin info minio/); do echo 'waiting... for 5secs' && sleep 5; done"
+
+    echo "Wait to mc admin info minio/"
+    try kubectl wait --for=jsonpath="{.status.phase}=Succeeded" --timeout=10m pod/admin-mc --namespace default
+
+    # Retrieve the logs
+    kubectl logs admin-mc
   fi
 
   echo "Done."
