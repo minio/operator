@@ -777,7 +777,7 @@ function install_cert_manager_tenant() {
     echo "## First get the CA from cert-manager secret..."
     try kubectl get secrets -n tenant-certmanager tenant-certmanager-tls -o=jsonpath='{.data.ca\.crt}' | base64 -d > public.crt
     echo "## Then create the secret in operator's namespace..."
-    try kubectl create secret generic operator-ca-tls --from-file=public.crt -n minio-operator
+    try kubectl create secret generic operator-ca-tls-tenant-certmanager --from-file=public.crt -n minio-operator
     echo "## Finally restart minio operator pods to catch up and trust tenant..."
     try kubectl rollout restart deployment.apps/minio-operator -n minio-operator
 
