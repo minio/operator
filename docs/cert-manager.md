@@ -9,7 +9,7 @@ namespaces and an `Issuer` can only issue them in a single namespace.
 
 To learn more about Cert Manager Issuers refer to their documentation https://cert-manager.io/docs/concepts/issuer/.
 
-Below is a logical view of how a Kubernetes cluster looks like:
+Below is a logical view of a Kubernetes cluster:
 
 ![Cert-manager-namespaces.png](images%2FCert-manager-namespaces.png)
 
@@ -30,8 +30,8 @@ The global `Cluster Issuer` is created in the default namespace.
 
 A local `Issuer` is created in each tenant namespace.
 
-As well one `Issuer` is created in the `minio-operator` namespace, we will explain services that require TLS certificates
-in the `minio-operator` namespace in the section [MinIO Operator services with cert-manager](# MinIO Operator services with cert-manager) below.
+An `Issuer` is also created in the `minio-operator` namespace. More about services that require TLS certificates
+in the `minio-operator` namespace are covered below in [MinIO Operator services with cert-manager](# MinIO Operator services with cert-manager).
 
 > [!NOTE]  
 > This guide uses a self-signed `Cluster Issuer`. You can also use [other Issuers supported by Cert Manager](https://cert-manager.io/docs/configuration/issuers/).
@@ -59,7 +59,7 @@ For more details on the Cert Manager refer to https://cert-manager.io/docs/insta
 
 ### Create Cluster Self-signed root Issuer
 
-The `Cluster Issuer` is the cluster level Issuer all other certificates are derived from, request Cert Manager to
+The `Cluster Issuer` is the cluster level Issuer all other certificates are derived from. Request Cert Manager to
 generate this by creating a `ClusterIssuer` resource:
 
 ```yaml
@@ -78,23 +78,22 @@ kubectl apply -f selfsigned-root-clusterissuer.yaml
 
 # MinIO Operator services with cert-manager
 
-MinIO Operator manages the TLS certificate issuing for the services hosted in the `minio-operator` namespace, such services
-are the Secure Token Service `sts` and the Console `console` service.
+MinIO Operator manages the TLS certificate issuing for the services hosted in the `minio-operator` namespace. These include Secure Token Service `sts` and the Console `console` service.
 
-In this guide section we will explain how to generate the `sts` and `console` TLS certificates with Cert Manager.
-
-Wait to install Operator after certificates are issued by Cert Manager, make sure to follow step [Create Cluster Self-signed root Issuer ](#Create Cluster Self-signed root Issuer) mentioned above.
+This section describes how to generate the `sts` and `console` TLS certificates with Cert Manager.
+These certificates must be issued before installing Operator.
+Be sure to follow step [Create Cluster Self-signed root Issuer ](#Create Cluster Self-signed root Issuer) mentioned above.
 
 ## Secure Token Service (STS)
 
-MinIO STS is a service included MinIO Operator, build to provide Native IAM Authentication for Kubernetes. In essence
+MinIO STS is a service included with MinIO Operator that provides Native IAM Authentication for Kubernetes. In essence
 this service allows you to control access to your MinIO tenant from your kubernetes applications without having to explicitly create credentials
-for each application, for more information on the Service check on the MinIO docs https://min.io/docs/minio/kubernetes/upstream/developers/sts-for-operator.html
-there is also a little [STS](https://github.com/minio/operator/blob/master/docs/STS.md) guide in the docs with some example client code in
+for each application. For more information on the Service see the MinIO docs at https://min.io/docs/minio/kubernetes/upstream/developers/sts-for-operator.html.
+There is also an [STS](https://github.com/minio/operator/blob/master/docs/STS.md) guide in the docs and example client code in
 https://github.com/minio/operator/tree/master/examples/kustomization/sts-example.
 
-For what matters in this guide, STS Service is a webserver presented with a TLS certificate for https traffic,
-this guide covers how to **disable** the automatic generation of the certificate in MinIO Operator and issue the certificate using
+For the purpose of this guide, STS Service can be considered a webserver presented with a TLS certificate for https traffic.
+This guide covers how to **disable** the automatic generation of the certificate in MinIO Operator and issue the certificate using
 Cert Manager instead.
 
 ## Console service
@@ -103,7 +102,7 @@ The console service is the well known UI provided by Operator, it looks like the
 
 ![console-dashboard.png](images%2Fconsole-dashboard.png)
 
-When you install MinIO Operator, by default the Console service comes with TLS disabled, in this guide we will explain
+When you install MinIO Operator, by default the Console service comes with TLS disabled. This guide explains
 how to issue the TLS certificate for this service with Cert Manager and enable TLS for https traffic.
 
 ### Create minio-operator namespace CA Issuer
@@ -152,8 +151,8 @@ spec:
 ```shell
 kubectl apply -f operator-ca-tls-secret.yaml
 ```
-A new secret with the name `operator-ca-tls` will be created in the `minio-operator` namespace.
-This is the CA issuing TLS certificates for the services in the `minio-operator` namespace, MinIO Operator will do a copy of this secret with the same name (`operator-ca-tls`) into all the Tenant namespaces and keep the secret contents in sync.
+A new secret with the name `operator-ca-tls` is created in the `minio-operator` namespace.
+This is the CA issuing TLS certificates for the services in the `minio-operator` namespace. MinIO Operator copies this secret, using the same name (`operator-ca-tls`), into all the Tenant namespaces and keep the secret contents in sync.
 
 > [!IMPORTANT]
 > Make sure to trust this certificate in your applications that need to interact with either the `console` or the `sts` service.
@@ -170,9 +169,9 @@ sts.minio-operator.svc.<cluster domain>
 
 > [!IMPORTANT]
 > Replace `<cluster domain>` with the actual values for your MinIO tenant.
-> `cluster domain` is the internal root DNS domain assigned in your Kubernetes cluster, typically this is `cluster.local`, check on your coredns
-> configuration for the correct value for your Kubernetes cluster, ie: using `kubectl get configmap coredns -n kube-system -oyaml | yq ".data"`. 
-> The way how root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
+> `cluster domain` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
+> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -oyaml | yq ".data"`. 
+> The way the root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
 
 Create a `Certificate` for the domains mentioned above:
 
@@ -196,14 +195,14 @@ spec:
 ```shell
 kubectl apply -f sts-tls-certificate.yaml
 ```
-This will create a secret called `sts-tls` in the `minio-operator` namespace,
+This creates a secret called `sts-tls` in the `minio-operator` namespace.
 
 > [!IMPORTANT]
-> The secret name is not optional, please make sure the secret name is `sts-tls` by setting `spec.secretName: sts-tls` as in the example above.
+> The secret name is not optional. Make sure the secret name is `sts-tls` by setting `spec.secretName: sts-tls` as in the example above.
 
 ### Create TLS certificate for Console service
 
-Request Cert Manager ti issue a new certificate including the following DNS domains for console:
+Request Cert Manager to issue a new certificate including the following DNS domains for console:
 
 ```shell
 console
@@ -213,9 +212,9 @@ console.minio-operator.svc.<cluster domain>
 
 > [!IMPORTANT]
 > Replace `<cluster domain>` with the actual values for your MinIO tenant.
-> `cluster domain` is the internal root DNS domain assigned in your Kubernetes cluster, typically this is `cluster.local`, check on your coredns
-> configuration for the correct value for your Kubernetes cluster, ie: using `kubectl get configmap coredns -n kube-system -oyaml | yq ".data"`.
-> The way how root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
+> `cluster domain` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
+> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -oyaml | yq ".data"`.
+> The way the root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
 
 Create a `Certificate` for the domains mentioned above:
 
@@ -240,22 +239,22 @@ spec:
 kubectl apply -f console-tls-certificate.yaml
 ```
 
-This will create a secret called `console-tls` in the `minio-operator` namespace.
+This creates a secret called `console-tls` in the `minio-operator` namespace.
 
 > [!IMPORTANT]
-> The secret name is not optional, please make sure the secret name is `console-tls` by setting `spec.secretName: console-tls` as in the example above.
+> The secret name is not optional. Make sure the secret name is `console-tls` by setting `spec.secretName: console-tls` as in the example above.
 
 ### Install Operator with Auto TLS disabled for STS
 
-When installing the Operator deployment, make sure to set `OPERATOR_STS_AUTO_TLS_ENABLED: off` env variable in the `minio-operator` container, this will prevent
-MinIO Operator from issuing the certificate for STS, and instead will wait for you to provide the TLS certificate issued by Cert Manager.
+When installing the Operator deployment, make sure to set `OPERATOR_STS_AUTO_TLS_ENABLED: off` env variable in the `minio-operator` container. This prevents
+MinIO Operator from issuing the certificate for STS and instead wait for you to provide the TLS certificate issued by Cert Manager.
 
-Also make sure to set `MINIO_CONSOLE_TLS_ENABLE: off` env variable, this will prevent MinIO Operator from issuing the certificate for Console
+Also make sure to set `MINIO_CONSOLE_TLS_ENABLE: off` env variable, this prevents MinIO Operator from issuing the certificate for Console
 and instead will expect you to provide the TLS certificate issued by Cert Manager.
 
 > [!WARNING]
 > Failing to provide the secret `sts-tls` containing the TLS certificate or providing an invalid key-pair in the secret will
-> prevent the STS service from start.
+> prevent the STS service from starting.
 
 ```yaml
 apiVersion: apps/v1
@@ -289,7 +288,7 @@ spec:
 
 ## Create tenant-1 namespace CA Issuer
 
-Create the Certificate Authority (CA) certificate in the namespace `tenant-1`, first create the `Issuer`:
+To create the Certificate Authority (CA) certificate in the namespace `tenant-1`, first create the `Issuer`:
 
 ```yaml
 # tenant-1-ca-issuer.yaml
@@ -350,9 +349,9 @@ minio.<namespace>.svc.<cluster domain>
 
 > [!IMPORTANT]
 > Replace `<cluster domain>` with the actual values for your MinIO tenant.
-> * `cluster domain` is the internal root DNS domain assigned in your Kubernetes cluster, typically this is `cluster.local`, check on your coredns
-> configuration for the correct value for your Kubernetes cluster, ie: using `kubectl get configmap coredns -n kube-system -oyaml | yq ".data"`.
-> The way how root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
+> * `cluster domain` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
+> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -oyaml | yq ".data"`.
+> The way the root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
 > * `tenant-name` is the name provided to your tenant in the `metadata.name` of the Tenant YAML. For this example it is `myminio`.
 > * `namespace` is the namespace where the tenant is created, the `metadata.namespace` notes that in the Tenant YAML. For this example it is `tenant-1`.
 
@@ -378,18 +377,18 @@ spec:
 ```
 
 > [!TIP]
-> For this example, the Tenant name is `myminio`, we recommend to name the secret in the field `spec.secretName` as `<tenant name>-tls`, since this is the naming
-> convention MinIO Operator follows when creates certificates with Autocert enabled (`spec.requestAutoCert: true`).
+> For this example, the Tenant name is `myminio`. We recommend naming the secret in the field `spec.secretName` as `<tenant name>-tls`, following the naming
+> convention MinIO Operator uses when creates certificates with Autocert enabled (`spec.requestAutoCert: true`).
 
 ```shell
 kubectl apply -f tenant-1-minio-certificate.yaml
 ```
 
-### Setup tenant to use certificate created by cert-manager 
+### Configure the tenant to use the certificate created by cert-manager 
 
 In the tenant spec, do the following:
 
-* Disable Autocert `spec.requestAutoCert: false`, this instructs Operator to not attempt to issue certificates and instead rely on Cert Manager to provide them in a secret.
+* Disable Autocert `spec.requestAutoCert: false`. This instructs Operator to not attempt to issue certificates and instead rely on Cert Manager to provide them in a secret.
 * Reference the Secret containing the TLS certificate from the previous step in `spec.externalCertSecret`.
 
 The `Tenant` section should look like the following:
@@ -411,23 +410,23 @@ spec:
 
 ## Trust tenant-1 CA in MinIO Operator
 
-MinIO Operator can trust as many CA certificates as provided, to do this, create a secret with the prefix `operator-ca-tls-` 
+MinIO Operator can trust as many CA certificates as provided. To do this, create a secret with the prefix `operator-ca-tls-` 
 followed by a unique identifier in the `minio-operator` namespace.
 
-MinIO Operator will mount and trust all certificates issued by the provided CA's, this is required because
+MinIO Operator mounts and trusts all certificates issued by the provided CA's. This is required because
 MinIO Operator performs health checks using the */minio/health/cluster* endpoint.
 
-If Operator is not correctly configured to trust the MinIO Certificate (or its CA), you will see a similar error message in the Operator Pod logs that the following:
+If Operator is not correctly configured to trust the MinIO Certificate (or its CA), you will see an error message like the following in the Operator Pod logs:
 
 ```error
 Failed to get cluster health: Get "https://minio.tenant-1.svc.cluster.local/minio/health/cluster":
 x509: certificate signed by unknown authority
 ```
-For more details in health checks, see https://min.io/docs/minio/Kubernetes/upstream/operations/monitoring/healthcheck-probe.html#cluster-write-quorum.
+For more details about health checks, see https://min.io/docs/minio/Kubernetes/upstream/operations/monitoring/healthcheck-probe.html#cluster-write-quorum.
 
 ### Create `operator-ca-tls-tenant-1` secret
 
-Copy the Cert Manager generated CA public key (ca.crt) into the minio-operator namespace, this allows Operator to trust
+Copy the Cert Manager generated CA public key (ca.crt) into the minio-operator namespace. This allows Operator to trust
 the cert-manager issued CA and the derived certificates.
 
 Create a `ca.crt` file containing the CA:
@@ -440,8 +439,8 @@ Create the secret:
 kubectl create secret generic operator-ca-tls-tenant1 --from-file=ca.crt -n minio-operator
 ```
 > [!TIP]
-> In this example we choosed the secret name is `operator-ca-tls-tenant-1`, notice that we used the tenant namespace
-> `tenant-1` as suffix for easy identification of which namespace the CA is coming from.
+> In this example we choose a secret name of `operator-ca-tls-tenant-1`. Note the tenant namespace
+> `tenant-1` is used as as suffix for easy identification of which namespace the CA is coming from.
 
 Restart `minio-operator` to apply the changes.
 
