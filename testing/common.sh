@@ -858,7 +858,7 @@ function setup_sts_bucket() {
   namespace="minio-tenant-1"
   condition="condition=Complete"
   selector="metadata.name=setup-bucket"
-  try wait_for_resource_field_selector $namespace job $condition $selector
+  try wait_for_resource_field_selector $namespace job $condition $selector "10m"
   echo "Installing setup bucket job: DONE"
 }
 

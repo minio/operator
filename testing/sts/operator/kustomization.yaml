@@ -4,6 +4,6 @@ kind: Kustomization
 bases:
   - ../../../resources
 
-patchesStrategicMerge:
-  - deployment.yaml
-  - console-deployment.yaml
+patches:
+  - path: deployment.yaml
+  - path: console-deployment.yaml

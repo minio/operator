@@ -32,7 +32,7 @@ metadata:
   name: setup-bucket
   namespace: minio-tenant-1
 spec:
-  backoffLimit: 5
+  backoffLimit: 10
   template:
     spec:
       serviceAccountName: mc-job-sa
