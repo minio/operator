@@ -7,6 +7,7 @@
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/traverse": "7.23.3",
     "@reduxjs/toolkit": "1.9.7",
+    "eslint-config-formidable": "^4.0.0",
     "ip": "2.0.1",
     "kbar": "^0.1.0-beta.39",
     "local-storage-fallback": "^4.1.1",
