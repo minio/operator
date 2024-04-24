@@ -491,10 +491,10 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 			if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
 				klog.Infof("STS is enabled, skipping TLS certificate generation on Openshift deployment")
 			} else if IsSTSAutocertEnabled() {
-				klog.Infof("STS Autocert generation is disabled, skipping certificate generation")
-			} else {
-				klog.Infof("STS is enabled and STS Autocert enable, starting API certificate setup")
+				klog.Infof("STS Autocert is enabled, starting API certificate setup.")
 				c.generateSTSTLSCert()
+			} else {
+				klog.Infof("STS Autocert is disabled, skipping certificate generation.")
 			}
 		}()
 	}
