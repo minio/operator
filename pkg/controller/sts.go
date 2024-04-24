@@ -43,7 +43,7 @@ const (
 	// STSEnabled Env variable name to turn on and off the STS Service is enabled, disabled by default
 	STSEnabled = "OPERATOR_STS_ENABLED"
 
-	// STSAutoTLSEnabled Env variable name to turn on and off generate the STS TLS automatically using CSR, if disable
+	// STSAutoTLSEnabled Env variable name to turn on and off generation of the STS TLS automatically using CSR, if disable
 	// a certificate issued externally needs to be provided
 	STSAutoTLSEnabled = "OPERATOR_STS_AUTO_TLS_ENABLED"
 
