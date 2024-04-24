@@ -426,7 +426,7 @@ For more details about health checks, see https://min.io/docs/minio/Kubernetes/u
 
 ### Create `operator-ca-tls-tenant-1` secret
 
-Copy the Cert Manager generated CA public key (ca.crt) into the minio-operator namespace. This allows Operator to trust
+Copy the Cert Manager generated CA public key (ca.crt) into the `minio-operator` namespace. This allows Operator to trust
 the cert-manager issued CA and the derived certificates.
 
 Create a `ca.crt` file containing the CA:
