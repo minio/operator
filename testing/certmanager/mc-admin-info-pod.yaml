@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: admin-mc
+  name: admin-mc
+  namespace: tenant-certmanager
+spec:
+  containers:
+    - command:
+        - bash
+        - -c
+        - until (mc admin info myminio/ ); do echo 'waiting... for 5secs' && sleep 5; done
+      env:
+        - name: MC_HOST_myminio
+          value: https://minio:minio123@minio.tenant-certmanager.svc.cluster.local
+      image: quay.io/minio/mc
+      name: admin-mc
+      volumeMounts:
+        - name: certmanager-ca
+          mountPath: /root/.mc/certs/CAs/myminio.crt
+          subPath: tls.crt
+  volumes:
+    - name: certmanager-ca
+      secret:
+        secretName: myminio-tls
+        items:
+          - key: tls.crt
+            path: tls.crt
+            mode: 422
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never

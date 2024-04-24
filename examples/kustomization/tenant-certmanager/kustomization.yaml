@@ -3,16 +3,10 @@ kind: Kustomization
 namespace: tenant-certmanager
 
 resources:
-  - tenant-certmanager-myminio-certificate.yaml
   - tenant-certmanager-issuer.yaml
   - tenant-certmanager-ca-certificate.yaml
+  - tenant-certmanager-myminio-certificate.yaml
   - ../base
 
 patches:
-  - target:
-      group: minio.min.io
-      version: v2
-      kind: Tenant
-      name: myminio
-      namespace: minio-tenant
-    path: tenant.yaml
+  - path: tenant.yaml
