@@ -402,7 +402,7 @@ func IsSTSEnabled() bool {
 	return true
 }
 
-// IsSTSAutocertEnabled Validates if STS Autocert is turned on,  is enabled by default.
+// IsSTSAutocertEnabled Validates if STS Autocert is turned on, is enabled by default.
 func IsSTSAutocertEnabled() bool {
 	value, set := os.LookupEnv(STSAutoTLSEnabled)
 	if set {
