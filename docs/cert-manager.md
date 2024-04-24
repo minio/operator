@@ -152,7 +152,7 @@ spec:
 kubectl apply -f operator-ca-tls-secret.yaml
 ```
 A new secret with the name `operator-ca-tls` is created in the `minio-operator` namespace.
-This is the CA issuing TLS certificates for the services in the `minio-operator` namespace. MinIO Operator copies this secret, using the same name (`operator-ca-tls`), into all the Tenant namespaces and keep the secret contents in sync.
+This is the CA issuing TLS certificates for the services in the `minio-operator` namespace. MinIO Operator copies this secret, using the same name (`operator-ca-tls`), into all the Tenant namespaces and keeps the secret contents in sync.
 
 > [!IMPORTANT]
 > Make sure to trust this certificate in your applications that need to interact with either the `console` or the `sts` service.
