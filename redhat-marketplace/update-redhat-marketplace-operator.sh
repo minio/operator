@@ -30,13 +30,11 @@ git rebase upstream/master
 git push
 
 echo " "
-echo "Execute olm.sh and then olm-post-script.sh"
+echo "Execute olm.sh"
 echo "As a work around get working scripts from your repository"
 cp ~/minio/olm-scripts/olm.sh ~/operator/olm.sh
-cp ~/minio/olm-scripts/olm-post-script.sh ~/operator/olm-post-script.sh
 cd ~/operator || return
 source olm.sh
-source olm-post-script.sh
 
 echo " "
 echo "Create the branch:"

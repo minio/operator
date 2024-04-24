@@ -90,7 +90,6 @@ helm-reindex:
 
 release: assets
 	@./release.sh
-	@./olm.sh
 
 apply-gofmt:
 	@echo "Applying gofmt to all generated an existing files"
