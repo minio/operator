@@ -17,9 +17,10 @@ spec:
   dnsNames:
     - "minio.tenant-certmanager"
     - "minio.tenant-certmanager.svc"
+    - "minio.tenant-certmanager.svc.cluster.local"
+    - "*.myminio-hl.tenant-certmanager.svc.cluster.local"
     - "*.tenant-certmanager.svc.cluster.local"
     - "*.myminio.tenant-certmanager.svc.cluster.local"
-    - "*.myminio-hl.tenant-certmanager.svc.cluster.local"
   secretName: myminio-tls
   issuerRef:
     name: tenant-certmanager-issuer
