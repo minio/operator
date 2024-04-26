@@ -117,7 +117,7 @@ kubectl create ns minio-operator
 Now creat the `Issuer`:
 
 ```yaml
-# minio-operator-ca-issuer.yaml
+# operator-ca-issuer.yaml
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
@@ -129,7 +129,7 @@ spec:
 ```
 
 ```shell
-kubectl apply -f minio-operator-ca-issuer.yaml
+kubectl apply -f operator-ca-issuer.yaml
 ```
 Next, request a Certificate with `spec.isCA: true` specified. This is our CA for the `minio-operator` namespace.
 
@@ -318,7 +318,7 @@ metadata:
   namespace: tenant-1
 spec:
   ca:
-    secretName: tenant-1-ca-secret
+    secretName: tenant-1-ca-tls
 ```
 
 ```shell
@@ -337,7 +337,7 @@ metadata:
 spec:
   isCA: true
   commonName: tenant-1-ca
-  secretName: tenant-1-ca-secret
+  secretName: tenant-1-ca-tls
   duration: 70128h # 8y
   privateKey:
     algorithm: ECDSA
