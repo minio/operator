@@ -373,7 +373,7 @@ spec:
     - '*.myminio-hl.tenant-1.svc.cluster.local'
   secretName: myminio-tls
   issuerRef:
-    name: tenant-certmanager-issuer
+    name: tenant-1-ca-issuer
 ```
 
 > [!TIP]
