@@ -31,6 +31,7 @@ import (
 	joblisters "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/utils/miniojob"
 	batchjobv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -206,6 +207,12 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		}
 		return WrapResult(Result{}, err)
 	}
+
+	if !IsSTSEnabled() {
+		c.recorder.Eventf(&jobCR, corev1.EventTypeWarning, "STSDisabled", "JobCR cannot work with STS disabled")
+		return WrapResult(Result{}, nil)
+	}
+
 	// if job cr is Success, do nothing
 	if jobCR.Status.Phase == miniojob.MinioJobPhaseSuccess {
 		// delete the job status
