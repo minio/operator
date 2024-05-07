@@ -14,29 +14,19 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package pkg
 
-import (
-	"github.com/minio/cli"
-	"github.com/minio/operator/pkg/validator"
+var (
+	// Version - the version being released (v prefix stripped)
+	Version = "(dev)"
+	// ReleaseTag - the current git tag
+	ReleaseTag = "(no tag)"
+	// ReleaseTime - current UTC date in RFC3339 format.
+	ReleaseTime = "(no release)"
+	// CommitID - latest commit id.
+	CommitID = "(dev)"
+	// ShortCommitID - first 12 characters from CommitID.
+	ShortCommitID = "(dev)"
+	// MPSecret - MP Secret
+	MPSecret = "(dev)"
 )
-
-// starts the controller
-var validateCmd = cli.Command{
-	Name:    "validate",
-	Aliases: []string{"v"},
-	Usage:   "Start MinIO Operator Config Validator",
-	Action:  startValidator,
-	Flags: []cli.Flag{
-		cli.StringFlag{
-			Name:  "tenant",
-			Value: "",
-			Usage: "name of tenant being validated",
-		},
-	},
-}
-
-func startValidator(ctx *cli.Context) {
-	tenantName := ctx.String("tenant")
-	validator.Validate(tenantName)
-}

@@ -468,7 +468,6 @@ type NewPoolArgs struct {
 	HostsTemplate   string
 	OperatorVersion string
 	OperatorCATLS   bool
-	OperatorImage   string
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
@@ -480,7 +479,6 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	serviceName := args.ServiceName
 	hostsTemplate := args.HostsTemplate
 	operatorVersion := args.OperatorVersion
-	operatorImage := args.OperatorImage
 
 	var podVolumes []corev1.Volume
 	replicas := pool.Servers
@@ -796,7 +794,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, skipEnvVars, pool, hostsTemplate, operatorVersion, certVolumeSources),
-		getSideCarContainer(t, operatorImage, pool),
+		getSideCarContainer(t, pool),
 	}
 
 	// attach any sidecar containers and volumes
@@ -805,7 +803,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		podVolumes = append(podVolumes, t.Spec.SideCars.Volumes...)
 	}
 
-	initContainer := getInitContainer(t, operatorImage, pool)
+	initContainer := getInitContainer(t, pool)
 
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: ssMeta,
@@ -881,10 +879,10 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	return ss
 }
 
-func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) corev1.Container {
+func getInitContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container {
 	initContainer := corev1.Container{
 		Name:  "validate-arguments",
-		Image: operatorImage,
+		Image: getSidecarImage(),
 		Args: []string{
 			"validate",
 			"--tenant",
@@ -911,10 +909,11 @@ func getInitContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Poo
 	return initContainer
 }
 
-func getSideCarContainer(t *miniov2.Tenant, operatorImage string, pool *miniov2.Pool) corev1.Container {
+func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container {
+
 	sidecarContainer := corev1.Container{
 		Name:  "sidecar",
-		Image: operatorImage,
+		Image: getSidecarImage(),
 		Args: []string{
 			"sidecar",
 			"--tenant",

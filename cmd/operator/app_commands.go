@@ -20,7 +20,5 @@ import (
 
 var appCmds = []cli.Command{
 	controllerCmd,
-	sidecarCmd,
-	validateCmd,
 	uiCmd,
 }
