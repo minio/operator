@@ -712,6 +712,11 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(v1.Probe)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.Lifecycle != nil {
+		in, out := &in.Lifecycle, &out.Lifecycle
+		*out = new(v1.Lifecycle)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.Features != nil {
 		in, out := &in.Features, &out.Features
 		*out = new(Features)
