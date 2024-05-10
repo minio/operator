@@ -32,7 +32,7 @@ metadata:
               "bucketDNS": false,
               "domains": {}
             },
-            "image": "quay.io/minio/minio@sha256:ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113",
+            "image": "quay.io/minio/minio@sha256:f95dc4fc35439654a71300f765b485e114e7a720318dbce24ccd4f324d1475cf",
             "imagePullSecret": {},
             "mountPath": "/export",
             "podManagementPolicy": "Parallel",
@@ -101,8 +101,7 @@ metadata:
     operators.operatorframework.io/builder: operator-sdk-v1.22.2
     operators.operatorframework.io/project_layout: unknown
     repository: https://github.com/minio/operator
-    containerImage: quay.io/minio/operator:v5.0.14
-  name: minio-operator-rhmp.v5.0.14
+  name: minio-operator-rhmp.v5.0.15
   namespace: minio-operator
 spec:
   apiservicedefinitions: {}
@@ -562,6 +561,7 @@ spec:
             selector:
               matchLabels:
                 app: console
+                app.kubernetes.io/name: operator
             strategy: {}
             template:
               metadata:
@@ -569,7 +569,7 @@ spec:
                   operator.min.io/authors: MinIO, Inc.
                   operator.min.io/license: AGPLv3
                   operator.min.io/support: https://subnet.min.io
-                  operator.min.io/version: v5.0.14
+                  operator.min.io/version: v5.0.15
                 labels:
                   app: console
                   app.kubernetes.io/instance: minio-operator-console
@@ -579,7 +579,7 @@ spec:
                   - args:
                       - ui
                       - --certs-dir=/tmp/certs
-                    image: quay.io/minio/operator@sha256:db47d598488f10daf6a4d26431ab2b65e24f3dffbae0edb76bc44f63c6daf500
+                    image: minio/operator@sha256:811d71f9d41ce275946a50cc564b6fab3d3268b3af5969e45c0278d711a60ac2
                     imagePullPolicy: IfNotPresent
                     name: console
                     ports:
@@ -588,7 +588,6 @@ spec:
                       - containerPort: 9443
                         name: https
                     resources: {}
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/certs
                         name: tls-certificates
@@ -624,6 +623,7 @@ spec:
             replicas: 1
             selector:
               matchLabels:
+                app.kubernetes.io/name: operator
                 name: minio-operator
             strategy:
               type: Recreate
@@ -633,7 +633,7 @@ spec:
                   operator.min.io/authors: MinIO, Inc.
                   operator.min.io/license: AGPLv3
                   operator.min.io/support: https://subnet.min.io
-                  operator.min.io/version: v5.0.14
+                  operator.min.io/version: v5.0.15
                 labels:
                   app.kubernetes.io/instance: minio-operator
                   app.kubernetes.io/name: operator
@@ -659,7 +659,7 @@ spec:
                         value: "on"
                       - name: OPERATOR_STS_ENABLED
                         value: "on"
-                    image: quay.io/minio/operator@sha256:db47d598488f10daf6a4d26431ab2b65e24f3dffbae0edb76bc44f63c6daf500
+                    image: minio/operator@sha256:811d71f9d41ce275946a50cc564b6fab3d3268b3af5969e45c0278d711a60ac2
                     imagePullPolicy: IfNotPresent
                     name: minio-operator
                     resources:
@@ -667,7 +667,6 @@ spec:
                         cpu: 200m
                         ephemeral-storage: 500Mi
                         memory: 256Mi
-                    securityContext: {}
                     volumeMounts:
                       - mountPath: /tmp/service-ca
                         name: openshift-service-ca
@@ -777,11 +776,11 @@ spec:
     name: MinIO Inc
     url: https://min.io
   relatedImages:
-    - image: quay.io/minio/operator@sha256:db47d598488f10daf6a4d26431ab2b65e24f3dffbae0edb76bc44f63c6daf500
+    - image: minio/operator@sha256:811d71f9d41ce275946a50cc564b6fab3d3268b3af5969e45c0278d711a60ac2
       name: console
-    - image: quay.io/minio/operator@sha256:db47d598488f10daf6a4d26431ab2b65e24f3dffbae0edb76bc44f63c6daf500
+    - image: minio/operator@sha256:811d71f9d41ce275946a50cc564b6fab3d3268b3af5969e45c0278d711a60ac2
       name: minio-operator
-    - image: quay.io/minio/minio@sha256:ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113
-      name: minio-ea2c70cda70860c7d10f04ce1df640d3abb995784cb7aeedef8d4baa53a5a113-annotation
-  version: 5.0.14
-  replaces: minio-operator-rhmp.v5.0.13
+    - image: quay.io/minio/minio@sha256:f95dc4fc35439654a71300f765b485e114e7a720318dbce24ccd4f324d1475cf
+      name: minio-f95dc4fc35439654a71300f765b485e114e7a720318dbce24ccd4f324d1475cf-annotation
+  version: 5.0.15
+  replaces: minio-operator-rhmp.v5.0.15
