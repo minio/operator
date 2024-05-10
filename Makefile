@@ -92,6 +92,7 @@ update-versions:
 	@./release.sh
 
 release: update-versions generate-code regen-crd regen-crd-docs assets
+	@git add .
 
 apply-gofmt:
 	@echo "Applying gofmt to all generated an existing files"
