@@ -5,7 +5,7 @@ metadata:
     operator.min.io/authors: MinIO, Inc.
     operator.min.io/license: AGPLv3
     operator.min.io/support: https://subnet.min.io
-    operator.min.io/version: v5.0.14
+    operator.min.io/version: v5.0.15
     service.beta.openshift.io/serving-cert-secret-name: console-tls
   creationTimestamp: null
   labels:
@@ -23,5 +23,6 @@ spec:
     targetPort: 0
   selector:
     app: console
+    app.kubernetes.io/name: operator
 status:
   loadBalancer: {}
