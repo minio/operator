@@ -30,7 +30,7 @@ import (
 
 	"github.com/minio/operator/pkg/common"
 
-	"github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	"github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
 	iampolicy "github.com/minio/pkg/iam/policy"
 
 	"github.com/gorilla/mux"
@@ -132,8 +132,8 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	saName := chunks[1]
 
 	// Authorized PolicyBindings for the Service Account
-	policyBindings := []v1alpha1.PolicyBinding{}
-	pbs, err := c.minioClientSet.StsV1alpha1().PolicyBindings(tenantNamespace).List(ctx, metav1.ListOptions{})
+	policyBindings := []v1beta1.PolicyBinding{}
+	pbs, err := c.minioClientSet.StsV1beta1().PolicyBindings(tenantNamespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		writeSTSErrorResponse(w, true, ErrSTSInternalError, fmt.Errorf("Error obtaining PolicyBindings: %s", err))
 		return

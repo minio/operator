@@ -26,6 +26,8 @@ import (
 	fakeminiov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2/fake"
 	stsv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1alpha1"
 	fakestsv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1alpha1/fake"
+	stsv1beta1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1beta1"
+	fakestsv1beta1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1beta1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -96,4 +98,9 @@ func (c *Clientset) MinioV2() miniov2.MinioV2Interface {
 // StsV1alpha1 retrieves the StsV1alpha1Client
 func (c *Clientset) StsV1alpha1() stsv1alpha1.StsV1alpha1Interface {
 	return &fakestsv1alpha1.FakeStsV1alpha1{Fake: &c.Fake}
+}
+
+// StsV1beta1 retrieves the StsV1beta1Client
+func (c *Clientset) StsV1beta1() stsv1beta1.StsV1beta1Interface {
+	return &fakestsv1beta1.FakeStsV1beta1{Fake: &c.Fake}
 }

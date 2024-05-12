@@ -25,6 +25,7 @@ import (
 	jobv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/job.min.io/v1alpha1"
 	miniov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2"
 	stsv1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1alpha1"
+	stsv1beta1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1beta1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -35,6 +36,7 @@ type Interface interface {
 	JobV1alpha1() jobv1alpha1.JobV1alpha1Interface
 	MinioV2() miniov2.MinioV2Interface
 	StsV1alpha1() stsv1alpha1.StsV1alpha1Interface
+	StsV1beta1() stsv1beta1.StsV1beta1Interface
 }
 
 // Clientset contains the clients for groups.
@@ -43,6 +45,7 @@ type Clientset struct {
 	jobV1alpha1 *jobv1alpha1.JobV1alpha1Client
 	minioV2     *miniov2.MinioV2Client
 	stsV1alpha1 *stsv1alpha1.StsV1alpha1Client
+	stsV1beta1  *stsv1beta1.StsV1beta1Client
 }
 
 // JobV1alpha1 retrieves the JobV1alpha1Client
@@ -58,6 +61,11 @@ func (c *Clientset) MinioV2() miniov2.MinioV2Interface {
 // StsV1alpha1 retrieves the StsV1alpha1Client
 func (c *Clientset) StsV1alpha1() stsv1alpha1.StsV1alpha1Interface {
 	return c.stsV1alpha1
+}
+
+// StsV1beta1 retrieves the StsV1beta1Client
+func (c *Clientset) StsV1beta1() stsv1beta1.StsV1beta1Interface {
+	return c.stsV1beta1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -116,6 +124,10 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 	if err != nil {
 		return nil, err
 	}
+	cs.stsV1beta1, err = stsv1beta1.NewForConfigAndClient(&configShallowCopy, httpClient)
+	if err != nil {
+		return nil, err
+	}
 
 	cs.DiscoveryClient, err = discovery.NewDiscoveryClientForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
@@ -140,6 +152,7 @@ func New(c rest.Interface) *Clientset {
 	cs.jobV1alpha1 = jobv1alpha1.New(c)
 	cs.minioV2 = miniov2.New(c)
 	cs.stsV1alpha1 = stsv1alpha1.New(c)
+	cs.stsV1beta1 = stsv1beta1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

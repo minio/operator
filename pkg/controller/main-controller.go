@@ -76,7 +76,7 @@ import (
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
-	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1alpha1"
+	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1beta1"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
 

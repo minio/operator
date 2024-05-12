@@ -12,7 +12,7 @@
 // You should have received a copy of the GNU Affero General Public License, version 3,
 // along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-package v1alpha1
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,13 +21,15 @@ import (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:defaulter-gen=true
+// +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=policybinding,singular=policybinding
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.currentState"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:metadata:annotations=operator.min.io/version=v5.0.15
+// +kubebuilder:storageversion
 // +groupName=policybinding.sts.min.io
-// +versionName=v1alpha1
+// +versionName=v1beta1
 
 // PolicyBinding is a https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/[Kubernetes object] describing a MinIO PolicyBinding.
 type PolicyBinding struct {
@@ -78,6 +80,7 @@ type Application struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 
 // PolicyBindingList is a list of PolicyBinding resources
 type PolicyBindingList struct {

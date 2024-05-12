@@ -1,4 +1,4 @@
-apiVersion: sts.min.io/v1alpha1
+apiVersion: sts.min.io/v1beta1
 kind: PolicyBinding
 metadata:
   name: mc-job-binding

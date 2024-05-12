@@ -43,7 +43,7 @@ chmod +x ${CODEGEN_PKG}/generate-internal-groups.sh
 cd ${SCRIPT_ROOT}
 ${CODEGEN_PKG}/generate-groups.sh "all" \
               $ROOT_PKG/pkg/client $ROOT_PKG/pkg/apis \
-              "minio.min.io:v2 sts.min.io:v1alpha1 job.min.io:v1alpha1" \
+              "minio.min.io:v2 sts.min.io:v1alpha1,v1beta1 job.min.io:v1alpha1" \
               --output-base "${TEMP_DIR}" \
               --go-header-file "k8s/boilerplate.go.txt"
 
