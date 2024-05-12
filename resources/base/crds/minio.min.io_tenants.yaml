@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-    operator.min.io/version: v5.0.14
+    operator.min.io/version: v5.0.15
   name: tenants.minio.min.io
 spec:
   group: minio.min.io
@@ -20,6 +20,9 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .status.currentState
       name: State
+      type: string
+    - jsonPath: .status.healthStatus
+      name: Health
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
@@ -2417,6 +2420,14 @@ spec:
                         required:
                         - port
                         type: object
+                      sleep:
+                        properties:
+                          seconds:
+                            format: int64
+                            type: integer
+                        required:
+                        - seconds
+                        type: object
                       tcpSocket:
                         properties:
                           host:
@@ -2466,6 +2477,14 @@ spec:
                             type: string
                         required:
                         - port
+                        type: object
+                      sleep:
+                        properties:
+                          seconds:
+                            format: int64
+                            type: integer
+                        required:
+                        - seconds
                         type: object
                       tcpSocket:
                         properties:

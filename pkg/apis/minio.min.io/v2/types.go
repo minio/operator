@@ -29,6 +29,7 @@ import (
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=tenant,singular=tenant
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.currentState"
+// +kubebuilder:printcolumn:name="Health",type="string",JSONPath=".status.healthStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:metadata:annotations=operator.min.io/version=v5.0.15
 // +kubebuilder:storageversion
