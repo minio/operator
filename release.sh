@@ -69,5 +69,3 @@ sed -i -e "s~operator.min.io/version: .*~operator.min.io/version: v${RELEASE}~g"
 
 echo "clean -e files"
 rm -vf $(git ls-files --others | grep -e "-e$" | awk '{print $1}')
-git add .
-

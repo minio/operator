@@ -88,8 +88,11 @@ helm-reindex:
 	@echo "Re-indexing helm chart release"
 	@./helm-reindex.sh
 
-release: assets
+update-versions:
 	@./release.sh
+
+release: update-versions generate-code regen-crd regen-crd-docs assets
+	@git add .
 
 apply-gofmt:
 	@echo "Applying gofmt to all generated an existing files"
