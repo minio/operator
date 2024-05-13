@@ -26,7 +26,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	stsv1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
 	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	joblisters "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
 	"github.com/minio/operator/pkg/utils/miniojob"
@@ -241,7 +241,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
 	// check sa
-	pbs := &stsv1alpha1.PolicyBindingList{}
+	pbs := &stsv1beta1.PolicyBindingList{}
 	err = c.k8sClient.List(ctx, pbs, client.InNamespace(namespace))
 	if err != nil {
 		return WrapResult(Result{}, err)

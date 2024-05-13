@@ -2,7 +2,7 @@
 
 Each example in this folder contains an example using a different SDK on how to adopt Operator's STS.
 
-> ⚠️ This feature is an alpha release and is subject to breaking changes in future releases.
+> ⚠️ This feature is an Beta release now starting Operator v6.x, Operator v5.x released STS as v1alpha1.
 
 # Requirements
 
@@ -58,7 +58,7 @@ namespace `minio-tenant-1` by installing a `PolicyBinding` on the `minio-tenant-
 Example policy binding (see CRD documentation in [policybinding_crd.adoc](../../../docs/policybinding_crd.adoc) )
 
 ```yaml
-apiVersion: sts.min.io/v1alpha1
+apiVersion: sts.min.io/v1beta1
 kind: PolicyBinding
 metadata:
   name: binding-1

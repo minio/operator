@@ -23,6 +23,8 @@ import (
 	"syscall"
 	"time"
 
+	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+
 	"github.com/minio/pkg/env"
 
 	"github.com/minio/operator/pkg"
@@ -36,7 +38,7 @@ import (
 
 	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	stsv1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions"
 	promclientset "github.com/prometheus-operator/prometheus-operator/pkg/client/versioned"
@@ -76,6 +78,7 @@ func init() {
 func StartOperator(kubeconfig string) {
 	_ = v2.AddToScheme(scheme.Scheme)
 	_ = v1alpha1.AddToScheme(scheme.Scheme)
+	_ = stsv1beta1.AddToScheme(scheme.Scheme)
 	_ = stsv1alpha1.AddToScheme(scheme.Scheme)
 	klog.Info("Starting MinIO Operator")
 	// set up signals, so we handle the first shutdown signal gracefully
@@ -164,7 +167,7 @@ func StartOperator(kubeconfig string) {
 		kubeInformerFactory.Apps().V1().Deployments(),
 		kubeInformerFactory.Core().V1().Pods(),
 		minioInformerFactory.Minio().V2().Tenants(),
-		minioInformerFactory.Sts().V1alpha1().PolicyBindings(),
+		minioInformerFactory.Sts().V1beta1().PolicyBindings(),
 		kubeInformerFactory.Core().V1().Services(),
 		hostsTemplate,
 		pkg.Version,

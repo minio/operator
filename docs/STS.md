@@ -2,7 +2,7 @@
 
 **Native IAM Authentication for Kubernetes.**
 
-> ⚠️ This feature is an alpha release and is subject to breaking changes in future releases.
+> ⚠️ This feature is an Beta release starting Operator v6.x, was released in Beta on Operator v5.x
 
 MinIO Operator offers support
 for [Secure Tokens](https://min.io/docs/minio/linux/developers/security-token-service.html?ref=op-gh) (a.k.a. STS) which

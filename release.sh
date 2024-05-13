@@ -55,7 +55,7 @@ done
 annotations_files=(
   "pkg/apis/job.min.io/v1alpha1/types.go"
   "pkg/apis/minio.min.io/v2/types.go"
-  "pkg/apis/sts.min.io/v1alpha1/types.go"
+  "pkg/apis/sts.min.io/v1beta1/types.go"
 )
 
 for file in "${annotations_files[@]}"; do
