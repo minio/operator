@@ -34,7 +34,7 @@ getdeps:
 verify: getdeps govet lint
 
 binary:
-	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o minio-operator-sidecar ./cmd/sidecar
+	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o ../minio-operator-sidecar ./cmd/sidecar
 
 sidecar: binary
 

@@ -19,9 +19,9 @@ LABEL name="MinIO" \
 # - /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem (RHEL 7)
 COPY --from=build /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem /etc/pki/ca-trust/extracted/pem/
 
-COPY ./CREDITS /licenses/CREDITS
-COPY ./LICENSE /licenses/LICENSE
+COPY CREDITS /licenses/CREDITS
+COPY LICENSE /licenses/LICENSE
 
-COPY sidecar/minio-operator-sidecar /minio-operator-sidecar
+COPY minio-operator-sidecar /minio-operator-sidecar
 
 ENTRYPOINT ["/minio-operator-sidecar"]
