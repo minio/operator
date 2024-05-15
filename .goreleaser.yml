@@ -29,8 +29,27 @@ builds:
     env:
       - CGO_ENABLED=0
     main: ./cmd/operator/
+    dir: .
+    id: minio-operator
     ldflags:
       - -s -w -X github.com/minio/operator/pkg.ReleaseTag={{.Tag}} -X github.com/minio/operator/pkg.CommitID={{.FullCommit}} -X github.com/minio/operator/pkg.Version={{.Version}} -X github.com/minio/operator/pkg.ShortCommitID={{.ShortCommit}} -X github.com/minio/operator/pkg.ReleaseTime={{.Date}}
+    flags:
+      - -trimpath
+  - goos:
+      - linux
+    goarch:
+      - arm64
+      - amd64
+      - ppc64le
+      - s390x
+    env:
+      - CGO_ENABLED=0
+    id: minio-operator-sidecar
+    dir: sidecar/
+    binary: minio-operator-sidecar
+    main: ./cmd/sidecar/
+    ldflags:
+      - -s -w -X github.com/minio/operator/pkg.ReleaseTag={{.Tag}} -X github.com/minio/operator/pkg.CommitID={{.FullCommit}} -X github.com/minio/operator/sidecar/pkg.Version={{.Version}} -X github.com/minio/operator/sidecar/pkg.ShortCommitID={{.ShortCommit}} -X github.com/minio/operator/pkg.ReleaseTime={{.Date}}
     flags:
       - -trimpath
 
@@ -127,6 +146,94 @@ dockers:
     build_flag_templates:
       - "--platform=linux/arm64"
       - "--build-arg=TAG={{ .Tag }}"
+  - image_templates:
+      - "minio/operator-sidecar:{{ .Tag }}-amd64"
+    use: buildx
+    goarch: amd64
+    dockerfile: sidecar/Dockerfile
+    extra_files:
+      - LICENSE
+      - CREDITS
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--build-arg=TAG={{ .Tag }}"
+  - image_templates:
+      - "minio/operator-sidecar:{{ .Tag }}-ppc64le"
+    use: buildx
+    dockerfile: sidecar/Dockerfile
+    goarch: ppc64le
+    extra_files:
+      - LICENSE
+      - CREDITS
+    build_flag_templates:
+      - "--platform=linux/ppc64le"
+      - "--build-arg=TAG={{ .Tag }}"
+  - image_templates:
+      - "minio/operator-sidecar:{{ .Tag }}-s390x"
+    use: buildx
+    goarch: s390x
+    dockerfile: sidecar/Dockerfile
+    extra_files:
+      - LICENSE
+      - CREDITS
+    build_flag_templates:
+      - "--platform=linux/s390x"
+      - "--build-arg=TAG={{ .Tag }}"
+  - image_templates:
+      - "minio/operator-sidecar:{{ .Tag }}-arm64"
+    use: buildx
+    goarch: arm64
+    dockerfile: sidecar/Dockerfile
+    extra_files:
+      - LICENSE
+      - CREDITS
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--build-arg=TAG={{ .Tag }}"
+  - image_templates:
+      - "quay.io/minio/operator-sidecar:{{ .Tag }}-amd64"
+    use: buildx
+    goarch: amd64
+    dockerfile: sidecar/Dockerfile
+    extra_files:
+      - LICENSE
+      - CREDITS
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--build-arg=TAG={{ .Tag }}"
+  - image_templates:
+      - "quay.io/minio/operator-sidecar:{{ .Tag }}-ppc64le"
+    use: buildx
+    dockerfile: sidecar/Dockerfile
+    goarch: ppc64le
+    extra_files:
+      - LICENSE
+      - CREDITS
+    build_flag_templates:
+      - "--platform=linux/ppc64le"
+      - "--build-arg=TAG={{ .Tag }}"
+  - image_templates:
+      - "quay.io/minio/operator-sidecar:{{ .Tag }}-s390x"
+    use: buildx
+    goarch: s390x
+    dockerfile: sidecar/Dockerfile
+    extra_files:
+      - LICENSE
+      - CREDITS
+    build_flag_templates:
+      - "--platform=linux/s390x"
+      - "--build-arg=TAG={{ .Tag }}"
+  - image_templates:
+      - "quay.io/minio/operator-sidecar:{{ .Tag }}-arm64"
+    use: buildx
+    goarch: arm64
+    dockerfile: sidecar/Dockerfile
+    extra_files:
+      - LICENSE
+      - CREDITS
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--build-arg=TAG={{ .Tag }}"
 docker_manifests:
   - name_template: minio/operator:{{ .Tag }}
     image_templates:
@@ -140,3 +247,15 @@ docker_manifests:
       - quay.io/minio/operator:{{ .Tag }}-arm64
       - quay.io/minio/operator:{{ .Tag }}-ppc64le
       - quay.io/minio/operator:{{ .Tag }}-s390x
+  - name_template: minio/operator-sidecar:{{ .Tag }}
+    image_templates:
+      - minio/operator-sidecar:{{ .Tag }}-amd64
+      - minio/operator-sidecar:{{ .Tag }}-arm64
+      - minio/operator-sidecar:{{ .Tag }}-ppc64le
+      - minio/operator-sidecar:{{ .Tag }}-s390x
+  - name_template: quay.io/minio/operator-sidecar:{{ .Tag }}
+    image_templates:
+      - quay.io/minio/operator-sidecar:{{ .Tag }}-amd64
+      - quay.io/minio/operator-sidecar:{{ .Tag }}-arm64
+      - quay.io/minio/operator-sidecar:{{ .Tag }}-ppc64le
+      - quay.io/minio/operator-sidecar:{{ .Tag }}-s390x

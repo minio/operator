@@ -555,15 +555,15 @@ function install_operator() {
   (cd "${SCRIPT_DIR}/.." && try docker build -t $TAG .) # will not change your shell's current directory
 
   echo 'start - load compiled image so we can use it later on'
-  try kind load docker-image minio/operator:noop
+  try kind load docker-image $TAG
   echo 'end - load compiled image so we can use it later on'
   # To compile current branch
   echo "Compiling Current Branch Sidecar"
-  TAG=minio/operator-sidecar:noop
-  (cd "${SCRIPT_DIR}/../sidecar" && try docker build -t $TAG .) # will not change your shell's current directory
+  SIDECAR_TAG=minio/operator-sidecar:noop
+  (cd "${SCRIPT_DIR}/../" && try docker build -t $SIDECAR_TAG -f sidecar/Dockerfile .) # will not change your shell's current directory
 
   echo 'start - load compiled sidecar image so we can use it later on'
-  try kind load docker-image minio/operator-sidecar:noop
+  try kind load docker-image $SIDECAR_TAG
   echo 'end - load compiled sidecar image so we can use it later on'
 
   if [ "$1" = "helm" ]; then
@@ -604,7 +604,7 @@ function install_operator() {
     echo "changing images for console and minio-operator deployments"
     try kubectl -n minio-operator set image deployment/minio-operator minio-operator="$TAG"
     try kubectl -n minio-operator set image deployment/console console="$TAG"
-    try kubectl -n minio-operator set env deployment/minio-operator OPERATOR_SIDECAR_IMAGE="$TAG"
+    try kubectl -n minio-operator set env deployment/minio-operator OPERATOR_SIDECAR_IMAGE="$SIDECAR_TAG"
 
     echo "key, value for pod selector in kustomize test"
     key=name
