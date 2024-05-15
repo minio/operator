@@ -193,7 +193,23 @@ func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sCli
 									Value: "/var/run/secrets/kubernetes.io/serviceaccount/token",
 								},
 							},
-							Command: jobCommands,
+							Command:         jobCommands,
+							SecurityContext: jobCR.Spec.ContainerSecurityContext,
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "config-dir",
+									MountPath: "/.mc",
+								},
+							},
+						},
+					},
+					SecurityContext: jobCR.Spec.SecurityContext,
+					Volumes: []corev1.Volume{
+						{
+							Name: "config-dir",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
 						},
 					},
 				},
