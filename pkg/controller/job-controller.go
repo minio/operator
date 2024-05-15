@@ -219,10 +219,6 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		globalIntervalJobStatus.Delete(fmt.Sprintf("%s/%s", jobCR.Namespace, jobCR.Name))
 		return WrapResult(Result{}, nil)
 	}
-	intervalJob, err := checkMinIOJob(&jobCR)
-	if err != nil {
-		return WrapResult(Result{}, err)
-	}
 	// get tenant
 	tenant := &miniov2.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
@@ -257,6 +253,10 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	}
 	if !saFound {
 		return WrapResult(Result{}, fmt.Errorf("no serviceaccount found"))
+	}
+	intervalJob, err := checkMinIOJob(&jobCR)
+	if err != nil {
+		return WrapResult(Result{}, err)
 	}
 	err = intervalJob.CreateCommandJob(ctx, c.k8sClient)
 	if err != nil {
