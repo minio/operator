@@ -99,7 +99,7 @@ func newApp(name string) *cli.App {
 	app.Author = "MinIO, Inc."
 	app.Usage = "MinIO Operator Sidecar"
 	app.Description = `MinIO Operator automates the orchestration of MinIO Tenants on Kubernetes.`
-	app.Copyright = "(c) 2023 MinIO, Inc."
+	app.Copyright = "(c) 2024 MinIO, Inc."
 	app.Compiled, _ = time.Parse(time.RFC3339, pkg.ReleaseTime)
 	app.Commands = commands
 	app.HideHelpCommand = true // Hide `help, h` command, we already have `minio --help`.
