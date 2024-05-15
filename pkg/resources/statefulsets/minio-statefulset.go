@@ -910,7 +910,6 @@ func getInitContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container {
 }
 
 func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container {
-
 	sidecarContainer := corev1.Container{
 		Name:  "sidecar",
 		Image: getSidecarImage(),
