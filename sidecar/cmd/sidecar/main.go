@@ -53,7 +53,7 @@ func newApp(name string) *cli.App {
 	// Collection of console commands currently supported are.
 	var commands []cli.Command
 
-	// Collection of console commands currently supported in a trie tree.
+	// Collection of console commands currently supported in a tree.
 	commandsTree := trie.NewTrie()
 
 	// registerCommand registers a cli command.
