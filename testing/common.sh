@@ -562,7 +562,7 @@ function install_operator() {
   TAG=minio/operator-sidecar:noop
   (cd "${SCRIPT_DIR}/../sidecar" && try docker build -t $TAG .) # will not change your shell's current directory
 
-  echo 'start - load compiled sidecar  image so we can use it later on'
+  echo 'start - load compiled sidecar image so we can use it later on'
   try kind load docker-image minio/operator-sidecar:noop
   echo 'end - load compiled sidecar image so we can use it later on'
 
