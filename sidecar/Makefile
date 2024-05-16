@@ -41,7 +41,7 @@ sidecar: binary
 docker: sidecar
 	@(cd .. && docker buildx build --no-cache --load --platform linux/$(GOARCH) -t $(TAG) -f sidecar/Dockerfile .)
 
-build: regen-crd verify sidecar docker
+build: verify sidecar docker
 
 install: all
 
