@@ -17,9 +17,10 @@
 package sidecar
 
 import (
-	"github.com/minio/operator/pkg/common"
 	"net/http"
 	"time"
+
+	"github.com/minio/operator/pkg/common"
 
 	"github.com/gorilla/mux"
 )

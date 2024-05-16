@@ -17,11 +17,12 @@
 package main
 
 import (
-	"github.com/minio/operator/sidecar/pkg"
 	"os"
 	"path/filepath"
 	"sort"
 	"time"
+
+	"github.com/minio/operator/sidecar/pkg"
 
 	"github.com/minio/cli"
 	"github.com/minio/pkg/console"
