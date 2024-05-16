@@ -1,8 +1,6 @@
 module github.com/minio/operator/sidecar
 
-go 1.21.8
-
-toolchain go1.22.2
+go 1.21.9
 
 require (
 	github.com/gorilla/mux v1.8.1

@@ -1,5 +1,6 @@
 operator
 minio-operator
+minio-operator-sidecar
 !minio-operator/
 !operator/
 !tenant/
