@@ -47,7 +47,7 @@ install: all
 
 lint: getdeps
 	@echo "Running $@ check"
-	@GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ./.golangci.yml
+	@GO111MODULE=on ${GOPATH}/bin/golangci-lint run --timeout=5m --config ../.golangci.yml
 
 govet:
 	@go vet ./...
