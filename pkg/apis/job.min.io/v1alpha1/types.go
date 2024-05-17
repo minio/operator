@@ -145,6 +145,35 @@ type CommandSpec struct {
 	// DependsOn List of named `command` in this MinioJob that have to be scheduled and executed before this command runs
 	// +optional
 	DependsOn []string `json:"dependsOn,omitempty"`
+
+	// Compute Resources required by this container.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	// +optional
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// List of sources to populate environment variables in the container.
+	// The keys defined within a source must be a C_IDENTIFIER. All invalid keys
+	// will be reported as an event when the container is starting. When a key exists in multiple
+	// sources, the value associated with the last source will take precedence.
+	// Values defined by an Env with a duplicate key will take precedence.
+	// Cannot be updated.
+	// +optional
+	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
+	// List of environment variables to set in the container.
+	// Cannot be updated.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Pod volumes to mount into the container's filesystem.
+	// Cannot be updated.
+	// +optional
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// List of volumes that can be mounted by containers belonging to the pod.
+	// More info: https://kubernetes.io/docs/concepts/storage/volumes
+	// +optional
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
 // TenantRef Is the reference to the target tenant of the jobs

@@ -304,15 +304,7 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *miniojob.MinIOInterva
 		return intervalJob, fmt.Errorf("serviceaccount name is empty")
 	}
 	for index, val := range jobCR.Spec.Commands {
-		mcCommand, found := miniojob.OperationAliasToMC(val.Operation)
-		if !found {
-			return intervalJob, fmt.Errorf("operation %s is not supported", val.Operation)
-		}
-		argsFuncs, found := miniojob.JobOperation[mcCommand]
-		if !found {
-			return intervalJob, fmt.Errorf("operation %s is not supported", mcCommand)
-		}
-		jobCommand, err := miniojob.GenerateMinIOIntervalJobCommand(mcCommand, index, val.DependsOn, val.Name, val.Args, argsFuncs)
+		jobCommand, err := miniojob.GenerateMinIOIntervalJobCommand(val, index)
 		if err != nil {
 			return intervalJob, err
 		}
@@ -321,7 +313,7 @@ func checkMinIOJob(jobCR *v1alpha1.MinIOJob) (intervalJob *miniojob.MinIOInterva
 	}
 	// check all dependon
 	for _, command := range intervalJob.Command {
-		for _, dep := range command.DepnedsOn {
+		for _, dep := range command.CommandSpec.DependsOn {
 			_, found := intervalJob.CommandMap[dep]
 			if !found {
 				return intervalJob, fmt.Errorf("dependent job %s not found", dep)
