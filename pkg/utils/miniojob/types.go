@@ -163,26 +163,26 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 	baseVolumes = append(baseVolumes, jobCommand.CommandSpec.Volumes...)
 	baseEnvFrom := []corev1.EnvFromSource{
 		{
-			ConfigMapRef: &corev1.ConfigMapEnvSource{
+			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: fmt.Sprintf("%s-%s-cm", jobCR.Name, jobCommand.JobName),
+					Name: fmt.Sprintf("%s-job-secret", jobCR.Name),
 				},
 			},
 		},
 	}
 	baseEnvFrom = append(baseEnvFrom, jobCommand.CommandSpec.EnvFrom...)
-	cm := &corev1.ConfigMap{
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s-cm", jobCR.Name, jobCommand.JobName),
+			Name:      fmt.Sprintf("%s-job-secret", jobCR.Name),
 			Namespace: jobCR.Namespace,
 		},
-		Data: map[string]string{
+		StringData: map[string]string{
 			"MC_HOST_myminio":                    fmt.Sprintf("https://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.cluster.local", jobCR.Namespace),
 			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:4223/sts/%s", miniov2.GetNSFromFile(), jobCR.Namespace),
 			"MC_WEB_IDENTITY_TOKEN_FILE_myminio": "/var/run/secrets/kubernetes.io/serviceaccount/token",
 		},
 	}
-	objs = append(objs, cm)
+	objs = append(objs, secret)
 	job := &batchjobv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", jobCR.Name, jobCommand.JobName),
