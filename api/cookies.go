@@ -41,11 +41,40 @@ func NewSessionCookieForConsole(token string) http.Cookie {
 	}
 }
 
+// NewIDPSessionCookie creates a cookie for a refresh token
+func NewIDPSessionCookie(token string) http.Cookie {
+	return http.Cookie{
+		Path:     "/",
+		Name:     "idp-refresh-token",
+		Value:    token,
+		HttpOnly: true,
+		Secure:   len(GlobalPublicCerts) > 0,
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
 // ExpireSessionCookie expires a cookie
 func ExpireSessionCookie() http.Cookie {
 	return http.Cookie{
 		Path:     "/",
 		Name:     "token",
+		Value:    "",
+		MaxAge:   -1,
+		Expires:  time.Now().Add(-100 * time.Hour),
+		HttpOnly: true,
+		// if len(GlobalPublicCerts) > 0 is true, that means Console is running with TLS enable and the browser
+		// should not leak any cookie if we access the site using HTTP
+		Secure: len(GlobalPublicCerts) > 0,
+		// read more: https://web.dev/samesite-cookies-explained/
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
+// ExpireIDPSessionCookie expires a cookie for idp
+func ExpireIDPSessionCookie() http.Cookie {
+	return http.Cookie{
+		Path:     "/",
+		Name:     "idp-refresh-token",
 		Value:    "",
 		MaxAge:   -1,
 		Expires:  time.Now().Add(-100 * time.Hour),

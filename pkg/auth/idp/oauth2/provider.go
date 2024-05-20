@@ -64,6 +64,7 @@ type DiscoveryDoc struct {
 	TokenEndpoint                    string   `json:"token_endpoint,omitempty"`
 	UserInfoEndpoint                 string   `json:"userinfo_endpoint,omitempty"`
 	RevocationEndpoint               string   `json:"revocation_endpoint,omitempty"`
+	EndSessionEndpoint               string   `json:"end_session_endpoint,omitempty"`
 	JwksURI                          string   `json:"jwks_uri,omitempty"`
 	ResponseTypesSupported           []string `json:"response_types_supported,omitempty"`
 	SubjectTypesSupported            []string `json:"subject_types_supported,omitempty"`
@@ -120,11 +121,12 @@ type Provider struct {
 	// - Scopes specifies optional requested permissions.
 	IDPName string
 	// if enabled means that we need extrace access_token as well
-	UserInfo       bool
-	RefreshToken   string
-	oauth2Config   Configuration
-	provHTTPClient *http.Client
-	stsHTTPClient  *http.Client
+	UserInfo           bool
+	RefreshToken       string
+	endSessionEndpoint string
+	oauth2Config       Configuration
+	provHTTPClient     *http.Client
+	stsHTTPClient      *http.Client
 }
 
 // DefaultDerivedKey is the key used to compute the HMAC for signing the oauth state parameter
@@ -216,6 +218,7 @@ func NewOauth2ProviderClient(scopes []string, r *http.Request, httpClient *http.
 	client.IDPName = GetIDPClientID()
 	client.UserInfo = GetIDPUserInfo()
 	client.provHTTPClient = httpClient
+	client.endSessionEndpoint = ddoc.EndSessionEndpoint
 
 	return client, nil
 }
@@ -380,6 +383,24 @@ func (client *Provider) VerifyIdentity(ctx context.Context, code, state, roleARN
 	return sts, nil
 }
 
+// EndSession to invoke endsession_endpoint
+func (client *Provider) EndSession(refreshToken string) error {
+	if client.endSessionEndpoint != "" {
+		params := url.Values{}
+		params.Add("client_id", client.IDPName)
+		params.Add("client_secret", GetIDPSecret())
+		params.Add("refresh_token", refreshToken)
+		clnt := &http.Client{
+			Transport: client.provHTTPClient.Transport,
+		}
+		_, err := clnt.PostForm(client.endSessionEndpoint, params)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // VerifyIdentityForOperator will contact the configured IDP and validate the user identity based on the authorization code and state
 func (client *Provider) VerifyIdentityForOperator(ctx context.Context, code, state string, keyFunc StateKeyFunc) (*xoauth2.Token, error) {
 	// verify the provided state is valid (prevents CSRF attacks)
@@ -394,6 +415,7 @@ func (client *Provider) VerifyIdentityForOperator(ctx context.Context, code, sta
 	if !oauth2Token.Valid() {
 		return nil, errors.New("invalid token")
 	}
+	client.RefreshToken = oauth2Token.RefreshToken
 	return oauth2Token, nil
 }
 

@@ -31,6 +31,7 @@ type IdentityProviderI interface {
 	VerifyIdentity(ctx context.Context, code, state string) (*credentials.Credentials, error)
 	VerifyIdentityForOperator(ctx context.Context, code, state string) (*xoauth2.Token, error)
 	GenerateLoginURL() string
+	Logout(refreshToken string) error
 }
 
 // IdentityProvider Identity implementation
@@ -56,4 +57,9 @@ func (c IdentityProvider) VerifyIdentityForOperator(ctx context.Context, code, s
 // GenerateLoginURL returns a new URL used by the user to login against the idp
 func (c IdentityProvider) GenerateLoginURL() string {
 	return c.Client.GenerateLoginURL(c.KeyFunc, c.Client.IDPName)
+}
+
+// Logout ends session on IDP
+func (c IdentityProvider) Logout(refreshToken string) error {
+	return c.Client.EndSession(refreshToken)
 }
