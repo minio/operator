@@ -71,7 +71,9 @@ func registerLoginHandlers(api *operations.OperatorAPI) {
 		// Custom response writer to set the session cookies
 		return middleware.ResponderFunc(func(w http.ResponseWriter, p runtime.Producer) {
 			cookie := NewSessionCookieForConsole(loginResponse.SessionID)
+			idpCookie := NewIDPSessionCookie(loginResponse.IDPRefreshToken)
 			http.SetCookie(w, &cookie)
+			http.SetCookie(w, &idpCookie)
 			authApi.NewLoginOauth2AuthNoContent().WriteResponse(w, p)
 		})
 	})
@@ -199,7 +201,8 @@ func getLoginOauth2AuthResponse(params authApi.LoginOauth2AuthParams) (*models.L
 		}
 		// serialize output
 		loginResponse := &models.LoginResponse{
-			SessionID: *token,
+			SessionID:       *token,
+			IDPRefreshToken: identityProvider.Client.RefreshToken,
 		}
 		return loginResponse, nil
 	}
