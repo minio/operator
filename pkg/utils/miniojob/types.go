@@ -120,7 +120,7 @@ func (jobCommand *MinIOIntervalJobCommand) Success() bool {
 }
 
 // createJob - create job
-func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, port string) (objs []client.Object) {
+func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort string) (objs []client.Object) {
 	if jobCommand == nil {
 		return nil
 	}
@@ -178,7 +178,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 		},
 		StringData: map[string]string{
 			"MC_HOST_myminio":                    fmt.Sprintf("https://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.cluster.local", jobCR.Namespace),
-			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:%s/sts/%s", miniov2.GetNSFromFile(), jobCR.Namespace, port),
+			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:%s/sts/%s", miniov2.GetNSFromFile(), jobCR.Namespace, stsPort),
 			"MC_WEB_IDENTITY_TOKEN_FILE_myminio": "/var/run/secrets/kubernetes.io/serviceaccount/token",
 		},
 	}
@@ -233,8 +233,8 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 }
 
 // CreateJob - create job
-func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, port string) error {
-	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, port) {
+func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort string) error {
+	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, stsPort) {
 		_, err := runtime.NewObjectSyncer(ctx, k8sClient, jobCR, func() error {
 			return nil
 		}, obj, runtime.SyncTypeCreateOrUpdate).Sync(ctx)
@@ -305,10 +305,10 @@ func (intervalJob *MinIOIntervalJob) GetMinioJobStatus(ctx context.Context) v1al
 }
 
 // CreateCommandJob - create command job
-func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, port string) error {
+func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, stsPort string) error {
 	for _, command := range intervalJob.Command {
 		if len(command.CommandSpec.DependsOn) == 0 {
-			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, port)
+			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort)
 			if err != nil {
 				return err
 			}
@@ -325,7 +325,7 @@ func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sCl
 				}
 			}
 			if allDepsSuccess {
-				err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, port)
+				err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort)
 				if err != nil {
 					return err
 				}
