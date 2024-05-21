@@ -235,6 +235,9 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 // CreateJob - create job
 func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort string) error {
 	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, stsPort) {
+		if obj == nil {
+			continue
+		}
 		_, err := runtime.NewObjectSyncer(ctx, k8sClient, jobCR, func() error {
 			return nil
 		}, obj, runtime.SyncTypeCreateOrUpdate).Sync(ctx)
