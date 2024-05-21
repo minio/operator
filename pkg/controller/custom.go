@@ -112,10 +112,10 @@ func (c *Controller) getCustomCertificates(ctx context.Context, tenant *miniov2.
 				if expiresInDays > 0 && expiresInDays < 10 {
 					c.recorder.Event(tenant, corev1.EventTypeWarning, "CertificateExpiryImminent", fmt.Sprintf("%s certificate '%s' is expiring in %d days", certType, secret.Name, expiresInDays))
 				}
-				if expiresInDays > 0 && expiresInDays < 1 {
+				if expiresIn > 0 && expiresIn < 24*time.Hour {
 					expiresInHuman = fmt.Sprintf("%v hours, %v minutes, and %v seconds", expiresInHours, expiresInMinutes, expiresInSeconds)
 				}
-				if expiresInDays <= 0 {
+				if expiresIn <= 0 {
 					c.recorder.Event(tenant, corev1.EventTypeWarning, "CertificateExpired", fmt.Sprintf("%s certificate '%s' has expired", certType, secret.Name))
 					expiresInHuman = "EXPIRED"
 				}
