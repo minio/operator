@@ -77,7 +77,7 @@ func ExpireIDPSessionCookie() http.Cookie {
 		Name:     "idp-refresh-token",
 		Value:    "",
 		MaxAge:   -1,
-		Expires:  time.Now().Add(-100 * time.Hour),
+		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		// if len(GlobalPublicCerts) > 0 is true, that means Console is running with TLS enable and the browser
 		// should not leak any cookie if we access the site using HTTP
