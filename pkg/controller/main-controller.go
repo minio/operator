@@ -26,6 +26,8 @@ import (
 	"syscall"
 	"time"
 
+	kubeinformers "k8s.io/client-go/informers"
+
 	"github.com/minio/operator/pkg/utils"
 
 	"github.com/minio/madmin-go/v3"
@@ -54,9 +56,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
-	appsinformers "k8s.io/client-go/informers/apps/v1"
-	batchv1 "k8s.io/client-go/informers/batch/v1"
-	coreinformers "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -138,25 +137,25 @@ type Controller struct {
 	// statefulSetListerSynced returns true if the StatefulSet shared informer
 	// has synced at least once.
 	statefulSetListerSynced cache.InformerSynced
-
+	// secretLister returns list/get secrets from a shared informer
+	secretLister corelisters.SecretLister
+	// secretListerSynced returns true if Secret shared informer has synced at least once
+	secretListerSynced cache.InformerSynced
 	// deploymentLister is able to list/get Deployments from a shared
 	// informer's store.
 	deploymentLister appslisters.DeploymentLister
 	// deploymentListerSynced returns true if the Deployment shared informer
 	// has synced at least once.
 	deploymentListerSynced cache.InformerSynced
-
 	// tenantsSynced returns true if the StatefulSet shared informer
 	// has synced at least once.
 	tenantsSynced cache.InformerSynced
-
 	// serviceLister is able to list/get Services from a shared informer's
 	// store.
 	serviceLister corelisters.ServiceLister
 	// serviceListerSynced returns true if the Service shared informer
 	// has synced at least once.
 	serviceListerSynced cache.InformerSynced
-
 	// queue is a rate limited work queue. This is used to queue work to be
 	// processed instead of performing it as soon as a change happens. This
 	// means we can ensure we only process a fixed amount of resources at a
@@ -227,17 +226,20 @@ func NewController(
 	k8sClient client.Client,
 	minioClientSet clientset.Interface,
 	promClient promclientset.Interface,
-	statefulSetInformer appsinformers.StatefulSetInformer,
-	deploymentInformer appsinformers.DeploymentInformer,
-	podInformer coreinformers.PodInformer,
-	tenantInformer informers.TenantInformer,
-	policyBindingInformer stsInformers.PolicyBindingInformer,
-	serviceInformer coreinformers.ServiceInformer,
 	hostsTemplate,
 	operatorVersion string,
-	minioJobinformer jobinformers.MinIOJobInformer,
-	jobInformer batchv1.JobInformer,
+	kubeInformerFactory kubeinformers.SharedInformerFactory,
+	tenantInformer informers.TenantInformer,
+	policyBindingInformer stsInformers.PolicyBindingInformer,
+	minioJobInformer jobinformers.MinIOJobInformer,
 ) *Controller {
+	statefulSetInformer := kubeInformerFactory.Apps().V1().StatefulSets()
+	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
+	podInformer := kubeInformerFactory.Core().V1().Pods()
+	serviceInformer := kubeInformerFactory.Core().V1().Services()
+	jobInformer := kubeInformerFactory.Batch().V1().Jobs()
+	secretInformer := kubeInformerFactory.Core().V1().Secrets()
+
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
 	// logged for minio-controller types.
@@ -263,20 +265,22 @@ func NewController(
 		tenantsSynced:             tenantInformer.Informer().HasSynced,
 		serviceLister:             serviceInformer.Lister(),
 		serviceListerSynced:       serviceInformer.Informer().HasSynced,
-		workqueue:                 queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "Tenants"),
-		healthCheckQueue:          queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "TenantsHealth"),
+		secretLister:              secretInformer.Lister(),
+		secretListerSynced:        secretInformer.Informer().HasSynced,
+		workqueue:                 queue.NewRateLimitingQueueWithConfig(MinIOControllerRateLimiter(), queue.RateLimitingQueueConfig{Name: "Tenants"}),
+		healthCheckQueue:          queue.NewRateLimitingQueueWithConfig(MinIOControllerRateLimiter(), queue.RateLimitingQueueConfig{Name: "TenantsHealth"}),
 		recorder:                  recorder,
 		hostsTemplate:             hostsTemplate,
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
 		controllers: []*JobController{
 			NewJobController(
-				minioJobinformer,
+				minioJobInformer,
 				jobInformer,
 				namespacesToWatch,
 				kubeClientSet,
 				recorder,
-				queue.NewNamedRateLimitingQueue(MinIOControllerRateLimiter(), "MinioJobs"),
+				queue.NewRateLimitingQueueWithConfig(MinIOControllerRateLimiter(), queue.RateLimitingQueueConfig{Name: "MinioJobs"}),
 				k8sClient,
 			),
 		},
@@ -347,12 +351,28 @@ func NewController(
 			oldDepl := old.(*corev1.Pod)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
 				// Periodic resync will send update events for all known Deployments.
-				// Two different versions of the same Deployments will always have different RVs.
+				// Two different versions of the same Pods will always have different RVs.
 				return
 			}
 			controller.handlePodChange(new)
 		},
 		DeleteFunc: controller.handlePodChange,
+	})
+
+	secretInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			controller.handleSecret(obj, nil)
+		},
+		UpdateFunc: func(old, new interface{}) {
+			newSecret := new.(*corev1.Secret)
+			oldSecret := old.(*corev1.Secret)
+			if newSecret.ResourceVersion == oldSecret.ResourceVersion {
+				// Periodic resync will send update events for all known Deployments.
+				// Two different versions of the same secret will always have different RVs.
+				return
+			}
+			controller.handleSecret(new, old)
+		},
 	})
 
 	return controller
@@ -415,7 +435,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced); !ok {
+	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced, c.secretListerSynced); !ok {
 		panic("failed to wait for caches to sync")
 	}
 	// Wait for the caches to be synced before starting workers
@@ -896,13 +916,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, err)
 	}
 
-	// check if operator-ca-tls has to be updated or re-created in the tenant namespace
-	operatorCATLSExists, err := c.checkOperatorCAForTenant(ctx, tenant)
-	if err != nil {
-		// Don't return here as we get stuck when recreating the stateful set
-		klog.Infof("There was an error while updating the certificate %s", err)
-	}
-
 	// consolidate the status of all pools. this is meant to cover for legacy tenants
 	// this status value is zero only for new tenants or legacy tenants
 	if len(tenant.Status.Pools) == 0 {
@@ -974,7 +987,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				ServiceName:     tenant.MinIOHLServiceName(),
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
-				OperatorCATLS:   operatorCATLSExists,
 			})
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
@@ -1183,7 +1195,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				ServiceName:     tenant.MinIOHLServiceName(),
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
-				OperatorCATLS:   operatorCATLSExists,
 			})
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return WrapResult(Result{}, err)
@@ -1232,7 +1243,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			ServiceName:     tenant.MinIOHLServiceName(),
 			HostsTemplate:   c.hostsTemplate,
 			OperatorVersion: c.operatorVersion,
-			OperatorCATLS:   operatorCATLSExists,
 		})
 		// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
 		poolMatchesSS, err := poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet)
@@ -1387,6 +1397,29 @@ func (c *Controller) handleObject(obj interface{}) {
 
 		c.enqueueTenant(tenant)
 		return
+	}
+}
+
+func (c *Controller) handleSecret(obj interface{}, oldObj interface{}) {
+	ns := miniov2.GetNSFromFile()
+	var secret *corev1.Secret
+	var ok bool
+	if secret, ok = obj.(*corev1.Secret); !ok {
+		runtime.HandleError(fmt.Errorf("error decoding object, invalid type"))
+		return
+	}
+	// Observe secrets in the Operator namespace
+	if secret.Namespace == ns {
+		// a secret with prefix "operator-ca-tls" changed, reload all trusted CA certificates
+		if strings.HasPrefix(secret.Name, OperatorCATLSSecretName) {
+			klog.Infof("secret '%s' found, adding TLS certs in it to trusted CA's", secret.Name)
+			var oldSecret *corev1.Secret
+			if oldSecret != nil {
+				oldSecret = oldObj.(*corev1.Secret)
+			}
+			// Add new certificates to Transport Certs if any changed
+			c.TrustTLSCertificatesInSecretIfChanged(secret, oldSecret)
+		}
 	}
 }
 

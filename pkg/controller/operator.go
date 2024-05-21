@@ -21,25 +21,29 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/minio/operator/pkg/certs"
+
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/common"
 	"github.com/minio/operator/pkg/utils"
+	xcerts "github.com/minio/pkg/certs"
+	"github.com/minio/pkg/env"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	xcerts "github.com/minio/pkg/certs"
-	"github.com/minio/pkg/env"
 	"k8s.io/klog/v2"
 	k8sscheme "k8s.io/kubectl/pkg/scheme"
 )
@@ -51,6 +55,8 @@ const (
 	OperatorDeploymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
 	OperatorCATLSSecretName = "operator-ca-tls"
+	// OperatorCATLSSecretPrefix is the name of the multi tenant secret for the operator CA
+	OperatorCATLSSecretPrefix = OperatorCATLSSecretName + "-"
 	// OperatorCSRSignerCASecretName is the name of the secret for the signer-ca certificate
 	// this is a copy of the secret signer-ca in namespace
 	OperatorCSRSignerCASecretName = "openshift-csr-signer-ca"
@@ -160,43 +166,120 @@ func (c *Controller) fetchTransportCACertificates() (pool *x509.CertPool) {
 		}
 	}
 
-	// Custom ca certificate to be used by operator
-	operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), OperatorCATLSSecretName, metav1.GetOptions{})
-	if err == nil && operatorCATLSCert != nil {
-		if val, ok := operatorCATLSCert.Data["tls.crt"]; ok {
-			rootCAs.AppendCertsFromPEM(val)
-		}
-		if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-			rootCAs.AppendCertsFromPEM(val)
-		}
-		if val, ok := operatorCATLSCert.Data["public.crt"]; ok {
-			rootCAs.AppendCertsFromPEM(val)
-		}
-	}
-
-	// Multi-tenancy support for external certificates
-	// One secret per tenant to allow for the automatic appending and renewal of certificates upon expiration.
+	// Append all external Certificate Authorities added to Operator, secrets with prefix "operator-ca-tls"
 	secretsAvailableAtOperatorNS, _ := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).List(context.Background(), metav1.ListOptions{})
 	for _, secret := range secretsAvailableAtOperatorNS.Items {
 		// Check if secret starts with "operator-ca-tls-"
-		secretName := OperatorCATLSSecretName + "-"
-		if strings.HasPrefix(secret.Name, secretName) {
-			klog.Infof("External secret found: %s", secret.Name)
+		if strings.HasPrefix(secret.Name, OperatorCATLSSecretName) {
 			operatorCATLSCert, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(context.Background(), secret.Name, metav1.GetOptions{})
 			if err == nil && operatorCATLSCert != nil {
-				if val, ok := operatorCATLSCert.Data["ca.crt"]; ok {
-					klog.Infof("Appending cert from %s secret", secret.Name)
-					rootCAs.AppendCertsFromPEM(val)
-				} else {
-					klog.Errorf("NOT appending %s secret, ok: %t", secret.Name, ok)
+				if newPublicCert, err := getFileFromSecretDataField(operatorCATLSCert.Data, certs.PublicCertFile); err == nil {
+					rootCAs.AppendCertsFromPEM(newPublicCert)
 				}
-			} else {
-				klog.Errorf("NOT appending %s secret, err: %s operatorCATLSCert: %s", secret.Name, err, operatorCATLSCert)
+				if newTLSCert, err := getFileFromSecretDataField(operatorCATLSCert.Data, certs.TLSCertFile); err == nil {
+					rootCAs.AppendCertsFromPEM(newTLSCert)
+				}
+				if newCACert, err := getFileFromSecretDataField(operatorCATLSCert.Data, certs.CAPublicCertFile); err == nil {
+					rootCAs.AppendCertsFromPEM(newCACert)
+				}
 			}
 		}
 	}
 
 	return rootCAs
+}
+
+// getFileFromSecretDataField Get the value of a secret field
+// limiting the field key name to public TLS certificate file names
+func getFileFromSecretDataField(secretData map[string][]byte, key string) ([]byte, error) {
+	keys := []string{
+		certs.TLSCertFile,
+		certs.CAPublicCertFile,
+		certs.PublicCertFile,
+	}
+	if slices.Contains(keys, key) {
+		data, ok := secretData[key]
+		if ok {
+			return data, nil
+		}
+	} else {
+		return nil, fmt.Errorf("unknow TLS key '%s'", key)
+	}
+	return nil, fmt.Errorf("key '%s' not found in secret", key)
+}
+
+// TrustTLSCertificatesInSecretIfChanged Compares old and new secret content and trusts TLS certificates if field
+// content is different, looks for the fields public.crt, tls.crt and ca.crt
+func (c *Controller) TrustTLSCertificatesInSecretIfChanged(newSecret *corev1.Secret, oldSecret *corev1.Secret) {
+	if oldSecret == nil {
+		// secret did not exist before, we trust all certs in it
+		c.trustPEMInSecretField(newSecret, certs.PublicCertFile)
+		c.trustPEMInSecretField(newSecret, certs.PrivateKeyFile)
+		c.trustPEMInSecretField(newSecret, certs.CAPublicCertFile)
+	} else {
+		// compare to add to trust only certs that changed
+		c.trustIfChanged(newSecret, oldSecret, certs.PublicCertFile)
+		c.trustIfChanged(newSecret, oldSecret, certs.TLSCertFile)
+		c.trustIfChanged(newSecret, oldSecret, certs.CAPublicCertFile)
+	}
+}
+
+func (c *Controller) trustIfChanged(newSecret *corev1.Secret, oldSecret *corev1.Secret, fieldToCompare string) {
+	if newPublicCert, err := getFileFromSecretDataField(newSecret.Data, fieldToCompare); err == nil {
+		if oldPublicCert, err := getFileFromSecretDataField(oldSecret.Data, fieldToCompare); err == nil {
+			newPublicCert = bytes.TrimSpace(newPublicCert)
+			oldPublicCert = bytes.TrimSpace(oldPublicCert)
+			// add to trust only if cert changed
+			if !bytes.Equal(oldPublicCert, newPublicCert) {
+				if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
+					klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, newSecret.Namespace, newSecret.Name)
+				} else {
+					klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
+				}
+			}
+		} else {
+			// If filed was not present in old secret but is in new secret then is an addition, we trust it
+			if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
+				klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, newSecret.Namespace, newSecret.Name)
+			} else {
+				klog.Errorf("Failed adding certs in field %s of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
+			}
+		}
+	}
+}
+
+func (c *Controller) trustPEMInSecretField(secret *corev1.Secret, fieldToCompare string) {
+	newPublicCert, err := getFileFromSecretDataField(secret.Data, fieldToCompare)
+	if err == nil {
+		if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
+			klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, secret.Namespace, secret.Name)
+		} else {
+			klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, secret.Namespace, secret.Name, err)
+		}
+	}
+}
+
+func (c *Controller) addTLSCertificatesToTrustInTransport(certificateData []byte) error {
+	var x509Certs []*x509.Certificate
+	current := certificateData
+	// A single PEM file could contain more than one certificate, keeping track of the index to help debugging
+	certIndex := 1
+	for len(current) > 0 {
+		var pemBlock *pem.Block
+		if pemBlock, current = pem.Decode(current); pemBlock == nil {
+			return fmt.Errorf("invalid PEM in file in index %d", certIndex)
+		}
+		x509Cert, err := x509.ParseCertificate(pemBlock.Bytes)
+		if err != nil {
+			return fmt.Errorf("error parsing x509 certificate from PEM in index, %d: %v", certIndex, err)
+		}
+		x509Certs = append(x509Certs, x509Cert)
+		certIndex++
+	}
+	for _, cert := range x509Certs {
+		c.getTransport().TLSClientConfig.RootCAs.AddCert(cert)
+	}
+	return nil
 }
 
 // GetSignerCAFromSecret Retrieves the CA certificate for Openshift CSR signed certificates from
@@ -211,7 +294,7 @@ func (c *Controller) GetSignerCAFromSecret() ([]byte, error) {
 		}
 		return nil, fmt.Errorf("%s secret was found but we failed to load the secret: %#v", OpenshiftCATLSSecretName, err)
 	} else if openShiftCATLSCertSecret != nil {
-		if val, ok := openShiftCATLSCertSecret.Data[common.TLSCRT]; ok {
+		if val, ok := openShiftCATLSCertSecret.Data[certs.TLSCertFile]; ok {
 			caCertificate = val
 		}
 	}
@@ -232,7 +315,7 @@ func (c *Controller) GetOpenshiftCSRSignerCAFromSecret() ([]byte, error) {
 		return nil, fmt.Errorf("%s secret was found but we failed to get certificate: %#v", OperatorCSRSignerCASecretName, err)
 	} else if openShifCSRSignerCATLSCertSecret != nil {
 		// When secret was obtained with no errors
-		if val, ok := openShifCSRSignerCATLSCertSecret.Data[common.TLSCRT]; ok {
+		if val, ok := openShifCSRSignerCATLSCertSecret.Data[certs.TLSCertFile]; ok {
 			// OpenShift csr-signer secret has tls.crt certificates that we need to append in order
 			// to trust the signer. If we append the val, Operator will be able to provisioning the
 			// initial users and get Tenant Health, so tenant can be properly initialized and in
@@ -281,7 +364,7 @@ func (c *Controller) checkOpenshiftSignerCACertInOperatorNamespace(ctx context.C
 					OwnerReferences: []metav1.OwnerReference{ownerReference},
 				},
 				Data: map[string][]byte{
-					common.TLSCRT: csrSignerCertificate,
+					certs.TLSCertFile: csrSignerCertificate,
 				},
 			}
 			_, err = c.kubeClientSet.CoreV1().Secrets(namespace).Create(ctx, csrSignerSecret, metav1.CreateOptions{})
@@ -292,14 +375,13 @@ func (c *Controller) checkOpenshiftSignerCACertInOperatorNamespace(ctx context.C
 		return err
 	}
 
-	if caCert, ok := csrSignerSecret.Data[common.TLSCRT]; ok && !bytes.Equal(caCert, csrSignerCertificate) {
-		csrSignerSecret.Data[common.TLSCRT] = csrSignerCertificate
+	if caCert, ok := csrSignerSecret.Data[certs.TLSCertFile]; ok && !bytes.Equal(caCert, csrSignerCertificate) {
+		csrSignerSecret.Data[certs.TLSCertFile] = csrSignerCertificate
 		_, err = c.kubeClientSet.CoreV1().Secrets(namespace).Update(ctx, csrSignerSecret, metav1.UpdateOptions{})
 		if err != nil {
 			return err
 		}
 		klog.Infof("'%s/%s' secret changed, updating '%s/%s' secret", OpenshiftKubeControllerNamespace, OpenshiftCATLSSecretName, namespace, OperatorCSRSignerCASecretName)
-		c.fetchTransportCACertificates()
 		// Reload CA certificates
 		c.createTransport()
 	}

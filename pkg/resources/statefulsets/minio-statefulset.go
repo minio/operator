@@ -467,7 +467,6 @@ type NewPoolArgs struct {
 	ServiceName     string
 	HostsTemplate   string
 	OperatorVersion string
-	OperatorCATLS   bool
 }
 
 // NewPool creates a new StatefulSet for the given Cluster.
@@ -486,12 +485,12 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 
 	var clientCertSecret string
 	clientCertPaths := []corev1.KeyToPath{
-		{Key: "public.crt", Path: "client.crt"},
-		{Key: "private.key", Path: "client.key"},
+		{Key: certs.PublicCertFile, Path: "client.crt"},
+		{Key: certs.PrivateKeyFile, Path: "client.key"},
 	}
 	var kesCertSecret string
 	KESCertPath := []corev1.KeyToPath{
-		{Key: "public.crt", Path: "CAs/kes.crt"},
+		{Key: certs.PublicCertFile, Path: "CAs/kes.crt"},
 	}
 
 	// Create an empty dir volume to share the configuration between the main container and side-car
@@ -526,8 +525,8 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	//
 	// Iterate over all provided TLS certificates and store them on the list of Volumes that will be mounted to the Pod
 	for index, secret := range t.Spec.ExternalCertSecret {
-		crtMountPath := fmt.Sprintf("hostname-%d/public.crt", index)
-		keyMountPath := fmt.Sprintf("hostname-%d/private.key", index)
+		crtMountPath := fmt.Sprintf("hostname-%d/%s", index, certs.PublicCertFile)
+		keyMountPath := fmt.Sprintf("hostname-%d/%s", index, certs.PrivateKeyFile)
 		caMountPath := fmt.Sprintf("CAs/hostname-%d.crt", index)
 		// MinIO requires to have at least 1 certificate keyPair under the `certs` folder, by default
 		// we will take the first secret as the default certificate
@@ -536,29 +535,29 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		//		+ public.crt
 		//		+ private.key
 		if index == 0 {
-			crtMountPath = "public.crt"
-			keyMountPath = "private.key"
-			caMountPath = "CAs/public.crt"
+			crtMountPath = certs.PublicCertFile
+			keyMountPath = certs.PrivateKeyFile
+			caMountPath = fmt.Sprintf("%s/%s", certs.CertsCADir, certs.PublicCertFile)
 		}
 
 		var serverCertPaths []corev1.KeyToPath
 		if secret.Type == "kubernetes.io/tls" {
 			serverCertPaths = []corev1.KeyToPath{
-				{Key: "tls.crt", Path: crtMountPath},
-				{Key: "tls.key", Path: keyMountPath},
-				{Key: "tls.crt", Path: caMountPath},
+				{Key: certs.TLSCertFile, Path: crtMountPath},
+				{Key: certs.TLSKeyFile, Path: keyMountPath},
+				{Key: certs.TLSCertFile, Path: caMountPath},
 			}
 		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
 			serverCertPaths = []corev1.KeyToPath{
-				{Key: "tls.crt", Path: crtMountPath},
-				{Key: "tls.key", Path: keyMountPath},
-				{Key: "ca.crt", Path: caMountPath},
+				{Key: certs.TLSCertFile, Path: crtMountPath},
+				{Key: certs.TLSKeyFile, Path: keyMountPath},
+				{Key: certs.CAPublicCertFile, Path: caMountPath},
 			}
 		} else {
 			serverCertPaths = []corev1.KeyToPath{
-				{Key: "public.crt", Path: crtMountPath},
-				{Key: "private.key", Path: keyMountPath},
-				{Key: "public.crt", Path: caMountPath},
+				{Key: certs.PublicCertFile, Path: crtMountPath},
+				{Key: certs.PrivateKeyFile, Path: keyMountPath},
+				{Key: certs.PublicCertFile, Path: caMountPath},
 			}
 		}
 		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
@@ -572,13 +571,13 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	}
 	// AutoCert certificates will be used for internal communication if requested
 	if t.AutoCert() {
-		crtMountPath := "public.crt"
-		keyMountPath := "private.key"
-		caMountPath := "CAs/public.crt"
+		crtMountPath := certs.PublicCertFile
+		keyMountPath := certs.PrivateKeyFile
+		caMountPath := fmt.Sprintf("%s/%s", certs.CertsCADir, certs.PublicCertFile)
 		if len(t.Spec.ExternalCertSecret) > 0 {
 			index := len(t.Spec.ExternalCertSecret)
-			crtMountPath = fmt.Sprintf("hostname-%d/public.crt", index)
-			keyMountPath = fmt.Sprintf("hostname-%d/private.key", index)
+			crtMountPath = fmt.Sprintf("hostname-%d/%s", index, certs.PublicCertFile)
+			keyMountPath = fmt.Sprintf("hostname-%d/%s", index, certs.PrivateKeyFile)
 			caMountPath = fmt.Sprintf("CAs/hostname-%d.crt", index)
 		}
 		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
@@ -587,9 +586,9 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 					Name: t.MinIOTLSSecretName(),
 				},
 				Items: []corev1.KeyToPath{
-					{Key: "public.crt", Path: crtMountPath},
-					{Key: "private.key", Path: keyMountPath},
-					{Key: "public.crt", Path: caMountPath},
+					{Key: certs.PublicCertFile, Path: crtMountPath},
+					{Key: certs.PrivateKeyFile, Path: keyMountPath},
+					{Key: certs.PublicCertFile, Path: caMountPath},
 				},
 			},
 		})
@@ -615,19 +614,19 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		var clientKeyPairPaths []corev1.KeyToPath
 		if secret.Type == "kubernetes.io/tls" {
 			clientKeyPairPaths = []corev1.KeyToPath{
-				{Key: "tls.crt", Path: crtMountPath},
-				{Key: "tls.key", Path: keyMountPath},
+				{Key: certs.TLSCertFile, Path: crtMountPath},
+				{Key: certs.TLSKeyFile, Path: keyMountPath},
 			}
 		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
 			clientKeyPairPaths = []corev1.KeyToPath{
-				{Key: "tls.crt", Path: crtMountPath},
-				{Key: "tls.key", Path: keyMountPath},
-				{Key: "ca.crt", Path: fmt.Sprintf("CAs/client-ca-%d.crt", index)},
+				{Key: certs.TLSCertFile, Path: crtMountPath},
+				{Key: certs.TLSKeyFile, Path: keyMountPath},
+				{Key: certs.CAPublicCertFile, Path: fmt.Sprintf("%s/client-ca-%d.crt", certs.CertsCADir, index)},
 			}
 		} else {
 			clientKeyPairPaths = []corev1.KeyToPath{
-				{Key: "public.crt", Path: crtMountPath},
-				{Key: "private.key", Path: keyMountPath},
+				{Key: certs.PublicCertFile, Path: crtMountPath},
+				{Key: certs.PrivateKeyFile, Path: keyMountPath},
 			}
 		}
 		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
@@ -653,15 +652,15 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		// "cert-manager.io/v1alpha2" because of same keys in both.
 		if secret.Type == "kubernetes.io/tls" {
 			caCertPaths = []corev1.KeyToPath{
-				{Key: "tls.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+				{Key: certs.TLSCertFile, Path: fmt.Sprintf("%s/ca-%d.crt", certs.CertsCADir, index)},
 			}
 		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
 			caCertPaths = []corev1.KeyToPath{
-				{Key: "ca.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+				{Key: certs.CAPublicCertFile, Path: fmt.Sprintf("%s/ca-%d.crt", certs.CertsCADir, index)},
 			}
 		} else {
 			caCertPaths = []corev1.KeyToPath{
-				{Key: "public.crt", Path: fmt.Sprintf("CAs/ca-%d.crt", index)},
+				{Key: certs.PublicCertFile, Path: fmt.Sprintf("%s/ca-%d.crt", certs.CertsCADir, index)},
 			}
 		}
 		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
@@ -683,13 +682,13 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 			// "cert-manager.io/v1alpha2" / cert-manager.io/v1 because of same keys in both.
 			if t.Spec.ExternalClientCertSecret.Type == "kubernetes.io/tls" || t.Spec.ExternalClientCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 				clientCertPaths = []corev1.KeyToPath{
-					{Key: "tls.crt", Path: "client.crt"},
-					{Key: "tls.key", Path: "client.key"},
+					{Key: certs.TLSCertFile, Path: "client.crt"},
+					{Key: certs.TLSKeyFile, Path: "client.key"},
 				}
 			} else {
 				clientCertPaths = []corev1.KeyToPath{
-					{Key: "public.crt", Path: "client.crt"},
-					{Key: "private.key", Path: "client.key"},
+					{Key: certs.PublicCertFile, Path: "client.crt"},
+					{Key: certs.PrivateKeyFile, Path: "client.key"},
 				}
 			}
 		} else {
@@ -703,7 +702,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 			// "cert-manager.io/v1alpha2" because of same keys in both.
 			if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 				KESCertPath = []corev1.KeyToPath{
-					{Key: "tls.crt", Path: "CAs/kes.crt"},
+					{Key: certs.TLSCertFile, Path: fmt.Sprintf("%s/kes.crt", certs.CertsCADir)},
 				}
 			}
 		} else {

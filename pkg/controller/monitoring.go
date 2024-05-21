@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/minio/madmin-go/v3"
@@ -118,13 +119,14 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	// get cluster health for tenant
 	healthResult, err := aClnt.Healthy(hctx, madmin.HealthOpts{})
 	if err != nil {
+		if strings.Contains(err.Error(), "failed to verify certificate") {
+			err := c.reloadTenantExternalCerts(tenant)
+			if err != nil {
+				return err
+			}
+		}
 		// show the error and continue
 		klog.Infof("'%s/%s' Failed to get cluster health: %v", tenant.Namespace, tenant.Name, err)
-		err = c.renewExternalCerts(context.Background(), tenant, err)
-		if err != nil {
-			klog.Errorf("There was an error on certificate renewal %s", err)
-			return err
-		}
 		return nil
 	}
 

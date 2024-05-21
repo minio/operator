@@ -29,6 +29,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/minio/operator/pkg/certs"
+
 	"github.com/minio/operator/pkg/controller/certificates"
 
 	certificatesV1 "k8s.io/api/certificates/v1"
@@ -257,8 +259,8 @@ func (c *Controller) createSecret(ctx context.Context, tenant *miniov2.Tenant, l
 			},
 		},
 		Data: map[string][]byte{
-			"private.key": pkBytes,
-			"public.crt":  certBytes,
+			certs.PrivateKeyFile: pkBytes,
+			certs.PublicCertFile: certBytes,
 		},
 	}
 	_, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, secret, metav1.CreateOptions{})
