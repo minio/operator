@@ -178,7 +178,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 		},
 		StringData: map[string]string{
 			"MC_HOST_myminio":                    fmt.Sprintf("https://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.cluster.local", jobCR.Namespace),
-			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:%s/sts/%s", miniov2.GetNSFromFile(), jobCR.Namespace, stsPort),
+			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:%s/sts/%s", miniov2.GetNSFromFile(), stsPort, jobCR.Namespace),
 			"MC_WEB_IDENTITY_TOKEN_FILE_myminio": "/var/run/secrets/kubernetes.io/serviceaccount/token",
 		},
 	}
