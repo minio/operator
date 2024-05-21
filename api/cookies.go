@@ -27,7 +27,7 @@ import (
 func NewSessionCookieForConsole(token string) http.Cookie {
 	sessionDuration := xjwt.GetConsoleSTSDuration()
 	return http.Cookie{
-		Path:     "/",
+		Path:     "/api/v1/",
 		Name:     "token",
 		Value:    token,
 		MaxAge:   int(sessionDuration.Seconds()), // default 1 hr
@@ -44,7 +44,7 @@ func NewSessionCookieForConsole(token string) http.Cookie {
 // NewIDPSessionCookie creates a cookie for a refresh token
 func NewIDPSessionCookie(token string) http.Cookie {
 	return http.Cookie{
-		Path:     "/",
+		Path:     "/api/v1/",
 		Name:     "idp-refresh-token",
 		Value:    token,
 		HttpOnly: true,
@@ -56,11 +56,11 @@ func NewIDPSessionCookie(token string) http.Cookie {
 // ExpireSessionCookie expires a cookie
 func ExpireSessionCookie() http.Cookie {
 	return http.Cookie{
-		Path:     "/",
+		Path:     "/api/v1/",
 		Name:     "token",
 		Value:    "",
 		MaxAge:   -1,
-		Expires:  time.Now().Add(-100 * time.Hour),
+		Expires:  time.Unix(0, 0),
 		HttpOnly: true,
 		// if len(GlobalPublicCerts) > 0 is true, that means Console is running with TLS enable and the browser
 		// should not leak any cookie if we access the site using HTTP
@@ -73,7 +73,7 @@ func ExpireSessionCookie() http.Cookie {
 // ExpireIDPSessionCookie expires a cookie for idp
 func ExpireIDPSessionCookie() http.Cookie {
 	return http.Cookie{
-		Path:     "/",
+		Path:     "/api/v1/",
 		Name:     "idp-refresh-token",
 		Value:    "",
 		MaxAge:   -1,
