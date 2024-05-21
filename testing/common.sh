@@ -555,8 +555,16 @@ function install_operator() {
   (cd "${SCRIPT_DIR}/.." && try docker build -t $TAG .) # will not change your shell's current directory
 
   echo 'start - load compiled image so we can use it later on'
-  try kind load docker-image minio/operator:noop
+  try kind load docker-image $TAG
   echo 'end - load compiled image so we can use it later on'
+  # To compile current branch
+  echo "Compiling Current Branch Sidecar"
+  SIDECAR_TAG=minio/operator-sidecar:noop
+  (cd "${SCRIPT_DIR}/../" && try docker build -t $SIDECAR_TAG -f sidecar/Dockerfile .) # will not change your shell's current directory
+
+  echo 'start - load compiled sidecar image so we can use it later on'
+  try kind load docker-image $SIDECAR_TAG
+  echo 'end - load compiled sidecar image so we can use it later on'
 
   if [ "$1" = "helm" ]; then
 
@@ -565,6 +573,7 @@ function install_operator() {
     yq -i '.operator.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.console.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.console.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
+    yq -i '.operator.env += [{"name": "OPERATOR_SIDECAR_IMAGE", "value": "'$SIDECAR_TAG'"}]' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     echo "Installing Current Operator via HELM"
     create_restricted_namespace minio-operator
     helm install \
@@ -577,6 +586,7 @@ function install_operator() {
   elif [ "$1" = "sts" ]; then
     echo "Installing Current Operator with sts enabled"
     try kubectl apply -k "${SCRIPT_DIR}/../testing/sts/operator"
+    try kubectl -n minio-operator set env deployment/minio-operator OPERATOR_SIDECAR_IMAGE="$SIDECAR_TAG"
     echo "key, value for pod selector in kustomize test"
     key=name
     value=minio-operator
@@ -596,6 +606,7 @@ function install_operator() {
     echo "changing images for console and minio-operator deployments"
     try kubectl -n minio-operator set image deployment/minio-operator minio-operator="$TAG"
     try kubectl -n minio-operator set image deployment/console console="$TAG"
+    try kubectl -n minio-operator set env deployment/minio-operator OPERATOR_SIDECAR_IMAGE="$SIDECAR_TAG"
 
     echo "key, value for pod selector in kustomize test"
     key=name

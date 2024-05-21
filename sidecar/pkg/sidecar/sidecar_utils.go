@@ -29,7 +29,7 @@ import (
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioInformers "github.com/minio/operator/pkg/client/informers/externalversions"
 	v22 "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
-	"github.com/minio/operator/pkg/validator"
+	"github.com/minio/operator/sidecar/pkg/validator"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
 	coreinformers "k8s.io/client-go/informers/core/v1"

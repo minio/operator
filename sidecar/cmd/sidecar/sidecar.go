@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2023 MinIO, Inc.
+// Copyright (c) 2024 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -17,26 +17,43 @@
 package main
 
 import (
+	"log"
+	"os"
+
 	"github.com/minio/cli"
-	"github.com/minio/operator/pkg/validator"
+	"github.com/minio/operator/sidecar/pkg/sidecar"
 )
 
 // starts the controller
-var validateCmd = cli.Command{
-	Name:    "validate",
-	Aliases: []string{"v"},
-	Usage:   "Start MinIO Operator Config Validator",
-	Action:  startValidator,
+var sidecarCmd = cli.Command{
+	Name:    "sidecar",
+	Aliases: []string{"s"},
+	Usage:   "Start MinIO Operator Sidecar",
+	Action:  startSideCar,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "tenant",
 			Value: "",
 			Usage: "name of tenant being validated",
 		},
+		cli.StringFlag{
+			Name:  "config-name",
+			Value: "",
+			Usage: "secret being watched",
+		},
 	},
 }
 
-func startValidator(ctx *cli.Context) {
+func startSideCar(ctx *cli.Context) {
 	tenantName := ctx.String("tenant")
-	validator.Validate(tenantName)
+	if tenantName == "" {
+		log.Println("Must pass --tenant flag")
+		os.Exit(1)
+	}
+	configName := ctx.String("config-name")
+	if configName == "" {
+		log.Println("Must pass --config-name flag")
+		os.Exit(1)
+	}
+	sidecar.StartSideCar(tenantName, configName)
 }

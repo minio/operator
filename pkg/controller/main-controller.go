@@ -34,7 +34,6 @@ import (
 
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/minio/operator/pkg/controller/certificates"
-	"github.com/minio/pkg/env"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/klog/v2"
 
@@ -192,8 +191,6 @@ type Controller struct {
 	// time, and makes it easy to ensure we are never processing the same item
 	// simultaneously in two different workers.
 	healthCheckQueue queue.RateLimitingInterface
-	// image being used in the operator deployment
-	operatorImage string
 
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
@@ -251,34 +248,6 @@ func NewController(
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClientSet.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
-	// get operator deployment name
-	ns := miniov2.GetNSFromFile()
-	ctx := context.Background()
-	oprImg := DefaultOperatorImage
-	oprDep, err := kubeClientSet.AppsV1().Deployments(ns).Get(ctx, getOperatorDeploymentName(), metav1.GetOptions{})
-	if err == nil && oprDep != nil {
-		// assume we are the first container, just in case they changed the default name
-		if len(oprDep.Spec.Template.Spec.Containers) > 0 {
-			oprImg = oprDep.Spec.Template.Spec.Containers[0].Image
-		}
-		// attempt to iterate in case there's multiple containers
-		for _, c := range oprDep.Spec.Template.Spec.Containers {
-			if c.Name == "minio-operator" || c.Name == "operator" {
-				oprImg = c.Image
-			}
-		}
-	}
-
-	oprImg = env.Get(DefaultOperatorImageEnv, oprImg)
-
-	//controllerConfig := controllerConfig{
-	//	serviceLister:     serviceInformer.Lister(),
-	//	kubeClientSet:     kubeClientSet,
-	//	statefulSetLister: statefulSetInformer.Lister(),
-	//	deploymentLister:  deploymentInformer.Lister(),
-	//	recorder:          recorder,
-	//}
-
 	controller := &Controller{
 		podName:                   podName,
 		namespacesToWatch:         namespacesToWatch,
@@ -300,7 +269,6 @@ func NewController(
 		hostsTemplate:             hostsTemplate,
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
-		operatorImage:             oprImg,
 		controllers: []*JobController{
 			NewJobController(
 				minioJobinformer,
@@ -1007,7 +975,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
 				OperatorCATLS:   operatorCATLSExists,
-				OperatorImage:   c.operatorImage,
 			})
 			ss, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ss, cOpts)
 			if err != nil {
@@ -1217,7 +1184,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
 				OperatorCATLS:   operatorCATLSExists,
-				OperatorImage:   c.operatorImage,
 			})
 			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
 				return WrapResult(Result{}, err)
@@ -1267,7 +1233,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			HostsTemplate:   c.hostsTemplate,
 			OperatorVersion: c.operatorVersion,
 			OperatorCATLS:   operatorCATLSExists,
-			OperatorImage:   c.operatorImage,
 		})
 		// Verify if this pool matches the spec on the tenant (resources, affinity, sidecars, etc)
 		poolMatchesSS, err := poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet)
