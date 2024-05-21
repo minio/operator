@@ -258,7 +258,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	if err != nil {
 		return WrapResult(Result{}, err)
 	}
-	err = intervalJob.CreateCommandJob(ctx, c.k8sClient)
+	err = intervalJob.CreateCommandJob(ctx, c.k8sClient, STSDefaultPort)
 	if err != nil {
 		jobCR.Status.Phase = miniojob.MinioJobPhaseError
 		jobCR.Status.Message = fmt.Sprintf("Create job error:%v", err)
