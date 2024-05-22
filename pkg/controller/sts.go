@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"sync"
@@ -34,8 +35,8 @@ const (
 
 // STS API constants
 const (
-	STSDefaultPort = "4223"
-	STSEndpoint    = "/sts"
+	STSDefaultPort int = 4223
+	STSEndpoint        = "/sts"
 )
 
 const (
@@ -263,7 +264,7 @@ func configureSTSServer(c *Controller) *http.Server {
 	router.NotFoundHandler = http.NotFoundHandler()
 
 	s := &http.Server{
-		Addr:           ":" + STSDefaultPort,
+		Addr:           fmt.Sprintf(":%d", STSDefaultPort),
 		Handler:        router,
 		ReadTimeout:    time.Minute,
 		WriteTimeout:   time.Minute,

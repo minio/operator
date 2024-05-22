@@ -120,7 +120,7 @@ func (jobCommand *MinIOIntervalJobCommand) Success() bool {
 }
 
 // createJob - create job
-func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort string) (objs []client.Object) {
+func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int) (objs []client.Object) {
 	if jobCommand == nil {
 		return nil
 	}
@@ -178,7 +178,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 		},
 		StringData: map[string]string{
 			"MC_HOST_myminio":                    fmt.Sprintf("https://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.cluster.local", jobCR.Namespace),
-			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:%s/sts/%s", miniov2.GetNSFromFile(), stsPort, jobCR.Namespace),
+			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:%d/sts/%s", miniov2.GetNSFromFile(), stsPort, jobCR.Namespace),
 			"MC_WEB_IDENTITY_TOKEN_FILE_myminio": "/var/run/secrets/kubernetes.io/serviceaccount/token",
 		},
 	}
@@ -233,7 +233,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 }
 
 // CreateJob - create job
-func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort string) error {
+func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int) error {
 	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, stsPort) {
 		if obj == nil {
 			continue
@@ -308,7 +308,7 @@ func (intervalJob *MinIOIntervalJob) GetMinioJobStatus(ctx context.Context) v1al
 }
 
 // CreateCommandJob - create command job
-func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, stsPort string) error {
+func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, stsPort int) error {
 	for _, command := range intervalJob.Command {
 		if len(command.CommandSpec.DependsOn) == 0 {
 			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort)
