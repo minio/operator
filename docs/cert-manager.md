@@ -114,7 +114,7 @@ namespace, first create the minio-operator namespace
 kubectl create ns minio-operator
 ```
 
-Now creat the `Issuer`:
+Now create the `Issuer`:
 
 ```yaml
 # operator-ca-issuer.yaml
