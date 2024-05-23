@@ -248,18 +248,16 @@ func (c *Controller) trustIfChanged(newSecret *corev1.Secret, oldSecret *corev1.
 				if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
 					klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, newSecret.Namespace, newSecret.Name)
 					return true
-				} else {
-					klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
 				}
+				klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
 			}
 		} else {
 			// If filed was not present in old secret but is in new secret then is an addition, we trust it
 			if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
 				klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, newSecret.Namespace, newSecret.Name)
 				return true
-			} else {
-				klog.Errorf("Failed adding certs in field %s of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
 			}
+			klog.Errorf("Failed adding certs in field %s of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
 		}
 	}
 	return false
@@ -271,9 +269,8 @@ func (c *Controller) trustPEMInSecretField(secret *corev1.Secret, fieldToCompare
 		if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
 			klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, secret.Namespace, secret.Name)
 			return true
-		} else {
-			klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, secret.Namespace, secret.Name, err)
 		}
+		klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, secret.Namespace, secret.Name, err)
 	}
 	return false
 }
