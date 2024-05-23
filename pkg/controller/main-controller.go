@@ -1412,13 +1412,15 @@ func (c *Controller) handleSecret(obj interface{}, oldObj interface{}) {
 	if secret.Namespace == ns {
 		// a secret with prefix "operator-ca-tls" changed, reload all trusted CA certificates
 		if strings.HasPrefix(secret.Name, OperatorCATLSSecretName) {
-			klog.Infof("secret '%s' found, adding TLS certs in it to trusted CA's", secret.Name)
+			klog.Infof("Secret '%s/%s' changed", secret.Namespace, secret.Name)
 			var oldSecret *corev1.Secret
-			if oldSecret != nil {
+			if oldObj != nil {
 				oldSecret = oldObj.(*corev1.Secret)
 			}
 			// Add new certificates to Transport Certs if any changed
-			c.TrustTLSCertificatesInSecretIfChanged(secret, oldSecret)
+			if !c.TrustTLSCertificatesInSecretIfChanged(secret, oldSecret) {
+				klog.Infof("No new certificate was added from secret '%s/%s'", secret.Name, secret.Name)
+			}
 		}
 	}
 }

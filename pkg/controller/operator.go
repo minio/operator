@@ -210,21 +210,35 @@ func getFileFromSecretDataField(secretData map[string][]byte, key string) ([]byt
 
 // TrustTLSCertificatesInSecretIfChanged Compares old and new secret content and trusts TLS certificates if field
 // content is different, looks for the fields public.crt, tls.crt and ca.crt
-func (c *Controller) TrustTLSCertificatesInSecretIfChanged(newSecret *corev1.Secret, oldSecret *corev1.Secret) {
+func (c *Controller) TrustTLSCertificatesInSecretIfChanged(newSecret *corev1.Secret, oldSecret *corev1.Secret) bool {
+	added := false
 	if oldSecret == nil {
 		// secret did not exist before, we trust all certs in it
-		c.trustPEMInSecretField(newSecret, certs.PublicCertFile)
-		c.trustPEMInSecretField(newSecret, certs.TLSCertFile)
-		c.trustPEMInSecretField(newSecret, certs.CAPublicCertFile)
+		if c.trustPEMInSecretField(newSecret, certs.PublicCertFile) {
+			added = true
+		}
+		if c.trustPEMInSecretField(newSecret, certs.TLSCertFile) {
+			added = true
+		}
+		if c.trustPEMInSecretField(newSecret, certs.CAPublicCertFile) {
+			added = true
+		}
 	} else {
 		// compare to add to trust only certs that changed
-		c.trustIfChanged(newSecret, oldSecret, certs.PublicCertFile)
-		c.trustIfChanged(newSecret, oldSecret, certs.TLSCertFile)
-		c.trustIfChanged(newSecret, oldSecret, certs.CAPublicCertFile)
+		if c.trustIfChanged(newSecret, oldSecret, certs.PublicCertFile) {
+			added = true
+		}
+		if c.trustIfChanged(newSecret, oldSecret, certs.TLSCertFile) {
+			added = true
+		}
+		if c.trustIfChanged(newSecret, oldSecret, certs.CAPublicCertFile) {
+			added = true
+		}
 	}
+	return added
 }
 
-func (c *Controller) trustIfChanged(newSecret *corev1.Secret, oldSecret *corev1.Secret, fieldToCompare string) {
+func (c *Controller) trustIfChanged(newSecret *corev1.Secret, oldSecret *corev1.Secret, fieldToCompare string) bool {
 	if newPublicCert, err := getFileFromSecretDataField(newSecret.Data, fieldToCompare); err == nil {
 		if oldPublicCert, err := getFileFromSecretDataField(oldSecret.Data, fieldToCompare); err == nil {
 			newPublicCert = bytes.TrimSpace(newPublicCert)
@@ -233,6 +247,7 @@ func (c *Controller) trustIfChanged(newSecret *corev1.Secret, oldSecret *corev1.
 			if !bytes.Equal(oldPublicCert, newPublicCert) {
 				if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
 					klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, newSecret.Namespace, newSecret.Name)
+					return true
 				} else {
 					klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
 				}
@@ -241,22 +256,26 @@ func (c *Controller) trustIfChanged(newSecret *corev1.Secret, oldSecret *corev1.
 			// If filed was not present in old secret but is in new secret then is an addition, we trust it
 			if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
 				klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, newSecret.Namespace, newSecret.Name)
+				return true
 			} else {
 				klog.Errorf("Failed adding certs in field %s of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
 			}
 		}
 	}
+	return false
 }
 
-func (c *Controller) trustPEMInSecretField(secret *corev1.Secret, fieldToCompare string) {
+func (c *Controller) trustPEMInSecretField(secret *corev1.Secret, fieldToCompare string) bool {
 	newPublicCert, err := getFileFromSecretDataField(secret.Data, fieldToCompare)
 	if err == nil {
 		if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
 			klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, secret.Namespace, secret.Name)
+			return true
 		} else {
 			klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, secret.Namespace, secret.Name, err)
 		}
 	}
+	return false
 }
 
 func (c *Controller) addTLSCertificatesToTrustInTransport(certificateData []byte) error {
