@@ -214,7 +214,7 @@ func (c *Controller) TrustTLSCertificatesInSecretIfChanged(newSecret *corev1.Sec
 	if oldSecret == nil {
 		// secret did not exist before, we trust all certs in it
 		c.trustPEMInSecretField(newSecret, certs.PublicCertFile)
-		c.trustPEMInSecretField(newSecret, certs.PrivateKeyFile)
+		c.trustPEMInSecretField(newSecret, certs.TLSCertFile)
 		c.trustPEMInSecretField(newSecret, certs.CAPublicCertFile)
 	} else {
 		// compare to add to trust only certs that changed
