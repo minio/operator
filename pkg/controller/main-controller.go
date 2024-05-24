@@ -1416,7 +1416,9 @@ func (c *Controller) handleSecret(obj interface{}, oldObj interface{}) {
 			klog.Infof("Secret '%s/%s' changed", secret.Namespace, secret.Name)
 			var oldSecret *corev1.Secret
 			if oldObj != nil {
-				oldSecret = oldObj.(*corev1.Secret)
+				if oldCasted, ok := oldObj.(*corev1.Secret); ok {
+					oldSecret = oldCasted
+				}
 			}
 			// Add new certificates to Transport Certs if any changed
 			if !c.TrustTLSCertificatesInSecretIfChanged(secret, oldSecret) {

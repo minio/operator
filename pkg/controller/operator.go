@@ -252,12 +252,12 @@ func (c *Controller) trustIfChanged(newSecret *corev1.Secret, oldSecret *corev1.
 				klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
 			}
 		} else {
-			// If filed was not present in old secret but is in new secret then is an addition, we trust it
+			// If field was not present in old secret but is in new secret then is an addition, we trust it
 			if err := c.addTLSCertificatesToTrustInTransport(newPublicCert); err == nil {
 				klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, newSecret.Namespace, newSecret.Name)
 				return true
 			}
-			klog.Errorf("Failed adding certs in field %s of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
+			klog.Errorf("Failed adding certificates in field %s of '%s/%s' secret: %v", fieldToCompare, newSecret.Namespace, newSecret.Name, err)
 		}
 	}
 	return false
@@ -270,7 +270,7 @@ func (c *Controller) trustPEMInSecretField(secret *corev1.Secret, fieldToCompare
 			klog.Infof("Added certificates in field '%s' of '%s/%s' secret to trusted RootCA's", fieldToCompare, secret.Namespace, secret.Name)
 			return true
 		}
-		klog.Errorf("Failed adding certs in field '%s' of '%s/%s' secret: %v", fieldToCompare, secret.Namespace, secret.Name, err)
+		klog.Errorf("Failed adding certificates in field '%s' of '%s/%s' secret: %v", fieldToCompare, secret.Namespace, secret.Name, err)
 	}
 	return false
 }
@@ -278,7 +278,7 @@ func (c *Controller) trustPEMInSecretField(secret *corev1.Secret, fieldToCompare
 func (c *Controller) addTLSCertificatesToTrustInTransport(certificateData []byte) error {
 	var x509Certs []*x509.Certificate
 	current := certificateData
-	// A single PEM file could contain more than one certificate, keeping track of the index to help debugging
+	// A single PEM file could contain more than one certificates, keeping track of the index to help debugging
 	certIndex := 1
 	for len(current) > 0 {
 		var pemBlock *pem.Block
