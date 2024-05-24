@@ -90,18 +90,10 @@ func (c *Controller) checkMinIOSvc(ctx context.Context, tenant *miniov2.Tenant, 
 }
 
 func minioSvcMatchesSpecification(svc *corev1.Service, expectedSvc *corev1.Service) (bool, error) {
-	// expected labels match
-	if len(svc.ObjectMeta.Labels) != len(expectedSvc.ObjectMeta.Labels) {
-		return false, errors.New("service labels don't match")
-	}
 	for k, expVal := range expectedSvc.ObjectMeta.Labels {
 		if value, ok := svc.ObjectMeta.Labels[k]; !ok || value != expVal {
 			return false, errors.New("service labels don't match")
 		}
-	}
-	// expected annotations match
-	if len(svc.ObjectMeta.Annotations) != len(expectedSvc.ObjectMeta.Annotations) {
-		return false, errors.New("service annotations don't match")
 	}
 	for k, expVal := range expectedSvc.ObjectMeta.Annotations {
 		if value, ok := svc.ObjectMeta.Annotations[k]; !ok || value != expVal {
