@@ -143,7 +143,7 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 			if oldSecret.Name != secretName {
 				return
 			}
-			log.Println(fmt.Sprintf("Config secret '%s' sync", secretName))
+			log.Printf("Config secret '%s' sync", secretName)
 			newSecret := new.(*corev1.Secret)
 			if newSecret.ResourceVersion == oldSecret.ResourceVersion {
 				// Periodic resync will send update events for all known Tenants.
@@ -177,7 +177,7 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 			if !strings.HasSuffix(dataStr, "\n") {
 				dataStr = dataStr + "\n"
 			}
-			c.regenCfgWithCfg(tenantName, namespace, string(data))
+			c.regenCfgWithCfg(tenantName, namespace, dataStr)
 		},
 	})
 
