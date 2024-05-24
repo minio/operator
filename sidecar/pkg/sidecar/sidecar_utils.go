@@ -143,6 +143,7 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 			if oldSecret.Name != secretName {
 				return
 			}
+			log.Printf("Config secret '%s' sync", secretName)
 			newSecret := new.(*corev1.Secret)
 			if newSecret.ResourceVersion == oldSecret.ResourceVersion {
 				// Periodic resync will send update events for all known Tenants.
@@ -151,36 +152,39 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 			}
 			data := newSecret.Data["config.env"]
 			// validate root creds in string
-			rootUserMissing := true
-			rootPassMissing := false
+			rootUserFound := false
+			rootPwdFound := false
 
 			dataStr := string(data)
-			if !strings.Contains(dataStr, "MINIO_ROOT_USER") {
-				rootUserMissing = true
+			if strings.Contains(dataStr, "MINIO_ROOT_USER") {
+				rootUserFound = true
 			}
-			if !strings.Contains(dataStr, "MINIO_ACCESS_KEY") {
-				rootUserMissing = true
+			if strings.Contains(dataStr, "MINIO_ACCESS_KEY") {
+				rootUserFound = true
 			}
-			if !strings.Contains(dataStr, "MINIO_ROOT_PASSWORD") {
-				rootPassMissing = true
+			if strings.Contains(dataStr, "MINIO_ROOT_PASSWORD") {
+				rootPwdFound = true
 			}
-			if !strings.Contains(dataStr, "MINIO_SECRET_KEY") {
-				rootPassMissing = true
+			if strings.Contains(dataStr, "MINIO_SECRET_KEY") {
+				rootPwdFound = true
 			}
-			if rootUserMissing || rootPassMissing {
+			if !rootUserFound || !rootPwdFound {
 				log.Println("Missing root credentials in the configuration.")
 				log.Println("MinIO won't start")
 				os.Exit(1)
 			}
 
-			c.regenCfgWithCfg(tenantName, namespace, string(data))
+			if !strings.HasSuffix(dataStr, "\n") {
+				dataStr = dataStr + "\n"
+			}
+			c.regenCfgWithCfg(tenantName, namespace, dataStr)
 		},
 	})
 
 	return c
 }
 
-func (c Controller) regenCfg(tenantName string, namespace string) {
+func (c *Controller) regenCfg(tenantName string, namespace string) {
 	rootUserFound, rootPwdFound, fileContents, err := validator.ReadTmpConfig()
 	if err != nil {
 		log.Println(err)
@@ -194,7 +198,7 @@ func (c Controller) regenCfg(tenantName string, namespace string) {
 	c.regenCfgWithCfg(tenantName, namespace, fileContents)
 }
 
-func (c Controller) regenCfgWithCfg(tenantName string, namespace string, fileContents string) {
+func (c *Controller) regenCfgWithCfg(tenantName string, namespace string, fileContents string) {
 	ctx := context.Background()
 
 	args, err := validator.GetTenantArgs(ctx, c.controllerClient, tenantName, namespace)
@@ -213,18 +217,13 @@ func (c Controller) regenCfgWithCfg(tenantName string, namespace string, fileCon
 
 // Run starts the informers
 func (c *Controller) Run(stopCh chan struct{}) error {
-	// Starts all the shared minioInformers that have been created by the factory so
-	// far.
-	c.minInformerFactory.Start(stopCh)
-	c.informerFactory.Start(stopCh)
+	// Starts all the shared minioInformers that have been created by the factory so far.
+	go c.minInformerFactory.Start(stopCh)
+	go c.informerFactory.Start(stopCh)
 
 	// wait for the initial synchronization of the local cache.
-	if !cache.WaitForCacheSync(stopCh, c.tenantInformer.Informer().HasSynced) {
-		return fmt.Errorf("Failed to sync")
-	}
-	// wait for the initial synchronization of the local cache.
-	if !cache.WaitForCacheSync(stopCh, c.secretInformer.Informer().HasSynced) {
-		return fmt.Errorf("Failed to sync")
+	if !cache.WaitForCacheSync(stopCh, c.tenantInformer.Informer().HasSynced, c.secretInformer.Informer().HasSynced) {
+		return fmt.Errorf("failed to sync")
 	}
 	return nil
 }
