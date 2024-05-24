@@ -16,7 +16,11 @@
 
 package miniojob
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
+)
 
 func TestParser(t *testing.T) {
 	args := map[string]string{
@@ -92,30 +96,6 @@ func TestParser(t *testing.T) {
 			expectError: false,
 		},
 		{
-			command: File("policy", "json"),
-			args:    copyArgs(args),
-			expect: Arg{
-				FileName: "policy",
-				FileExt:  "json",
-				FileContext: `{
-              "Version": "2012-10-17",
-              "Statement": [
-                  {
-                      "Effect": "Allow",
-                      "Action": [
-                          "s3:*"
-                      ],
-                      "Resource": [
-                          "arn:aws:s3:::memes",
-                          "arn:aws:s3:::memes/*"
-                      ]
-                  }
-              ]
-          }`,
-			},
-			expectError: false,
-		},
-		{
 			command:     OneOf(KeyFormat("user", "--user"), KeyFormat("group", "--group")),
 			args:        copyArgs(args),
 			expect:      Arg{Command: "--user a b c d"},
@@ -152,59 +132,54 @@ func TestParser(t *testing.T) {
 			if tc.expect.Command != "" && cmd.Command != tc.expect.Command {
 				t.Fatalf("expectCommand %s, but got %s", tc.expect.Command, cmd.Command)
 			}
-			if tc.expect.FileName != "" {
-				if tc.expect.FileContext != cmd.FileContext {
-					t.Fatalf("expectCommand %s, but got %s", tc.expect.FileContext, cmd.FileContext)
-				}
-				if tc.expect.FileExt != cmd.FileExt {
-					t.Fatalf("expectCommand %s, but got %s", tc.expect.FileExt, cmd.FileExt)
-				}
-				if tc.expect.FileName != cmd.FileName {
-					t.Fatalf("expectCommand %s, but got %s", tc.expect.FileName, cmd.FileName)
-				}
-			}
 		}
 	}
 }
 
 func TestAdminPolicyCreate(t *testing.T) {
 	mcCommand := "admin/policy/create"
-	funcs := JobOperation[mcCommand]
 	testCase := []struct {
-		name             string
-		args             map[string]string
-		expectError      bool
-		expectCommand    string
-		expectFileNumber int
+		name          string
+		spec          v1alpha1.CommandSpec
+		expectError   bool
+		expectCommand string
 	}{
 		{
 			name: "testFull",
-			args: map[string]string{
-				"name":   "mypolicy",
-				"policy": "JsonContent",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"name":   "mypolicy",
+					"policy": "JsonContent",
+				},
 			},
-			expectCommand:    "myminio mypolicy /temp/policy.json",
-			expectFileNumber: 1,
+			expectCommand: "myminio mypolicy JsonContent",
 		},
 		{
 			name: "testError1",
-			args: map[string]string{
-				"name": "mypolicy",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"name": "mypolicy",
+				},
 			},
 			expectCommand: "",
 			expectError:   true,
 		},
 		{
 			name: "testError2",
-			args: map[string]string{
-				"policy": "JsonContent",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"policy": "JsonContent",
+				},
 			},
 			expectCommand: "",
 			expectError:   true,
 		},
 	}
 	for _, tc := range testCase {
-		command, err := GenerateMinIOIntervalJobCommand(mcCommand, 0, nil, "test", tc.args, funcs)
+		command, err := GenerateMinIOIntervalJobCommand(tc.spec, 0)
 		if !tc.expectError {
 			if err != nil {
 				t.Fatal(err)
@@ -222,94 +197,82 @@ func TestAdminPolicyCreate(t *testing.T) {
 
 func TestMCConfigSet(t *testing.T) {
 	mcCommand := "admin/config/set"
-	funcs := JobOperation[mcCommand]
 	testCase := []struct {
-		name             string
-		args             map[string]string
-		expectCommand    string
-		expectError      bool
-		expectFileNumber int
+		name          string
+		spec          v1alpha1.CommandSpec
+		expectCommand string
+		expectError   bool
 	}{
 		{
 			name: "testFull",
-			args: map[string]string{
-				"webhookName": "webhook1",
-				"endpoint":    "endpoint1",
-				"auth_token":  "token1",
-				"client_cert": "cert1",
-				"client_key":  "key1",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"webhookName": "webhook1",
+					"endpoint":    "endpoint1",
+					"auth_token":  "token1",
+					"client_cert": "cert1",
+					"client_key":  "key1",
+				},
 			},
-			expectCommand:    "myminio webhook1 endpoint=\"endpoint1\" client_key=\"/temp/client_key.key\" client_cert=\"/temp/client_cert.pem\" auth_token=\"token1\"",
-			expectFileNumber: 2,
-		},
-		{
-			name: "testOptionFile",
-			args: map[string]string{
-				"webhookName": "webhook1",
-				"endpoint":    "endpoint1",
-				"auth_token":  "token1",
-				"client_key":  "key1",
-			},
-			expectCommand:    "myminio webhook1 endpoint=\"endpoint1\" client_key=\"/temp/client_key.key\" auth_token=\"token1\"",
-			expectFileNumber: 1,
-		},
-		{
-			name: "testOptionKeyValue",
-			args: map[string]string{
-				"webhookName": "webhook1",
-				"endpoint":    "endpoint1",
-				"client_key":  "key1",
-			},
-			expectCommand:    "myminio webhook1 endpoint=\"endpoint1\" client_key=\"/temp/client_key.key\"",
-			expectFileNumber: 1,
+			expectCommand: "myminio webhook1 endpoint=\"endpoint1\" auth_token=\"token1\" client_cert=\"cert1\" client_key=\"key1\"",
 		},
 		{
 			name: "notify_mysql",
-			args: map[string]string{
-				"webhookName": "notify_mysql",
-				"dsn_string":  "username:password@tcp(mysql.example.com:3306)/miniodb",
-				"table":       "minioevents",
-				"format":      "namespace",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"webhookName": "notify_mysql",
+					"dsn_string":  "username:password@tcp(mysql.example.com:3306)/miniodb",
+					"table":       "minioevents",
+					"format":      "namespace",
+				},
 			},
-			expectCommand:    "myminio notify_mysql dsn_string=\"username:password@tcp(mysql.example.com:3306)/miniodb\" format=\"namespace\" table=\"minioevents\"",
-			expectFileNumber: 0,
+			expectCommand: "myminio notify_mysql dsn_string=\"username:password@tcp(mysql.example.com:3306)/miniodb\" format=\"namespace\" table=\"minioevents\"",
 		},
 		{
 			name: "notify_amqp",
-			args: map[string]string{
-				"webhookName": "notify_amqp:primary",
-				"url":         "user:password@amqp://amqp-endpoint.example.net:5672",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"webhookName": "notify_amqp:primary",
+					"url":         "user:password@amqp://amqp-endpoint.example.net:5672",
+				},
 			},
-			expectCommand:    "myminio notify_amqp:primary url=\"user:password@amqp://amqp-endpoint.example.net:5672\"",
-			expectFileNumber: 0,
+			expectCommand: "myminio notify_amqp:primary url=\"user:password@amqp://amqp-endpoint.example.net:5672\"",
 		},
 		{
 			name: "notify_elasticsearch",
-			args: map[string]string{
-				"webhookName": "notify_elasticsearch:primary",
-				"url":         "user:password@https://elasticsearch-endpoint.example.net:9200",
-				"index":       "bucketevents",
-				"format":      "namespace",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"webhookName": "notify_elasticsearch:primary",
+					"url":         "user:password@https://elasticsearch-endpoint.example.net:9200",
+					"index":       "bucketevents",
+					"format":      "namespace",
+				},
 			},
-			expectCommand:    "myminio notify_elasticsearch:primary format=\"namespace\" index=\"bucketevents\" url=\"user:password@https://elasticsearch-endpoint.example.net:9200\"",
-			expectFileNumber: 0,
+			expectCommand: "myminio notify_elasticsearch:primary format=\"namespace\" index=\"bucketevents\" url=\"user:password@https://elasticsearch-endpoint.example.net:9200\"",
 		},
 		{
 			name: "identity_ldap",
-			args: map[string]string{
-				"webhookName":             "identity_ldap",
-				"enabled":                 "true",
-				"server_addr":             "ad-ldap.example.net/",
-				"lookup_bind_dn":          "cn=miniolookupuser,dc=example,dc=net",
-				"lookup_bind_dn_password": "userpassword",
-				"user_dn_search_base_dn":  "dc=example,dc=net",
-				"user_dn_search_filter":   "(&(objectCategory=user)(sAMAccountName=%s))",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"webhookName":             "identity_ldap",
+					"enabled":                 "true",
+					"server_addr":             "ad-ldap.example.net/",
+					"lookup_bind_dn":          "cn=miniolookupuser,dc=example,dc=net",
+					"lookup_bind_dn_password": "userpassword",
+					"user_dn_search_base_dn":  "dc=example,dc=net",
+					"user_dn_search_filter":   "(&(objectCategory=user)(sAMAccountName=%s))",
+				},
 			},
 			expectCommand: "myminio identity_ldap enabled=\"true\" lookup_bind_dn=\"cn=miniolookupuser,dc=example,dc=net\" lookup_bind_dn_password=\"userpassword\" server_addr=\"ad-ldap.example.net/\" user_dn_search_base_dn=\"dc=example,dc=net\" user_dn_search_filter=\"(&(objectCategory=user)(sAMAccountName=%s))\"",
 		},
 	}
 	for _, tc := range testCase {
-		command, err := GenerateMinIOIntervalJobCommand(mcCommand, 0, nil, "test", tc.args, funcs)
+		command, err := GenerateMinIOIntervalJobCommand(tc.spec, 0)
 		if !tc.expectError {
 			if err != nil {
 				t.Fatal(err)
@@ -317,8 +280,67 @@ func TestMCConfigSet(t *testing.T) {
 			if command.Command != tc.expectCommand {
 				t.Fatalf("[%s] expectCommand %s, but got %s", tc.name, tc.expectCommand, command.Command)
 			}
-			if tc.expectFileNumber != len(command.Files) {
-				t.Fatalf("[%s] expectFileNumber %d, but got %d", tc.name, tc.expectFileNumber, len(command.Files))
+		} else {
+			if err == nil {
+				t.Fatalf("[%s] expectCommand error", tc.name)
+			}
+		}
+	}
+}
+
+func TestSupportcallhome(t *testing.T) {
+	mcCommand := "support/callhome"
+	testCase := []struct {
+		name          string
+		spec          v1alpha1.CommandSpec
+		expectCommand string
+		expectError   bool
+	}{
+		{
+			name: "testEnable",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"action": "enable",
+					"--logs": "",
+					"--diag": "",
+				},
+			},
+			expectCommand: "enable myminio --diag --logs",
+		},
+		{
+			name: "testDisable",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"action": "disable",
+					"--logs": "",
+					"--diag": "",
+				},
+			},
+			expectCommand: "disable myminio --diag --logs",
+		},
+		{
+			name: "testNoAction",
+			spec: v1alpha1.CommandSpec{
+				Operation: mcCommand,
+				Args: map[string]string{
+					"--logs": "",
+					"--diag": "",
+				},
+			},
+			expectCommand: "",
+			expectError:   true,
+		},
+	}
+	for _, tc := range testCase {
+		command, err := GenerateMinIOIntervalJobCommand(tc.spec, 0)
+		if !tc.expectError {
+			if err != nil {
+				t.Fatal(err)
+			}
+			if command.Command != tc.expectCommand {
+				t.Fatalf("[%s] expectCommand %s, but got %s", tc.name, tc.expectCommand, command.Command)
 			}
 		} else {
 			if err == nil {

@@ -59,9 +59,11 @@ var operationAlias = map[string]string{
 var JobOperation = map[string][]FieldsFunc{
 	"mb":                  {FLAGS(), Sanitize(ALIAS(), Static("/"), Key("name")), Static("--ignore-existing")},
 	"admin/user/add":      {ALIAS(), Key("user"), Key("password")},
-	"admin/policy/create": {ALIAS(), Key("name"), File("policy", "json")},
+	"admin/policy/create": {ALIAS(), Key("name"), Key("policy")},
 	"admin/policy/attach": {ALIAS(), Key("policy"), OneOf(KeyFormat("user", "--user"), KeyFormat("group", "--group"))},
-	"admin/config/set":    {ALIAS(), Key("webhookName"), Option(KeyValue("endpoint")), Option(KeyFile("client_key", "key")), Option(KeyFile("client_cert", "pem")), OthersKeyValues()},
+	"admin/config/set":    {ALIAS(), Key("webhookName"), Option(KeyValue("endpoint")), OthersKeyValues()},
+	"support/callhome":    {Key("action"), ALIAS(), FLAGS()},
+	"license/register":    {ALIAS(), OthersKeyValues()},
 }
 
 // OperationAliasToMC - convert operation to mc operation
@@ -84,22 +86,13 @@ func OperationAliasToMC(operation string) (op string, found bool) {
 	return "", false
 }
 
-// MinIOIntervalJobCommandFile - Job run command need a file such as /temp/policy.json
-type MinIOIntervalJobCommandFile struct {
-	Name    string
-	Ext     string
-	Dir     string
-	Content string
-}
-
 // MinIOIntervalJobCommand - Job run command
 type MinIOIntervalJobCommand struct {
 	mutex       sync.RWMutex
+	CommandSpec v1alpha1.CommandSpec
 	JobName     string
 	MCOperation string
 	Command     string
-	DepnedsOn   []string
-	Files       []MinIOIntervalJobCommandFile
 	Succeeded   bool
 	Message     string
 	Created     bool
@@ -126,8 +119,8 @@ func (jobCommand *MinIOIntervalJobCommand) Success() bool {
 	return jobCommand.Succeeded
 }
 
-// CreateJob - create job
-func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob) error {
+// createJob - create job
+func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int) (objs []client.Object) {
 	if jobCommand == nil {
 		return nil
 	}
@@ -148,11 +141,48 @@ func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sCli
 		}
 	}
 	jobCommands = append(jobCommands, "--insecure")
-	objs := []client.Object{}
 	mcImage := jobCR.Spec.MCImage
 	if mcImage == "" {
 		mcImage = DefaultMCImage
 	}
+	baseVolumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "config-dir",
+			MountPath: "/.mc",
+		},
+	}
+	baseVolumeMounts = append(baseVolumeMounts, jobCommand.CommandSpec.VolumeMounts...)
+	baseVolumes := []corev1.Volume{
+		{
+			Name: "config-dir",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
+	baseVolumes = append(baseVolumes, jobCommand.CommandSpec.Volumes...)
+	baseEnvFrom := []corev1.EnvFromSource{
+		{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: fmt.Sprintf("%s-job-secret", jobCR.Name),
+				},
+			},
+		},
+	}
+	baseEnvFrom = append(baseEnvFrom, jobCommand.CommandSpec.EnvFrom...)
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-job-secret", jobCR.Name),
+			Namespace: jobCR.Namespace,
+		},
+		StringData: map[string]string{
+			"MC_HOST_myminio":                    fmt.Sprintf("https://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.cluster.local", jobCR.Namespace),
+			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:%d/sts/%s", miniov2.GetNSFromFile(), stsPort, jobCR.Namespace),
+			"MC_WEB_IDENTITY_TOKEN_FILE_myminio": "/var/run/secrets/kubernetes.io/serviceaccount/token",
+		},
+	}
+	objs = append(objs, secret)
 	job := &batchjobv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s", jobCR.Name, jobCommand.JobName),
@@ -179,39 +209,16 @@ func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sCli
 							Name:            "mc",
 							Image:           mcImage,
 							ImagePullPolicy: corev1.PullIfNotPresent,
-							Env: []corev1.EnvVar{
-								{
-									Name:  "MC_HOST_myminio",
-									Value: fmt.Sprintf("https://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.cluster.local", jobCR.Namespace),
-								},
-								{
-									Name:  "MC_STS_ENDPOINT_myminio",
-									Value: fmt.Sprintf("https://sts.%s.svc.cluster.local:4223/sts/%s", miniov2.GetNSFromFile(), jobCR.Namespace),
-								},
-								{
-									Name:  "MC_WEB_IDENTITY_TOKEN_FILE_myminio",
-									Value: "/var/run/secrets/kubernetes.io/serviceaccount/token",
-								},
-							},
+							Env:             jobCommand.CommandSpec.Env,
+							EnvFrom:         baseEnvFrom,
 							Command:         jobCommands,
 							SecurityContext: jobCR.Spec.ContainerSecurityContext,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "config-dir",
-									MountPath: "/.mc",
-								},
-							},
+							VolumeMounts:    baseVolumeMounts,
+							Resources:       jobCommand.CommandSpec.Resources,
 						},
 					},
 					SecurityContext: jobCR.Spec.SecurityContext,
-					Volumes: []corev1.Volume{
-						{
-							Name: "config-dir",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-					},
+					Volumes:         baseVolumes,
 				},
 			},
 		},
@@ -221,40 +228,16 @@ func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sCli
 	} else {
 		job.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyOnFailure
 	}
-	if len(jobCommand.Files) > 0 {
-		cmName := fmt.Sprintf("%s-%s-cm", jobCR.Name, jobCommand.JobName)
-		job.Spec.Template.Spec.Containers[0].VolumeMounts = append(job.Spec.Template.Spec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      "file-volume",
-			ReadOnly:  true,
-			MountPath: jobCommand.Files[0].Dir,
-		})
-		job.Spec.Template.Spec.Volumes = append(job.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: "file-volume",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cmName,
-					},
-				},
-			},
-		})
-		configMap := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      cmName,
-				Namespace: jobCR.Namespace,
-				Labels: map[string]string{
-					"job.min.io/name": jobCR.Name,
-				},
-			},
-			Data: map[string]string{},
-		}
-		for _, file := range jobCommand.Files {
-			configMap.Data[fmt.Sprintf("%s.%s", file.Name, file.Ext)] = file.Content
-		}
-		objs = append(objs, configMap)
-	}
 	objs = append(objs, job)
-	for _, obj := range objs {
+	return objs
+}
+
+// CreateJob - create job
+func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int) error {
+	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, stsPort) {
+		if obj == nil {
+			continue
+		}
 		_, err := runtime.NewObjectSyncer(ctx, k8sClient, jobCR, func() error {
 			return nil
 		}, obj, runtime.SyncTypeCreateOrUpdate).Sync(ctx)
@@ -325,16 +308,16 @@ func (intervalJob *MinIOIntervalJob) GetMinioJobStatus(ctx context.Context) v1al
 }
 
 // CreateCommandJob - create command job
-func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client) error {
+func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, stsPort int) error {
 	for _, command := range intervalJob.Command {
-		if len(command.DepnedsOn) == 0 {
-			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR)
+		if len(command.CommandSpec.DependsOn) == 0 {
+			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort)
 			if err != nil {
 				return err
 			}
 		} else {
 			allDepsSuccess := true
-			for _, dep := range command.DepnedsOn {
+			for _, dep := range command.CommandSpec.DependsOn {
 				status, found := intervalJob.CommandMap[dep]
 				if !found {
 					return fmt.Errorf("dependent job %s not found", dep)
@@ -345,7 +328,7 @@ func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sCl
 				}
 			}
 			if allDepsSuccess {
-				err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR)
+				err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort)
 				if err != nil {
 					return err
 				}
@@ -356,44 +339,31 @@ func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sCl
 }
 
 // GenerateMinIOIntervalJobCommand - generate command
-func GenerateMinIOIntervalJobCommand(mcCommand string, commandIndex int, dependsOn []string, jobName string, args map[string]string, argsFuncs []FieldsFunc) (*MinIOIntervalJobCommand, error) {
+func GenerateMinIOIntervalJobCommand(commandSpec v1alpha1.CommandSpec, commandIndex int) (*MinIOIntervalJobCommand, error) {
+	mcCommand, found := OperationAliasToMC(commandSpec.Operation)
+	if !found {
+		return nil, fmt.Errorf("operation %s is not supported", commandSpec.Operation)
+	}
+	argsFuncs, found := JobOperation[mcCommand]
+	if !found {
+		return nil, fmt.Errorf("operation %s is not supported", mcCommand)
+	}
 	commands := []string{}
-	files := []MinIOIntervalJobCommandFile{}
 	for _, argsFunc := range argsFuncs {
-		jobArg, err := argsFunc(args)
+		jobArg, err := argsFunc(commandSpec.Args)
 		if err != nil {
 			return nil, err
 		}
-		switch jobArg.ArgType {
-		case ArgTypeKey:
-			if jobArg.Command != "" {
-				commands = append(commands, jobArg.Command)
-			}
-		case ArgTypeFile:
-			files = append(files, MinIOIntervalJobCommandFile{
-				Name:    jobArg.FileName,
-				Ext:     jobArg.FileExt,
-				Dir:     CommandFilePath,
-				Content: jobArg.FileContext,
-			})
-			commands = append(commands, fmt.Sprintf("%s/%s.%s", CommandFilePath, jobArg.FileName, jobArg.FileExt))
-		case ArgTypeKeyFile:
-			files = append(files, MinIOIntervalJobCommandFile{
-				Name:    jobArg.FileName,
-				Ext:     jobArg.FileExt,
-				Dir:     CommandFilePath,
-				Content: jobArg.FileContext,
-			})
-			commands = append(commands, fmt.Sprintf(`%s="%s/%s.%s"`, jobArg.FileName, CommandFilePath, jobArg.FileName, jobArg.FileExt))
+		if jobArg.Command != "" {
+			commands = append(commands, jobArg.Command)
 		}
 
 	}
 	jobCommand := &MinIOIntervalJobCommand{
-		JobName:     jobName,
+		JobName:     commandSpec.Name,
 		MCOperation: mcCommand,
 		Command:     strings.Join(commands, " "),
-		DepnedsOn:   dependsOn,
-		Files:       files,
+		CommandSpec: commandSpec,
 	}
 	// some commands need to have a empty name
 	if jobCommand.JobName == "" {
