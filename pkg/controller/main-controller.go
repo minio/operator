@@ -232,13 +232,14 @@ func NewController(
 	tenantInformer informers.TenantInformer,
 	policyBindingInformer stsInformers.PolicyBindingInformer,
 	minioJobInformer jobinformers.MinIOJobInformer,
+	kubeInformerFactoryInOperatorNamespace kubeinformers.SharedInformerFactory,
 ) *Controller {
 	statefulSetInformer := kubeInformerFactory.Apps().V1().StatefulSets()
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
 	podInformer := kubeInformerFactory.Core().V1().Pods()
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	jobInformer := kubeInformerFactory.Batch().V1().Jobs()
-	secretInformer := kubeInformerFactory.Core().V1().Secrets()
+	secretInformer := kubeInformerFactoryInOperatorNamespace.Core().V1().Secrets()
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be

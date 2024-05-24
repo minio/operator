@@ -148,7 +148,7 @@ func StartOperator(kubeconfig string) {
 		klog.Infof("Watching only namespaces: %s", strings.Join(namespaces.ToSlice(), ","))
 	}
 
-	// kubeInformerFactory := kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(v2.GetNSFromFile()))
+	kubeInformerFactoryInOperatorNamespace := kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Hour*1, kubeinformers.WithNamespace(v2.GetNSFromFile()))
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	podName := os.Getenv(HostnameEnv)
@@ -170,10 +170,12 @@ func StartOperator(kubeconfig string) {
 		minioInformerFactory.Minio().V2().Tenants(),
 		minioInformerFactory.Sts().V1beta1().PolicyBindings(),
 		minioInformerFactory.Job().V1alpha1().MinIOJobs(),
+		kubeInformerFactoryInOperatorNamespace,
 	)
 
 	go kubeInformerFactory.Start(stopCh)
 	go minioInformerFactory.Start(stopCh)
+	go kubeInformerFactoryInOperatorNamespace.Start(stopCh)
 
 	if err = mainController.Start(2, stopCh); err != nil {
 		klog.Fatalf("Error running mainController: %s", err.Error())
