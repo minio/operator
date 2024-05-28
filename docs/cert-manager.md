@@ -98,7 +98,7 @@ Cert Manager instead.
 
 ## Console service
 
-The console service is the well known UI provided by Operator, it looks like the image below:
+The console service is the well-known UI provided by Operator, it looks like the image below:
 
 ![console-dashboard.png](images%2Fconsole-dashboard.png)
 
