@@ -4,7 +4,7 @@ This document explains how to deploy MinIO Operator and a MinIO Tenant using cer
 
 On a Kubernetes cluster, Certificate Manager requires a global level `Cluster Issuer` to generate intermediary Issuers and certificates.
 At the namespace level, Cert Manager issues certificates derived from an `Issuer`.
-The main difference between a `Cluster Issuer` and a `Issuer` is that `Cluster Issuer` can Issue certificates for several
+The main difference between a `Cluster Issuer` and an `Issuer` is that `Cluster Issuer` can issue certificates for several
 namespaces and an `Issuer` can only issue them in a single namespace.
 
 To learn more about Cert Manager Issuers refer to their documentation https://cert-manager.io/docs/concepts/issuer/.
