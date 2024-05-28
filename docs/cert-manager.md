@@ -457,7 +457,7 @@ kubectl get secrets -n tenant-1 tenant-1-ca-tls -o=jsonpath='{.data.ca\.crt}' | 
 
 Create the secret:
 ```sh
-kubectl create secret generic operator-ca-tls-tenant1 --from-file=ca.crt -n minio-operator
+kubectl create secret generic operator-ca-tls-tenant-1 --from-file=ca.crt -n minio-operator
 ```
 > [!TIP]
 > In this example we choose a secret name of `operator-ca-tls-tenant-1`. Note the tenant namespace
