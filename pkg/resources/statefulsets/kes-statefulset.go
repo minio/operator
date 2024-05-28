@@ -17,6 +17,8 @@ package statefulsets
 import (
 	"sort"
 
+	"github.com/minio/operator/pkg/certs"
+
 	operatorApi "github.com/minio/operator/api"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
@@ -201,8 +203,8 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	var clientCertSecret string
 
 	serverCertPaths := []corev1.KeyToPath{
-		{Key: "public.crt", Path: certPath},
-		{Key: "private.key", Path: keyPath},
+		{Key: certs.PublicCertFile, Path: certPath},
+		{Key: certs.PrivateKeyFile, Path: keyPath},
 	}
 
 	configPath := []corev1.KeyToPath{
@@ -216,8 +218,8 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 		// "cert-manager.io/v1alpha2" because of same keys in both.
 		if t.Spec.KES.ExternalCertSecret.Type == "kubernetes.io/tls" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1alpha2" || t.Spec.KES.ExternalCertSecret.Type == "cert-manager.io/v1" {
 			serverCertPaths = []corev1.KeyToPath{
-				{Key: "tls.crt", Path: certPath},
-				{Key: "tls.key", Path: keyPath},
+				{Key: certs.TLSCertFile, Path: certPath},
+				{Key: certs.TLSKeyFile, Path: keyPath},
 			}
 		}
 	} else {

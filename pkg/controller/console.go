@@ -100,12 +100,12 @@ func (c *Controller) checkConsoleSvc(ctx context.Context, tenant *miniov2.Tenant
 
 // generateConsoleTLSCert Issues the Operator Console TLS Certificate
 func (c *Controller) generateConsoleTLSCert() (*string, *string) {
-	return c.generateTLSCert("console", OperatorConsoleTLSSecretName, getConsoleDeploymentName())
+	return c.generateTLSCertificateForService("console", OperatorConsoleTLSSecretName, getConsoleDeploymentName())
 }
 
 func (c *Controller) recreateOperatorConsoleCertsIfRequired(ctx context.Context) error {
 	namespace := miniov2.GetNSFromFile()
-	operatorConsoleTLSSecret, err := c.getTLSSecret(ctx, namespace, OperatorConsoleTLSSecretName)
+	operatorConsoleTLSSecret, err := c.getCertificateSecret(ctx, namespace, OperatorConsoleTLSSecretName)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			klog.V(2).Info("TLS certificate not found. Generating one.")

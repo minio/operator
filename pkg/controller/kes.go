@@ -26,6 +26,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/minio/operator/pkg/certs"
+
 	"github.com/minio/operator/pkg/controller/certificates"
 
 	corev1 "k8s.io/api/core/v1"
@@ -326,9 +328,9 @@ func (c *Controller) getCertIdentity(ns string, cert *miniov2.LocalCertificateRe
 	}
 	// Store the Identity to be used later during KES container creation
 	if secret.Type == "kubernetes.io/tls" || secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
-		certbytes = secret.Data["tls.crt"]
+		certbytes = secret.Data[certs.TLSCertFile]
 	} else {
-		certbytes = secret.Data["public.crt"]
+		certbytes = secret.Data[certs.PublicCertFile]
 	}
 
 	// parse the certificate here to generate the identity for this certifcate.

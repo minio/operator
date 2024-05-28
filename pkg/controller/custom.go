@@ -24,15 +24,17 @@ import (
 	"math"
 	"time"
 
+	"github.com/minio/operator/pkg/certs"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var secretTypePublicKeyNameMap = map[string]string{
-	"kubernetes.io/tls":        "tls.crt",
-	"cert-manager.io/v1":       "tls.crt",
-	"cert-manager.io/v1alpha2": "tls.crt",
+	"kubernetes.io/tls":        certs.TLSCertFile,
+	"cert-manager.io/v1":       certs.TLSCertFile,
+	"cert-manager.io/v1alpha2": certs.TLSCertFile,
 	// Add newer secretTypes and their corresponding values in future
 }
 
@@ -51,7 +53,7 @@ func (c *Controller) getCustomCertificates(ctx context.Context, tenant *miniov2.
 
 	for certType, secrets := range secretsMap {
 		certificates = nil
-		publicKey := "public.crt"
+		publicKey := certs.PublicCertFile
 		// Iterate over TLS secrets and build array of CertificateInfo structure
 		// that will be used to display information about certs
 		for _, secret := range secrets {

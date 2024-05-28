@@ -21,6 +21,8 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/minio/operator/pkg/certs"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
@@ -51,11 +53,8 @@ func (c *Controller) getTenantConfiguration(ctx context.Context, tenant *miniov2
 
 // renewCert will renew one certificate at a time
 func (c *Controller) renewCert(secret corev1.Secret, index int, tenant *miniov2.Tenant) error {
-	// Check if secret starts with "operator-ca-tls-"
-	secretName := OperatorCATLSSecretName + "-"
 	// If the secret does not start with "operator-ca-tls-" then no need to continue
-	if !strings.HasPrefix(secret.Name, secretName) {
-		klog.Info("No secret found for multi-tenancy architecture of external certificates")
+	if !strings.HasPrefix(secret.Name, OperatorCATLSSecretPrefix) {
 		return nil
 	}
 	klog.Infof("%d external secret found: %s", index, secret.Name)
@@ -71,7 +70,7 @@ func (c *Controller) renewCert(secret corev1.Secret, index int, tenant *miniov2.
 		klog.Errorf("certificate's data can't be empty: %s", data)
 		return errors.New("empty cert data")
 	}
-	CACertificate := data.Data["ca.crt"]
+	CACertificate := data.Data[certs.CAPublicCertFile]
 	if CACertificate == nil || len(CACertificate) <= 0 {
 		klog.Errorf("ca.crt certificate data can't be empty: %s", CACertificate)
 		return errors.New("empty cert ca data")
@@ -91,7 +90,7 @@ func (c *Controller) renewCert(secret corev1.Secret, index int, tenant *miniov2.
 			Namespace: miniov2.GetNSFromFile(),
 		},
 		Data: map[string][]byte{
-			"ca.crt": CACertificate,
+			certs.CAPublicCertFile: CACertificate,
 		},
 	}
 	_, err = c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Create(context.Background(), newSecret, metav1.CreateOptions{})
@@ -99,8 +98,6 @@ func (c *Controller) renewCert(secret corev1.Secret, index int, tenant *miniov2.
 		klog.Errorf("Secret not created %s", err)
 		return err
 	}
-	// Append it
-	c.fetchTransportCACertificates()
 	// Reload CA certificates
 	c.createTransport()
 	// Rollout the Operator Deployment to use new certificate and trust the tenant.
@@ -119,25 +116,22 @@ func (c *Controller) renewCert(secret corev1.Secret, index int, tenant *miniov2.
 	return nil
 }
 
-// renewExternalCerts renews external certificates when they expire, ensuring that the Operator trusts its tenants.
-func (c *Controller) renewExternalCerts(ctx context.Context, tenant *miniov2.Tenant, err error) error {
-	if strings.Contains(err.Error(), "failed to verify certificate") {
-		externalCertSecret := tenant.Spec.ExternalCertSecret
-		klog.Info("Let's check if there is an external cert for the tenant...")
-		if externalCertSecret != nil {
-			// Check that there is a secret that starts with "operator-ca-tls-" to proceed with the renewal
-			secretsAvailableAtOperatorNS, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).List(context.Background(), metav1.ListOptions{})
+// reloadTenantExternalCerts reloads Tenant external certificates
+func (c *Controller) reloadTenantExternalCerts(tenant *miniov2.Tenant) error {
+	externalCertSecret := tenant.Spec.ExternalCertSecret
+	if externalCertSecret != nil {
+		// Check that there is a secret that starts with "operator-ca-tls-" to proceed with the renewal
+		secretsAvailableAtOperatorNS, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			klog.Info("No external certificates are found under the multi-tenancy architecture to handle.")
+			return nil
+		}
+		klog.Info("there are secret(s) for the operator")
+		for index, secret := range secretsAvailableAtOperatorNS.Items {
+			err = c.renewCert(secret, index, tenant)
 			if err != nil {
-				klog.Info("No external certificates are found under the multi-tenancy architecture to handle.")
-				return nil
-			}
-			klog.Info("there are secret(s) for the operator")
-			for index, secret := range secretsAvailableAtOperatorNS.Items {
-				err = c.renewCert(secret, index, tenant)
-				if err != nil {
-					klog.Errorf("There was an error while renewing the cert: %s", err)
-					return err
-				}
+				klog.Errorf("There was an error while renewing the cert: %s", err)
+				return err
 			}
 		}
 	}

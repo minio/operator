@@ -28,6 +28,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/minio/operator/pkg/certs"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/controller/certificates"
 	xcerts "github.com/minio/pkg/certs"
@@ -104,8 +106,8 @@ func (c *Controller) writeCertSecretToFile(tlsCertSecret *corev1.Secret, service
 	return publicCertPath, privateKeyPath
 }
 
-// generateTLSCert Generic method to generate TLS Certificartes for different services
-func (c *Controller) generateTLSCert(serviceName string, secretName string, deploymentName string) (*string, *string) {
+// generateTLSCertificateForService Generic method to generate TLS Certificates for a service
+func (c *Controller) generateTLSCertificateForService(serviceName, secretName, deploymentName string) (*string, *string) {
 	ctx := context.Background()
 	namespace := miniov2.GetNSFromFile()
 	csrName := getCSRName(serviceName)
@@ -172,12 +174,12 @@ func (c *Controller) checkAndCreateCSR(ctx context.Context, deployment metav1.Ob
 // getKeyNames Identify the K8s secret keys containing the public and private TLS certificate keys
 func (c *Controller) getKeyNames(tlsCertificateSecret *corev1.Secret) (string, string) {
 	// default secret keys for Opaque k8s secret
-	publicCertKey := "public.crt"
-	privateKeyKey := "private.key"
+	publicCertKey := certs.PublicCertFile
+	privateKeyKey := certs.PrivateKeyFile
 	// if secret type is k8s tls or cert-manager use the right secret keys
 	if tlsCertificateSecret.Type == "kubernetes.io/tls" || tlsCertificateSecret.Type == "cert-manager.io/v1alpha2" || tlsCertificateSecret.Type == "cert-manager.io/v1" {
-		publicCertKey = "tls.crt"
-		privateKeyKey = "tls.key"
+		publicCertKey = certs.TLSCertFile
+		privateKeyKey = certs.TLSKeyFile
 	}
 	return publicCertKey, privateKeyKey
 }
@@ -199,8 +201,8 @@ func (c *Controller) createCertificateSecret(ctx context.Context, deployment met
 			},
 		},
 		Data: map[string][]byte{
-			"private.key": pkBytes,
-			"public.crt":  certBytes,
+			certs.PrivateKeyFile: pkBytes,
+			certs.PublicCertFile: certBytes,
 		},
 	}
 	_, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Create(ctx, secret, metav1.CreateOptions{})
@@ -211,7 +213,7 @@ func (c *Controller) createCertificateSecret(ctx context.Context, deployment met
 // finally creating a secret storing private key and certificate for TLS
 // This Method Blocks till the CSR Request is approved via kubectl approve
 func (c *Controller) createAndStoreCSR(ctx context.Context, deployment metav1.Object, serviceName string, csrName string, secretName string) error {
-	privKeysBytes, csrBytes, err := generateCSRCryptoData(serviceName)
+	privKeysBytes, csrBytes, err := generateServiceCSRCryptoData(serviceName)
 	if err != nil {
 		klog.Errorf("Private Key and CSR generation failed with error: %v", err)
 		return err
@@ -299,8 +301,8 @@ func getCSRName(serviceName string) string {
 	return fmt.Sprintf("%s-%s-csr", serviceName, namespace)
 }
 
-// generateCSRCryptoData Internal func Creates the private Key material
-func generateCSRCryptoData(serviceName string) ([]byte, []byte, error) {
+// generateServiceCSRCryptoData Creates the private Key material
+func generateServiceCSRCryptoData(serviceName string) ([]byte, []byte, error) {
 	privateKey, err := newPrivateKey(miniov2.DefaultEllipticCurve)
 	if err != nil {
 		klog.Errorf("Unexpected error during the ECDSA Key generation: %v", err)

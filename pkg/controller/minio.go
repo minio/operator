@@ -15,7 +15,6 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
@@ -27,12 +26,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
-	"slices"
 	"time"
-
-	"github.com/minio/operator/pkg/common"
-
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/minio/operator/pkg/controller/certificates"
 
@@ -109,128 +103,11 @@ func (c *Controller) recreateMinIOCertsOnTenant(ctx context.Context, tenant *min
 	return c.checkAndCreateMinIOCSR(ctx, nsName, tenant)
 }
 
-func (c *Controller) getTLSSecret(ctx context.Context, nsName string, secretName string) (*corev1.Secret, error) {
-	return c.kubeClientSet.CoreV1().Secrets(nsName).Get(ctx, secretName, metav1.GetOptions{})
-}
-
-func getOperatorCertFromSecret(secretData map[string][]byte, key string) ([]byte, error) {
-	keys := []string{
-		common.TLSCRT,
-		common.CACRT,
-		common.PublicCRT,
-	}
-	if slices.Contains(keys, key) {
-		data, ok := secretData[key]
-		if ok {
-			return data, nil
-		}
-	}
-	return nil, fmt.Errorf("missing '%s' in %s/%s secret", key, miniov2.GetNSFromFile(), OperatorCATLSSecretName)
-}
-
-// checkOperatorCaForTenant create or updates the operator-ca-tls secret for tenant if need it
-func (c *Controller) checkOperatorCAForTenant(ctx context.Context, tenant *miniov2.Tenant) (operatorCATLSExists bool, err error) {
-	certsData := make(map[string][]byte)
-
-	// get operator-ca-tls in minio-operator namespace
-	operatorCaSecret, err := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
-	if err != nil {
-		// if operator-ca-tls doesnt exists continue
-		if k8serrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	operatorPublicCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.PublicCRT)
-	if err == nil {
-		certsData[common.PublicCRT] = operatorPublicCert
-	}
-
-	operatorTLSCert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.TLSCRT)
-	if err == nil {
-		certsData[common.TLSCRT] = operatorTLSCert
-	}
-
-	operatorCACert, err := getOperatorCertFromSecret(operatorCaSecret.Data, common.CACRT)
-	if err == nil {
-		certsData[common.CACRT] = operatorCACert
-	}
-
-	if len(certsData) == 0 {
-		return false, fmt.Errorf("'%s' secret exists but is missing public.crt, tls.crt and ca.crt, please fix it manually", OperatorCATLSSecretName)
-	}
-
-	var tenantCaSecret *corev1.Secret
-
-	createTenantCASecret := func() error {
-		// create tenant operator-ca-tls secret
-		tenantCaSecret = &corev1.Secret{
-			Type: "Opaque",
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      OperatorCATLSSecretName,
-				Namespace: tenant.Namespace,
-				Labels:    tenant.MinIOPodLabels(),
-				OwnerReferences: []metav1.OwnerReference{
-					*metav1.NewControllerRef(tenant, schema.GroupVersionKind{
-						Group:   miniov2.SchemeGroupVersion.Group,
-						Version: miniov2.SchemeGroupVersion.Version,
-						Kind:    miniov2.MinIOCRDResourceKind,
-					}),
-				},
-			},
-			Data: certsData,
-		}
-		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, tenantCaSecret, metav1.CreateOptions{})
-		return err
-	}
-
-	tenantCaSecret, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, OperatorCATLSSecretName, metav1.GetOptions{})
-	if err != nil {
-		if !k8serrors.IsNotFound(err) {
-			return false, err
-		}
-		klog.Infof("'%s/%s' secret not found, creating one now", tenant.Namespace, OperatorCATLSSecretName)
-		if err = createTenantCASecret(); err != nil {
-			return false, err
-		}
-	}
-
-	update := false
-
-	if publicCert, ok := tenantCaSecret.Data[common.PublicCRT]; ok && !bytes.Equal(publicCert, operatorPublicCert) {
-		tenantCaSecret.Data[common.PublicCRT] = operatorPublicCert
-		update = true
-	}
-
-	if tlsCert, ok := tenantCaSecret.Data[common.TLSCRT]; ok && !bytes.Equal(tlsCert, operatorTLSCert) {
-		tenantCaSecret.Data[common.TLSCRT] = tlsCert
-		update = true
-	}
-
-	if caCert, ok := tenantCaSecret.Data[common.CACRT]; ok && !bytes.Equal(caCert, operatorCACert) {
-		tenantCaSecret.Data[common.CACRT] = caCert
-		update = true
-	}
-
-	if update {
-		_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Update(ctx, tenantCaSecret, metav1.UpdateOptions{})
-		if err != nil {
-			return false, err
-		}
-		// Reload certificates
-		c.createTransport()
-		return false, fmt.Errorf("'%s/%s' secret changed, updating '%s/%s' secret", miniov2.GetNSFromFile(), OperatorCATLSSecretName, tenant.Namespace, OperatorCATLSSecretName)
-	}
-
-	return true, nil
-}
-
 // checkMinIOCertificatesStatus checks for the current status of MinIO and it's service
 func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
 	if tenant.AutoCert() {
 		// check if there's already a TLS secret for MinIO
-		tlsSecret, err := c.getTLSSecret(ctx, tenant.Namespace, tenant.MinIOTLSSecretName())
+		tlsSecret, err := c.getCertificateSecret(ctx, tenant.Namespace, tenant.MinIOTLSSecretName())
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				if err := c.checkAndCreateMinIOCSR(ctx, nsName, tenant); err != nil {

@@ -37,6 +37,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/minio/operator/pkg/certs"
+
 	"github.com/miekg/dns"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -102,7 +104,7 @@ var (
 // GetPodCAFromFile assumes the operator is running inside a k8s pod and extract the
 // current ca certificate from /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
 func GetPodCAFromFile() []byte {
-	cert, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	cert, err := os.ReadFile(fmt.Sprintf("/var/run/secrets/kubernetes.io/serviceaccount/%s", certs.CAPublicCertFile))
 	if err != nil {
 		return nil
 	}
@@ -120,7 +122,7 @@ func GetOpenshiftServiceCAFromFile() []byte {
 
 // GetOpenshiftCSRSignerCAFromFile extracts the tls.crt certificate in Openshift deployments coming from the mounted secret openshift-csr-signer-ca
 func GetOpenshiftCSRSignerCAFromFile() []byte {
-	cert, err := os.ReadFile("/tmp/csr-signer-ca/tls.crt")
+	cert, err := os.ReadFile(fmt.Sprintf("/tmp/csr-signer-ca/%s", certs.TLSCertFile))
 	if err != nil {
 		return nil
 	}
@@ -129,13 +131,13 @@ func GetOpenshiftCSRSignerCAFromFile() []byte {
 
 // GetPublicCertFilePath return the path to the certificate file based for the serviceName
 func GetPublicCertFilePath(serviceName string) string {
-	publicCertPath := fmt.Sprintf("/tmp/%s/public.crt", serviceName)
+	publicCertPath := fmt.Sprintf("/tmp/%s/%s", serviceName, certs.PublicCertFile)
 	return publicCertPath
 }
 
 // GetPrivateKeyFilePath return the path to the key file based for the serviceName
 func GetPrivateKeyFilePath(serviceName string) string {
-	privateKey := fmt.Sprintf("/tmp/%s/private.key", serviceName)
+	privateKey := fmt.Sprintf("/tmp/%s/%s", serviceName, certs.PrivateKeyFile)
 	return privateKey
 }
 
