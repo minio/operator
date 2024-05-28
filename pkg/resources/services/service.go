@@ -151,7 +151,11 @@ func ServiceForBucket(t *miniov2.Tenant, bucket string) *corev1.Service {
 
 // NewHeadlessForMinIO will return a new headless Kubernetes service for a Tenant
 func NewHeadlessForMinIO(t *miniov2.Tenant) *corev1.Service {
-	minioPort := corev1.ServicePort{Port: miniov2.MinIOPort, Name: miniov2.MinIOServiceHTTPPortName}
+	name := miniov2.MinIOServiceHTTPPortName
+	if t.TLS() {
+		name = miniov2.MinIOServiceHTTPSPortName
+	}
+	minioPort := corev1.ServicePort{Port: miniov2.MinIOPort, Name: name}
 	ports := []corev1.ServicePort{minioPort}
 
 	if t.Spec.Features != nil && t.Spec.Features.EnableSFTP != nil && *t.Spec.Features.EnableSFTP {
