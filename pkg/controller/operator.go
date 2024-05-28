@@ -384,9 +384,12 @@ func (c *Controller) checkOpenshiftSignerCACertInOperatorNamespace(ctx context.C
 				},
 			}
 			_, err = c.kubeClientSet.CoreV1().Secrets(namespace).Create(ctx, csrSignerSecret, metav1.CreateOptions{})
-			// Reload CA certificates
-			c.createTransport()
-			return err
+			if err != nil {
+				return err
+			}
+			// Add the CA certificate to the trusted Root CA's
+			c.trustPEMInSecretField(csrSignerSecret, certs.TLSCertFile)
+			return nil
 		}
 		return err
 	}
@@ -397,9 +400,9 @@ func (c *Controller) checkOpenshiftSignerCACertInOperatorNamespace(ctx context.C
 		if err != nil {
 			return err
 		}
-		klog.Infof("'%s/%s' secret changed, updating '%s/%s' secret", OpenshiftKubeControllerNamespace, OpenshiftCATLSSecretName, namespace, OperatorCSRSignerCASecretName)
-		// Reload CA certificates
-		c.createTransport()
+		klog.Infof("'%s/%s' secret changed, updated '%s/%s' secret", OpenshiftKubeControllerNamespace, OpenshiftCATLSSecretName, namespace, OperatorCSRSignerCASecretName)
+		// Add the CA certificate to the trusted Root CA's
+		c.trustPEMInSecretField(csrSignerSecret, certs.TLSCertFile)
 	}
 	return nil
 }
