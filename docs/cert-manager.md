@@ -369,7 +369,7 @@ minio.<namespace>.svc.<cluster domain>
 
 > [!IMPORTANT]
 > Replace `<cluster domain>` with the actual values for your MinIO tenant.
-> * `cluster domain` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
+> * `<cluster domain>` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
 > configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -oyaml | yq ".data"`.
 > The way the root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
 > * `tenant-name` is the name provided to your tenant in the `metadata.name` of the Tenant YAML. For this example it is `myminio`.
