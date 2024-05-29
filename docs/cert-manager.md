@@ -114,24 +114,7 @@ namespace, first create the minio-operator namespace
 kubectl create ns minio-operator
 ```
 
-Now create the `Issuer`:
-
-```yaml
-# operator-ca-issuer.yaml
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: minio-operator-ca-issuer
-  namespace: minio-operator
-spec:
-  ca:
-    secretName: operator-ca-tls
-```
-
-```shell
-kubectl apply -f operator-ca-issuer.yaml
-```
-Next, request a Certificate with `spec.isCA: true` specified. This is our CA for the `minio-operator` namespace.
+Request a Certificate with `spec.isCA: true` specified. This is our CA for the `minio-operator` namespace.
 
 ```yaml
 # operator-ca-tls-secret.yaml
@@ -157,11 +140,29 @@ spec:
 ```shell
 kubectl apply -f operator-ca-tls-secret.yaml
 ```
-A new secret with the name `operator-ca-tls` is created in the `minio-operator` namespace.
-This is the CA issuing TLS certificates for the services in the `minio-operator` namespace. MinIO Operator copies this secret, using the same name (`operator-ca-tls`), into all the Tenant namespaces and keeps the secret contents in sync.
+A new secret with the name `operator-ca-tls` is created in the `minio-operator` namespace, this is the CA issuing TLS certificates for the services in the `minio-operator` namespace.
 
 > [!IMPORTANT]
 > Make sure to trust this certificate in your applications that need to interact with either the `console` or the `sts` service.
+
+
+Now create the `Issuer`:
+
+```yaml
+# operator-ca-issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: minio-operator-ca-issuer
+  namespace: minio-operator
+spec:
+  ca:
+    secretName: operator-ca-tls
+```
+
+```shell
+kubectl apply -f operator-ca-issuer.yaml
+```
 
 ### Create TLS certificate for STS service
 
@@ -259,10 +260,10 @@ Also make sure to set `MINIO_CONSOLE_TLS_ENABLE: off` env variable, this prevent
 and instead will expect you to provide the TLS certificate issued by Cert Manager.
 
 > [!WARNING]
-> Failing to provide the secret `sts-tls` containing the TLS certificate or providing an invalid key-pair in the secret will
-> prevent the STS service from starting.
+> Missing to provide the secret `sts-tls` containing the TLS certificate or providing an invalid key-pair in the secret will
+> prevent the STS service from start.
 
-A way to make sure that the env variables are properly set is using kustomization to patch the `minio-operator` Deployment:
+A way to make sure that the env variables are properly set is using kustomization to patch the `minio-operator` deployment:
 
 ```yaml
 # minio-operator/kustomization.yaml
@@ -307,24 +308,6 @@ To create the Certificate Authority (CA) certificate in the namespace `tenant-1`
 kubectl create ns tenant-1
 ```
 
-Then create the `Issuer`:
-
-```yaml
-# tenant-1-ca-issuer.yaml
-apiVersion: cert-manager.io/v1
-kind: Issuer
-metadata:
-  name: tenant-1-ca-issuer
-  namespace: tenant-1
-spec:
-  ca:
-    secretName: tenant-1-ca-tls
-```
-
-```shell
-kubectl apply -f tenant-1-ca-issuer.yaml
-```
-
 Next, request a Certificate with `spec.isCA: true` specified:
 
 ```yaml
@@ -350,6 +333,25 @@ spec:
 
 ```shell
 kubectl apply -f tenant-1-ca-certificate.yaml
+```
+
+
+Then create the `Issuer`:
+
+```yaml
+# tenant-1-ca-issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: tenant-1-ca-issuer
+  namespace: tenant-1
+spec:
+  ca:
+    secretName: tenant-1-ca-tls
+```
+
+```shell
+kubectl apply -f tenant-1-ca-issuer.yaml
 ```
 
 ## Deploy the tenant 
