@@ -304,7 +304,7 @@ kubectl apply -k minio-operator
 To create the Certificate Authority (CA) certificate in the namespace `tenant-1`, first create the namespace
 
 ```shell
- kubectl create ns tenant-1
+kubectl create ns tenant-1
 ```
 
 Then create the `Issuer`:
@@ -461,10 +461,4 @@ kubectl create secret generic operator-ca-tls-tenant-1 --from-file=ca.crt -n min
 ```
 > [!TIP]
 > In this example we choose a secret name of `operator-ca-tls-tenant-1`. Note the tenant namespace
-> `tenant-1` is used as as suffix for easy identification of which namespace the CA is coming from.
-
-Restart `minio-operator` to apply the changes.
-
-```sh
-kubectl rollout restart deployment.apps/minio-operator -n minio-operator
-```
+> `tenant-1` is used as suffix for easy identification of which namespace the CA is coming from.
