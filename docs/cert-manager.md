@@ -390,7 +390,7 @@ spec:
   dnsNames:
     - "minio.tenant-1"
     - "minio.tenant-1.svc"
-    - 'minio.minio-tenant-1.svc.cluster.local'
+    - 'minio.tenant-1.svc.cluster.local'
     - '*.minio.tenant-1.svc.cluster.local'
     - '*.myminio-hl.tenant-1.svc.cluster.local'
     - '*.myminio.minio.tenant-1.svc.cluster.local'
