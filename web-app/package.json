@@ -76,24 +76,12 @@
     "typescript": "^4.4.3"
   },
   "resolutions": {
-    "**/superagent/formidable": "3.5.1",
     "nth-check": "^2.0.1",
     "yaml": "^2.4.2",
     "postcss": "^8.4.31",
-    "react-scripts/**/node-forge": "^1.3.0",
-    "react-scripts/**/async": "^2.6.4",
-    "react-scripts/workbox-webpack-plugin/workbox-build/@surma/rollup-plugin-off-main-thread/ejs/jake/async": "^2.6.4",
-    "react-scripts/webpack-dev-server/portfinder/async": "^2.6.4",
-    "react-scripts/**/glob-parent": "^6.0.1",
-    "react-scripts/**/minimatch": "^3.0.5",
-    "react-scripts/**/loader-utils": "^2.0.4",
-    "react-scripts/**/json5": "^2.2.2",
-    "react-scripts/**/debug": "^3.1.0",
-    "recharts/**/d3-color": "^3.1.0",
     "websocket/debug": "^3.1.0",
     "fast-xml-parser": "^4.2.4",
-    "semver": "^7.5.2",
-    "testcafe/**/tough-cookie": "^4.1.4",
-    "styled-components/**/@babel/traverse": "^7.24.5"
-  }
+    "semver": "^7.5.2"
+  },
+  "packageManager": "yarn@4.2.2"
 }
