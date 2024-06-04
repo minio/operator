@@ -32,7 +32,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "find-deadcode": "ts-prune -s operatorApi.ts | (! grep -v 'used in module')"
+    "find-deadcode": "ts-prune -s operatorApi.ts | sh -c '(! grep -v \"used in module\")'"
   },
   "eslintConfig": {
     "extends": "react-app",
