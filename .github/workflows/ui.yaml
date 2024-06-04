@@ -180,8 +180,7 @@ jobs:
         continue-on-error: false
         run: |
           yarn npm audit --environment production \
-            --ignore '1097346' \
-            --ignore '@babel/plugin-proposal-private-property-in-object (deprecation)'
+            --ignore '1097346'
 
   all-operator-tests-1:
     timeout-minutes: 30

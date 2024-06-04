@@ -4,7 +4,6 @@
   "homepage": ".",
   "private": true,
   "dependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@babel/traverse": "7.24.5",
     "@reduxjs/toolkit": "1.9.7",
     "ip": "2.0.1",
