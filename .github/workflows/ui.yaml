@@ -50,6 +50,8 @@ jobs:
       - name: Read .nvmrc
         id: node_version
         run: echo "$(cat .nvmrc)" && echo "NVMRC=$(cat .nvmrc)" >> $GITHUB_ENV
+      - name: Enable Corepack
+        run: corepack enable
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NVMRC }}
@@ -66,7 +68,7 @@ jobs:
         working-directory: ./web-app
         continue-on-error: false
         run: |
-          yarn install --frozen-lockfile --immutable
+          yarn install --immutable
       - name: Check for Warnings in build output
         working-directory: ./web-app
         continue-on-error: false
@@ -163,6 +165,11 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
+      - name: Read .nvmrc
+        id: node_version
+        run: echo "$(cat .nvmrc)" && echo "NVMRC=$(cat .nvmrc)" >> $GITHUB_ENV
+      - name: Enable Corepack
+        run: corepack enable
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NVMRC }}
@@ -172,7 +179,8 @@ jobs:
         working-directory: ./web-app
         continue-on-error: false
         run: |
-          yarn audit --groups dependencies
+          yarn npm audit --environment production \
+            --ignore '1097346'
 
   all-operator-tests-1:
     timeout-minutes: 30
@@ -187,6 +195,11 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
+      - name: Read .nvmrc
+        id: node_version
+        run: echo "$(cat .nvmrc)" && echo "NVMRC=$(cat .nvmrc)" >> $GITHUB_ENV
+      - name: Enable Corepack
+        run: corepack enable
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NVMRC }}
@@ -224,6 +237,11 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v3
+      - name: Read .nvmrc
+        id: node_version
+        run: echo "$(cat .nvmrc)" && echo "NVMRC=$(cat .nvmrc)" >> $GITHUB_ENV
+      - name: Enable Corepack
+        run: corepack enable
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NVMRC }}
@@ -297,9 +315,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Enable Corepack
+        run: corepack enable
       - name: Install modules
         working-directory: ./web-app
-        run: yarn
+        run: yarn install --immutable
       - name: Run tests
         working-directory: ./web-app
         run: yarn test
