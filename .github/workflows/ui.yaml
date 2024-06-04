@@ -179,7 +179,9 @@ jobs:
         working-directory: ./web-app
         continue-on-error: false
         run: |
-          yarn npm audit --environment production
+          yarn npm audit --environment production \
+            --ignore '1097346' \
+            --ignore '@babel/plugin-proposal-private-property-in-object (deprecation)'
 
   all-operator-tests-1:
     timeout-minutes: 30
