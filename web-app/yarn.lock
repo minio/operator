@@ -15950,7 +15950,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tough-cookie@npm:4.1.4, tough-cookie@npm:^4.0.0":
+"tough-cookie@npm:^4.0.0":
   version: 4.1.4
   resolution: "tough-cookie@npm:4.1.4"
   dependencies:
@@ -16847,7 +16847,6 @@ __metadata:
     styled-components: "npm:^5.3.11"
     superagent: "npm:^9.0.2"
     testcafe: "npm:2.6.2"
-    tough-cookie: "npm:4.1.4"
     ts-prune: "npm:^0.10.3"
     typescript: "npm:^4.4.3"
     yaml: "npm:2.4.2"
