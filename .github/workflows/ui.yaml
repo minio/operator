@@ -179,7 +179,7 @@ jobs:
         working-directory: ./web-app
         continue-on-error: false
         run: |
-          yarn audit --groups dependencies
+          yarn npm audit --environment production
 
   all-operator-tests-1:
     timeout-minutes: 30
@@ -314,9 +314,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Enable Corepack
+        run: corepack enable
       - name: Install modules
         working-directory: ./web-app
-        run: yarn
+        run: yarn install --immutable
       - name: Run tests
         working-directory: ./web-app
         run: yarn test
