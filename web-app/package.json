@@ -23,7 +23,7 @@
     "react-window-infinite-loader": "^1.0.7",
     "recharts": "2.12.6",
     "styled-components": "^5.3.11",
-    "superagent": "^8.1.2",
+    "superagent": "^9.0.2",
     "tough-cookie": "4.1.4",
     "yaml": "2.4.2"
   },
