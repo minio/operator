@@ -29,7 +29,6 @@ import (
 	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -104,22 +103,6 @@ func NewPodInformer(kubeClientSet kubernetes.Interface, labelSelectorString stri
 			cache.NamespaceIndex: cache.MetaNamespaceIndexFunc, // Index by namespace
 		},
 	)
-}
-
-// LabelSelectorToString gets a string from a labelSelector
-func LabelSelectorToString(labelSelector metav1.LabelSelector) (string, error) {
-	var matchExpressions []string
-	for _, expr := range labelSelector.MatchExpressions {
-		// Handle only Exists expressions
-		matchExpressions = append(matchExpressions, expr.Key)
-	}
-	// Join match labels and match expressions into a single string with a comma separator.
-	labelSelectorString := strings.Join(matchExpressions, ",")
-	// Validate labelSelectorString
-	if _, err := labels.Parse(labelSelectorString); err != nil {
-		return "", err
-	}
-	return labelSelectorString, nil
 }
 
 // CastObjectToMetaV1 gets a metav1.Object from an interface

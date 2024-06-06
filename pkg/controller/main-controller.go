@@ -37,6 +37,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/set"
 	"github.com/minio/operator/pkg/controller/certificates"
 	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog/v2"
 
 	"k8s.io/client-go/tools/leaderelection"
@@ -251,17 +252,10 @@ func NewController(
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
 	// Create PodInformer for Tenant Pods
-	labelSelector := metav1.LabelSelector{
-		MatchExpressions: []metav1.LabelSelectorRequirement{
-			{
-				Key:      miniov2.TenantLabel,
-				Operator: metav1.LabelSelectorOpExists,
-			},
-		},
-	}
-	labelSelectorString, err := utils.LabelSelectorToString(labelSelector)
-	if err != nil {
+	labelSelectorString := miniov2.TenantLabel // "<key>" -> "Key exists"
+	if _, err := labels.Parse(labelSelectorString); err != nil {
 		klog.Errorf("bad label: %s for podInformer", labelSelectorString)
+		labelSelectorString = "" // falback value
 	}
 
 	podInformer := utils.NewPodInformer(kubeClientSet, labelSelectorString)
