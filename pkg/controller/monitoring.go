@@ -205,6 +205,11 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 			klog.Infof("'%s/%s' Can't update tenant status with tiers: %v", tenant.Namespace, tenant.Name, err)
 		}
 	}
+	// Add tenant to the health check queue again until is green again
+	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
+		key := fmt.Sprintf("%s/%s", tenant.GetNamespace(), tenant.Name)
+		c.healthCheckQueue.Add(key)
+	}
 
 	return nil
 }
