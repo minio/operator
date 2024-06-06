@@ -37,6 +37,7 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/minio/operator/api/operations"
 	"github.com/minio/operator/models"
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -350,7 +351,7 @@ func TestCreateTenant(t *testing.T) {
 	pools := make([]map[string]interface{}, 1)
 	matchExpressions := make([]map[string]interface{}, 2)
 	matchExpressions[0] = map[string]interface{}{
-		"key":      "v1.min.io/tenant",
+		"key":      miniov2.TenantLabel,
 		"operator": "In",
 		"values":   values,
 	}
@@ -489,7 +490,7 @@ func TestDeleteTenant(t *testing.T) {
 	pools := make([]map[string]interface{}, 1)
 	matchExpressions := make([]map[string]interface{}, 2)
 	matchExpressions[0] = map[string]interface{}{
-		"key":      "v1.min.io/tenant",
+		"key":      miniov2.TenantLabel,
 		"operator": "In",
 		"values":   values,
 	}

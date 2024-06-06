@@ -17,13 +17,24 @@
 package utils
 
 import (
+	"context"
 	"encoding/base64"
+	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/minio/operator/pkg/common"
 
 	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/klog/v2"
 )
 
 // NewUUID - get a random UUID.
@@ -70,4 +81,61 @@ func GetOperatorRuntime() common.Runtime {
 		}
 	}
 	return runtimeReturn
+}
+
+// NewPodInformer creates a Shared Index Pod Informer matching the labelSelector string
+func NewPodInformer(kubeClientSet kubernetes.Interface, labelSelectorString string) cache.SharedIndexInformer {
+	return cache.NewSharedIndexInformer(
+		&cache.ListWatch{
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+				return kubeClientSet.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
+					LabelSelector: labelSelectorString,
+				})
+			},
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+				return kubeClientSet.CoreV1().Pods("").Watch(context.Background(), metav1.ListOptions{
+					LabelSelector: labelSelectorString,
+				})
+			},
+		},
+		&corev1.Pod{},  // Resource type
+		time.Second*30, // Resync period
+		cache.Indexers{
+			cache.NamespaceIndex: cache.MetaNamespaceIndexFunc, // Index by namespace
+		},
+	)
+}
+
+// LabelSelectorToString gets a string from a labelSelector
+func LabelSelectorToString(labelSelector metav1.LabelSelector) (string, error) {
+	var matchExpressions []string
+	for _, expr := range labelSelector.MatchExpressions {
+		// Handle only Exists expressions
+		matchExpressions = append(matchExpressions, expr.Key)
+	}
+	// Join match labels and match expressions into a single string with a comma separator.
+	labelSelectorString := strings.Join(matchExpressions, ",")
+	// Validate labelSelectorString
+	if _, err := labels.Parse(labelSelectorString); err != nil {
+		return "", err
+	}
+	return labelSelectorString, nil
+}
+
+// CastObjectToMetaV1 gets a metav1.Object from an interface
+func CastObjectToMetaV1(obj interface{}) (metav1.Object, error) {
+	var object metav1.Object
+	var ok bool
+	if object, ok = obj.(metav1.Object); !ok {
+		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
+		if !ok {
+			return nil, fmt.Errorf("error decoding object, invalid type")
+		}
+		object, ok = tombstone.Obj.(metav1.Object)
+		if !ok {
+			return nil, fmt.Errorf("error decoding object tombstone, invalid type")
+		}
+		klog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
+	}
+	return object, nil
 }

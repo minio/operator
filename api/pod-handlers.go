@@ -169,7 +169,7 @@ func getDeletePodResponse(session *models.Principal, params operator_api.DeleteP
 		return ErrorWithContext(ctx, err)
 	}
 	listOpts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("v1.min.io/tenant=%s", params.Tenant),
+		LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, params.Tenant),
 		FieldSelector: fmt.Sprintf("metadata.name=%s%s", params.Tenant, params.PodName[len(params.Tenant):]),
 	}
 	if err = clientset.CoreV1().Pods(params.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOpts); err != nil {
@@ -531,7 +531,7 @@ func generateTenantLogReport(ctx context.Context, coreInterface v1.CoreV1Interfa
 		return []byte{}, ErrorWithContext(ctx, errors.New("Namespace and Tenant name cannot be empty"))
 	}
 	podListOpts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("v1.min.io/tenant=%s", tenantName),
+		LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, tenantName),
 	}
 	pods, err := coreInterface.Pods(namespace).List(ctx, podListOpts)
 	if err != nil {

@@ -17,7 +17,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/minio/madmin-go/v3"
@@ -39,46 +38,6 @@ const (
 	// HealthReduceAvailabilityMessage some drives are offline
 	HealthReduceAvailabilityMessage = "Reduced Availability"
 )
-
-// recurrentTenantStatusMonitor loop that checks every 3 minutes for tenants health
-func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
-	// do an initial check, then start the periodic check
-	if err := c.tenantsHealthMonitor(); err != nil {
-		log.Println(err)
-	}
-	// How often will this function run
-	interval := miniov2.GetMonitoringInterval()
-	ticker := time.NewTicker(time.Duration(interval) * time.Minute)
-	defer func() {
-		log.Println("recurrent pod status monitor closed")
-	}()
-	for {
-		select {
-		case <-ticker.C:
-			if err := c.tenantsHealthMonitor(); err != nil {
-				klog.Infof("%v", err)
-			}
-		case <-stopCh:
-			ticker.Stop()
-			return
-		}
-	}
-}
-
-func (c *Controller) tenantsHealthMonitor() error {
-	// list all tenants and get their cluster health
-	tenants, err := c.minioClientSet.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, tenant := range tenants.Items {
-		if err = c.updateHealthStatusForTenant(&tenant); err != nil {
-			klog.Errorf("%v", err)
-			return err
-		}
-	}
-	return nil
-}
 
 func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	// don't get the tenant cluster health if it doesn't have at least 1 pool initialized

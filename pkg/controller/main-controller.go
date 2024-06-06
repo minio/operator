@@ -236,7 +236,6 @@ func NewController(
 ) *Controller {
 	statefulSetInformer := kubeInformerFactory.Apps().V1().StatefulSets()
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
-	podInformer := kubeInformerFactory.Core().V1().Pods()
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	jobInformer := kubeInformerFactory.Batch().V1().Jobs()
 	secretInformer := kubeInformerFactoryInOperatorNamespace.Core().V1().Secrets()
@@ -251,6 +250,22 @@ func NewController(
 	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: kubeClientSet.CoreV1().Events("")})
 	recorder := eventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: controllerAgentName})
 
+	// Create PodInformer for Tenant Pods
+	labelSelector := metav1.LabelSelector{
+		MatchExpressions: []metav1.LabelSelectorRequirement{
+			{
+				Key:      miniov2.TenantLabel,
+				Operator: metav1.LabelSelectorOpExists,
+			},
+		},
+	}
+	labelSelectorString, err := utils.LabelSelectorToString(labelSelector)
+	if err != nil {
+		klog.Errorf("bad label: %s for podInformer", labelSelectorString)
+	}
+
+	podInformer := utils.NewPodInformer(kubeClientSet, labelSelectorString)
+
 	controller := &Controller{
 		podName:                   podName,
 		namespacesToWatch:         namespacesToWatch,
@@ -260,7 +275,7 @@ func NewController(
 		promClient:                promClient,
 		statefulSetLister:         statefulSetInformer.Lister(),
 		statefulSetListerSynced:   statefulSetInformer.Informer().HasSynced,
-		podInformer:               podInformer.Informer(),
+		podInformer:               podInformer,
 		deploymentLister:          deploymentInformer.Lister(),
 		deploymentListerSynced:    deploymentInformer.Informer().HasSynced,
 		tenantsSynced:             tenantInformer.Informer().HasSynced,
@@ -345,14 +360,13 @@ func NewController(
 		DeleteFunc: controller.handleObject,
 	})
 
-	podInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handlePodChange,
 		UpdateFunc: func(old, new interface{}) {
-			newDepl := new.(*corev1.Pod)
-			oldDepl := old.(*corev1.Pod)
-			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
-				// Periodic resync will send update events for all known Deployments.
-				// Two different versions of the same Pods will always have different RVs.
+			newPod := new.(*corev1.Pod)
+			oldPod := old.(*corev1.Pod)
+			// Ignore Pod changes if same ResourceVersion
+			if newPod.ResourceVersion == oldPod.ResourceVersion {
 				return
 			}
 			controller.handlePodChange(new)
@@ -379,8 +393,13 @@ func NewController(
 	return controller
 }
 
+// StartPodInformer runs PodInformer
+func (c *Controller) StartPodInformer(stopCh <-chan struct{}) {
+	c.podInformer.Run(stopCh)
+}
+
 // startUpgradeServer Starts the Upgrade tenant API server and notifies the start and stop via notificationChannel returned
-func (c *Controller) startUpgradeServer(ctx context.Context) <-chan error {
+func (c *Controller) startUpgradeServer() <-chan error {
 	notificationChannel := make(chan error)
 	go func() {
 		defer close(notificationChannel)
@@ -429,7 +448,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	var upgradeServerChannel <-chan error
 
 	klog.Info("Waiting for Upgrade Server to start")
-	upgradeServerChannel = c.startUpgradeServer(ctx)
+	upgradeServerChannel = c.startUpgradeServer()
 
 	// Start the informer factories to begin populating the informer caches
 	klog.Info("Starting Tenant controller")
@@ -448,7 +467,6 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 
 	klog.Info("Starting workers and Job workers")
 	JobController := c.controllers[0]
-	// fmt.Println(controller.SyncHandler())
 	// Launch two workers to process Job resources
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(JobController.runJobWorker, time.Second, stopCh)
@@ -458,8 +476,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	// Launch a single worker for Health Check reacting to Pod Changes
 	go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
 
-	// Launch a goroutine to monitor all Tenants
-	go c.recurrentTenantStatusMonitor(stopCh)
+	go c.StartPodInformer(stopCh)
 
 	// 1) we need to make sure we have console TLS certificates (if enabled)
 	if isOperatorConsoleTLS() {
@@ -502,7 +519,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 		case err := <-upgradeServerChannel:
 			if err != http.ErrServerClosed {
 				klog.Errorf("Upgrade Server stopped: %v, going to restart", err)
-				upgradeServerChannel = c.startUpgradeServer(ctx)
+				upgradeServerChannel = c.startUpgradeServer()
 			}
 			// webserver was instructed to stop, do not attempt to restart
 			continue
@@ -740,7 +757,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				Namespace: namespace,
 			}
 			client.MatchingLabels{
-				"v1.min.io/tenant": tenantName,
+				miniov2.TenantLabel: tenantName,
 			}.ApplyToList(&listOpt)
 			err := c.k8sClient.List(ctx, &pvcList, &listOpt)
 			if err != nil {

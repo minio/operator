@@ -17,46 +17,28 @@
 package controller
 
 import (
-	"context"
 	"fmt"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/klog/v2"
+	"github.com/minio/operator/pkg/utils"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
-// handlePodChange will handle changes in pods and see if they are a MinIO pod, if so, queue it for processing
+// handlePodChange will handle changes in pods and queue it for processing, pods are already filtered by PodInformer
 func (c *Controller) handlePodChange(obj interface{}) {
-	var object metav1.Object
-	var ok bool
-	if object, ok = obj.(metav1.Object); !ok {
-		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("error decoding object, invalid type"))
-			return
-		}
-		object, ok = tombstone.Obj.(metav1.Object)
-		if !ok {
-			runtime.HandleError(fmt.Errorf("error decoding object tombstone, invalid type"))
-			return
-		}
-		klog.V(4).Infof("Recovered deleted object '%s' from tombstone", object.GetName())
-	}
-	// if the pod is a MinIO pod, we do process it
-	if tenantName, ok := object.GetLabels()[miniov2.TenantLabel]; ok {
-		// check this is still a valid tenant
-		_, err := c.minioClientSet.MinioV2().Tenants(object.GetNamespace()).Get(context.Background(), tenantName, metav1.GetOptions{})
-		if err != nil {
-			klog.V(4).Infof("ignoring orphaned object '%s' of tenant '%s'", object.GetSelfLink(), tenantName)
-			return
-		}
-		key := fmt.Sprintf("%s/%s", object.GetNamespace(), tenantName)
-		// check if already in queue before re-queueing
-
-		c.healthCheckQueue.Add(key)
+	// NOTE: currently only Tenant pods are being monitored by the Pod Informer
+	object, err := utils.CastObjectToMetaV1(obj)
+	if err != nil {
+		utilruntime.HandleError(err)
 		return
 	}
+
+	instanceName, ok := object.GetLabels()[miniov2.TenantLabel]
+	if !ok {
+		utilruntime.HandleError(fmt.Errorf("label: %s not found in %s", miniov2.TenantLabel, object.GetName()))
+		return
+	}
+
+	key := fmt.Sprintf("%s/%s", object.GetNamespace(), instanceName)
+	c.healthCheckQueue.Add(key)
 }
