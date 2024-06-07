@@ -1,0 +1,8 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: minio-operator-ca-issuer
+  namespace: minio-operator
+spec:
+  ca:
+    secretName: operator-ca-tls

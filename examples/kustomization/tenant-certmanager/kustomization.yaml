@@ -1,11 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 namespace: tenant-certmanager
 
 resources:
-  - certificates.yaml
+  - tenant-certmanager-issuer.yaml
+  - tenant-certmanager-ca-certificate.yaml
+  - tenant-certmanager-myminio-certificate.yaml
   - ../base
 
-patchesStrategicMerge:
-  - tenant.yaml
+patches:
+  - path: tenant.yaml

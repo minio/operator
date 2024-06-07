@@ -29,11 +29,11 @@ function main() {
 
     install_cert_manager
 
-    install_operator
+    install_operator certmanager
 
     install_cert_manager_tenant
 
-    check_tenant_status tenant-certmanager myminio
+    check_tenant_status tenant-certmanager myminio minio "certmanager"
 
     destroy_kind
 }

@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sts-certmanager-cert
+  namespace: minio-operator
+spec:
+  dnsNames:
+    - sts
+    - sts.minio-operator.svc
+    - sts.minio-operator.svc.cluster.local
+  secretName: sts-tls
+  issuerRef:
+    name: minio-operator-ca-issuer
