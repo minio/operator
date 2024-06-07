@@ -142,6 +142,10 @@ type CommandSpec struct {
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
 
+	// Command custom command to run
+	// +optional
+	Command []string `json:"command,omitempty"`
+
 	// DependsOn List of named `command` in this MinioJob that have to be scheduled and executed before this command runs
 	// +optional
 	DependsOn []string `json:"dependsOn,omitempty"`

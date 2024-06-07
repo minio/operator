@@ -120,6 +120,7 @@ func NewJobController(
 			}
 			controller.enqueueJob(new)
 		},
+		DeleteFunc: controller.enqueueJob,
 	})
 
 	jobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
