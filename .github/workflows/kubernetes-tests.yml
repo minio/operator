@@ -224,11 +224,11 @@ jobs:
       - uses: actions/cache@v3
         name: Operator Sidecar Binary Cache
         with:
+          working-directory: ./sidecar
           path: |
             ./minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Operator Binary
-        working-directory: ./sidecar
         run: |
           make sidecar
   test-tenant:
