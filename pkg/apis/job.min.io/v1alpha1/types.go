@@ -142,7 +142,7 @@ type CommandSpec struct {
 	// +optional
 	Args map[string]string `json:"args,omitempty"`
 
-	// Command custom command to run
+	// Command Execute All User-Defined Commands
 	// +optional
 	Command []string `json:"command,omitempty"`
 
