@@ -120,7 +120,7 @@ func getPVCsResponse(session *models.Principal, params operator_api.ListPVCsPara
 			Status:       status,
 			StorageClass: *pvc.Spec.StorageClassName,
 			Volume:       pvc.Spec.VolumeName,
-			Tenant:       pvc.Labels["v1.min.io/tenant"],
+			Tenant:       pvc.Labels[miniov2.TenantLabel],
 		}
 		ListPVCs = append(ListPVCs, &pvcResponse)
 	}
@@ -142,7 +142,7 @@ func getPVCsForTenantResponse(session *models.Principal, params operator_api.Lis
 
 	// Filter Tenant PVCs. They keep their v1 tenant annotation
 	listOpts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("v1.min.io/tenant=%s", params.Tenant),
+		LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, params.Tenant),
 	}
 
 	// List all PVCs
@@ -167,7 +167,7 @@ func getPVCsForTenantResponse(session *models.Principal, params operator_api.Lis
 			Status:       status,
 			StorageClass: *pvc.Spec.StorageClassName,
 			Volume:       pvc.Spec.VolumeName,
-			Tenant:       pvc.Labels["v1.min.io/tenant"],
+			Tenant:       pvc.Labels[miniov2.TenantLabel],
 		}
 		ListPVCs = append(ListPVCs, &pvcResponse)
 	}
@@ -188,7 +188,7 @@ func getDeletePVCResponse(session *models.Principal, params operator_api.DeleteP
 		return ErrorWithContext(ctx, err)
 	}
 	listOpts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("v1.min.io/tenant=%s", params.Tenant),
+		LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, params.Tenant),
 		FieldSelector: fmt.Sprintf("metadata.name=%s", params.PVCName),
 	}
 	if err = clientset.CoreV1().PersistentVolumeClaims(params.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOpts); err != nil {
@@ -237,7 +237,7 @@ func getTenantCSResponse(session *models.Principal, params operator_api.ListTena
 	}
 
 	// Get CSRs by Label "v1.min.io/tenant=" + params.Tenant
-	listByTenantLabel := metav1.ListOptions{LabelSelector: "v1.min.io/tenant=" + params.Tenant}
+	listByTenantLabel := metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, params.Tenant)}
 	listResult, listError := clientset.CertificatesV1().CertificateSigningRequests().List(ctx, listByTenantLabel)
 	if listError != nil {
 		return nil, ErrorWithContext(ctx, listError)

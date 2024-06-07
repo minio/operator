@@ -17,7 +17,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/minio/madmin-go/v3"
@@ -40,47 +39,7 @@ const (
 	HealthReduceAvailabilityMessage = "Reduced Availability"
 )
 
-// recurrentTenantStatusMonitor loop that checks every 3 minutes for tenants health
-func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
-	// do an initial check, then start the periodic check
-	if err := c.tenantsHealthMonitor(); err != nil {
-		log.Println(err)
-	}
-	// How often will this function run
-	interval := miniov2.GetMonitoringInterval()
-	ticker := time.NewTicker(time.Duration(interval) * time.Minute)
-	defer func() {
-		log.Println("recurrent pod status monitor closed")
-	}()
-	for {
-		select {
-		case <-ticker.C:
-			if err := c.tenantsHealthMonitor(); err != nil {
-				klog.Infof("%v", err)
-			}
-		case <-stopCh:
-			ticker.Stop()
-			return
-		}
-	}
-}
-
-func (c *Controller) tenantsHealthMonitor() error {
-	// list all tenants and get their cluster health
-	tenants, err := c.minioClientSet.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, tenant := range tenants.Items {
-		if err = c.updateHealthStatusForTenant(&tenant); err != nil {
-			klog.Errorf("%v", err)
-			return err
-		}
-	}
-	return nil
-}
-
-func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
+func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 	// don't get the tenant cluster health if it doesn't have at least 1 pool initialized
 	oneInitialized := false
 	for _, pool := range tenant.Status.Pools {
@@ -90,25 +49,25 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	}
 	if !oneInitialized {
 		klog.Infof("'%s/%s' no pool is initialized", tenant.Namespace, tenant.Name)
-		return nil
+		return tenant, nil
 	}
 
 	tenantConfiguration, err := c.getTenantCredentials(context.Background(), tenant)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	adminClnt, err := tenant.NewMinIOAdmin(tenantConfiguration, c.getTransport())
 	if err != nil {
 		klog.Errorf("Error instantiating adminClnt '%s/%s': %v", tenant.Namespace, tenant.Name, err)
-		return err
+		return nil, err
 	}
 
 	aClnt, err := madmin.NewAnonymousClient(tenant.MinIOServerHostAddress(), tenant.TLS())
 	if err != nil {
 		// show the error and continue
 		klog.Infof("'%s/%s': %v", tenant.Namespace, tenant.Name, err)
-		return nil
+		return tenant, nil
 	}
 	aClnt.SetCustomTransport(c.getTransport())
 
@@ -120,7 +79,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	if err != nil {
 		// show the error and continue
 		klog.Infof("'%s/%s' Failed to get cluster health: %v", tenant.Namespace, tenant.Name, err)
-		return nil
+		return tenant, nil
 	}
 
 	tenant.Status.DrivesHealing = int32(healthResult.HealingDrives)
@@ -139,7 +98,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, tenant.Name),
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	allPodsRunning := true
@@ -163,7 +122,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 	if err != nil {
 		// show the error and continue
 		klog.Infof("'%s/%s' Failed to get storage info: %v", tenant.Namespace, tenant.Name, err)
-		return nil
+		return tenant, nil
 	}
 
 	// Add back "Usable Capacity" & "Internal" values in Tenant Status and in the UI
@@ -247,7 +206,7 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) error {
 		}
 	}
 
-	return nil
+	return tenant, nil
 }
 
 // HealthResult holds the results from cluster/health query into MinIO
@@ -280,9 +239,15 @@ func (c *Controller) syncHealthCheckHandler(key string) (Result, error) {
 
 	tenant.EnsureDefaults()
 
-	if err = c.updateHealthStatusForTenant(tenant); err != nil {
+	tenant, err = c.updateHealthStatusForTenant(tenant)
+	if err != nil {
 		klog.Errorf("%v", err)
 		return WrapResult(Result{}, err)
+	}
+
+	// Add tenant to the health check queue again until is green again
+	if tenant != nil && tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
+		c.healthCheckQueue.Add(key)
 	}
 
 	return WrapResult(Result{}, nil)
