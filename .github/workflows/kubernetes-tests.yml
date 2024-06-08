@@ -225,7 +225,7 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            .sidecar/minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Operator Sidecar Binary
         working-directory: ./sidecar
