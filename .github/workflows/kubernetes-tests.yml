@@ -225,9 +225,9 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            ./minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
-      - name: Operator Binary
+      - name: Operator Sidecar Binary
         working-directory: ./sidecar
         run: |
           make sidecar
@@ -257,7 +257,7 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            ./minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Deploy Tenant
         run: |
@@ -287,7 +287,7 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            ./minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Tenant upgrade test on Kind
         run: |
@@ -317,7 +317,7 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            ./minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Tenant KES
         run: |
@@ -346,7 +346,7 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            ./minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Deploy Tenant with cert-manager
         run: |
@@ -385,7 +385,7 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            ./minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Test PolicyBinding CRD and sts call on kind
         run: |
@@ -418,7 +418,7 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            ./minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       # Runs a set of commands using the runners shell
       - name: Deploy a MinIO Tenant on Kind
@@ -455,7 +455,7 @@ jobs:
         name: Operator Sidecar Binary Cache
         with:
           path: |
-            ./minio-operator-sidecar
+            ./sidecar/minio-operator-sidecar
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       # Runs a set of commands using the runners shell
       - name: Deploy a MinIO Tenant on Kind

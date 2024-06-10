@@ -34,12 +34,12 @@ getdeps:
 verify: getdeps govet lint
 
 binary:
-	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o ../minio-operator-sidecar ./cmd/sidecar
+	@CGO_ENABLED=0 GOOS=linux go build -trimpath --ldflags $(LDFLAGS) -o ./minio-operator-sidecar ./cmd/sidecar
 
 sidecar: binary
 
 docker: sidecar
-	@(cd .. && docker buildx build --no-cache --load --platform linux/$(GOARCH) -t $(TAG) -f sidecar/Dockerfile .)
+	@docker buildx build --no-cache --load --platform linux/$(GOARCH) -t $(TAG) .
 
 build: verify sidecar docker
 

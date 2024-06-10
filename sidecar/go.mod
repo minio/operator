@@ -12,6 +12,7 @@ require (
 	k8s.io/client-go v0.29.0
 	k8s.io/klog/v2 v2.120.1
 )
+replace github.com/minio/operator => ../
 
 require (
 	aead.dev/mem v0.2.0 // indirect

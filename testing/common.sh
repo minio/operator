@@ -560,7 +560,7 @@ function install_operator() {
   # To compile current branch
   echo "Compiling Current Branch Sidecar"
   SIDECAR_TAG=minio/operator-sidecar:noop
-  (cd "${SCRIPT_DIR}/../" && try docker build -t $SIDECAR_TAG -f sidecar/Dockerfile .) # will not change your shell's current directory
+  (cd "${SCRIPT_DIR}/../sidecar" && try docker build -t $SIDECAR_TAG .) # will not change your shell's current directory
 
   echo 'start - load compiled sidecar image so we can use it later on'
   try kind load docker-image $SIDECAR_TAG
