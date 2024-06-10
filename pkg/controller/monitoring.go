@@ -66,10 +66,16 @@ func (c *Controller) tenantsHealthMonitor() error {
 	if err != nil {
 		return err
 	}
-	for _, tenant := range tenants.Items {
-		if _, err = c.updateHealthStatusForTenant(&tenant); err != nil {
+	for _, t := range tenants.Items {
+		tenant, err := c.updateHealthStatusForTenant(&t)
+		if err != nil {
 			klog.Errorf("%v", err)
 			return err
+		}
+		// Add tenant to the health check queue until is green again
+		if tenant != nil && tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
+			key := fmt.Sprintf("%s/%s", tenant.GetNamespace(), tenant.GetName())
+			c.healthCheckQueue.Add(key)
 		}
 	}
 	return nil
