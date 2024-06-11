@@ -524,7 +524,6 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 			// webserver was instructed to stop, do not attempt to restart
 			continue
 		case <-stopCh:
-			klog.Infof("Si salio leaderRun()")
 			return
 		}
 	}
