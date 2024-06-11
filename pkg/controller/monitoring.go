@@ -39,6 +39,48 @@ const (
 	HealthReduceAvailabilityMessage = "Reduced Availability"
 )
 
+// recurrentTenantStatusMonitor loop that checks every N minutes for tenants health
+func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
+	// How often will this function run
+	interval := miniov2.GetMonitoringInterval()
+	ticker := time.NewTicker(time.Duration(interval) * time.Minute)
+	defer func() {
+		klog.Info("recurrent pod status monitor closed")
+	}()
+	for {
+		select {
+		case <-ticker.C:
+			if err := c.tenantsHealthMonitor(); err != nil {
+				klog.Infof("%v", err)
+			}
+		case <-stopCh:
+			ticker.Stop()
+			return
+		}
+	}
+}
+
+func (c *Controller) tenantsHealthMonitor() error {
+	// list all tenants and get their cluster health
+	tenants, err := c.minioClientSet.MinioV2().Tenants("").List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	for _, t := range tenants.Items {
+		tenant, err := c.updateHealthStatusForTenant(&t)
+		if err != nil {
+			klog.Errorf("%v", err)
+			return err
+		}
+		// Add tenant to the health check queue until is green again
+		if tenant != nil && tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
+			key := fmt.Sprintf("%s/%s", tenant.GetNamespace(), tenant.GetName())
+			c.healthCheckQueue.Add(key)
+		}
+	}
+	return nil
+}
+
 func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 	// don't get the tenant cluster health if it doesn't have at least 1 pool initialized
 	oneInitialized := false

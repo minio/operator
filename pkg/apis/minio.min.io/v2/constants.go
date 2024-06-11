@@ -201,7 +201,7 @@ const tenantKesImageEnv = "TENANT_KES_IMAGE"
 const monitoringIntervalEnv = "MONITORING_INTERVAL"
 
 // DefaultMonitoringInterval is how often we run monitoring on tenants
-const DefaultMonitoringInterval = 3
+const DefaultMonitoringInterval = 5
 
 // PrometheusNamespace is the namespace of the prometheus
 const PrometheusNamespace = "PROMETHEUS_NAMESPACE"

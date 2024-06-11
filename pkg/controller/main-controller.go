@@ -470,6 +470,8 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	// Launch a single worker for Health Check reacting to Pod Changes
 	go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
 
+	// Launch a goroutine to monitor all Tenants
+	go c.recurrentTenantStatusMonitor(stopCh)
 	go c.StartPodInformer(stopCh)
 
 	// 1) we need to make sure we have console TLS certificates (if enabled)
