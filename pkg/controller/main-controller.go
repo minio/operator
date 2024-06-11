@@ -422,7 +422,8 @@ func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel 
 			Err:  err,
 		}
 	}
-	c.sts.TLSConfig = c.createTLSConfig(certsManager)
+	serverCertsManager = certsManager
+	c.sts.TLSConfig = c.createTLSConfig(serverCertsManager)
 
 	if err := c.sts.ListenAndServeTLS("", ""); !errors.Is(err, http.ErrServerClosed) {
 		// only notify on server failure, on http.ErrServerClosed the channel should be already closed
