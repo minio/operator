@@ -43,6 +43,10 @@ spec:
                       additionalProperties:
                         type: string
                       type: object
+                    command:
+                      items:
+                        type: string
+                      type: array
                     dependsOn:
                       items:
                         type: string

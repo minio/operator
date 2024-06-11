@@ -131,16 +131,20 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 	}
 	jobCommand.mutex.RUnlock()
 	jobCommands := []string{}
-	commands := []string{"mc"}
-	commands = append(commands, strings.SplitN(jobCommand.MCOperation, "/", -1)...)
-	commands = append(commands, strings.SplitN(jobCommand.Command, " ", -1)...)
-	for _, command := range commands {
-		trimCommand := strings.TrimSpace(command)
-		if trimCommand != "" {
-			jobCommands = append(jobCommands, trimCommand)
+	if len(jobCommand.CommandSpec.Command) == 0 {
+		commands := []string{"mc"}
+		commands = append(commands, strings.SplitN(jobCommand.MCOperation, "/", -1)...)
+		commands = append(commands, strings.SplitN(jobCommand.Command, " ", -1)...)
+		for _, command := range commands {
+			trimmedCommand := strings.TrimSpace(command)
+			if trimmedCommand != "" {
+				jobCommands = append(jobCommands, trimmedCommand)
+			}
 		}
+		jobCommands = append(jobCommands, "--insecure")
+	} else {
+		jobCommands = append(jobCommands, jobCommand.CommandSpec.Command...)
 	}
-	jobCommands = append(jobCommands, "--insecure")
 	mcImage := jobCR.Spec.MCImage
 	if mcImage == "" {
 		mcImage = DefaultMCImage
@@ -340,30 +344,32 @@ func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sCl
 
 // GenerateMinIOIntervalJobCommand - generate command
 func GenerateMinIOIntervalJobCommand(commandSpec v1alpha1.CommandSpec, commandIndex int) (*MinIOIntervalJobCommand, error) {
-	mcCommand, found := OperationAliasToMC(commandSpec.Operation)
-	if !found {
-		return nil, fmt.Errorf("operation %s is not supported", commandSpec.Operation)
-	}
-	argsFuncs, found := JobOperation[mcCommand]
-	if !found {
-		return nil, fmt.Errorf("operation %s is not supported", mcCommand)
-	}
-	commands := []string{}
-	for _, argsFunc := range argsFuncs {
-		jobArg, err := argsFunc(commandSpec.Args)
-		if err != nil {
-			return nil, err
-		}
-		if jobArg.Command != "" {
-			commands = append(commands, jobArg.Command)
-		}
-
-	}
 	jobCommand := &MinIOIntervalJobCommand{
 		JobName:     commandSpec.Name,
-		MCOperation: mcCommand,
-		Command:     strings.Join(commands, " "),
 		CommandSpec: commandSpec,
+	}
+	if len(commandSpec.Command) == 0 {
+		mcCommand, found := OperationAliasToMC(commandSpec.Operation)
+		if !found {
+			return nil, fmt.Errorf("operation %s is not supported", commandSpec.Operation)
+		}
+		argsFuncs, found := JobOperation[mcCommand]
+		if !found {
+			return nil, fmt.Errorf("operation %s is not supported", mcCommand)
+		}
+		commands := []string{}
+		for _, argsFunc := range argsFuncs {
+			jobArg, err := argsFunc(commandSpec.Args)
+			if err != nil {
+				return nil, err
+			}
+			if jobArg.Command != "" {
+				commands = append(commands, jobArg.Command)
+			}
+
+		}
+		jobCommand.MCOperation = mcCommand
+		jobCommand.Command = strings.Join(commands, " ")
 	}
 	// some commands need to have a empty name
 	if jobCommand.JobName == "" {
