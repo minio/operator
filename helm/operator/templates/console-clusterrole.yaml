@@ -122,7 +122,13 @@ rules:
     resources:
       - '*'
     verbs:
+      {{- if not .Values.console.readOnly }}
       - '*'
+      {{- else }}
+      - get
+      - list
+      - watch
+      {{- end}}
   - apiGroups:
       - min.io
     resources:
