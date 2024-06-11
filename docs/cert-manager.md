@@ -31,7 +31,7 @@ The global `Cluster Issuer` is created in the default namespace.
 A local `Issuer` is created in each tenant namespace.
 
 An `Issuer` is also created in the `minio-operator` namespace. More about services that require TLS certificates
-in the `minio-operator` namespace are covered below in [MinIO Operator services with cert-manager](# MinIO Operator services with cert-manager).
+in the `minio-operator` namespace are covered below in [MinIO Operator services with cert-manager](#minio-operator-services-with-cert-manager)..
 
 > [!NOTE]  
 > This guide uses a self-signed `Cluster Issuer`. You can also use [other Issuers supported by Cert Manager](https://cert-manager.io/docs/configuration/issuers/).
@@ -82,7 +82,7 @@ MinIO Operator manages the TLS certificate issuing for the services hosted in th
 
 This section describes how to generate the `sts` and `console` TLS certificates with Cert Manager.
 These certificates must be issued before installing Operator.
-Be sure to follow step [Create Cluster Self-signed root Issuer ](#Create Cluster Self-signed root Issuer) mentioned above.
+Be sure to follow step [Create Cluster Self-signed root Issuer](#create-cluster-self-signed-root-issuer) mentioned above.
 
 ## Secure Token Service (STS)
 
@@ -177,7 +177,7 @@ sts.minio-operator.svc.<cluster domain>
 > [!IMPORTANT]
 > Replace `<cluster domain>` with the actual values for your MinIO tenant.
 > `cluster domain` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
-> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -o yaml | yq ".data"`. 
+> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -o jsonpath="{.data}"`. 
 > The way the root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
 
 Create a `Certificate` for the domains mentioned above:
@@ -220,7 +220,7 @@ console.minio-operator.svc.<cluster domain>
 > [!IMPORTANT]
 > Replace `<cluster domain>` with the actual values for your MinIO tenant.
 > `<cluster domain>` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
-> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -o yaml | yq ".data"`.
+> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -o jsonpath="{.data}"`.
 > The way the root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
 
 Create a `Certificate` for the domains mentioned above:
@@ -372,7 +372,7 @@ minio.<namespace>.svc.<cluster domain>
 > [!IMPORTANT]
 > Replace `<cluster domain>` with the actual values for your MinIO tenant.
 > * `<cluster domain>` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
-> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -o yaml | yq ".data"`.
+> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -o jsonpath="{.data}"`.
 > The way the root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
 > * `tenant-name` is the name provided to your tenant in the `metadata.name` of the Tenant YAML. For this example it is `myminio`.
 > * `namespace` is the namespace where the tenant is created, the `metadata.namespace` notes that in the Tenant YAML. For this example it is `tenant-1`.
