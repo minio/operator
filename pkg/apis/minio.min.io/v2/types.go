@@ -617,7 +617,8 @@ type CustomCertificateConfig struct {
 // See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#procedure-command-line[MinIO Operator CRD] reference for the `pools` object for examples and more complete documentation. +
 type Pool struct {
 	// *Required*
-	//
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:MinLength=1
 	// Specify the name of the pool. The Operator automatically generates the pool name if this field is omitted.
 	Name string `json:"name"`
 	// *Required*
