@@ -960,11 +960,17 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 
 		// if this index is in the status of pools use it, else capture the desired name in the status and store it
-		var ssName string
-		if len(tenant.Status.Pools) > i {
-			ssName = tenant.Status.Pools[i].SSName
-		} else {
-			ssName = tenant.PoolStatefulsetName(&pool)
+		ssName := tenant.PoolStatefulsetName(&pool)
+
+		poolInStatus := false
+		for _, poolStatus := range tenant.Status.Pools {
+			if poolStatus.SSName == ssName {
+				poolInStatus = true
+				break
+			}
+		}
+
+		if !poolInStatus {
 			tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
 				SSName: ssName,
 				State:  miniov2.PoolNotCreated,
@@ -1209,10 +1215,17 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	for i, pool := range tenant.Spec.Pools {
 		// Get the StatefulSet with the name specified in Tenant.status.pools[i].SSName
 		// if this index is in the status of pools use it, else capture the desired name in the status and store it
-		var ssName string
-		if len(tenant.Status.Pools) > i {
-			ssName = tenant.Status.Pools[i].SSName
-		} else {
+		ssName := tenant.PoolStatefulsetName(&pool)
+
+		poolInStatus := false
+		for _, poolStatus := range tenant.Status.Pools {
+			if poolStatus.SSName == ssName {
+				poolInStatus = true
+				break
+			}
+		}
+
+		if !poolInStatus {
 			ssName = tenant.PoolStatefulsetName(&pool)
 			tenant.Status.Pools = append(tenant.Status.Pools, miniov2.PoolStatus{
 				SSName: ssName,
