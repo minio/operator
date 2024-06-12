@@ -18,64 +18,50 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/runtime"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (c *Controller) checkAndCreateServiceAccount(ctx context.Context, tenant *miniov2.Tenant) error {
 	// check if service account exits
-	sa, err := c.kubeClientSet.CoreV1().ServiceAccounts(tenant.Namespace).Get(ctx, tenant.Spec.ServiceAccountName, v1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			// create SA
-			sa, err = c.kubeClientSet.CoreV1().ServiceAccounts(tenant.Namespace).Create(ctx, &corev1.ServiceAccount{
-				ObjectMeta: v1.ObjectMeta{
-					Name:      tenant.Spec.ServiceAccountName,
-					Namespace: tenant.Namespace,
-				},
-			}, v1.CreateOptions{})
-			if err != nil {
-				return err
-			}
-			c.recorder.Event(tenant, corev1.EventTypeNormal, "SACreated", "Service Account Created")
-		} else {
-			c.recorder.Event(tenant, corev1.EventTypeWarning, "SAFailed", fmt.Sprintf("Service Account could not be created: %s", err.Error()))
-			return err
-		}
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      tenant.Spec.ServiceAccountName,
+			Namespace: tenant.Namespace,
+		},
 	}
+	_, err := runtime.NewObjectSyncer(ctx, c.k8sClient, tenant, func() error {
+		return nil
+	}, sa, runtime.SyncTypeCreateOrUpdate).Sync(ctx)
+	if err != nil {
+		return err
+	}
+
 	// check if role exist
-	role, err := c.kubeClientSet.RbacV1().Roles(tenant.Namespace).Get(ctx, tenant.GetRoleName(), v1.GetOptions{})
+	role := getTenantRole(tenant)
+	_, err = runtime.NewObjectSyncer(ctx, c.k8sClient, tenant, func() error {
+		// set expected rules
+		role.Rules = getTenantRole(tenant).Rules
+		return nil
+	}, role, runtime.SyncTypeCreateOrUpdate).Sync(ctx)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			role = getTenantRole(tenant)
-			role, err = c.kubeClientSet.RbacV1().Roles(tenant.Namespace).Create(ctx, role, v1.CreateOptions{})
-			if err != nil {
-				return err
-			}
-			c.recorder.Event(tenant, corev1.EventTypeNormal, "RoleCreated", "Role Created")
-		} else {
-			c.recorder.Event(tenant, corev1.EventTypeWarning, "RoleFailed", fmt.Sprintf("Role could not be created: %s", err.Error()))
-			return err
-		}
+		return err
 	}
+
 	// check rolebinding
-	_, err = c.kubeClientSet.RbacV1().RoleBindings(tenant.Namespace).Get(ctx, tenant.GetBindingName(), v1.GetOptions{})
+	roleBinding := getRoleBinding(tenant, sa, role)
+	_, err = runtime.NewObjectSyncer(ctx, c.k8sClient, tenant, func() error {
+		// set expected subjects and roleRef
+		roleBinding.Subjects = getRoleBinding(tenant, sa, role).Subjects
+		roleBinding.RoleRef = getRoleBinding(tenant, sa, role).RoleRef
+		return nil
+	}, roleBinding, runtime.SyncTypeCreateOrUpdate).Sync(ctx)
 	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			_, err = c.kubeClientSet.RbacV1().RoleBindings(tenant.Namespace).Create(ctx, getRoleBinding(tenant, sa, role), v1.CreateOptions{})
-			if err != nil {
-				return err
-			}
-			c.recorder.Event(tenant, corev1.EventTypeNormal, "BindingCreated", "Role Binding Created")
-		} else {
-			c.recorder.Event(tenant, corev1.EventTypeWarning, "BindingFailed", fmt.Sprintf("Role Binding could not be created: %s", err.Error()))
-			return err
-		}
+		return err
 	}
 	return nil
 }
