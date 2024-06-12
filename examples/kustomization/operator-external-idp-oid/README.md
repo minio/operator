@@ -77,7 +77,7 @@ In OAuth2, scopes defines the specific actions that an application (client) is a
 ### Callback URL
 OpenID uses a "call back" URL to redirect back to the application once the authentication succeeds. This callback URL is set in Operator Console with the `CONSOLE_IDP_CALLBACK` environment variable.
 
-A Callback URL can also be constructed dynamically. To do this, set `CONSOLE_IDP_CALLBACK_DYNAMIC` environment variable to `on` instead of setting a `CONSOLE_IDP_CALBACK`.
+A Callback URL can also be constructed dynamically. To do this, set `CONSOLE_IDP_CALLBACK_DYNAMIC` environment variable to `on` instead of setting a `CONSOLE_IDP_CALLBACK`.
 
 The constructed URL resembles following: `$protocol://$host/oauth_callback`
 
