@@ -413,13 +413,8 @@ func (t *Tenant) GenBearerToken(accessKey, secretKey string) string {
 // MinIOHosts returns the domain names in ellipses format created for current Tenant
 func (t *Tenant) MinIOHosts() (hosts []string) {
 	// Create the ellipses style URL
-	for pi, pool := range t.Spec.Pools {
-		// determine the proper statefulset name
+	for _, pool := range t.Spec.Pools {
 		ssName := t.PoolStatefulsetName(&pool)
-		if len(t.Status.Pools) > pi {
-			ssName = t.Status.Pools[pi].SSName
-		}
-
 		if pool.Servers == 1 {
 			hosts = append(hosts, fmt.Sprintf("%s-%s.%s.%s.svc.%s", ssName, "0", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain()))
 		} else {
