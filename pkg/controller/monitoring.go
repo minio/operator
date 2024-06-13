@@ -289,7 +289,7 @@ func (c *Controller) syncHealthCheckHandler(key string) (Result, error) {
 
 	// Add tenant to the health check queue again until is green again
 	if tenant != nil && tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
-		c.healthCheckQueue.Add(key)
+		c.healthCheckQueue.AddAfter(key, 1*time.Second)
 	}
 
 	return WrapResult(Result{}, nil)

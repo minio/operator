@@ -18,6 +18,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/utils"
@@ -40,5 +41,5 @@ func (c *Controller) handlePodChange(obj interface{}) {
 	}
 
 	key := fmt.Sprintf("%s/%s", object.GetNamespace(), instanceName)
-	c.healthCheckQueue.Add(key)
+	c.healthCheckQueue.AddAfter(key, 1*time.Second)
 }
