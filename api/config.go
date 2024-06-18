@@ -18,11 +18,14 @@ package api
 
 import (
 	"crypto/x509"
-	"io/ioutil"
 	"net"
 	"strconv"
 	"strings"
 	"time"
+
+	xoauth2 "golang.org/x/oauth2"
+
+	"k8s.io/klog/v2"
 
 	"github.com/minio/operator/pkg/auth/idp/oauth2"
 
@@ -60,14 +63,20 @@ var (
 	GlobalTLSCertsManager *xcerts.Manager
 )
 
-// getK8sSAToken assumes the plugin is running inside a k8s pod and extract the current service account from the
-// /var/run/secrets/kubernetes.io/serviceaccount/token file
-func getK8sSAToken() string {
-	dat, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
-	if err != nil {
+// getK8sSAToken assumes the plugin is running inside a k8s pod and gets the token directly from IdP as id_token
+// if id_token is valid token for k8s, then user will have access as described in k8s documentation:
+// https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens
+func getK8sSAToken(oauth2Token *xoauth2.Token) string {
+	var idToken interface{}
+	if oauth2Token != nil {
+		// The extraction of id_token alone
+		idToken = oauth2Token.Extra("id_token")
+	}
+	if idToken == nil {
+		klog.Warning("we no longer provide console-sa access token but rather your should consider configuring k8s idp to get the token in a production environment")
 		return env.Get(OperatorSAToken, "")
 	}
-	return string(dat)
+	return idToken.(string)
 }
 
 // Get Marketplace deployment platform

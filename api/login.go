@@ -184,14 +184,19 @@ func getLoginOauth2AuthResponse(params authApi.LoginOauth2AuthParams) (*models.L
 			KeyFunc: oauth2.DefaultDerivedKey,
 			Client:  oauth2Client,
 		}
+
+		// Pointer to extract the whole token from IdP
+		var oauth2Token *xoauth2.Token
+
 		// Validate user against IDP
-		_, err = verifyUserAgainstIDP(ctx, identityProvider, *lr.Code, requestItems.State)
+		oauth2Token, err = verifyUserAgainstIDP(ctx, identityProvider, *lr.Code, requestItems.State)
 		if err != nil {
 			return nil, ErrorWithContext(ctx, err)
 		}
+
 		// If we pass here that means the IDP correctly authenticate the user with the operator resource
 		// we proceed to use the service account token configured in the operator-console pod
-		creds, err := newConsoleCredentials(getK8sSAToken())
+		creds, err := newConsoleCredentials(getK8sSAToken(oauth2Token))
 		if err != nil {
 			return nil, ErrorWithContext(ctx, err)
 		}
