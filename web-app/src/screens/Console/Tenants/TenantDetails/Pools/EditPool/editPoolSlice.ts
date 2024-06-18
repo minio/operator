@@ -60,7 +60,6 @@ const initialState: IEditPool = {
     tolerations: [
       {
         key: "",
-        tolerationSeconds: { seconds: 0 },
         value: "",
         effect: ITolerationEffect.NoSchedule,
         operator: ITolerationOperator.Equal,
@@ -82,7 +81,6 @@ export const editPoolSlice = createSlice({
       let tolerations: ITolerationModel[] = [
         {
           key: "",
-          tolerationSeconds: { seconds: 0 },
           value: "",
           effect: ITolerationEffect.NoSchedule,
           operator: ITolerationOperator.Equal,
@@ -232,12 +230,12 @@ export const editPoolSlice = createSlice({
 
       editPoolTolerationValue[action.payload.index] =
         action.payload.tolerationValue;
+
       state.fields.tolerations = editPoolTolerationValue;
     },
     addNewEditPoolToleration: (state) => {
       state.fields.tolerations.push({
         key: "",
-        tolerationSeconds: { seconds: 0 },
         value: "",
         effect: ITolerationEffect.NoSchedule,
         operator: ITolerationOperator.Equal,

@@ -78,7 +78,6 @@ const initialState: IAddPool = {
   tolerations: [
     {
       key: "",
-      tolerationSeconds: { seconds: 0 },
       value: "",
       effect: ITolerationEffect.NoSchedule,
       operator: ITolerationOperator.Equal,
@@ -150,7 +149,6 @@ export const addPoolSlice = createSlice({
     addNewPoolToleration: (state) => {
       state.tolerations.push({
         key: "",
-        tolerationSeconds: { seconds: 0 },
         value: "",
         effect: ITolerationEffect.NoSchedule,
         operator: ITolerationOperator.Equal,
