@@ -181,16 +181,20 @@ const TolerationSelector = ({
               <Grid item xs className={"fieldContainer"}>
                 <InputBox
                   id={`seconds-${index}`}
-                  label={""}
                   name={`seconds-${index}`}
-                  value={tolerationSeconds?.toString() || "0"}
+                  value={
+                    // treat the NaN cases
+                    !isNaN(parseFloat(tolerationSeconds?.toString() || ""))
+                      ? tolerationSeconds?.toString()
+                      : undefined
+                  }
                   onChange={(e) => {
                     if (e.target.validity.valid) {
                       onSecondsChange(parseInt(e.target.value));
                     }
                   }}
                   index={index}
-                  pattern={"[0-9]*"}
+                  pattern={"[0-9]+"}
                   overlayObject={
                     <InputUnitMenu
                       id={`seconds-${index}`}

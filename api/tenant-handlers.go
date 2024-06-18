@@ -982,22 +982,29 @@ func parseTenantPoolRequest(poolParams *models.Pool) (*miniov2.Pool, error) {
 	tolerations := []corev1.Toleration{}
 	for _, elem := range poolParams.Tolerations {
 		var tolerationSeconds *int64
-		if elem.TolerationSeconds != nil {
-			// elem.TolerationSeconds.Seconds is allowed to be nil
-			tolerationSeconds = elem.TolerationSeconds.Seconds
+		effect := corev1.TaintEffect(elem.Effect)
+		tolerationOperator := corev1.TolerationOperator(elem.Operator)
 
-			if tolerationSeconds != nil {
-				if corev1.TaintEffect(elem.Effect) != corev1.TaintEffectNoExecute {
-					return nil, fmt.Errorf(`Invalid value: "%s": effect must be 'NoExecute' when tolerationSeconds is set`, elem.Effect)
-				}
+		// We only allow empty key if operator is exists.
+		// An empty key with operator Exists matches all keys, values and effects which means this will tolerate everything.
+		if elem.Key == "" && tolerationOperator != corev1.TolerationOpExists {
+			// ignore
+			continue
+		}
+
+		if elem.TolerationSeconds != nil && elem.TolerationSeconds.Seconds != nil {
+			tolerationSeconds = elem.TolerationSeconds.Seconds
+			if effect != corev1.TaintEffectNoExecute {
+				return nil, fmt.Errorf(`Invalid value: "%s": effect must be 'NoExecute' when tolerationSeconds is set`, elem.Effect)
 			}
+
 		}
 
 		toleration := corev1.Toleration{
 			Key:               elem.Key,
-			Operator:          corev1.TolerationOperator(elem.Operator),
+			Operator:          tolerationOperator,
 			Value:             elem.Value,
-			Effect:            corev1.TaintEffect(elem.Effect),
+			Effect:            effect,
 			TolerationSeconds: tolerationSeconds,
 		}
 		tolerations = append(tolerations, toleration)

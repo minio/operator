@@ -324,7 +324,6 @@ const initialState: ICreateTenant = {
   tolerations: [
     {
       key: "",
-      tolerationSeconds: { seconds: 0 },
       value: "",
       effect: ITolerationEffect.NoSchedule,
       operator: ITolerationOperator.Equal,
@@ -658,7 +657,6 @@ export const createTenantSlice = createSlice({
         ...state.tolerations,
         {
           key: "",
-          tolerationSeconds: { seconds: 0 },
           value: "",
           effect: ITolerationEffect.NoSchedule,
           operator: ITolerationOperator.Equal,

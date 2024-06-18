@@ -463,11 +463,15 @@ const Affinity = () => {
                         onValueChange={(value) => {
                           updateToleration(i, "value", value);
                         }}
-                        tolerationSeconds={tol.tolerationSeconds?.seconds || 0}
+                        tolerationSeconds={tol.tolerationSeconds?.seconds}
                         onSecondsChange={(value) => {
-                          updateToleration(i, "tolerationSeconds", {
-                            seconds: value,
-                          });
+                          if (isNaN(value)) {
+                            updateToleration(i, "tolerationSeconds", undefined);
+                          } else {
+                            updateToleration(i, "tolerationSeconds", {
+                              seconds: value,
+                            });
+                          }
                         }}
                         index={i}
                       />

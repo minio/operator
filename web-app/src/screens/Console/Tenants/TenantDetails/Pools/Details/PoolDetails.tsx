@@ -249,7 +249,7 @@ const PoolDetails = () => {
                             <strong>{tolItem.value}</strong> then{" "}
                             <strong>{tolItem.effect}</strong> after{" "}
                             <strong>
-                              {tolItem.tolerationSeconds?.seconds || 0}
+                              {tolItem.tolerationSeconds?.seconds}
                             </strong>{" "}
                             seconds
                           </Fragment>
@@ -258,7 +258,7 @@ const PoolDetails = () => {
                             If <strong>{tolItem.key}</strong> exists then{" "}
                             <strong>{tolItem.effect}</strong> after{" "}
                             <strong>
-                              {tolItem.tolerationSeconds?.seconds || 0}
+                              {tolItem.tolerationSeconds?.seconds}
                             </strong>{" "}
                             seconds
                           </Fragment>
