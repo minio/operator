@@ -19,6 +19,8 @@ package api
 import (
 	"os"
 	"testing"
+
+	xoauth2 "golang.org/x/oauth2"
 )
 
 func Test_getK8sSAToken(t *testing.T) {
@@ -47,7 +49,8 @@ func Test_getK8sSAToken(t *testing.T) {
 					os.Setenv(k, v)
 				}
 			}
-			if got := getK8sSAToken(); got != tt.want {
+			var oauth2Token *xoauth2.Token
+			if got := getK8sSAToken(oauth2Token); got != tt.want {
 				t.Errorf("getK8sSAToken() = %v, want %v", got, tt.want)
 			}
 			if tt.envs != nil {
