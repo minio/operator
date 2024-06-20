@@ -89,6 +89,12 @@ const (
 	MessageResourceExists = "Resource %q already exists and is not managed by MinIO Operator"
 )
 
+// Standard Events for Tenant
+const (
+	UsersCreationFailedReason   = "UsersCreationFailed"
+	WaitingMinIOIsHealthyReason = "WaitingMinIOIsHealthy"
+)
+
 // Standard Status messages for Tenant
 const (
 	StatusInitialized                = "Initialized"
@@ -98,6 +104,7 @@ const (
 	StatusProvisioningConsoleService = "Provisioning Console Service"
 	StatusProvisioningKESStatefulSet = "Provisioning KES StatefulSet"
 	StatusProvisioningInitialUsers   = "Provisioning initial users"
+	StatusWaitingMinIOIsHealthy      = "Waiting for Tenant to be healthy"
 	StatusProvisioningDefaultBuckets = "Provisioning default buckets"
 	StatusWaitingMinIOCert           = "Waiting for MinIO TLS Certificate"
 	StatusWaitingMinIOClientCert     = "Waiting for MinIO TLS Client Certificate"
@@ -1315,11 +1322,19 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		}
 	}
 
+	// Stay in this state until minio is ready
+	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
+		c.updateTenantStatus(ctx, tenant, StatusWaitingMinIOIsHealthy, 0)
+		c.recorder.Event(tenant, corev1.EventTypeWarning, WaitingMinIOIsHealthyReason, fmt.Sprintf("Waiting for MinIO to be ready: %s", err))
+		// retry after 5sec
+		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
+	}
+
 	// Ensure we are only provisioning users one time
 	if !tenant.Status.ProvisionedUsers && len(tenant.Spec.Users) > 0 {
 		if err := c.createUsers(ctx, tenant, tenantConfiguration); err != nil {
 			klog.V(2).Infof("Unable to create MinIO users: %v", err)
-			c.recorder.Event(tenant, corev1.EventTypeWarning, "UsersCreatedFailed", fmt.Sprintf("Users creation failed: %s", err))
+			c.recorder.Event(tenant, corev1.EventTypeWarning, UsersCreationFailedReason, fmt.Sprintf("Users creation failed: %s", err))
 			// retry after 5sec
 			return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 		}
