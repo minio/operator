@@ -21,7 +21,7 @@ kind: Secret
 metadata:
   name: mytestsecret
 data:
-  PASSWORD: ZGFuaWVsMTIz
+  PASSWORD: cGVkcm8xMjM=
 ---
 apiVersion: v1
 kind: Secret
@@ -58,7 +58,7 @@ kind: MinIOJob
 metadata:
   name: minio-test-job
 spec:
-  mcImage: minio/mc:latest
+  mcImage: quay.io/minio/mc:latest # optional, defaults to minio/mc:latest
   serviceAccountName: mc-job-sa
   securityContext: {}
   containerSecurityContext: {}
@@ -126,6 +126,7 @@ spec:
         - "--insecure"  
 ```
 The MinioJob is a Kubernetes Job that runs mc commands. It uses the MinIO client (mc) to interact with the MinIO server.
+`--insecure` will be added to the mc command. For we can't mount the minio certs in the job pod.
 ## mcImage
 The `mcImage` field specifies the Docker image that will be used to run the mc commands. In this case, the image is `minio/mc:latest`.
 ## serviceAccountName
@@ -145,7 +146,7 @@ capabilities:
 ```
 The `securityContext` field specifies the security context that will be used to run the mc commands. 
 ## containerSecurityContext
-The `containerSecurityContext` field specifies the security context that will be used to run the `mc` commands in the container. In this case, 
+The `containerSecurityContext` field specifies the security context that will be used to run the `mc` commands in the container.
 ## tenant
 ```yaml
 name: tenantName
