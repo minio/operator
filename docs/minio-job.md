@@ -9,7 +9,7 @@ metadata:
 apiVersion: sts.min.io/v1alpha1
 kind: PolicyBinding
 metadata:
-  name: mc-job-bingding
+  name: mc-job-binding
 spec:
   application:
     serviceaccount: mc-job-sa
@@ -127,9 +127,9 @@ spec:
 ```
 The MinioJob is a Kubernetes Job that runs mc commands. It uses the MinIO client (mc) to interact with the MinIO server.
 ## mcImage
-The mcImage field specifies the Docker image that will be used to run the mc commands. In this case, the image is minio/mc:latest.
+The `mcImage` field specifies the Docker image that will be used to run the mc commands. In this case, the image is `minio/mc:latest`.
 ## serviceAccountName
-The serviceAccountName field specifies the name of the Kubernetes ServiceAccount that will be used to run the mc commands. In this case, the ServiceAccount is mc-job-sa.
+The `serviceAccountName` field specifies the name of the Kubernetes ServiceAccount that will be used to run the mc commands. In this case, the ServiceAccount is `mc-job-sa`.
 ## securityContext
 example:
 ```yaml
@@ -143,9 +143,9 @@ capabilities:
   drop:
     - ALL
 ```
-The securityContext field specifies the security context that will be used to run the mc commands. 
+The `securityContext` field specifies the security context that will be used to run the mc commands. 
 ## containerSecurityContext
-The containerSecurityContext field specifies the security context that will be used to run the mc commands in the container. In this case, 
+The `containerSecurityContext` field specifies the security context that will be used to run the `mc` commands in the container. In this case, 
 ## tenant
 ```yaml
 name: tenantName
@@ -154,7 +154,7 @@ namespace: tenantNamespace
 The target tenant that the job will run against.
 ## commands
 ### args
-if you set this field, the mc command will be executed with the args.
+if you set this field, the `mc` command will be executed with the arguments.
 `op` must be one of these:
 `make-bucket`, `admin/user/add`,`admin/policy/create`,`admin/policy/attach`, `admin/config/set`, `support/callhome`,`license/register`
 ```yaml
@@ -182,7 +182,7 @@ volumes:
 ```
 Will do a job like `mc admin policy create myminio memes-access /temp/policy.json --insecure`
 ### command
-The command field specifies the command that will be executed by the mc command.
+The `command` field specifies the command that will be executed by the `mc` command.
 `args` must be empty. And `op` can be set to the main command name.
 ```
 op: stat
@@ -194,7 +194,7 @@ command:
 ```
 Will do a job like `mc stat myminio/memes --insecure`
 ### env/envFrom/volumeMounts/volumes
-The env/envFrom/volumeMounts/volumes fields specify the environment variables/volumes that will be used by the mc command
+The `env/envFrom/volumeMounts/volumes` fields specify the environment variables/volumes that will be used by the `mc` command
 ### resources
 ```yaml
 resources:
@@ -205,6 +205,6 @@ resources:
     cpu: "500m"
     memory: "256Mi"
 ```
-The resources field specifies the resource requirements that will be used by the container.
+The `resources` field specifies the resource requirements that will be used by the container.
 ### dependsOn
-The dependsOn field specifies the commands that must be executed before the current command.
+The `dependsOn` field specifies the commands that must be executed before the current command.
