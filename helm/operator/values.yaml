@@ -61,6 +61,30 @@ operator:
     tag: v5.0.15
     pullPolicy: IfNotPresent
   ###
+  # Specify the sidecar container image to deploy on tenant pods for init container and sidecar.
+  # Only need to change this if want to use a different version that the default, or want to set a custom registry.
+  # ``sidecarImage.tag``
+  # For example, the following sets the image to the ``quay.io/minio/operator-sidecar`` repo and the v5.0.15 tag.
+  # The container pulls the image if not already present:
+  #
+  # .. code-block:: yaml
+  #
+  #    sidecarImage:
+  #      repository: quay.io/minio/operator-sidecar
+  #      tag: v5.0.15
+  #      pullPolicy: IfNotPresent
+  #
+  # The chart also supports specifying an image based on digest value:
+  #
+  # .. code-block:: yaml
+  #
+  #    sidecarImage:
+  #      repository: quay.io/minio/operator-sidecar@sha256
+  #      digest: 28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+  #      pullPolicy: IfNotPresent
+  #
+  sidecarImage: {}
+  ###
   #
   # An array of Kubernetes secrets to use for pulling images from a private ``image.repository``.
   # Only one array element is supported at this time.
