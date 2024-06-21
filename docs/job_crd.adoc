@@ -4,8 +4,8 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2024-03-15T01-07-19Z]
-:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2024-03-13T17-52-13Z]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2024-05-01T01-11-10Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2024-04-12T13-50-00Z]
 
 
 [id="{anchor_prefix}-job-min-io-v1alpha1"]
@@ -43,8 +43,36 @@ Operation is the MinioClient Action
 |*`args`* __object (keys:string, values:string)__ 
 |Args Arguments to pass to the action
 
+|*`command`* __string array__ 
+|Command Execute All User-Defined Commands
+
 |*`dependsOn`* __string array__ 
 |DependsOn List of named `command` in this MinioJob that have to be scheduled and executed before this command runs
+
+|*`resources`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[$$ResourceRequirements$$]__ 
+|Compute Resources required by this container.
+Cannot be updated.
+More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+
+|*`envFrom`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#envfromsource-v1-core[$$EnvFromSource$$] array__ 
+|List of sources to populate environment variables in the container.
+The keys defined within a source must be a C_IDENTIFIER. All invalid keys
+will be reported as an event when the container is starting. When a key exists in multiple
+sources, the value associated with the last source will take precedence.
+Values defined by an Env with a duplicate key will take precedence.
+Cannot be updated.
+
+|*`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#envvar-v1-core[$$EnvVar$$] array__ 
+|List of environment variables to set in the container.
+Cannot be updated.
+
+|*`volumeMounts`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#volumemount-v1-core[$$VolumeMount$$] array__ 
+|Pod volumes to mount into the container's filesystem.
+Cannot be updated.
+
+|*`volumes`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#volume-v1-core[$$Volume$$] array__ 
+|List of volumes that can be mounted by containers belonging to the pod.
+More info: https://kubernetes.io/docs/concepts/storage/volumes
 
 |===
 
@@ -170,6 +198,39 @@ Commands List of MinioClient commands
 
 |*`mcImage`* __string__ 
 |mc job image
+
+|*`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ 
+|*Optional* +
+
+
+Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of pods in the pool. The Operator supports only the following pod security fields: +
+
+
+* `fsGroup` +
+
+
+* `fsGroupChangePolicy` +
+
+
+* `runAsGroup` +
+
+
+* `runAsNonRoot` +
+
+
+* `runAsUser` +
+
+|*`containerSecurityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#securitycontext-v1-core[$$SecurityContext$$]__ 
+|Specify the https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Security Context] of containers in the pool. The Operator supports only the following container security fields: +
+
+
+* `runAsGroup` +
+
+
+* `runAsNonRoot` +
+
+
+* `runAsUser` +
 
 |===
 
