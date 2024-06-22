@@ -161,7 +161,7 @@ op: make-bucket
 args:
   name: memes
 ```
-Will do a job like `mc mb myminio/memes --insecure`
+Will do a job like `mc mb myminio/memes`
 ```yaml
 name: add-my-policy
 op: admin/policy/create
@@ -179,7 +179,7 @@ volumes:
       - key: policy.json
         path: policy.json
 ```
-Will do a job like `mc admin policy create myminio memes-access /temp/policy.json --insecure`
+Will do a job like `mc admin policy create myminio memes-access /temp/policy.json`
 ### command
 The `command` field specifies the command that will be executed by the `mc` command.
 `args` must be empty. And `op` can be set to the main command name.
@@ -189,9 +189,8 @@ command:
   - "mc"
   - "stat"
   - "myminio/memes"
-  - "--insecure"
 ```
-Will do a job like `mc stat myminio/memes --insecure`
+Will do a job like `mc stat myminio/memes`
 ### env/envFrom/volumeMounts/volumes
 The `env/envFrom/volumeMounts/volumes` fields specify the environment variables/volumes that will be used by the `mc` command
 ### resources
