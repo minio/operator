@@ -141,7 +141,6 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 				jobCommands = append(jobCommands, trimmedCommand)
 			}
 		}
-		jobCommands = append(jobCommands, "--insecure")
 	} else {
 		jobCommands = append(jobCommands, jobCommand.CommandSpec.Command...)
 	}
