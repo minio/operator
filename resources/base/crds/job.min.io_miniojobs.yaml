@@ -1025,8 +1025,18 @@ spec:
                 - continueOnFailure
                 - stopOnFailure
                 type: string
+              imagePullPolicy:
+                type: string
+              imagePullSecret:
+                items:
+                  properties:
+                    name:
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               mcImage:
-                default: minio/mc:latest
+                default: quay.io/minio/mc:latest
                 type: string
               securityContext:
                 properties:
