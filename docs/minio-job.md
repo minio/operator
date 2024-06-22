@@ -123,10 +123,8 @@ spec:
         - "mc"
         - "stat"
         - "myminio/memes"
-        - "--insecure"  
 ```
 The MinioJob is a Kubernetes Job that runs mc commands. It uses the MinIO client (mc) to interact with the MinIO server.
-`--insecure` will be added to the mc command. For we can't mount the minio certs in the job pod.
 ## mcImage
 The `mcImage` field specifies the Docker image that will be used to run the mc commands. In this case, the image is `minio/mc:latest`.
 ## serviceAccountName
