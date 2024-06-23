@@ -48,3 +48,8 @@ var Runtimes = map[string]Runtime{
 
 // Runtime type to for Operator runtime
 type Runtime string
+
+const (
+	// AnnotationsEnvTenantGeneration is the annotation used to store the last configuration generation
+	AnnotationsEnvTenantGeneration = "min.io/env-tenant-generation"
+)

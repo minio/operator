@@ -20,12 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/common"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -94,6 +95,11 @@ func poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet *appsv1.Stateful
 
 // restartInitializedPool restarts a pool that is assumed to have been initialized
 func (c *Controller) restartInitializedPool(ctx context.Context, tenant *miniov2.Tenant, pool miniov2.Pool, tenantConfiguration map[string][]byte) error {
+	err := c.waitUntilPoolPodAnnotated(ctx, tenant)
+	if err != nil {
+		klog.Warning("Could not validate state of statefulset for pool", err)
+		return err
+	}
 	// get a new admin client that points to a pod of an already initialized pool (ie: pool-0)
 	livePods, err := c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("%s=%s", miniov2.PoolLabel, pool.Name),
@@ -134,4 +140,32 @@ func (c *Controller) restartInitializedPool(ctx context.Context, tenant *miniov2
 	}
 
 	return nil
+}
+
+// waitUntilPoolPodAnnotated restarts a pool that is assumed to have been initialized
+func (c *Controller) waitUntilPoolPodAnnotated(ctx context.Context, tenant *miniov2.Tenant) (err error) {
+	tryCount := 0
+	var podList *corev1.PodList
+	for tryCount == 0 || (tryCount < 10 && err != nil) {
+		tryCount++
+		time.Sleep(time.Second * 2)
+		podList, err = c.kubeClientSet.CoreV1().Pods(tenant.Namespace).List(ctx, metav1.ListOptions{
+			LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, tenant.Name),
+		})
+		if err != nil {
+			klog.Warning("Could not validate state of statefulset for pool", err)
+		}
+		generationMatch := true
+		for _, pod := range podList.Items {
+			if pod.Status.Phase == corev1.PodRunning && pod.Annotations[common.AnnotationsEnvTenantGeneration] != fmt.Sprintf("%d", tenant.Generation) {
+				generationMatch = false
+			}
+		}
+		if generationMatch {
+			break
+		}
+		err = fmt.Errorf("Not all pods are generation %d", tenant.Generation)
+
+	}
+	return err
 }

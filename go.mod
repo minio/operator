@@ -1,6 +1,6 @@
 module github.com/minio/operator
 
-go 1.21.8
+go 1.21.11
 
 require (
 	github.com/blang/semver/v4 v4.0.0
