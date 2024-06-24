@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -118,7 +118,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -160,7 +160,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -190,7 +190,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -232,7 +232,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -277,7 +277,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code
@@ -335,7 +335,7 @@ jobs:
 
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
 
     steps:
 
@@ -373,7 +373,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Check out code

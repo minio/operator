@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
@@ -32,7 +32,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -48,7 +48,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -89,7 +89,7 @@ jobs:
       - govet
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -105,7 +105,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -122,7 +122,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -140,7 +140,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -165,7 +165,7 @@ jobs:
       - govet-sidecar
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -187,7 +187,7 @@ jobs:
       - shellcheck
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -213,7 +213,7 @@ jobs:
       - govet-sidecar
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -239,7 +239,7 @@ jobs:
       - sidecar
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -269,7 +269,7 @@ jobs:
       - operator
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -299,7 +299,7 @@ jobs:
       - operator
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     steps:
@@ -329,7 +329,7 @@ jobs:
       - operator
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - uses: actions/checkout@v3
@@ -358,7 +358,7 @@ jobs:
       - operator
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -398,7 +398,7 @@ jobs:
       - operator
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -435,7 +435,7 @@ jobs:
       - operator
     strategy:
       matrix:
-        go-version: [ 1.21.x ]
+        go-version: [ 1.22.x ]
         os: [ ubuntu-latest ]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
