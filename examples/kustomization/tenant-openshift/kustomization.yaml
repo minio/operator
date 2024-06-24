@@ -4,6 +4,6 @@ kind: Kustomization
 namespace: minio-tenant
 
 resources:
-  - ../base
+- ../base
 patches:
-  - path: tenant.yaml
+- path: tenant.yaml

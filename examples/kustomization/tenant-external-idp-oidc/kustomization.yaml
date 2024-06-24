@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: tenant-external-idp-oidc
 
 resources:
-  - ../base
+- ../base
 
-patchesStrategicMerge:
-  - tenant.yaml
+patches:
+- path: tenant.yaml

@@ -4,8 +4,8 @@ kind: Kustomization
 namespace: tenant-kms-encrypted
 
 resources:
-  - ../base
-  - kes-configuration-secret.yaml
+- ../base
+- kes-configuration-secret.yaml
 
-patchesStrategicMerge:
-  - tenant.yaml
+patches:
+- path: tenant.yaml

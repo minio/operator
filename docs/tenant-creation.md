@@ -34,8 +34,8 @@ namespace: minio-tenant
 resources:
   - github.com/minio/operator/examples/kustomization/base
 
-patchesStrategicMerge:
-  - tenant.yaml
+patches:
+  - path: tenant.yaml
 ```
 
 and an overlay `tenant.yaml` like:

@@ -2,12 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ../cert-manager
-  - ../../../resources
-  - operator-ca-tls-secret.yaml
-  - sts-tls-certificate.yaml
-  - console-tls-certificate.yaml
-  - minio-operator-ca-issuer.yaml
+- ../cert-manager
+- ../../../resources
+- operator-ca-tls-secret.yaml
+- sts-tls-certificate.yaml
+- console-tls-certificate.yaml
+- minio-operator-ca-issuer.yaml
 
 patches:
-  - path: operator-deployment.yaml
+- path: operator-deployment.yaml

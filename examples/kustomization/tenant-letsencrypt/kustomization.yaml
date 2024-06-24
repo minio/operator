@@ -4,8 +4,8 @@ kind: Kustomization
 namespace: tenant-letsencrypt
 
 resources:
-  - ingress.yaml
-  - ../base
+- ingress.yaml
+- ../base
 
-patchesStrategicMerge:
-  - tenant.yaml
+patches:
+- path: tenant.yaml
