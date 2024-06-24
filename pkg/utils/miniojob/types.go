@@ -33,7 +33,7 @@ import (
 
 const (
 	// DefaultMCImage - job mc image
-	DefaultMCImage = "minio/mc:latest"
+	DefaultMCImage = "quay.io/minio/mc:latest"
 	// MinioJobName - job name
 	MinioJobName = "job.min.io/job-name"
 	// MinioJobCRName - job cr name
@@ -211,7 +211,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 						{
 							Name:            "mc",
 							Image:           mcImage,
-							ImagePullPolicy: corev1.PullIfNotPresent,
+							ImagePullPolicy: jobCR.Spec.ImagePullPolicy,
 							Env:             jobCommand.CommandSpec.Env,
 							EnvFrom:         baseEnvFrom,
 							Command:         jobCommands,
@@ -220,8 +220,9 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sCli
 							Resources:       jobCommand.CommandSpec.Resources,
 						},
 					},
-					SecurityContext: jobCR.Spec.SecurityContext,
-					Volumes:         baseVolumes,
+					ImagePullSecrets: jobCR.Spec.ImagePullSecret,
+					SecurityContext:  jobCR.Spec.SecurityContext,
+					Volumes:          baseVolumes,
 				},
 			},
 		},

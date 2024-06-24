@@ -96,8 +96,27 @@ type MinIOJobSpec struct {
 
 	// mc job image
 	// +optional
-	// +kubebuilder:default="minio/mc:latest"
+	// +kubebuilder:default="quay.io/minio/mc:latest"
 	MCImage string `json:"mcImage,omitempty"`
+
+	// *Optional* +
+	//
+	// The pull policy for the MinIO Docker image. Specify one of the following: +
+	//
+	// * `Always` +
+	//
+	// * `Never` +
+	//
+	// * `IfNotPresent` (Default) +
+	//
+	// Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+	ImagePullPolicy corev1.PullPolicy `json:"imagePullPolicy,omitempty"`
+
+	// *Optional* +
+	//
+	// Specify the secret key to use for pulling images from a private Docker repository. +
+	// +optional
+	ImagePullSecret []corev1.LocalObjectReference `json:"imagePullSecret,omitempty"`
 
 	// *Optional* +
 	//
