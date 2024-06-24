@@ -94,6 +94,8 @@ func (c *Controller) getKeychainForTenant(ctx context.Context, ref name.Referenc
 // Attempts to fetch given image and then extracts and keeps relevant files
 // (minio, minio.sha256sum & minio.minisig) at a pre-defined location (/tmp/webhook/v1/update)
 func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest string, err error) {
+	c.removeArtifacts() // remove before a fresh fetch.
+
 	basePath := updatePath
 
 	if err = os.MkdirAll(basePath, 1777); err != nil {
@@ -166,13 +168,15 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest string, err 
 	if err != nil {
 		return latest, err
 	}
-	defer func() {
-		_ = f.Close()
-	}()
 
 	// Tarball writes a file called image.tar
 	// This file in turn has each container layer present inside in the form `<layer-hash>.tar.gz`
 	if err = tarball.Write(ref, img, f); err != nil {
+		f.Close()
+		return latest, err
+	}
+
+	if err = f.Close(); err != nil {
 		return latest, err
 	}
 
