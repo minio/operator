@@ -4,9 +4,9 @@ kind: Kustomization
 namespace: tenant-external-idp-ldap
 
 resources:
-  - ../base
-  - openldap.yaml
+- ../base
+- openldap.yaml
 
-patchesStrategicMerge:
-  - tenant.yaml
-  - storage-user.yaml
+patches:
+- path: tenant.yaml
+- path: storage-user.yaml

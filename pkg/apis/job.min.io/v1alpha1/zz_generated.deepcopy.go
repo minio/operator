@@ -176,6 +176,11 @@ func (in *MinIOJobSpec) DeepCopyInto(out *MinIOJobSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.ImagePullSecret != nil {
+		in, out := &in.ImagePullSecret, &out.ImagePullSecret
+		*out = make([]v1.LocalObjectReference, len(*in))
+		copy(*out, *in)
+	}
 	if in.SecurityContext != nil {
 		in, out := &in.SecurityContext, &out.SecurityContext
 		*out = new(v1.PodSecurityContext)

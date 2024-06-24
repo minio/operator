@@ -199,6 +199,30 @@ Commands List of MinioClient commands
 |*`mcImage`* __string__ 
 |mc job image
 
+|*`imagePullPolicy`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#pullpolicy-v1-core[$$PullPolicy$$]__ 
+|*Optional* +
+
+
+The pull policy for the MinIO Docker image. Specify one of the following: +
+
+
+* `Always` +
+
+
+* `Never` +
+
+
+* `IfNotPresent` (Default) +
+
+
+Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/containers/images#updating-images
+
+|*`imagePullSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ 
+|*Optional* +
+
+
+Specify the secret key to use for pulling images from a private Docker repository. +
+
 |*`securityContext`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#podsecuritycontext-v1-core[$$PodSecurityContext$$]__ 
 |*Optional* +
 

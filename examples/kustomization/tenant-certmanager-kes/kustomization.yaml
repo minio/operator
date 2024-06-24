@@ -4,11 +4,10 @@ kind: Kustomization
 namespace: tenant-certmanager-kes
 
 resources:
-  - ../cert-manager
-  - myminio-kes-certificate.yaml
-  - vault.yaml
-  - ../tenant-kes-encryption
+- ../cert-manager
+- myminio-kes-certificate.yaml
+- vault.yaml
+- ../tenant-kes-encryption
 
-patchesStrategicMerge:
-  - tenant.yaml
-
+patches:
+- path: tenant.yaml

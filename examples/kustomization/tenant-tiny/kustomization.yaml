@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: tenant-tiny
 
 resources:
-  - ../base
+- ../base
 
-patchesStrategicMerge:
-  - tenant.yaml
+patches:
+- path: tenant.yaml

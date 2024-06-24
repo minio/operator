@@ -1,41 +1,42 @@
 namespace: minio-operator
 
 resources:
-  - bases/minio-operator.clusterserviceversion.yaml
-  - bases/minio-operator-rhmp.clusterserviceversion.yaml
-  - ../../resources/
-  - ../../samples/
+- bases/minio-operator.clusterserviceversion.yaml
+- bases/minio-operator-rhmp.clusterserviceversion.yaml
+- ../../resources/
+- ../../samples/
 
-patchesStrategicMerge:
-  - overlay/minio-operator-deployment.yaml
-  - overlay/console-deployment.yaml
-  - overlay/console_v1_service.yaml
-  - overlay/sts_v1_service.yaml
 
 patches:
-  - target:
-        group: apps
-        version: v1
-        kind: Deployment
-        name: console
-        namespace: minio-operator
-    patch: |-
-        - op: remove
-          path: /spec/template/spec/containers/0/securityContext/runAsGroup
-        - op: remove
-          path: /spec/template/spec/containers/0/securityContext/runAsUser
-        - op: remove
-          path: /spec/template/spec/containers/0/securityContext/runAsNonRoot
-  - target:
-        group: apps
-        version: v1
-        kind: Deployment
-        name: minio-operator
-        namespace: minio-operator
-    patch: |-
-        - op: remove
-          path: /spec/template/spec/containers/0/securityContext/runAsGroup
-        - op: remove
-          path: /spec/template/spec/containers/0/securityContext/runAsUser
-        - op: remove
-          path: /spec/template/spec/containers/0/securityContext/runAsNonRoot
+- patch: |-
+    - op: remove
+      path: /spec/template/spec/containers/0/securityContext/runAsGroup
+    - op: remove
+      path: /spec/template/spec/containers/0/securityContext/runAsUser
+    - op: remove
+      path: /spec/template/spec/containers/0/securityContext/runAsNonRoot
+  target:
+    group: apps
+    kind: Deployment
+    name: console
+    namespace: minio-operator
+    version: v1
+- patch: |-
+    - op: remove
+      path: /spec/template/spec/containers/0/securityContext/runAsGroup
+    - op: remove
+      path: /spec/template/spec/containers/0/securityContext/runAsUser
+    - op: remove
+      path: /spec/template/spec/containers/0/securityContext/runAsNonRoot
+  target:
+    group: apps
+    kind: Deployment
+    name: minio-operator
+    namespace: minio-operator
+    version: v1
+- path: overlay/minio-operator-deployment.yaml
+- path: overlay/console-deployment.yaml
+- path: overlay/console_v1_service.yaml
+- path: overlay/sts_v1_service.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization

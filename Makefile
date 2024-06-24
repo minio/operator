@@ -28,7 +28,7 @@ getdeps:
 		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2 && \
 		echo "Installing govulncheck" && \
 		go install golang.org/x/vuln/cmd/govulncheck@latest &&\
-		echo "installng gopls" && \
+		echo "installing gopls" && \
 		go install golang.org/x/tools/gopls@latest
 
 verify: getdeps govet lint
