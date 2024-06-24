@@ -1128,10 +1128,11 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			tenantName, images[0], tenant.Spec.Image)
 
 		latest, err := c.fetchArtifacts(tenant)
-		defer c.removeArtifacts()
 		if err != nil {
+			// Do not remove assets with errors, keep them for investigation.
 			return WrapResult(Result{}, err)
 		}
+		defer c.removeArtifacts()
 		updateURL, err := tenant.UpdateURL(latest, fmt.Sprintf("http://operator.%s.svc.%s:%s%s",
 			miniov2.GetNSFromFile(),
 			miniov2.GetClusterDomain(),
