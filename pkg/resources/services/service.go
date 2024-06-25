@@ -58,9 +58,10 @@ func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 			Annotations:     annotations,
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:    []corev1.ServicePort{minioPort},
-			Selector: t.MinIOPodLabels(),
-			Type:     corev1.ServiceTypeClusterIP,
+			Ports:                    []corev1.ServicePort{minioPort},
+			Selector:                 t.MinIOPodLabels(),
+			Type:                     corev1.ServiceTypeClusterIP,
+			PublishNotReadyAddresses: false,
 		},
 	}
 	// check if the service is meant to be exposed
@@ -171,10 +172,11 @@ func NewHeadlessForMinIO(t *miniov2.Tenant) *corev1.Service {
 			OwnerReferences: t.OwnerRef(),
 		},
 		Spec: corev1.ServiceSpec{
-			Ports:     ports,
-			Selector:  t.MinIOPodLabels(),
-			Type:      corev1.ServiceTypeClusterIP,
-			ClusterIP: corev1.ClusterIPNone,
+			Ports:                    ports,
+			Selector:                 t.MinIOPodLabels(),
+			Type:                     corev1.ServiceTypeClusterIP,
+			ClusterIP:                corev1.ClusterIPNone,
+			PublishNotReadyAddresses: true,
 		},
 	}
 

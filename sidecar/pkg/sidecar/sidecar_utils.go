@@ -19,6 +19,8 @@ package sidecar
 import (
 	"context"
 	"fmt"
+	common2 "github.com/minio/operator/sidecar/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"net/http"
 	"os"
@@ -65,8 +67,18 @@ func StartSideCar(tenantName string, secretName string) {
 		klog.Fatalf("Error building MinIO clientset: %s", err.Error())
 	}
 
-	controller := NewSideCarController(kubeClient, controllerClient, tenantName, secretName)
+	namespace := v2.GetNSFromFile()
+	// get the only tenant in this namespace
+	tenant, err := controllerClient.MinioV2().Tenants(namespace).Get(context.Background(), tenantName, metav1.GetOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tenant.EnsureDefaults()
+
+	controller := NewSideCarController(kubeClient, controllerClient, namespace, tenantName, secretName)
 	controller.ws = configureWebhookServer(controller)
+	controller.probeServer = configureProbesServer(controller, tenant.TLS())
 
 	stopControllerCh := make(chan struct{})
 
@@ -78,6 +90,14 @@ func StartSideCar(tenantName string, secretName string) {
 
 	go func() {
 		if err = controller.ws.ListenAndServe(); err != nil {
+			// if the web server exits,
+			klog.Error(err)
+			close(stopControllerCh)
+		}
+	}()
+
+	go func() {
+		if err = controller.probeServer.ListenAndServe(); err != nil {
 			// if the web server exits,
 			klog.Error(err)
 			close(stopControllerCh)
@@ -99,11 +119,11 @@ type Controller struct {
 	namespace          string
 	informerFactory    informers.SharedInformerFactory
 	ws                 *http.Server
+	probeServer        *http.Server
 }
 
 // NewSideCarController returns an instance of Controller with the provided clients
-func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *clientset.Clientset, tenantName string, secretName string) *Controller {
-	namespace := v2.GetNSFromFile()
+func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *clientset.Clientset, namespace string, tenantName string, secretName string) *Controller {
 
 	factory := informers.NewSharedInformerFactoryWithOptions(kubeClient, time.Hour*1, informers.WithNamespace(namespace))
 	secretInformer := factory.Core().V1().Secrets()
@@ -201,13 +221,14 @@ func (c *Controller) regenCfg(tenantName string, namespace string) {
 func (c *Controller) regenCfgWithCfg(tenantName string, namespace string, fileContents string) {
 	ctx := context.Background()
 
-	args, err := validator.GetTenantArgs(ctx, c.controllerClient, tenantName, namespace)
+	tenant, err := c.controllerClient.MinioV2().Tenants(namespace).Get(ctx, tenantName, metav1.GetOptions{})
 	if err != nil {
-		log.Println(err)
+		log.Println("could not get tenant", err)
 		return
 	}
+	tenant.EnsureDefaults()
 
-	fileContents = fileContents + fmt.Sprintf("export MINIO_ARGS=\"%s\"\n", args)
+	fileContents = common2.AttachGeneratedConfig(tenant, fileContents)
 
 	err = os.WriteFile(v2.CfgFile, []byte(fileContents), 0o644)
 	if err != nil {

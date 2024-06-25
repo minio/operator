@@ -3,6 +3,16 @@ Upgrades
 
 In this document we will try to document relevant upgrade notes for the MinIO Operator.
 
+v6.0.0
+---
+
+This release is focused on a variety of improvements and bug fixes. Mainly reducing the number of times we need to do a
+rolling restart for a MinIO Tenant, for example when the MinIO Operator is upgraded or downgraded.
+
+This release introduces a readiness probe to prevent kubernetes from routing traffic to a MinIO pod that is not ready
+
+> ⚠️ Upgrading to v6.0.0 will cause all pods to restart upon upgrade.
+
 v5.0.0
 ---
 
@@ -40,7 +50,8 @@ kubectl -n $NAMESPACE get svc $TENANT_NAME-prometheus-hl-svc -o yaml > $TENANT_N
 
 After exporting these objects, remove `.metadata.ownerReferences` for all these files.
 
-After upgrading, to have the MinIO Tenant keep using these services, just add the following environment variables to `.spec.env`
+After upgrading, to have the MinIO Tenant keep using these services, just add the following environment variables
+to `.spec.env`
 
 ```yaml
 - name: MINIO_LOG_QUERY_AUTH_TOKEN
@@ -55,7 +66,6 @@ After upgrading, to have the MinIO Tenant keep using these services, just add th
 - name: MINIO_PROMETHEUS_URL
   value: http://<TENANT_NAME>-prometheus-hl-svc:9090
 ```
-
 
 v4.4.5
 ---
@@ -101,7 +111,7 @@ securityContext:
 
 This scenario is automatically handled by the operator, however if the tenant is updated from a pre-stored source (i.e:
 a yaml file) which is missing the added `securityContext` this problem may arise again, so update your stored yamls
-respectively. 
+respectively.
 
 v4.2.2 to v4.2.3
 ---
@@ -110,7 +120,8 @@ Before upgrading the `MinIO Operator` you need to make the following changes to 
 
 - Update your current `MinIO image` to the latest version in the tenant spec.
 - Make sure every `pool` in `tenant.spec.pools` explicitly set a `securityContext` if not configured already, if this is
-  the first time you are configuring a `securityContext` then your `MinIO` pods are running as root, and you need to use:
+  the first time you are configuring a `securityContext` then your `MinIO` pods are running as root, and you need to
+  use:
 
 ```yaml
       securityContext:
@@ -124,7 +135,7 @@ Before upgrading the `MinIO Operator` you need to make the following changes to 
 
 ```yaml
   image: "minio/minio:$(LATEST-VERSION)"
-  ...
+           ...
   pools:
     - servers: 4
       name: "pool-0"
@@ -176,7 +187,7 @@ Before upgrading the `MinIO Operator` you need to make the following changes to 
 
 ```yaml
   image: "minio/minio:$(LATEST-VERSION)"
-  ...
+           ...
   zones:
     - servers: 4
       name: "zone-0"
@@ -195,29 +206,30 @@ Before upgrading the `MinIO Operator` you need to make the following changes to 
         runAsGroup: 0
         runAsNonRoot: false
         fsGroup: 0
-  - servers: 4
-      name: "zone-1"
-      volumesPerServer: 4
-      volumeClaimTemplate:
-        metadata:
-          name: data
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 1Ti
-      securityContext:
-        runAsUser: 0
-        runAsGroup: 0
-        runAsNonRoot: false
-        fsGroup: 0
+    - servers: 4
+        name: "zone-1"
+        volumesPerServer: 4
+        volumeClaimTemplate:
+          metadata:
+            name: data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 1Ti
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+          runAsNonRoot: false
+          fsGroup: 0
 ```
 
 You can make all the changes directly via `kubectl edit tenants $(TENANT-NAME) -n $(NAMESPACE)` or edit your
 `tenant.yaml` and apply the changes: `kubectl apply -f tenant.yaml`.
 
-Failing to apply this changes will cause some issues during the upgrade such as the tenants not able to provision because
+Failing to apply this changes will cause some issues during the upgrade such as the tenants not able to provision
+because
 of wrong `persistent volume claims` (this happens if you don't add the zone name) or MinIO not able to `read/write` on
 existing volumes (this happens if you don't add the right `securityContext`) or they will take too long to start.
 
@@ -236,7 +248,8 @@ existing tenant.
 
 # Upgrade MinIO Operator via Helm Charts
 
-Make sure your current version of the `tenants.minio.min.io` `CRD` includes the necessary `labels` and `annotations` for `Helm`
+Make sure your current version of the `tenants.minio.min.io` `CRD` includes the necessary `labels` and `annotations`
+for `Helm`
 to perform the upgrade:
 
 ```bash

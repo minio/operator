@@ -16,6 +16,7 @@ package statefulsets
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -53,10 +54,6 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVe
 		"MINIO_UPDATE_MINISIGN_PUBKEY": {
 			Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
 			Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
-		},
-		"MINIO_OPERATOR_VERSION": {
-			Name:  "MINIO_OPERATOR_VERSION",
-			Value: opVersion,
 		},
 		"MINIO_PROMETHEUS_JOB_ID": {
 			Name:  "MINIO_PROMETHEUS_JOB_ID",
@@ -909,6 +906,26 @@ func getInitContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container {
 }
 
 func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container {
+
+	scheme := corev1.URISchemeHTTP
+
+	readinessProbe := &corev1.Probe{
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/ready",
+				Port: intstr.IntOrString{
+					IntVal: 4444,
+				},
+				//Host:        "localhost",
+				Scheme:      scheme,
+				HTTPHeaders: nil,
+			},
+		},
+		InitialDelaySeconds: 5,
+		PeriodSeconds:       1,
+		FailureThreshold:    1,
+	}
+
 	sidecarContainer := corev1.Container{
 		Name:  "sidecar",
 		Image: getSidecarImage(),
@@ -929,6 +946,7 @@ func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container
 			CfgVolumeMount,
 		},
 		SecurityContext: poolContainerSecurityContext(pool),
+		ReadinessProbe:  readinessProbe,
 	}
 	if t.Spec.SideCars != nil && t.Spec.SideCars.Resources != nil {
 		sidecarContainer.Resources = *t.Spec.SideCars.Resources
