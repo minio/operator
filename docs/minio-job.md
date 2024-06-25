@@ -160,8 +160,9 @@ if you set this field, the `mc` command will be executed with the arguments.
 op: make-bucket
 args:
   name: memes
+  --with-locks: ""
 ```
-Will do a job like `mc mb myminio/memes`
+Will do a job like `mc mb --with-locks myminio/memes`
 ```yaml
 name: add-my-policy
 op: admin/policy/create
