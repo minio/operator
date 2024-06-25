@@ -131,7 +131,10 @@ const SummaryUsageBar = ({
       ) : (
         <TenantCapacityMain>
           <TenantCapacity
-            totalCapacity={tenant.status?.usage?.raw || 0}
+            totalCapacity={
+              (tenant.status?.usage?.capacity || 0) +
+              (tenant.status?.usage?.capacity_usage || 0)
+            }
             usedSpaceVariants={spaceVariants}
             statusClass={""}
             render={"bar"}
