@@ -19,10 +19,11 @@ package validator
 import (
 	"bufio"
 	"context"
-	common2 "github.com/minio/operator/sidecar/pkg/common"
 	"log"
 	"os"
 	"strings"
+
+	common2 "github.com/minio/operator/sidecar/pkg/common"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"

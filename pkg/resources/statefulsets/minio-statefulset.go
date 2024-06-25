@@ -16,11 +16,12 @@ package statefulsets
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/minio/operator/pkg/certs"
 	"github.com/minio/operator/pkg/common"
@@ -906,7 +907,6 @@ func getInitContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container {
 }
 
 func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container {
-
 	scheme := corev1.URISchemeHTTP
 
 	readinessProbe := &corev1.Probe{
@@ -916,7 +916,7 @@ func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container
 				Port: intstr.IntOrString{
 					IntVal: 4444,
 				},
-				//Host:        "localhost",
+				// Host:        "localhost",
 				Scheme:      scheme,
 				HTTPHeaders: nil,
 			},

@@ -18,11 +18,12 @@ package common
 
 import (
 	"fmt"
-	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"github.com/minio/operator/pkg/resources/statefulsets"
 	"log"
 	"os"
 	"strings"
+
+	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/resources/statefulsets"
 )
 
 func AttachGeneratedConfig(tenant *miniov2.Tenant, fileContents string) string {

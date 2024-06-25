@@ -19,13 +19,14 @@ package sidecar
 import (
 	"context"
 	"fmt"
-	common2 "github.com/minio/operator/sidecar/pkg/common"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	common2 "github.com/minio/operator/sidecar/pkg/common"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
@@ -124,7 +125,6 @@ type Controller struct {
 
 // NewSideCarController returns an instance of Controller with the provided clients
 func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *clientset.Clientset, namespace string, tenantName string, secretName string) *Controller {
-
 	factory := informers.NewSharedInformerFactoryWithOptions(kubeClient, time.Hour*1, informers.WithNamespace(namespace))
 	secretInformer := factory.Core().V1().Secrets()
 
