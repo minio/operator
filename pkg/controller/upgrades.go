@@ -419,7 +419,7 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 	return c.updateTenantSyncVersion(ctx, tenant, version500)
 }
 
-// Upgrades the sync version to v5.0.0
+// Upgrades the sync version to v6.0.0
 // since we are adding `publishNotReadyAddresses` to the headless service, we need to restart all pods
 func (c *Controller) upgrade600(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 	nsName := types.NamespacedName{Namespace: tenant.Namespace, Name: tenant.Name}
