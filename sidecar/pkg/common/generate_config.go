@@ -26,6 +26,7 @@ import (
 	"github.com/minio/operator/pkg/resources/statefulsets"
 )
 
+// AttachGeneratedConfig attaches the generated config to the file contents which will be stored in /tmp/minio/config.env
 func AttachGeneratedConfig(tenant *miniov2.Tenant, fileContents string) string {
 	args, err := GetTenantArgs(tenant)
 	if err != nil {
