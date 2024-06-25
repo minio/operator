@@ -160,6 +160,7 @@ func (c *Controller) checkMinIOHLSvc(ctx context.Context, tenant *miniov2.Tenant
 		hlSvc.ObjectMeta.Annotations = expectedHlSvc.ObjectMeta.Annotations
 		hlSvc.ObjectMeta.Labels = expectedHlSvc.ObjectMeta.Labels
 		hlSvc.Spec.Ports = expectedHlSvc.Spec.Ports
+		hlSvc.Spec.PublishNotReadyAddresses = expectedHlSvc.Spec.PublishNotReadyAddresses
 
 		// update the selector
 		hlSvc.Spec.Selector = expectedHlSvc.Spec.Selector
