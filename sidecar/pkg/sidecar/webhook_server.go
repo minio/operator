@@ -17,6 +17,8 @@
 package sidecar
 
 import (
+	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -54,4 +56,62 @@ func configureWebhookServer(c *Controller) *http.Server {
 	}
 
 	return s
+}
+
+func configureProbesServer(c *Controller, tenantTLS bool) *http.Server {
+	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
+
+	router.Methods(http.MethodGet).
+		Path("/ready").
+		HandlerFunc(readinessHandler(tenantTLS))
+
+	router.NotFoundHandler = http.NotFoundHandler()
+
+	s := &http.Server{
+		Addr:           "0.0.0.0:4444",
+		Handler:        router,
+		ReadTimeout:    time.Minute,
+		WriteTimeout:   time.Minute,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	return s
+}
+
+func readinessHandler(tenantTLS bool) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		schema := "https"
+		if !tenantTLS {
+			schema = "http"
+		}
+		// we only check against the local instance of MinIO
+		url := schema + "://localhost:9000"
+		request, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to create request: %s", err), http.StatusInternalServerError)
+			return
+		}
+
+		// we do insecure skip verify because we are checking against the local instance and don't care for the
+		// certificate
+		client := &http.Client{
+			Timeout: time.Millisecond * 500,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+
+		response, err := client.Do(request)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("HTTP request failed: %s", err), http.StatusInternalServerError)
+			return
+		}
+		defer response.Body.Close()
+
+		if response.StatusCode == 403 {
+			fmt.Fprintln(w, "Readiness probe succeeded.")
+		} else {
+			http.Error(w, fmt.Sprintf("Readiness probe failed: expected status 403, got %d", response.StatusCode), http.StatusServiceUnavailable)
+		}
+	}
 }

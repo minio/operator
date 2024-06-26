@@ -27,7 +27,7 @@ install_binaries
 RELEASE="$(sed -n 's/^.*DefaultOperatorImage = "minio\/operator:v\(.*\)"/\1/p' pkg/controller/operator.go)"
 
 # get the minio version
-minioVersionInExample=$(kustomize build examples/kustomization/tenant-lite | yq eval-all '.spec.image' | tail -1)
+minioVersionInExample=$(kubectl kustomize examples/kustomization/tenant-lite | yq eval-all '.spec.image' | tail -1)
 echo "minioVersionInExample: ${minioVersionInExample}"
 
 # Get sha form of minio version
@@ -57,7 +57,7 @@ for catalog in "${redhatCatalogs[@]}"; do
     package=minio-operator-rhmp
   fi
   echo "package: ${package}"
-  kustomize build config/manifests | $OPERATOR_SDK_BIN generate bundle \
+  kubectl kustomize config/manifests | $OPERATOR_SDK_BIN generate bundle \
     --package $package \
     --version $RELEASE \
     --manifests \

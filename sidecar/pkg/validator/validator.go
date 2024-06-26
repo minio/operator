@@ -19,14 +19,14 @@ package validator
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"strings"
 
+	common2 "github.com/minio/operator/sidecar/pkg/common"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
-	"github.com/minio/operator/pkg/resources/statefulsets"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -58,13 +58,15 @@ func Validate(tenantName string) {
 
 	ctx := context.Background()
 
-	args, err := GetTenantArgs(ctx, controllerClient, tenantName, namespace)
+	// get the only tenant in this namespace
+	tenant, err := controllerClient.MinioV2().Tenants(namespace).Get(ctx, tenantName, metav1.GetOptions{})
 	if err != nil {
 		log.Println(err)
-		os.Exit(1)
+		panic(err)
 	}
+	tenant.EnsureDefaults()
 
-	fileContents = fileContents + fmt.Sprintf("export MINIO_ARGS=\"%s\"\n", args)
+	fileContents = common2.AttachGeneratedConfig(tenant, fileContents)
 
 	if !rootUserFound || !rootPwdFound {
 		log.Println("Missing root credentials in the configuration.")
@@ -76,27 +78,6 @@ func Validate(tenantName string) {
 	if err != nil {
 		log.Println(err)
 	}
-}
-
-// GetTenantArgs returns the arguments for the tenant based on the tenants they have
-func GetTenantArgs(ctx context.Context, controllerClient *clientset.Clientset, tenantName string, namespace string) (string, error) {
-	// get the only tenant in this namespace
-	tenant, err := controllerClient.MinioV2().Tenants(namespace).Get(ctx, tenantName, metav1.GetOptions{})
-	if err != nil {
-		log.Println(err)
-		return "", err
-	}
-
-	tenant.EnsureDefaults()
-
-	// Validate the MinIO Tenant
-	if err = tenant.Validate(); err != nil {
-		log.Println(err)
-		return "", err
-	}
-
-	args := strings.Join(statefulsets.GetContainerArgs(tenant, ""), " ")
-	return args, err
 }
 
 // ReadTmpConfig reads the seeded configuration from a tmp location

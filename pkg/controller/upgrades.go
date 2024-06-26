@@ -22,6 +22,7 @@ import (
 
 	"github.com/minio/operator/pkg/controller/legacy"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/blang/semver/v4"
 	"github.com/hashicorp/go-version"
@@ -41,8 +42,9 @@ const (
 	version430 = "v4.3.0"
 	version45  = "v4.5"
 	version500 = "v5.0.0"
+	version600 = "v6.0.0"
 	// currentVersion will point to the latest released update version
-	currentVersion = version500
+	currentVersion = version600
 )
 
 // Legacy const
@@ -62,12 +64,13 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		version430: c.upgrade430,
 		version45:  c.upgrade45,
 		version500: c.upgrade500,
+		version600: c.upgrade600,
 	}
 
 	// if tenant has no version we mark it with latest version upgrade released
 	if tenant.Status.SyncVersion == "" {
 		tenant.Status.SyncVersion = currentVersion
-		return c.updateTenantSyncVersion(ctx, tenant, version500)
+		return c.updateTenantSyncVersion(ctx, tenant, version600)
 	}
 
 	// if the version is empty, upgrades might not been applied, we apply them all
@@ -84,6 +87,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 			version430,
 			version45,
 			version500,
+			version600,
 		}
 		for _, v := range versionsThatNeedUpgrades {
 			vp, _ := version.NewVersion(v)
@@ -413,4 +417,26 @@ func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*m
 		}
 	}
 	return c.updateTenantSyncVersion(ctx, tenant, version500)
+}
+
+// Upgrades the sync version to v6.0.0
+// since we are adding `publishNotReadyAddresses` to the headless service, we need to restart all pods
+func (c *Controller) upgrade600(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
+	nsName := types.NamespacedName{Namespace: tenant.Namespace, Name: tenant.Name}
+	// Check MinIO Headless Service used for internode communication
+	err := c.checkMinIOHLSvc(ctx, tenant, nsName)
+	if err != nil {
+		klog.V(2).Infof("error consolidating headless service: %s", err.Error())
+		return nil, err
+	}
+	// restart all pods for this tenant
+	listOpts := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", miniov2.TenantLabel, tenant.Name),
+	}
+	err = c.kubeClientSet.CoreV1().Pods(tenant.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{}, listOpts)
+	if err != nil {
+		klog.V(2).Infof("error deleting pods: %s", err.Error())
+		return nil, err
+	}
+	return c.updateTenantSyncVersion(ctx, tenant, version600)
 }

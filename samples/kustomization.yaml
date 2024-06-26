@@ -1,8 +1,10 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
-  - ../examples/kustomization/tenant-openshift/
+- ../examples/kustomization/tenant-openshift/
 
-patchesStrategicMerge:
-  - delete-namespace.yaml
-  - delete-storage-user.yaml
-  - delete-tenant-config.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patches:
+- path: delete-namespace.yaml
+- path: delete-storage-user.yaml
+- path: delete-tenant-config.yaml

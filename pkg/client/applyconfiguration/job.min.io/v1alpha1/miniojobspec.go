@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2023 MinIO, Inc.
+// Copyright (c) 2024 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -20,17 +20,22 @@ package v1alpha1
 
 import (
 	jobminiov1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // MinIOJobSpecApplyConfiguration represents an declarative configuration of the MinIOJobSpec type for use
 // with apply.
 type MinIOJobSpecApplyConfiguration struct {
-	ServiceAccountName *string                           `json:"serviceAccountName,omitempty"`
-	TenantRef          *TenantRefApplyConfiguration      `json:"tenant,omitempty"`
-	Execution          *jobminiov1alpha1.Execution       `json:"execution,omitempty"`
-	FailureStrategy    *jobminiov1alpha1.FailureStrategy `json:"failureStrategy,omitempty"`
-	Commands           []CommandSpecApplyConfiguration   `json:"commands,omitempty"`
-	MCImage            *string                           `json:"mcImage,omitempty"`
+	ServiceAccountName       *string                           `json:"serviceAccountName,omitempty"`
+	TenantRef                *TenantRefApplyConfiguration      `json:"tenant,omitempty"`
+	Execution                *jobminiov1alpha1.Execution       `json:"execution,omitempty"`
+	FailureStrategy          *jobminiov1alpha1.FailureStrategy `json:"failureStrategy,omitempty"`
+	Commands                 []CommandSpecApplyConfiguration   `json:"commands,omitempty"`
+	MCImage                  *string                           `json:"mcImage,omitempty"`
+	ImagePullPolicy          *v1.PullPolicy                    `json:"imagePullPolicy,omitempty"`
+	ImagePullSecret          []v1.LocalObjectReference         `json:"imagePullSecret,omitempty"`
+	SecurityContext          *v1.PodSecurityContext            `json:"securityContext,omitempty"`
+	ContainerSecurityContext *v1.SecurityContext               `json:"containerSecurityContext,omitempty"`
 }
 
 // MinIOJobSpecApplyConfiguration constructs an declarative configuration of the MinIOJobSpec type for use with
@@ -89,5 +94,39 @@ func (b *MinIOJobSpecApplyConfiguration) WithCommands(values ...*CommandSpecAppl
 // If called multiple times, the MCImage field is set to the value of the last call.
 func (b *MinIOJobSpecApplyConfiguration) WithMCImage(value string) *MinIOJobSpecApplyConfiguration {
 	b.MCImage = &value
+	return b
+}
+
+// WithImagePullPolicy sets the ImagePullPolicy field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ImagePullPolicy field is set to the value of the last call.
+func (b *MinIOJobSpecApplyConfiguration) WithImagePullPolicy(value v1.PullPolicy) *MinIOJobSpecApplyConfiguration {
+	b.ImagePullPolicy = &value
+	return b
+}
+
+// WithImagePullSecret adds the given value to the ImagePullSecret field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the ImagePullSecret field.
+func (b *MinIOJobSpecApplyConfiguration) WithImagePullSecret(values ...v1.LocalObjectReference) *MinIOJobSpecApplyConfiguration {
+	for i := range values {
+		b.ImagePullSecret = append(b.ImagePullSecret, values[i])
+	}
+	return b
+}
+
+// WithSecurityContext sets the SecurityContext field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the SecurityContext field is set to the value of the last call.
+func (b *MinIOJobSpecApplyConfiguration) WithSecurityContext(value v1.PodSecurityContext) *MinIOJobSpecApplyConfiguration {
+	b.SecurityContext = &value
+	return b
+}
+
+// WithContainerSecurityContext sets the ContainerSecurityContext field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ContainerSecurityContext field is set to the value of the last call.
+func (b *MinIOJobSpecApplyConfiguration) WithContainerSecurityContext(value v1.SecurityContext) *MinIOJobSpecApplyConfiguration {
+	b.ContainerSecurityContext = &value
 	return b
 }

@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2023 MinIO, Inc.
+// Copyright (c) 2024 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -18,13 +18,23 @@
 
 package v1alpha1
 
+import (
+	v1 "k8s.io/api/core/v1"
+)
+
 // CommandSpecApplyConfiguration represents an declarative configuration of the CommandSpec type for use
 // with apply.
 type CommandSpecApplyConfiguration struct {
-	Operation *string           `json:"op,omitempty"`
-	Name      *string           `json:"name,omitempty"`
-	Args      map[string]string `json:"args,omitempty"`
-	DependsOn []string          `json:"dependsOn,omitempty"`
+	Operation    *string                  `json:"op,omitempty"`
+	Name         *string                  `json:"name,omitempty"`
+	Args         map[string]string        `json:"args,omitempty"`
+	Command      []string                 `json:"command,omitempty"`
+	DependsOn    []string                 `json:"dependsOn,omitempty"`
+	Resources    *v1.ResourceRequirements `json:"resources,omitempty"`
+	EnvFrom      []v1.EnvFromSource       `json:"envFrom,omitempty"`
+	Env          []v1.EnvVar              `json:"env,omitempty"`
+	VolumeMounts []v1.VolumeMount         `json:"volumeMounts,omitempty"`
+	Volumes      []v1.Volume              `json:"volumes,omitempty"`
 }
 
 // CommandSpecApplyConfiguration constructs an declarative configuration of the CommandSpec type for use with
@@ -63,12 +73,70 @@ func (b *CommandSpecApplyConfiguration) WithArgs(entries map[string]string) *Com
 	return b
 }
 
+// WithCommand adds the given value to the Command field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Command field.
+func (b *CommandSpecApplyConfiguration) WithCommand(values ...string) *CommandSpecApplyConfiguration {
+	for i := range values {
+		b.Command = append(b.Command, values[i])
+	}
+	return b
+}
+
 // WithDependsOn adds the given value to the DependsOn field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the DependsOn field.
 func (b *CommandSpecApplyConfiguration) WithDependsOn(values ...string) *CommandSpecApplyConfiguration {
 	for i := range values {
 		b.DependsOn = append(b.DependsOn, values[i])
+	}
+	return b
+}
+
+// WithResources sets the Resources field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Resources field is set to the value of the last call.
+func (b *CommandSpecApplyConfiguration) WithResources(value v1.ResourceRequirements) *CommandSpecApplyConfiguration {
+	b.Resources = &value
+	return b
+}
+
+// WithEnvFrom adds the given value to the EnvFrom field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the EnvFrom field.
+func (b *CommandSpecApplyConfiguration) WithEnvFrom(values ...v1.EnvFromSource) *CommandSpecApplyConfiguration {
+	for i := range values {
+		b.EnvFrom = append(b.EnvFrom, values[i])
+	}
+	return b
+}
+
+// WithEnv adds the given value to the Env field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Env field.
+func (b *CommandSpecApplyConfiguration) WithEnv(values ...v1.EnvVar) *CommandSpecApplyConfiguration {
+	for i := range values {
+		b.Env = append(b.Env, values[i])
+	}
+	return b
+}
+
+// WithVolumeMounts adds the given value to the VolumeMounts field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the VolumeMounts field.
+func (b *CommandSpecApplyConfiguration) WithVolumeMounts(values ...v1.VolumeMount) *CommandSpecApplyConfiguration {
+	for i := range values {
+		b.VolumeMounts = append(b.VolumeMounts, values[i])
+	}
+	return b
+}
+
+// WithVolumes adds the given value to the Volumes field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the Volumes field.
+func (b *CommandSpecApplyConfiguration) WithVolumes(values ...v1.Volume) *CommandSpecApplyConfiguration {
+	for i := range values {
+		b.Volumes = append(b.Volumes, values[i])
 	}
 	return b
 }

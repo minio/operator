@@ -4,10 +4,10 @@ kind: Kustomization
 namespace: tenant-kms-encrypted
 
 resources:
-  - ../base
-  - kes-configuration-secret.yaml
-  - gcp-default-creds-secret.yaml
-  - kes-service-account.yaml
+- ../base
+- kes-configuration-secret.yaml
+- gcp-default-creds-secret.yaml
+- kes-service-account.yaml
 
-patchesStrategicMerge:
-  - tenant.yaml
+patches:
+- path: tenant.yaml

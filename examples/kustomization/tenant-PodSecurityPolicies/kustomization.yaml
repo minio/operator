@@ -4,10 +4,10 @@ kind: Kustomization
 namespace: tenant-psp
 
 resources:
-  - auditlog-sa.yaml
-  - prometheus-sa.yaml
-  - minio-sa.yaml
-  - ../base
+- auditlog-sa.yaml
+- prometheus-sa.yaml
+- minio-sa.yaml
+- ../base
 
-patchesStrategicMerge:
-  - tenant.yaml
+patches:
+- path: tenant.yaml
