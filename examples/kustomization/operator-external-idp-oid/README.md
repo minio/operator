@@ -93,3 +93,19 @@ Make sure the `CONSOLE_IDP_CALLBACK` URL contains the correct path, for example 
 
 The default OpenID login token duration is 3600 seconds (1 hour). You can set a longer duration with the
 `CONSOLE_IDP_TOKEN_EXPIRATION` environment variable.
+
+### In addition
+
+A new authentication mechanism is being used for Operator version 6, as observed in PR https://github.com/minio/operator/pull/2166. This is for security reasons, and you must properly configure your k8s API Server to support it with the flags below:
+
+```
+--oidc-issuer-url=https://dev-xqm5ioqlmy7qyjvl.us.auth0.com/
+--oidc-client-id=rMVc40T7fwgbEez1svp8wmjBtSaoKIOJ
+--oidc-groups-claim=group
+```
+
+Official Kubernetes documentation can be found at https://kubernetes.io/docs/reference/access-authn-authz/authentication/#openid-connect-tokens.
+
+Additionally, IdP configuration is required to provide the groups via `id_token` so that Kubernetes can validate access via RBAC, determining whether a user can access certain resources. We suggest reading articles like https://developer.okta.com/blog/2021/11/08/k8s-api-server-oidc for a better understanding.
+
+If properly configured, the SSO experience for the end user remains the same, but this time MinIO will no longer provide the Service Account.
