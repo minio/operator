@@ -21,15 +21,15 @@ kind: Secret
 metadata:
   name: mytestsecret
 data:
-  PASSWORD: cGVkcm8xMjM=
+  PASSWORD: cGVkcm8xMjM= # echo pedro123 | base64
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: mytestsecretenvs
 data:
-  USER: ZGFuaWVs
-  PASSWORD: ZGFuaWVsMTIz
+  USER: ZGFuaWVs # echo daniel | base64
+  PASSWORD: ZGFuaWVsMTIz # echo daniel123 | base64
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -58,7 +58,7 @@ kind: MinIOJob
 metadata:
   name: minio-test-job
 spec:
-  mcImage: quay.io/minio/mc:latest # optional, defaults to minio/mc:latest
+#  mcImage: quay.io/minio/mc:latest
   serviceAccountName: mc-job-sa
   securityContext: {}
   containerSecurityContext: {}
@@ -126,7 +126,8 @@ spec:
 ```
 The MinioJob is a Kubernetes Job that runs mc commands. It uses the MinIO client (mc) to interact with the MinIO server.
 ## mcImage
-The `mcImage` field specifies the Docker image that will be used to run the mc commands. In this case, the image is `minio/mc:latest`.
+Optional, defaults to `quay.io/minio/mc:latest`
+The `mcImage` field specifies the Docker image that will be used to run the mc commands.
 ## serviceAccountName
 The `serviceAccountName` field specifies the name of the Kubernetes ServiceAccount that will be used to run the mc commands. In this case, the ServiceAccount is `mc-job-sa`.
 ## securityContext
