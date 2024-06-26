@@ -258,7 +258,9 @@ const TenantListItem = ({ tenant }: { tenant: TenantList }) => {
             <Grid container>
               <Grid item xs={2}>
                 <TenantCapacity
-                  totalCapacity={tenant.capacity || 0}
+                  totalCapacity={
+                    (tenant.capacity || 0) + (tenant.capacity_usage || 0)
+                  }
                   usedSpaceVariants={spaceVariants}
                   statusClass={healthStatusToClass(tenant.health_status!)}
                 />
