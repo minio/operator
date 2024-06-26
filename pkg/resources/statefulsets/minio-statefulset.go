@@ -421,34 +421,35 @@ func poolContainerSecurityContext(pool *miniov2.Pool) *corev1.SecurityContext {
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
 	poolSCSet := false
-
-	// Values from pool.SecurityContext ONLY if provided
-	if pool.SecurityContext != nil {
-		if pool.SecurityContext.RunAsNonRoot != nil {
-			runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
-			poolSCSet = true
-		}
-		if pool.SecurityContext.RunAsUser != nil {
-			runAsUser = *pool.SecurityContext.RunAsUser
-			poolSCSet = true
-		}
-		if pool.SecurityContext.RunAsGroup != nil {
-			runAsGroup = *pool.SecurityContext.RunAsGroup
-			poolSCSet = true
-		}
-		if poolSCSet {
-			// Only set values if one of above is set otherwise let it empty
-			containerSecurityContext = corev1.SecurityContext{
-				RunAsNonRoot: &runAsNonRoot,
-				RunAsUser:    &runAsUser,
-				RunAsGroup:   &runAsGroup,
+	if pool != nil {
+		// Values from pool.SecurityContext ONLY if provided
+		if pool.SecurityContext != nil {
+			if pool.SecurityContext.RunAsNonRoot != nil {
+				runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
+				poolSCSet = true
+			}
+			if pool.SecurityContext.RunAsUser != nil {
+				runAsUser = *pool.SecurityContext.RunAsUser
+				poolSCSet = true
+			}
+			if pool.SecurityContext.RunAsGroup != nil {
+				runAsGroup = *pool.SecurityContext.RunAsGroup
+				poolSCSet = true
+			}
+			if poolSCSet {
+				// Only set values if one of above is set otherwise let it empty
+				containerSecurityContext = corev1.SecurityContext{
+					RunAsNonRoot: &runAsNonRoot,
+					RunAsUser:    &runAsUser,
+					RunAsGroup:   &runAsGroup,
+				}
 			}
 		}
-	}
 
-	// Values from pool.ContainerSecurityContext if provided
-	if pool != nil && pool.ContainerSecurityContext != nil {
-		containerSecurityContext = *pool.ContainerSecurityContext
+		// Values from pool.ContainerSecurityContext if provided
+		if pool.ContainerSecurityContext != nil {
+			containerSecurityContext = *pool.ContainerSecurityContext
+		}
 	}
 	return &containerSecurityContext
 }
