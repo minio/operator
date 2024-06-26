@@ -1,4 +1,8 @@
 # MinioJob is a Kubernetes Job that runs mc commands
+
+Requirements:
+- Operator Enabled STS
+
 here is an example of a MinioJob:
 ```yaml
 apiVersion: v1
