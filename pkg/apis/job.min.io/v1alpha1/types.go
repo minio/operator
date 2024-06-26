@@ -148,7 +148,7 @@ type MinIOJobSpec struct {
 
 // CommandSpec (`spec`) defines the configuration of a MinioClient Command.
 type CommandSpec struct {
-	// *Required* +
+	// +optional
 	//
 	// Operation is the MinioClient Action
 	Operation string `json:"op"`

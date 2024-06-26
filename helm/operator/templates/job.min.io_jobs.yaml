@@ -982,8 +982,6 @@ spec:
                         - name
                         type: object
                       type: array
-                  required:
-                  - op
                   type: object
                 type: array
               containerSecurityContext:

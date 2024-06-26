@@ -163,7 +163,7 @@ The target tenant that the job will run against.
 ### args
 if you set this field, the `mc` command will be executed with the arguments.
 `op` must be one of these:
-`make-bucket`, `admin/user/add`,`admin/policy/create`,`admin/policy/attach`, `admin/config/set`, `support/callhome`,`license/register`
+`mb`,`make-bucket`, `admin/user/add`,`admin/policy/create`,`admin/policy/attach`, `admin/config/set`, `support/callhome`,`license/register`
 ```yaml
 op: make-bucket
 args:
@@ -191,9 +191,17 @@ volumes:
 Will do a job like `mc admin policy create myminio memes-access /temp/policy.json`
 ### command
 The `command` field specifies the command that will be executed by the `mc` command.
-`args` must be empty. And `op` can be set to the main command name.
+`args` must be empty. 
+`op` optional, can be set to the main command name.
 ```
 op: stat
+command:
+  - "mc"
+  - "stat"
+  - "myminio/memes"
+```
+or
+```
 command:
   - "mc"
   - "stat"
