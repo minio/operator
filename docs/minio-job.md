@@ -3,6 +3,9 @@
 Requirements:
 - Operator Enabled STS
 
+Tips:
+MinioJob will use `myminio` as reference tenant `ALIAS`
+
 here is an example of a MinioJob:
 ```yaml
 apiVersion: v1
