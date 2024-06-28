@@ -206,7 +206,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs:
       - lint-sidecar
-      - vulnerable-dependencies-checks-sidecar
       - govet-sidecar
     strategy:
       matrix:
