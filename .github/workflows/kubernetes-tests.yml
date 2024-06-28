@@ -180,7 +180,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs:
       - lint
-      - vulnerable-dependencies-checks
       - govet
       - shellcheck
     strategy:
