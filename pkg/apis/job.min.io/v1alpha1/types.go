@@ -94,7 +94,7 @@ type MinIOJobSpec struct {
 	// Commands List of MinioClient commands
 	Commands []CommandSpec `json:"commands"`
 
-	// mc job image
+	// The Docker image to use when deploying `mc` pods. Defaults to {mc-image}. +
 	// +optional
 	// +kubebuilder:default="quay.io/minio/mc:latest"
 	MCImage string `json:"mcImage,omitempty"`
