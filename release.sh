@@ -10,14 +10,19 @@ get_latest_release() {
 
 MINIO_RELEASE=$(get_latest_release minio/minio)
 KES_RELEASE=$(get_latest_release minio/kes)
+MC_RELEASE=$(get_latest_release minio/mc)
 
 KES_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/kes\:)([v]?.*)"/\2/p' pkg/apis/minio.min.io/v2/constants.go)
+
+MC_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/mc\:)([v]?.*)"/\2/p' pkg/utils/miniojob/types.go)
 
 files=(
   "README.md"
   "api/consts.go"
+  "pkg/apis/job.min.io/v1alpha1/types.go"
   "docs/tenant_crd.adoc"
   "docs/policybinding_crd.adoc"
+  "docs/job_crd.adoc"
   "docs/templates/asciidoctor/gv_list.tpl"
   "examples/kustomization/base/tenant.yaml"
   "examples/kustomization/tenant-certmanager-kes/tenant.yaml"
@@ -50,6 +55,7 @@ for file in "${files[@]}"; do
   sed -i -e "s/${CURRENT_RELEASE}/${RELEASE}/g" "$file"
   sed -i -e "s/RELEASE\.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]Z/${MINIO_RELEASE}/g" "$file"
   sed -i -e "s/${KES_CURRENT_RELEASE}/${KES_RELEASE}/g" "$file"
+  sed -i -e "s/${MC_CURRENT_RELEASE}/${MC_RELEASE}/g" "$file"
 done
 
 annotations_files=(
