@@ -118,20 +118,13 @@ func createTenant(ctx context.Context, params operator_api.CreateTenantParams, c
 		}
 	}
 
-	canEncryptionBeEnabled := false
-
 	if tenantReq.EnableTLS != nil {
 		// if enableTLS is defined in the create tenant request we assign the value
 		// to the RequestAutoCert attribute in the tenant spec
 		minInst.Spec.RequestAutoCert = tenantReq.EnableTLS
-		if *tenantReq.EnableTLS {
-			// requestAutoCert is enabled, MinIO will be deployed with TLS enabled and encryption can be enabled
-			canEncryptionBeEnabled = true
-		}
 	}
 	// External server TLS certificates for MinIO
 	if tenantReq.TLS != nil && len(tenantReq.TLS.MinioServerCertificates) > 0 {
-		canEncryptionBeEnabled = true
 		// Certificates used by the MinIO instance
 		externalCertSecretName := fmt.Sprintf("%s-external-server-certificate", tenantName)
 		externalCertSecret, err := createOrReplaceExternalCertSecrets(ctx, clientSet, ns, tenantReq.TLS.MinioServerCertificates, externalCertSecretName, tenantName)
@@ -151,7 +144,7 @@ func createTenant(ctx context.Context, params operator_api.CreateTenantParams, c
 		minInst.Spec.ExternalClientCertSecrets = externalClientCertSecret
 	}
 	// If encryption configuration is present and TLS will be enabled (using AutoCert or External certificates)
-	if tenantReq.Encryption != nil && canEncryptionBeEnabled {
+	if tenantReq.Encryption != nil {
 		// KES client mTLSCertificates used by MinIO instance
 		if tenantReq.Encryption.MinioMtls != nil {
 			tenantExternalClientCertSecretName := fmt.Sprintf("%s-external-client-certificate-kes", tenantName)
