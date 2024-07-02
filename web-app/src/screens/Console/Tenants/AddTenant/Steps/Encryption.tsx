@@ -94,13 +94,6 @@ const Encryption = () => {
   const enableAutoCert = useSelector(
     (state: AppState) => state.createTenant.fields.security.enableAutoCert,
   );
-  const enableTLS = useSelector(
-    (state: AppState) => state.createTenant.fields.security.enableTLS,
-  );
-  const minioServerCertificates = useSelector(
-    (state: AppState) =>
-      state.createTenant.certificates.minioServerCertificates,
-  );
   const kesServerCertificate = useSelector(
     (state: AppState) => state.createTenant.certificates.kesServerCertificate,
   );
@@ -122,18 +115,6 @@ const Encryption = () => {
   );
 
   const [validationErrors, setValidationErrors] = useState<any>({});
-
-  let encryptionAvailable = false;
-  if (
-    enableTLS &&
-    (enableAutoCert ||
-      (minioServerCertificates &&
-        minioServerCertificates.filter(
-          (item) => item.encoded_key && item.encoded_cert,
-        ).length > 0))
-  ) {
-    encryptionAvailable = true;
-  }
 
   // Common
   const updateField = useCallback(
@@ -299,7 +280,6 @@ const Encryption = () => {
             updateField("enableEncryption", checked);
           }}
           description=""
-          disabled={!encryptionAvailable}
         />
       </Box>
       <Box className={"muted inputItem"}>
