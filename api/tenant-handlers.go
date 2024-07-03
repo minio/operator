@@ -568,9 +568,7 @@ func updateTenantIdentityProvider(ctx context.Context, operatorClient OperatorCl
 }
 
 func listTenants(ctx context.Context, operatorClient OperatorClientI, namespace string, limit *int32) (*models.ListTenantsResponse, error) {
-	listOpts := metav1.ListOptions{
-		Limit: 10,
-	}
+	listOpts := metav1.ListOptions{}
 
 	if limit != nil {
 		listOpts.Limit = int64(*limit)
