@@ -1310,6 +1310,12 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		}
 	}
 
+	// Handle PVC expansion
+	err = ExpandPVCs(ctx, c.kubeClientSet, tenant, namespace)
+	if err != nil {
+		return WrapResult(Result{}, err)
+	}
+
 	if tenant.HasPrometheusOperatorEnabled() {
 		err := c.checkAndCreatePrometheusAddlConfig(ctx, tenant, string(tenantConfiguration["accesskey"]), string(tenantConfiguration["secretkey"]))
 		if err != nil {
