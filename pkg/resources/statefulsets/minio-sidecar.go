@@ -23,7 +23,7 @@ import (
 
 const (
 	// DefaultSidecarImage is the sidecar image to use for tenants
-	DefaultSidecarImage = "minio/operator-sidecar:edge"
+	DefaultSidecarImage = "quay.io/minio/operator-sidecar:latest"
 )
 
 var (
