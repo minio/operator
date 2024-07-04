@@ -15,7 +15,7 @@ kubectl describe secrets -n minio-operator console-sa-secret | grep 'token:' | a
 
 Once the server is running you can see the UI either by port forwarding or using kubefwd for the operator pod.
 
-For development you can also run locally yarn in the web-app/ folder just make sure the port in `package.json `
+For development you can also run locally yarn in the web-app/ folder just make sure the port in `package.json` is the same as the operator console service.
 ```
 "proxy": "http://localhost:9090/"
 ```
