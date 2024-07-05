@@ -97,7 +97,7 @@ const MinIOVolumeMountPath = "/export"
 const MinIOVolumeSubPath = ""
 
 // DefaultMinIOImage specifies the default MinIO Docker hub image
-const DefaultMinIOImage = "minio/minio:RELEASE.2024-05-01T01-11-10Z"
+const DefaultMinIOImage = "minio/minio:RELEASE.2024-07-04T14-25-45Z"
 
 // DefaultMinIOUpdateURL specifies the default MinIO URL where binaries are
 // pulled from during MinIO upgrades
@@ -135,7 +135,7 @@ const ConsoleAdminPolicyName = "consoleAdmin"
 // KES Related Constants
 
 // DefaultKESImage specifies the latest KES Docker hub image
-const DefaultKESImage = "minio/kes:2024-04-12T13-50-00Z"
+const DefaultKESImage = "minio/kes:2024-06-17T15-47-05Z"
 
 // KESInstanceLabel is applied to the KES pods of a Tenant cluster
 const KESInstanceLabel = "v1.min.io/kes"

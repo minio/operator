@@ -1,5 +1,5 @@
 ###
-# WARNING: '.secrets' is deprecated since v5.0.15 and will be removed in next minor release (i.e. v5.1.0).
+# WARNING: '.secrets' is deprecated since v5.0.16 and will be removed in next minor release (i.e. v5.1.0).
 # WARNING: Please use '.tenant.configSecret' instead.
 # Root key for dynamically creating a secret for use with configuring root MinIO User
 # Specify the ``name`` and then a list of environment variables. 
@@ -48,14 +48,14 @@ tenant:
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.15 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.16 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
   # 
   #    image:
   #       repository: quay.io/minio/minio
-  #       tag: RELEASE.2024-05-01T01-11-10Z
+  #       tag: RELEASE.2024-07-04T14-25-45Z
   #       pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
@@ -70,7 +70,7 @@ tenant:
   #
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2024-05-01T01-11-10Z
+    tag: RELEASE.2024-07-04T14-25-45Z
     pullPolicy: IfNotPresent
   ###
   #
@@ -383,14 +383,14 @@ tenant:
   #  # Image from tag (original behavior), for example:
   #  # image:
   #  #   repository: quay.io/minio/kes
-  #  #   tag: 2024-04-12T13-50-00Z
+  #  #   tag: 2024-06-17T15-47-05Z
   #  # Image from digest (added after original behavior), for example:
   #  # image:
   #  #   repository: quay.io/minio/kes@sha256
   #  #   digest: fb15af611149892f357a8a99d1bcd8bf5dae713bd64c15e6eb27fbdb88fc208b
   #  image:
   #    repository: quay.io/minio/kes
-  #    tag: 2024-04-12T13-50-00Z
+  #    tag: 2024-06-17T15-47-05Z
   #    pullPolicy: IfNotPresent
   #  env: [ ]
   #  replicas: 2
