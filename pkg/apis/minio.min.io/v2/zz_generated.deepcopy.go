@@ -412,11 +412,6 @@ func (in *Pool) DeepCopyInto(out *Pool) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.ReclaimStorage != nil {
-		in, out := &in.ReclaimStorage, &out.ReclaimStorage
-		*out = new(bool)
-		**out = **in
-	}
 	return
 }
 
