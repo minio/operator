@@ -700,6 +700,100 @@ func key2NamespaceName(key string) (namespace, name string) {
 	return key[:m], key[m+len(slashSeparator):]
 }
 
+func (c *Controller) updateServer(
+	ctx context.Context,
+	tenantName string,
+	tenant *miniov2.Tenant,
+	totalAvailableReplicas int32,
+	adminClnt *madmin.AdminClient,
+	updateURL string,
+) error {
+	result, err := adminClnt.ServerUpdateV2(ctx, madmin.ServerUpdateOpts{UpdateURL: updateURL})
+	if err != nil {
+		if madmin.ToErrorResponse(err).Code != "MethodNotAllowed" {
+			if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
+				return terr
+			}
+			// Update failed, nothing needs to be changed in the container
+			return err
+		}
+		c.recorder.Event(
+			tenant,
+			corev1.EventTypeWarning,
+			"Inplace update is disabled, falling back to performing only statefulset update.",
+			fmt.Sprintf("Tenant %s", tenant.Name),
+		)
+		return nil
+	}
+
+	reduceErrors := func(results []madmin.ServerPeerUpdateStatus) (err error) {
+		var messages []string
+		for _, status := range results {
+			if status.Err != "" {
+				messages = append(messages, fmt.Sprintf("host %v: %v", status.Host, status.Err))
+			}
+		}
+		if messages != nil {
+			err = errors.New(strings.Join(messages, ";"))
+		}
+
+		return
+	}
+
+	isUpdated := func(results []madmin.ServerPeerUpdateStatus) (bool, string, string) {
+		var currentVersion, updatedVersion string
+		for _, status := range results {
+			if updatedVersion == "" {
+				currentVersion = status.CurrentVersion
+				updatedVersion = status.UpdatedVersion
+			}
+			if status.CurrentVersion != status.UpdatedVersion {
+				return false, currentVersion, updatedVersion
+			}
+		}
+		return true, currentVersion, updatedVersion
+	}
+
+	if err := reduceErrors(result.Results); err != nil {
+		if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
+			return terr
+		}
+		// Update failed, nothing needs to be changed in the container
+		return err
+	}
+
+	if updated, currentVersion, updatedVersion := isUpdated(result.Results); !updated {
+		// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
+		// MinIO server integrated with Console), we need to delete the old console deployment and service.
+		// We do this only when MinIO server is successfully updated.
+		unifiedConsoleReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("RELEASE.2021-07-27T02-40-15Z")
+		newVer, err := miniov2.ReleaseTagToReleaseTime(updatedVersion)
+		if err != nil {
+			klog.Errorf("Unsupported release tag on new image, server updated but might leave dangling console deployment %v", err)
+			return err
+		}
+		consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())
+		if unifiedConsoleReleaseTime.Before(newVer) && consoleDeployment != nil && err == nil {
+			if err := c.deleteOldConsoleDeployment(ctx, tenant, consoleDeployment.Name); err != nil {
+				return err
+			}
+		}
+		klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
+			tenantName, currentVersion, updatedVersion)
+	} else {
+		msg := fmt.Sprintf(
+			"Tenant '%s' MinIO is already running the most recent version of %s",
+			tenantName,
+			currentVersion,
+		)
+		klog.Info(msg)
+		if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalAvailableReplicas); terr != nil {
+			return terr
+		}
+	}
+	return nil
+}
+
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the Tenant resource
 // with the current status of the resource.
@@ -1159,47 +1253,17 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		klog.V(4).Infof("Updating Tenant %s MinIO version from: %s, to: %s -> URL: %s",
 			tenantName, tenant.Spec.Image, images[0], updateURL)
 
-		us, err := adminClnt.ServerUpdate(ctx, updateURL)
-		if err != nil {
-			if madmin.ToErrorResponse(err).Code != "MethodNotAllowed" {
-				if _, terr := c.updateTenantStatus(ctx, tenant, err.Error(), totalAvailableReplicas); terr != nil {
-					return WrapResult(Result{}, terr)
-				}
-				// Update failed, nothing needs to be changed in the container
-				return WrapResult(Result{}, err)
-			}
-			c.recorder.Event(tenant, corev1.EventTypeWarning, "Inplace update is disabled, falling back to performing only statefulset update.", fmt.Sprintf("Tenant %s", tenant.Name))
+		if err := c.updateServer(
+			ctx,
+			tenantName,
+			tenant,
+			totalAvailableReplicas,
+			adminClnt,
+			updateURL,
+		); err != nil {
+			return WrapResult(Result{}, err)
 		}
-		if err == nil {
-			if us.CurrentVersion != us.UpdatedVersion {
-				// In case the upgrade is from an older version to RELEASE.2021-07-27T02-40-15Z (which introduced
-				// MinIO server integrated with Console), we need to delete the old console deployment and service.
-				// We do this only when MinIO server is successfully updated.
-				unifiedConsoleReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("RELEASE.2021-07-27T02-40-15Z")
-				newVer, err := miniov2.ReleaseTagToReleaseTime(us.UpdatedVersion)
-				if err != nil {
-					klog.Errorf("Unsupported release tag on new image, server updated but might leave dangling console deployment %v", err)
-					return WrapResult(Result{}, err)
-				}
-				consoleDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(tenant.ConsoleDeploymentName())
-				if unifiedConsoleReleaseTime.Before(newVer) && consoleDeployment != nil && err == nil {
-					if err := c.deleteOldConsoleDeployment(ctx, tenant, consoleDeployment.Name); err != nil {
-						return WrapResult(Result{}, err)
-					}
-				}
-				klog.Infof("Tenant '%s' MinIO updated successfully from: %s, to: %s successfully",
-					tenantName, us.CurrentVersion, us.UpdatedVersion)
-			} else {
-				msg := fmt.Sprintf("Tenant '%s' MinIO is already running the most recent version of %s",
-					tenantName,
-					us.CurrentVersion)
-				klog.Info(msg)
-				if _, terr := c.updateTenantStatus(ctx, tenant, msg, totalAvailableReplicas); terr != nil {
-					return WrapResult(Result{}, err)
-				}
-				return WrapResult(Result{}, nil)
-			}
-		}
+
 		for i, pool := range tenant.Spec.Pools {
 			// Now proceed to make the yaml changes for the tenant statefulset.
 			ss := statefulsets.NewPool(&statefulsets.NewPoolArgs{
