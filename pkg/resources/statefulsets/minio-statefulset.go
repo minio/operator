@@ -35,8 +35,6 @@ import (
 
 const (
 	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
-	// ReclaimStorageLabel - pvc with this label and the value is `true` means when tenant is being deleted the pvc will be deleted.
-	ReclaimStorageLabel = "reclaimStorage"
 )
 
 // Returns the MinIO environment variables set in configuration.
@@ -839,12 +837,6 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 
 	if pool.VolumeClaimTemplate != nil {
 		pvClaim := *pool.VolumeClaimTemplate
-		if pool.ReclaimStorage != nil && *pool.ReclaimStorage {
-			if len(pvClaim.Labels) == 0 {
-				pvClaim.Labels = make(map[string]string)
-			}
-			pvClaim.Labels[ReclaimStorageLabel] = "true"
-		}
 		name := pvClaim.Name
 		for i := 0; i < int(pool.VolumesPerServer); i++ {
 			pvClaim.Name = name + strconv.Itoa(i)
