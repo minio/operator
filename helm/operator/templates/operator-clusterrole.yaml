@@ -19,7 +19,6 @@ rules:
       - get
       - update
       - list
-      - delete
   - apiGroups:
       - ""
     resources:

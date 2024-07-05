@@ -712,11 +712,6 @@ type Pool struct {
 	// If provided, each pod on the Statefulset will run with the specified RuntimeClassName, for more info https://kubernetes.io/docs/concepts/containers/runtime-class/
 	// +optional
 	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
-	// *Optional* +
-	//
-	// If true. Will delete the storage when tenant has been deleted.
-	// +optional
-	ReclaimStorage *bool `json:"reclaimStorage,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same
