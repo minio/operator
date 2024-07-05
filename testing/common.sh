@@ -614,6 +614,8 @@ function install_operator() {
     try kubectl -n minio-operator set image deployment/console console="$TAG"
     try kubectl -n minio-operator set env deployment/minio-operator OPERATOR_SIDECAR_IMAGE="$SIDECAR_TAG"
 
+    try kubectl -n minio-operator rollout status deployment/minio-operator
+
     echo "key, value for pod selector in kustomize test"
     key=name
     value=minio-operator
@@ -714,13 +716,15 @@ function check_tenant_status() {
     echo "No third argument provided, using default key"
   fi
 
+  wait_resource_status $1 Tenant $2 600
+
   wait_for_resource $1 $value $key
 
   echo "Waiting for tenant to be Initialized"
 
   condition=jsonpath='{.status.currentState}'=Initialized
   selector="metadata.name=$2"
-  try wait_for_resource_field_selector "$1" tenant $condition "$selector" 600s
+  try wait_for_resource_field_selector "$1" tenant $condition "$selector" 1200s
 
   if [ $# -ge 4 ]; then
     echo "Fourth argument provided, then get secrets from helm"
@@ -758,6 +762,10 @@ function check_tenant_status() {
 
     # Retrieve the logs
     kubectl logs admin-mc -n tenant-certmanager
+
+		echo "removing the admin-mc pod"
+	  try kubectl delete pod admin-mc -n tenant-certmanager
+
   else
     try kubectl run --restart=Never admin-mc --image quay.io/minio/mc \
       --env="MC_HOST_minio=https://${USER}:${PASSWORD}@minio.${1}.svc.cluster.local" \
@@ -768,6 +776,10 @@ function check_tenant_status() {
 
     # Retrieve the logs
     kubectl logs admin-mc
+
+		echo "removing the admin-mc pod"
+		try kubectl delete pod admin-mc
+
   fi
 
   echo "Done."
