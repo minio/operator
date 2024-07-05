@@ -76,7 +76,7 @@
     "typescript": "^4.4.3"
   },
   "resolutions": {
-    "**/superagent/formidable": "3.5.1",
+    "**/formidable": "3.5.1",
     "nth-check": "^2.0.1",
     "yaml": "^2.4.2",
     "postcss": "^8.4.31",
