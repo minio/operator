@@ -1,17 +1,15 @@
 # Tenant Storage Deletion
 
-Deleting the storage of a tenant is a controversial and delicate situation, on one hand, some users wants to delete the
-storage in CI/CD sitations, but on the other hand, some users may configure this in production environments and forger
-which
-exposes them to potential data loss.
+Deleting a tenant's storage in Kubernetes is a sensitive and controversial issue. On one hand, some users may want to
+delete storage in CI/CD scenarios. On the other hand, if configured in production environments and forgotten, it risks
+potential data loss.
 
-Kubernetes official doesn't cascade delete PVCs when a Statefulset due to the delicate nature of the operation, it's
-instead
-deferred to the user to decide when to delete the PVCs, MinIO Operator follows the same approach.
+Kubernetes does not automatically delete Persistent Volume Claims (PVCs) when a StatefulSet is deleted, due to the risk
+involved. This decision is left to the user. The MinIO Operator adheres to this practice as well.
 
-To delete the storage of a tenant, you can delete the PVCs associated with the tenant via kubectl same time you are
-deleting a tenant, for example, when deleting a tenant called `tenant` in namespace `ns-1`, you can delete the PVCs
-associated with the tenant by running the following commands:
+To delete a tenant's storage, you should manually delete the PVCs associated with the tenant. This can be done via
+kubectl at the same time you are deleting the tenant. For example, to delete a tenant named tenant in the namespace
+ns-1, run the following commands:
 
 ```bash
 kubectl -n ns-1 delete tenant tenant
