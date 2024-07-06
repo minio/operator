@@ -35,6 +35,7 @@ files=(
   "pkg/controller/operator.go"
   "resources/base/deployment.yaml"
   "testing/console-tenant+kes.sh"
+)
 
 CURRENT_RELEASE=$(get_latest_release minio/operator)
 CURRENT_RELEASE="${CURRENT_RELEASE:1}"
