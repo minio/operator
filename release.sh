@@ -18,7 +18,6 @@ MC_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/mc\:)([v]?.*)"/\2/p' pkg/utils/miniojo
 
 files=(
   "README.md"
-  "api/consts.go"
   "pkg/apis/job.min.io/v1alpha1/types.go"
   "docs/tenant_crd.adoc"
   "docs/policybinding_crd.adoc"
