@@ -17,9 +17,6 @@
 package kes
 
 import (
-	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -245,22 +242,6 @@ type ServerConfigV2 struct {
 	Cache    CacheV2             `yaml:"cache,omitempty" json:"cache,omitempty"`
 	Log      Log                 `yaml:"log,omitempty" json:"log,omitempty"`
 	Keystore Keys                `yaml:"keystore,omitempty" json:"keystore,omitempty"`
-}
-
-// ParseCertificate parses a certificate
-func ParseCertificate(cert []byte) (*x509.Certificate, error) {
-	for {
-		var certDERBlock *pem.Block
-		certDERBlock, cert = pem.Decode(cert)
-		if certDERBlock == nil {
-			break
-		}
-
-		if certDERBlock.Type == "CERTIFICATE" {
-			return x509.ParseCertificate(certDERBlock.Bytes)
-		}
-	}
-	return nil, errors.New("found no (non-CA) certificate in any PEM block")
 }
 
 // Marshal ServerConfigV1

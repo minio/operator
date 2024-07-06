@@ -15,11 +15,15 @@
 package statefulsets
 
 import (
+	"fmt"
+	"regexp"
 	"sort"
+	"strings"
+
+	"golang.org/x/mod/semver"
 
 	"github.com/minio/operator/pkg/certs"
 
-	operatorApi "github.com/minio/operator/api"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -99,11 +103,11 @@ func KESServerContainer(t *miniov2.Tenant) corev1.Container {
 	// Args to start KES with config mounted at miniov2.KESConfigMountPath and require but don't verify mTLS authentication
 	args := []string{"server", "--config=" + miniov2.KESConfigMountPath + "/server-config.yaml"}
 
-	kesVersion, _ := operatorApi.GetKesConfigVersion(t.Spec.KES.Image)
+	kesVersion, _ := getKesConfigVersion(t.Spec.KES.Image)
 	// Add `--auth` flag only on config versions that are still compatible with it (v1 and v2).
 	// Starting KES 2023-11-09T17-35-47Z (v3) is no longer supported.
 	switch kesVersion {
-	case operatorApi.KesConfigVersion1, operatorApi.KesConfigVersion2:
+	case KesConfigVersion1, KesConfigVersion2:
 		args = append(args, "--auth=off")
 	}
 
@@ -346,4 +350,70 @@ func NewForKES(t *miniov2.Tenant, serviceName string) *appsv1.StatefulSet {
 	}
 
 	return ss
+}
+
+const (
+	// imageTagWithArchRegex is a regular expression to identify if a KES tag
+	// includes the arch as suffix, ie: 2023-05-02T22-48-10Z-arm64
+	kesImageTagWithArchRegexPattern = `(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)(-.*)`
+)
+
+const (
+	// KesConfigVersion1 identifier v1
+	KesConfigVersion1 = "v1"
+	// KesConfigVersion2 identifier v2
+	KesConfigVersion2 = "v2"
+)
+
+func getKesConfigVersion(image string) (string, error) {
+	version := KesConfigVersion2
+
+	imageStrings := strings.Split(image, ":")
+	var imageTag string
+	if len(imageStrings) > 1 {
+		imageTag = imageStrings[1]
+	} else {
+		return "", fmt.Errorf("%s not a valid KES release tag", image)
+	}
+
+	if imageTag == "edge" {
+		return KesConfigVersion2, nil
+	}
+
+	if imageTag == "latest" {
+		return KesConfigVersion2, nil
+	}
+
+	// When the image tag is semantic version is config v1
+	if semver.IsValid(imageTag) {
+		// Admin is required starting version v0.22.0
+		if semver.Compare(imageTag, "v0.22.0") < 0 {
+			return KesConfigVersion1, nil
+		}
+		return KesConfigVersion2, nil
+	}
+
+	releaseTagNoArch := imageTag
+
+	re := regexp.MustCompile(kesImageTagWithArchRegexPattern)
+	// if pattern matches, that means we have a tag with arch
+	if matched := re.Match([]byte(imageTag)); matched {
+		slicesOfTag := re.FindStringSubmatch(imageTag)
+		// here we will remove the arch suffix by assigning the first group in the regex
+		releaseTagNoArch = slicesOfTag[1]
+	}
+
+	// v0.22.0 is the initial image version for Kes config v2, any time format came after and is v2
+	_, err := miniov2.ReleaseTagToReleaseTime(releaseTagNoArch)
+	if err != nil {
+		// could not parse semversion either, returning error
+		return "", fmt.Errorf("could not identify KES version from image TAG: %s", releaseTagNoArch)
+	}
+
+	// Leaving this snippet as comment as this will helpful to compare in future config versions
+	// kesv2ReleaseTime, _ := miniov2.ReleaseTagToReleaseTime("2023-04-03T16-41-28Z")
+	// if imageVersionTime.Before(kesv2ReleaseTime) {
+	// 	version = kesConfigVersion2
+	// }
+	return version, nil
 }

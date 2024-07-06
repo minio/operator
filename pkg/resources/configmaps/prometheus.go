@@ -16,15 +16,10 @@ package configmaps
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
-	"github.com/golang-jwt/jwt"
-	"gopkg.in/yaml.v2"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"gopkg.in/yaml.v2"
 )
 
 type globalConfig struct {
@@ -103,82 +98,4 @@ func GetPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *Promet
 		},
 	}
 	return promConfig
-}
-
-const prometheusYml = "prometheus.yml"
-
-// fromPrometheusConfigMap parses prometheus config file from the given
-// configmap and returns *prometheusConfig on success. Otherwise, returns error.
-func fromPrometheusConfigMap(configMap *corev1.ConfigMap) (*PrometheusConfig, error) {
-	configFile := configMap.Data[prometheusYml]
-	var config PrometheusConfig
-	err := yaml.Unmarshal([]byte(configFile), &config)
-	if err != nil {
-		return nil, err
-	}
-	return &config, nil
-}
-
-// getConfigMap returns k8s config map for the given tenant
-func (p *PrometheusConfig) getConfigMap(tenant *miniov2.Tenant) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            tenant.PrometheusConfigMapName(),
-			Namespace:       tenant.Namespace,
-			OwnerReferences: tenant.OwnerRef(),
-		},
-		Data: map[string]string{
-			prometheusYml: p.ConfigFile(),
-		},
-	}
-}
-
-// bearerTokenNeedsUpdate returns true if the prometheusConfig's bearer token
-// can't be verified using the given secretKey
-func (p *PrometheusConfig) bearerTokenNeedsUpdate(secretKey string) bool {
-	tokenStr := p.ScrapeConfigs[0].BearerToken
-	_, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		// TODO: add checks on token.Claims like issuer etc.
-		return []byte(secretKey), nil
-	})
-	return err != nil
-}
-
-// PrometheusConfigMap returns k8s configmap containing Prometheus configuration.
-func PrometheusConfigMap(tenant *miniov2.Tenant, accessKey, secretKey string) *corev1.ConfigMap {
-	config := GetPrometheusConfig(tenant, accessKey, secretKey)
-	return config.getConfigMap(tenant)
-}
-
-// UpdatePrometheusConfigMap checks if the prometheus config map needs update
-// and if so returns the updated map. Otherwise it returns nil.
-func UpdatePrometheusConfigMap(t *miniov2.Tenant, accessKey, secretKey string, existing *corev1.ConfigMap) *corev1.ConfigMap {
-	config := GetPrometheusConfig(t, accessKey, secretKey)
-	existingConfig, err := fromPrometheusConfigMap(existing)
-	if err != nil {
-		// needs update to recover possibly corrupt current config file
-		return config.getConfigMap(t)
-	}
-
-	// Validate existing config bearer token with the secret key from
-	// 'desired' tenant spec. Success indicates that the secret key hasn't
-	// changed, so 'mask' the bearer token before performing equality check
-	// to determine if the prometheus config requires update.
-	needsUpdate := existingConfig.bearerTokenNeedsUpdate(secretKey)
-	if !needsUpdate {
-		config.ScrapeConfigs[0].BearerToken = ""
-		existingConfig.ScrapeConfigs[0].BearerToken = ""
-		if !reflect.DeepEqual(existingConfig, config) {
-			needsUpdate = true
-		}
-	}
-
-	if needsUpdate {
-		return config.getConfigMap(t)
-	}
-
-	return nil
 }

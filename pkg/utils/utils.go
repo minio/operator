@@ -18,7 +18,6 @@ package utils
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -26,7 +25,6 @@ import (
 
 	"github.com/minio/operator/pkg/common"
 
-	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,38 +32,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
-)
-
-// NewUUID - get a random UUID.
-func NewUUID() (string, error) {
-	u, err := uuid.NewRandom()
-	if err != nil {
-		return "", err
-	}
-	return u.String(), nil
-}
-
-// DecodeBase64 : decoded base64 input into utf-8 text
-func DecodeBase64(s string) (string, error) {
-	decodedInput, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return "", err
-	}
-	return string(decodedInput), nil
-}
-
-// Key used for Get/SetReqInfo
-type key string
-
-// context keys
-const (
-	ContextLogKey            = key("console-log")
-	ContextRequestID         = key("request-id")
-	ContextRequestUserID     = key("request-user-id")
-	ContextRequestUserAgent  = key("request-user-agent")
-	ContextRequestHost       = key("request-host")
-	ContextRequestRemoteAddr = key("request-remote-addr")
-	ContextAuditKey          = key("request-audit-entry")
 )
 
 // GetOperatorRuntime Retrieves the runtime from env variable
@@ -86,12 +52,12 @@ func GetOperatorRuntime() common.Runtime {
 func NewPodInformer(kubeClientSet kubernetes.Interface, labelSelectorString string) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
-			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+			ListFunc: func(_ metav1.ListOptions) (runtime.Object, error) {
 				return kubeClientSet.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
 					LabelSelector: labelSelectorString,
 				})
 			},
-			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
 				return kubeClientSet.CoreV1().Pods("").Watch(context.Background(), metav1.ListOptions{
 					LabelSelector: labelSelectorString,
 				})

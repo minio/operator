@@ -22,7 +22,6 @@ import (
 	"crypto/sha1"
 	"strings"
 
-	"github.com/minio/operator/pkg/auth/token"
 	"github.com/minio/pkg/env"
 	"golang.org/x/crypto/pbkdf2"
 )
@@ -62,56 +61,9 @@ func GetSTSEndpoint() string {
 	return strings.TrimSpace(env.Get(ConsoleMinIOServer, "http://localhost:9000"))
 }
 
-// GetIDPURL returns the URL of the IDP
-func GetIDPURL() string {
-	return env.Get(ConsoleIDPURL, "")
-}
-
-// GetIDPClientID returns environment variable
-func GetIDPClientID() string {
-	return env.Get(ConsoleIDPClientID, "")
-}
-
-// GetIDPUserInfo returns environment variable
-func GetIDPUserInfo() bool {
-	return env.Get(ConsoleIDPUserInfo, "") == "on"
-}
-
 // GetIDPSecret returns environment variable
 func GetIDPSecret() string {
 	return env.Get(ConsoleIDPSecret, "")
-}
-
-// GetIDPCallbackURL is the public endpoint used by the identity oidcProvider when redirecting
-// the user after identity verification
-func GetIDPCallbackURL() string {
-	return env.Get(ConsoleIDPCallbackURL, "")
-}
-
-// GetIDPCallbackURLDynamic returns environment variable
-func GetIDPCallbackURLDynamic() bool {
-	return env.Get(ConsoleIDPCallbackURLDynamic, "") == "on"
-}
-
-// IsIDPEnabled returns boolean value for env var
-func IsIDPEnabled() bool {
-	return GetIDPURL() != "" &&
-		GetIDPClientID() != ""
-}
-
-// GetPassphraseForIDPHmac returns passphrase for the pbkdf2 function used to sign the oauth2 state parameter
-func getPassphraseForIDPHmac() string {
-	return env.Get(ConsoleIDPHmacPassphrase, token.GetPBKDFPassphrase())
-}
-
-// GetSaltForIDPHmac returns salt for the pbkdf2 function used to sign the oauth2 state parameter
-func getSaltForIDPHmac() string {
-	return env.Get(ConsoleIDPHmacSalt, token.GetPBKDFSalt())
-}
-
-// getIDPScopes return default scopes during the IDP login request
-func getIDPScopes() string {
-	return env.Get(ConsoleIDPScopes, "openid,profile,email")
 }
 
 // getIDPTokenExpiration return default token expiration for access token (in seconds)

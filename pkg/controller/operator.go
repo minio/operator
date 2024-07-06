@@ -55,8 +55,6 @@ const (
 	OperatorDeploymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
 	OperatorCATLSSecretName = "operator-ca-tls"
-	// OperatorCATLSSecretPrefix is the name of the multi tenant secret for the operator CA
-	OperatorCATLSSecretPrefix = OperatorCATLSSecretName + "-"
 	// OperatorCSRSignerCASecretName is the name of the secret for the signer-ca certificate
 	// this is a copy of the secret signer-ca in namespace
 	OperatorCSRSignerCASecretName = "openshift-csr-signer-ca"
@@ -66,10 +64,6 @@ const (
 	OpenshiftCATLSSecretName = "csr-signer"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
-	// DefaultOperatorImage is the version fo the operator being used
-	DefaultOperatorImage = "minio/operator:v5.0.15"
-	// DefaultOperatorImageEnv is the default image to minio instance
-	DefaultOperatorImageEnv = "MINIO_OPERATOR_IMAGE"
 )
 
 var serverCertsManager *xcerts.Manager

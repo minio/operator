@@ -47,7 +47,7 @@ func ALIAS() FieldsFunc {
 
 // Static - some static value
 func Static(val string) FieldsFunc {
-	return func(args map[string]string) (Arg, error) {
+	return func(_ map[string]string) (Arg, error) {
 		return Arg{Command: val}, nil
 	}
 }
@@ -100,7 +100,7 @@ func KeyFormat(key string, format string) FieldsFunc {
 }
 
 // OthersKeyValues - get all the key values
-func OthersKeyValues(ignoreFileKeys ...string) FieldsFunc {
+func OthersKeyValues(_ ...string) FieldsFunc {
 	return func(args map[string]string) (out Arg, err error) {
 		if args == nil {
 			return out, fmt.Errorf("args is nil")

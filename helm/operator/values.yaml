@@ -14,8 +14,6 @@ operator:
   #      valueFrom:
   #        fieldRef:
   #          fieldPath: metadata.labels['app.kubernetes.io/name']
-  #    - name: MINIO_CONSOLE_TLS_ENABLE
-  #      value: "off"
   #    - name: CLUSTER_DOMAIN
   #      value: "cluster.domain"
   #    - name: WATCHED_NAMESPACE
@@ -24,12 +22,9 @@ operator:
   #      value: "OpenShift"
   #
   # See `Operator environment variables <https://github.com/minio/operator/blob/master/docs/env-variables.md>`__ for a list of all supported values.
-  # If MINIO_CONSOLE_TLS_ENABLE is enabled, utilize port 9443 for console.ingress.number.
   env:
     - name: OPERATOR_STS_ENABLED
       value: "on"
-    - name: MINIO_CONSOLE_TLS_ENABLE
-      value: "off"
   # An array of additional annotations to be applied to the operator service account
   serviceAccountAnnotations: []
   # additional labels to be applied to operator resources
@@ -194,174 +189,3 @@ operator:
       cpu: 200m
       memory: 256Mi
       ephemeral-storage: 500Mi
-
-###
-# Root key for Operator Console
-console:
-  ###
-  # Specify ``false`` to disable the Operator Console.
-  #
-  # If the Operator Console is disabled, all management of Operator Tenants must be done through the Kubernetes API.
-  enabled: true
-  # additional labels to include for console resources
-  additionalLabels: {}
-  ###
-  # Specify the Operator Console container image to use for the deployment.
-  # ``image.tag``
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.15 tag.
-  # The container pulls the image if not already present:
-  #
-  # .. code-block:: yaml
-  #
-  #    image:
-  #      repository: quay.io/minio/operator
-  #      tag: v5.0.15
-  #      pullPolicy: IfNotPresent
-  #
-  # The chart also supports specifying an image based on digest value:
-  #
-  # .. code-block:: yaml
-  #
-  #    image:
-  #      repository: quay.io/minio/operator@sha256
-  #      digest: 28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
-  #      pullPolicy: IfNotPresent
-  #
-  # The specified values should match that of ``operator.image`` to ensure predictable operations.
-  image:
-    repository: quay.io/minio/operator
-    tag: v5.0.15
-    pullPolicy: IfNotPresent
-  ###
-  # An array of environment variables to pass to the Operator Console deployment.
-  # Pass an empty array to start Operator Console with defaults.
-  env: [ ]
-  ###
-  #
-  # An array of Kubernetes secrets to use for pulling images from a private ``image.repository``.
-  imagePullSecrets: [ ]
-  ###
-  #
-  # The name of a custom `Container Runtime <https://kubernetes.io/docs/concepts/containers/runtime-class/>`__ to use for the Operator Console pods.
-  runtimeClassName: ~
-  ###
-  # An array of `initContainers <https://kubernetes.io/docs/concepts/workloads/pods/init-containers/>`__ to start up before the Operator Console pods.
-  # Exercise care as ``initContainer`` failures prevent Console pods from starting.
-  # Pass an empty array to start the Console normally.
-  initContainers: [ ]
-  ###
-  # The number of Operator Console pods to deploy.
-  # Higher values increase availability in the event of worker node failures.
-  #
-  # The cluster must have sufficient number of available worker nodes to fulfill the request.
-  # Console pods deploy with pod anti-affinity by default, preventing Kubernetes from scheduling multiple pods onto a single Worker node.
-  replicaCount: 1
-  ###
-  # Any `Node Selectors <https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/>`__ to apply to Operator Console pods.
-  #
-  # The Kubernetes scheduler uses these selectors to determine which worker nodes onto which it can deploy Console pods.
-  #
-  # If no worker nodes match the specified selectors, the Console deployment will fail.
-  nodeSelector: { }
-  ###
-  #
-  # The `affinity <https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes-using-node-affinity/>`__ or anti-affinity settings to apply to Operator Console pods.
-  #
-  # These settings determine the distribution of pods across worker nodes and can help prevent or allow colocating pods onto the same worker nodes.
-  affinity:
-    podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        - labelSelector:
-            matchExpressions:
-              - key: name
-                operator: In
-                values:
-                  - minio-operator
-          topologyKey: kubernetes.io/hostname
-  ###
-  #
-  # An array of `Toleration labels <https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/>`__ to associate to Operator Console pods.
-  #
-  # These settings determine the distribution of pods across worker nodes.
-  tolerations: [ ]
-  ###
-  #
-  # An array of `Topology Spread Constraints <https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/>`__ to associate to Operator Console pods.
-  #
-  # These settings determine the distribution of pods across worker nodes.
-  topologySpreadConstraints: [ ]
-  ###
-  #
-  # The `Requests or Limits <https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/>`__ for resources to associate to Operator Console pods.
-  #
-  # These settings can control the minimum and maximum resources requested for each pod.
-  # If no worker nodes can meet the specified requests, the Console may fail to deploy.
-  resources:
-    requests:
-      cpu: 0.25
-      memory: 512Mi
-  ###
-  # The Kubernetes `SecurityContext <https://kubernetes.io/docs/tasks/configure-pod-container/security-context/>`__ to use for deploying Operator Console resources.
-  #
-  # You may need to modify these values to meet your cluster's security and access settings.
-  securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
-    runAsNonRoot: true
-  ###
-  # The Kubernetes `SecurityContext <https://kubernetes.io/docs/tasks/configure-pod-container/security-context/>`__ to use for deploying Operator Console containers.
-  # You may need to modify these values to meet your cluster's security and access settings.
-  containerSecurityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
-    runAsNonRoot: true
-    allowPrivilegeEscalation: false
-    capabilities:
-      drop:
-        - ALL
-    seccompProfile:
-      type: RuntimeDefault
-
-  ###
-  # Forbid write permissions
-  readOnly: false
-
-  ###
-  # Configures `Ingress <https://kubernetes.io/docs/concepts/services-networking/ingress/>`__ for the Operator Console.
-  #
-  # Set the keys to conform to the Ingress controller and configuration of your choice.
-  # Set console.ingress.number to any port. For example:
-  # You may choose port number 9443 for HTTPS or 9090 for HTTP, as desired.
-  ingress:
-    enabled: false
-    ingressClassName: ""
-    labels: { }
-    annotations: { }
-    tls: [ ]
-    host: console.local
-    path: /
-    pathType: Prefix
-    number: 9090
-  ###
-  # An array of `Volumes <https://kubernetes.io/docs/concepts/storage/volumes/>`__ which the Operator Console can mount to pods.
-  #
-  # The volumes must exist *and* be accessible to the Console pods.
-  volumes:
-    - name: tmp
-      emptyDir: {}
-  ###
-  # An array of volume mount points associated to each Operator Console container.
-  #
-  # Specify each item in the array as follows:
-  #
-  # .. code-block:: yaml
-  #
-  #    volumeMounts:
-  #    - name: volumename
-  #      mountPath: /path/to/mount
-  #
-  # The ``name`` field must correspond to an entry in the ``volumes`` array.
-  volumeMounts:
-    - name: tmp
-      readOnly: false
-      mountPath: /tmp/certs/CAs

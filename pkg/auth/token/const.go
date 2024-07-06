@@ -17,8 +17,6 @@
 package token
 
 const (
-	// STSDuration session duration
-	STSDuration = "OPERATOR_STS_DURATION" // time.Duration format, ie: 3600s, 2h45m, 1h, etc
 	// PBKDFPassphrase passphrase for session encryption
 	PBKDFPassphrase = "OPERATOR_PBKDF_PASSPHRASE"
 	// PBKDFSalt  salt for hashes
