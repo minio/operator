@@ -34,7 +34,6 @@ files=(
   "pkg/apis/minio.min.io/v2/constants.go"
   "pkg/controller/operator.go"
   "resources/base/deployment.yaml"
-  "resources/base/console-ui.yaml"
   "testing/console-tenant+kes.sh"
   "web-app/src/screens/Console/Tenants/AddTenant/Steps/Images.tsx"
   "web-app/src/screens/Console/Tenants/TenantDetails/TenantEncryption.tsx")

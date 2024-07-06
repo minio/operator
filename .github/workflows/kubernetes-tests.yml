@@ -288,6 +288,36 @@ jobs:
       - name: Tenant upgrade test on Kind
         run: |
           "${GITHUB_WORKSPACE}/testing/deploy-tenant-upgrade.sh"
+  #  test-kes:
+  #    timeout-minutes: 30
+  #    runs-on: ${{ matrix.os }}
+  #    needs:
+  #      - operator
+  #    strategy:
+  #      matrix:
+  #        go-version: [ 1.22.x ]
+  #        os: [ ubuntu-latest ]
+  #
+  #    steps:
+  #      - uses: actions/checkout@v3
+  #      - uses: actions/setup-go@v4
+  #        with:
+  #          go-version: ${{ matrix.go-version }}
+  #      - uses: actions/cache@v3
+  #        name: Operator Binary Cache
+  #        with:
+  #          path: |
+  #            ./minio-operator
+  #          key: ${{ runner.os }}-binary-${{ github.run_id }}
+  #      - uses: actions/cache@v3
+  #        name: Operator Sidecar Binary Cache
+  #        with:
+  #          path: |
+  #            ./sidecar/minio-operator-sidecar
+  #          key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
+  #      - name: Tenant KES
+  #        run: |
+  #          "${GITHUB_WORKSPACE}/testing/console-tenant+kes.sh"
   test-tenant-hotfix-update:
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}

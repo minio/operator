@@ -102,7 +102,7 @@ metadata:
   name: minio-operator.v5.0.15
   namespace: minio-operator
 spec:
-  apiservicedefinitions: {}
+  apiservicedefinitions: { }
   customresourcedefinitions:
     owned:
       - kind: MinIOJob
@@ -550,69 +550,6 @@ spec:
                 - deletecollection
           serviceAccountName: minio-operator
       deployments:
-        - label:
-            app.kubernetes.io/instance: minio-operator
-            app.kubernetes.io/name: operator
-          name: console
-          spec:
-            replicas: 1
-            selector:
-              matchLabels:
-                app: console
-                app.kubernetes.io/name: operator
-            strategy: {}
-            template:
-              metadata:
-                annotations:
-                  operator.min.io/authors: MinIO, Inc.
-                  operator.min.io/license: AGPLv3
-                  operator.min.io/support: https://subnet.min.io
-                  operator.min.io/version: v5.0.15
-                labels:
-                  app: console
-                  app.kubernetes.io/instance: minio-operator-console
-                  app.kubernetes.io/name: operator
-              spec:
-                containers:
-                  - args:
-                      - ui
-                      - --certs-dir=/tmp/certs
-                    image: minio/operator@sha256:811d71f9d41ce275946a50cc564b6fab3d3268b3af5969e45c0278d711a60ac2
-                    imagePullPolicy: IfNotPresent
-                    name: console
-                    ports:
-                      - containerPort: 9090
-                        name: http
-                      - containerPort: 9443
-                        name: https
-                    resources: {}
-                    volumeMounts:
-                      - mountPath: /tmp/certs
-                        name: tls-certificates
-                      - mountPath: /tmp/certs/CAs
-                        name: tmp
-                serviceAccountName: console-sa
-                volumes:
-                  - name: tls-certificates
-                    projected:
-                      defaultMode: 420
-                      sources:
-                        - secret:
-                            items:
-                              - key: tls.crt
-                                path: public.crt
-                              - key: tls.key
-                                path: private.key
-                            name: console-tls
-                            optional: true
-                        - configMap:
-                            items:
-                              - key: service-ca.crt
-                                path: CAs/ca.crt
-                            name: openshift-service-ca.crt
-                            optional: true
-                  - emptyDir: {}
-                    name: tmp
         - label:
             app.kubernetes.io/instance: minio-operator
             app.kubernetes.io/name: operator
