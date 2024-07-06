@@ -15,7 +15,6 @@ complete documentation on the MinIO Operator.
 ## Table of Contents
 
 * [Architecture](#architecture)
-    * [MinIO Console](#minio-console)
     * [MinIO Operator and `kubectl` Plugin](#minio-operator-and-kubectl-plugin)
 * [Deploy the MinIO Operator and Create a Tenant](#deploy-the-minio-operator-and-create-a-tenant)
     * [Prerequisites](#prerequisites)
@@ -30,22 +29,6 @@ MinIO Tenant deployed into Kubernetes:
 ![Tenant Architecture](docs/images/architecture.png)
 
 MinIO provides multiple methods for accessing and managing the MinIO Tenant:
-
-## MinIO Console
-
-The MinIO Console provides a graphical user interface (GUI) for interacting with
-MinIO Tenants. The MinIO Operator installs and configures the Console for each
-tenant by default.
-
-![Console Dashboard](docs/images/console-dashboard.png)
-
-Administrators of MinIO Tenants can perform a variety of tasks through the Console,
-including user creation, policy configuration, and bucket replication. The
-Console also provides a high level view of Tenant health, usage, and healing
-status.
-
-For more complete documentation on using the MinIO Console, see the
-[MinIO Console Github Repository](https://github.com/minio/console).
 
 # Deploy the MinIO Operator and Create a Tenant
 
@@ -75,8 +58,6 @@ for the MinIO Tenant.
 ```sh
 kubectl create namespace minio-tenant
 ```
-
-The MinIO Operator Console supports creating a namespace as part of the Tenant Creation procedure.
 
 ### Tenant Storage Class
 
@@ -255,7 +236,6 @@ Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICE
 - [Examples for MinIO Tenant Settings](https://github.com/minio/operator/blob/master/docs/examples.md)
 - [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md).
 - [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md).
-- [Deploy MinIO Tenant with Console](https://github.com/minio/operator/blob/master/docs/console.md).
-- [Deploy MinIO Tenant with KES](https://github.com/minio/operator/blob/master/docs/kes.md).
+- [Deploy MinIO Tenant with KES](shttps://github.com/minio/operator/blob/master/docs/kes.md).
 - [Tenant API Documentation](docs/tenant_crd.adoc)
 - [Policy Binding API Documentation](docs/policybinding_crd.adoc)
