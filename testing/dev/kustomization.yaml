@@ -3,7 +3,6 @@ kind: Kustomization
 
 
 resources:
-- ../../resources
+  - ../../resources
 patches:
-- path: console-deployment.yaml
-- path: deployment.yaml
+  - path: deployment.yaml

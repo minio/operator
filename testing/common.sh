@@ -499,16 +499,6 @@ function get_latest_operator_version() {
   echo "$version"
 }
 
-# usage: get_console_image
-function get_console_image() {
-  ### NOTE: DON'T PUT ECHO IN BETWEEN BECAUSE THAT IS WHAT WE RETURN AT THE END OF THE FUNCTION
-  if [ -z "$OPERATOR_VERSION" ] || [ "$OPERATOR_VERSION" == "latest" ]; then
-    operator_tag=$(get_latest_operator_version)
-  else
-    operator_tag=$OPERATOR_VERSION
-  fi
-  echo "minio/operator:$operator_tag"
-}
 
 # usage: load_kind_image <image>
 function load_kind_image() {
@@ -522,11 +512,8 @@ function load_kind_image() {
 function load_kind_images() {
     echo "load_kind_images():"
     MINIO_RELEASE=$(get_minio_image_name "latest")
-    CONSOLE_RELEASE=$(get_console_image)
     echo "MINIO_RELEASE: ${MINIO_RELEASE}"
-    echo "CONSOLE_RELEASE: ${CONSOLE_RELEASE}"
     load_kind_image "$MINIO_RELEASE"
-    load_kind_image "$CONSOLE_RELEASE"
 }
 
 function create_restricted_namespace() {
@@ -571,8 +558,6 @@ function install_operator() {
     echo "Change the version accordingly for image to be found within the cluster"
     yq -i '.operator.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.operator.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
-    yq -i '.console.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
-    yq -i '.console.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.operator.env += [{"name": "OPERATOR_SIDECAR_IMAGE", "value": "'$SIDECAR_TAG'"}]' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     echo "Installing Current Operator via HELM"
     create_restricted_namespace minio-operator
@@ -609,9 +594,7 @@ function install_operator() {
     fi
 
     # and then we change the images, no need to have more overlays in different folders.
-    echo "changing images for console and minio-operator deployments"
     try kubectl -n minio-operator set image deployment/minio-operator minio-operator="$TAG"
-    try kubectl -n minio-operator set image deployment/console console="$TAG"
     try kubectl -n minio-operator set env deployment/minio-operator OPERATOR_SIDECAR_IMAGE="$SIDECAR_TAG"
 
     try kubectl -n minio-operator rollout status deployment/minio-operator
