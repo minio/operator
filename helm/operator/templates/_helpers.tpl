@@ -57,25 +57,3 @@ Selector labels Operator
 app.kubernetes.io/name: {{ include "minio-operator.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
-
-{{/*
-Common labels for console
-*/}}
-{{- define "minio-operator.console-labels" -}}
-helm.sh/chart: {{ include "minio-operator.chart" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- range $key, $val := .Values.console.additionalLabels }}
-{{ $key }}: {{ $val | quote }}
-{{- end }}
-{{- end -}}
-
-{{/*
-Selector labels Console
-*/}}
-{{- define "minio-operator.console-selectorLabels" -}}
-app.kubernetes.io/name: {{ include "minio-operator.name" . }}
-app.kubernetes.io/instance: {{ printf "%s-%s" .Release.Name "console" }}
-{{- end -}}
