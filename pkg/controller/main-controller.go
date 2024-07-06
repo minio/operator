@@ -480,30 +480,6 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	go c.recurrentTenantStatusMonitor(stopCh)
 	go c.StartPodInformer(stopCh)
 
-	// 1) we need to make sure we have console TLS certificates (if enabled)
-	if isOperatorConsoleTLS() {
-		klog.Info("Waiting for Console TLS")
-		go func() {
-			if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
-				klog.Infof("Console TLS is enabled, skipping TLS certificate generation on Openshift deployment")
-			} else {
-				klog.Infof("Console TLS is enabled, starting console TLS certificate setup")
-
-				err := c.recreateOperatorConsoleCertsIfRequired(ctx)
-				if err != nil {
-					panic(err)
-				}
-				klog.Infof("Restarting Console pods")
-				err = c.rolloutRestartDeployment(getConsoleDeploymentName())
-				if err != nil {
-					klog.Errorf("Console deployment didn't restart: %s", err)
-				}
-			}
-		}()
-	} else {
-		klog.Infof("Console TLS is not enabled")
-	}
-
 	// 2) we need to make sure we have STS API certificates (if enabled)
 	if IsSTSEnabled() {
 		go func() {
@@ -939,12 +915,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	err = c.checkMinIOSvc(ctx, tenant, nsName)
 	if err != nil {
 		klog.V(2).Infof("error consolidating minio service: %s", err.Error())
-		return WrapResult(Result{}, err)
-	}
-	// Check Console Endpoint Service
-	err = c.checkConsoleSvc(ctx, tenant, nsName)
-	if err != nil {
-		klog.V(2).Infof("error consolidating console service: %s", err.Error())
 		return WrapResult(Result{}, err)
 	}
 
