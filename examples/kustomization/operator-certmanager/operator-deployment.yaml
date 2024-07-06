@@ -9,8 +9,6 @@ spec:
       containers:
         - name: minio-operator
           env:
-            - name: MINIO_CONSOLE_TLS_ENABLE
-              value: "off"
             - name: OPERATOR_STS_AUTO_TLS_ENABLED
               value: "off"
             - name: OPERATOR_STS_ENABLED

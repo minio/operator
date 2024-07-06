@@ -78,9 +78,9 @@ kubectl apply -f selfsigned-root-clusterissuer.yaml
 
 # MinIO Operator services with cert-manager
 
-MinIO Operator manages the TLS certificate issuing for the services hosted in the `minio-operator` namespace. These include Secure Token Service `sts` and the Console `console` service.
+MinIO Operator manages the TLS certificate issuing for the services hosted in the `minio-operator` namespace. That is the Secure Token Service `sts`.
 
-This section describes how to generate the `sts` and `console` TLS certificates with Cert Manager.
+This section describes how to generate the `sts` TLS certificate with Cert Manager.
 These certificates must be issued before installing Operator.
 Be sure to follow step [Create Cluster Self-signed root Issuer](#create-cluster-self-signed-root-issuer) mentioned above.
 
@@ -95,15 +95,6 @@ https://github.com/minio/operator/tree/master/examples/kustomization/sts-example
 For the purpose of this guide, STS Service can be considered a webserver presented with a TLS certificate for https traffic.
 This guide covers how to **disable** the automatic generation of the certificate in MinIO Operator and issue the certificate using
 Cert Manager instead.
-
-## Console service
-
-The console service is the well-known UI provided by Operator, it looks like the image below:
-
-![console-dashboard.png](images%2Fconsole-dashboard.png)
-
-When you install MinIO Operator, by default the Console service comes with TLS disabled. This guide explains
-how to issue the TLS certificate for this service with Cert Manager and enable TLS for https traffic.
 
 ### Create minio-operator namespace CA Issuer
 
@@ -143,7 +134,7 @@ kubectl apply -f operator-ca-tls-secret.yaml
 A new secret with the name `operator-ca-tls` is created in the `minio-operator` namespace, this is the CA issuing TLS certificates for the services in the `minio-operator` namespace.
 
 > [!IMPORTANT]
-> Make sure to trust this certificate in your applications that need to interact with either the `console` or the `sts` service.
+> Make sure to trust this certificate in your applications that need to interact with the `sts` service.
 
 
 Now create the `Issuer`:
@@ -207,57 +198,10 @@ This creates a secret called `sts-tls` in the `minio-operator` namespace.
 > [!IMPORTANT]
 > The secret name is not optional. Make sure the secret name is `sts-tls` by setting `spec.secretName: sts-tls` as in the example above.
 
-### Create TLS certificate for Console service
-
-Request Cert Manager to issue a new certificate including the following DNS domains for console:
-
-```shell
-console
-console.minio-operator.svc.
-console.minio-operator.svc.<cluster domain>
-```
-
-> [!IMPORTANT]
-> Replace `<cluster domain>` with the actual values for your MinIO tenant.
-> `<cluster domain>` is the internal root DNS domain assigned in your Kubernetes cluster. Typically this is `cluster.local`, check on your coredns
-> configuration for the correct value for your Kubernetes cluster. For example, using `kubectl get configmap coredns -n kube-system -o jsonpath="{.data}"`.
-> The way the root DNS domain is managed can vary depending on the Kubernetes distribution (Openshift, Rancher, EKS, etc.)
-
-Create a `Certificate` for the domains mentioned above:
-
-```yaml
-# console-tls-certificate.yaml
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: console-certmanager-cert
-  namespace: minio-operator
-spec:
-  dnsNames:
-    - console
-    - console.minio-operator.svc
-    - console.minio-operator.svc.cluster.local
-  secretName: console-tls
-  issuerRef:
-    name: minio-operator-ca-issuer
-```
-
-```shell
-kubectl apply -f console-tls-certificate.yaml
-```
-
-This creates a secret called `console-tls` in the `minio-operator` namespace.
-
-> [!IMPORTANT]
-> The secret name is not optional. Make sure the secret name is `console-tls` by setting `spec.secretName: console-tls` as in the example above.
-
 ### Install Operator with Auto TLS disabled for STS
 
 When installing the Operator deployment, make sure to set `OPERATOR_STS_AUTO_TLS_ENABLED: off` env variable in the `minio-operator` container. This prevents
 MinIO Operator from issuing the certificate for STS and instead wait for you to provide the TLS certificate issued by Cert Manager.
-
-Also make sure to set `MINIO_CONSOLE_TLS_ENABLE: off` env variable, this prevents MinIO Operator from issuing the certificate for Console
-and instead will expect you to provide the TLS certificate issued by Cert Manager.
 
 > [!WARNING]
 > Missing to provide the secret `sts-tls` containing the TLS certificate or providing an invalid key-pair in the secret will
@@ -286,8 +230,6 @@ patches:
           containers:
             - name: minio-operator
               env:
-                - name: MINIO_CONSOLE_TLS_ENABLE
-                  value: "off"
                 - name: OPERATOR_STS_AUTO_TLS_ENABLED
                   value: "off"
                 - name: OPERATOR_STS_ENABLED
