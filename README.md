@@ -15,7 +15,6 @@ complete documentation on the MinIO Operator.
 ## Table of Contents
 
 * [Architecture](#architecture)
-    * [MinIO Console](#minio-console)
     * [MinIO Operator and `kubectl` Plugin](#minio-operator-and-kubectl-plugin)
 * [Deploy the MinIO Operator and Create a Tenant](#deploy-the-minio-operator-and-create-a-tenant)
     * [Prerequisites](#prerequisites)
@@ -30,22 +29,6 @@ MinIO Tenant deployed into Kubernetes:
 ![Tenant Architecture](docs/images/architecture.png)
 
 MinIO provides multiple methods for accessing and managing the MinIO Tenant:
-
-## MinIO Console
-
-The MinIO Console provides a graphical user interface (GUI) for interacting with
-MinIO Tenants. The MinIO Operator installs and configures the Console for each
-tenant by default.
-
-![Console Dashboard](docs/images/console-dashboard.png)
-
-Administrators of MinIO Tenants can perform a variety of tasks through the Console,
-including user creation, policy configuration, and bucket replication. The
-Console also provides a high level view of Tenant health, usage, and healing
-status.
-
-For more complete documentation on using the MinIO Console, see the
-[MinIO Console Github Repository](https://github.com/minio/console).
 
 # Deploy the MinIO Operator and Create a Tenant
 
@@ -75,8 +58,6 @@ for the MinIO Tenant.
 ```sh
 kubectl create namespace minio-tenant
 ```
-
-The MinIO Operator Console supports creating a namespace as part of the Tenant Creation procedure.
 
 ### Tenant Storage Class
 
@@ -178,95 +159,17 @@ The output resembles the following:
 
 ```sh
 NAME                              READY   STATUS    RESTARTS   AGE
-console-6b6cf8946c-9cj25          1/1     Running   0          99s
 minio-operator-69fd675557-lsrqg   1/1     Running   0          99s
 ```
 
-The `console-*` pod runs the MinIO Operator Console, a graphical user
-interface for creating and managing MinIO Tenants.
-
-The `minio-operator-*` pod runs the MinIO Operator itself.
-
-### 2) Access the Operator Console via NodePort
-
-Get the token:
-
-```sh
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: console-sa-secret
-  namespace: minio-operator
-  annotations:
-    kubernetes.io/service-account.name: console-sa
-type: kubernetes.io/service-account-token
-EOF
-SA_TOKEN=$(kubectl -n minio-operator  get secret console-sa-secret -o jsonpath="{.data.token}" | base64 --decode)
-echo $SA_TOKEN
-```
-
-Change the console service to use NodePort:
-
-```yaml
-spec:
-  ports:
-    - name: http
-      protocol: TCP
-      port: 9090
-      targetPort: 9090
-      nodePort: 30080 <--------------- Using this port in the node
-    - name: https
-      protocol: TCP
-      port: 9443
-      targetPort: 9443
-      nodePort: 30869
-  selector:
-    app: console
-  clusterIP: 10.96.69.150
-  clusterIPs:
-    - 10.96.69.150
-  type: NodePort <-------------------- Using NodePort
-```
-
-Open your browser to the provided address and use the JWT token to log in
-to the Operator Console.
-
-![Operator Console](docs/images/operator-console.png)
-
-Click **+ Create Tenant** to open the Tenant Creation workflow.
-
 ### 3) Build the Tenant Configuration
 
-The Operator Console **Create New Tenant** walkthrough builds out
-a MinIO Tenant. The following list describes the basic configuration sections.
+We provide a variety of examples for creating MinIO Tenants in the `examples` directory. The following example creates a
+4-node MinIO Tenant with 4 volumes per node:
 
-- **Name** - Specify the *Name*, *Namespace*, and *Storage Class* for the new Tenant.
-
-  The *Storage Class* must correspond to a [Storage Class](#default-storage-class) that corresponds
-  to [Local Persistent Volumes](#local-persistent-volumes) that can support the MinIO Tenant.
-
-  The *Namespace* must correspond to an existing [Namespace](#minio-tenant-namespace) that does *not* contain any other
-  MinIO Tenant.
-
-  Enable *Advanced Mode* to access additional advanced configuration options.
-
-- **Tenant Size** - Specify the *Number of Servers*, *Number of Drives per Server*, and *Total Size* of the Tenant.
-
-  The *Resource Allocation* section summarizes the Tenant configuration
-  based on the inputs above.
-
-  Additional configuration inputs may be visible if *Advanced Mode* was enabled
-  in the previous step.
-
-- **Preview Configuration** - summarizes the details of the new Tenant.
-
-After configuring the Tenant to your requirements, click **Create** to create the new tenant.
-
-The Operator Console displays credentials for connecting to the MinIO Tenant. You *must* download and secure these
-credentials at this stage. You cannot trivially retrieve these credentials later.
-
-You can monitor Tenant creation from the Operator Console.
+```yaml
+kubectl apply -k github.com/minio/operator/examples/kustomization/bases
+```
 
 ### 4) Connect to the Tenant
 
@@ -333,7 +236,6 @@ Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICE
 - [Examples for MinIO Tenant Settings](https://github.com/minio/operator/blob/master/docs/examples.md)
 - [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md).
 - [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md).
-- [Deploy MinIO Tenant with Console](https://github.com/minio/operator/blob/master/docs/console.md).
-- [Deploy MinIO Tenant with KES](https://github.com/minio/operator/blob/master/docs/kes.md).
+- [Deploy MinIO Tenant with KES](shttps://github.com/minio/operator/blob/master/docs/kes.md).
 - [Tenant API Documentation](docs/tenant_crd.adoc)
 - [Policy Binding API Documentation](docs/policybinding_crd.adoc)

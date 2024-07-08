@@ -24,8 +24,3 @@ qkltaKyTLRENd4w3IRktYYCRgzpDLPn/nrf7snV/ERO5qcI7fkEES34IVEr+2Uff
 JkO2PfyyAYEO/5dBlPh1Undu9WQl6J7B
 -----END PUBLIC KEY-----`, // https://subnet.min.io/downloads/license-pubkey.pem
 }
-
-const (
-	// SubnetURL url
-	SubnetURL = "CONSOLE_SUBNET_URL"
-)

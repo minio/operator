@@ -6,7 +6,6 @@ resources:
 - ../../../resources
 - operator-ca-tls-secret.yaml
 - sts-tls-certificate.yaml
-- console-tls-certificate.yaml
 - minio-operator-ca-issuer.yaml
 
 patches:

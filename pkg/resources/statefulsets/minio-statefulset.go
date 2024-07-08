@@ -40,7 +40,7 @@ const (
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
-func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte, opVersion string) []corev1.EnvVar {
+func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 	// Enable `mc admin update` style updates to MinIO binaries
 	// within the container, only operator is supposed to perform
@@ -289,7 +289,7 @@ func volumeMounts(t *miniov2.Tenant, pool *miniov2.Pool, certVolumeSources []cor
 }
 
 // Builds the MinIO container for a Tenant.
-func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, pool *miniov2.Pool, hostsTemplate string, opVersion string, certVolumeSources []corev1.VolumeProjection) corev1.Container {
+func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, pool *miniov2.Pool, certVolumeSources []corev1.VolumeProjection) corev1.Container {
 	consolePort := miniov2.ConsolePort
 	if t.TLS() {
 		consolePort = miniov2.ConsoleTLSPort
@@ -342,7 +342,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, pool, certVolumeSources),
 		Args:            args,
-		Env:             minioEnvironmentVars(t, skipEnvVars, opVersion),
+		Env:             minioEnvironmentVars(t, skipEnvVars),
 		Resources:       pool.Resources,
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
@@ -473,8 +473,6 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	pool := args.Pool
 	poolStatus := args.PoolStatus
 	serviceName := args.ServiceName
-	hostsTemplate := args.HostsTemplate
-	operatorVersion := args.OperatorVersion
 
 	var podVolumes []corev1.Volume
 	replicas := pool.Servers
@@ -789,7 +787,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	}
 
 	containers := []corev1.Container{
-		poolMinioServerContainer(t, skipEnvVars, pool, hostsTemplate, operatorVersion, certVolumeSources),
+		poolMinioServerContainer(t, skipEnvVars, pool, certVolumeSources),
 		getSideCarContainer(t, pool),
 	}
 

@@ -21,52 +21,45 @@ export SCRIPT_DIR
 source "${SCRIPT_DIR}/common.sh"
 
 function install_tenants() {
-	echo "Installing tenants"
+  echo "Installing tenants"
 
-	# Install lite & kes tenants
-	try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-lite"
-	try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption"
+  # Install lite & kes tenants
+  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-lite"
+  try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/tenant-kes-encryption"
 
-	echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"
-	waitdone=0
-	totalwait=0
-	while true; do
-	waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=myminio --no-headers | wc -l)
-	if [ "$waitdone" -ne 0 ]; then
-	    echo "Found $waitdone pods"
-	    break
-	fi
-	sleep 5
-	totalwait=$((totalwait + 5))
-	if [ "$totalwait" -gt 300 ]; then
-		echo "Tenant never created statefulset after 5 minutes"
-		try false
-	fi
-	done
+  echo "Waiting for the tenant statefulset, this indicates the tenant is being fulfilled"
+  waitdone=0
+  totalwait=0
+  while true; do
+    waitdone=$(kubectl -n tenant-lite get pods -l v1.min.io/tenant=myminio --no-headers | wc -l)
+    if [ "$waitdone" -ne 0 ]; then
+      echo "Found $waitdone pods"
+      break
+    fi
+    sleep 5
+    totalwait=$((totalwait + 5))
+    if [ "$totalwait" -gt 300 ]; then
+      echo "Tenant never created statefulset after 5 minutes"
+      try false
+    fi
+  done
 
-	echo "Waiting for tenant pods to come online (5m timeout)"
-	try kubectl wait --namespace tenant-lite \
-	--for=condition=ready pod \
-	--selector="v1.min.io/tenant=myminio" \
-	--timeout=300s
+  echo "Waiting for tenant pods to come online (5m timeout)"
+  try kubectl wait --namespace tenant-lite \
+    --for=condition=ready pod \
+    --selector="v1.min.io/tenant=myminio" \
+    --timeout=300s
 
-	echo "Build passes basic tenant creation"
+  echo "Build passes basic tenant creation"
 }
 
-
 function main() {
-	destroy_kind
-	setup_kind
-	install_operator
-	install_tenants
-	check_tenant_status tenant-lite myminio
-	kubectl proxy &
-	# Beginning  Kubernetes 1.24 ----> Service Account Token Secrets are not 
-	# automatically generated, to generate them manually, users must manually
-	# create the secret, for our examples where we lead people to get the JWT
-	# from the console-sa service account, they additionally need to manually
-	# generate the secret via
-	kubectl apply -f "${SCRIPT_DIR}/console-sa-secret.yaml"
+  destroy_kind
+  setup_kind
+  install_operator
+  install_tenants
+  check_tenant_status tenant-lite myminio
+  kubectl proxy &
 }
 
 main "$@"

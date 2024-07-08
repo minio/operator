@@ -12,8 +12,6 @@ spec:
           env:
             - name: MINIO_OPERATOR_RUNTIME
               value: "OpenShift"
-            - name: MINIO_CONSOLE_TLS_ENABLE
-              value: "on"
           volumeMounts:
             - name: openshift-service-ca
               mountPath: /tmp/service-ca

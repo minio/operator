@@ -17,11 +17,6 @@
 package certs
 
 const (
-	// DefaultConsoleConfigDir minio configuration directory where below configuration files/directories are stored.
-	DefaultConsoleConfigDir = ".console"
-
-	// CertsDir Directory contains below files/directories for HTTPS configuration.
-	CertsDir = "certs"
 
 	// CertsCADir Directory contains all CA certificates other than system defaults for HTTPS.
 	CertsCADir = "CAs"

@@ -19,8 +19,6 @@ spec:
           image: minio/operator:noop
           imagePullPolicy: IfNotPresent
           env:
-            - name: MINIO_CONSOLE_TLS_ENABLE
-              value: "off"
             - name: OPERATOR_STS_ENABLED
               value: "on"
           securityContext:

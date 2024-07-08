@@ -17,20 +17,9 @@
 package token
 
 import (
-	"time"
-
 	"github.com/minio/operator/pkg/auth/utils"
 	"github.com/minio/pkg/env"
 )
-
-// GetConsoleSTSDuration returns the default session duration for the STS requested tokens (defaults to 12h)
-func GetConsoleSTSDuration() time.Duration {
-	duration, err := time.ParseDuration(env.Get(STSDuration, "12h"))
-	if err != nil {
-		duration = 12 * time.Hour
-	}
-	return duration
-}
 
 var defaultPBKDFPassphrase = utils.RandomCharString(64)
 

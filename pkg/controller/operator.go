@@ -42,10 +42,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2"
-	k8sscheme "k8s.io/kubectl/pkg/scheme"
 )
 
 const (
@@ -55,8 +52,6 @@ const (
 	OperatorDeploymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
 	OperatorCATLSSecretName = "operator-ca-tls"
-	// OperatorCATLSSecretPrefix is the name of the multi tenant secret for the operator CA
-	OperatorCATLSSecretPrefix = OperatorCATLSSecretName + "-"
 	// OperatorCSRSignerCASecretName is the name of the secret for the signer-ca certificate
 	// this is a copy of the secret signer-ca in namespace
 	OperatorCSRSignerCASecretName = "openshift-csr-signer-ca"
@@ -66,36 +61,9 @@ const (
 	OpenshiftCATLSSecretName = "csr-signer"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
-	// DefaultOperatorImage is the version fo the operator being used
-	DefaultOperatorImage = "minio/operator:v5.0.15"
-	// DefaultOperatorImageEnv is the default image to minio instance
-	DefaultOperatorImageEnv = "MINIO_OPERATOR_IMAGE"
 )
 
 var serverCertsManager *xcerts.Manager
-
-// rolloutRestartDeployment - executes the equivalent to kubectl rollout restart deployment
-func (c *Controller) rolloutRestartDeployment(deployName string) error {
-	ctx := context.Background()
-	namespace := miniov2.GetNSFromFile()
-	deployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, deployName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	if deployment.Spec.Template.ObjectMeta.Annotations == nil {
-		deployment.Spec.Template.ObjectMeta.Annotations = make(map[string]string)
-	}
-	deployment.Spec.Template.ObjectMeta.Annotations["kubectl.kubernetes.io/restartedAt"] = time.Now().Format(time.RFC3339)
-	data, err := runtime.Encode(k8sscheme.Codecs.LegacyCodec(appsv1.SchemeGroupVersion), deployment)
-	if err != nil {
-		return err
-	}
-	_, err2 := c.kubeClientSet.AppsV1().Deployments(namespace).Patch(ctx, deployName, types.StrategicMergePatchType, data, metav1.PatchOptions{FieldManager: "kubectl-rollout"})
-	if err2 != nil {
-		return err2
-	}
-	return nil
-}
 
 func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.Tenant) []*v1.Secret {
 	var userCredentials []*v1.Secret

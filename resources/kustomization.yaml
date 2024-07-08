@@ -16,4 +16,3 @@ resources:
   - base/crds/
   - base/service.yaml
   - base/deployment.yaml
-  - base/console-ui.yaml

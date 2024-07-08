@@ -2,7 +2,7 @@ name: goreleaser
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [ opened, reopened, synchronize ]
     branches:
       - 'release*'
       - 'master'
@@ -24,9 +24,6 @@ jobs:
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Set up swagger
-        run: |
-          go install github.com/go-swagger/go-swagger/cmd/swagger@latest
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:

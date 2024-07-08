@@ -72,20 +72,11 @@ echo "Add files to Community Repo"
 git add operators/minio-operator/$RELEASE
 git restore --staged operators/minio-operator/$RELEASE/metadata/annotations.yaml-e
 rm operators/minio-operator/$RELEASE/metadata/annotations.yaml-e
-git rm operators/minio-operator/$PREVIOUSVERSION/manifests/console-env_v1_configmap.yaml
-git rm operators/minio-operator/$PREVIOUSVERSION/manifests/console-sa-secret_v1_secret.yaml
-git rm operators/minio-operator/$PREVIOUSVERSION/manifests/console_v1_service.yaml
 git rm operators/minio-operator/$PREVIOUSVERSION/manifests/minio-operator.clusterserviceversion.yaml
 git rm operators/minio-operator/$PREVIOUSVERSION/manifests/minio.min.io_tenants.yaml
 git rm operators/minio-operator/$PREVIOUSVERSION/manifests/operator_v1_service.yaml
 git rm operators/minio-operator/$PREVIOUSVERSION/metadata/annotations.yaml
 git rm operators/minio-operator/$PREVIOUSVERSION/metadata/annotations.yaml-e
-
-# To avoid error:
-#   msg: Operator 'minio-operator' is in bundle format, but contains some versions in package manifest format (see above for list). Format mixing in one operator is not supported.
-git rm operators/minio-operator/$PREVIOUSVERSION/manifests/dup0_console_v1_service.yaml
-git rm operators/minio-operator/$PREVIOUSVERSION/manifests/dup1_console-sa-secret_v1_secret.yaml
-git rm operators/minio-operator/$PREVIOUSVERSION/manifests/dup2_console-env_v1_configmap.yaml
 
 echo " "
 echo "Commit the changes"

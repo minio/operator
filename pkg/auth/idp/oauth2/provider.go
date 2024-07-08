@@ -18,7 +18,6 @@ package oauth2
 
 import (
 	"context"
-	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -33,7 +32,6 @@ import (
 	"github.com/minio/minio-go/v7/pkg/set"
 
 	"github.com/minio/operator/pkg/auth/utils"
-	"golang.org/x/crypto/pbkdf2"
 	xoauth2 "golang.org/x/oauth2"
 )
 
@@ -129,12 +127,6 @@ type Provider struct {
 	stsHTTPClient      *http.Client
 }
 
-// DefaultDerivedKey is the key used to compute the HMAC for signing the oauth state parameter
-// its derived using pbkdf on CONSOLE_IDP_HMAC_PASSPHRASE with CONSOLE_IDP_HMAC_SALT
-var DefaultDerivedKey = func() []byte {
-	return pbkdf2.Key([]byte(getPassphraseForIDPHmac()), []byte(getSaltForIDPHmac()), 4096, 32, sha1.New)
-}
-
 const (
 	schemeHTTP  = "http"
 	schemeHTTPS = "https"
@@ -159,69 +151,6 @@ func getLoginCallbackURL(r *http.Request) string {
 }
 
 var requiredResponseTypes = set.CreateStringSet("code")
-
-// NewOauth2ProviderClient instantiates a new oauth2 client using the configured credentials
-// it returns a *Provider object that contains the necessary configuration to initiate an
-// oauth2 authentication flow.
-//
-// We only support Authentication with the Authorization Code Flow - spec:
-// https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth
-func NewOauth2ProviderClient(scopes []string, r *http.Request, httpClient *http.Client) (*Provider, error) {
-	ddoc, err := parseDiscoveryDoc(GetIDPURL(), httpClient)
-	if err != nil {
-		return nil, err
-	}
-
-	supportedResponseTypes := set.NewStringSet()
-	for _, responseType := range ddoc.ResponseTypesSupported {
-		// FIXME: ResponseTypesSupported is a JSON array of strings - it
-		// may not actually have strings with spaces inside them -
-		// making the following code unnecessary.
-		for _, s := range strings.Fields(responseType) {
-			supportedResponseTypes.Add(s)
-		}
-	}
-	isSupported := requiredResponseTypes.Difference(supportedResponseTypes).IsEmpty()
-
-	if !isSupported {
-		return nil, fmt.Errorf("expected 'code' response type - got %s, login not allowed", ddoc.ResponseTypesSupported)
-	}
-
-	// If provided scopes are empty we use a default list or the user configured list
-	if len(scopes) == 0 {
-		scopes = strings.Split(getIDPScopes(), ",")
-	}
-
-	redirectURL := GetIDPCallbackURL()
-
-	if GetIDPCallbackURLDynamic() {
-		// dynamic redirect if set, will generate redirect URLs
-		// dynamically based on incoming requests.
-		redirectURL = getLoginCallbackURL(r)
-	}
-
-	// add "openid" scope always.
-	scopes = append(scopes, "openid")
-
-	client := new(Provider)
-	client.oauth2Config = &xoauth2.Config{
-		ClientID:     GetIDPClientID(),
-		ClientSecret: GetIDPSecret(),
-		RedirectURL:  redirectURL,
-		Endpoint: xoauth2.Endpoint{
-			AuthURL:  ddoc.AuthEndpoint,
-			TokenURL: ddoc.TokenEndpoint,
-		},
-		Scopes: scopes,
-	}
-
-	client.IDPName = GetIDPClientID()
-	client.UserInfo = GetIDPUserInfo()
-	client.provHTTPClient = httpClient
-	client.endSessionEndpoint = ddoc.EndSessionEndpoint
-
-	return client, nil
-}
 
 var defaultScopes = []string{"openid", "profile", "email"}
 

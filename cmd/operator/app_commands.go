@@ -20,5 +20,4 @@ import (
 
 var appCmds = []cli.Command{
 	controllerCmd,
-	uiCmd,
 }

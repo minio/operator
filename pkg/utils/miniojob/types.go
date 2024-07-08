@@ -38,8 +38,6 @@ const (
 	MinioJobName = "job.min.io/job-name"
 	// MinioJobCRName - job cr name
 	MinioJobCRName = "job.min.io/job-cr-name"
-	// CommandFilePath - command file path
-	CommandFilePath = "/temp"
 	// MinioJobPhaseError - error
 	MinioJobPhaseError = "Error"
 	// MinioJobPhaseSuccess - Success
@@ -120,7 +118,7 @@ func (jobCommand *MinIOIntervalJobCommand) Success() bool {
 }
 
 // createJob - create job
-func (jobCommand *MinIOIntervalJobCommand) createJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int) (objs []client.Object) {
+func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client.Client, jobCR *v1alpha1.MinIOJob, stsPort int) (objs []client.Object) {
 	if jobCommand == nil {
 		return nil
 	}
@@ -264,7 +262,7 @@ type MinIOIntervalJob struct {
 }
 
 // GetMinioJobStatus - get job status
-func (intervalJob *MinIOIntervalJob) GetMinioJobStatus(ctx context.Context) v1alpha1.MinIOJobStatus {
+func (intervalJob *MinIOIntervalJob) GetMinioJobStatus(_ context.Context) v1alpha1.MinIOJobStatus {
 	status := v1alpha1.MinIOJobStatus{}
 	failed := false
 	running := false

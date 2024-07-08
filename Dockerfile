@@ -11,7 +11,7 @@ LABEL name="MinIO" \
       maintainer="MinIO Inc <dev@min.io>" \
       version="${TAG}" \
       release="${TAG}" \
-      summary="MinIO Operator brings native support for MinIO, Console, and Encryption to Kubernetes." \
+      summary="MinIO Operator brings native support for MinIO and Encryption to Kubernetes." \
       description="MinIO object storage is fundamentally different. Designed for performance and the S3 API, it is 100% open-source. MinIO is ideal for large, private cloud environments with stringent security requirements and delivers mission-critical availability across a diverse range of workloads."
 
 # On RHEL the certificate bundle is located at:

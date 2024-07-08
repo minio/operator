@@ -172,7 +172,7 @@ type wrapK8sClientCanceledTest struct {
 	client.Client
 }
 
-func (w *wrapK8sClientCanceledTest) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+func (w *wrapK8sClientCanceledTest) Create(_ context.Context, _ client.Object, _ ...client.CreateOption) error {
 	return context.Canceled
 }
 

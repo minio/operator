@@ -93,7 +93,7 @@ func NewJobController(
 	minioJobInformer jobinformers.MinIOJobInformer,
 	jobInformer batchv1.JobInformer,
 	namespacesToWatch set.StringSet,
-	kubeClientSet kubernetes.Interface,
+	_ kubernetes.Interface,
 	recorder record.EventRecorder,
 	workqueue workqueue.RateLimitingInterface,
 	k8sClient client.Client,
@@ -124,7 +124,7 @@ func NewJobController(
 	})
 
 	jobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(old, new interface{}) {
+		UpdateFunc: func(_, new interface{}) {
 			newJob := new.(*batchjobv1.Job)
 			jobName, ok := newJob.Labels[miniojob.MinioJobName]
 			if !ok {

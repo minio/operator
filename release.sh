@@ -18,7 +18,6 @@ MC_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/mc\:)([v]?.*)"/\2/p' pkg/utils/miniojo
 
 files=(
   "README.md"
-  "api/consts.go"
   "pkg/apis/job.min.io/v1alpha1/types.go"
   "docs/tenant_crd.adoc"
   "docs/policybinding_crd.adoc"
@@ -34,10 +33,8 @@ files=(
   "pkg/apis/minio.min.io/v2/constants.go"
   "pkg/controller/operator.go"
   "resources/base/deployment.yaml"
-  "resources/base/console-ui.yaml"
   "testing/console-tenant+kes.sh"
-  "web-app/src/screens/Console/Tenants/AddTenant/Steps/Images.tsx"
-  "web-app/src/screens/Console/Tenants/TenantDetails/TenantEncryption.tsx")
+)
 
 CURRENT_RELEASE=$(get_latest_release minio/operator)
 CURRENT_RELEASE="${CURRENT_RELEASE:1}"

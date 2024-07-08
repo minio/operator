@@ -6,4 +6,3 @@ bases:
 
 patches:
   - path: deployment.yaml
-  - path: console-deployment.yaml
