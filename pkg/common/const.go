@@ -24,3 +24,8 @@ const (
 	WebhookAPIBucketService = WebhookAPIVersion + "/bucketsrv"
 	WebhookAPIUpdate        = WebhookAPIVersion + "/update"
 )
+
+const (
+	// AnnotationsEnvTenantGeneration is the annotation used to store the last configuration generation
+	AnnotationsEnvTenantGeneration = "min.io/env-tenant-generation"
+)

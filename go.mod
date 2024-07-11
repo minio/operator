@@ -39,7 +39,6 @@ require (
 	k8s.io/client-go v0.30.2
 	k8s.io/code-generator v0.30.2
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.30.2
 	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1
 )

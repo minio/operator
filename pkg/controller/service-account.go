@@ -133,6 +133,17 @@ func getTenantRole(tenant *miniov2.Tenant) *rbacv1.Role {
 					"watch",
 				},
 			},
+			{
+				APIGroups: []string{
+					"",
+				},
+				Resources: []string{
+					"pods",
+				},
+				Verbs: []string{
+					"patch",
+				},
+			},
 		},
 	}
 	return &role
