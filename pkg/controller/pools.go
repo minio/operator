@@ -164,7 +164,7 @@ func (c *Controller) waitUntilPoolPodAnnotated(ctx context.Context, tenant *mini
 		if generationMatch {
 			break
 		}
-		err = fmt.Errorf("Not all pods are generation %d", tenant.Generation)
+		err = fmt.Errorf("Not all pods have the same generation number -> %d", tenant.Generation)
 
 	}
 	return err

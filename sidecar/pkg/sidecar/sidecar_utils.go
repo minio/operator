@@ -50,7 +50,7 @@ func init() {
 
 // StartSideCar instantiates kube clients and starts the side-car controller
 func StartSideCar(tenantName string, secretName string) {
-	log.Println("Starting Minio123 Sidecar")
+	log.Println("Starting Sidecar")
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err)
@@ -143,12 +143,10 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 
 	tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(new interface{}) {
-			fmt.Println("new")
 			tenant := new.(*v2.Tenant)
 			c.regenCfg(tenantName, namespace, tenant.Generation)
 		},
 		UpdateFunc: func(old, new interface{}) {
-			fmt.Println("update")
 			oldTenant := old.(*v2.Tenant)
 			newTenant := new.(*v2.Tenant)
 			if newTenant.ResourceVersion == oldTenant.ResourceVersion {
@@ -244,12 +242,12 @@ func (c *Controller) regenCfgWithCfg(tenantName string, namespace string, fileCo
 	if podName != "" && podNamespace != "" {
 		_, err := c.kubeClient.CoreV1().Pods(podNamespace).Patch(ctx, podName, types.MergePatchType, []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"%d"}}}`, common.AnnotationsEnvTenantGeneration, tenantGeneration)), metav1.PatchOptions{})
 		if err != nil {
-			fmt.Printf("failed to patch pod annotations: %s", err)
+			log.Printf("failed to patch pod annotations: %s", err)
 		} else {
-			fmt.Printf("patched pod annotations[%s:%d] succcess", common.AnnotationsEnvTenantGeneration, tenantGeneration)
+			log.Printf("patched pod annotations[%s:%d] succcess", common.AnnotationsEnvTenantGeneration, tenantGeneration)
 		}
 	} else {
-		fmt.Printf("Will not patch for podName[%s] or podNamespace[%s]", podName, podNamespace)
+		log.Printf("Will not patch for podName[%s] or podNamespace[%s]", podName, podNamespace)
 	}
 }
 
