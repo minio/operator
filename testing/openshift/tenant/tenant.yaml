@@ -1,8 +1,0 @@
-apiVersion: minio.min.io/v2
-kind: Tenant
-metadata:
-  name: myminio
-  namespace: minio-tenant
-spec:
-  log:
-    image: quay.io/minio/operator:latest
