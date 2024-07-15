@@ -2,6 +2,19 @@
 
 set -e
 
+# Parse command line arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --release-sidecar)
+            RELEASE_SIDECAR="$2"
+            shift 2
+            ;;
+        *)
+            ;;
+    esac
+    shift
+done
+
 get_latest_release() {
   curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
     grep '"tag_name":' |                                            # Get tag line
@@ -36,7 +49,7 @@ files=(
   "testing/console-tenant+kes.sh"
 )
 
-CURRENT_RELEASE=$(get_latest_release minio/operator)
+CURRENT_RELEASE="v5.0.15"
 CURRENT_RELEASE="${CURRENT_RELEASE:1}"
 
 echo "MinIO: $MINIO_RELEASE"
@@ -67,6 +80,11 @@ done
 
 # Update annotation in kustomization yaml
 sed -i -e "s~operator.min.io/version: .*~operator.min.io/version: v${RELEASE}~g" "resources/kustomization.yaml"
+
+if [ "${RELEASE_SIDECAR}" = "true" ]; then
+
+  sed -i -e 's~quay.io/minio/operator-sidecar:.*\"~quay.io/minio/operator-sidecar:v'$RELEASE'\"~g' "pkg/resources/statefulsets/minio-sidecar.go"
+fi
 
 # Add all the generated files to git
 
