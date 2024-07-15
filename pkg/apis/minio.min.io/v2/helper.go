@@ -111,24 +111,6 @@ func GetPodCAFromFile() []byte {
 	return cert
 }
 
-// GetOpenshiftServiceCAFromFile extracts the service-ca.crt certificate in Openshift deployments coming from configmap openshift-service-ca.crt
-func GetOpenshiftServiceCAFromFile() []byte {
-	cert, err := os.ReadFile("/tmp/service-ca/service-ca.crt")
-	if err != nil {
-		return nil
-	}
-	return cert
-}
-
-// GetOpenshiftCSRSignerCAFromFile extracts the tls.crt certificate in Openshift deployments coming from the mounted secret openshift-csr-signer-ca
-func GetOpenshiftCSRSignerCAFromFile() []byte {
-	cert, err := os.ReadFile(fmt.Sprintf("/tmp/csr-signer-ca/%s", certs.TLSCertFile))
-	if err != nil {
-		return nil
-	}
-	return cert
-}
-
 // GetPublicCertFilePath return the path to the certificate file based for the serviceName
 func GetPublicCertFilePath(serviceName string) string {
 	publicCertPath := fmt.Sprintf("/tmp/%s/%s", serviceName, certs.PublicCertFile)

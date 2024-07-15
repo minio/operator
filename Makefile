@@ -81,9 +81,6 @@ regen-crd-docs:
 generate-code:
 	@./k8s/update-codegen.sh
 
-generate-openshift-manifests:
-	@./olm.sh
-
 helm-reindex:
 	@echo "Re-indexing helm chart release"
 	@./helm-reindex.sh

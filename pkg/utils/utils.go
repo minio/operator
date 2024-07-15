@@ -19,11 +19,7 @@ package utils
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
 	"time"
-
-	"github.com/minio/operator/pkg/common"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,20 +29,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 )
-
-// GetOperatorRuntime Retrieves the runtime from env variable
-func GetOperatorRuntime() common.Runtime {
-	envString := os.Getenv(common.OperatorRuntimeEnv)
-	runtimeReturn := common.OperatorRuntimeK8s
-	if envString != "" {
-		envString = strings.TrimSpace(envString)
-		envString = strings.ToUpper(envString)
-		if val, ok := common.Runtimes[envString]; ok {
-			runtimeReturn = val
-		}
-	}
-	return runtimeReturn
-}
 
 // NewPodInformer creates a Shared Index Pod Informer matching the labelSelector string
 func NewPodInformer(kubeClientSet kubernetes.Interface, labelSelectorString string) cache.SharedIndexInformer {
