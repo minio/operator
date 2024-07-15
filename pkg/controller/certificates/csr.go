@@ -20,9 +20,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/minio/operator/pkg/common"
-	"github.com/minio/operator/pkg/utils"
-
 	certificatesV1 "k8s.io/api/certificates/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
@@ -111,11 +108,6 @@ func GetCSRSignerName(clientSet kubernetes.Interface) string {
 		// only for csr api v1 we will try to detect if we are running inside an EKS cluster and switch to AWS's way to
 		// get certificates using their CSRSignerName https://docs.aws.amazon.com/eks/latest/userguide/cert-signing.html
 		if GetCertificatesAPIVersion(clientSet) == CSRV1 {
-			// if the user specified the EKS runtime, no need to do the check
-			if utils.GetOperatorRuntime() == common.OperatorRuntimeEKS {
-				csrSignerName = EKSCsrSignerName
-				return
-			}
 			nodes, err := clientSet.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 			if err != nil {
 				klog.Infof("Could not retrieve nodes to determine if we are in EKS: %v", err)

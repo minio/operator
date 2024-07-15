@@ -31,14 +31,9 @@ import (
 
 	"github.com/minio/operator/pkg/certs"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"github.com/minio/operator/pkg/common"
-	"github.com/minio/operator/pkg/utils"
 	xcerts "github.com/minio/pkg/certs"
 	"github.com/minio/pkg/env"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,13 +47,6 @@ const (
 	OperatorDeploymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
 	OperatorCATLSSecretName = "operator-ca-tls"
-	// OperatorCSRSignerCASecretName is the name of the secret for the signer-ca certificate
-	// this is a copy of the secret signer-ca in namespace
-	OperatorCSRSignerCASecretName = "openshift-csr-signer-ca"
-	// OpenshiftKubeControllerNamespace is the namespace of kube controller manager operator in Openshift
-	OpenshiftKubeControllerNamespace = "openshift-kube-controller-manager-operator"
-	// OpenshiftCATLSSecretName is the secret name of the CRD's signer in kubernetes under  OpenshiftKubeControllerNamespace namespace
-	OpenshiftCATLSSecretName = "csr-signer"
 	// DefaultDeploymentName is the default name of the operator deployment
 	DefaultDeploymentName = "minio-operator"
 )
@@ -122,17 +110,6 @@ func (c *Controller) fetchTransportCACertificates() (pool *x509.CertPool) {
 	rootCAs := miniov2.MustGetSystemCertPool()
 	// Default kubernetes CA certificate
 	rootCAs.AppendCertsFromPEM(miniov2.GetPodCAFromFile())
-
-	if utils.GetOperatorRuntime() == common.OperatorRuntimeOpenshift {
-		// Openshift Service CA certificate
-		if serviceCA := miniov2.GetOpenshiftServiceCAFromFile(); serviceCA != nil {
-			rootCAs.AppendCertsFromPEM(serviceCA)
-		}
-		// Openshift csr-signer CA certificate
-		if cert := miniov2.GetOpenshiftCSRSignerCAFromFile(); cert != nil {
-			rootCAs.AppendCertsFromPEM(cert)
-		}
-	}
 
 	// Append all external Certificate Authorities added to Operator, secrets with prefix "operator-ca-tls"
 	secretsAvailableAtOperatorNS, _ := c.kubeClientSet.CoreV1().Secrets(miniov2.GetNSFromFile()).List(context.Background(), metav1.ListOptions{})
@@ -262,115 +239,6 @@ func (c *Controller) addTLSCertificatesToTrustInTransport(certificateData []byte
 	}
 	for _, cert := range x509Certs {
 		c.getTransport().TLSClientConfig.RootCAs.AddCert(cert)
-	}
-	return nil
-}
-
-// GetSignerCAFromSecret Retrieves the CA certificate for Openshift CSR signed certificates from
-// openshift-kube-controller-manager-operator namespace
-func (c *Controller) GetSignerCAFromSecret() ([]byte, error) {
-	var caCertificate []byte
-	openShiftCATLSCertSecret, err := c.kubeClientSet.CoreV1().Secrets(OpenshiftKubeControllerNamespace).Get(
-		context.Background(), OpenshiftCATLSSecretName, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil, fmt.Errorf("%s secret in %s wasn't found", OpenshiftCATLSSecretName, OpenshiftKubeControllerNamespace)
-		}
-		return nil, fmt.Errorf("%s secret was found but we failed to load the secret: %#v", OpenshiftCATLSSecretName, err)
-	} else if openShiftCATLSCertSecret != nil {
-		if val, ok := openShiftCATLSCertSecret.Data[certs.TLSCertFile]; ok {
-			caCertificate = val
-		}
-	}
-	return caCertificate, nil
-}
-
-// GetOpenshiftCSRSignerCAFromSecret loads the tls certificate in openshift-csr-signer-ca secret in operator namespace
-func (c *Controller) GetOpenshiftCSRSignerCAFromSecret() ([]byte, error) {
-	var caCertificate []byte
-	operatorNamespace := miniov2.GetNSFromFile()
-	openShifCSRSignerCATLSCertSecret, err := c.kubeClientSet.CoreV1().Secrets(operatorNamespace).Get(
-		context.Background(), OperatorCSRSignerCASecretName, metav1.GetOptions{})
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			return nil, fmt.Errorf("%s secret wasn't found, Skip load the certificate", OperatorCSRSignerCASecretName)
-		}
-		// Lack of permissions to read the secret
-		return nil, fmt.Errorf("%s secret was found but we failed to get certificate: %#v", OperatorCSRSignerCASecretName, err)
-	} else if openShifCSRSignerCATLSCertSecret != nil {
-		// When secret was obtained with no errors
-		if val, ok := openShifCSRSignerCATLSCertSecret.Data[certs.TLSCertFile]; ok {
-			// OpenShift csr-signer secret has tls.crt certificates that we need to append in order
-			// to trust the signer. If we append the val, Operator will be able to provisioning the
-			// initial users and get Tenant Health, so tenant can be properly initialized and in
-			// green status, otherwise if we don't append it, it will get stuck and expose this
-			// issue in the log:
-			// Failed to get cluster health: Get "https://minio.tenant-lite.svc.cluster.local/minio/health/cluster":
-			// x509: certificate signed by unknown authority
-			caCertificate = val
-		}
-	}
-	return caCertificate, nil
-}
-
-// checkOpenshiftSignerCACertInOperatorNamespace checks if csr-signer secret in openshift changed and updates or create
-// a copy of the secret in operator namespace
-func (c *Controller) checkOpenshiftSignerCACertInOperatorNamespace(ctx context.Context) error {
-	// get the current certificate from openshift
-	csrSignerCertificate, err := c.GetSignerCAFromSecret()
-	if err != nil {
-		return err
-	}
-	namespace := miniov2.GetNSFromFile()
-	// get openshift-csr-signer-ca secret in minio-operator namespace
-	csrSignerSecret, err := c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, OperatorCSRSignerCASecretName, metav1.GetOptions{})
-	if err != nil {
-		// if csrSignerCa doesnt exists create it
-		if k8serrors.IsNotFound(err) {
-			klog.Infof("'%s/%s' secret is missing, creating", namespace, OperatorCSRSignerCASecretName)
-			operatorDeployment, err := c.kubeClientSet.AppsV1().Deployments(namespace).Get(ctx, getOperatorDeploymentName(), metav1.GetOptions{})
-			if err != nil {
-				return err
-			}
-
-			ownerReference := metav1.OwnerReference{
-				APIVersion: appsv1.SchemeGroupVersion.Version,
-				Kind:       "Deployment",
-				Name:       operatorDeployment.Name,
-				UID:        operatorDeployment.UID,
-			}
-
-			csrSignerSecret := &v1.Secret{
-				Type: "Opaque",
-				ObjectMeta: metav1.ObjectMeta{
-					Name:            OperatorCSRSignerCASecretName,
-					Namespace:       miniov2.GetNSFromFile(),
-					OwnerReferences: []metav1.OwnerReference{ownerReference},
-				},
-				Data: map[string][]byte{
-					certs.TLSCertFile: csrSignerCertificate,
-				},
-			}
-			_, err = c.kubeClientSet.CoreV1().Secrets(namespace).Create(ctx, csrSignerSecret, metav1.CreateOptions{})
-			if err != nil {
-				return err
-			}
-			// Add the CA certificate to the trusted Root CA's
-			c.trustPEMInSecretField(csrSignerSecret, certs.TLSCertFile)
-			return nil
-		}
-		return err
-	}
-
-	if caCert, ok := csrSignerSecret.Data[certs.TLSCertFile]; ok && !bytes.Equal(caCert, csrSignerCertificate) {
-		csrSignerSecret.Data[certs.TLSCertFile] = csrSignerCertificate
-		_, err = c.kubeClientSet.CoreV1().Secrets(namespace).Update(ctx, csrSignerSecret, metav1.UpdateOptions{})
-		if err != nil {
-			return err
-		}
-		klog.Infof("'%s/%s' secret changed, updated '%s/%s' secret", OpenshiftKubeControllerNamespace, OpenshiftCATLSSecretName, namespace, OperatorCSRSignerCASecretName)
-		// Add the CA certificate to the trusted Root CA's
-		c.trustPEMInSecretField(csrSignerSecret, certs.TLSCertFile)
 	}
 	return nil
 }

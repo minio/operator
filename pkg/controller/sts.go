@@ -415,8 +415,3 @@ func IsSTSAutocertEnabled() bool {
 func (c *Controller) generateSTSTLSCert() (*string, *string) {
 	return c.generateTLSCertificateForService("sts", STSTLSSecretName, getOperatorDeploymentName())
 }
-
-// waitSTSTLSCert Waits for the Operator leader to issue the TLS Certificate for STS
-func (c *Controller) waitSTSTLSCert() (string, string) {
-	return c.waitForCertSecretReady("sts", STSTLSSecretName)
-}
