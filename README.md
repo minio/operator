@@ -146,7 +146,7 @@ for [kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kusto
 use that to install MiniO Operator.
 
 ```sh
-kubectl kustomize github.com/minio/operator\?ref=v5.0.15
+kubectl kustomize github.com/minio/operator\?ref=v6.0.0
 ```
 
 Run the following command to verify the status of the Operator:
