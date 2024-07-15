@@ -416,8 +416,7 @@ func (c *Controller) startUpgradeServer() <-chan error {
 func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel chan<- *EventNotification) {
 	klog.Infof("Starting STS API server")
 
-	publicCertPath := miniov2.GetPublicCertFilePath("sts")
-	privateKeyPath := miniov2.GetPrivateKeyFilePath("sts")
+	publicCertPath, privateKeyPath := c.waitSTSTLSCert()
 	certsManager, err := xcerts.NewManager(ctx, publicCertPath, privateKeyPath, LoadX509KeyPair)
 	if err != nil {
 		klog.Errorf("HTTPS STS API server failed to load certificate: %v", err)

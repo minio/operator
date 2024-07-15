@@ -41,6 +41,35 @@ import (
 	"k8s.io/klog/v2"
 )
 
+// waitForCertSecretReady Function designed to run in a non-leader operator container to wait for the leader to issue a TLS certificate
+func (c *Controller) waitForCertSecretReady(serviceName string, secretName string) (string, string) {
+	ctx := context.Background()
+	namespace := miniov2.GetNSFromFile()
+	var publicCertPath, publicKeyPath string
+
+	for {
+		tlsCertSecret, err := c.getCertificateSecret(ctx, namespace, secretName)
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				klog.Infof("Waiting for the %s certificates secret to be issued", serviceName)
+				time.Sleep(time.Second * 10)
+			} else {
+				klog.Infof(err.Error())
+			}
+		} else {
+			publicCertPath, publicKeyPath = c.writeCertSecretToFile(tlsCertSecret, serviceName)
+			break
+		}
+	}
+
+	// validate certificates if they are valid, if not panic right here.
+	if _, err := tls.LoadX509KeyPair(publicCertPath, publicKeyPath); err != nil {
+		panic(err)
+	}
+
+	return publicCertPath, publicKeyPath
+}
+
 // getCertificateSecret gets a TLS Certificate secret
 func (c *Controller) getCertificateSecret(ctx context.Context, namespace string, secretName string) (*corev1.Secret, error) {
 	return c.kubeClientSet.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
