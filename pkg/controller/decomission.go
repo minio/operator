@@ -90,7 +90,8 @@ func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, t
 		// This means we are attempting to remove a "pool", perhaps after a decommission event.
 		var poolNamesRemoved []string
 		var initializedPool miniov2.Pool
-		for i, pstatus := range tenant.Status.Pools {
+		var poolStatus []miniov2.PoolStatus
+		for _, pstatus := range tenant.Status.Pools {
 			var found bool
 			for _, pool := range tenant.Spec.Pools {
 				if pstatus.SSName == tenant.PoolStatefulsetName(&pool) {
@@ -103,9 +104,11 @@ func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, t
 			}
 			if !found {
 				poolNamesRemoved = append(poolNamesRemoved, pstatus.SSName)
-				tenant.Status.Pools = append(tenant.Status.Pools[:i], tenant.Status.Pools[i+1:]...)
+			} else {
+				poolStatus = append(poolStatus, *pstatus.DeepCopy())
 			}
 		}
+		tenant.Status.Pools = poolStatus
 
 		var restarted bool
 		// Only restart if there is an initialized pool to fetch the new args.
