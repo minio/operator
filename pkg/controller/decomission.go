@@ -99,7 +99,7 @@ func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, t
 					if pstatus.State == miniov2.PoolInitialized {
 						initializedPool = pool
 					}
-					continue
+					break
 				}
 			}
 			if !found {
