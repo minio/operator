@@ -4,4 +4,5 @@ metadata:
   name: tenant-certmanager-issuer
   namespace: tenant-certmanager
 spec:
-  selfSigned: { }
+  ca:
+    secretName: tenant-certmanager-ca-tls
