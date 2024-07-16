@@ -45,7 +45,7 @@ func (c *Controller) getTenantConfiguration(ctx context.Context, tenant *miniov2
 	return tenantConfiguration, nil
 }
 
-// getTenantCredentials returns a combination of env, credsSecret and Configuration tenant credentials
+// getTenantCredentials returns a combination of env and Configuration tenant credentials
 func (c *Controller) getTenantCredentials(ctx context.Context, tenant *miniov2.Tenant) (map[string][]byte, error) {
 	// Configuration for tenant can be passed using 2 different sources, tenant.spec.env and config.env secret
 	// If the user provides duplicated configuration the override order will be:

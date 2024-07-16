@@ -882,13 +882,6 @@ spec:
                     type: string
                 type: object
                 x-kubernetes-map-type: atomic
-              credsSecret:
-                properties:
-                  name:
-                    default: ""
-                    type: string
-                type: object
-                x-kubernetes-map-type: atomic
               env:
                 items:
                   properties:

@@ -637,11 +637,6 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		}
 	}
 	out.ImagePullSecret = in.ImagePullSecret
-	if in.CredsSecret != nil {
-		in, out := &in.CredsSecret, &out.CredsSecret
-		*out = new(v1.LocalObjectReference)
-		**out = **in
-	}
 	if in.Env != nil {
 		in, out := &in.Env, &out.Env
 		*out = make([]v1.EnvVar, len(*in))

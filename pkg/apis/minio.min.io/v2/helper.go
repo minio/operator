@@ -138,12 +138,6 @@ func genEllipsis(start, end int) string {
 	return "{" + strconv.Itoa(start) + "..." + strconv.Itoa(end) + "}"
 }
 
-// HasCredsSecret returns true if the user has provided a secret
-// for a Tenant else false
-func (t *Tenant) HasCredsSecret() bool {
-	return t.Spec.CredsSecret != nil && t.Spec.CredsSecret.Name != ""
-}
-
 // HasConfigurationSecret returns true if the user has provided a configuration
 // for a Tenant else false
 func (t *Tenant) HasConfigurationSecret() bool {
@@ -824,7 +818,7 @@ func (t *Tenant) Validate() error {
 		return errors.New("pools must be configured")
 	}
 
-	if !t.HasConfigurationSecret() && !t.HasCredsSecret() {
+	if !t.HasConfigurationSecret() {
 		return errors.New("please set 'configuration' secret with credentials for Tenant")
 	}
 

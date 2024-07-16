@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/minio/operator/pkg/controller/legacy"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/blang/semver/v4"
@@ -62,7 +61,6 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		version424: c.upgrade424,
 		version429: c.upgrade429,
 		version430: c.upgrade430,
-		version45:  c.upgrade45,
 		version500: c.upgrade500,
 		version600: c.upgrade600,
 	}
@@ -265,67 +263,7 @@ func (c *Controller) upgrade430(ctx context.Context, tenant *miniov2.Tenant) (*m
 	return c.updateTenantSyncVersion(ctx, tenant, version430)
 }
 
-// Upgrades the sync version to v4.5
-// in this version we finally deprecated tenant.spec.credsSecret field.
-func (c *Controller) upgrade45(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
-	if tenant.HasConfigurationSecret() {
-		return c.updateTenantSyncVersion(ctx, tenant, version45)
-	}
-	if !tenant.HasCredsSecret() {
-		return tenant, fmt.Errorf("'%s/%s' error migrating tenant credsSecret, credsSecret does not exist", tenant.Namespace, tenant.Name)
-	}
-	// Create new configuration secret based on the existing credsSecret
-	credsSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, tenant.Spec.CredsSecret.Name, metav1.GetOptions{})
-	if err != nil && !k8serrors.IsNotFound(err) {
-		return tenant, err
-	}
-	var accessKey string
-	var secretKey string
-	if _, ok := credsSecret.Data["accesskey"]; ok {
-		accessKey = string(credsSecret.Data["accesskey"])
-	}
-	if _, ok := credsSecret.Data["secretkey"]; ok {
-		secretKey = string(credsSecret.Data["secretkey"])
-	}
-	if accessKey == "" || secretKey == "" {
-		return tenant, fmt.Errorf("accessKey/secretKey are empty - '%s/%s' error in migrating tenant credsSecret to newer configuration", tenant.Namespace, tenant.Name)
-	}
-	tenantConfiguration := map[string]string{}
-	tenantConfiguration["MINIO_ROOT_USER"] = accessKey
-	tenantConfiguration["MINIO_ROOT_PASSWORD"] = secretKey
-	configurationSecret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      tenant.ConfigurationSecretName(),
-			Namespace: tenant.Namespace,
-		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: corev1.SchemeGroupVersion.Version,
-		},
-		Data: map[string][]byte{
-			"config.env": []byte(miniov2.GenerateTenantConfigurationFile(tenantConfiguration)),
-		},
-	}
-	_, err = c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Create(ctx, configurationSecret, metav1.CreateOptions{})
-	if err != nil {
-		return tenant, err
-	}
-	// Update tenant fields
-	tenantCopy := tenant.DeepCopy()
-	tenantCopy.EnsureDefaults()
-	tenantCopy.Spec.Configuration = &corev1.LocalObjectReference{
-		Name: tenantCopy.ConfigurationSecretName(),
-	}
-	tenantCopy.Spec.CredsSecret = nil
-	_, err = c.minioClientSet.MinioV2().Tenants(tenant.Namespace).Update(ctx, tenantCopy, metav1.UpdateOptions{})
-	if err != nil {
-		return tenant, fmt.Errorf("error updating tenant '%s/%s', could not update tenant.spec.configuration field: %v", tenant.Namespace, tenant.Name, err)
-	}
-	return c.updateTenantSyncVersion(ctx, tenant, version45)
-}
-
 // Upgrades the sync version to v5.0.0
-// in this version we finally deprecated tenant.spec.credsSecret field.
 func (c *Controller) upgrade500(ctx context.Context, tenant *miniov2.Tenant) (*miniov2.Tenant, error) {
 	// log search deployment
 	logSearchDeployment, err := c.deploymentLister.Deployments(tenant.Namespace).Get(legacy.LogSearchAPIDeploymentName(tenant))
