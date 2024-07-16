@@ -43,8 +43,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 
-	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
-
 	"golang.org/x/time/rate"
 
 	// Workaround for auth import issues refer https://github.com/minio/operator/issues/283
@@ -1202,8 +1200,15 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		}
 
 		for i, pool := range tenant.Spec.Pools {
+			ssName := tenant.PoolStatefulsetName(&pool)
+			existingStatefulSet, err := c.statefulSetLister.StatefulSets(tenant.Namespace).Get(ssName)
+			if k8serrors.IsNotFound(err) {
+				klog.Errorf("%s's pool %s doesn't exist: %v", tenant.Name, ssName, err)
+				return WrapResult(Result{}, err)
+			}
+
 			// Now proceed to make the yaml changes for the tenant statefulset.
-			ss := statefulsets.NewPool(&statefulsets.NewPoolArgs{
+			expectedStatefulSet := statefulsets.NewPool(&statefulsets.NewPoolArgs{
 				Tenant:          tenant,
 				SkipEnvVars:     skipEnvVars,
 				Pool:            &pool,
@@ -1212,7 +1217,9 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 				HostsTemplate:   c.hostsTemplate,
 				OperatorVersion: c.operatorVersion,
 			})
-			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, ss, uOpts); err != nil {
+
+			newStatefulSet := statefulsets.UpdateStatefulSetSpec(existingStatefulSet, expectedStatefulSet)
+			if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, newStatefulSet, uOpts); err != nil {
 				return WrapResult(Result{}, err)
 			}
 			c.recorder.Event(tenant, corev1.EventTypeNormal, "PoolUpdated", fmt.Sprintf("Tenant pool %s updated", pool.Name))
@@ -1274,24 +1281,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		}
 		// if the pool doesn't match the spec
 		if !poolMatchesSS {
-			// for legacy reasons, if the zone label is present in SS we must carry it over
-			carryOverLabels := make(map[string]string)
-			if val, ok := existingStatefulSet.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
-				carryOverLabels[miniov1.ZoneLabel] = val
-			}
-
-			newStatefulSet := existingStatefulSet.DeepCopy()
-
-			newStatefulSet.Spec.Template = expectedStatefulSet.Spec.Template
-			newStatefulSet.Spec.UpdateStrategy = expectedStatefulSet.Spec.UpdateStrategy
-
-			if existingStatefulSet.Spec.Template.ObjectMeta.Labels == nil {
-				newStatefulSet.Spec.Template.ObjectMeta.Labels = make(map[string]string)
-			}
-			for k, v := range carryOverLabels {
-				newStatefulSet.Spec.Template.ObjectMeta.Labels[k] = v
-			}
-
+			newStatefulSet := statefulsets.UpdateStatefulSetSpec(existingStatefulSet, expectedStatefulSet)
 			if existingStatefulSet, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Update(ctx, newStatefulSet, uOpts); err != nil {
 				klog.Errorf("[Will try again in 5sec] Update tenant %s statefulset %s error %s", tenant.Name, ssName, err)
 				return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)

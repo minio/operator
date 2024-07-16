@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 
+	miniov1 "github.com/minio/operator/pkg/apis/minio.min.io/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/minio/operator/pkg/certs"
@@ -946,4 +947,36 @@ func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container
 		sidecarContainer.VolumeMounts = append(sidecarContainer.VolumeMounts, TmpCfgVolumeMount)
 	}
 	return sidecarContainer
+}
+
+// UpdateStatefulSetSpec updates the spec of an existing StatefulSet with the spec of the expected StatefulSet.
+// It only updates the fields that are allowed to be updated in Kubernetes StatefulSets, which include `replicas`,
+// `ordinals`, `template`, `updateStrategy`, `persistentVolumeClaimRetentionPolicy`, and `minReadySeconds`. Additionally,
+// it ensures that specific legacy labels, such as the zone label, are carried over to the new spec.
+//
+// Parameters:
+// - existingStatefulSet: The current StatefulSet object.
+// - expectedStatefulSet: The desired StatefulSet object with the updated spec.
+//
+// Returns:
+// - A new StatefulSet object with the updated spec and preserved legacy labels.
+func UpdateStatefulSetSpec(existingStatefulSet *appsv1.StatefulSet, expectedStatefulSet *appsv1.StatefulSet) *appsv1.StatefulSet {
+	// for legacy reasons, if the zone label is present in SS we must carry it over
+	carryOverLabels := make(map[string]string)
+	if val, ok := existingStatefulSet.Spec.Template.ObjectMeta.Labels[miniov1.ZoneLabel]; ok {
+		carryOverLabels[miniov1.ZoneLabel] = val
+	}
+
+	newStatefulSet := existingStatefulSet.DeepCopy()
+
+	newStatefulSet.Spec.Template = expectedStatefulSet.Spec.Template
+	newStatefulSet.Spec.UpdateStrategy = expectedStatefulSet.Spec.UpdateStrategy
+
+	if existingStatefulSet.Spec.Template.ObjectMeta.Labels == nil {
+		newStatefulSet.Spec.Template.ObjectMeta.Labels = make(map[string]string)
+	}
+	for k, v := range carryOverLabels {
+		newStatefulSet.Spec.Template.ObjectMeta.Labels[k] = v
+	}
+	return newStatefulSet
 }
