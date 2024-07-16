@@ -915,18 +915,6 @@ Specify the secret key to use for pulling images from a private Docker repositor
 
 Pod Management Policy for pod created by StatefulSet
 
-|*`credsSecret`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$]__ 
-|*optional* +
-
-
-Specify a https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secret] to use for setting the MinIO root access key and secret key. Specify the secret as `name: <secret>`. The Kubernetes secret must contain the following fields: +
-
-
-* `data.accesskey` - The access key for the root credentials +
-
-
-* `data.secretkey` - The secret key for the root credentials +
-
 |*`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#envvar-v1-core[$$EnvVar$$] array__ 
 |*Optional* +
 
