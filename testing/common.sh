@@ -577,7 +577,7 @@ function install_operator() {
     value=minio-operator
   elif [ "$1" = "certmanager" ]; then
     echo "Installing Current Operator with certmanager"
-    try kubectl apply -k "${SCRIPT_DIR}/../examples/kustomization/operator-certmanager"
+    try kubectl apply -k "${SCRIPT_DIR}/../testing/certmanager/operator"
     echo "key, value for pod selector in kustomize test"
     key=name
     value=minio-operator
