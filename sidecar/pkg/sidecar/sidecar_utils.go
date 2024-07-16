@@ -50,7 +50,7 @@ func init() {
 
 // StartSideCar instantiates kube clients and starts the side-car controller
 func StartSideCar(tenantName string, secretName string) {
-	log.Println("Starting Sidecar")
+	klog.Infoln("Starting Sidecar")
 	cfg, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err)
@@ -70,7 +70,7 @@ func StartSideCar(tenantName string, secretName string) {
 	// get the only tenant in this namespace
 	tenant, err := controllerClient.MinioV2().Tenants(namespace).Get(context.Background(), tenantName, metav1.GetOptions{})
 	if err != nil {
-		log.Fatal(err)
+		klog.Fatal(err)
 	}
 
 	tenant.EnsureDefaults()
@@ -165,7 +165,7 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 			if oldSecret.Name != secretName {
 				return
 			}
-			log.Printf("Config secret '%s' sync", secretName)
+			klog.Infof("Config secret '%s' sync", secretName)
 			newSecret := new.(*corev1.Secret)
 			if newSecret.ResourceVersion == oldSecret.ResourceVersion {
 				// Periodic resync will send update events for all known Tenants.
@@ -191,8 +191,8 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 				rootPwdFound = true
 			}
 			if !rootUserFound || !rootPwdFound {
-				log.Println("Missing root credentials in the configuration.")
-				log.Println("MinIO won't start")
+				klog.Errorln("Missing root credentials in the configuration.")
+				klog.Errorln("MinIO won't start")
 				os.Exit(1)
 			}
 
@@ -209,12 +209,12 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 func (c *Controller) regenCfg(tenantName string, namespace string, tenantGeneration int64) {
 	rootUserFound, rootPwdFound, fileContents, err := validator.ReadTmpConfig()
 	if err != nil {
-		log.Println(err)
+		klog.Errorln(err)
 		return
 	}
 	if !rootUserFound || !rootPwdFound {
-		log.Println("Missing root credentials in the configuration.")
-		log.Println("MinIO won't start")
+		klog.Errorln("Missing root credentials in the configuration.")
+		klog.Errorln("MinIO won't start")
 		os.Exit(1)
 	}
 	c.regenCfgWithCfg(tenantName, namespace, fileContents, tenantGeneration)
@@ -225,7 +225,7 @@ func (c *Controller) regenCfgWithCfg(tenantName string, namespace string, fileCo
 
 	tenant, err := c.controllerClient.MinioV2().Tenants(namespace).Get(ctx, tenantName, metav1.GetOptions{})
 	if err != nil {
-		log.Println("could not get tenant", err)
+		klog.Errorln("could not get tenant", err)
 		return
 	}
 	tenant.EnsureDefaults()
@@ -234,7 +234,7 @@ func (c *Controller) regenCfgWithCfg(tenantName string, namespace string, fileCo
 
 	err = os.WriteFile(v2.CfgFile, []byte(fileContents), 0o644)
 	if err != nil {
-		log.Println(err)
+		klog.Errorln(err)
 	}
 	// patch pod annotations
 	podName := os.Getenv("POD_NAME")
@@ -242,12 +242,12 @@ func (c *Controller) regenCfgWithCfg(tenantName string, namespace string, fileCo
 	if podName != "" && podNamespace != "" {
 		_, err := c.kubeClient.CoreV1().Pods(podNamespace).Patch(ctx, podName, types.MergePatchType, []byte(fmt.Sprintf(`{"metadata":{"annotations":{"%s":"%d"}}}`, common.AnnotationsEnvTenantGeneration, tenantGeneration)), metav1.PatchOptions{})
 		if err != nil {
-			log.Printf("failed to patch pod annotations: %s", err)
+			klog.Errorf("failed to patch pod annotations: %s", err)
 		} else {
-			log.Printf("patched pod annotations[%s:%d] succcess", common.AnnotationsEnvTenantGeneration, tenantGeneration)
+			klog.Infof("patched pod annotations[%s:%d] succcess", common.AnnotationsEnvTenantGeneration, tenantGeneration)
 		}
 	} else {
-		log.Printf("Will not patch for podName[%s] or podNamespace[%s]", podName, podNamespace)
+		klog.Infof("Will not patch for podName[%s] or podNamespace[%s]", podName, podNamespace)
 	}
 }
 
