@@ -80,7 +80,7 @@ func configureProbesServer(c *Controller, tenantTLS bool) *http.Server {
 }
 
 // we do insecure skip verify because we are checking against the local instance and don't care for the certificate
-var probeHttpClient = &http.Client{
+var probeHTTPClient = &http.Client{
 	Timeout: time.Millisecond * 500,
 	Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -101,7 +101,7 @@ func readinessHandler(tenantTLS bool) func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		response, err := probeHttpClient.Do(request)
+		response, err := probeHTTPClient.Do(request)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("HTTP request failed: %s", err), http.StatusInternalServerError)
 			return
