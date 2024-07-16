@@ -812,7 +812,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// Set any required default values and init Global variables
 	nsName := types.NamespacedName{Namespace: namespace, Name: tenantName}
 
-	// get combined configurations (tenant.env, tenant.credsSecret and tenant.Configuration) for tenant
+	// get combined configurations (tenant.env and tenant.Configuration) for tenant
 	tenantConfiguration, err := c.getTenantCredentials(ctx, tenant)
 	if err != nil {
 		if errors.Is(err, ErrEmptyRootCredentials) {

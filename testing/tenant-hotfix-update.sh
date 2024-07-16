@@ -103,6 +103,17 @@ function install_tenant_with_image() {
 	fi
 	kustomize build "${SCRIPT_DIR}/../examples/kustomization/tenant-lite" > tenant-lite.yaml
 	yq -i e "select(.kind == \"Tenant\").spec.image = \"${minio_image}\"" tenant-lite.yaml
+   
+	echo "#################"
+    echo "tenant-lite.yaml:"
+	echo "#################"
+	echo " "
+	echo " "
+	echo " "
+    cat tenant-lite.yaml
+	echo " "
+	echo " "
+	echo " "
 
 	try kubectl apply -f tenant-lite.yaml
 }
