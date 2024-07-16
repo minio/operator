@@ -19,6 +19,7 @@ package sidecar
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -78,6 +79,14 @@ func configureProbesServer(c *Controller, tenantTLS bool) *http.Server {
 	return s
 }
 
+// we do insecure skip verify because we are checking against the local instance and don't care for the certificate
+var probeHttpClient = &http.Client{
+	Timeout: time.Millisecond * 500,
+	Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	},
+}
+
 func readinessHandler(tenantTLS bool) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		schema := "https"
@@ -92,21 +101,13 @@ func readinessHandler(tenantTLS bool) func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		// we do insecure skip verify because we are checking against the local instance and don't care for the
-		// certificate
-		client := &http.Client{
-			Timeout: time.Millisecond * 500,
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
-		}
-
-		response, err := client.Do(request)
+		response, err := probeHttpClient.Do(request)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("HTTP request failed: %s", err), http.StatusInternalServerError)
 			return
 		}
 		defer response.Body.Close()
+		_, _ = io.Copy(io.Discard, response.Body) // Discard body to enable connection reuse
 
 		if response.StatusCode == 403 {
 			fmt.Fprintln(w, "Readiness probe succeeded.")
