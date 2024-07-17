@@ -14,8 +14,6 @@ release:
 before:
   hooks:
     - make clean
-    - go mod tidy -compat=1.21.8
-    - go mod download
 
 builds:
   - id: minio-operator-sidecar
@@ -31,7 +29,7 @@ builds:
     binary: minio-operator-sidecar
     main: ./cmd/sidecar/
     ldflags:
-      - -s -w -X github.com/minio/operator/pkg.ReleaseTag={{.Tag}} -X github.com/minio/operator/pkg.CommitID={{.FullCommit}} -X github.com/minio/operator/sidecar/pkg.Version={{.Version}} -X github.com/minio/operator/sidecar/pkg.ShortCommitID={{.ShortCommit}} -X github.com/minio/operator/pkg.ReleaseTime={{.Date}}
+      - -s -w -X github.com/minio/operator/sidecar/pkg.ReleaseTag={{.Tag}} -X github.com/minio/operator/sidecar/pkg.CommitID={{.FullCommit}} -X github.com/minio/operator/sidecar/pkg.Version={{.Version}} -X github.com/minio/operator/sidecar/pkg.ShortCommitID={{.ShortCommit}} -X github.com/minio/operator/sidecar/pkg.ReleaseTime={{.Date}}
     flags:
       - -trimpath
 
