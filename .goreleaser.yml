@@ -14,8 +14,6 @@ release:
 before:
   hooks:
     - make clean
-    - go mod tidy -compat=1.21.8
-    - go mod download
 
 builds:
   - goos:
