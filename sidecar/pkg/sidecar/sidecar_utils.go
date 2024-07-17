@@ -19,11 +19,12 @@ package sidecar
 import (
 	"context"
 	"fmt"
-	"github.com/minio/operator/pkg/configuration"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/minio/operator/pkg/configuration"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

@@ -20,11 +20,12 @@ package sidecar
 
 import (
 	"fmt"
-	"github.com/minio/operator/pkg/common"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/minio/operator/pkg/common"
 
 	"github.com/gorilla/mux"
 	"github.com/minio/operator/pkg/resources/services"

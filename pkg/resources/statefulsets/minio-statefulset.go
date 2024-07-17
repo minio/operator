@@ -16,10 +16,11 @@ package statefulsets
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"path/filepath"
 	"sort"
 	"strconv"
+
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/certs"

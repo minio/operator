@@ -19,11 +19,12 @@ package validator
 import (
 	"bufio"
 	"context"
-	"github.com/minio/operator/pkg/configuration"
-	"k8s.io/client-go/kubernetes"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/minio/operator/pkg/configuration"
+	"k8s.io/client-go/kubernetes"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	operatorClientset "github.com/minio/operator/pkg/client/clientset/versioned"

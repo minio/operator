@@ -17,11 +17,12 @@
 package sidecar
 
 import (
-	"github.com/gorilla/mux"
-	"github.com/minio/operator/pkg/common"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/minio/operator/pkg/common"
 )
 
 func configureSidecarServer(c *Controller) *http.Server {
@@ -35,7 +36,7 @@ func configureSidecarServer(c *Controller) *http.Server {
 	router.NotFoundHandler = http.NotFoundHandler()
 
 	s := &http.Server{
-		Addr:           "0.0.0.0:" + common.SidecarHttpPort,
+		Addr:           "0.0.0.0:" + common.SidecarHTTPPort,
 		Handler:        router,
 		ReadTimeout:    time.Minute,
 		WriteTimeout:   time.Minute,

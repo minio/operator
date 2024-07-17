@@ -18,18 +18,20 @@ package configuration
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/common"
 	"github.com/minio/operator/pkg/resources/statefulsets"
 	corev1 "k8s.io/api/core/v1"
-	"sort"
-	"strings"
 )
 
 const (
 	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
 )
 
+// GetFullTenantConfig returns the full configuration for the tenant considering the secret and the tenant spec
 func GetFullTenantConfig(tenant *miniov2.Tenant, configSecret *corev1.Secret) (string, bool, bool) {
 	seededVars := parseConfEnvSecret(configSecret)
 	rootUserFound := false

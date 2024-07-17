@@ -23,7 +23,7 @@ const (
 	WebhookDefaultPort       = "4222"
 	WebhookAPIBucketService  = WebhookAPIVersion + "/bucketsrv"
 	WebhookAPIUpdate         = WebhookAPIVersion + "/update"
-	SidecarHttpPort          = "4224"
+	SidecarHTTPPort          = "4224"
 	SidecarAPIVersion        = "/sidecar/v1"
 	SidecarAPIConfigEndpoint = SidecarAPIVersion + "/config"
 )

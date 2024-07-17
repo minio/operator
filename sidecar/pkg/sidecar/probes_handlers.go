@@ -20,9 +20,10 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"github.com/gorilla/mux"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func configureProbesServer(c *Controller, tenantTLS bool) *http.Server {
