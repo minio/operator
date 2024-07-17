@@ -23,6 +23,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/minio/operator/pkg/common"
 
 	"github.com/gorilla/mux"
 	"github.com/minio/operator/pkg/resources/services"
@@ -31,6 +34,27 @@ import (
 
 	"k8s.io/klog/v2"
 )
+
+func configureWebhookServer(c *Controller) *http.Server {
+	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
+
+	router.Methods(http.MethodPost).
+		Path(common.WebhookAPIBucketService + "/{namespace}/{name:.+}").
+		HandlerFunc(c.BucketSrvHandler).
+		Queries(restQueries("bucket")...)
+
+	router.NotFoundHandler = http.NotFoundHandler()
+
+	s := &http.Server{
+		Addr:           "127.0.0.1:" + common.WebhookDefaultPort,
+		Handler:        router,
+		ReadTimeout:    time.Minute,
+		WriteTimeout:   time.Minute,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	return s
+}
 
 // BucketSrvHandler - POST /webhook/v1/bucketsrv/{namespace}/{name}?bucket={bucket}
 func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {

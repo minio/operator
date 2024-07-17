@@ -22,17 +22,16 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
-	common2 "github.com/minio/operator/sidecar/pkg/common"
+	"github.com/minio/operator/pkg/configuration"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioInformers "github.com/minio/operator/pkg/client/informers/externalversions"
 	v22 "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
-	"github.com/minio/operator/sidecar/pkg/validator"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/informers"
 	coreinformers "k8s.io/client-go/informers/core/v1"
@@ -80,6 +79,7 @@ func StartSideCar(tenantName string, secretName string) {
 	controller := NewSideCarController(kubeClient, controllerClient, namespace, tenantName, secretName)
 	controller.ws = configureWebhookServer(controller)
 	controller.probeServer = configureProbesServer(controller, tenant.TLS())
+	controller.sidecar = configureSidecarServer(controller)
 
 	stopControllerCh := make(chan struct{})
 
@@ -105,6 +105,14 @@ func StartSideCar(tenantName string, secretName string) {
 		}
 	}()
 
+	go func() {
+		if err = controller.sidecar.ListenAndServe(); err != nil {
+			// if the web server exits,
+			klog.Error(err)
+			close(stopControllerCh)
+		}
+	}()
+
 	<-stopControllerCh
 }
 
@@ -121,6 +129,7 @@ type Controller struct {
 	informerFactory    informers.SharedInformerFactory
 	ws                 *http.Server
 	probeServer        *http.Server
+	sidecar            *http.Server
 }
 
 // NewSideCarController returns an instance of Controller with the provided clients
@@ -143,7 +152,7 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 		secretInformer:     secretInformer,
 	}
 
-	tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err := tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(old, new interface{}) {
 			oldTenant := old.(*v2.Tenant)
 			newTenant := new.(*v2.Tenant)
@@ -152,11 +161,15 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 				// Two different versions of the same Tenant will always have different RVs.
 				return
 			}
-			c.regenCfg(tenantName, namespace)
+			c.regenCfgWithTenant(newTenant)
 		},
 	})
+	if err != nil {
+		log.Println("could not add event handler for tenant informer", err)
+		return nil
+	}
 
-	secretInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	_, err = secretInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		UpdateFunc: func(old, new interface{}) {
 			oldSecret := old.(*corev1.Secret)
 			// ignore anything that is not what we want
@@ -170,65 +183,58 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 				// Two different versions of the same Tenant will always have different RVs.
 				return
 			}
-			data := newSecret.Data["config.env"]
-			// validate root creds in string
-			rootUserFound := false
-			rootPwdFound := false
 
-			dataStr := string(data)
-			if strings.Contains(dataStr, "MINIO_ROOT_USER") {
-				rootUserFound = true
-			}
-			if strings.Contains(dataStr, "MINIO_ACCESS_KEY") {
-				rootUserFound = true
-			}
-			if strings.Contains(dataStr, "MINIO_ROOT_PASSWORD") {
-				rootPwdFound = true
-			}
-			if strings.Contains(dataStr, "MINIO_SECRET_KEY") {
-				rootPwdFound = true
-			}
-			if !rootUserFound || !rootPwdFound {
-				log.Println("Missing root credentials in the configuration.")
-				log.Println("MinIO won't start")
-				os.Exit(1)
-			}
-
-			if !strings.HasSuffix(dataStr, "\n") {
-				dataStr = dataStr + "\n"
-			}
-			c.regenCfgWithCfg(tenantName, namespace, dataStr)
+			c.regenCfgWithSecret(newSecret)
 		},
 	})
+	if err != nil {
+		log.Println("could not add event handler for secret informer", err)
+		return nil
+	}
 
 	return c
 }
 
-func (c *Controller) regenCfg(tenantName string, namespace string) {
-	rootUserFound, rootPwdFound, fileContents, err := validator.ReadTmpConfig()
+func (c *Controller) regenCfgWithTenant(tenant *v2.Tenant) {
+	// get the tenant secret
+	tenant.EnsureDefaults()
+
+	configSecret, err := c.secretInformer.Lister().Secrets(c.namespace).Get(tenant.Spec.Configuration.Name)
 	if err != nil {
-		log.Println(err)
+		log.Println("could not get secret", err)
 		return
 	}
+
+	fileContents, rootUserFound, rootPwdFound := configuration.GetFullTenantConfig(tenant, configSecret)
+
 	if !rootUserFound || !rootPwdFound {
 		log.Println("Missing root credentials in the configuration.")
 		log.Println("MinIO won't start")
 		os.Exit(1)
 	}
-	c.regenCfgWithCfg(tenantName, namespace, fileContents)
+
+	err = os.WriteFile(v2.CfgFile, []byte(fileContents), 0o644)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
-func (c *Controller) regenCfgWithCfg(tenantName string, namespace string, fileContents string) {
-	ctx := context.Background()
-
-	tenant, err := c.controllerClient.MinioV2().Tenants(namespace).Get(ctx, tenantName, metav1.GetOptions{})
+func (c *Controller) regenCfgWithSecret(configSecret *corev1.Secret) {
+	// get the tenant
+	tenant, err := c.tenantInformer.Lister().Tenants(c.namespace).Get(c.tenantName)
 	if err != nil {
-		log.Println("could not get tenant", err)
+		log.Println("could not get secret", err)
 		return
 	}
 	tenant.EnsureDefaults()
 
-	fileContents = common2.AttachGeneratedConfig(tenant, fileContents)
+	fileContents, rootUserFound, rootPwdFound := configuration.GetFullTenantConfig(tenant, configSecret)
+
+	if !rootUserFound || !rootPwdFound {
+		log.Println("Missing root credentials in the configuration.")
+		log.Println("MinIO won't start")
+		os.Exit(1)
+	}
 
 	err = os.WriteFile(v2.CfgFile, []byte(fileContents), 0o644)
 	if err != nil {

@@ -19,22 +19,15 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/minio/operator/pkg/certs"
-	"github.com/minio/operator/pkg/common"
-
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/certs"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-)
-
-const (
-	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
 )
 
 // Returns the MinIO environment variables set in configuration.
@@ -42,134 +35,12 @@ const (
 // that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
 func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
-	// Enable `mc admin update` style updates to MinIO binaries
-	// within the container, only operator is supposed to perform
-	// these operations.
-	envVarsMap := map[string]corev1.EnvVar{
-		"MINIO_UPDATE": {
-			Name:  "MINIO_UPDATE",
-			Value: "on",
-		},
-		"MINIO_UPDATE_MINISIGN_PUBKEY": {
-			Name:  "MINIO_UPDATE_MINISIGN_PUBKEY",
-			Value: "RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav",
-		},
-		"MINIO_PROMETHEUS_JOB_ID": {
-			Name:  "MINIO_PROMETHEUS_JOB_ID",
-			Value: t.PrometheusConfigJobName(),
-		},
-	}
-	// Specific case of bug in runtimeClass crun where $HOME is not set
-	for _, pool := range t.Spec.Pools {
-		if pool.RuntimeClassName != nil && *pool.RuntimeClassName == "crun" {
-			// Set HOME to /
-			envVarsMap["HOME"] = corev1.EnvVar{
-				Name:  "HOME",
-				Value: "/",
-			}
-		}
-	}
 
-	var domains []string
-	// Enable Bucket DNS only if asked for by default turned off
-	if t.BucketDNS() {
-		domains = append(domains, t.MinIOBucketBaseDomain())
-		sidecarBucketURL := fmt.Sprintf("http://127.0.0.1:%s%s/%s/%s",
-			common.WebhookDefaultPort,
-			common.WebhookAPIBucketService,
-			t.Namespace,
-			t.Name)
-		envVarsMap[bucketDNSEnv] = corev1.EnvVar{
-			Name:  bucketDNSEnv,
-			Value: sidecarBucketURL,
-		}
-	}
-	// Check if any domains are configured
-	if t.HasMinIODomains() {
-		domains = append(domains, t.GetDomainHosts()...)
-	}
-	// tell MinIO about all the domains meant to hit it if they are not passed manually via .spec.env
-	if len(domains) > 0 {
-		envVarsMap[miniov2.MinIODomain] = corev1.EnvVar{
-			Name:  miniov2.MinIODomain,
-			Value: strings.Join(domains, ","),
-		}
-	}
-	// If no specific server URL is specified we will specify the internal k8s url, but if a list of domains was
-	// provided we will use the first domain.
-	serverURL := t.MinIOServerEndpoint()
-	if t.HasMinIODomains() {
-		// Infer schema from tenant TLS, if not explicit
-		if !strings.HasPrefix(t.Spec.Features.Domains.Minio[0], "http") {
-			useSchema := "http"
-			if t.TLS() {
-				useSchema = "https"
-			}
-			serverURL = fmt.Sprintf("%s://%s", useSchema, t.Spec.Features.Domains.Minio[0])
-		} else {
-			serverURL = t.Spec.Features.Domains.Minio[0]
-		}
-	}
-	envVarsMap[miniov2.MinIOServerURL] = corev1.EnvVar{
-		Name:  miniov2.MinIOServerURL,
-		Value: serverURL,
-	}
+	envVarsMap := map[string]corev1.EnvVar{}
 
-	// Set the redirect url for console
-	if t.HasConsoleDomains() {
-		consoleDomain := t.Spec.Features.Domains.Console
-		// Infer schema from tenant TLS, if not explicit
-		if !strings.HasPrefix(consoleDomain, "http") {
-			useSchema := "http"
-			if t.TLS() {
-				useSchema = "https"
-			}
-			consoleDomain = fmt.Sprintf("%s://%s", useSchema, consoleDomain)
-		}
-		envVarsMap[miniov2.MinIOBrowserRedirectURL] = corev1.EnvVar{
-			Name:  miniov2.MinIOBrowserRedirectURL,
-			Value: consoleDomain,
-		}
-	}
-
-	if t.HasKESEnabled() {
-		envVarsMap["MINIO_KMS_KES_ENDPOINT"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_ENDPOINT",
-			Value: t.KESServiceEndpoint(),
-		}
-		envVarsMap["MINIO_KMS_KES_CERT_FILE"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_CERT_FILE",
-			Value: miniov2.MinIOCertPath + "/client.crt",
-		}
-		envVarsMap["MINIO_KMS_KES_KEY_FILE"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_KEY_FILE",
-			Value: miniov2.MinIOCertPath + "/client.key",
-		}
-		envVarsMap["MINIO_KMS_KES_CA_PATH"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_CA_PATH",
-			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
-		}
-		envVarsMap["MINIO_KMS_KES_CAPATH"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_CAPATH",
-			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
-		}
-		envVarsMap["MINIO_KMS_KES_KEY_NAME"] = corev1.EnvVar{
-			Name:  "MINIO_KMS_KES_KEY_NAME",
-			Value: t.Spec.KES.KeyName,
-		}
-	}
-
-	if t.HasConfigurationSecret() {
-		envVarsMap["MINIO_CONFIG_ENV_FILE"] = corev1.EnvVar{
-			Name:  "MINIO_CONFIG_ENV_FILE",
-			Value: miniov2.CfgFile,
-		}
-	}
-
-	// Add all the tenant.spec.env environment variables
-	// User defined environment variables will take precedence over default environment variables
-	for _, env := range t.GetEnvVars() {
-		envVarsMap[env.Name] = env
+	envVarsMap["MINIO_CONFIG_ENV_FILE"] = corev1.EnvVar{
+		Name:  "MINIO_CONFIG_ENV_FILE",
+		Value: miniov2.CfgFile,
 	}
 
 	// transform map to array and skip configurations from config.env

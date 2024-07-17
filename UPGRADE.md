@@ -13,6 +13,14 @@ This release introduces a readiness probe to prevent kubernetes from routing tra
 
 > ⚠️ Upgrading to v6.0.0 will cause all pods to restart upon upgrade.
 
+v6.0.1
+---
+
+This release includes improvements to reduce the number of restarts to MinIO including when changes to environment
+variables happen, the operator will perform an in-place update to the MinIO pods without restarting them.
+
+> ⚠️ Upgrading to v6.0.1 will cause all pods to restart upon upgrade due to new sidecar image.
+
 v5.0.0
 ---
 

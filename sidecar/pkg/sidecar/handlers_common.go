@@ -1,5 +1,5 @@
 // This file is part of MinIO Operator
-// Copyright (c) 2023 MinIO, Inc.
+// Copyright (c) 2024 MinIO, Inc.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -14,16 +14,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package common
+package sidecar
 
-// Constants for the webhook endpoints
-const (
-	WebhookAPIVersion        = "/webhook/v1"
-	UpgradeServerPort        = "4221"
-	WebhookDefaultPort       = "4222"
-	WebhookAPIBucketService  = WebhookAPIVersion + "/bucketsrv"
-	WebhookAPIUpdate         = WebhookAPIVersion + "/update"
-	SidecarHTTPPort          = "4224"
-	SidecarAPIVersion        = "/sidecar/v1"
-	SidecarAPIConfigEndpoint = SidecarAPIVersion + "/config"
-)
+// Used for registering with rest handlers (have a look at registerStorageRESTHandlers for usage example)
+// If it is passed ["aaaa", "bbbb"], it returns ["aaaa", "{aaaa:.*}", "bbbb", "{bbbb:.*}"]
+func restQueries(keys ...string) []string {
+	var accumulator []string
+	for _, key := range keys {
+		accumulator = append(accumulator, key, "{"+key+":.*}")
+	}
+	return accumulator
+}

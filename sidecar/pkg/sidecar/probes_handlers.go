@@ -23,41 +23,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/minio/operator/pkg/common"
-
 	"github.com/gorilla/mux"
 )
-
-// Used for registering with rest handlers (have a look at registerStorageRESTHandlers for usage example)
-// If it is passed ["aaaa", "bbbb"], it returns ["aaaa", "{aaaa:.*}", "bbbb", "{bbbb:.*}"]
-func restQueries(keys ...string) []string {
-	var accumulator []string
-	for _, key := range keys {
-		accumulator = append(accumulator, key, "{"+key+":.*}")
-	}
-	return accumulator
-}
-
-func configureWebhookServer(c *Controller) *http.Server {
-	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
-
-	router.Methods(http.MethodPost).
-		Path(common.WebhookAPIBucketService + "/{namespace}/{name:.+}").
-		HandlerFunc(c.BucketSrvHandler).
-		Queries(restQueries("bucket")...)
-
-	router.NotFoundHandler = http.NotFoundHandler()
-
-	s := &http.Server{
-		Addr:           "127.0.0.1:" + common.WebhookDefaultPort,
-		Handler:        router,
-		ReadTimeout:    time.Minute,
-		WriteTimeout:   time.Minute,
-		MaxHeaderBytes: 1 << 20,
-	}
-
-	return s
-}
 
 func configureProbesServer(c *Controller, tenantTLS bool) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()

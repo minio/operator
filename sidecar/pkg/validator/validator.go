@@ -23,10 +23,11 @@ import (
 	"os"
 	"strings"
 
-	common2 "github.com/minio/operator/sidecar/pkg/common"
+	"github.com/minio/operator/pkg/configuration"
+	"k8s.io/client-go/kubernetes"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
+	operatorClientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -35,11 +36,6 @@ import (
 // Validate checks the configuration on the seeded configuration and issues a valid one for MinIO to
 // start, however if root credentials are missing, it will exit with error
 func Validate(tenantName string) {
-	rootUserFound, rootPwdFound, fileContents, err := ReadTmpConfig()
-	if err != nil {
-		panic(err)
-	}
-
 	namespace := miniov2.GetNSFromFile()
 
 	cfg, err := rest.InClusterConfig()
@@ -51,9 +47,14 @@ func Validate(tenantName string) {
 		panic(err)
 	}
 
-	controllerClient, err := clientset.NewForConfig(cfg)
+	kubeClient, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		klog.Fatalf("Error building MinIO clientset: %s", err.Error())
+		klog.Fatalf("Error building MinIO operatorClientset: %s", err.Error())
+	}
+
+	controllerClient, err := operatorClientset.NewForConfig(cfg)
+	if err != nil {
+		klog.Fatalf("Error building MinIO operatorClientset: %s", err.Error())
 	}
 
 	ctx := context.Background()
@@ -65,8 +66,14 @@ func Validate(tenantName string) {
 		panic(err)
 	}
 	tenant.EnsureDefaults()
+	// get tenant config secret
+	configSecret, err := kubeClient.CoreV1().Secrets(namespace).Get(ctx, tenant.Spec.Configuration.Name, metav1.GetOptions{})
+	if err != nil {
+		log.Println(err)
+		panic(err)
+	}
 
-	fileContents = common2.AttachGeneratedConfig(tenant, fileContents)
+	fileContents, rootUserFound, rootPwdFound := configuration.GetFullTenantConfig(tenant, configSecret)
 
 	if !rootUserFound || !rootPwdFound {
 		log.Println("Missing root credentials in the configuration.")
