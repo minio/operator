@@ -86,7 +86,7 @@ helm-reindex:
 	@./helm-reindex.sh
 
 update-versions:
-	@./release.sh
+	@./release.sh --release-sidecar=$(RELEASE_SIDECAR)
 
 release: update-versions generate-code regen-crd regen-crd-docs
 	@git add .
