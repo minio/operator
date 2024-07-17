@@ -192,15 +192,15 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-      - uses: actions/cache@v3
-        name: Operator Binary Cache
+      - name: Operator Binary
+        run: |
+          make operator
+      - uses: actions/cache/save@v3
+        name: Save Operator Binary
         with:
           path: |
             ./minio-operator
           key: ${{ runner.os }}-binary-${{ github.run_id }}
-      - name: Operator Binary
-        run: |
-          make operator
   sidecar:
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}
@@ -217,16 +217,16 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-      - uses: actions/cache@v3
-        name: Operator Sidecar Binary Cache
-        with:
-          path: |
-            ./sidecar/minio-operator-sidecar
-          key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Operator Sidecar Binary
         working-directory: ./sidecar
         run: |
           make sidecar
+      - uses: actions/cache/save@v3
+        name: Save Operator Sidecar Binary
+        with:
+          path: |
+            ./sidecar/minio-operator-sidecar
+          key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
   test-tenant:
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}
@@ -347,7 +347,7 @@ jobs:
           key: ${{ runner.os }}-sidecar-binary-${{ github.run_id }}
       - name: Tenant upgrade to hotfix version
         run: |
-          "${GITHUB_WORKSPACE}/testing/tenant-hotfix-update.sh" "quay.io/minio/minio:RELEASE.2024-02-04T22-36-13Z" "quay.io/minio/minio:RELEASE.2024-02-04T22-36-13Z.hotfix.c40028f8f"
+          "${GITHUB_WORKSPACE}/testing/tenant-hotfix-update.sh" "quay.io/minio/minio:RELEASE.2024-01-31T20-20-33Z" "quay.io/minio/minio:RELEASE.2024-02-04T22-36-13Z.hotfix.c40028f8f"
   test-kes:
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}
