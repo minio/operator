@@ -572,13 +572,12 @@ function install_operator() {
     echo "Installing Current Operator with sts enabled"
     try kubectl apply -k "${SCRIPT_DIR}/../testing/sts/operator"
     try kubectl -n minio-operator set env deployment/minio-operator OPERATOR_SIDECAR_IMAGE="$SIDECAR_TAG"
-    echo "key, value for pod selector in kustomize test"
+    try kubectl -n minio-operator rollout status deployment/minio-operator
     key=name
     value=minio-operator
   elif [ "$1" = "certmanager" ]; then
     echo "Installing Current Operator with certmanager"
     try kubectl apply -k "${SCRIPT_DIR}/../testing/certmanager/operator"
-    echo "key, value for pod selector in kustomize test"
     key=name
     value=minio-operator
   else
@@ -596,17 +595,11 @@ function install_operator() {
     # and then we change the images, no need to have more overlays in different folders.
     try kubectl -n minio-operator set image deployment/minio-operator minio-operator="$TAG"
     try kubectl -n minio-operator set env deployment/minio-operator OPERATOR_SIDECAR_IMAGE="$SIDECAR_TAG"
-
     try kubectl -n minio-operator rollout status deployment/minio-operator
 
-    echo "key, value for pod selector in kustomize test"
     key=name
     value=minio-operator
   fi
-
-  # Reusing the wait for both, Kustomize and Helm
-  echo "Waiting for k8s api"
-  sleep 10
 
   kubectl get ns
 
@@ -692,11 +685,8 @@ function check_tenant_status() {
   key=v1.min.io/tenant
   value=$2
   if [ $# -ge 3 ]; then
-    echo "Third argument provided, then set key value"
     key=app
     value=$3
-  else
-    echo "No third argument provided, using default key"
   fi
 
   wait_resource_status $1 Tenant $2 600
