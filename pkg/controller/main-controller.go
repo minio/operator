@@ -149,6 +149,10 @@ type Controller struct {
 	secretLister corelisters.SecretLister
 	// secretListerSynced returns true if Secret shared informer has synced at least once
 	secretListerSynced cache.InformerSynced
+	// namespaceLister returns list/get namespaces for read only operations
+	namespaceLister corelisters.NamespaceLister
+	// namespaceListerSynced returns true if Namespace shared informer has synced once
+	namespaceListerSynced cache.InformerSynced
 	// deploymentLister is able to list/get Deployments from a shared
 	// informer's store.
 	deploymentLister appslisters.DeploymentLister
@@ -246,6 +250,7 @@ func NewController(
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
 	jobInformer := kubeInformerFactory.Batch().V1().Jobs()
 	secretInformer := kubeInformerFactoryInOperatorNamespace.Core().V1().Secrets()
+	namespaceInformer := kubeInformerFactory.Core().V1().Namespaces()
 
 	// Create event broadcaster
 	// Add minio-controller types to the default Kubernetes Scheme so Events can be
@@ -283,6 +288,8 @@ func NewController(
 		serviceListerSynced:       serviceInformer.Informer().HasSynced,
 		secretLister:              secretInformer.Lister(),
 		secretListerSynced:        secretInformer.Informer().HasSynced,
+		namespaceLister:           namespaceInformer.Lister(),
+		namespaceListerSynced:     namespaceInformer.Informer().HasSynced,
 		workqueue:                 queue.NewRateLimitingQueueWithConfig(MinIOControllerRateLimiter(), queue.RateLimitingQueueConfig{Name: "Tenants"}),
 		healthCheckQueue:          queue.NewRateLimitingQueueWithConfig(MinIOControllerRateLimiter(), queue.RateLimitingQueueConfig{Name: "TenantsHealth"}),
 		recorder:                  recorder,
