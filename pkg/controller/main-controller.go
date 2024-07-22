@@ -905,6 +905,13 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, err)
 	}
 
+	// Check Console Endpoint Service
+	err = c.checkConsoleSvc(ctx, tenant, nsName)
+	if err != nil {
+		klog.V(2).Infof("error consolidating console service: %s", err.Error())
+		return WrapResult(Result{}, err)
+	}
+
 	// Check MinIO Headless Service used for internode communication
 	err = c.checkMinIOHLSvc(ctx, tenant, nsName)
 	if err != nil {
