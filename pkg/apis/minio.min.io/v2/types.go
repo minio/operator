@@ -235,6 +235,10 @@ type TenantSpec struct {
 	// +optional
 	RequestAutoCert *bool `json:"requestAutoCert,omitempty"`
 
+	// CertExpiryAlertThreshold is the minimum number of days to expiry before an alert for an expiring certificate is fired.
+	// +optional
+	CertExpiryAlertThreshold *int32 `json:"certExpiryAlertThreshold,omitempty"`
+
 	// Liveness Probe for container liveness. Container will be restarted if the probe fails.
 	// +optional
 	Liveness *corev1.Probe `json:"liveness,omitempty"`

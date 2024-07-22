@@ -875,6 +875,9 @@ spec:
                       type: string
                     type: array
                 type: object
+              certExpiryAlertThreshold:
+                format: int32
+                type: integer
               configuration:
                 properties:
                   name:

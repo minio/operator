@@ -224,6 +224,9 @@ spec:
   ## Enable automatic Kubernetes based certificate generation and signing as explained in
   ## https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster
   requestAutoCert: true
+  # The minimum number of days to expiry before an alert for an expiring certificate is fired.
+  # In the below example, if a given certificate will expire in 7 days then expiration events will only be triggered 1 day before expiry
+  # certExpiryAlertThreshold: 1
   ## Prometheus setup for MinIO Tenant.
   #  prometheus:
   #    image: "" # defaults to quay.io/prometheus/prometheus:RELEASE.2024-07-11T18-01-28Z
