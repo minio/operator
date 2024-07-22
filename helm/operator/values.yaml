@@ -75,7 +75,7 @@ operator:
   #
   #    sidecarImage:
   #      repository: quay.io/minio/operator-sidecar@sha256
-  #      digest: 28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
+  #      digest: a11947a230b80fb1b0bffa97173147a505d4f1207958f722e348d11ab9e972c1
   #      pullPolicy: IfNotPresent
   #
   sidecarImage: {}

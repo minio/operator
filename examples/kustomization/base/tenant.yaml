@@ -144,7 +144,7 @@ spec:
   ## https://github.com/minio/minio/tree/master/docs/tls/kubernetes#2-create-kubernetes-secret
   externalClientCertSecrets: [ ]
   ## Registry location and Tag to download MinIO Server image
-  image: quay.io/minio/minio:RELEASE.2024-07-13T01-46-15Z
+  image: quay.io/minio/minio:RELEASE.2024-07-16T23-46-41Z
   imagePullSecret: { }
   ## Mount path where PV will be mounted inside container(s).
   mountPath: /export
@@ -229,7 +229,7 @@ spec:
   # certExpiryAlertThreshold: 1
   ## Prometheus setup for MinIO Tenant.
   #  prometheus:
-  #    image: "" # defaults to quay.io/prometheus/prometheus:RELEASE.2024-07-11T18-01-28Z
+  #    image: "" # defaults to quay.io/prometheus/prometheus:RELEASE.2024-07-16T23-46-41Z
   #    env: [ ]
   #    sidecarimage: "" # defaults to alpine
   #    initimage: "" # defaults to busybox:1.33.1

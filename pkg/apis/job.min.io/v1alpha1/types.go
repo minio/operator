@@ -35,7 +35,7 @@ const (
 // +kubebuilder:resource:scope=Namespaced,shortName=miniojob,singular=miniojob
 // +kubebuilder:printcolumn:name="Tenant",type=string,JSONPath=`.spec.tenant.name`
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.spec.status.phase`
-// +kubebuilder:metadata:annotations=operator.min.io/version=v6.0.0
+// +kubebuilder:metadata:annotations=operator.min.io/version=v6.0.1
 
 // MinIOJob is a top-level type. A client is created for it
 type MinIOJob struct {
@@ -96,7 +96,7 @@ type MinIOJobSpec struct {
 
 	// The Docker image to use when deploying `mc` pods. Defaults to {mc-image}. +
 	// +optional
-	// +kubebuilder:default="quay.io/minio/mc:RELEASE.2024-07-11T18-01-28Z"
+	// +kubebuilder:default="quay.io/minio/mc:RELEASE.2024-07-16T23-46-41Z"
 	MCImage string `json:"mcImage,omitempty"`
 
 	// *Optional* +
