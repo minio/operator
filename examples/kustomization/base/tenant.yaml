@@ -256,7 +256,7 @@ spec:
   ## Audit Logs will be deprecated soon, commenting out for now!.
   ## LogSearch API setup for MinIO Tenant.
   # log:
-  #   image: "" # defaults to minio/operator:v6.0.0
+  #   image: "" # defaults to minio/operator:v6.0.1
   #   env: [ ]
   #   resources: { }
   #   nodeSelector: { }
