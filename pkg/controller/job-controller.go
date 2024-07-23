@@ -153,6 +153,7 @@ func NewJobController(
 			}
 			controller.HandleObject(newJob)
 		},
+		DeleteFunc: controller.enqueueJob,
 	})
 	return controller
 }

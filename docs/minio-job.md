@@ -78,8 +78,8 @@ spec:
     - name: add-my-user-1
       op: admin/user/add
       args:
-        user: ${USER}
-        password: ${PASSWORD}
+        user: $(USER)
+        password: $(PASSWORD)
       envFrom:
         - secretRef:
             name: mytestsecretenvs
@@ -87,7 +87,7 @@ spec:
       op: admin/user/add
       args:
         user: pedro
-        password: $PASSWORD
+        password: $(PASSWORD)
       env:
         - name: PASSWORD
           valueFrom:
