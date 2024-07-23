@@ -102,23 +102,27 @@ func (c *Controller) getCustomCertificates(ctx context.Context, tenant *miniov2.
 				}
 				// Register event in case of certificate expiring
 				expiresIn := time.Until(cert.NotAfter)
-				expiresInDays := int64(expiresIn.Hours() / 24)
+				expiresInDays := int32(expiresIn.Hours() / 24)
 				expiresInHours := int64(math.Mod(expiresIn.Hours(), 24))
 				expiresInMinutes := int64(math.Mod(expiresIn.Minutes(), 60))
 				expiresInSeconds := int64(math.Mod(expiresIn.Seconds(), 60))
 				expiresInHuman := fmt.Sprintf("%v days, %v hours, %v minutes, %v seconds", expiresInDays, expiresInHours, expiresInMinutes, expiresInSeconds)
 
-				if expiresInDays >= 10 && expiresInDays < 30 {
-					c.recorder.Event(tenant, corev1.EventTypeWarning, "CertificateExpiring", fmt.Sprintf("%s certificate '%s' is expiring in %d days", certType, secret.Name, expiresInDays))
-				}
-				if expiresInDays > 0 && expiresInDays < 10 {
-					c.recorder.Event(tenant, corev1.EventTypeWarning, "CertificateExpiryImminent", fmt.Sprintf("%s certificate '%s' is expiring in %d days", certType, secret.Name, expiresInDays))
+				if tenant.Spec.CertExpiryAlertThreshold == nil || expiresInDays < *tenant.Spec.CertExpiryAlertThreshold {
+					if expiresInDays >= 10 && expiresInDays < 30 {
+						c.recorder.Event(tenant, corev1.EventTypeWarning, "CertificateExpiring", fmt.Sprintf("%s certificate '%s' is expiring in %d days", certType, secret.Name, expiresInDays))
+					}
+					if expiresInDays > 0 && expiresInDays < 10 {
+						c.recorder.Event(tenant, corev1.EventTypeWarning, "CertificateExpiryImminent", fmt.Sprintf("%s certificate '%s' is expiring in %d days", certType, secret.Name, expiresInDays))
+					}
+					if expiresIn <= 0 {
+						c.recorder.Event(tenant, corev1.EventTypeWarning, "CertificateExpired", fmt.Sprintf("%s certificate '%s' has expired", certType, secret.Name))
+					}
 				}
 				if expiresIn > 0 && expiresIn < 24*time.Hour {
 					expiresInHuman = fmt.Sprintf("%v hours, %v minutes, and %v seconds", expiresInHours, expiresInMinutes, expiresInSeconds)
 				}
 				if expiresIn <= 0 {
-					c.recorder.Event(tenant, corev1.EventTypeWarning, "CertificateExpired", fmt.Sprintf("%s certificate '%s' has expired", certType, secret.Name))
 					expiresInHuman = "EXPIRED"
 				}
 

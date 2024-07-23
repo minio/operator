@@ -94,6 +94,9 @@ spec:
   externalCertSecret: {{- toYaml . | nindent 6 }}
   {{- end }}
   requestAutoCert: {{ dig "certificate" "requestAutoCert" false . }}
+  {{- if ((.certificate).certExpiryAlertThreshold) }}
+  certExpiryAlertThreshold: {{ ((.certificate).certExpiryAlertThreshold) }}
+  {{- end }}
   {{- if dig "s3" "bucketDNS" false . }}
     {{- fail "Value 'tenant.s3.bucketDNS' is deprecated since Operator v4.3.2, use 'tenant.features.bucketDNS' instead" }}
   {{- end }}
