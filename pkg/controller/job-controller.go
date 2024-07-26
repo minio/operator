@@ -186,7 +186,7 @@ func (c *JobController) HandleObject(obj metav1.Object) {
 // SyncHandler compares the current Job state with the desired, and attempts to
 // converge the two. It then updates the Status block of the Job resource
 // with the current status of the resource.
-func (c *JobController) SyncHandler(key string) (Result, error) {
+func (c *JobController) SyncHandler(key string) (rsl Result, err error) {
 	// Convert the namespace/name string into a distinct namespace and name
 	if key == "" {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))
@@ -200,7 +200,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 			Namespace: namespace,
 		},
 	}
-	err := c.k8sClient.Get(ctx, client.ObjectKeyFromObject(&jobCR), &jobCR)
+	err = c.k8sClient.Get(ctx, client.ObjectKeyFromObject(&jobCR), &jobCR)
 	if err != nil {
 		// job cr have gone
 		globalIntervalJobStatus.Delete(fmt.Sprintf("%s/%s", jobCR.Namespace, jobCR.Name))
@@ -210,17 +210,28 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 		return WrapResult(Result{}, err)
 	}
 
-	if !IsSTSEnabled() {
-		c.recorder.Eventf(&jobCR, corev1.EventTypeWarning, "STSDisabled", "JobCR cannot work with STS disabled")
-		return WrapResult(Result{}, nil)
-	}
-
 	// if job cr is Success, do nothing
 	if jobCR.Status.Phase == miniojob.MinioJobPhaseSuccess {
 		// delete the job status
 		globalIntervalJobStatus.Delete(fmt.Sprintf("%s/%s", jobCR.Namespace, jobCR.Name))
 		return WrapResult(Result{}, nil)
 	}
+
+	defer func() {
+		if err != nil {
+			if jobCR.Status.Phase != miniojob.MinioJobPhaseSuccess {
+				jobCR.Status.Phase = miniojob.MinioJobPhaseError
+				jobCR.Status.Message = err.Error()
+				err = c.updateJobStatus(ctx, &jobCR)
+			}
+		}
+	}()
+
+	if !IsSTSEnabled() {
+		c.recorder.Eventf(&jobCR, corev1.EventTypeWarning, "STSDisabled", "JobCR cannot work with STS disabled")
+		return WrapResult(Result{}, fmt.Errorf("JobCR cannot work with STS disabled"))
+	}
+
 	// get tenant
 	tenant := &miniov2.Tenant{
 		ObjectMeta: metav1.ObjectMeta{
@@ -230,20 +241,16 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	}
 	err = c.k8sClient.Get(ctx, client.ObjectKeyFromObject(tenant), tenant)
 	if err != nil {
-		jobCR.Status.Phase = miniojob.MinioJobPhaseError
-		jobCR.Status.Message = fmt.Sprintf("Get tenant %s/%s error:%v", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err)
-		klog.Errorln(jobCR.Status.Message)
-		err = c.updateJobStatus(ctx, &jobCR)
-		return WrapResult(Result{}, err)
+		return WrapResult(Result{}, fmt.Errorf("get tenant %s/%s error:%w", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err))
 	}
 	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
-		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
+		return WrapResult(Result{RequeueAfter: time.Second * 5}, fmt.Errorf("get tenant %s/%s error:%w", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err))
 	}
 	// check sa
 	pbs := &stsv1beta1.PolicyBindingList{}
 	err = c.k8sClient.List(ctx, pbs, client.InNamespace(namespace))
 	if err != nil {
-		return WrapResult(Result{}, err)
+		return WrapResult(Result{}, fmt.Errorf("get policybinding error:%w", err))
 	}
 	if len(pbs.Items) == 0 {
 		return WrapResult(Result{}, fmt.Errorf("no policybinding found"))
@@ -263,11 +270,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	}
 	err = intervalJob.CreateCommandJob(ctx, c.k8sClient, STSDefaultPort)
 	if err != nil {
-		jobCR.Status.Phase = miniojob.MinioJobPhaseError
-		jobCR.Status.Message = fmt.Sprintf("Create job error:%v", err)
-		klog.Errorln(jobCR.Status.Message)
-		err = c.updateJobStatus(ctx, &jobCR)
-		return WrapResult(Result{}, err)
+		return WrapResult(Result{}, fmt.Errorf("create job error:%w", err))
 	}
 	// update status
 	jobCR.Status = intervalJob.GetMinioJobStatus(ctx)
