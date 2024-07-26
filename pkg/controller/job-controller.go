@@ -186,7 +186,7 @@ func (c *JobController) HandleObject(obj metav1.Object) {
 // SyncHandler compares the current Job state with the desired, and attempts to
 // converge the two. It then updates the Status block of the Job resource
 // with the current status of the resource.
-func (c *JobController) SyncHandler(key string) (rsl Result, err error) {
+func (c *JobController) SyncHandler(key string) (_ Result, err error) {
 	// Convert the namespace/name string into a distinct namespace and name
 	if key == "" {
 		runtime.HandleError(fmt.Errorf("Invalid resource key: %s", key))
@@ -241,16 +241,16 @@ func (c *JobController) SyncHandler(key string) (rsl Result, err error) {
 	}
 	err = c.k8sClient.Get(ctx, client.ObjectKeyFromObject(tenant), tenant)
 	if err != nil {
-		return WrapResult(Result{}, fmt.Errorf("get tenant %s/%s error:%w", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err))
+		return WrapResult(Result{}, fmt.Errorf("get tenant %s/%s error: %w", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err))
 	}
 	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
-		return WrapResult(Result{RequeueAfter: time.Second * 5}, fmt.Errorf("get tenant %s/%s error:%w", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err))
+		return WrapResult(Result{RequeueAfter: time.Second * 5}, fmt.Errorf("get tenant %s/%s error: %w", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err))
 	}
 	// check sa
 	pbs := &stsv1beta1.PolicyBindingList{}
 	err = c.k8sClient.List(ctx, pbs, client.InNamespace(namespace))
 	if err != nil {
-		return WrapResult(Result{}, fmt.Errorf("get policybinding error:%w", err))
+		return WrapResult(Result{}, fmt.Errorf("list policybinding error: %w", err))
 	}
 	if len(pbs.Items) == 0 {
 		return WrapResult(Result{}, fmt.Errorf("no policybinding found"))
@@ -270,7 +270,7 @@ func (c *JobController) SyncHandler(key string) (rsl Result, err error) {
 	}
 	err = intervalJob.CreateCommandJob(ctx, c.k8sClient, STSDefaultPort)
 	if err != nil {
-		return WrapResult(Result{}, fmt.Errorf("create job error:%w", err))
+		return WrapResult(Result{}, fmt.Errorf("create job error: %w", err))
 	}
 	// update status
 	jobCR.Status = intervalJob.GetMinioJobStatus(ctx)
