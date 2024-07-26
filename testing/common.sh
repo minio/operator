@@ -26,7 +26,7 @@ DEV_TEST=$OPERATOR_DEV_TEST
 # Set OPERATOR_DEV_TEST to skip downloading these dependencies
 if [[ -z "${DEV_TEST}" ]]; then
   ## Make sure to install things if not present already
-  sudo curl -#L "https://dl.k8s.io/release/v1.23.1/bin/$OS/$ARCH/kubectl" -o /usr/local/bin/kubectl
+  sudo curl -#L "https://dl.k8s.io/release/v1.28.12/bin/$OS/$ARCH/kubectl" -o /usr/local/bin/kubectl
   sudo chmod +x /usr/local/bin/kubectl
 
   sudo curl -#L "https://dl.min.io/client/mc/release/${OS}-${ARCH}/mc" -o /usr/local/bin/mc
