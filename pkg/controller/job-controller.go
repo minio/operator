@@ -232,6 +232,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	if err != nil {
 		jobCR.Status.Phase = miniojob.MinioJobPhaseError
 		jobCR.Status.Message = fmt.Sprintf("Get tenant %s/%s error:%v", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err)
+		klog.Errorln(jobCR.Status.Message)
 		err = c.updateJobStatus(ctx, &jobCR)
 		return WrapResult(Result{}, err)
 	}
@@ -264,6 +265,7 @@ func (c *JobController) SyncHandler(key string) (Result, error) {
 	if err != nil {
 		jobCR.Status.Phase = miniojob.MinioJobPhaseError
 		jobCR.Status.Message = fmt.Sprintf("Create job error:%v", err)
+		klog.Errorln(jobCR.Status.Message)
 		err = c.updateJobStatus(ctx, &jobCR)
 		return WrapResult(Result{}, err)
 	}
