@@ -18,10 +18,10 @@ spec:
   scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .spec.status.phase
+    - jsonPath: .status.phase
       name: Phase
       type: string
-    - jsonPath: .spec.status.message
+    - jsonPath: .status.message
       name: Message
       type: string
     name: v1alpha1
