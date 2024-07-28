@@ -288,17 +288,15 @@ func poolContainerSecurityContext(pool *miniov2.Pool) *corev1.SecurityContext {
 	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
-	if pool != nil {
-		if pool.SecurityContext != nil {
-			if pool.SecurityContext.RunAsNonRoot != nil {
-				runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
-			}
-			if pool.SecurityContext.RunAsUser != nil {
-				runAsUser = *pool.SecurityContext.RunAsUser
-			}
-			if pool.SecurityContext.RunAsGroup != nil {
-				runAsGroup = *pool.SecurityContext.RunAsGroup
-			}
+	if pool != nil && pool.SecurityContext != nil {
+		if pool.SecurityContext.RunAsNonRoot != nil {
+			runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
+		}
+		if pool.SecurityContext.RunAsUser != nil {
+			runAsUser = *pool.SecurityContext.RunAsUser
+		}
+		if pool.SecurityContext.RunAsGroup != nil {
+			runAsGroup = *pool.SecurityContext.RunAsGroup
 		}
 	}
 
