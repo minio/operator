@@ -330,11 +330,13 @@ type TenantSpec struct {
 	//
 	// The Operator creates each user with the `consoleAdmin` policy by default. You can change the assigned policy after the Tenant starts. +
 	// +optional
+	// +deprecated
 	Users []corev1.LocalObjectReference `json:"users,omitempty"`
 	// *Optional* +
 	//
 	// Create buckets when creating a new tenant. Skip if bucket with given name already exists
 	// +optional
+	// +deprecated
 	Buckets []Bucket `json:"buckets,omitempty"`
 	// *Optional* +
 	//
@@ -539,13 +541,15 @@ type TenantStatus struct {
 	//
 	// Information about tenant usage
 	Usage TenantUsage `json:"usage,omitempty"`
-	// Health Message regarding the State of the tenant
+
 	// ProvisionedUsers keeps track for telling if operator already created initial users for the tenant
+	// +deprecated
 	ProvisionedUsers bool `json:"provisionedUsers,omitempty"`
 	// *Optional* +
 	//
 	// Health Message regarding the State of the tenant
 	// ProvisionedBuckets keeps track for telling if operator already created initial buckets for the tenant
+	// +deprecated
 	ProvisionedBuckets bool `json:"provisionedBuckets,omitempty"`
 }
 
