@@ -281,45 +281,36 @@ func poolSecurityContext(pool *miniov2.Pool, status *miniov2.PoolStatus) *corev1
 
 // Builds the security context for containers in a Pool
 func poolContainerSecurityContext(pool *miniov2.Pool) *corev1.SecurityContext {
-	// Default values:
-	// By default, values should be totally empty if not provided
-	// This is specially needed in OpenShift where Security Context Constraints restrict them
-	// if let empty then OCP can pick the values from the constraints defined.
-	containerSecurityContext := corev1.SecurityContext{}
+	// By default, we are opinionated and set the following values to request
+	// kubernetes to run our pods as a non-root user intentionally, we don't need to be root
+	// if the user needs a special security context, it should be specified on the pool's
+	// securityContext
 	runAsNonRoot := true
 	var runAsUser int64 = 1000
 	var runAsGroup int64 = 1000
-	poolSCSet := false
-	if pool != nil {
-		// Values from pool.SecurityContext ONLY if provided
-		if pool.SecurityContext != nil {
-			if pool.SecurityContext.RunAsNonRoot != nil {
-				runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
-				poolSCSet = true
-			}
-			if pool.SecurityContext.RunAsUser != nil {
-				runAsUser = *pool.SecurityContext.RunAsUser
-				poolSCSet = true
-			}
-			if pool.SecurityContext.RunAsGroup != nil {
-				runAsGroup = *pool.SecurityContext.RunAsGroup
-				poolSCSet = true
-			}
-			if poolSCSet {
-				// Only set values if one of above is set otherwise let it empty
-				containerSecurityContext = corev1.SecurityContext{
-					RunAsNonRoot: &runAsNonRoot,
-					RunAsUser:    &runAsUser,
-					RunAsGroup:   &runAsGroup,
-				}
-			}
+	if pool != nil && pool.SecurityContext != nil {
+		if pool.SecurityContext.RunAsNonRoot != nil {
+			runAsNonRoot = *pool.SecurityContext.RunAsNonRoot
 		}
-
-		// Values from pool.ContainerSecurityContext if provided
-		if pool.ContainerSecurityContext != nil {
-			containerSecurityContext = *pool.ContainerSecurityContext
+		if pool.SecurityContext.RunAsUser != nil {
+			runAsUser = *pool.SecurityContext.RunAsUser
+		}
+		if pool.SecurityContext.RunAsGroup != nil {
+			runAsGroup = *pool.SecurityContext.RunAsGroup
 		}
 	}
+
+	containerSecurityContext := corev1.SecurityContext{
+		RunAsNonRoot: &runAsNonRoot,
+		RunAsUser:    &runAsUser,
+		RunAsGroup:   &runAsGroup,
+	}
+
+	// Values from pool.ContainerSecurityContext if provided
+	if pool.ContainerSecurityContext != nil {
+		containerSecurityContext = *pool.ContainerSecurityContext
+	}
+
 	return &containerSecurityContext
 }
 
