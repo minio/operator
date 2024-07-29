@@ -33,8 +33,8 @@ const (
 // +k8s:defaulter-gen=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Namespaced,shortName=miniojob,singular=miniojob
-// +kubebuilder:printcolumn:name="Tenant",type=string,JSONPath=`.spec.tenant.name`
-// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.spec.status.phase`
+// +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`
+// +kubebuilder:printcolumn:name="Message",type=string,JSONPath=`.status.message`
 // +kubebuilder:metadata:annotations=operator.min.io/version=v6.0.1
 
 // MinIOJob is a top-level type. A client is created for it
