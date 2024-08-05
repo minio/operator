@@ -1329,6 +1329,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			return WrapResult(Result{}, err)
 		}
 		if !maps.Equal(expectSystemCfg, existSystemCfg) {
+			// delete pdb to let deleted all the statefulSet pods
 			err = c.DeletePDB(ctx, tenant)
 			if err != nil {
 				return Result{}, err
