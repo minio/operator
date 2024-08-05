@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -90,6 +91,38 @@ func poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet *appsv1.Stateful
 		return false, nil
 	}
 	return true, nil
+}
+
+// getSystemCfgFromStatefulSet gets the MinIO environment variables from a statefulset
+// set getServerSystemCfg at minio
+func (c *Controller) getSystemCfgFromStatefulSet(ctx context.Context, sts *appsv1.StatefulSet) (systemCfg map[string]string, err error) {
+	for _, container := range sts.Spec.Template.Spec.Containers {
+		if container.Name == miniov2.MinIOServerName {
+			for _, e := range container.Env {
+				if strings.HasPrefix(e.Name, "MINIO_") {
+					switch {
+					case e.Value != "":
+						systemCfg[e.Name] = e.Value
+					case e.ValueFrom != nil && e.ValueFrom.SecretKeyRef != nil:
+						secret, err := c.kubeClientSet.CoreV1().Secrets(sts.Namespace).Get(ctx, e.ValueFrom.SecretKeyRef.Name, metav1.GetOptions{})
+						if err != nil {
+							return nil, err
+						}
+						systemCfg[e.Name] = string(secret.Data[e.ValueFrom.SecretKeyRef.Key])
+					case e.ValueFrom != nil && e.ValueFrom.ConfigMapKeyRef != nil:
+						configMap, err := c.kubeClientSet.CoreV1().ConfigMaps(sts.Namespace).Get(ctx, e.ValueFrom.ConfigMapKeyRef.Name, metav1.GetOptions{})
+						if err != nil {
+							return nil, err
+						}
+						systemCfg[e.Name] = string(configMap.Data[e.ValueFrom.ConfigMapKeyRef.Key])
+					default:
+						return nil, fmt.Errorf("unsupported env var %s", e.Name)
+					}
+				}
+			}
+		}
+	}
+	return
 }
 
 // restartInitializedPool restarts a pool that is assumed to have been initialized
