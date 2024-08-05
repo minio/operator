@@ -114,7 +114,7 @@ func (c *Controller) getSystemCfgFromStatefulSet(ctx context.Context, sts *appsv
 						if err != nil {
 							return nil, err
 						}
-						systemCfg[e.Name] = string(configMap.Data[e.ValueFrom.ConfigMapKeyRef.Key])
+						systemCfg[e.Name] = configMap.Data[e.ValueFrom.ConfigMapKeyRef.Key]
 					default:
 						return nil, fmt.Errorf("unsupported env var %s", e.Name)
 					}
