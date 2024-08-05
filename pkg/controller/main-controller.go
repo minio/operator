@@ -1329,6 +1329,10 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			return WrapResult(Result{}, err)
 		}
 		if !maps.Equal(expectSystemCfg, existSystemCfg) {
+			err = c.DeletePDB(ctx, tenant)
+			if err != nil {
+				return Result{}, err
+			}
 			// found all existing statefulSet pods and delete them
 			err = c.DeletePodsByStatefulSet(ctx, existingStatefulSet)
 			if err != nil {
