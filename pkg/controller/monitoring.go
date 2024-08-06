@@ -167,41 +167,72 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) (*minio
 		return tenant, nil
 	}
 
-	// Add back "Usable Capacity" & "Internal" values in Tenant Status and in the UI
-	// How much is available: "Usable Capacity" in UI comes from "tenant.Status.Usage.Capacity"
-	// How much is used: "Internal" in UI comes from "tenant.Status.Usage.Usage"
-	UsedSpace := int64(0)      // How much is used
-	AvailableSpace := int64(0) // How much is available
-	for _, disk := range storageInfo.Disks {
-		UsedSpace = UsedSpace + int64(disk.UsedSpace)
-		AvailableSpace = AvailableSpace + int64(disk.AvailableSpace)
+	// Raw capacity: Total amount of physical disk space reserved for MinIO
+	// Raw usage: Total amount of physical disk space actually in use by MinIO
+	// Capacity: Net capacity that can actually be stored inside MinIO
+	// Usage: Net usage actually stored data inside MinIO
+	//
+	// The net capacity/usage is derived from the raw capacity/usage by
+	// subtracting the additional stored parity data from the physical data.
+	// Because objects are stored in blocks, the "net usage" reported here
+	// may be higher than the sum of all object sizes.
+	var rawCapacity, rawUsage, capacity, usage uint64
+
+	standardSCData := storageInfo.Backend.StandardSCData
+	if nrOfPools := len(standardSCData); nrOfPools > 0 {
+		standardSCParities := storageInfo.Backend.StandardSCParities
+		if len(standardSCParities) == 0 {
+			// Per-pool parity is not always returned, so it's assumed
+			// that each pool uses the standard parity if not
+			standardSCParities = make([]int, nrOfPools)
+			for pool := range nrOfPools {
+				standardSCParities[pool] = storageInfo.Backend.StandardSCParity
+			}
+		}
+
+		// calculate the raw capacity/usage per pool
+		rawPoolCapacities := make([]uint64, nrOfPools)
+		rawPoolUsages := make([]uint64, nrOfPools)
+		for _, disk := range storageInfo.Disks {
+			pi := disk.PoolIndex
+			if pi >= nrOfPools {
+				// make sure that invalid pool index won't panic the operator
+				// the result will be 0 for (raw) capacity/usage.
+				goto bailout
+			}
+			rawPoolCapacities[pi] = rawPoolCapacities[pi] + disk.AvailableSpace
+			rawPoolUsages[pi] = rawPoolUsages[pi] + disk.UsedSpace
+		}
+
+		// calculate the total capacity/usage for the cluster
+		for pool := range len(standardSCData) {
+			rawCapacity = rawCapacity + rawPoolCapacities[pool]
+			rawUsage = rawUsage + rawPoolUsages[pool]
+
+			poolEfficiency := float64(standardSCData[pool]) / float64(standardSCData[pool]+standardSCParities[pool])
+			capacity = capacity + uint64(poolEfficiency*float64(rawPoolCapacities[pool]))
+			usage = usage + uint64(poolEfficiency*float64(rawPoolUsages[pool]))
+		}
 	}
-	tenant.Status.Usage.Usage = UsedSpace
-	tenant.Status.Usage.Capacity = AvailableSpace
 
-	var rawUsage uint64
+bailout:
+	// use safe conversions to signed integer to avoid negative sizes
+	tenant.Status.Usage.RawCapacity = safeToInt64(rawCapacity)
+	tenant.Status.Usage.RawUsage = safeToInt64(rawUsage)
+	tenant.Status.Usage.Capacity = safeToInt64(capacity)
+	tenant.Status.Usage.Usage = safeToInt64(usage)
 
-	var onlineDisks int32
-	var offlineDisks int32
-	for _, d := range storageInfo.Disks {
-		if d.State == madmin.DriveStateOk {
+	var onlineDisks, offlineDisks int32
+	for _, disk := range storageInfo.Disks {
+		if disk.State == madmin.DriveStateOk {
 			onlineDisks++
 		} else {
 			offlineDisks++
 		}
-		rawUsage = rawUsage + d.UsedSpace
 	}
 
 	tenant.Status.DrivesOnline = onlineDisks
 	tenant.Status.DrivesOffline = offlineDisks
-
-	tenant.Status.Usage.RawUsage = int64(rawUsage)
-
-	var rawCapacity int64
-	for _, p := range tenant.Spec.Pools {
-		rawCapacity = rawCapacity + (int64(p.Servers) * int64(p.VolumesPerServer) * p.VolumeClaimTemplate.Spec.Resources.Requests.Storage().Value())
-	}
-	tenant.Status.Usage.RawCapacity = rawCapacity
 
 	if tenant.Status.DrivesOffline > 0 || tenant.Status.DrivesHealing > 0 {
 		tenant.Status.HealthStatus = miniov2.HealthStatusYellow
@@ -293,4 +324,15 @@ func (c *Controller) syncHealthCheckHandler(key string) (Result, error) {
 	}
 
 	return WrapResult(Result{}, nil)
+}
+
+// safeToInt64 converts an unsigned 64-bit integer to a signed int64
+// and round to the upper limit of the integer, instead of returning
+// a negative value.
+func safeToInt64(u uint64) int64 {
+	const maxInt64 = ^uint64(0) >> 1
+	if u > maxInt64 {
+		u = maxInt64
+	}
+	return int64(u)
 }
