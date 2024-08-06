@@ -78,7 +78,7 @@ func StartSideCar(tenantName string, secretName string) {
 
 	controller := NewSideCarController(kubeClient, controllerClient, namespace, tenantName, secretName)
 	controller.ws = configureWebhookServer(controller)
-	controller.probeServer = configureProbesServer(controller, tenant.TLS())
+	controller.probeServer = configureProbesServer(tenant)
 	controller.sidecar = configureSidecarServer(controller)
 
 	stopControllerCh := make(chan struct{})
