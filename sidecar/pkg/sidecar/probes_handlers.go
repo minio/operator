@@ -24,14 +24,15 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
-func configureProbesServer(c *Controller, tenantTLS bool) *http.Server {
+func configureProbesServer(tenant *v2.Tenant) *http.Server {
 	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
 	router.Methods(http.MethodGet).
 		Path("/ready").
-		HandlerFunc(readinessHandler(tenantTLS))
+		HandlerFunc(readinessHandler(tenant))
 
 	router.NotFoundHandler = http.NotFoundHandler()
 
@@ -46,23 +47,29 @@ func configureProbesServer(c *Controller, tenantTLS bool) *http.Server {
 	return s
 }
 
-// we do insecure skip verify because we are checking against the local instance and don't care for the certificate
-var probeHTTPClient = &http.Client{
-	Timeout: time.Millisecond * 500,
-	Transport: &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	},
-}
+func readinessHandler(tenant *v2.Tenant) func(http.ResponseWriter, *http.Request) {
+	// we do insecure skip verify because we are checking against
+	// the local instance and don't care for the certificate. We
+	// do need to specify a proper server-name (SNI), otherwise the
+	// MinIO server doesn't know which certificate it should offer
+	probeHTTPClient := &http.Client{
+		Timeout: time.Millisecond * 500,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				ServerName:         tenant.MinIOFQDNServiceName(),
+				InsecureSkipVerify: true,
+			},
+		},
+	}
 
-func readinessHandler(tenantTLS bool) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		schema := "https"
-		if !tenantTLS {
+		if !tenant.TLS() {
 			schema = "http"
 		}
 		// we only check against the local instance of MinIO
-		url := schema + "://localhost:9000"
-		request, err := http.NewRequest("GET", url, nil)
+		url := schema + "://localhost:9000/minio/health/live"
+		request, err := http.NewRequest("HEAD", url, nil)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to create request: %s", err), http.StatusInternalServerError)
 			return
@@ -76,10 +83,8 @@ func readinessHandler(tenantTLS bool) func(w http.ResponseWriter, r *http.Reques
 		defer response.Body.Close()
 		_, _ = io.Copy(io.Discard, response.Body) // Discard body to enable connection reuse
 
-		if response.StatusCode == 403 {
-			fmt.Fprintln(w, "Readiness probe succeeded.")
-		} else {
-			http.Error(w, fmt.Sprintf("Readiness probe failed: expected status 403, got %d", response.StatusCode), http.StatusServiceUnavailable)
-		}
+		// we don't care if MinIO is actually handling requests,
+		// but we only want to know if the service is running
+		fmt.Fprintln(w, "Readiness probe succeeded with HTTP status ", response.StatusCode)
 	}
 }
