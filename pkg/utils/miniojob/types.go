@@ -118,7 +118,7 @@ func (jobCommand *MinIOIntervalJobCommand) Success() bool {
 }
 
 // createJob - create job
-func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client.Client, jobCR *v1alpha1.MinIOJob, stsPort int) (objs []client.Object) {
+func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client.Client, jobCR *v1alpha1.MinIOJob, stsPort int, isTLS bool) (objs []client.Object) {
 	if jobCommand == nil {
 		return nil
 	}
@@ -172,14 +172,18 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 		},
 	}
 	baseEnvFrom = append(baseEnvFrom, jobCommand.CommandSpec.EnvFrom...)
+	scheme := "http"
+	if isTLS {
+		scheme = "https"
+	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-job-secret", jobCR.Name),
 			Namespace: jobCR.Namespace,
 		},
 		StringData: map[string]string{
-			"MC_HOST_myminio":                    fmt.Sprintf("https://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.cluster.local", jobCR.Namespace),
-			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.cluster.local:%d/sts/%s", miniov2.GetNSFromFile(), stsPort, jobCR.Namespace),
+			"MC_HOST_myminio":                    fmt.Sprintf("%s://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.%s", scheme, jobCR.Namespace, miniov2.GetClusterDomain()),
+			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.%s:%d/sts/%s", miniov2.GetNSFromFile(), miniov2.GetClusterDomain(), stsPort, jobCR.Namespace),
 			"MC_WEB_IDENTITY_TOKEN_FILE_myminio": "/var/run/secrets/kubernetes.io/serviceaccount/token",
 		},
 	}
@@ -235,8 +239,8 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 }
 
 // CreateJob - create job
-func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int) error {
-	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, stsPort) {
+func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int, isTLS bool) error {
+	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, stsPort, isTLS) {
 		if obj == nil {
 			continue
 		}
@@ -310,10 +314,10 @@ func (intervalJob *MinIOIntervalJob) GetMinioJobStatus(_ context.Context) v1alph
 }
 
 // CreateCommandJob - create command job
-func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, stsPort int) error {
+func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, stsPort int, isTLS bool) error {
 	for _, command := range intervalJob.Command {
 		if len(command.CommandSpec.DependsOn) == 0 {
-			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort)
+			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort, isTLS)
 			if err != nil {
 				return err
 			}
@@ -330,7 +334,7 @@ func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sCl
 				}
 			}
 			if allDepsSuccess {
-				err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort)
+				err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort, isTLS)
 				if err != nil {
 					return err
 				}
