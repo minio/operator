@@ -687,6 +687,11 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.CertExpiryAlertThreshold != nil {
+		in, out := &in.CertExpiryAlertThreshold, &out.CertExpiryAlertThreshold
+		*out = new(int32)
+		**out = **in
+	}
 	if in.Liveness != nil {
 		in, out := &in.Liveness, &out.Liveness
 		*out = new(v1.Probe)

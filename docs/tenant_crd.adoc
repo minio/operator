@@ -4,9 +4,9 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2024-07-16T23-46-41Z]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2024-08-03T04-33-23Z]
 :kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2024-06-17T15-47-05Z]
-:mc-image: https://hub.docker.com/r/minio/mc/tags[minio/mc:RELEASE.2024-07-16T23-46-41Z]
+:mc-image: https://hub.docker.com/r/minio/mc/tags[minio/mc:RELEASE.2024-08-03T04-33-23Z]
 
 
 [id="{anchor_prefix}-minio-min-io-v2"]
@@ -1062,6 +1062,9 @@ If `requestAutoCert` is set to `false` *and* `externalCertSecret` is omitted, th
 
 
 See the https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html#create-tenant-security-section[MinIO Operator CRD] reference for examples and more complete documentation on configuring TLS for MinIO Tenants.
+
+|*`certExpiryAlertThreshold`* __integer__ 
+|CertExpiryAlertThreshold is the minimum number of days to expiry before an alert for an expiring certificate is fired.
 
 |*`liveness`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#probe-v1-core[$$Probe$$]__ 
 |Liveness Probe for container liveness. Container will be restarted if the probe fails.

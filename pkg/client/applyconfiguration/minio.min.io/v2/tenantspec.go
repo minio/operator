@@ -39,6 +39,7 @@ type TenantSpecApplyConfiguration struct {
 	Mountpath                 *string                                      `json:"mountPath,omitempty"`
 	Subpath                   *string                                      `json:"subPath,omitempty"`
 	RequestAutoCert           *bool                                        `json:"requestAutoCert,omitempty"`
+	CertExpiryAlertThreshold  *int32                                       `json:"certExpiryAlertThreshold,omitempty"`
 	Liveness                  *v1.Probe                                    `json:"liveness,omitempty"`
 	Readiness                 *v1.Probe                                    `json:"readiness,omitempty"`
 	Startup                   *v1.Probe                                    `json:"startup,omitempty"`
@@ -183,6 +184,14 @@ func (b *TenantSpecApplyConfiguration) WithSubpath(value string) *TenantSpecAppl
 // If called multiple times, the RequestAutoCert field is set to the value of the last call.
 func (b *TenantSpecApplyConfiguration) WithRequestAutoCert(value bool) *TenantSpecApplyConfiguration {
 	b.RequestAutoCert = &value
+	return b
+}
+
+// WithCertExpiryAlertThreshold sets the CertExpiryAlertThreshold field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the CertExpiryAlertThreshold field is set to the value of the last call.
+func (b *TenantSpecApplyConfiguration) WithCertExpiryAlertThreshold(value int32) *TenantSpecApplyConfiguration {
+	b.CertExpiryAlertThreshold = &value
 	return b
 }
 
