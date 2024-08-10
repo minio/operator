@@ -307,7 +307,7 @@ minio.<namespace>
 minio.<namespace>.svc
 minio.<namespace>.svc.<cluster domain>
 *.<tenant-name>-hl.<namespace>.svc.<cluster domain>
-*.<namespace>.svc.<cluster domain>
+*.minio.<namespace>.svc.<cluster domain>
 *.<tenant-name>.minio.<namespace>.svc.<cluster domain>'
 ```
 
