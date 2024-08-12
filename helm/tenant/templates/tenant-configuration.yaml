@@ -1,21 +1,10 @@
 {{- if (.Values.secrets) }}
-{{- print "# WARNING: '.secrets' is deprecated since v5.0.15 and will be removed in next minor release (i.e. v5.1.0). Please use '.tenant.configSecret' instead." }}
-{{- end }}
-{{- if and (.Values.secrets) (.Values.tenant.configSecret) }}
-{{- fail "ERROR: '.secrets' and '.tenant.configSecret' are mutually exclusive. Please use 'tenant.configSecret' instead." }}
-{{- end }}
-{{- if and (.Values.secrets) (not (.Values.secrets).existingSecret) }}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ dig "secrets" "name" "" (.Values | merge (dict)) }}
-type: Opaque
-stringData:
-  config.env: |-
-    export MINIO_ROOT_USER={{ .Values.secrets.accessKey | quote }}
-    export MINIO_ROOT_PASSWORD={{ .Values.secrets.secretKey | quote }}
-{{- end }}
-{{- if and (.Values.tenant.configSecret) (not (.Values.tenant.configSecret).existingSecret) }}
+{{- fail "# ERROR: '.secrets' is deprecated since v5.0.15 and has been removed. Please use '.tenant.configSecret' instead." }}
+{{- else }}
+{{- if not (.Values.tenant.configSecret) }}
+{{- fail "# ERROR: '.tenant.configSecret' should be set." }}
+{{- else }}
+
 apiVersion: v1
 kind: Secret
 metadata:
@@ -25,4 +14,7 @@ stringData:
   config.env: |-
     export MINIO_ROOT_USER={{ .Values.tenant.configSecret.accessKey | quote }}
     export MINIO_ROOT_PASSWORD={{ .Values.tenant.configSecret.secretKey | quote }}
+
 {{- end }}
+{{- end }}
+
