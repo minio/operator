@@ -61,11 +61,9 @@ func (c *Controller) DeletePodsByStatefulSet(ctx context.Context, sts *appsv1.St
 	}
 	for _, item := range podList.Items {
 		err = c.k8sClient.Delete(ctx, &item)
-		if err != nil {
-			// Ignore Not Found
-			if client.IgnoreNotFound(err) != nil {
-				return err
-			}
+		// Ignore Not Found
+		if client.IgnoreNotFound(err) != nil {
+			log.Printf("unable to restart %s/%s (ignored): %s",  item.Namespace, item.Name, err)
 		}
 	}
 	return
