@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"k8s.io/klog/v2"
 	"time"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -60,10 +61,12 @@ func (c *Controller) DeletePodsByStatefulSet(ctx context.Context, sts *appsv1.St
 		return err
 	}
 	for _, item := range podList.Items {
-		err = c.k8sClient.Delete(ctx, &item)
-		// Ignore Not Found
-		if client.IgnoreNotFound(err) != nil {
-			log.Printf("unable to restart %s/%s (ignored): %s",  item.Namespace, item.Name, err)
+		if item.DeletionTimestamp == nil {
+			err = c.k8sClient.Delete(ctx, &item)
+			// Ignore Not Found
+			if client.IgnoreNotFound(err) != nil {
+				klog.Infof("unable to restart %s/%s (ignored): %s", item.Namespace, item.Name, err)
+			}
 		}
 	}
 	return

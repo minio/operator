@@ -109,13 +109,21 @@ func (c *Controller) getSystemCfgFromStatefulSet(ctx context.Context, sts *appsv
 						if err != nil {
 							return nil, err
 						}
-						systemCfg[e.Name] = string(secret.Data[e.ValueFrom.SecretKeyRef.Key])
+						value, ok := secret.Data[e.ValueFrom.SecretKeyRef.Key]
+						if !ok {
+							return nil, fmt.Errorf("secret %s does not have key %s", e.ValueFrom.SecretKeyRef.Name, e.ValueFrom.SecretKeyRef.Key)
+						}
+						systemCfg[e.Name] = string(value)
 					case e.ValueFrom != nil && e.ValueFrom.ConfigMapKeyRef != nil:
 						configMap, err := c.kubeClientSet.CoreV1().ConfigMaps(sts.Namespace).Get(ctx, e.ValueFrom.ConfigMapKeyRef.Name, metav1.GetOptions{})
 						if err != nil {
 							return nil, err
 						}
-						systemCfg[e.Name] = configMap.Data[e.ValueFrom.ConfigMapKeyRef.Key]
+						value, ok := configMap.Data[e.ValueFrom.ConfigMapKeyRef.Key]
+						if !ok {
+							return nil, fmt.Errorf("configmap %s does not have key %s", e.ValueFrom.ConfigMapKeyRef.Name, e.ValueFrom.ConfigMapKeyRef.Key)
+						}
+						systemCfg[e.Name] = value
 					default:
 						return nil, fmt.Errorf("unsupported env var %s", e.Name)
 					}
