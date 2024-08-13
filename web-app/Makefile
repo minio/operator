@@ -3,9 +3,9 @@ default: build-static
 build-static:
 	@echo "Building frontend static assets to 'build'"
 	@if [ -f "${NVM_DIR}/nvm.sh" ]; then \. "${NVM_DIR}/nvm.sh" && nvm install && nvm use; fi && \
-	  NODE_OPTIONS=--openssl-legacy-provider yarn build
+	  yarn build
 
-test-warnings:
+test-warnings build-static:
 	./check-warnings.sh
 
 test-prettier:

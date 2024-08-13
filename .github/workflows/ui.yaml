@@ -15,7 +15,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   semgrep-static-code-analysis:
     timeout-minutes: 30
     name: "semgrep checks"
@@ -129,12 +128,6 @@ jobs:
           cache: true
         id: go
       - uses: actions/cache@v3
-        name: Operator Binary Cache
-        with:
-          path: |
-            ./minio-operator
-          key: ${{ runner.os }}-binary-${{ github.run_id }}
-      - uses: actions/cache@v3
         id: assets-cache
         name: Assets Cache
         with:
@@ -147,6 +140,12 @@ jobs:
           GOOS: linux
         run: |
           make binary
+      - uses: actions/cache/save@v3
+        name: Save Operator Binary
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-ui-binary-${{ github.run_id }}
   
   
   
@@ -200,7 +199,7 @@ jobs:
         with:
           path: |
             ./minio-operator
-          key: ${{ runner.os }}-binary-${{ github.run_id }}
+          key: ${{ runner.os }}-ui-binary-${{ github.run_id }}
 
       # Runs a set of commands using the runners shell
       - name: Start Kind for Operator UI
@@ -237,7 +236,7 @@ jobs:
         with:
           path: |
             ./minio-operator
-          key: ${{ runner.os }}-binary-${{ github.run_id }}
+          key: ${{ runner.os }}-ui-binary-${{ github.run_id }}
 
       # Runs a set of commands using the runners shell
       - name: Start Kind for Operator UI
@@ -311,6 +310,7 @@ jobs:
       - ui-assets
       - reuse-golang-dependencies
       - semgrep-static-code-analysis
+      - compile-binary
     runs-on: ubuntu-latest
 
     strategy:
@@ -327,13 +327,19 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
         id: go
+      - uses: actions/cache@v3
+        name: Operator Binary Cache
+        with:
+          path: |
+            ./minio-operator
+          key: ${{ runner.os }}-ui-binary-${{ github.run_id }}
 
       - name: Operator API Tests
         run: |
           curl -sLO "https://dl.k8s.io/release/v1.23.1/bin/linux/amd64/kubectl" -o kubectl
           chmod +x kubectl
           mv kubectl /usr/local/bin
-          "${GITHUB_WORKSPACE}/tests/start-tests-tenant.sh"
+          "${GITHUB_WORKSPACE}/testing/start-tests-tenant.sh"
           echo "start ---> make test-operator-integration";
           make test-operator-integration;
 

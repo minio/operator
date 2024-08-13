@@ -174,7 +174,7 @@ jobs:
           key: ${{ runner.os }}-binary-${{ github.run_id }}
       - name: Tenant upgrade test on Kind
         run: |
-          "${GITHUB_WORKSPACE}/testing/deploy-tenant-upgrade.sh"
+          "${GITHUB_WORKSPACE}/testing/deploy-tenant-upgrade.sh" "5.0.16"
   test-kes:
     timeout-minutes: 30
     runs-on: ${{ matrix.os }}
