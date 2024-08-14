@@ -13,10 +13,13 @@
 # # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-SCRIPT_DIR=$(dirname "$0")
+WEBAPP_SCRIPT_DIR=$(dirname "$0")
+export WEBAPP_SCRIPT_DIR
+source "${WEBAPP_SCRIPT_DIR}/common.sh" # This is common.sh for TestCafe Tests
+
+SCRIPT_DIR="$GITHUB_WORKSPACE/testing"
 export SCRIPT_DIR
-source "${SCRIPT_DIR}/common.sh" # This is common.sh for TestCafe Tests
-source "${GITHUB_WORKSPACE}/tests/common.sh" # This is common.sh for k8s tests.
+source "${SCRIPT_DIR}/common.sh" # This is common.sh for k8s tests.
 
 ## this enables :dev tag for minio/operator container image.
 CI="true"

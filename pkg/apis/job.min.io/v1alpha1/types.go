@@ -34,7 +34,7 @@ const (
 // +kubebuilder:resource:scope=Namespaced,shortName=miniojob,singular=miniojob
 // +kubebuilder:printcolumn:name="Tenant",type=string,JSONPath=`.spec.tenant.name`
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.spec.status.phase`
-// +kubebuilder:metadata:annotations=operator.min.io/version=v5.0.16
+// +kubebuilder:metadata:annotations=operator.min.io/version=v5.0.17
 
 // MinIOJob is a top-level type. A client is created for it
 type MinIOJob struct {
