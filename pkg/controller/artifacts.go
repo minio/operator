@@ -98,7 +98,7 @@ func (c *Controller) fetchArtifacts(tenant *miniov2.Tenant) (latest string, err 
 
 	basePath := updatePath
 
-	if err = os.MkdirAll(basePath, 1777); err != nil {
+	if err = os.MkdirAll(basePath, 0o777); err != nil {
 		return latest, err
 	}
 
