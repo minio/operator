@@ -269,6 +269,9 @@ func ExtractTar(filesToExtract []string, basePath, tarFileName string) error {
 		}
 
 		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return fmt.Errorf("Tar file contains only %d from the %d files", len(filesToExtract)-success, len(filesToExtract))
+			}
 			return fmt.Errorf("Tar file extraction failed for file index: %d, with: %w", success, err)
 		}
 		if header.Typeflag == tar.TypeReg {
