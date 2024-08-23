@@ -155,26 +155,25 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 	if mcImage == "" {
 		mcImage = DefaultMCImage
 	}
-	var baseVolumeMounts []corev1.VolumeMount
-	var baseVolumes []corev1.Volume
+	baseVolumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "config-dir",
+			MountPath: "/.mc",
+		},
+	}
+	baseVolumes := []corev1.Volume{
+		{
+			Name: "config-dir",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
 	// if auto cert is not enabled and insecure is not enabled and tenant tls is enabled, add cert volumes
 	if !t.AutoCert() && !insecure && t.TLS() {
-		baseVolumes, baseVolumeMounts = getCertVolumes(t)
-	} else {
-		baseVolumeMounts = []corev1.VolumeMount{
-			{
-				Name:      "config-dir",
-				MountPath: "/.mc",
-			},
-		}
-		baseVolumes = []corev1.Volume{
-			{
-				Name: "config-dir",
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-		}
+		certsVolumes, certsVolumeMounts := getCertVolumes(t)
+		baseVolumeMounts = append(baseVolumeMounts, certsVolumeMounts...)
+		baseVolumes = append(baseVolumes, certsVolumes...)
 	}
 
 	baseVolumeMounts = append(baseVolumeMounts, jobCommand.CommandSpec.VolumeMounts...)
@@ -492,7 +491,7 @@ func getCertVolumes(t *miniov2.Tenant) (certsVolumes []corev1.Volume, certsVolum
 
 	if len(certVolumeSources) > 0 {
 		certsVolumes = append(certsVolumes, corev1.Volume{
-			Name: "config-dir",
+			Name: "certs",
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
 					Sources: certVolumeSources,
@@ -500,8 +499,8 @@ func getCertVolumes(t *miniov2.Tenant) (certsVolumes []corev1.Volume, certsVolum
 			},
 		})
 		certsVolumeMounts = append(certsVolumeMounts, corev1.VolumeMount{
-			Name:      "config-dir",
-			MountPath: "/.mc",
+			Name:      "certs",
+			MountPath: "/.mc/certs",
 		})
 	}
 	return certsVolumes, certsVolumeMounts
