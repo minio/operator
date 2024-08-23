@@ -268,7 +268,7 @@ func (c *JobController) SyncHandler(key string) (_ Result, err error) {
 	if err != nil {
 		return WrapResult(Result{}, err)
 	}
-	err = intervalJob.CreateCommandJob(ctx, c.k8sClient, STSDefaultPort, tenant.TLS())
+	err = intervalJob.CreateCommandJob(ctx, c.k8sClient, STSDefaultPort, tenant)
 	if err != nil {
 		return WrapResult(Result{}, fmt.Errorf("create job error: %w", err))
 	}

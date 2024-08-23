@@ -24,6 +24,7 @@ import (
 
 	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	"github.com/minio/operator/pkg/certs"
 	"github.com/minio/operator/pkg/runtime"
 	batchjobv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -118,7 +119,7 @@ func (jobCommand *MinIOIntervalJobCommand) Success() bool {
 }
 
 // createJob - create job
-func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client.Client, jobCR *v1alpha1.MinIOJob, stsPort int, isTLS bool) (objs []client.Object) {
+func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client.Client, jobCR *v1alpha1.MinIOJob, stsPort int, t *miniov2.Tenant) (objs []client.Object) {
 	if jobCommand == nil {
 		return nil
 	}
@@ -129,6 +130,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 	}
 	jobCommand.mutex.RUnlock()
 	jobCommands := []string{}
+	insecure := false
 	if len(jobCommand.CommandSpec.Command) == 0 {
 		commands := []string{"mc"}
 		commands = append(commands, strings.SplitN(jobCommand.MCOperation, "/", -1)...)
@@ -137,6 +139,9 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 			trimmedCommand := strings.TrimSpace(command)
 			if trimmedCommand != "" {
 				jobCommands = append(jobCommands, trimmedCommand)
+			}
+			if command == "--insecure" {
+				insecure = true
 			}
 		}
 	} else {
@@ -162,6 +167,13 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 		},
 	}
 	baseVolumes = append(baseVolumes, jobCommand.CommandSpec.Volumes...)
+	// if auto cert is not enabled and insecure is not enabled, add cert volumes
+	if !t.AutoCert() && !insecure {
+		certVolumes, certVolumeMounts := getCertVolumes(t)
+		baseVolumes = append(baseVolumes, certVolumes...)
+		baseVolumeMounts = append(baseVolumeMounts, certVolumeMounts...)
+	}
+
 	baseEnvFrom := []corev1.EnvFromSource{
 		{
 			SecretRef: &corev1.SecretEnvSource{
@@ -173,7 +185,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 	}
 	baseEnvFrom = append(baseEnvFrom, jobCommand.CommandSpec.EnvFrom...)
 	scheme := "http"
-	if isTLS {
+	if t.TLS() {
 		scheme = "https"
 	}
 	secret := &corev1.Secret{
@@ -239,8 +251,8 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 }
 
 // CreateJob - create job
-func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int, isTLS bool) error {
-	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, stsPort, isTLS) {
+func (jobCommand *MinIOIntervalJobCommand) CreateJob(ctx context.Context, k8sClient client.Client, jobCR *v1alpha1.MinIOJob, stsPort int, t *miniov2.Tenant) error {
+	for _, obj := range jobCommand.createJob(ctx, k8sClient, jobCR, stsPort, t) {
 		if obj == nil {
 			continue
 		}
@@ -314,10 +326,10 @@ func (intervalJob *MinIOIntervalJob) GetMinioJobStatus(_ context.Context) v1alph
 }
 
 // CreateCommandJob - create command job
-func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, stsPort int, isTLS bool) error {
+func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sClient client.Client, stsPort int, t *miniov2.Tenant) error {
 	for _, command := range intervalJob.Command {
 		if len(command.CommandSpec.DependsOn) == 0 {
-			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort, isTLS)
+			err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort, t)
 			if err != nil {
 				return err
 			}
@@ -334,7 +346,7 @@ func (intervalJob *MinIOIntervalJob) CreateCommandJob(ctx context.Context, k8sCl
 				}
 			}
 			if allDepsSuccess {
-				err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort, isTLS)
+				err := command.CreateJob(ctx, k8sClient, intervalJob.JobCR, stsPort, t)
 				if err != nil {
 					return err
 				}
@@ -378,4 +390,113 @@ func GenerateMinIOIntervalJobCommand(commandSpec v1alpha1.CommandSpec, commandIn
 		jobCommand.JobName = fmt.Sprintf("command-%d", commandIndex)
 	}
 	return jobCommand, nil
+}
+
+// getCertVolumes - get cert volumes
+// from statefulsets.NewPool implementation
+func getCertVolumes(t *miniov2.Tenant) (certsVolumes []corev1.Volume, certsVolumeMounts []corev1.VolumeMount) {
+	var certVolumeSources []corev1.VolumeProjection
+	for index, secret := range t.Spec.ExternalCertSecret {
+		crtMountPath := fmt.Sprintf("hostname-%d/%s", index, certs.PublicCertFile)
+		caMountPath := fmt.Sprintf("CAs/hostname-%d.crt", index)
+
+		if index == 0 {
+			crtMountPath = certs.PublicCertFile
+			caMountPath = fmt.Sprintf("%s/%s", certs.CertsCADir, certs.PublicCertFile)
+		}
+
+		var serverCertPaths []corev1.KeyToPath
+		if secret.Type == "kubernetes.io/tls" {
+			serverCertPaths = []corev1.KeyToPath{
+				{Key: certs.TLSCertFile, Path: crtMountPath},
+				{Key: certs.TLSCertFile, Path: caMountPath},
+			}
+		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
+			serverCertPaths = []corev1.KeyToPath{
+				{Key: certs.TLSCertFile, Path: crtMountPath},
+				{Key: certs.CAPublicCertFile, Path: caMountPath},
+			}
+		} else {
+			serverCertPaths = []corev1.KeyToPath{
+				{Key: certs.PublicCertFile, Path: crtMountPath},
+				{Key: certs.PublicCertFile, Path: caMountPath},
+			}
+		}
+		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secret.Name,
+				},
+				Items: serverCertPaths,
+			},
+		})
+	}
+	for index, secret := range t.Spec.ExternalClientCertSecrets {
+		crtMountPath := fmt.Sprintf("client-%d/client.crt", index)
+		var clientKeyPairPaths []corev1.KeyToPath
+		if secret.Type == "kubernetes.io/tls" {
+			clientKeyPairPaths = []corev1.KeyToPath{
+				{Key: certs.TLSCertFile, Path: crtMountPath},
+			}
+		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
+			clientKeyPairPaths = []corev1.KeyToPath{
+				{Key: certs.TLSCertFile, Path: crtMountPath},
+				{Key: certs.CAPublicCertFile, Path: fmt.Sprintf("%s/client-ca-%d.crt", certs.CertsCADir, index)},
+			}
+		} else {
+			clientKeyPairPaths = []corev1.KeyToPath{
+				{Key: certs.PublicCertFile, Path: crtMountPath},
+			}
+		}
+		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secret.Name,
+				},
+				Items: clientKeyPairPaths,
+			},
+		})
+	}
+	for index, secret := range t.Spec.ExternalCaCertSecret {
+		var caCertPaths []corev1.KeyToPath
+		// This covers both secrets of type "kubernetes.io/tls" and
+		// "cert-manager.io/v1alpha2" because of same keys in both.
+		if secret.Type == "kubernetes.io/tls" {
+			caCertPaths = []corev1.KeyToPath{
+				{Key: certs.TLSCertFile, Path: fmt.Sprintf("%s/ca-%d.crt", certs.CertsCADir, index)},
+			}
+		} else if secret.Type == "cert-manager.io/v1alpha2" || secret.Type == "cert-manager.io/v1" {
+			caCertPaths = []corev1.KeyToPath{
+				{Key: certs.CAPublicCertFile, Path: fmt.Sprintf("%s/ca-%d.crt", certs.CertsCADir, index)},
+			}
+		} else {
+			caCertPaths = []corev1.KeyToPath{
+				{Key: certs.PublicCertFile, Path: fmt.Sprintf("%s/ca-%d.crt", certs.CertsCADir, index)},
+			}
+		}
+		certVolumeSources = append(certVolumeSources, corev1.VolumeProjection{
+			Secret: &corev1.SecretProjection{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: secret.Name,
+				},
+				Items: caCertPaths,
+			},
+		})
+	}
+
+	if len(certVolumeSources) > 0 {
+		certsVolumes = append(certsVolumes, corev1.Volume{
+			Name: "certs",
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					Sources: certVolumeSources,
+				},
+			},
+		})
+		certsVolumeMounts = append(certsVolumeMounts, corev1.VolumeMount{
+			Name:      "certs",
+			MountPath: "/.mc/certs",
+		})
+	}
+	return certsVolumes, certsVolumeMounts
 }
