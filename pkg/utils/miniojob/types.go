@@ -167,8 +167,8 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 		},
 	}
 	baseVolumes = append(baseVolumes, jobCommand.CommandSpec.Volumes...)
-	// if auto cert is not enabled and insecure is not enabled, add cert volumes
-	if !t.AutoCert() && !insecure {
+	// if auto cert is not enabled and insecure is not enabled and tenant tls is enabled, add cert volumes
+	if !t.AutoCert() && !insecure && t.TLS() {
 		certVolumes, certVolumeMounts := getCertVolumes(t)
 		baseVolumes = append(baseVolumes, certVolumes...)
 		baseVolumeMounts = append(baseVolumeMounts, certVolumeMounts...)
