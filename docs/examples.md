@@ -93,6 +93,9 @@ Create `kubernetes secrets`  based on the previous certificates
 kubectl create secret tls minio-tls-cert --key="_wildcard.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.minio-tenant.svc.cluster.local.pem" -n minio-tenant
 kubectl create secret tls minio-buckets-cert --key="_wildcard.myminio.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.myminio.minio-tenant.svc.cluster.local.pem" -n minio-tenant
 kubectl create secret tls minio-hl-cert --key="_wildcard.myminio-hl.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.myminio-hl.minio-tenant.svc.cluster.local.pem" -n minio-tenant
+
+# create a new secret for the operator certs
+kubectl create secret tls operator-ca-tls-minio-tls-cert --key="_wildcard.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.minio-tenant.svc.cluster.local.pem" -n minio-tenant
 ```
 
 You need to provide those `kubernetes secrets` in your Tenant `YAML` overlay using the `externalCertSecret` fields, ie:
