@@ -492,7 +492,7 @@ func getCertVolumes(t *miniov2.Tenant) (certsVolumes []corev1.Volume, certsVolum
 
 	if len(certVolumeSources) > 0 {
 		certsVolumes = append(certsVolumes, corev1.Volume{
-			Name: "certs",
+			Name: "config-dir",
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
 					Sources: certVolumeSources,
@@ -500,8 +500,8 @@ func getCertVolumes(t *miniov2.Tenant) (certsVolumes []corev1.Volume, certsVolum
 			},
 		})
 		certsVolumeMounts = append(certsVolumeMounts, corev1.VolumeMount{
-			Name:      "certs",
-			MountPath: "/.mc/certs",
+			Name:      "config-dir",
+			MountPath: "/.mc",
 		})
 	}
 	return certsVolumes, certsVolumeMounts
