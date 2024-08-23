@@ -500,7 +500,7 @@ func getCertVolumes(t *miniov2.Tenant) (certsVolumes []corev1.Volume, certsVolum
 		})
 		certsVolumeMounts = append(certsVolumeMounts, corev1.VolumeMount{
 			Name:      "certs",
-			MountPath: "/.mc/certs",
+			MountPath: "/root/.mc/certs",
 		})
 	}
 	return certsVolumes, certsVolumeMounts
