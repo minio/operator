@@ -140,39 +140,45 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 			if trimmedCommand != "" {
 				jobCommands = append(jobCommands, trimmedCommand)
 			}
-			if command == "--insecure" {
-				insecure = true
-			}
 		}
 	} else {
 		jobCommands = append(jobCommands, jobCommand.CommandSpec.Command...)
 	}
+
+	for _, command := range jobCommands {
+		if command == "--insecure" {
+			insecure = true
+		}
+	}
+
 	mcImage := jobCR.Spec.MCImage
 	if mcImage == "" {
 		mcImage = DefaultMCImage
 	}
-	baseVolumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "config-dir",
-			MountPath: "/.mc",
-		},
-	}
-	baseVolumeMounts = append(baseVolumeMounts, jobCommand.CommandSpec.VolumeMounts...)
-	baseVolumes := []corev1.Volume{
-		{
-			Name: "config-dir",
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-	}
-	baseVolumes = append(baseVolumes, jobCommand.CommandSpec.Volumes...)
+	var baseVolumeMounts []corev1.VolumeMount
+	var baseVolumes []corev1.Volume
 	// if auto cert is not enabled and insecure is not enabled and tenant tls is enabled, add cert volumes
 	if !t.AutoCert() && !insecure && t.TLS() {
-		certVolumes, certVolumeMounts := getCertVolumes(t)
-		baseVolumes = append(baseVolumes, certVolumes...)
-		baseVolumeMounts = append(baseVolumeMounts, certVolumeMounts...)
+		baseVolumes, baseVolumeMounts = getCertVolumes(t)
+	} else {
+		baseVolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      "config-dir",
+				MountPath: "/.mc",
+			},
+		}
+		baseVolumes = []corev1.Volume{
+			{
+				Name: "config-dir",
+				VolumeSource: corev1.VolumeSource{
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
+				},
+			},
+		}
 	}
+
+	baseVolumeMounts = append(baseVolumeMounts, jobCommand.CommandSpec.VolumeMounts...)
+	baseVolumes = append(baseVolumes, jobCommand.CommandSpec.Volumes...)
 
 	baseEnvFrom := []corev1.EnvFromSource{
 		{
