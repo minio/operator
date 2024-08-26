@@ -17,12 +17,17 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/utils"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // handlePodChange will handle changes in pods and queue it for processing, pods are already filtered by PodInformer
@@ -42,4 +47,26 @@ func (c *Controller) handlePodChange(obj interface{}) {
 
 	key := fmt.Sprintf("%s/%s", object.GetNamespace(), instanceName)
 	c.healthCheckQueue.AddAfter(key, 1*time.Second)
+}
+
+// DeletePodsByStatefulSet deletes all pods associated with a statefulset
+func (c *Controller) DeletePodsByStatefulSet(ctx context.Context, sts *appsv1.StatefulSet) (err error) {
+	listOpt := &client.ListOptions{
+		Namespace: sts.Namespace,
+	}
+	client.MatchingLabels(sts.Spec.Template.Labels).ApplyToList(listOpt)
+	podList := &corev1.PodList{}
+	if err := c.k8sClient.List(ctx, podList, listOpt); err != nil {
+		return err
+	}
+	for _, item := range podList.Items {
+		if item.DeletionTimestamp == nil {
+			err = c.k8sClient.Delete(ctx, &item)
+			// Ignore Not Found
+			if client.IgnoreNotFound(err) != nil {
+				klog.Infof("unable to restart %s/%s (ignored): %s", item.Namespace, item.Name, err)
+			}
+		}
+	}
+	return
 }

@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"os"
 	"os/signal"
@@ -1315,6 +1316,29 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			c.recorder.Event(tenant, corev1.EventTypeWarning, ErrResourceExists, msg)
 			// return nil so we don't re-queue this work item, this error won't get fixed by reprocessing
 			return WrapResult(Result{}, nil)
+		}
+
+		// check if the system config has changed
+		// if changed, minio request the systemCfg must be the same to restart.
+		expectedSystemCfg, err := c.getSystemCfgFromStatefulSet(ctx, expectedStatefulSet)
+		if err != nil {
+			return WrapResult(Result{}, err)
+		}
+		existingSystemCfg, err := c.getSystemCfgFromStatefulSet(ctx, existingStatefulSet)
+		if err != nil {
+			return WrapResult(Result{}, err)
+		}
+		if !maps.Equal(expectedSystemCfg, existingSystemCfg) {
+			// delete pdb to let all the statefulSet pods get deleted
+			err = c.DeletePDB(ctx, tenant)
+			if err != nil {
+				return Result{}, err
+			}
+			// find all existing statefulSet pods and delete them
+			err = c.DeletePodsByStatefulSet(ctx, existingStatefulSet)
+			if err != nil {
+				return WrapResult(Result{}, err)
+			}
 		}
 	}
 
