@@ -128,7 +128,7 @@ func GetPrivateKeyFilePath(serviceName string) string {
 func GetNSFromFile() string {
 	namespace, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
 	if err != nil {
-		return "minio-operator"
+		return os.Getenv("DEV_NAMESPACE")
 	}
 	return string(namespace)
 }

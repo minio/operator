@@ -48,7 +48,21 @@ func init() {
 // StartSideCar instantiates kube clients and starts the side-car controller
 func StartSideCar(tenantName string, secretName string) {
 	log.Println("Starting Sidecar")
-	cfg, err := rest.InClusterConfig()
+	var cfg *rest.Config
+	var err error
+
+	if os.Getenv("DEV_NAMESPACE") != "" {
+		klog.Info("DEV_NAMESPACE present, running dev mode")
+		cfg = &rest.Config{
+			Host:            "http://localhost:8001",
+			TLSClientConfig: rest.TLSClientConfig{Insecure: true},
+			APIPath:         "/",
+		}
+	} else {
+		// Look for incluster config by default
+		cfg, err = rest.InClusterConfig()
+	}
+
 	if err != nil {
 		panic(err)
 	}
