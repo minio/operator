@@ -36,11 +36,6 @@ var sidecarCmd = cli.Command{
 			Value: "",
 			Usage: "name of tenant being validated",
 		},
-		cli.StringFlag{
-			Name:  "config-name",
-			Value: "",
-			Usage: "secret being watched",
-		},
 	},
 }
 
@@ -50,10 +45,5 @@ func startSideCar(ctx *cli.Context) {
 		log.Println("Must pass --tenant flag")
 		os.Exit(1)
 	}
-	configName := ctx.String("config-name")
-	if configName == "" {
-		log.Println("Must pass --config-name flag")
-		os.Exit(1)
-	}
-	sidecar.StartSideCar(tenantName, configName)
+	sidecar.StartSideCar(tenantName)
 }

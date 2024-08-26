@@ -23,11 +23,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/minio/operator/pkg/configuration"
+	"github.com/minio/operator/sidecar/pkg/configuration"
 	"k8s.io/client-go/kubernetes"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	operatorClientset "github.com/minio/operator/pkg/client/clientset/versioned"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
@@ -66,14 +67,19 @@ func Validate(tenantName string) {
 		panic(err)
 	}
 	tenant.EnsureDefaults()
-	// get tenant config secret
-	configSecret, err := kubeClient.CoreV1().Secrets(namespace).Get(ctx, tenant.Spec.Configuration.Name, metav1.GetOptions{})
+
+	// determine the configmaps and secrets to watch
+	configMaps, secrets, err := configuration.TenantResources(context.Background(), tenant, func(ctx context.Context, name string) (*corev1.ConfigMap, error) {
+		return kubeClient.CoreV1().ConfigMaps(tenant.Namespace).Get(ctx, name, metav1.GetOptions{})
+	}, func(ctx context.Context, name string) (*corev1.Secret, error) {
+		return kubeClient.CoreV1().Secrets(tenant.Namespace).Get(ctx, name, metav1.GetOptions{})
+	})
 	if err != nil {
 		log.Println(err)
 		panic(err)
 	}
 
-	fileContents, rootUserFound, rootPwdFound := configuration.GetFullTenantConfig(tenant, configSecret)
+	fileContents, rootUserFound, rootPwdFound := configuration.GetFullTenantConfig(tenant, configMaps, secrets)
 
 	if !rootUserFound || !rootPwdFound {
 		log.Println("Missing root credentials in the configuration.")

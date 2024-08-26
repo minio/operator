@@ -67,7 +67,7 @@ export MINIO_UPDATE_MINISIGN_PUBKEY="RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRy
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := envVarsToFileContent(tt.args.envVars); got != tt.want {
+			if got := envVarsToFileContent(tt.args.envVars, nil, nil); got != tt.want {
 				t.Errorf("envVarsToFileContent() = `%v`, want `%v`", got, tt.want)
 			}
 		})
@@ -377,7 +377,12 @@ export TEST="value"
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.tenant.EnsureDefaults()
-			if got, _, _ := GetFullTenantConfig(tt.args.tenant, tt.args.configSecret); got != tt.want {
+
+			var configMaps map[string]*corev1.ConfigMap
+			secrets := map[string]*corev1.Secret{
+				tt.args.tenant.ConfigurationSecretName(): tt.args.configSecret,
+			}
+			if got, _, _ := GetFullTenantConfig(tt.args.tenant, configMaps, secrets); got != tt.want {
 				t.Errorf("GetFullTenantConfig() = `%v`, want `%v`", got, tt.want)
 			}
 		})

@@ -17,8 +17,12 @@
 package configuration
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"log"
 	"sort"
+	"strconv"
 	"strings"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -31,27 +35,69 @@ const (
 	bucketDNSEnv = "MINIO_DNS_WEBHOOK_ENDPOINT"
 )
 
+type (
+	secretFunc func(ctx context.Context, name string) (*corev1.Secret, error)
+	configFunc func(ctx context.Context, name string) (*corev1.ConfigMap, error)
+)
+
+// TenantResources returns maps for all configmap/secret resources that
+// are used in the tenant specification
+func TenantResources(ctx context.Context, tenant *miniov2.Tenant, cf configFunc, sf secretFunc) (map[string]*corev1.ConfigMap, map[string]*corev1.Secret, error) {
+	configMaps := make(map[string]*corev1.ConfigMap)
+	secrets := make(map[string]*corev1.Secret)
+
+	for _, env := range tenant.Spec.Env {
+		if env.ValueFrom != nil {
+			if env.ValueFrom.SecretKeyRef != nil {
+				secret, err := sf(ctx, env.ValueFrom.SecretKeyRef.Name)
+				if err != nil {
+					return nil, nil, err
+				}
+				secrets[env.ValueFrom.SecretKeyRef.Name] = secret
+			}
+			if env.ValueFrom.ConfigMapKeyRef != nil {
+				configmap, err := cf(ctx, env.ValueFrom.ConfigMapKeyRef.Name)
+				if err != nil {
+					return nil, nil, err
+				}
+				configMaps[env.ValueFrom.ConfigMapKeyRef.Name] = configmap
+			}
+			if env.ValueFrom.FieldRef != nil {
+				return nil, nil, errors.New("mapping fields is not supported")
+			}
+			if env.ValueFrom.ResourceFieldRef != nil {
+				return nil, nil, errors.New("mapping resource fields is not supported")
+			}
+		}
+	}
+
+	secret, err := sf(ctx, tenant.Spec.Configuration.Name)
+	if err != nil {
+		return nil, nil, err
+	}
+	secrets[tenant.Spec.Configuration.Name] = secret
+
+	return configMaps, secrets, nil
+}
+
 // GetFullTenantConfig returns the full configuration for the tenant considering the secret and the tenant spec
-func GetFullTenantConfig(tenant *miniov2.Tenant, configSecret *corev1.Secret) (string, bool, bool) {
+func GetFullTenantConfig(tenant *miniov2.Tenant, configMaps map[string]*corev1.ConfigMap, secrets map[string]*corev1.Secret) (string, bool, bool) {
+	configSecret := secrets[tenant.Spec.Configuration.Name]
+
 	seededVars := parseConfEnvSecret(configSecret)
 	rootUserFound := false
 	rootPwdFound := false
 	for _, env := range seededVars {
-		if env.Name == "MINIO_ROOT_USER" {
+		if env.Name == "MINIO_ROOT_USER" || env.Name == "MINIO_ACCESS_KEY" {
 			rootUserFound = true
 		}
-		if env.Name == "MINIO_ACCESS_KEY" {
-			rootUserFound = true
-		}
-		if env.Name == "MINIO_ROOT_PASSWORD" {
-			rootPwdFound = true
-		}
-		if env.Name == "MINIO_SECRET_KEY" {
+		if env.Name == "MINIO_ROOT_PASSWORD" || env.Name == "MINIO_SECRET_KEY" {
 			rootPwdFound = true
 		}
 	}
+
 	compiledConfig := buildTenantEnvs(tenant, seededVars)
-	configurationFileContent := envVarsToFileContent(compiledConfig)
+	configurationFileContent := envVarsToFileContent(compiledConfig, configMaps, secrets)
 	return configurationFileContent, rootUserFound, rootPwdFound
 }
 
@@ -70,12 +116,15 @@ func parseConfEnvSecret(secret *corev1.Secret) map[string]corev1.EnvVar {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
 				name := strings.TrimSpace(parts[0])
-				value := strings.Trim(strings.TrimSpace(parts[1]), "\"")
-				envVar := corev1.EnvVar{
+				value, err := strconv.Unquote(strings.TrimSpace(parts[1]))
+				if err != nil {
+					log.Printf("Syntax error for variable %s (skipped): %s", name, err)
+					continue
+				}
+				envMap[name] = corev1.EnvVar{
 					Name:  name,
 					Value: value,
 				}
-				envMap[name] = envVar
 			}
 		}
 	}
@@ -234,10 +283,19 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 	return envVars
 }
 
-func envVarsToFileContent(envVars []corev1.EnvVar) string {
-	content := ""
+func envVarsToFileContent(envVars []corev1.EnvVar, configMaps map[string]*corev1.ConfigMap, secrets map[string]*corev1.Secret) string {
+	var sb strings.Builder
 	for _, env := range envVars {
-		content += fmt.Sprintf("export %s=\"%s\"\n", env.Name, env.Value)
+		value := env.Value
+		if env.ValueFrom != nil {
+			if env.ValueFrom.ConfigMapKeyRef != nil {
+				value = configMaps[env.ValueFrom.ConfigMapKeyRef.Name].Data[env.ValueFrom.ConfigMapKeyRef.Key]
+			}
+			if env.ValueFrom.SecretKeyRef != nil {
+				value = string(secrets[env.ValueFrom.SecretKeyRef.Name].Data[env.ValueFrom.SecretKeyRef.Key])
+			}
+		}
+		sb.WriteString(fmt.Sprintf("export %s=\"%s\"\n", env.Name, value))
 	}
-	return content
+	return sb.String()
 }
