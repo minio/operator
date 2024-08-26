@@ -78,7 +78,7 @@ This example will deploy a MinIO tenant with TLS using certificates provided by 
   certificate keypairs:
 
   ```sh
-    mkcert "*.minio-tenant.svc.cluster.local"
+    mkcert "minio.minio-tenant.svc.cluster.local"
     mkcert "*.myminio.minio-tenant.svc.cluster.local"
     mkcert "*.myminio-hl.minio-tenant.svc.cluster.local"
   ```
@@ -90,9 +90,12 @@ inter-node communication.
 Create `kubernetes secrets`  based on the previous certificates
 
 ```$xslt
-kubectl create secret tls minio-tls-cert --key="_wildcard.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.minio-tenant.svc.cluster.local.pem" -n minio-tenant
+kubectl create secret tls minio-tls-cert --key="minio.minio-tenant.svc.cluster.local-key.pem" --cert="minio.minio-tenant.svc.cluster.local.pem" -n minio-tenant
 kubectl create secret tls minio-buckets-cert --key="_wildcard.myminio.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.myminio.minio-tenant.svc.cluster.local.pem" -n minio-tenant
 kubectl create secret tls minio-hl-cert --key="_wildcard.myminio-hl.minio-tenant.svc.cluster.local-key.pem" --cert="_wildcard.myminio-hl.minio-tenant.svc.cluster.local.pem" -n minio-tenant
+
+# create a new secret for the operator certs
+kubectl create secret tls operator-ca-tls-minio-tls-cert --key="minio.minio-tenant.svc.cluster.local-key.pem" --cert="minio.minio-tenant.svc.cluster.local.pem" -n minio-tenant
 ```
 
 You need to provide those `kubernetes secrets` in your Tenant `YAML` overlay using the `externalCertSecret` fields, ie:
