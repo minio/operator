@@ -200,7 +200,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 		},
 		StringData: map[string]string{
 			"MC_HOST_myminio":                    fmt.Sprintf("%s://$(ACCESS_KEY):$(SECRET_KEY)@minio.%s.svc.%s", scheme, jobCR.Namespace, miniov2.GetClusterDomain()),
-			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.%s:%d/sts/%s", miniov2.GetNSFromFile(), miniov2.GetClusterDomain(), stsPort, jobCR.Namespace),
+			"MC_STS_ENDPOINT_myminio":            fmt.Sprintf("https://sts.%s.svc.%s:%d/sts/%s", miniov2.GetNSFromFile(), miniov2.GetClusterDomain(), stsPort, t.Namespace),
 			"MC_WEB_IDENTITY_TOKEN_FILE_myminio": "/var/run/secrets/kubernetes.io/serviceaccount/token",
 		},
 	}

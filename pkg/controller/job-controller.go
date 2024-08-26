@@ -248,7 +248,7 @@ func (c *JobController) SyncHandler(key string) (_ Result, err error) {
 	}
 	// check sa
 	pbs := &stsv1beta1.PolicyBindingList{}
-	err = c.k8sClient.List(ctx, pbs, client.InNamespace(namespace))
+	err = c.k8sClient.List(ctx, pbs, client.InNamespace(tenant.Namespace))
 	if err != nil {
 		return WrapResult(Result{}, fmt.Errorf("list policybinding error: %w", err))
 	}
@@ -257,7 +257,7 @@ func (c *JobController) SyncHandler(key string) (_ Result, err error) {
 	}
 	saFound := false
 	for _, pb := range pbs.Items {
-		if pb.Spec.Application.Namespace == namespace && pb.Spec.Application.ServiceAccount == jobCR.Spec.ServiceAccountName {
+		if pb.Spec.Application.Namespace == jobCR.Namespace && pb.Spec.Application.ServiceAccount == jobCR.Spec.ServiceAccountName {
 			saFound = true
 		}
 	}
