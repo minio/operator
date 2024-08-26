@@ -1320,21 +1320,21 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 
 		// check if the system config has changed
 		// if changed, minio request the systemCfg must be the same to restart.
-		expectSystemCfg, err := c.getSystemCfgFromStatefulSet(ctx, expectedStatefulSet)
+		expectedSystemCfg, err := c.getSystemCfgFromStatefulSet(ctx, expectedStatefulSet)
 		if err != nil {
 			return WrapResult(Result{}, err)
 		}
-		existSystemCfg, err := c.getSystemCfgFromStatefulSet(ctx, existingStatefulSet)
+		existingSystemCfg, err := c.getSystemCfgFromStatefulSet(ctx, existingStatefulSet)
 		if err != nil {
 			return WrapResult(Result{}, err)
 		}
-		if !maps.Equal(expectSystemCfg, existSystemCfg) {
-			// delete pdb to let deleted all the statefulSet pods
+		if !maps.Equal(expectedSystemCfg, existingSystemCfg) {
+			// delete pdb to let all the statefulSet pods get deleted
 			err = c.DeletePDB(ctx, tenant)
 			if err != nil {
 				return Result{}, err
 			}
-			// found all existing statefulSet pods and delete them
+			// find all existing statefulSet pods and delete them
 			err = c.DeletePodsByStatefulSet(ctx, existingStatefulSet)
 			if err != nil {
 				return WrapResult(Result{}, err)

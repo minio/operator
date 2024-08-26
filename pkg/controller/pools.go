@@ -94,7 +94,6 @@ func poolSSMatchesSpec(expectedStatefulSet, existingStatefulSet *appsv1.Stateful
 }
 
 // getSystemCfgFromStatefulSet gets the MinIO environment variables from a statefulset
-// set getServerSystemCfg at minio
 func (c *Controller) getSystemCfgFromStatefulSet(ctx context.Context, sts *appsv1.StatefulSet) (systemCfg map[string]string, err error) {
 	systemCfg = make(map[string]string)
 	for _, container := range sts.Spec.Template.Spec.Containers {

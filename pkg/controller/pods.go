@@ -56,8 +56,7 @@ func (c *Controller) DeletePodsByStatefulSet(ctx context.Context, sts *appsv1.St
 	}
 	client.MatchingLabels(sts.Spec.Template.Labels).ApplyToList(listOpt)
 	podList := &corev1.PodList{}
-	err = c.k8sClient.List(ctx, podList, listOpt)
-	if err != nil {
+	if err := c.k8sClient.List(ctx, podList, listOpt); err != nil {
 		return err
 	}
 	for _, item := range podList.Items {
