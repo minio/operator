@@ -25,9 +25,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const configSecretName = "config-secret"
+
 func TestEnvVarsToFileContent(t *testing.T) {
 	type args struct {
-		envVars []corev1.EnvVar
+		envVars []miniov2.EnvVar
 	}
 	tests := []struct {
 		name string
@@ -37,7 +39,7 @@ func TestEnvVarsToFileContent(t *testing.T) {
 		{
 			name: "Basic test case",
 			args: args{
-				envVars: []corev1.EnvVar{
+				envVars: []miniov2.EnvVar{
 					{
 						Name:  "MINIO_UPDATE",
 						Value: "on",
@@ -49,7 +51,7 @@ func TestEnvVarsToFileContent(t *testing.T) {
 		{
 			name: "Two Vars test case",
 			args: args{
-				envVars: []corev1.EnvVar{
+				envVars: []miniov2.EnvVar{
 					{
 						Name:  "MINIO_UPDATE",
 						Value: "on",
@@ -77,12 +79,12 @@ export MINIO_UPDATE_MINISIGN_PUBKEY="RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRy
 func TestGetTenantConfiguration(t *testing.T) {
 	type args struct {
 		tenant         *miniov2.Tenant
-		cfgEnvExisting map[string]corev1.EnvVar
+		cfgEnvExisting map[string]miniov2.EnvVar
 	}
 	tests := []struct {
 		name string
 		args args
-		want []corev1.EnvVar
+		want []miniov2.EnvVar
 	}{
 		{
 			name: "Defaulted Values",
@@ -90,7 +92,7 @@ func TestGetTenantConfiguration(t *testing.T) {
 				tenant:         &miniov2.Tenant{},
 				cfgEnvExisting: nil,
 			},
-			want: []corev1.EnvVar{
+			want: []miniov2.EnvVar{
 				{
 					Name:  "MINIO_ARGS",
 					Value: "",
@@ -118,7 +120,7 @@ func TestGetTenantConfiguration(t *testing.T) {
 			args: args{
 				tenant: &miniov2.Tenant{
 					Spec: miniov2.TenantSpec{
-						Env: []corev1.EnvVar{
+						Env: []miniov2.EnvVar{
 							{
 								Name:  "TEST",
 								Value: "value",
@@ -128,7 +130,7 @@ func TestGetTenantConfiguration(t *testing.T) {
 				},
 				cfgEnvExisting: nil,
 			},
-			want: []corev1.EnvVar{
+			want: []miniov2.EnvVar{
 				{
 					Name:  "MINIO_ARGS",
 					Value: "",
@@ -173,7 +175,7 @@ func TestParseConfEnvSecret(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want map[string]corev1.EnvVar
+		want map[string]miniov2.EnvVar
 	}{
 		{
 			name: "Basic case",
@@ -185,7 +187,7 @@ export MINIO_STORAGE_CLASS_STANDARD="EC:2"
 export MINIO_BROWSER="on"`)},
 				},
 			},
-			want: map[string]corev1.EnvVar{
+			want: map[string]miniov2.EnvVar{
 				"MINIO_ROOT_USER": {
 					Name:  "MINIO_ROOT_USER",
 					Value: "minio",
@@ -214,7 +216,7 @@ export MINIO_BROWSER="on"`)},
 	export MINIO_BROWSER="on"`)},
 				},
 			},
-			want: map[string]corev1.EnvVar{
+			want: map[string]miniov2.EnvVar{
 				"MINIO_ROOT_USER": {
 					Name:  "MINIO_ROOT_USER",
 					Value: "minio",
@@ -245,8 +247,9 @@ export MINIO_BROWSER="on"`)},
 
 func TestGetFullTenantConfig(t *testing.T) {
 	type args struct {
-		tenant       *miniov2.Tenant
-		configSecret *corev1.Secret
+		tenant     *miniov2.Tenant
+		secrets    map[string]*corev1.Secret
+		configMaps map[string]*corev1.ConfigMap
 	}
 	tests := []struct {
 		name string
@@ -258,7 +261,10 @@ func TestGetFullTenantConfig(t *testing.T) {
 			args: args{
 				tenant: &miniov2.Tenant{
 					Spec: miniov2.TenantSpec{
-						Env: []corev1.EnvVar{
+						Configuration: &corev1.LocalObjectReference{
+							Name: configSecretName,
+						},
+						Env: []miniov2.EnvVar{
 							{
 								Name:  "TEST",
 								Value: "value",
@@ -266,11 +272,13 @@ func TestGetFullTenantConfig(t *testing.T) {
 						},
 					},
 				},
-				configSecret: &corev1.Secret{
-					Data: map[string][]byte{"config.env": []byte(`export MINIO_ROOT_USER="minio"
+				secrets: map[string]*corev1.Secret{
+					configSecretName: {
+						Data: map[string][]byte{"config.env": []byte(`export MINIO_ROOT_USER="minio"
 export MINIO_ROOT_PASSWORD="minio123"
 export MINIO_STORAGE_CLASS_STANDARD="EC:2"
 export MINIO_BROWSER="on"`)},
+					},
 				},
 			},
 			want: `export MINIO_ARGS=""
@@ -290,7 +298,10 @@ export TEST="value"
 			args: args{
 				tenant: &miniov2.Tenant{
 					Spec: miniov2.TenantSpec{
-						Env: []corev1.EnvVar{
+						Configuration: &corev1.LocalObjectReference{
+							Name: configSecretName,
+						},
+						Env: []miniov2.EnvVar{
 							{
 								Name:  "TEST",
 								Value: "value",
@@ -303,11 +314,13 @@ export TEST="value"
 						},
 					},
 				},
-				configSecret: &corev1.Secret{
-					Data: map[string][]byte{"config.env": []byte(`export MINIO_ROOT_USER="minio"
+				secrets: map[string]*corev1.Secret{
+					configSecretName: {
+						Data: map[string][]byte{"config.env": []byte(`export MINIO_ROOT_USER="minio"
 export MINIO_ROOT_PASSWORD="minio123"
 export MINIO_STORAGE_CLASS_STANDARD="EC:2"
 export MINIO_BROWSER="on"`)},
+					},
 				},
 			},
 			want: `export MINIO_ARGS=""
@@ -332,7 +345,10 @@ export TEST="value"
 						Namespace: "ns-x",
 					},
 					Spec: miniov2.TenantSpec{
-						Env: []corev1.EnvVar{
+						Configuration: &corev1.LocalObjectReference{
+							Name: configSecretName,
+						},
+						Env: []miniov2.EnvVar{
 							{
 								Name:  "TEST",
 								Value: "value",
@@ -353,11 +369,13 @@ export TEST="value"
 						},
 					},
 				},
-				configSecret: &corev1.Secret{
-					Data: map[string][]byte{"config.env": []byte(`export MINIO_ROOT_USER="minio"
+				secrets: map[string]*corev1.Secret{
+					configSecretName: {
+						Data: map[string][]byte{"config.env": []byte(`export MINIO_ROOT_USER="minio"
 export MINIO_ROOT_PASSWORD="minio123"
 export MINIO_STORAGE_CLASS_STANDARD="EC:2"
 export MINIO_BROWSER="on"`)},
+					},
 				},
 			},
 			want: `export MINIO_ARGS="https://tenant-pool-0-{0...3}.tenant-hl.ns-x.svc.cluster.local/export{0...3}"
@@ -373,16 +391,103 @@ export MINIO_UPDATE_MINISIGN_PUBKEY="RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRy
 export TEST="value"
 `,
 		},
+		{
+			name: "Default with both a config-map and secret reference",
+			args: args{
+				tenant: &miniov2.Tenant{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "tenant",
+						Namespace: "ns-x",
+					},
+					Spec: miniov2.TenantSpec{
+						Configuration: &corev1.LocalObjectReference{
+							Name: configSecretName,
+						},
+						Env: []miniov2.EnvVar{
+							{
+								Name:  "TEST",
+								Value: "value",
+							},
+							{
+								Name: "TEST_CONFIGMAP",
+								ValueFrom: &miniov2.EnvVarSource{
+									ConfigMapKeyRef: &miniov2.ConfigMapKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "test-configmap",
+										},
+										Key: "test-configmap-key",
+									},
+								},
+							},
+							{
+								Name: "TEST_SECRET",
+								ValueFrom: &miniov2.EnvVarSource{
+									SecretKeyRef: &miniov2.SecretKeySelector{
+										LocalObjectReference: corev1.LocalObjectReference{
+											Name: "test-secret",
+										},
+										Key: "test-secret-key",
+									},
+								},
+							},
+						},
+						Features: &miniov2.Features{
+							Domains: &miniov2.TenantDomains{
+								Console: "http://console.minio",
+							},
+						},
+						Pools: []miniov2.Pool{
+							{
+								Name:                "pool-0",
+								Servers:             4,
+								VolumesPerServer:    4,
+								VolumeClaimTemplate: nil,
+							},
+						},
+					},
+				},
+				secrets: map[string]*corev1.Secret{
+					configSecretName: {
+						Data: map[string][]byte{"config.env": []byte(`export MINIO_ROOT_USER="minio"
+export MINIO_ROOT_PASSWORD="minio123"
+export MINIO_STORAGE_CLASS_STANDARD="EC:2"
+export MINIO_BROWSER="on"`)},
+					},
+					"test-secret": {
+						Data: map[string][]byte{
+							"test-secret-key": []byte("test-secret-value"),
+						},
+					},
+				},
+				configMaps: map[string]*corev1.ConfigMap{
+					"test-configmap": {
+						Data: map[string]string{
+							"test-configmap-key": "test-configmap-value",
+						},
+					},
+				},
+			},
+			want: `export MINIO_ARGS="https://tenant-pool-0-{0...3}.tenant-hl.ns-x.svc.cluster.local/export{0...3}"
+export MINIO_BROWSER="on"
+export MINIO_BROWSER_REDIRECT_URL="http://console.minio"
+export MINIO_PROMETHEUS_JOB_ID="minio-job"
+export MINIO_ROOT_PASSWORD="minio123"
+export MINIO_ROOT_USER="minio"
+export MINIO_SERVER_URL="https://minio.ns-x.svc.cluster.local:443"
+export MINIO_STORAGE_CLASS_STANDARD="EC:2"
+export MINIO_UPDATE="on"
+export MINIO_UPDATE_MINISIGN_PUBKEY="RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav"
+export TEST="value"
+export TEST_CONFIGMAP="test-configmap-value"
+export TEST_SECRET="test-secret-value"
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.tenant.EnsureDefaults()
 
-			var configMaps map[string]*corev1.ConfigMap
-			secrets := map[string]*corev1.Secret{
-				tt.args.tenant.ConfigurationSecretName(): tt.args.configSecret,
-			}
-			if got, _, _ := GetFullTenantConfig(tt.args.tenant, configMaps, secrets); got != tt.want {
+			if got, _, _ := GetFullTenantConfig(tt.args.tenant, tt.args.configMaps, tt.args.secrets); got != tt.want {
 				t.Errorf("GetFullTenantConfig() = `%v`, want `%v`", got, tt.want)
 			}
 		})

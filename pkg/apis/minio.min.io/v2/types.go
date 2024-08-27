@@ -944,7 +944,7 @@ type EnvVarSource struct {
 	SecretKeyRef *SecretKeySelector `json:"secretKeyRef,omitempty" protobuf:"bytes,4,opt,name=secretKeyRef"`
 }
 
-// Selects a key from a ConfigMap.
+// ConfigMapKeySelector selects a key from a ConfigMap.
 // +structType=atomic
 type ConfigMapKeySelector struct {
 	// The ConfigMap to select from.
