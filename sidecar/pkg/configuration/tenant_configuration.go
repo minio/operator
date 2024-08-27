@@ -19,9 +19,7 @@ package configuration
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
-	"strconv"
 	"strings"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
@@ -101,14 +99,9 @@ func parseConfEnvSecret(secret *corev1.Secret) map[string]miniov2.EnvVar {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
 				name := strings.TrimSpace(parts[0])
-				value, err := strconv.Unquote(strings.TrimSpace(parts[1]))
-				if err != nil {
-					log.Printf("Syntax error for variable %s (skipped): %s", name, err)
-					continue
-				}
 				envMap[name] = miniov2.EnvVar{
 					Name:  name,
-					Value: value,
+					Value: unquote(strings.TrimSpace(parts[1])),
 				}
 			}
 		}
@@ -292,7 +285,28 @@ func envVarsToFileContent(envVars []miniov2.EnvVar, configMaps map[string]*corev
 			value = &env.Value
 		}
 		if value != nil {
-			sb.WriteString(fmt.Sprintf("export %s=\"%s\"\n", env.Name, *value))
+			sb.WriteString(fmt.Sprintf("export %s=%q\n", env.Name, *value))
+		}
+	}
+	return sb.String()
+}
+
+func unquote(value string) string {
+	if len(value) < 2 {
+		return value
+	}
+	firstCh := value[0]
+	lastCh := value[len(value)-1]
+	if firstCh != lastCh || (firstCh != '\'' && firstCh != '"') {
+		return value
+	}
+	var sb strings.Builder
+	for i, ch := range value {
+		if i == 0 || i == len(value)-1 {
+			continue
+		}
+		if ch != '\\' {
+			sb.WriteRune(ch)
 		}
 	}
 	return sb.String()

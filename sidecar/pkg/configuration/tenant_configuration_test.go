@@ -482,6 +482,47 @@ export TEST_CONFIGMAP="test-configmap-value"
 export TEST_SECRET="test-secret-value"
 `,
 		},
+		{
+			name: "Quoted variables",
+			args: args{
+				tenant: &miniov2.Tenant{
+					Spec: miniov2.TenantSpec{
+						Configuration: &corev1.LocalObjectReference{
+							Name: configSecretName,
+						},
+					},
+				},
+				secrets: map[string]*corev1.Secret{
+					configSecretName: {
+						Data: map[string][]byte{"config.env": []byte(`export MINIO_ROOT_USER="minio"
+export MINIO_ROOT_PASSWORD="minio123"
+export MINIO_STORAGE_CLASS_STANDARD="EC:2"
+export MINIO_BROWSER="on"
+export MINIO_TEST1a="on"
+export MINIO_TEST1b="\"'on'\""
+export MINIO_TEST2a='on'
+export MINIO_TEST2b='"\'on\'"'
+export MINIO_TEST3=on
+`)},
+					},
+				},
+			},
+			want: `export MINIO_ARGS=""
+export MINIO_BROWSER="on"
+export MINIO_PROMETHEUS_JOB_ID="minio-job"
+export MINIO_ROOT_PASSWORD="minio123"
+export MINIO_ROOT_USER="minio"
+export MINIO_SERVER_URL="https://minio..svc.cluster.local:443"
+export MINIO_STORAGE_CLASS_STANDARD="EC:2"
+export MINIO_TEST1a="on"
+export MINIO_TEST1b="\"'on'\""
+export MINIO_TEST2a="on"
+export MINIO_TEST2b="\"'on'\""
+export MINIO_TEST3="on"
+export MINIO_UPDATE="on"
+export MINIO_UPDATE_MINISIGN_PUBKEY="RWTx5Zr1tiHQLwG9keckT0c45M3AGeHD6IvimQHpyRywVWGbP1aVSGav"
+`,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
