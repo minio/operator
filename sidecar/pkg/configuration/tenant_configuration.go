@@ -18,7 +18,6 @@ package configuration
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"sort"
@@ -36,8 +35,8 @@ const (
 )
 
 type (
-	secretFunc func(ctx context.Context, name string) (*corev1.Secret, error)
-	configFunc func(ctx context.Context, name string) (*corev1.ConfigMap, error)
+	secretFunc func(ctx context.Context, name string) *corev1.Secret
+	configFunc func(ctx context.Context, name string) *corev1.ConfigMap
 )
 
 // TenantResources returns maps for all configmap/secret resources that
@@ -49,31 +48,17 @@ func TenantResources(ctx context.Context, tenant *miniov2.Tenant, cf configFunc,
 	for _, env := range tenant.Spec.Env {
 		if env.ValueFrom != nil {
 			if env.ValueFrom.SecretKeyRef != nil {
-				secret, err := sf(ctx, env.ValueFrom.SecretKeyRef.Name)
-				if err != nil {
-					return nil, nil, err
-				}
-				secrets[env.ValueFrom.SecretKeyRef.Name] = secret
+				secrets[env.ValueFrom.SecretKeyRef.Name] = sf(ctx, env.ValueFrom.SecretKeyRef.Name)
 			}
 			if env.ValueFrom.ConfigMapKeyRef != nil {
-				configmap, err := cf(ctx, env.ValueFrom.ConfigMapKeyRef.Name)
-				if err != nil {
-					return nil, nil, err
-				}
-				configMaps[env.ValueFrom.ConfigMapKeyRef.Name] = configmap
-			}
-			if env.ValueFrom.FieldRef != nil {
-				return nil, nil, errors.New("mapping fields is not supported")
-			}
-			if env.ValueFrom.ResourceFieldRef != nil {
-				return nil, nil, errors.New("mapping resource fields is not supported")
+				configMaps[env.ValueFrom.ConfigMapKeyRef.Name] = cf(ctx, env.ValueFrom.ConfigMapKeyRef.Name)
 			}
 		}
 	}
 
-	secret, err := sf(ctx, tenant.Spec.Configuration.Name)
-	if err != nil {
-		return nil, nil, err
+	secret := sf(ctx, tenant.Spec.Configuration.Name)
+	if secret == nil {
+		return nil, nil, fmt.Errorf("cannot find configurations secret %s", tenant.Spec.Configuration.Name)
 	}
 	secrets[tenant.Spec.Configuration.Name] = secret
 
@@ -101,12 +86,12 @@ func GetFullTenantConfig(tenant *miniov2.Tenant, configMaps map[string]*corev1.C
 	return configurationFileContent, rootUserFound, rootPwdFound
 }
 
-func parseConfEnvSecret(secret *corev1.Secret) map[string]corev1.EnvVar {
+func parseConfEnvSecret(secret *corev1.Secret) map[string]miniov2.EnvVar {
 	if secret == nil {
 		return nil
 	}
 	data := secret.Data["config.env"]
-	envMap := make(map[string]corev1.EnvVar)
+	envMap := make(map[string]miniov2.EnvVar)
 
 	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
@@ -121,7 +106,7 @@ func parseConfEnvSecret(secret *corev1.Secret) map[string]corev1.EnvVar {
 					log.Printf("Syntax error for variable %s (skipped): %s", name, err)
 					continue
 				}
-				envMap[name] = corev1.EnvVar{
+				envMap[name] = miniov2.EnvVar{
 					Name:  name,
 					Value: value,
 				}
@@ -131,11 +116,11 @@ func parseConfEnvSecret(secret *corev1.Secret) map[string]corev1.EnvVar {
 	return envMap
 }
 
-func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.EnvVar) []corev1.EnvVar {
+func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]miniov2.EnvVar) []miniov2.EnvVar {
 	// Enable `mc admin update` style updates to MinIO binaries
 	// within the container, only operator is supposed to perform
 	// these operations.
-	envVarsMap := map[string]corev1.EnvVar{
+	envVarsMap := map[string]miniov2.EnvVar{
 		"MINIO_UPDATE": {
 			Name:  "MINIO_UPDATE",
 			Value: "on",
@@ -153,7 +138,7 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 	for _, pool := range tenant.Spec.Pools {
 		if pool.RuntimeClassName != nil && *pool.RuntimeClassName == "crun" {
 			// Set HOME to /
-			envVarsMap["HOME"] = corev1.EnvVar{
+			envVarsMap["HOME"] = miniov2.EnvVar{
 				Name:  "HOME",
 				Value: "/",
 			}
@@ -168,7 +153,7 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 			common.WebhookAPIBucketService,
 			tenant.Namespace,
 			tenant.Name)
-		envVarsMap[bucketDNSEnv] = corev1.EnvVar{
+		envVarsMap[bucketDNSEnv] = miniov2.EnvVar{
 			Name:  bucketDNSEnv,
 			Value: sidecarBucketURL,
 		}
@@ -179,7 +164,7 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 	}
 	// tell MinIO about all the domains meant to hit it if they are not passed manually via .spec.env
 	if len(domains) > 0 {
-		envVarsMap[miniov2.MinIODomain] = corev1.EnvVar{
+		envVarsMap[miniov2.MinIODomain] = miniov2.EnvVar{
 			Name:  miniov2.MinIODomain,
 			Value: strings.Join(domains, ","),
 		}
@@ -200,7 +185,7 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 			serverURL = tenant.Spec.Features.Domains.Minio[0]
 		}
 	}
-	envVarsMap[miniov2.MinIOServerURL] = corev1.EnvVar{
+	envVarsMap[miniov2.MinIOServerURL] = miniov2.EnvVar{
 		Name:  miniov2.MinIOServerURL,
 		Value: serverURL,
 	}
@@ -216,33 +201,33 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 			}
 			consoleDomain = fmt.Sprintf("%s://%s", useSchema, consoleDomain)
 		}
-		envVarsMap[miniov2.MinIOBrowserRedirectURL] = corev1.EnvVar{
+		envVarsMap[miniov2.MinIOBrowserRedirectURL] = miniov2.EnvVar{
 			Name:  miniov2.MinIOBrowserRedirectURL,
 			Value: consoleDomain,
 		}
 	}
 	if tenant.HasKESEnabled() {
-		envVarsMap["MINIO_KMS_KES_ENDPOINT"] = corev1.EnvVar{
+		envVarsMap["MINIO_KMS_KES_ENDPOINT"] = miniov2.EnvVar{
 			Name:  "MINIO_KMS_KES_ENDPOINT",
 			Value: tenant.KESServiceEndpoint(),
 		}
-		envVarsMap["MINIO_KMS_KES_CERT_FILE"] = corev1.EnvVar{
+		envVarsMap["MINIO_KMS_KES_CERT_FILE"] = miniov2.EnvVar{
 			Name:  "MINIO_KMS_KES_CERT_FILE",
 			Value: miniov2.MinIOCertPath + "/client.crt",
 		}
-		envVarsMap["MINIO_KMS_KES_KEY_FILE"] = corev1.EnvVar{
+		envVarsMap["MINIO_KMS_KES_KEY_FILE"] = miniov2.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_FILE",
 			Value: miniov2.MinIOCertPath + "/client.key",
 		}
-		envVarsMap["MINIO_KMS_KES_CA_PATH"] = corev1.EnvVar{
+		envVarsMap["MINIO_KMS_KES_CA_PATH"] = miniov2.EnvVar{
 			Name:  "MINIO_KMS_KES_CA_PATH",
 			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
 		}
-		envVarsMap["MINIO_KMS_KES_CAPATH"] = corev1.EnvVar{
+		envVarsMap["MINIO_KMS_KES_CAPATH"] = miniov2.EnvVar{
 			Name:  "MINIO_KMS_KES_CAPATH",
 			Value: miniov2.MinIOCertPath + "/CAs/kes.crt",
 		}
-		envVarsMap["MINIO_KMS_KES_KEY_NAME"] = corev1.EnvVar{
+		envVarsMap["MINIO_KMS_KES_KEY_NAME"] = miniov2.EnvVar{
 			Name:  "MINIO_KMS_KES_KEY_NAME",
 			Value: tenant.Spec.KES.KeyName,
 		}
@@ -250,7 +235,7 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 
 	// attach tenant args
 	args := strings.Join(statefulsets.GetContainerArgs(tenant, ""), " ")
-	envVarsMap["MINIO_ARGS"] = corev1.EnvVar{
+	envVarsMap["MINIO_ARGS"] = miniov2.EnvVar{
 		Name:  "MINIO_ARGS",
 		Value: args,
 	}
@@ -260,7 +245,7 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 	for _, env := range tenant.GetEnvVars() {
 		envVarsMap[env.Name] = env
 	}
-	var envVars []corev1.EnvVar
+	var envVars []miniov2.EnvVar
 	// transform map to array and skip configurations from config.env
 	for _, env := range envVarsMap {
 		if cfgEnvExisting != nil {
@@ -283,19 +268,32 @@ func buildTenantEnvs(tenant *miniov2.Tenant, cfgEnvExisting map[string]corev1.En
 	return envVars
 }
 
-func envVarsToFileContent(envVars []corev1.EnvVar, configMaps map[string]*corev1.ConfigMap, secrets map[string]*corev1.Secret) string {
+func envVarsToFileContent(envVars []miniov2.EnvVar, configMaps map[string]*corev1.ConfigMap, secrets map[string]*corev1.Secret) string {
 	var sb strings.Builder
 	for _, env := range envVars {
-		value := env.Value
+		var value *string
 		if env.ValueFrom != nil {
 			if env.ValueFrom.ConfigMapKeyRef != nil {
-				value = configMaps[env.ValueFrom.ConfigMapKeyRef.Name].Data[env.ValueFrom.ConfigMapKeyRef.Key]
+				if configMap, ok := configMaps[env.ValueFrom.ConfigMapKeyRef.Name]; ok {
+					if configMapValue, ok := configMap.Data[env.ValueFrom.ConfigMapKeyRef.Key]; ok {
+						value = &configMapValue
+					}
+				}
 			}
 			if env.ValueFrom.SecretKeyRef != nil {
-				value = string(secrets[env.ValueFrom.SecretKeyRef.Name].Data[env.ValueFrom.SecretKeyRef.Key])
+				if secret, ok := secrets[env.ValueFrom.SecretKeyRef.Name]; ok {
+					if secretValue, ok := secret.Data[env.ValueFrom.SecretKeyRef.Key]; ok {
+						textValue := string(secretValue)
+						value = &textValue
+					}
+				}
 			}
+		} else {
+			value = &env.Value
 		}
-		sb.WriteString(fmt.Sprintf("export %s=\"%s\"\n", env.Name, value))
+		if value != nil {
+			sb.WriteString(fmt.Sprintf("export %s=\"%s\"\n", env.Name, *value))
+		}
 	}
 	return sb.String()
 }

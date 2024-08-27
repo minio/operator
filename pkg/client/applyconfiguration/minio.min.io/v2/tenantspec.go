@@ -31,7 +31,7 @@ type TenantSpecApplyConfiguration struct {
 	Image                     *string                                      `json:"image,omitempty"`
 	ImagePullSecret           *v1.LocalObjectReference                     `json:"imagePullSecret,omitempty"`
 	PodManagementPolicy       *appsv1.PodManagementPolicyType              `json:"podManagementPolicy,omitempty"`
-	Env                       []v1.EnvVar                                  `json:"env,omitempty"`
+	Env                       []EnvVarApplyConfiguration                   `json:"env,omitempty"`
 	ExternalCertSecret        []*miniominiov2.LocalCertificateReference    `json:"externalCertSecret,omitempty"`
 	ExternalCaCertSecret      []*miniominiov2.LocalCertificateReference    `json:"externalCaCertSecret,omitempty"`
 	ExternalClientCertSecret  *LocalCertificateReferenceApplyConfiguration `json:"externalClientCertSecret,omitempty"`
@@ -109,9 +109,12 @@ func (b *TenantSpecApplyConfiguration) WithPodManagementPolicy(value appsv1.PodM
 // WithEnv adds the given value to the Env field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Env field.
-func (b *TenantSpecApplyConfiguration) WithEnv(values ...v1.EnvVar) *TenantSpecApplyConfiguration {
+func (b *TenantSpecApplyConfiguration) WithEnv(values ...*EnvVarApplyConfiguration) *TenantSpecApplyConfiguration {
 	for i := range values {
-		b.Env = append(b.Env, values[i])
+		if values[i] == nil {
+			panic("nil value passed to WithEnv")
+		}
+		b.Env = append(b.Env, *values[i])
 	}
 	return b
 }

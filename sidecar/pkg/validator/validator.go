@@ -69,10 +69,12 @@ func Validate(tenantName string) {
 	tenant.EnsureDefaults()
 
 	// determine the configmaps and secrets to watch
-	configMaps, secrets, err := configuration.TenantResources(context.Background(), tenant, func(ctx context.Context, name string) (*corev1.ConfigMap, error) {
-		return kubeClient.CoreV1().ConfigMaps(tenant.Namespace).Get(ctx, name, metav1.GetOptions{})
-	}, func(ctx context.Context, name string) (*corev1.Secret, error) {
-		return kubeClient.CoreV1().Secrets(tenant.Namespace).Get(ctx, name, metav1.GetOptions{})
+	configMaps, secrets, err := configuration.TenantResources(context.Background(), tenant, func(ctx context.Context, name string) *corev1.ConfigMap {
+		retValue, _ := kubeClient.CoreV1().ConfigMaps(tenant.Namespace).Get(ctx, name, metav1.GetOptions{})
+		return retValue
+	}, func(ctx context.Context, name string) *corev1.Secret {
+		retValue, _ := kubeClient.CoreV1().Secrets(tenant.Namespace).Get(ctx, name, metav1.GetOptions{})
+		return retValue
 	})
 	if err != nil {
 		log.Println(err)

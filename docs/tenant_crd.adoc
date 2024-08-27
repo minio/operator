@@ -108,6 +108,35 @@ CertificateStatus keeps track of all the certificates managed by the operator
 |===
 
 
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-configmapkeyselector"]
+==== ConfigMapKeySelector 
+
+Selects a key from a ConfigMap.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-envvarsource[$$EnvVarSource$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`name`* __string__ 
+|Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+
+|*`key`* __string__ 
+|The key to select.
+
+|===
+
+
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-customcertificateconfig"]
 ==== CustomCertificateConfig 
 
@@ -186,6 +215,63 @@ Minio
 
 
 Certificate Authorities
+
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-envvar"]
+==== EnvVar 
+
+EnvVar represents an environment variable present in a Container.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`name`* __string__ 
+|Name of the environment variable. Must be a C_IDENTIFIER.
+
+|*`value`* __string__ 
+|Variable references $(VAR_NAME) are expanded
+using the previously defined environment variables in the container and
+any service environment variables. If a variable cannot be resolved,
+the reference in the input string will be unchanged. Double $$ are reduced
+to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e.
+"$$(VAR_NAME)" will produce the string literal "$(VAR_NAME)".
+Escaped references will never be expanded, regardless of whether the variable
+exists or not.
+Defaults to "".
+
+|*`valueFrom`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-envvarsource[$$EnvVarSource$$]__ 
+|Source for the environment variable's value. Cannot be used if value is not empty.
+
+|===
+
+
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-envvarsource"]
+==== EnvVarSource 
+
+EnvVarSource represents a source for the value of an EnvVar.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-envvar[$$EnvVar$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`configMapKeyRef`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-configmapkeyselector[$$ConfigMapKeySelector$$]__ 
+|Selects a key of a ConfigMap.
+
+|*`secretKeyRef`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-secretkeyselector[$$SecretKeySelector$$]__ 
+|Selects a key of a secret in the pod's namespace
 
 |===
 
@@ -689,6 +775,35 @@ Security Context
 |===
 
 
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-secretkeyselector"]
+==== SecretKeySelector 
+
+SecretKeySelector selects a key of a Secret.
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-envvarsource[$$EnvVarSource$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`name`* __string__ 
+|Name of the referent.
+This field is effectively required, but due to backwards compatibility is
+allowed to be empty. Instances of this type with an empty value here are
+almost certainly wrong.
+TODO: Add other useful fields. apiVersion, kind, uid?
+More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
+
+|*`key`* __string__ 
+|The key of the secret to select from.  Must be a valid secret key.
+
+|===
+
+
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-servicemetadata"]
 ==== ServiceMetadata 
 
@@ -915,7 +1030,7 @@ Specify the secret key to use for pulling images from a private Docker repositor
 
 Pod Management Policy for pod created by StatefulSet
 
-|*`env`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#envvar-v1-core[$$EnvVar$$] array__ 
+|*`env`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-envvar[$$EnvVar$$] array__ 
 |*Optional* +
 
 

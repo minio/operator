@@ -523,7 +523,7 @@ func (t *Tenant) HasPrometheusOperatorEnabled() bool {
 }
 
 // GetEnvVars returns the environment variables for tenant deployment.
-func (t *Tenant) GetEnvVars() (env []corev1.EnvVar) {
+func (t *Tenant) GetEnvVars() (env []EnvVar) {
 	return t.Spec.Env
 }
 

@@ -247,12 +247,14 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 	return c
 }
 
-func (c *Controller) getSecret(_ context.Context, name string) (*corev1.Secret, error) {
-	return c.secretInformer.Lister().Secrets(c.tenant.Namespace).Get(name)
+func (c *Controller) getSecret(_ context.Context, name string) *corev1.Secret {
+	retValue, _ := c.secretInformer.Lister().Secrets(c.tenant.Namespace).Get(name)
+	return retValue
 }
 
-func (c *Controller) getConfigMap(_ context.Context, name string) (*corev1.ConfigMap, error) {
-	return c.configMapInformer.Lister().ConfigMaps(c.tenant.Namespace).Get(name)
+func (c *Controller) getConfigMap(_ context.Context, name string) *corev1.ConfigMap {
+	retValue, _ := c.configMapInformer.Lister().ConfigMaps(c.tenant.Namespace).Get(name)
+	return retValue
 }
 
 func (c *Controller) regenCfg() {

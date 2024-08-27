@@ -395,7 +395,7 @@ func TestTenant_HasEnv(t1 *testing.T) {
 			name: "Contains env",
 			fields: fields{
 				Spec: TenantSpec{
-					Env: []corev1.EnvVar{
+					Env: []EnvVar{
 						{
 							Name:  "ENV1",
 							Value: "whatever",
@@ -412,7 +412,7 @@ func TestTenant_HasEnv(t1 *testing.T) {
 			name: "Does not Contains env",
 			fields: fields{
 				Spec: TenantSpec{
-					Env: []corev1.EnvVar{
+					Env: []EnvVar{
 						{
 							Name:  "ENV1",
 							Value: "whatever",
