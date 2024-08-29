@@ -68,6 +68,8 @@ tenant:
     name: myminio-env-configuration
     accessKey: minio
     secretKey: minio123
+    #existingSecret: true
+
   ###
   # If this variable is set to true, then enable the usage of an existing Kubernetes secret to set environment variables for the Tenant.
   # The existing Kubernetes secret name must be placed under .tenant.configuration.name e.g. existing-minio-env-configuration
