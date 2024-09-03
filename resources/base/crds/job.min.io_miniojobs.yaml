@@ -1080,7 +1080,7 @@ spec:
                   x-kubernetes-map-type: atomic
                 type: array
               mcImage:
-                default: quay.io/minio/mc:RELEASE.2024-08-17T01-24-54Z
+                default: quay.io/minio/mc:RELEASE.2024-08-17T11-33-50Z
                 type: string
               securityContext:
                 properties:
