@@ -497,7 +497,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 				go c.startSTSAPIServer(ctx, notificationChannel)
 			}
 		case err := <-upgradeServerChannel:
-			if err != http.ErrServerClosed {
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				klog.Errorf("Upgrade Server stopped: %v, going to restart", err)
 				upgradeServerChannel = c.startUpgradeServer()
 			}
@@ -584,13 +584,24 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				leaderRun(ctx, c, threadiness, stopCh, notificationChannel)
 			},
 			OnStoppedLeading: func() {
-				// we can do cleanup here
-				klog.Infof("leader lost: %s", c.podName)
-				// When we lose leadership, we should do cleanup, such as stop the controller.
-				if err := shutdown(); err != nil {
-					klog.Errorf("error shutting down: %v", err)
-				}
+				klog.Infof("leader lost, removing any leader labels that I '%s' might have", c.podName)
+				p := []patchAnnotation{{
+					Op:   "remove",
+					Path: "/metadata/labels/operator",
+				}}
 
+				payloadBytes, err := json.Marshal(p)
+				if err != nil {
+					klog.Errorf("failed to marshal patch: %#v", err)
+				} else {
+					c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
+				}
+				// Even if Stop() is called twice, stopping it here ensures the sync handler no longer is handling events,
+				// in case SIGTERM fails or the controller takes longer to exit.
+				c.Stop()
+				if err := syscall.Kill(os.Getpid(), syscall.SIGTERM); err != nil {
+					klog.Errorf("error sending SIGTERM: %v", err)
+				}
 			},
 			OnNewLeader: func(identity string) {
 				// we're notified when new leader elected
