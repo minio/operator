@@ -492,7 +492,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	for {
 		select {
 		case oerr := <-notificationChannel:
-			if !errors.Is(oerr.Err, http.ErrServerClosed) {
+			if oerr != nil && !errors.Is(oerr.Err, http.ErrServerClosed) {
 				klog.Errorf("STS API Server stopped: %v, going to restart", oerr.Err)
 				go c.startSTSAPIServer(ctx, notificationChannel)
 			}
@@ -586,6 +586,11 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 			OnStoppedLeading: func() {
 				// we can do cleanup here
 				klog.Infof("leader lost: %s", c.podName)
+				// When we lose leadership, we should do cleanup, such as stop the controller.
+				if err := shutdown(); err != nil {
+					klog.Errorf("error shutting down: %v", err)
+				}
+
 			},
 			OnNewLeader: func(identity string) {
 				// we're notified when new leader elected

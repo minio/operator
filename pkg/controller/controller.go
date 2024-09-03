@@ -207,6 +207,10 @@ func setupSignalHandler() (stopCh <-chan struct{}) {
 	return stop
 }
 
+func shutdown() error {
+	return syscall.Kill(os.Getpid(), syscall.SIGTERM)
+}
+
 // Result contains the result of a sync invocation.
 type Result struct {
 	// Requeue tells the Controller to requeue the reconcile key.  Defaults to false.
