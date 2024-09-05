@@ -807,7 +807,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// Check if the Tenant is marked to be deleted
 	// Shouldn't create resources when marked for deletion
 	if !tenant.DeletionTimestamp.IsZero() {
-		runtime.HandleError(fmt.Errorf("Tenant '%s' is marked for deletion", key))
+		runtime.HandleError(fmt.Errorf("Tenant '%s' is marked for deletion, skipping", key))
 		return WrapResult(Result{}, nil)
 	}
 
