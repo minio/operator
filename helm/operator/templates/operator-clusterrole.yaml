@@ -158,7 +158,9 @@ rules:
       - prometheuses
       - prometheusagents
     verbs:
-      - '*'
+      - get
+      - update
+      - list
   - apiGroups:
       - "coordination.k8s.io"
     resources:
