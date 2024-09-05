@@ -89,7 +89,6 @@ func (c *Controller) getPrometheusAgents(ctx context.Context) ([]*promv1alpha1.P
 
 func (c *Controller) getPrometheus(ctx context.Context) (promv1.PrometheusInterface, error) {
 	ns := miniov2.GetPrometheusNamespace()
-	promName := miniov2.GetPrometheusName()
 
 	var instances []promv1.PrometheusInterface
 	proms, err := c.getPrometheuses(ctx)
@@ -112,7 +111,7 @@ func (c *Controller) getPrometheus(ctx context.Context) (promv1.PrometheusInterf
 		return nil, errors.New("no Prometheus or PrometheusAgent found in namespace " + ns)
 	}
 	if len(instances) > 1 {
-		return nil, errors.New("more than one Prometheus or PrometheusAgent instance found with name " + promName)
+		return nil, errors.New("more than one Prometheus or PrometheusAgent instance found in namespace " + ns + ".")
 	}
 
 	return instances[0], nil
