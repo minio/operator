@@ -804,6 +804,12 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 		// will retry after 5sec
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
+	// Check if the Tenant is marked to be deleted
+	// Shouldn't create resources when marked for deletion
+	if !tenant.DeletionTimestamp.IsZero() {
+		runtime.HandleError(fmt.Errorf("Tenant '%s' is marked for deletion, skipping", key))
+		return WrapResult(Result{}, nil)
+	}
 
 	// Check the Sync Version to see if the tenant needs upgrade
 	if tenant, err = c.checkForUpgrades(ctx, tenant); err != nil {
