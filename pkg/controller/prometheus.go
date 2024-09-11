@@ -19,6 +19,7 @@ import (
 	"errors"
 
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
+	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,30 +36,85 @@ type MinIOPrometheusMetrics struct {
 	Usage          int64
 }
 
-func (c *Controller) getPrometheus(ctx context.Context) (*promv1.Prometheus, error) {
+func (c *Controller) getPrometheuses(ctx context.Context) ([]*promv1.Prometheus, error) {
 	ns := miniov2.GetPrometheusNamespace()
 	promName := miniov2.GetPrometheusName()
-	var p *promv1.Prometheus
-	var err error
+
+	var pList []*promv1.Prometheus
+
 	if promName != "" {
-		p, err = c.promClient.MonitoringV1().Prometheuses(ns).Get(ctx, promName, metav1.GetOptions{})
+		p, err := c.promClient.MonitoringV1().Prometheuses(ns).Get(ctx, promName, metav1.GetOptions{})
+		if k8serrors.IsNotFound(err) {
+			return nil, nil
+		}
 		if err != nil {
 			return nil, err
 		}
+		pList = append(pList, p)
 	} else {
-		pList, err := c.promClient.MonitoringV1().Prometheuses(ns).List(ctx, metav1.ListOptions{})
+		promList, err := c.promClient.MonitoringV1().Prometheuses(ns).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, err
 		}
-		if len(pList.Items) == 0 {
-			return nil, errors.New("No prometheus found on namespace " + ns)
-		}
-		if len(pList.Items) > 1 {
-			return nil, errors.New("More than 1 prometheus found on namespace " + ns + ". PROMETHEUS_NAME not specified.")
-		}
-		p = pList.Items[0]
+		pList = promList.Items
+
 	}
-	return p, nil
+	return pList, nil
+}
+
+func (c *Controller) getPrometheusAgents(ctx context.Context) ([]*promv1alpha1.PrometheusAgent, error) {
+	ns := miniov2.GetPrometheusNamespace()
+	promName := miniov2.GetPrometheusName()
+
+	var pList []*promv1alpha1.PrometheusAgent
+
+	if promName != "" {
+		p, err := c.promClient.MonitoringV1alpha1().PrometheusAgents(ns).Get(ctx, promName, metav1.GetOptions{})
+		if k8serrors.IsNotFound(err) {
+			return nil, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		pList = append(pList, p)
+	} else {
+		promAgentList, err := c.promClient.MonitoringV1alpha1().PrometheusAgents(ns).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			return nil, err
+		}
+		pList = promAgentList.Items
+	}
+	return pList, nil
+}
+
+func (c *Controller) getPrometheus(ctx context.Context) (promv1.PrometheusInterface, error) {
+	ns := miniov2.GetPrometheusNamespace()
+
+	var instances []promv1.PrometheusInterface
+	proms, err := c.getPrometheuses(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, prom := range proms {
+		instances = append(instances, prom) // Append Prometheus instances to the interface slice
+	}
+
+	promAgents, err := c.getPrometheusAgents(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, promAgent := range promAgents {
+		instances = append(instances, promAgent) // Append PrometheusAgent instances to the interface slice
+	}
+
+	if len(instances) == 0 {
+		return nil, errors.New("no Prometheus or PrometheusAgent found in namespace " + ns)
+	}
+	if len(instances) > 1 {
+		return nil, errors.New("more than one Prometheus or PrometheusAgent instance found in namespace " + ns + ".")
+	}
+
+	return instances[0], nil
 }
 
 func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, tenant *miniov2.Tenant, accessKey, secretKey string) error {
@@ -69,9 +125,11 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 		return err
 	}
 
+	// We use common fields of Prometheus & PrometheusAgents to make sure we only operate on fields available on both types.
+	cpf := p.GetCommonPrometheusFields()
 	// If the additional scrape config is set to something else, we will error out
-	if p.Spec.AdditionalScrapeConfigs != nil && p.Spec.AdditionalScrapeConfigs.Name != miniov2.PrometheusAddlScrapeConfigSecret {
-		return errors.New(p.Spec.AdditionalScrapeConfigs.Name + " is alreay set as additional scrape config in prometheus")
+	if cpf.AdditionalScrapeConfigs != nil && cpf.AdditionalScrapeConfigs.Name != miniov2.PrometheusAddlScrapeConfigSecret {
+		return errors.New(cpf.AdditionalScrapeConfigs.Name + " is alreay set as additional scrape config in prometheus")
 	}
 
 	secret, err := c.kubeClientSet.CoreV1().Secrets(ns).Get(ctx, miniov2.PrometheusAddlScrapeConfigSecret, metav1.GetOptions{})
@@ -132,13 +190,20 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 	}
 
 	// Update prometheus if it's not done alreay
-	if p.Spec.AdditionalScrapeConfigs == nil {
-		p.Spec.AdditionalScrapeConfigs = &corev1.SecretKeySelector{
+	if cpf.AdditionalScrapeConfigs == nil {
+		cpf.AdditionalScrapeConfigs = &corev1.SecretKeySelector{
 			LocalObjectReference: corev1.LocalObjectReference{Name: miniov2.PrometheusAddlScrapeConfigSecret},
 			Key:                  miniov2.PrometheusAddlScrapeConfigKey,
 		}
+		p.SetCommonPrometheusFields(cpf)
 
-		_, err = c.promClient.MonitoringV1().Prometheuses(ns).Update(ctx, p, metav1.UpdateOptions{})
+		switch prom := p.(type) {
+		case *promv1alpha1.PrometheusAgent:
+			_, err = c.promClient.MonitoringV1alpha1().PrometheusAgents(ns).Update(ctx, prom, metav1.UpdateOptions{})
+		case *promv1.Prometheus:
+			_, err = c.promClient.MonitoringV1().Prometheuses(ns).Update(ctx, prom, metav1.UpdateOptions{})
+		}
+
 		if err != nil {
 			return err
 		}
