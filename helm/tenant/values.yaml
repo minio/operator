@@ -1,5 +1,5 @@
 ###
-# WARNING: '.secrets' is deprecated since v5.0.16 and will be removed in next minor release (i.e. v5.1.0).
+# WARNING: '.secrets' is deprecated since v5.0.17 and will be removed in next minor release (i.e. v5.1.0).
 # WARNING: Please use '.tenant.configSecret' instead.
 # Root key for dynamically creating a secret for use with configuring root MinIO User
 # Specify the ``name`` and then a list of environment variables. 
@@ -48,7 +48,7 @@ tenant:
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.16 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v5.0.17 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
