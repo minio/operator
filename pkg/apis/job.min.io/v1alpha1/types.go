@@ -89,6 +89,10 @@ type MinIOJobSpec struct {
 	// +kubebuilder:validation:Enum=continueOnFailure;stopOnFailure;
 	FailureStrategy FailureStrategy `json:"failureStrategy"`
 
+	// Insecure is boolean to enable/disable TLS verification
+	// +optional
+	Insecure *bool `json:"insecure"`
+
 	// *Required* +
 	//
 	// Commands List of MinioClient commands

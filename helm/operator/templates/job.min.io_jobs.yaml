@@ -1079,6 +1079,8 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
+              insecure:
+                type: boolean
               mcImage:
                 default: quay.io/minio/mc:RELEASE.2024-08-17T11-33-50Z
                 type: string

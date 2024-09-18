@@ -151,6 +151,11 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 		}
 	}
 
+	if jobCR.Spec.Insecure != nil && *jobCR.Spec.Insecure && insecure == false {
+		jobCommands = append(jobCommands, "--insecure")
+		insecure = true
+	}
+
 	mcImage := jobCR.Spec.MCImage
 	if mcImage == "" {
 		mcImage = DefaultMCImage
