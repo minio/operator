@@ -151,7 +151,7 @@ func (jobCommand *MinIOIntervalJobCommand) createJob(_ context.Context, _ client
 		}
 	}
 
-	if jobCR.Spec.Insecure != nil && *jobCR.Spec.Insecure && insecure == false {
+	if jobCR.Spec.Insecure != nil && *jobCR.Spec.Insecure && !insecure {
 		jobCommands = append(jobCommands, "--insecure")
 		insecure = true
 	}
