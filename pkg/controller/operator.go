@@ -33,7 +33,6 @@ import (
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	xcerts "github.com/minio/pkg/certs"
-	"github.com/minio/pkg/env"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,8 +42,6 @@ import (
 const (
 	// CertPasswordEnv Env variable is used to decrypt the private key in the TLS certificate for operator if need it
 	CertPasswordEnv = "OPERATOR_CERT_PASSWD"
-	// OperatorDeploymentNameEnv Env variable to specify a custom deployment name for Operator
-	OperatorDeploymentNameEnv = "MINIO_OPERATOR_DEPLOYMENT_NAME"
 	// OperatorCATLSSecretName is the name of the secret for the operator CA
 	OperatorCATLSSecretName = "operator-ca-tls"
 	// DefaultDeploymentName is the default name of the operator deployment
@@ -303,9 +300,4 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 		}
 	}
 	return created, err
-}
-
-// getOperatorDeploymentName Internal func returns the Operator deployment name from MINIO_OPERATOR_DEPLOYMENT_NAME ENV variable or the default name
-func getOperatorDeploymentName() string {
-	return env.Get(OperatorDeploymentNameEnv, DefaultDeploymentName)
 }

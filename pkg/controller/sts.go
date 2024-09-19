@@ -413,7 +413,7 @@ func IsSTSAutocertEnabled() bool {
 
 // generateConsoleTLSCert Issues the Operator Console TLS Certificate
 func (c *Controller) generateSTSTLSCert() (*string, *string) {
-	return c.generateTLSCertificateForService("sts", STSTLSSecretName, getOperatorDeploymentName())
+	return c.generateTLSCertificateForService("sts", STSTLSSecretName, DefaultDeploymentName)
 }
 
 // waitSTSTLSCert Waits for the Operator leader to issue the TLS Certificate for STS
