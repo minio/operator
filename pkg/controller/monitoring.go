@@ -154,8 +154,10 @@ func (c *Controller) updateHealthStatusForTenant(tenant *miniov2.Tenant) (*minio
 	}
 
 	// partial status update, since the storage info might take a while
-	if tenant, err = c.updatePoolStatus(context.Background(), tenant); err != nil {
+	if tenantUpdate, err := c.updatePoolStatus(context.Background(), tenant); err != nil {
 		klog.Infof("'%s/%s' Can't update tenant status: %v", tenant.Namespace, tenant.Name, err)
+	} else {
+		tenant = tenantUpdate
 	}
 
 	srvInfoCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
