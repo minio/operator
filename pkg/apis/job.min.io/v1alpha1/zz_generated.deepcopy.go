@@ -169,6 +169,11 @@ func (in *MinIOJobList) DeepCopyObject() runtime.Object {
 func (in *MinIOJobSpec) DeepCopyInto(out *MinIOJobSpec) {
 	*out = *in
 	out.TenantRef = in.TenantRef
+	if in.Insecure != nil {
+		in, out := &in.Insecure, &out.Insecure
+		*out = new(bool)
+		**out = **in
+	}
 	if in.Commands != nil {
 		in, out := &in.Commands, &out.Commands
 		*out = make([]CommandSpec, len(*in))

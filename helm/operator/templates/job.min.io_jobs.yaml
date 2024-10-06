@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.15.0
-    operator.min.io/version: v6.0.3
+    operator.min.io/version: v6.0.4
   name: miniojobs.job.min.io
 spec:
   group: job.min.io
@@ -1082,7 +1082,7 @@ spec:
               insecure:
                 type: boolean
               mcImage:
-                default: quay.io/minio/mc:RELEASE.2024-08-17T11-33-50Z
+                default: quay.io/minio/mc:RELEASE.2024-10-02T08-27-28Z
                 type: string
               securityContext:
                 properties:
