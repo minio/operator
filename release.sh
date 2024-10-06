@@ -25,8 +25,8 @@ MINIO_RELEASE=$(get_latest_release minio/minio)
 KES_RELEASE=$(get_latest_release minio/kes)
 MC_RELEASE=$(get_latest_release minio/mc)
 
+MINIO_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/minio\:)([v]?.*)"/\2/p' pkg/apis/minio.min.io/v2/constants.go)
 KES_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/kes\:)([v]?.*)"/\2/p' pkg/apis/minio.min.io/v2/constants.go)
-
 MC_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/mc\:)([v]?.*)"/\2/p' pkg/utils/miniojob/types.go)
 
 files=(
@@ -47,14 +47,16 @@ files=(
   "pkg/controller/operator.go"
   "resources/base/deployment.yaml"
   "testing/console-tenant+kes.sh"
+  "pkg/utils/miniojob/types.go"
 )
 
 CURRENT_RELEASE=$(get_latest_release minio/operator)
 CURRENT_RELEASE="${CURRENT_RELEASE:1}"
 
-echo "MinIO: $MINIO_RELEASE"
 echo "Upgrade: $CURRENT_RELEASE => $RELEASE"
+echo "MinIO: $MINIO_RELEASE => $MINIO_RELEASE"
 echo "KES: $KES_CURRENT_RELEASE => $KES_RELEASE"
+echo "MC: $MC_CURRENT_RELEASE => $MC_RELEASE"
 
 if [ -z "$MINIO_RELEASE" ]; then
   echo "\$MINIO_RELEASE is empty"
@@ -62,10 +64,10 @@ if [ -z "$MINIO_RELEASE" ]; then
 fi
 
 for file in "${files[@]}"; do
+	sed -i -e "s/${KES_CURRENT_RELEASE}/${KES_RELEASE}/g" "$file"
+	sed -i -e "s/${MC_CURRENT_RELEASE}/${MC_RELEASE}/g" "$file"
   sed -i -e "s/${CURRENT_RELEASE}/${RELEASE}/g" "$file"
-  sed -i -e "s/RELEASE\.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]-[0-9][0-9]-[0-9][0-9]Z/${MINIO_RELEASE}/g" "$file"
-  sed -i -e "s/${KES_CURRENT_RELEASE}/${KES_RELEASE}/g" "$file"
-  sed -i -e "s/${MC_CURRENT_RELEASE}/${MC_RELEASE}/g" "$file"
+  sed -i -e "s/${MINIO_CURRENT_RELEASE}/${MINIO_RELEASE}/g" "$file"
 done
 
 annotations_files=(
