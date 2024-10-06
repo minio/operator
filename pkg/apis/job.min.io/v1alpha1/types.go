@@ -100,7 +100,7 @@ type MinIOJobSpec struct {
 
 	// The Docker image to use when deploying `mc` pods. Defaults to {mc-image}. +
 	// +optional
-	// +kubebuilder:default="quay.io/minio/mc:RELEASE.2024-08-17T11-33-50Z"
+	// +kubebuilder:default="quay.io/minio/mc:RELEASE.2024-10-02T08-27-28Z"
 	MCImage string `json:"mcImage,omitempty"`
 
 	// *Optional* +

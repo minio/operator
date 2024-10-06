@@ -35,6 +35,7 @@ files=(
   "docs/tenant_crd.adoc"
   "docs/policybinding_crd.adoc"
   "docs/job_crd.adoc"
+  "docs/minio-job.md"
   "docs/templates/asciidoctor/gv_list.tpl"
   "examples/kustomization/base/tenant.yaml"
   "examples/kustomization/tenant-certmanager-kes/tenant.yaml"
