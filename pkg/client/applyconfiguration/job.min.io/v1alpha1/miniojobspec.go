@@ -30,6 +30,7 @@ type MinIOJobSpecApplyConfiguration struct {
 	TenantRef                *TenantRefApplyConfiguration      `json:"tenant,omitempty"`
 	Execution                *jobminiov1alpha1.Execution       `json:"execution,omitempty"`
 	FailureStrategy          *jobminiov1alpha1.FailureStrategy `json:"failureStrategy,omitempty"`
+	Insecure                 *bool                             `json:"insecure,omitempty"`
 	Commands                 []CommandSpecApplyConfiguration   `json:"commands,omitempty"`
 	MCImage                  *string                           `json:"mcImage,omitempty"`
 	ImagePullPolicy          *v1.PullPolicy                    `json:"imagePullPolicy,omitempty"`
@@ -73,6 +74,14 @@ func (b *MinIOJobSpecApplyConfiguration) WithExecution(value jobminiov1alpha1.Ex
 // If called multiple times, the FailureStrategy field is set to the value of the last call.
 func (b *MinIOJobSpecApplyConfiguration) WithFailureStrategy(value jobminiov1alpha1.FailureStrategy) *MinIOJobSpecApplyConfiguration {
 	b.FailureStrategy = &value
+	return b
+}
+
+// WithInsecure sets the Insecure field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the Insecure field is set to the value of the last call.
+func (b *MinIOJobSpecApplyConfiguration) WithInsecure(value bool) *MinIOJobSpecApplyConfiguration {
+	b.Insecure = &value
 	return b
 }
 

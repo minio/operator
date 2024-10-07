@@ -65,7 +65,7 @@ kind: MinIOJob
 metadata:
   name: minio-test-job
 spec:
-#  mcImage: quay.io/minio/mc:latest
+#  mcImage: quay.io/minio/mc:RELEASE.2024-10-02T08-27-28Z
   serviceAccountName: mc-job-sa
   securityContext: {}
   containerSecurityContext: {}
@@ -133,7 +133,7 @@ spec:
 ```
 The MinioJob is a Kubernetes Job that runs mc commands. It uses the MinIO client (mc) to interact with the MinIO server.
 ## mcImage
-Optional, defaults to `quay.io/minio/mc:latest`
+Optional, defaults to `quay.io/minio/mc:RELEASE.2024-10-02T08-27-28Z`
 The `mcImage` field specifies the Docker image that will be used to run the mc commands.
 ## serviceAccountName
 The `serviceAccountName` field specifies the name of the Kubernetes ServiceAccount that will be used to run the mc commands. In this case, the ServiceAccount is `mc-job-sa`.

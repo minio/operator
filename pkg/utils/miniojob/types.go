@@ -34,7 +34,7 @@ import (
 
 const (
 	// DefaultMCImage - job mc image
-	DefaultMCImage = "quay.io/minio/mc:RELEASE.2024-07-31T15-58-33Z"
+	DefaultMCImage = "quay.io/minio/mc:RELEASE.2024-10-02T08-27-28Z"
 	// MinioJobName - job name
 	MinioJobName = "job.min.io/job-name"
 	// MinioJobCRName - job cr name
