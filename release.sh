@@ -27,7 +27,6 @@ MC_RELEASE=$(get_latest_release minio/mc)
 
 MINIO_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/minio\:)([v]?.*)"/\2/p' pkg/apis/minio.min.io/v2/constants.go)
 KES_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/kes\:)([v]?.*)"/\2/p' pkg/apis/minio.min.io/v2/constants.go)
-MC_CURRENT_RELEASE=$(sed -nr 's/.*(minio\/mc\:)([v]?.*)"/\2/p' pkg/utils/miniojob/types.go)
 
 files=(
   "README.md"
@@ -48,7 +47,6 @@ files=(
   "pkg/controller/operator.go"
   "resources/base/deployment.yaml"
   "testing/console-tenant+kes.sh"
-  "pkg/utils/miniojob/types.go"
 )
 
 CURRENT_RELEASE=$(get_latest_release minio/operator)

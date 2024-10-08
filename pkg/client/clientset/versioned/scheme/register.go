@@ -19,7 +19,6 @@
 package scheme
 
 import (
-	jobv1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	stsv1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	stsv1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
@@ -34,7 +33,6 @@ var Scheme = runtime.NewScheme()
 var Codecs = serializer.NewCodecFactory(Scheme)
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 var localSchemeBuilder = runtime.SchemeBuilder{
-	jobv1alpha1.AddToScheme,
 	miniov2.AddToScheme,
 	stsv1alpha1.AddToScheme,
 	stsv1beta1.AddToScheme,
