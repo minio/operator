@@ -74,7 +74,6 @@ import (
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
 	minioscheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
-	jobinformers "github.com/minio/operator/pkg/client/informers/externalversions/job.min.io/v1alpha1"
 	informers "github.com/minio/operator/pkg/client/informers/externalversions/minio.min.io/v2"
 	stsInformers "github.com/minio/operator/pkg/client/informers/externalversions/sts.min.io/v1beta1"
 	"github.com/minio/operator/pkg/resources/statefulsets"
@@ -203,11 +202,6 @@ type Controller struct {
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
-
-	// controllers denotes the list of components controlled
-	// by the controller. Each component is itself
-	// a controller. This handle is for supporting the abstraction.
-	controllers []*JobController
 }
 
 // EventType is Event type to handle
@@ -239,13 +233,11 @@ func NewController(
 	kubeInformerFactory kubeinformers.SharedInformerFactory,
 	tenantInformer informers.TenantInformer,
 	policyBindingInformer stsInformers.PolicyBindingInformer,
-	minioJobInformer jobinformers.MinIOJobInformer,
 	kubeInformerFactoryInOperatorNamespace kubeinformers.SharedInformerFactory,
 ) *Controller {
 	statefulSetInformer := kubeInformerFactory.Apps().V1().StatefulSets()
 	deploymentInformer := kubeInformerFactory.Apps().V1().Deployments()
 	serviceInformer := kubeInformerFactory.Core().V1().Services()
-	jobInformer := kubeInformerFactory.Batch().V1().Jobs()
 	secretInformer := kubeInformerFactoryInOperatorNamespace.Core().V1().Secrets()
 
 	// Create event broadcaster
@@ -290,17 +282,6 @@ func NewController(
 		hostsTemplate:             hostsTemplate,
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
-		controllers: []*JobController{
-			NewJobController(
-				minioJobInformer,
-				jobInformer,
-				namespacesToWatch,
-				kubeClientSet,
-				recorder,
-				queue.NewRateLimitingQueueWithConfig(MinIOControllerRateLimiter(), queue.RateLimitingQueueConfig{Name: "MinioJobs"}),
-				k8sClient,
-			),
-		},
 	}
 
 	// Initialize operator HTTP upgrade server handlers
@@ -455,18 +436,9 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced, c.secretListerSynced); !ok {
 		panic("failed to wait for caches to sync")
 	}
-	// Wait for the caches to be synced before starting workers
-	for _, jobController := range c.controllers {
-		if ok := cache.WaitForCacheSync(stopCh, jobController.minioJobHasSynced, jobController.jobHasSynced); !ok {
-			panic("failed to wait for caches to sync")
-		}
-	}
 
-	klog.Info("Starting workers and Job workers")
-	JobController := c.controllers[0]
 	// Launch two workers to process Job resources
 	for i := 0; i < threadiness; i++ {
-		go wait.Until(JobController.runJobWorker, time.Second, stopCh)
 		go wait.Until(c.runWorker, time.Second, stopCh)
 	}
 
@@ -596,12 +568,8 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				} else {
 					c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
 				}
-				// Even if Stop() is called twice, stopping it here ensures the sync handler no longer is handling events,
-				// in case SIGTERM fails or the controller takes longer to exit.
 				c.Stop()
-				if err := syscall.Kill(os.Getpid(), syscall.SIGTERM); err != nil {
-					klog.Errorf("error sending SIGTERM: %v", err)
-				}
+				cancel()
 			},
 			OnNewLeader: func(identity string) {
 				// we're notified when new leader elected

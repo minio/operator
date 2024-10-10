@@ -36,7 +36,6 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	stsv1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
 	clientset "github.com/minio/operator/pkg/client/clientset/versioned"
@@ -77,7 +76,6 @@ func init() {
 // StartOperator starts the MinIO Operator controller
 func StartOperator(kubeconfig string) {
 	_ = v2.AddToScheme(scheme.Scheme)
-	_ = v1alpha1.AddToScheme(scheme.Scheme)
 	_ = stsv1beta1.AddToScheme(scheme.Scheme)
 	_ = stsv1alpha1.AddToScheme(scheme.Scheme)
 	klog.Info("Starting MinIO Operator")
@@ -169,7 +167,6 @@ func StartOperator(kubeconfig string) {
 		kubeInformerFactory,
 		minioInformerFactory.Minio().V2().Tenants(),
 		minioInformerFactory.Sts().V1beta1().PolicyBindings(),
-		minioInformerFactory.Job().V1alpha1().MinIOJobs(),
 		kubeInformerFactoryInOperatorNamespace,
 	)
 
