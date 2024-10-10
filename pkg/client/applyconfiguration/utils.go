@@ -55,10 +55,16 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &miniominiov2.CertificateConfigApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("CertificateStatus"):
 		return &miniominiov2.CertificateStatusApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("ConfigMapKeySelector"):
+		return &miniominiov2.ConfigMapKeySelectorApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("CustomCertificateConfig"):
 		return &miniominiov2.CustomCertificateConfigApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("CustomCertificates"):
 		return &miniominiov2.CustomCertificatesApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("EnvVar"):
+		return &miniominiov2.EnvVarApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("EnvVarSource"):
+		return &miniominiov2.EnvVarSourceApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("ExposeServices"):
 		return &miniominiov2.ExposeServicesApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("Features"):
@@ -73,6 +79,8 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &miniominiov2.PoolApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("PoolStatus"):
 		return &miniominiov2.PoolStatusApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("SecretKeySelector"):
+		return &miniominiov2.SecretKeySelectorApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("ServiceMetadata"):
 		return &miniominiov2.ServiceMetadataApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("SideCars"):

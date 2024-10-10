@@ -99,6 +99,7 @@ func getTenantRole(tenant *miniov2.Tenant) *rbacv1.Role {
 					"",
 				},
 				Resources: []string{
+					"configmaps",
 					"secrets",
 				},
 				Verbs: []string{

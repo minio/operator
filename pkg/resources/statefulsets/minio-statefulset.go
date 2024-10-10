@@ -786,8 +786,6 @@ func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container
 			"sidecar",
 			"--tenant",
 			t.Name,
-			"--config-name",
-			t.Spec.Configuration.Name,
 		},
 		Env: []corev1.EnvVar{
 			{
