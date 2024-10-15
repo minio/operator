@@ -628,8 +628,15 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 		},
 	}
 	// Copy labels and annotations from the Tenant.Spec.Metadata
-	ssMeta.Labels = t.ObjectMeta.Labels
-	ssMeta.Annotations = t.ObjectMeta.Annotations
+	// unless `StatefulSetMetadata` is defined, then we'll copy it
+	// from there.
+	if t.Spec.StatefulSetMetadata != nil {
+		ssMeta.Labels = t.Spec.StatefulSetMetadata.Labels
+		ssMeta.Annotations = t.Spec.StatefulSetMetadata.Annotations
+	} else {
+		ssMeta.Labels = t.ObjectMeta.Labels
+		ssMeta.Annotations = t.ObjectMeta.Annotations
+	}
 
 	if ssMeta.Labels == nil {
 		ssMeta.Labels = make(map[string]string)
