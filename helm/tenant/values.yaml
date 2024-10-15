@@ -115,6 +115,9 @@ tenant:
       # Specify `storageAnnotations <https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/>`__ to associate to PVCs.
       storageAnnotations: { }
       ###
+      # Specify `storageLabels <https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/>`__ to associate to PVCs.
+      storageLabels: { }
+      ###
       # Specify `annotations <https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/>`__ to associate to Tenant pods.
       annotations: { }
       ###
