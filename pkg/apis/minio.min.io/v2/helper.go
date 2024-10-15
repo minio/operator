@@ -878,20 +878,6 @@ func GetClusterDomain() string {
 	return k8sClusterDomain
 }
 
-// MergeMaps merges two maps and returns the union
-func MergeMaps(a, b map[string]string) map[string]string {
-	if a == nil {
-		a = map[string]string{}
-	}
-	if b == nil {
-		b = map[string]string{}
-	}
-	for k, v := range b {
-		a[k] = v
-	}
-	return a
-}
-
 // ToMap converts a slice of env vars to a map of Name and value
 func ToMap(envs []corev1.EnvVar) map[string]string {
 	newMap := make(map[string]string)

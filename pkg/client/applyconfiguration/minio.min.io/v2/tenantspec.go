@@ -54,7 +54,7 @@ type TenantSpecApplyConfiguration struct {
 	SideCars                  *SideCarsApplyConfiguration                  `json:"sideCars,omitempty"`
 	ExposeServices            *ExposeServicesApplyConfiguration            `json:"exposeServices,omitempty"`
 	ServiceMetadata           *ServiceMetadataApplyConfiguration           `json:"serviceMetadata,omitempty"`
-	StatefulSetMetadata       *StatefulSetMetadataApplyConfiguration       `json:"statefulSetMetadata,omitempty"`
+	PoolsMetadata             *PoolsMetadataApplyConfiguration             `json:"poolsMetadata,omitempty"`
 	Users                     []v1.LocalObjectReference                    `json:"users,omitempty"`
 	Buckets                   []BucketApplyConfiguration                   `json:"buckets,omitempty"`
 	Logging                   *LoggingApplyConfiguration                   `json:"logging,omitempty"`
@@ -308,11 +308,11 @@ func (b *TenantSpecApplyConfiguration) WithServiceMetadata(value *ServiceMetadat
 	return b
 }
 
-// WithStatefulSetMetadata sets the StatefulSetMetadata field in the declarative configuration to the given value
+// WithPoolsMetadata sets the PoolsMetadata field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the StatefulSetMetadata field is set to the value of the last call.
-func (b *TenantSpecApplyConfiguration) WithStatefulSetMetadata(value *StatefulSetMetadataApplyConfiguration) *TenantSpecApplyConfiguration {
-	b.StatefulSetMetadata = value
+// If called multiple times, the PoolsMetadata field is set to the value of the last call.
+func (b *TenantSpecApplyConfiguration) WithPoolsMetadata(value *PoolsMetadataApplyConfiguration) *TenantSpecApplyConfiguration {
+	b.PoolsMetadata = value
 	return b
 }
 

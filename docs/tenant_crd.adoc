@@ -689,6 +689,35 @@ Security Context
 |===
 
 
+[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-poolsmetadata"]
+==== PoolsMetadata 
+
+PoolsMetadata (`poolsMetadata`) defines custom labels and annotations for the MinIO pool stateful sets / pods. +
+
+.Appears In:
+****
+- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantspec[$$TenantSpec$$]
+****
+
+[cols="25a,75a", options="header"]
+|===
+| Field | Description
+
+|*`labels`* __object (keys:string, values:string)__ 
+|*Optional* +
+
+
+If provided, append these labels to the MinIO statefulset / pods
+
+|*`annotations`* __object (keys:string, values:string)__ 
+|*Optional* +
+
+
+If provided, append these annotations to the MinIO statefulset / pods
+
+|===
+
+
 [id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-servicemetadata"]
 ==== ServiceMetadata 
 
@@ -726,6 +755,18 @@ If provided, append these labels to the Console service
 
 
 If provided, append these annotations to the Console service
+
+|*`kesServiceLabels`* __object (keys:string, values:string)__ 
+|*Optional* +
+
+
+If provided, append these labels to the KES service
+
+|*`kesServiceAnnotations`* __object (keys:string, values:string)__ 
+|*Optional* +
+
+
+If provided, append these annotations to the KES service
 
 |===
 
@@ -773,35 +814,6 @@ More info: https://kubernetes.io/docs/concepts/storage/volumes
 
 
 sidecar's Resource, initcontainer will use that if set.
-
-|===
-
-
-[id="{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-statefulsetmetadata"]
-==== StatefulSetMetadata 
-
-StatefulSetMetadata (`statefulSetMetadata`) defines custom labels and annotations for the MinIO stateful sets. +
-
-.Appears In:
-****
-- xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-tenantspec[$$TenantSpec$$]
-****
-
-[cols="25a,75a", options="header"]
-|===
-| Field | Description
-
-|*`labels`* __object (keys:string, values:string)__ 
-|*Optional* +
-
-
-If provided, append these labels to the MinIO statefulset
-
-|*`annotations`* __object (keys:string, values:string)__ 
-|*Optional* +
-
-
-If provided, append these annotations to the MinIO statefulset
 
 |===
 
@@ -1183,11 +1195,11 @@ Directs the Operator to expose the MinIO and/or Console services. +
 
 Specify custom labels and annotations to append to the MinIO service and/or Console service.
 
-|*`statefulSetMetadata`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-statefulsetmetadata[$$StatefulSetMetadata$$]__ 
+|*`poolsMetadata`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-minio-min-io-v2-poolsmetadata[$$PoolsMetadata$$]__ 
 |*Optional* +
 
 
-Specify custom labels and annotations to append to the MinIO statefulsets.
+Specify custom labels and annotations to append to all pool statefulsets and pods.
 
 |*`users`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#localobjectreference-v1-core[$$LocalObjectReference$$] array__ 
 |*Optional* +

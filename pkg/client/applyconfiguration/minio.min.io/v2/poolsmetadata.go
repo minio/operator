@@ -18,24 +18,24 @@
 
 package v2
 
-// StatefulSetMetadataApplyConfiguration represents an declarative configuration of the StatefulSetMetadata type for use
+// PoolsMetadataApplyConfiguration represents an declarative configuration of the PoolsMetadata type for use
 // with apply.
-type StatefulSetMetadataApplyConfiguration struct {
+type PoolsMetadataApplyConfiguration struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-// StatefulSetMetadataApplyConfiguration constructs an declarative configuration of the StatefulSetMetadata type for use with
+// PoolsMetadataApplyConfiguration constructs an declarative configuration of the PoolsMetadata type for use with
 // apply.
-func StatefulSetMetadata() *StatefulSetMetadataApplyConfiguration {
-	return &StatefulSetMetadataApplyConfiguration{}
+func PoolsMetadata() *PoolsMetadataApplyConfiguration {
+	return &PoolsMetadataApplyConfiguration{}
 }
 
 // WithLabels puts the entries into the Labels field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Labels field,
 // overwriting an existing map entries in Labels field with the same key.
-func (b *StatefulSetMetadataApplyConfiguration) WithLabels(entries map[string]string) *StatefulSetMetadataApplyConfiguration {
+func (b *PoolsMetadataApplyConfiguration) WithLabels(entries map[string]string) *PoolsMetadataApplyConfiguration {
 	if b.Labels == nil && len(entries) > 0 {
 		b.Labels = make(map[string]string, len(entries))
 	}
@@ -49,7 +49,7 @@ func (b *StatefulSetMetadataApplyConfiguration) WithLabels(entries map[string]st
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, the entries provided by each call will be put on the Annotations field,
 // overwriting an existing map entries in Annotations field with the same key.
-func (b *StatefulSetMetadataApplyConfiguration) WithAnnotations(entries map[string]string) *StatefulSetMetadataApplyConfiguration {
+func (b *PoolsMetadataApplyConfiguration) WithAnnotations(entries map[string]string) *PoolsMetadataApplyConfiguration {
 	if b.Annotations == nil && len(entries) > 0 {
 		b.Annotations = make(map[string]string, len(entries))
 	}

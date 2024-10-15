@@ -318,9 +318,9 @@ type TenantSpec struct {
 	ServiceMetadata *ServiceMetadata `json:"serviceMetadata,omitempty"`
 	// *Optional* +
 	//
-	// Specify custom labels and annotations to append to the MinIO statefulsets.
+	// Specify custom labels and annotations to append to all pool statefulsets and pods.
 	// +optional
-	StatefulSetMetadata *StatefulSetMetadata `json:"statefulSetMetadata,omitempty"`
+	PoolsMetadata *PoolsMetadata `json:"poolsMetadata,omitempty"`
 	// *Optional* +
 	//
 	// An array of https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secrets] to use for generating MinIO users during tenant provisioning. +
@@ -400,18 +400,28 @@ type ServiceMetadata struct {
 	// If provided, append these annotations to the Console service
 	// +optional
 	ConsoleServiceAnnotations map[string]string `json:"consoleServiceAnnotations,omitempty"`
-}
-
-// StatefulSetMetadata (`statefulSetMetadata`) defines custom labels and annotations for the MinIO stateful sets. +
-type StatefulSetMetadata struct {
 	// *Optional* +
 	//
-	// If provided, append these labels to the MinIO statefulset
+	// If provided, append these labels to the KES service
+	// +optional
+	KESServiceLabels map[string]string `json:"kesServiceLabels,omitempty"`
+	// *Optional* +
+	//
+	// If provided, append these annotations to the KES service
+	// +optional
+	KESServiceAnnotations map[string]string `json:"kesServiceAnnotations,omitempty"`
+}
+
+// PoolsMetadata (`poolsMetadata`) defines custom labels and annotations for the MinIO pool stateful sets / pods. +
+type PoolsMetadata struct {
+	// *Optional* +
+	//
+	// If provided, append these labels to the MinIO statefulset / pods
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
 	// *Optional* +
 	//
-	// If provided, append these annotations to the MinIO statefulset
+	// If provided, append these annotations to the MinIO statefulset / pods
 	// +optional
 	Annotations map[string]string `json:"annotations,omitempty"`
 }

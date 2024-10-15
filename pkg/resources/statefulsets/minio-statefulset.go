@@ -24,6 +24,7 @@ import (
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	"github.com/minio/operator/pkg/certs"
+	"github.com/minio/operator/pkg/utils"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,48 +62,23 @@ func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte) []co
 // If a user specifies metadata in the spec we return that metadata.
 func PodMetadata(t *miniov2.Tenant, pool *miniov2.Pool) metav1.ObjectMeta {
 	meta := metav1.ObjectMeta{}
-	// Copy Labels and Annotations from Tenant
-	labels := t.ObjectMeta.Labels
-	annotations := t.ObjectMeta.Annotations
-
-	if annotations == nil {
-		annotations = make(map[string]string)
+	if t.Spec.PoolsMetadata != nil {
+		meta.Labels = t.Spec.PoolsMetadata.Labels
+		meta.Annotations = t.Spec.PoolsMetadata.Annotations
 	}
+	meta.Labels = utils.MergeMaps(meta.Labels, pool.Labels, t.MinIOPodLabels(), t.ConsolePodLabels())
+	meta.Annotations = utils.MergeMaps(meta.Annotations, pool.Annotations)
 
-	annotations[miniov2.Revision] = fmt.Sprintf("%d", t.Status.Revision)
-
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-	// Add the additional label used by StatefulSet spec selector
-	for k, v := range t.MinIOPodLabels() {
-		labels[k] = v
-	}
-	// Add information labels, such as which pool we are building this pod about
-	labels[miniov2.PoolLabel] = pool.Name
-	// Add the additional label used by Console spec selector
-	for k, v := range t.ConsolePodLabels() {
-		labels[k] = v
-	}
-
-	// Add user specific annotations
-	if pool.Annotations != nil {
-		annotations = miniov2.MergeMaps(annotations, pool.Annotations)
-	}
-
-	if pool.Labels != nil {
-		labels = miniov2.MergeMaps(labels, pool.Labels)
-	}
-
-	meta.Labels = labels
-	meta.Annotations = annotations
+	// Set specific information
+	meta.Labels[miniov2.PoolLabel] = pool.Name
+	meta.Annotations[miniov2.Revision] = fmt.Sprintf("%d", t.Status.Revision)
 
 	return meta
 }
 
 // ContainerMatchLabels Returns the labels that match the Pods in the statefulset
 func ContainerMatchLabels(t *miniov2.Tenant, pool *miniov2.Pool) *metav1.LabelSelector {
-	labels := miniov2.MergeMaps(t.MinIOPodLabels(), t.ConsolePodLabels())
+	labels := utils.MergeMaps(t.MinIOPodLabels(), t.ConsolePodLabels())
 	// Add pool information so it's passed down to the underlying PVCs
 	labels[miniov2.PoolLabel] = pool.Name
 	return &metav1.LabelSelector{
@@ -630,30 +606,18 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 	// Copy labels and annotations from the Tenant.Spec.Metadata
 	// unless `StatefulSetMetadata` is defined, then we'll copy it
 	// from there.
-	if t.Spec.StatefulSetMetadata != nil {
-		ssMeta.Labels = t.Spec.StatefulSetMetadata.Labels
-		ssMeta.Annotations = t.Spec.StatefulSetMetadata.Annotations
-	} else {
-		ssMeta.Labels = t.ObjectMeta.Labels
-		ssMeta.Annotations = t.ObjectMeta.Annotations
+	if t.Spec.PoolsMetadata != nil {
+		ssMeta.Labels = t.Spec.PoolsMetadata.Labels
+		ssMeta.Annotations = t.Spec.PoolsMetadata.Annotations
 	}
 
-	if ssMeta.Labels == nil {
-		ssMeta.Labels = make(map[string]string)
-	}
+	// Add pool specific annotations
+	ssMeta.Annotations = utils.MergeMaps(ssMeta.Annotations, pool.Annotations)
+	ssMeta.Labels = utils.MergeMaps(ssMeta.Labels, pool.Labels)
 
 	// Add information labels, such as which pool we are building this pod about
 	ssMeta.Labels[miniov2.PoolLabel] = pool.Name
 	ssMeta.Labels[miniov2.TenantLabel] = t.Name
-
-	// Add user specific annotations
-	if pool.Annotations != nil {
-		ssMeta.Annotations = miniov2.MergeMaps(ssMeta.Annotations, pool.Annotations)
-	}
-
-	if pool.Labels != nil {
-		ssMeta.Labels = miniov2.MergeMaps(ssMeta.Labels, pool.Labels)
-	}
 
 	containers := []corev1.Container{
 		poolMinioServerContainer(t, skipEnvVars, pool, certVolumeSources),

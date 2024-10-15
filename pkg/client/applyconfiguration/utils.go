@@ -58,14 +58,14 @@ func ForKind(kind schema.GroupVersionKind) interface{} {
 		return &miniominiov2.LoggingApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("Pool"):
 		return &miniominiov2.PoolApplyConfiguration{}
+	case v2.SchemeGroupVersion.WithKind("PoolsMetadata"):
+		return &miniominiov2.PoolsMetadataApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("PoolStatus"):
 		return &miniominiov2.PoolStatusApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("ServiceMetadata"):
 		return &miniominiov2.ServiceMetadataApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("SideCars"):
 		return &miniominiov2.SideCarsApplyConfiguration{}
-	case v2.SchemeGroupVersion.WithKind("StatefulSetMetadata"):
-		return &miniominiov2.StatefulSetMetadataApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("Tenant"):
 		return &miniominiov2.TenantApplyConfiguration{}
 	case v2.SchemeGroupVersion.WithKind("TenantDomains"):

@@ -30,18 +30,6 @@ func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 		port = miniov2.MinIOTLSPortLoadBalancerSVC
 		name = miniov2.MinIOServiceHTTPSPortName
 	}
-	var internalLabels, labels, annotations map[string]string
-
-	internalLabels = t.MinIOPodLabels()
-	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.MinIOServiceLabels != nil {
-		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.MinIOServiceLabels)
-	} else {
-		labels = internalLabels
-	}
-
-	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.MinIOServiceAnnotations != nil {
-		annotations = t.Spec.ServiceMetadata.MinIOServiceAnnotations
-	}
 
 	minioPort := corev1.ServicePort{
 		Port:       port,
@@ -51,11 +39,9 @@ func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:          labels,
 			Name:            t.MinIOCIServiceName(),
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
-			Annotations:     annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:                    []corev1.ServicePort{minioPort},
@@ -64,6 +50,12 @@ func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 			PublishNotReadyAddresses: false,
 		},
 	}
+
+	if t.Spec.ServiceMetadata != nil {
+		svc.Labels = t.Spec.ServiceMetadata.MinIOServiceLabels
+		svc.Annotations = t.Spec.ServiceMetadata.MinIOServiceAnnotations
+	}
+
 	// check if the service is meant to be exposed
 	if t.Spec.ExposeServices != nil && t.Spec.ExposeServices.MinIO {
 		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
@@ -73,9 +65,6 @@ func NewClusterIPForMinIO(t *miniov2.Tenant) *corev1.Service {
 
 // NewClusterIPForConsole will return a new cluster IP service for Console Deployment
 func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
-	var internalLabels, labels, annotations map[string]string
-	internalLabels = t.ConsolePodLabels()
-
 	consolePort := corev1.ServicePort{
 		Port:       miniov2.ConsolePort,
 		TargetPort: intstr.FromInt(miniov2.ConsolePort),
@@ -88,23 +77,12 @@ func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
 			Name:       miniov2.ConsoleServiceTLSPortName,
 		}
 	}
-	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceLabels != nil {
-		labels = miniov2.MergeMaps(internalLabels, t.Spec.ServiceMetadata.ConsoleServiceLabels)
-	} else {
-		labels = internalLabels
-	}
-
-	if t.Spec.ServiceMetadata != nil && t.Spec.ServiceMetadata.ConsoleServiceAnnotations != nil {
-		annotations = t.Spec.ServiceMetadata.ConsoleServiceAnnotations
-	}
 
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:          labels,
 			Name:            t.ConsoleCIServiceName(),
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
-			Annotations:     annotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
@@ -114,6 +92,12 @@ func NewClusterIPForConsole(t *miniov2.Tenant) *corev1.Service {
 			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
+
+	if t.Spec.ServiceMetadata != nil {
+		svc.Labels = t.Spec.ServiceMetadata.ConsoleServiceLabels
+		svc.Annotations = t.Spec.ServiceMetadata.ConsoleServiceAnnotations
+	}
+
 	// check if the service is meant to be exposed
 	if t.Spec.ExposeServices != nil && t.Spec.ExposeServices.Console {
 		svc.Spec.Type = corev1.ServiceTypeLoadBalancer
@@ -166,7 +150,6 @@ func NewHeadlessForMinIO(t *miniov2.Tenant) *corev1.Service {
 
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:          t.MinIOPodLabels(),
 			Name:            t.MinIOHLServiceName(),
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
@@ -188,7 +171,6 @@ func NewHeadlessForKES(t *miniov2.Tenant) *corev1.Service {
 	kesPort := corev1.ServicePort{Port: miniov2.KESPort, Name: miniov2.KESServicePortName}
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels:          t.KESPodLabels(),
 			Name:            t.KESHLServiceName(),
 			Namespace:       t.Namespace,
 			OwnerReferences: t.OwnerRef(),
@@ -200,6 +182,9 @@ func NewHeadlessForKES(t *miniov2.Tenant) *corev1.Service {
 			ClusterIP: corev1.ClusterIPNone,
 		},
 	}
-
+	if t.Spec.ServiceMetadata != nil {
+		svc.Labels = t.Spec.ServiceMetadata.KESServiceLabels
+		svc.Annotations = t.Spec.ServiceMetadata.KESServiceAnnotations
+	}
 	return svc
 }
