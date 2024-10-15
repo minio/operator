@@ -54,6 +54,7 @@ type TenantSpecApplyConfiguration struct {
 	SideCars                  *SideCarsApplyConfiguration                  `json:"sideCars,omitempty"`
 	ExposeServices            *ExposeServicesApplyConfiguration            `json:"exposeServices,omitempty"`
 	ServiceMetadata           *ServiceMetadataApplyConfiguration           `json:"serviceMetadata,omitempty"`
+	StatefulSetMetadata       *StatefulSetMetadataApplyConfiguration       `json:"statefulSetMetadata,omitempty"`
 	Users                     []v1.LocalObjectReference                    `json:"users,omitempty"`
 	Buckets                   []BucketApplyConfiguration                   `json:"buckets,omitempty"`
 	Logging                   *LoggingApplyConfiguration                   `json:"logging,omitempty"`
@@ -304,6 +305,14 @@ func (b *TenantSpecApplyConfiguration) WithExposeServices(value *ExposeServicesA
 // If called multiple times, the ServiceMetadata field is set to the value of the last call.
 func (b *TenantSpecApplyConfiguration) WithServiceMetadata(value *ServiceMetadataApplyConfiguration) *TenantSpecApplyConfiguration {
 	b.ServiceMetadata = value
+	return b
+}
+
+// WithStatefulSetMetadata sets the StatefulSetMetadata field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the StatefulSetMetadata field is set to the value of the last call.
+func (b *TenantSpecApplyConfiguration) WithStatefulSetMetadata(value *StatefulSetMetadataApplyConfiguration) *TenantSpecApplyConfiguration {
+	b.StatefulSetMetadata = value
 	return b
 }
 
