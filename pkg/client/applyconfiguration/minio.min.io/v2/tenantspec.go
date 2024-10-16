@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// TenantSpecApplyConfiguration represents an declarative configuration of the TenantSpec type for use
+// TenantSpecApplyConfiguration represents a declarative configuration of the TenantSpec type for use
 // with apply.
 type TenantSpecApplyConfiguration struct {
 	Pools                     []PoolApplyConfiguration                     `json:"pools,omitempty"`
@@ -63,7 +63,7 @@ type TenantSpecApplyConfiguration struct {
 	AdditionalVolumeMounts    []v1.VolumeMount                             `json:"additionalVolumeMounts,omitempty"`
 }
 
-// TenantSpecApplyConfiguration constructs an declarative configuration of the TenantSpec type for use with
+// TenantSpecApplyConfiguration constructs a declarative configuration of the TenantSpec type for use with
 // apply.
 func TenantSpec() *TenantSpecApplyConfiguration {
 	return &TenantSpecApplyConfiguration{}

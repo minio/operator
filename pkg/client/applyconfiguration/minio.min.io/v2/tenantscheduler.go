@@ -18,13 +18,13 @@
 
 package v2
 
-// TenantSchedulerApplyConfiguration represents an declarative configuration of the TenantScheduler type for use
+// TenantSchedulerApplyConfiguration represents a declarative configuration of the TenantScheduler type for use
 // with apply.
 type TenantSchedulerApplyConfiguration struct {
 	Name *string `json:"name,omitempty"`
 }
 
-// TenantSchedulerApplyConfiguration constructs an declarative configuration of the TenantScheduler type for use with
+// TenantSchedulerApplyConfiguration constructs a declarative configuration of the TenantScheduler type for use with
 // apply.
 func TenantScheduler() *TenantSchedulerApplyConfiguration {
 	return &TenantSchedulerApplyConfiguration{}

@@ -18,7 +18,7 @@
 
 package v2
 
-// LoggingApplyConfiguration represents an declarative configuration of the Logging type for use
+// LoggingApplyConfiguration represents a declarative configuration of the Logging type for use
 // with apply.
 type LoggingApplyConfiguration struct {
 	JSON      *bool `json:"json,omitempty"`
@@ -26,7 +26,7 @@ type LoggingApplyConfiguration struct {
 	Quiet     *bool `json:"quiet,omitempty"`
 }
 
-// LoggingApplyConfiguration constructs an declarative configuration of the Logging type for use with
+// LoggingApplyConfiguration constructs a declarative configuration of the Logging type for use with
 // apply.
 func Logging() *LoggingApplyConfiguration {
 	return &LoggingApplyConfiguration{}

@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// TenantApplyConfiguration represents an declarative configuration of the Tenant type for use
+// TenantApplyConfiguration represents a declarative configuration of the Tenant type for use
 // with apply.
 type TenantApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -34,7 +34,7 @@ type TenantApplyConfiguration struct {
 	Status                           *TenantStatusApplyConfiguration    `json:"status,omitempty"`
 }
 
-// Tenant constructs an declarative configuration of the Tenant type for use with
+// Tenant constructs a declarative configuration of the Tenant type for use with
 // apply.
 func Tenant(name, namespace string) *TenantApplyConfiguration {
 	b := &TenantApplyConfiguration{}
@@ -225,4 +225,10 @@ func (b *TenantApplyConfiguration) WithSpec(value *TenantSpecApplyConfiguration)
 func (b *TenantApplyConfiguration) WithStatus(value *TenantStatusApplyConfiguration) *TenantApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *TenantApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

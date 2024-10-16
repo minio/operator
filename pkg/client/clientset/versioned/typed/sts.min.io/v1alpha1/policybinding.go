@@ -20,9 +20,6 @@ package v1alpha1
 
 import (
 	"context"
-	json "encoding/json"
-	"fmt"
-	"time"
 
 	v1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	stsminiov1alpha1 "github.com/minio/operator/pkg/client/applyconfiguration/sts.min.io/v1alpha1"
@@ -30,7 +27,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // PolicyBindingsGetter has a method to return a PolicyBindingInterface.
@@ -43,6 +40,7 @@ type PolicyBindingsGetter interface {
 type PolicyBindingInterface interface {
 	Create(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.CreateOptions) (*v1alpha1.PolicyBinding, error)
 	Update(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.UpdateOptions) (*v1alpha1.PolicyBinding, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 	UpdateStatus(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.UpdateOptions) (*v1alpha1.PolicyBinding, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
@@ -51,206 +49,25 @@ type PolicyBindingInterface interface {
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PolicyBinding, err error)
 	Apply(ctx context.Context, policyBinding *stsminiov1alpha1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PolicyBinding, err error)
+	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
 	ApplyStatus(ctx context.Context, policyBinding *stsminiov1alpha1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PolicyBinding, err error)
 	PolicyBindingExpansion
 }
 
 // policyBindings implements PolicyBindingInterface
 type policyBindings struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithListAndApply[*v1alpha1.PolicyBinding, *v1alpha1.PolicyBindingList, *stsminiov1alpha1.PolicyBindingApplyConfiguration]
 }
 
 // newPolicyBindings returns a PolicyBindings
 func newPolicyBindings(c *StsV1alpha1Client, namespace string) *policyBindings {
 	return &policyBindings{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithListAndApply[*v1alpha1.PolicyBinding, *v1alpha1.PolicyBindingList, *stsminiov1alpha1.PolicyBindingApplyConfiguration](
+			"policybindings",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *v1alpha1.PolicyBinding { return &v1alpha1.PolicyBinding{} },
+			func() *v1alpha1.PolicyBindingList { return &v1alpha1.PolicyBindingList{} }),
 	}
-}
-
-// Get takes name of the policyBinding, and returns the corresponding policyBinding object, and an error if there is any.
-func (c *policyBindings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PolicyBinding, err error) {
-	result = &v1alpha1.PolicyBinding{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("policybindings").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of PolicyBindings that match those selectors.
-func (c *policyBindings) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.PolicyBindingList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.PolicyBindingList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("policybindings").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested policyBindings.
-func (c *policyBindings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("policybindings").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a policyBinding and creates it.  Returns the server's representation of the policyBinding, and an error, if there is any.
-func (c *policyBindings) Create(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.CreateOptions) (result *v1alpha1.PolicyBinding, err error) {
-	result = &v1alpha1.PolicyBinding{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("policybindings").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(policyBinding).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a policyBinding and updates it. Returns the server's representation of the policyBinding, and an error, if there is any.
-func (c *policyBindings) Update(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.UpdateOptions) (result *v1alpha1.PolicyBinding, err error) {
-	result = &v1alpha1.PolicyBinding{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("policybindings").
-		Name(policyBinding.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(policyBinding).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *policyBindings) UpdateStatus(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.UpdateOptions) (result *v1alpha1.PolicyBinding, err error) {
-	result = &v1alpha1.PolicyBinding{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("policybindings").
-		Name(policyBinding.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(policyBinding).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the policyBinding and deletes it. Returns an error if one occurs.
-func (c *policyBindings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("policybindings").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *policyBindings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("policybindings").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched policyBinding.
-func (c *policyBindings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PolicyBinding, err error) {
-	result = &v1alpha1.PolicyBinding{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("policybindings").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied policyBinding.
-func (c *policyBindings) Apply(ctx context.Context, policyBinding *stsminiov1alpha1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PolicyBinding, err error) {
-	if policyBinding == nil {
-		return nil, fmt.Errorf("policyBinding provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(policyBinding)
-	if err != nil {
-		return nil, err
-	}
-	name := policyBinding.Name
-	if name == nil {
-		return nil, fmt.Errorf("policyBinding.Name must be provided to Apply")
-	}
-	result = &v1alpha1.PolicyBinding{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("policybindings").
-		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *policyBindings) ApplyStatus(ctx context.Context, policyBinding *stsminiov1alpha1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PolicyBinding, err error) {
-	if policyBinding == nil {
-		return nil, fmt.Errorf("policyBinding provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(policyBinding)
-	if err != nil {
-		return nil, err
-	}
-
-	name := policyBinding.Name
-	if name == nil {
-		return nil, fmt.Errorf("policyBinding.Name must be provided to Apply")
-	}
-
-	result = &v1alpha1.PolicyBinding{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("policybindings").
-		Name(*name).
-		SubResource("status").
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

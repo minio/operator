@@ -18,7 +18,7 @@
 
 package v2
 
-// CertificateConfigApplyConfiguration represents an declarative configuration of the CertificateConfig type for use
+// CertificateConfigApplyConfiguration represents a declarative configuration of the CertificateConfig type for use
 // with apply.
 type CertificateConfigApplyConfiguration struct {
 	CommonName       *string  `json:"commonName,omitempty"`
@@ -26,7 +26,7 @@ type CertificateConfigApplyConfiguration struct {
 	DNSNames         []string `json:"dnsNames,omitempty"`
 }
 
-// CertificateConfigApplyConfiguration constructs an declarative configuration of the CertificateConfig type for use with
+// CertificateConfigApplyConfiguration constructs a declarative configuration of the CertificateConfig type for use with
 // apply.
 func CertificateConfig() *CertificateConfigApplyConfiguration {
 	return &CertificateConfigApplyConfiguration{}

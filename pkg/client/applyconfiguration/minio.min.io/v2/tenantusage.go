@@ -18,7 +18,7 @@
 
 package v2
 
-// TenantUsageApplyConfiguration represents an declarative configuration of the TenantUsage type for use
+// TenantUsageApplyConfiguration represents a declarative configuration of the TenantUsage type for use
 // with apply.
 type TenantUsageApplyConfiguration struct {
 	Capacity    *int64                        `json:"capacity,omitempty"`
@@ -28,7 +28,7 @@ type TenantUsageApplyConfiguration struct {
 	Tiers       []TierUsageApplyConfiguration `json:"tiers,omitempty"`
 }
 
-// TenantUsageApplyConfiguration constructs an declarative configuration of the TenantUsage type for use with
+// TenantUsageApplyConfiguration constructs a declarative configuration of the TenantUsage type for use with
 // apply.
 func TenantUsage() *TenantUsageApplyConfiguration {
 	return &TenantUsageApplyConfiguration{}

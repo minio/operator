@@ -22,7 +22,7 @@ import (
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
-// PoolStatusApplyConfiguration represents an declarative configuration of the PoolStatus type for use
+// PoolStatusApplyConfiguration represents a declarative configuration of the PoolStatus type for use
 // with apply.
 type PoolStatusApplyConfiguration struct {
 	SSName                *string       `json:"ssName,omitempty"`
@@ -30,7 +30,7 @@ type PoolStatusApplyConfiguration struct {
 	LegacySecurityContext *bool         `json:"legacySecurityContext,omitempty"`
 }
 
-// PoolStatusApplyConfiguration constructs an declarative configuration of the PoolStatus type for use with
+// PoolStatusApplyConfiguration constructs a declarative configuration of the PoolStatus type for use with
 // apply.
 func PoolStatus() *PoolStatusApplyConfiguration {
 	return &PoolStatusApplyConfiguration{}
