@@ -54,7 +54,7 @@ require (
 	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.54.0 // indirect
+	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/prometheus/prom2json v1.3.3 // indirect
 	github.com/rs/xid v1.5.0 // indirect
