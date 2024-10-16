@@ -1351,11 +1351,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			return WrapResult(Result{}, err)
 		}
 		if !maps.Equal(expectedSystemCfg, existingSystemCfg) {
-			// delete pdb to let all the statefulSet pods get deleted
-			err = c.DeletePDB(ctx, tenant)
-			if err != nil {
-				return Result{}, err
-			}
 			// find all existing statefulSet pods and delete them
 			err = c.DeletePodsByStatefulSet(ctx, existingStatefulSet)
 			if err != nil {
@@ -1416,12 +1411,6 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// Finally, we update the status block of the Tenant resource to reflect the
 	// current state of the world
 	tenant, err = c.updateTenantStatus(ctx, tenant, StatusInitialized, totalAvailableReplicas)
-
-	// Create Or Update PDB for tenant
-	err = c.CreateOrUpdatePDB(ctx, tenant)
-	if err != nil {
-		return WrapResult(Result{}, err)
-	}
 
 	return WrapResult(Result{}, err)
 }

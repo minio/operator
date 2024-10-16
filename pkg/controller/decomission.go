@@ -51,10 +51,6 @@ func (c *Controller) checkForPoolDecommission(ctx context.Context, key string, t
 
 	// if the number of pools in the spec is less that what we know in the status, a decomission is taking place
 	if len(tenant.Status.Pools) > len(tenant.Spec.Pools) {
-		err := c.DeletePDB(ctx, tenant)
-		if err != nil {
-			return nil, err
-		}
 		// check for empty pool names
 		var noDecom bool
 		for _, pool := range tenant.Spec.Pools {
