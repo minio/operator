@@ -157,7 +157,7 @@ NAME                              READY   STATUS    RESTARTS   AGE
 minio-operator-69fd675557-lsrqg   1/1     Running   0          99s
 ```
 
-### 3) Build the Tenant Configuration
+### 2) Build the Tenant Configuration
 
 We provide a variety of examples for creating MinIO Tenants in the `examples` directory. The following example creates a
 4-node MinIO Tenant with 4 volumes per node:
@@ -166,7 +166,7 @@ We provide a variety of examples for creating MinIO Tenants in the `examples` di
 kubectl apply -k github.com/minio/operator/examples/kustomization/bases
 ```
 
-### 4) Connect to the Tenant
+### 3) Connect to the Tenant
 
 Use the following command to list the services created by the MinIO
 Operator:
