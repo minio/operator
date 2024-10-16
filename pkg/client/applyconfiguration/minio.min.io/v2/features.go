@@ -18,7 +18,7 @@
 
 package v2
 
-// FeaturesApplyConfiguration represents an declarative configuration of the Features type for use
+// FeaturesApplyConfiguration represents a declarative configuration of the Features type for use
 // with apply.
 type FeaturesApplyConfiguration struct {
 	BucketDNS  *bool                            `json:"bucketDNS,omitempty"`
@@ -26,7 +26,7 @@ type FeaturesApplyConfiguration struct {
 	EnableSFTP *bool                            `json:"enableSFTP,omitempty"`
 }
 
-// FeaturesApplyConfiguration constructs an declarative configuration of the Features type for use with
+// FeaturesApplyConfiguration constructs a declarative configuration of the Features type for use with
 // apply.
 func Features() *FeaturesApplyConfiguration {
 	return &FeaturesApplyConfiguration{}

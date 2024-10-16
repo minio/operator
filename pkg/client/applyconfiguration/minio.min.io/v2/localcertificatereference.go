@@ -18,14 +18,14 @@
 
 package v2
 
-// LocalCertificateReferenceApplyConfiguration represents an declarative configuration of the LocalCertificateReference type for use
+// LocalCertificateReferenceApplyConfiguration represents a declarative configuration of the LocalCertificateReference type for use
 // with apply.
 type LocalCertificateReferenceApplyConfiguration struct {
 	Name *string `json:"name,omitempty"`
 	Type *string `json:"type,omitempty"`
 }
 
-// LocalCertificateReferenceApplyConfiguration constructs an declarative configuration of the LocalCertificateReference type for use with
+// LocalCertificateReferenceApplyConfiguration constructs a declarative configuration of the LocalCertificateReference type for use with
 // apply.
 func LocalCertificateReference() *LocalCertificateReferenceApplyConfiguration {
 	return &LocalCertificateReferenceApplyConfiguration{}

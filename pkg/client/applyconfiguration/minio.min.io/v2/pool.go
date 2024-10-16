@@ -22,7 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// PoolApplyConfiguration represents an declarative configuration of the Pool type for use
+// PoolApplyConfiguration represents a declarative configuration of the Pool type for use
 // with apply.
 type PoolApplyConfiguration struct {
 	Name                      *string                       `json:"name,omitempty"`
@@ -41,7 +41,7 @@ type PoolApplyConfiguration struct {
 	RuntimeClassName          *string                       `json:"runtimeClassName,omitempty"`
 }
 
-// PoolApplyConfiguration constructs an declarative configuration of the Pool type for use with
+// PoolApplyConfiguration constructs a declarative configuration of the Pool type for use with
 // apply.
 func Pool() *PoolApplyConfiguration {
 	return &PoolApplyConfiguration{}

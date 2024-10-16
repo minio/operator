@@ -18,14 +18,14 @@
 
 package v2
 
-// TenantDomainsApplyConfiguration represents an declarative configuration of the TenantDomains type for use
+// TenantDomainsApplyConfiguration represents a declarative configuration of the TenantDomains type for use
 // with apply.
 type TenantDomainsApplyConfiguration struct {
 	Minio   []string `json:"minio,omitempty"`
 	Console *string  `json:"console,omitempty"`
 }
 
-// TenantDomainsApplyConfiguration constructs an declarative configuration of the TenantDomains type for use with
+// TenantDomainsApplyConfiguration constructs a declarative configuration of the TenantDomains type for use with
 // apply.
 func TenantDomains() *TenantDomainsApplyConfiguration {
 	return &TenantDomainsApplyConfiguration{}

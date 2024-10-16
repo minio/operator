@@ -18,14 +18,14 @@
 
 package v1alpha1
 
-// ApplicationApplyConfiguration represents an declarative configuration of the Application type for use
+// ApplicationApplyConfiguration represents a declarative configuration of the Application type for use
 // with apply.
 type ApplicationApplyConfiguration struct {
 	Namespace      *string `json:"namespace,omitempty"`
 	ServiceAccount *string `json:"serviceaccount,omitempty"`
 }
 
-// ApplicationApplyConfiguration constructs an declarative configuration of the Application type for use with
+// ApplicationApplyConfiguration constructs a declarative configuration of the Application type for use with
 // apply.
 func Application() *ApplicationApplyConfiguration {
 	return &ApplicationApplyConfiguration{}

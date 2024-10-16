@@ -18,14 +18,14 @@
 
 package v1beta1
 
-// PolicyBindingStatusApplyConfiguration represents an declarative configuration of the PolicyBindingStatus type for use
+// PolicyBindingStatusApplyConfiguration represents a declarative configuration of the PolicyBindingStatus type for use
 // with apply.
 type PolicyBindingStatusApplyConfiguration struct {
 	CurrentState *string                               `json:"currentState,omitempty"`
 	Usage        *PolicyBindingUsageApplyConfiguration `json:"usage,omitempty"`
 }
 
-// PolicyBindingStatusApplyConfiguration constructs an declarative configuration of the PolicyBindingStatus type for use with
+// PolicyBindingStatusApplyConfiguration constructs a declarative configuration of the PolicyBindingStatus type for use with
 // apply.
 func PolicyBindingStatus() *PolicyBindingStatusApplyConfiguration {
 	return &PolicyBindingStatusApplyConfiguration{}

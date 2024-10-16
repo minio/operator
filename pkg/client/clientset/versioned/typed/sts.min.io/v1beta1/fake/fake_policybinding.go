@@ -44,22 +44,24 @@ var policybindingsKind = v1beta1.SchemeGroupVersion.WithKind("PolicyBinding")
 
 // Get takes name of the policyBinding, and returns the corresponding policyBinding object, and an error if there is any.
 func (c *FakePolicyBindings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1beta1.PolicyBinding, err error) {
+	emptyResult := &v1beta1.PolicyBinding{}
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(policybindingsResource, c.ns, name), &v1beta1.PolicyBinding{})
+		Invokes(testing.NewGetActionWithOptions(policybindingsResource, c.ns, name, options), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1beta1.PolicyBinding), err
 }
 
 // List takes label and field selectors, and returns the list of PolicyBindings that match those selectors.
 func (c *FakePolicyBindings) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.PolicyBindingList, err error) {
+	emptyResult := &v1beta1.PolicyBindingList{}
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(policybindingsResource, policybindingsKind, c.ns, opts), &v1beta1.PolicyBindingList{})
+		Invokes(testing.NewListActionWithOptions(policybindingsResource, policybindingsKind, c.ns, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 
 	label, _, _ := testing.ExtractFromListOptions(opts)
@@ -78,40 +80,43 @@ func (c *FakePolicyBindings) List(ctx context.Context, opts v1.ListOptions) (res
 // Watch returns a watch.Interface that watches the requested policyBindings.
 func (c *FakePolicyBindings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(policybindingsResource, c.ns, opts))
+		InvokesWatch(testing.NewWatchActionWithOptions(policybindingsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a policyBinding and creates it.  Returns the server's representation of the policyBinding, and an error, if there is any.
 func (c *FakePolicyBindings) Create(ctx context.Context, policyBinding *v1beta1.PolicyBinding, opts v1.CreateOptions) (result *v1beta1.PolicyBinding, err error) {
+	emptyResult := &v1beta1.PolicyBinding{}
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(policybindingsResource, c.ns, policyBinding), &v1beta1.PolicyBinding{})
+		Invokes(testing.NewCreateActionWithOptions(policybindingsResource, c.ns, policyBinding, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1beta1.PolicyBinding), err
 }
 
 // Update takes the representation of a policyBinding and updates it. Returns the server's representation of the policyBinding, and an error, if there is any.
 func (c *FakePolicyBindings) Update(ctx context.Context, policyBinding *v1beta1.PolicyBinding, opts v1.UpdateOptions) (result *v1beta1.PolicyBinding, err error) {
+	emptyResult := &v1beta1.PolicyBinding{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(policybindingsResource, c.ns, policyBinding), &v1beta1.PolicyBinding{})
+		Invokes(testing.NewUpdateActionWithOptions(policybindingsResource, c.ns, policyBinding, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1beta1.PolicyBinding), err
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakePolicyBindings) UpdateStatus(ctx context.Context, policyBinding *v1beta1.PolicyBinding, opts v1.UpdateOptions) (*v1beta1.PolicyBinding, error) {
+func (c *FakePolicyBindings) UpdateStatus(ctx context.Context, policyBinding *v1beta1.PolicyBinding, opts v1.UpdateOptions) (result *v1beta1.PolicyBinding, err error) {
+	emptyResult := &v1beta1.PolicyBinding{}
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(policybindingsResource, "status", c.ns, policyBinding), &v1beta1.PolicyBinding{})
+		Invokes(testing.NewUpdateSubresourceActionWithOptions(policybindingsResource, "status", c.ns, policyBinding, opts), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1beta1.PolicyBinding), err
 }
@@ -126,7 +131,7 @@ func (c *FakePolicyBindings) Delete(ctx context.Context, name string, opts v1.De
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakePolicyBindings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(policybindingsResource, c.ns, listOpts)
+	action := testing.NewDeleteCollectionActionWithOptions(policybindingsResource, c.ns, opts, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1beta1.PolicyBindingList{})
 	return err
@@ -134,11 +139,12 @@ func (c *FakePolicyBindings) DeleteCollection(ctx context.Context, opts v1.Delet
 
 // Patch applies the patch and returns the patched policyBinding.
 func (c *FakePolicyBindings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.PolicyBinding, err error) {
+	emptyResult := &v1beta1.PolicyBinding{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(policybindingsResource, c.ns, name, pt, data, subresources...), &v1beta1.PolicyBinding{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(policybindingsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1beta1.PolicyBinding), err
 }
@@ -156,11 +162,12 @@ func (c *FakePolicyBindings) Apply(ctx context.Context, policyBinding *stsminiov
 	if name == nil {
 		return nil, fmt.Errorf("policyBinding.Name must be provided to Apply")
 	}
+	emptyResult := &v1beta1.PolicyBinding{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(policybindingsResource, c.ns, *name, types.ApplyPatchType, data), &v1beta1.PolicyBinding{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(policybindingsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1beta1.PolicyBinding), err
 }
@@ -179,11 +186,12 @@ func (c *FakePolicyBindings) ApplyStatus(ctx context.Context, policyBinding *sts
 	if name == nil {
 		return nil, fmt.Errorf("policyBinding.Name must be provided to Apply")
 	}
+	emptyResult := &v1beta1.PolicyBinding{}
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(policybindingsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1beta1.PolicyBinding{})
+		Invokes(testing.NewPatchSubresourceActionWithOptions(policybindingsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
 
 	if obj == nil {
-		return nil, err
+		return emptyResult, err
 	}
 	return obj.(*v1beta1.PolicyBinding), err
 }

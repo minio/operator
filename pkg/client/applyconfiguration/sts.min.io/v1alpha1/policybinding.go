@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// PolicyBindingApplyConfiguration represents an declarative configuration of the PolicyBinding type for use
+// PolicyBindingApplyConfiguration represents a declarative configuration of the PolicyBinding type for use
 // with apply.
 type PolicyBindingApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -33,7 +33,7 @@ type PolicyBindingApplyConfiguration struct {
 	Status                           *PolicyBindingStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// PolicyBinding constructs an declarative configuration of the PolicyBinding type for use with
+// PolicyBinding constructs a declarative configuration of the PolicyBinding type for use with
 // apply.
 func PolicyBinding(name, namespace string) *PolicyBindingApplyConfiguration {
 	b := &PolicyBindingApplyConfiguration{}
@@ -216,4 +216,10 @@ func (b *PolicyBindingApplyConfiguration) WithSpec(value *PolicyBindingSpecApply
 func (b *PolicyBindingApplyConfiguration) WithStatus(value *PolicyBindingStatusApplyConfiguration) *PolicyBindingApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *PolicyBindingApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.Name
 }

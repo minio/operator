@@ -22,7 +22,7 @@ import (
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
-// CustomCertificatesApplyConfiguration represents an declarative configuration of the CustomCertificates type for use
+// CustomCertificatesApplyConfiguration represents a declarative configuration of the CustomCertificates type for use
 // with apply.
 type CustomCertificatesApplyConfiguration struct {
 	Client   []*v2.CustomCertificateConfig `json:"client,omitempty"`
@@ -30,7 +30,7 @@ type CustomCertificatesApplyConfiguration struct {
 	MinioCAs []*v2.CustomCertificateConfig `json:"minioCAs,omitempty"`
 }
 
-// CustomCertificatesApplyConfiguration constructs an declarative configuration of the CustomCertificates type for use with
+// CustomCertificatesApplyConfiguration constructs a declarative configuration of the CustomCertificates type for use with
 // apply.
 func CustomCertificates() *CustomCertificatesApplyConfiguration {
 	return &CustomCertificatesApplyConfiguration{}
