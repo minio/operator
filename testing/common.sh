@@ -798,6 +798,7 @@ function install_tenant() {
     value=myminio
     create_restricted_namespace $namespace
     try helm install --namespace $namespace \
+       --set tenant.poolsMetadata.labels.app=minio \
       tenant ./helm/tenant
   elif [ "$1" = "logs" ]; then
     namespace="tenant-lite"
