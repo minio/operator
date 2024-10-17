@@ -318,6 +318,11 @@ type TenantSpec struct {
 	ServiceMetadata *ServiceMetadata `json:"serviceMetadata,omitempty"`
 	// *Optional* +
 	//
+	// Specify custom labels and annotations to append to all pool statefulsets and pods.
+	// +optional
+	PoolsMetadata *PoolsMetadata `json:"poolsMetadata,omitempty"`
+	// *Optional* +
+	//
 	// An array of https://kubernetes.io/docs/concepts/configuration/secret/[Kubernetes opaque secrets] to use for generating MinIO users during tenant provisioning. +
 	//
 	// Each element in the array is an object consisting of a key-value pair `name: <string>`, where the `<string>` references an opaque Kubernetes secret. +
@@ -395,6 +400,30 @@ type ServiceMetadata struct {
 	// If provided, append these annotations to the Console service
 	// +optional
 	ConsoleServiceAnnotations map[string]string `json:"consoleServiceAnnotations,omitempty"`
+	// *Optional* +
+	//
+	// If provided, append these labels to the KES service
+	// +optional
+	KESServiceLabels map[string]string `json:"kesServiceLabels,omitempty"`
+	// *Optional* +
+	//
+	// If provided, append these annotations to the KES service
+	// +optional
+	KESServiceAnnotations map[string]string `json:"kesServiceAnnotations,omitempty"`
+}
+
+// PoolsMetadata (`poolsMetadata`) defines custom labels and annotations for the MinIO pool stateful sets / pods. +
+type PoolsMetadata struct {
+	// *Optional* +
+	//
+	// If provided, append these labels to the MinIO statefulset / pods
+	// +optional
+	Labels map[string]string `json:"labels,omitempty"`
+	// *Optional* +
+	//
+	// If provided, append these annotations to the MinIO statefulset / pods
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // LocalCertificateReference (`externalCertSecret`, `externalCaCertSecret`,`clientCertSecret`) contains a Kubernetes secret containing TLS certificates or Certificate Authority files for use with enabling TLS in the MinIO Tenant. +

@@ -70,3 +70,14 @@ func CastObjectToMetaV1(obj interface{}) (metav1.Object, error) {
 	}
 	return object, nil
 }
+
+// MergeMaps merges maps and returns the union
+func MergeMaps(maps ...map[string]string) map[string]string {
+	dest := map[string]string{}
+	for _, m := range maps {
+		for k, v := range m {
+			dest[k] = v
+		}
+	}
+	return dest
+}

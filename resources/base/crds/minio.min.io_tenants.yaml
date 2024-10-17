@@ -3638,6 +3638,17 @@ spec:
                 x-kubernetes-list-map-keys:
                 - name
                 x-kubernetes-list-type: map
+              poolsMetadata:
+                properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
               priorityClassName:
                 type: string
               prometheusOperator:
@@ -3733,6 +3744,14 @@ spec:
                       type: string
                     type: object
                   consoleServiceLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  kesServiceAnnotations:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  kesServiceLabels:
                     additionalProperties:
                       type: string
                     type: object

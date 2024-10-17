@@ -25,6 +25,8 @@ type ServiceMetadataApplyConfiguration struct {
 	MinIOServiceAnnotations   map[string]string `json:"minioServiceAnnotations,omitempty"`
 	ConsoleServiceLabels      map[string]string `json:"consoleServiceLabels,omitempty"`
 	ConsoleServiceAnnotations map[string]string `json:"consoleServiceAnnotations,omitempty"`
+	KESServiceLabels          map[string]string `json:"kesServiceLabels,omitempty"`
+	KESServiceAnnotations     map[string]string `json:"kesServiceAnnotations,omitempty"`
 }
 
 // ServiceMetadataApplyConfiguration constructs a declarative configuration of the ServiceMetadata type for use with
@@ -85,6 +87,34 @@ func (b *ServiceMetadataApplyConfiguration) WithConsoleServiceAnnotations(entrie
 	}
 	for k, v := range entries {
 		b.ConsoleServiceAnnotations[k] = v
+	}
+	return b
+}
+
+// WithKESServiceLabels puts the entries into the KESServiceLabels field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the KESServiceLabels field,
+// overwriting an existing map entries in KESServiceLabels field with the same key.
+func (b *ServiceMetadataApplyConfiguration) WithKESServiceLabels(entries map[string]string) *ServiceMetadataApplyConfiguration {
+	if b.KESServiceLabels == nil && len(entries) > 0 {
+		b.KESServiceLabels = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.KESServiceLabels[k] = v
+	}
+	return b
+}
+
+// WithKESServiceAnnotations puts the entries into the KESServiceAnnotations field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, the entries provided by each call will be put on the KESServiceAnnotations field,
+// overwriting an existing map entries in KESServiceAnnotations field with the same key.
+func (b *ServiceMetadataApplyConfiguration) WithKESServiceAnnotations(entries map[string]string) *ServiceMetadataApplyConfiguration {
+	if b.KESServiceAnnotations == nil && len(entries) > 0 {
+		b.KESServiceAnnotations = make(map[string]string, len(entries))
+	}
+	for k, v := range entries {
+		b.KESServiceAnnotations[k] = v
 	}
 	return b
 }

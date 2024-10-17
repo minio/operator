@@ -28,6 +28,12 @@ spec:
   ## Secret with default environment variable configurations
   configuration:
     name: {{ .configuration.name }}
+  {{- if hasKey . "poolsMetadata" }}
+  poolsMetadata: {{- if eq (len .poolsMetadata) 0 }} {} {{- end }}
+  {{- with (dig "poolsMetadata" (dict) .) }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
   pools:
     {{- range (dig "pools" (list) .) }}
     - servers: {{ dig "servers" 4 . }}
