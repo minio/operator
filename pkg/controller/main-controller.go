@@ -1348,7 +1348,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	// Stay in this state until minio is ready
 	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
 		c.updateTenantStatus(ctx, tenant, StatusWaitingMinIOIsHealthy, 0)
-		c.recorder.Event(tenant, corev1.EventTypeWarning, WaitingMinIOIsHealthyReason, fmt.Sprintf("Waiting for MinIO to be ready: %s", err))
+		c.recorder.Event(tenant, corev1.EventTypeWarning, WaitingMinIOIsHealthyReason, fmt.Sprintf("Waiting for MinIO(%s/%s) to be ready", tenant.Namespace, tenant.Name))
 		// retry after 5sec
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, nil)
 	}
