@@ -197,9 +197,6 @@ const StatefulSetPrefix = "ss"
 // StatefulSetLegacyPrefix by old operators
 const StatefulSetLegacyPrefix = "zone"
 
-// MinIOPrometheusPathPrefix is the path prefix where MinIO tenant exposes cluster Prometheus metrics
-const MinIOPrometheusPathPrefix = "/minio/v2/metrics/"
-
 // MinIOPrometheusScrapeInterval defines how frequently to scrape targets.
 const MinIOPrometheusScrapeInterval = 30 * time.Second
 
