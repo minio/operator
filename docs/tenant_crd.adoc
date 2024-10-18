@@ -1143,7 +1143,7 @@ Directs the MinIO Operator to use prometheus operator. +
 
 Tenant scrape configuration will be added to prometheus managed by the prometheus-operator.
 
-|*`prometheusOperatorScrape`* __string array__ 
+|*`prometheusOperatorScrapeMetricsPath`* __string array__ 
 |*Optional* +
 
 

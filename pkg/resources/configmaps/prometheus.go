@@ -83,15 +83,15 @@ func GetPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *Promet
 		ScrapeConfigs: []ScrapeConfig{},
 	}
 
-	if len(t.Spec.PrometheusOperatorScrape) == 0 {
-		t.Spec.PrometheusOperatorScrape = []string{"cluster"}
+	if len(t.Spec.PrometheusOperatorScrapeMetricsPath) == 0 {
+		t.Spec.PrometheusOperatorScrapeMetricsPath = []string{"/minio/v2/metrics/cluster"}
 	}
 
-	for _, scrape := range t.Spec.PrometheusOperatorScrape {
+	for _, scrape := range t.Spec.PrometheusOperatorScrapeMetricsPath {
 		promConfig.ScrapeConfigs = append(promConfig.ScrapeConfigs, ScrapeConfig{
 			JobName:     t.PrometheusConfigJobName(),
 			BearerToken: bearerToken,
-			MetricsPath: fmt.Sprintf("%s%s", miniov2.MinIOPrometheusPathPrefix, scrape),
+			MetricsPath: scrape,
 			Scheme:      minioScheme,
 			TLSConfig: tlsConfig{
 				CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",

@@ -281,7 +281,7 @@ type TenantSpec struct {
 	// The name of the Prometheus instance to scrape metrics from.
 	//
 	// +optional
-	PrometheusOperatorScrape []string `json:"prometheusOperatorScrape,omitempty"`
+	PrometheusOperatorScrapeMetricsPath []string `json:"prometheusOperatorScrapeMetricsPath,omitempty"`
 	// *Optional* +
 	//
 	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO pods created as part of the Tenant. +
