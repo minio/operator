@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"strings"
 
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
@@ -169,7 +170,7 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 		}
 		// get other scrape configs
 		for _, sc := range scrapeConfigs {
-			if sc.JobName != tenant.PrometheusOperatorAddlConfigJobName() {
+			if !strings.HasPrefix(sc.JobName, tenant.PrometheusOperatorAddlConfigJobName()) {
 				exceptedScrapeConfigs = append(exceptedScrapeConfigs, sc)
 			}
 		}
@@ -231,7 +232,7 @@ func (c *Controller) deletePrometheusAddlConfig(ctx context.Context, tenant *min
 		return err
 	}
 	for _, sc := range scrapeConfigs {
-		if sc.JobName != tenant.PrometheusOperatorAddlConfigJobName() {
+		if !strings.HasPrefix(sc.JobName, tenant.PrometheusOperatorAddlConfigJobName()) {
 			exceptedScrapeConfigs = append(exceptedScrapeConfigs, sc)
 		}
 	}
