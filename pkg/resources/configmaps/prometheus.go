@@ -87,9 +87,9 @@ func GetPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *Promet
 		t.Spec.PrometheusOperatorScrapeMetricsPath = []string{"/minio/v2/metrics/cluster"}
 	}
 
-	for _, scrape := range t.Spec.PrometheusOperatorScrapeMetricsPath {
+	for index, scrape := range t.Spec.PrometheusOperatorScrapeMetricsPath {
 		promConfig.ScrapeConfigs = append(promConfig.ScrapeConfigs, ScrapeConfig{
-			JobName:     t.PrometheusConfigJobName(),
+			JobName:     fmt.Sprintf("%s-%d", t.PrometheusOperatorAddlConfigJobName(), index),
 			BearerToken: bearerToken,
 			MetricsPath: scrape,
 			Scheme:      minioScheme,
