@@ -72,6 +72,12 @@ const MinIOPort = 9000
 // MinIOPortName specifies the default Container port name
 const MinIOPortName = "minio-port"
 
+// ConsolePortName specifies the default Container port name
+const ConsolePortName = "console-port"
+
+// MinIOSFTPPortName specifies the default Container port name
+const MinIOSFTPPortName = "sftp-port"
+
 // MinIOSFTPPort specifies the default Tenant SFTP port number.
 const MinIOSFTPPort = 8022
 
