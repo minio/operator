@@ -69,6 +69,9 @@ const Revision = "min.io/revision"
 // MinIOPort specifies the default Tenant port number.
 const MinIOPort = 9000
 
+// MinIOPortName specifies the default Container port name
+const MinIOPortName = "minio-port"
+
 // MinIOSFTPPort specifies the default Tenant SFTP port number.
 const MinIOSFTPPort = 8022
 

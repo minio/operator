@@ -149,6 +149,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 
 	containerPorts := []corev1.ContainerPort{
 		{
+			Name:          miniov2.MinIOPortName,
 			ContainerPort: miniov2.MinIOPort,
 		},
 		{
