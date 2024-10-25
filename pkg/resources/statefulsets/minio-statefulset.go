@@ -149,9 +149,11 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 
 	containerPorts := []corev1.ContainerPort{
 		{
+			Name:          miniov2.MinIOPortName,
 			ContainerPort: miniov2.MinIOPort,
 		},
 		{
+			Name:          miniov2.ConsolePortName,
 			ContainerPort: int32(consolePort),
 		},
 	}
@@ -163,6 +165,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 			"--sftp", "ssh-private-key=" + pkFile,
 		}...)
 		containerPorts = append(containerPorts, corev1.ContainerPort{
+			Name:          miniov2.MinIOSFTPPortName,
 			ContainerPort: miniov2.MinIOSFTPPort,
 		})
 	}
