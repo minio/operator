@@ -569,7 +569,10 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 					c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
 				}
 				c.Stop()
-				cancel()
+
+				if err := syscall.Kill(os.Getpid(), syscall.SIGTERM); err != nil {
+					klog.Errorf("error sending SIGTERM: %v", err)
+				}
 			},
 			OnNewLeader: func(identity string) {
 				// we're notified when new leader elected
