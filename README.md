@@ -163,7 +163,7 @@ We provide a variety of examples for creating MinIO Tenants in the `examples` di
 4-node MinIO Tenant with 4 volumes per node:
 
 ```yaml
-kubectl apply -k github.com/minio/operator/examples/kustomization/bases
+kubectl apply -k github.com/minio/operator/examples/kustomization/base
 ```
 
 ### 3) Connect to the Tenant
