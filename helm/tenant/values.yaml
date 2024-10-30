@@ -71,6 +71,15 @@ tenant:
   # The secret is expected to have a key named config.env containing environment variables exports.
   configuration:
     name: myminio-env-configuration
+
+  ###
+  # The environment into which this tenant will be deployed.
+  # Valid options:
+  #
+  # environment: dev # will presume you are using the config secret in line as shown in the example below.
+  # environment: <anything else> # will ignore the name, accessKey and secretKey fields if provided and enable the existingSecret value to be used.
+  environment: dev
+
   ###
   # Root key for dynamically creating a secret for use with configuring root MinIO User
   # Specify the ``name`` and then a list of environment variables.
