@@ -35,62 +35,56 @@ spec:
   {{- end }}
   {{- end }}
   pools:
-    {{- range (dig "pools" (list) .) }}
-    - servers: {{ dig "servers" 4 . }}
-      name: {{ dig "name" "" . }}
-      volumesPerServer: {{ dig "volumesPerServer" 4 . }}
-      {{- if dig "runtimeClassName" "" . }}
-      runtimeClassName: {{ dig "runtimeClassName" "" . }}
+    {{- range .pools }}
+    - servers: {{ .servers | default 4 }}
+      name: {{ .name | default "" }}
+      volumesPerServer: {{ .volumesPerServer | default 4 }}
+      {{- if .runtimeClassName }}
+      runtimeClassName: {{ .runtimeClassName }}
       {{- end }}
       volumeClaimTemplate:
         metadata:
           name: data
-      {{- with (dig "storageAnnotations" (dict) .) }}
+          {{- with .storageAnnotations }}
           annotations: {{- toYaml . | nindent 12 }}
-      {{- end }}
-      {{- with (dig "storageLabels" (dict) .) }}
+          {{- end }}
+          {{- with .storageLabels }}
           labels: {{- toYaml . | nindent 12 }}
-      {{- end }}
+          {{- end }}
         spec:
-          {{- if dig "storageClassName" "" . }}
-          storageClassName: {{ dig "storageClassName" "" . }}
+          {{- if .storageClassName }}
+          storageClassName: {{ .storageClassName }}
           {{- end }}
           accessModes:
             - ReadWriteOnce
           resources:
             requests:
-              storage: {{ dig "size" "10Gi" . }}
-      {{- with (dig "annotations" (dict) .) }}
+              storage: {{ .size | default "10Gi" }}
+      {{- with .annotations }}
       annotations: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (dig "labels" (dict) .) }}
+      {{- with .labels }}
       labels: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (dig "tolerations" (list) .) }}
+      {{- with .tolerations }}
       tolerations: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (dig "nodeSelector" (dict) .) }}
+      {{- with .nodeSelector }}
       nodeSelector: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (dig "affinity" (dict) .) }}
+      {{- with .affinity }}
       affinity: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with (dig "resources" (dict) .) }}
+      {{- with .resources }}
       resources: {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if hasKey . "securityContext" }}
-      securityContext: {{- if eq (len .securityContext) 0 }} {} {{- end }}
-      {{- with (dig "securityContext" (dict) .) }}
-      {{- toYaml . | nindent 8 }}
+      {{- if .securityContext }}
+      securityContext: {{- toYaml .securityContext | nindent 8 }}
       {{- end }}
+      {{- if .containerSecurityContext }}
+      containerSecurityContext: {{- toYaml .containerSecurityContext | nindent 8 }}
       {{- end }}
-      {{- if hasKey . "containerSecurityContext" }}
-      containerSecurityContext: {{- if eq (len .containerSecurityContext) 0 }} {} {{- end }}
-      {{- with (dig "containerSecurityContext" (dict) .) }}
-      {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- end }}
-      {{- with (dig "topologySpreadConstraints" (list) .) }}
+      {{- with .topologySpreadConstraints }}
       topologySpreadConstraints: {{- toYaml . | nindent 8 }}
       {{- end }}
     {{- end }}
