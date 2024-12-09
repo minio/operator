@@ -66,7 +66,7 @@ clean:
 	@rm -rf dist/
 
 regen-crd:
-	@go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.15.0
+	@go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.5
 	@${GOPATH}/bin/controller-gen crd:maxDescLen=0,generateEmbeddedObjectMeta=true webhook paths="./..." output:crd:artifacts:config=$(KUSTOMIZE_CRDS)
 	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/minio.min.io_tenants.yaml > $(HELM_TEMPLATES)/minio.min.io_tenants.yaml
 	@sed 's#namespace: minio-operator#namespace: {{ .Release.Namespace }}#g' resources/base/crds/sts.min.io_policybindings.yaml > $(HELM_TEMPLATES)/sts.min.io_policybindings.yaml
