@@ -9,7 +9,7 @@ require (
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible
-	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/google/go-containerregistry v0.19.2
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1
