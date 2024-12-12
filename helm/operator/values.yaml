@@ -28,14 +28,14 @@ operator:
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag``
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v6.0.4 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v7.0.0 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
   #
   #    image:
   #      repository: quay.io/minio/operator
-  #      tag: v6.0.4
+  #      tag: v7.0.0
   #      pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
@@ -49,20 +49,20 @@ operator:
   #
   image:
     repository: quay.io/minio/operator
-    tag: v6.0.4
+    tag: v7.0.0
     pullPolicy: IfNotPresent
   ###
   # Specify the sidecar container image to deploy on tenant pods for init container and sidecar.
   # Only need to change this if want to use a different version that the default, or want to set a custom registry.
   # ``sidecarImage.tag``
-  # For example, the following sets the image to the ``quay.io/minio/operator-sidecar`` repo and the v6.0.4 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator-sidecar`` repo and the v7.0.0 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
   #
   #    sidecarImage:
   #      repository: quay.io/minio/operator-sidecar
-  #      tag: v6.0.4
+  #      tag: v7.0.0
   #      pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
