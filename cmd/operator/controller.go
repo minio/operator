@@ -15,6 +15,9 @@
 package main
 
 import (
+	"flag"
+	"strconv"
+
 	"github.com/minio/cli"
 	"github.com/minio/operator/pkg/controller"
 )
@@ -30,9 +33,17 @@ var controllerCmd = cli.Command{
 			Name:  "kubeconfig",
 			Usage: "Load configuration from `KUBECONFIG`",
 		},
+		cli.IntFlag{
+			Name:  "v",
+			Usage: "logging level",
+		},
 	},
 }
 
 func startController(ctx *cli.Context) {
+	if ctx.Int("v") > 0 {
+		flag.Set("v", strconv.Itoa(ctx.Int("v")))
+		flag.Parse()
+	}
 	controller.StartOperator(ctx.String("kubeconfig"))
 }
