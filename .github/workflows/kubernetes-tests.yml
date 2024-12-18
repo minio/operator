@@ -479,7 +479,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Deploy a MinIO Tenant on Kind
         run: |
-          curl -sLO "https://dl.k8s.io/release/v1.28.12/bin/linux/amd64/kubectl" -o kubectl
+          curl -sLO "https://dl.k8s.io/release/v1.29.10/bin/linux/amd64/kubectl" -o kubectl
           chmod +x kubectl
           mv kubectl /usr/local/bin
           "${GITHUB_WORKSPACE}/testing/check-helm.sh"
@@ -518,7 +518,7 @@ jobs:
         env:
           TEST_FLOOR: true
         run: |
-          curl -sLO "https://dl.k8s.io/release/v1.28.12/bin/linux/amd64/kubectl" -o kubectl
+          curl -sLO "https://dl.k8s.io/release/v1.29.10/bin/linux/amd64/kubectl" -o kubectl
           chmod +x kubectl
           mv kubectl /usr/local/bin
           "${GITHUB_WORKSPACE}/testing/check-helm.sh"
