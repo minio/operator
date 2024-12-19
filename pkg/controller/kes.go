@@ -152,6 +152,31 @@ func kesStatefulSetMatchesSpec(tenant *miniov2.Tenant, existingStatefulSet *apps
 	return true, nil
 }
 
+func (c *Controller) recreateKesCertsOnTenant(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+	err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, tenant.KESTLSSecretName(), metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+
+	// Then delete the CSR
+	err = c.deleteCSR(ctx, tenant.KESCSRName())
+	if err != nil {
+		return err
+	}
+
+	// Finally re-create the certs on the tenant
+	return c.checkAndCreateKESCSR(ctx, nsName, tenant)
+}
+
+// recreateMinIOClientCerts re-creates the client certificates for MinIO
+func (c *Controller) recreateMinIOClientCerts(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) error {
+	err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Delete(ctx, tenant.MinIOClientTLSSecretName(), metav1.DeleteOptions{})
+	if err != nil {
+		return err
+	}
+	return c.checkAndCreateMinIOClientCertificates(ctx, nsName, tenant)
+}
+
 func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *miniov2.Tenant, nsName types.NamespacedName) (err error) {
 	if !tenant.ExternalClientCert() {
 		if err = c.checkAndCreateMinIOClientCertificates(ctx, nsName, tenant); err != nil {
@@ -177,6 +202,47 @@ func (c *Controller) checkKESCertificatesStatus(ctx context.Context, tenant *min
 					}
 				}
 			}
+		}
+	}
+	if tenant.AutoCert() {
+		// renew the KES certificates
+		tlsSecret, err := c.getCertificateSecret(ctx, tenant.Namespace, tenant.KESTLSSecretName())
+		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				if err := c.checkAndCreateKESCSR(ctx, nsName, tenant); err != nil {
+					return err
+				}
+				// TLS secret not found, delete CSR if exists and start certificate generation process again
+				if err := c.deleteCSR(ctx, tenant.KESCSRName()); err != nil {
+					return err
+				}
+			} else {
+				return err
+			}
+		}
+
+		needsRenewal, err := c.certNeedsRenewal(tlsSecret)
+		if err != nil {
+			return err
+		}
+
+		if needsRenewal {
+			return c.recreateKesCertsOnTenant(ctx, tenant, nsName)
+		}
+
+		// renew the client certificates
+		tlsSecret, err = c.getCertificateSecret(ctx, tenant.Namespace, tenant.MinIOClientTLSSecretName())
+		if err != nil {
+			return err
+		}
+
+		needsRenewal, err = c.certNeedsRenewal(tlsSecret)
+
+		if err != nil {
+			return err
+		}
+		if needsRenewal {
+			return c.recreateMinIOClientCerts(ctx, tenant, nsName)
 		}
 	}
 	return nil
