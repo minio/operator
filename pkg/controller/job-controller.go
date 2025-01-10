@@ -85,6 +85,7 @@ func (c *JobController) enqueueJob(obj interface{}) {
 		}
 	}
 	// key = default/mc-job-1
+	klog.Infof("Enqueuing job `%s`", key)
 	c.workqueue.AddRateLimited(key)
 }
 
@@ -111,8 +112,12 @@ func NewJobController(
 
 	// Set up an event handler for when resources change
 	minioJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: controller.enqueueJob,
+		AddFunc: func(obj interface{}) {
+			klog.Info("MinioJob added")
+			controller.enqueueJob(obj)
+		},
 		UpdateFunc: func(old, new interface{}) {
+			klog.Info("MinioJob updated")
 			oldJob := old.(*v1alpha1.MinIOJob)
 			newJob := new.(*v1alpha1.MinIOJob)
 			if oldJob.ResourceVersion == newJob.ResourceVersion {
@@ -120,7 +125,10 @@ func NewJobController(
 			}
 			controller.enqueueJob(new)
 		},
-		DeleteFunc: controller.enqueueJob,
+		DeleteFunc: func(obj interface{}) {
+			klog.Info("MinioJob deleted")
+			controller.enqueueJob(obj)
+		},
 	})
 
 	jobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -193,6 +201,16 @@ func (c *JobController) SyncHandler(key string) (_ Result, err error) {
 		return WrapResult(Result{}, nil)
 	}
 	namespace, jobName := key2NamespaceName(key)
+
+	klog.Infof("Processing job %s/%s", namespace, jobName)
+	defer func() {
+		if err != nil {
+			klog.Warningf("Job %s/%s returned error: %s", namespace, jobName, err)
+		} else {
+			klog.Infof("Job %s/%s processed without issues", namespace, jobName)
+		}
+	}()
+
 	ctx := context.Background()
 	jobCR := v1alpha1.MinIOJob{
 		ObjectMeta: metav1.ObjectMeta{
@@ -246,6 +264,8 @@ func (c *JobController) SyncHandler(key string) (_ Result, err error) {
 	if tenant.Status.HealthStatus != miniov2.HealthStatusGreen {
 		return WrapResult(Result{RequeueAfter: time.Second * 5}, fmt.Errorf("get tenant %s/%s error: %w", jobCR.Spec.TenantRef.Namespace, jobCR.Spec.TenantRef.Name, err))
 	}
+	klog.Infof("Job %s/%s using tenant %s", namespace, jobName, tenant.Name)
+
 	// check sa
 	pbs := &stsv1beta1.PolicyBindingList{}
 	err = c.k8sClient.List(ctx, pbs, client.InNamespace(tenant.Namespace))
@@ -264,6 +284,7 @@ func (c *JobController) SyncHandler(key string) (_ Result, err error) {
 	if !saFound {
 		return WrapResult(Result{}, fmt.Errorf("no serviceaccount found"))
 	}
+	klog.Infof("Job %s/%s using SA %s", namespace, jobName, jobCR.Spec.ServiceAccountName)
 	intervalJob, err := checkMinIOJob(&jobCR)
 	if err != nil {
 		return WrapResult(Result{}, err)
