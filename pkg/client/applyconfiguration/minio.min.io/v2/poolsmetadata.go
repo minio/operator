@@ -18,14 +18,14 @@
 
 package v2
 
-// PoolsMetadataApplyConfiguration represents an declarative configuration of the PoolsMetadata type for use
+// PoolsMetadataApplyConfiguration represents a declarative configuration of the PoolsMetadata type for use
 // with apply.
 type PoolsMetadataApplyConfiguration struct {
 	Labels      map[string]string `json:"labels,omitempty"`
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
-// PoolsMetadataApplyConfiguration constructs an declarative configuration of the PoolsMetadata type for use with
+// PoolsMetadataApplyConfiguration constructs a declarative configuration of the PoolsMetadata type for use with
 // apply.
 func PoolsMetadata() *PoolsMetadataApplyConfiguration {
 	return &PoolsMetadataApplyConfiguration{}
