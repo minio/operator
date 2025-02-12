@@ -45,20 +45,20 @@ tenant:
   # 
   # .. code-block:: yaml
   #
-  # initContainers:
-  #  - name: wait-for-idp
-  #    image: busybox
-  #    command:
-  #      - sh
-  #      - -c
-  #      - |
-  #        URL="https://idp-url"
-  #        echo "Checking IdP reachability (${URL})"
-  #        until $(wget -q -O "/dev/null" ${URL}) ; do
-  #          echo "IdP (${URL}) not reachable. Waiting to be reachable..."
-  #          sleep 5
-  #        done
-  #        echo "IdP (${URL}) reachable. Starting MinIO..."
+  #    initContainers:
+  #     - name: wait-for-idp
+  #       image: busybox
+  #       command:
+  #         - sh
+  #         - -c
+  #         - |
+  #           URL="https://idp-url"
+  #           echo "Checking IdP reachability (${URL})"
+  #           until $(wget -q -O "/dev/null" ${URL}) ; do
+  #             echo "IdP (${URL}) not reachable. Waiting to be reachable..."
+  #             sleep 5
+  #           done
+  #           echo "IdP (${URL}) reachable. Starting MinIO..."
   #
   initContainers: [ ]
   ###
@@ -292,8 +292,8 @@ tenant:
   # .. code-block:: yaml
   #
   #    - name: my-minio-bucket
-  #         objectLock: false        # optional
-  #         region: us-east-1        # optional
+  #      objectLock: false        # optional
+  #      region: us-east-1        # optional
   buckets: [ ]
   ###
   # Array of Kubernetes secrets from which the Operator generates MinIO users during tenant provisioning.
