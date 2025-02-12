@@ -124,7 +124,8 @@ func (c *Controller) checkMinIOCertificatesStatus(ctx context.Context, tenant *m
 
 		needsRenewal, err := c.certNeedsRenewal(tlsSecret)
 		if err != nil {
-			return err
+			klog.Warningf("Cannot check secret %s/%s for renewal (will be renewing): %v", tlsSecret.Namespace, tlsSecret.Name, err)
+			needsRenewal = true
 		}
 
 		if needsRenewal {
