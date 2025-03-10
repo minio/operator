@@ -17,6 +17,8 @@ package controller
 import (
 	"context"
 	"errors"
+	"reflect"
+	"strings"
 
 	promv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	promv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
@@ -161,20 +163,34 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 			return err
 		}
 	} else {
-		var scrapeConfigs []configmaps.ScrapeConfig
+		var scrapeConfigs, exceptedScrapeConfigs []configmaps.ScrapeConfig
 		err := yaml.Unmarshal(secret.Data[miniov2.PrometheusAddlScrapeConfigKey], &scrapeConfigs)
 		if err != nil {
 			return err
 		}
-		// Check if the scrape config is already present
-		hasScrapeConfig := false
+		// get other scrape configs
 		for _, sc := range scrapeConfigs {
-			if sc.JobName == tenant.PrometheusOperatorAddlConfigJobName() {
-				hasScrapeConfig = true
-				break
+			if !strings.HasPrefix(sc.JobName, tenant.PrometheusOperatorAddlConfigJobName()) {
+				exceptedScrapeConfigs = append(exceptedScrapeConfigs, sc)
 			}
 		}
-		if !hasScrapeConfig {
+		exceptedScrapeConfigs = append(exceptedScrapeConfigs, promCfg.ScrapeConfigs...)
+		updateScrapeConfig := false
+		if len(scrapeConfigs) != len(exceptedScrapeConfigs) {
+			updateScrapeConfig = true
+		} else {
+			for i := range scrapeConfigs {
+				if scrapeConfigs[i].JobName != exceptedScrapeConfigs[i].JobName ||
+					scrapeConfigs[i].MetricsPath != exceptedScrapeConfigs[i].MetricsPath ||
+					scrapeConfigs[i].Scheme != exceptedScrapeConfigs[i].Scheme ||
+					!reflect.DeepEqual(scrapeConfigs[i].TLSConfig, exceptedScrapeConfigs[i].TLSConfig) ||
+					!reflect.DeepEqual(scrapeConfigs[i].StaticConfigs, exceptedScrapeConfigs[i].StaticConfigs) {
+					updateScrapeConfig = true
+					break
+				}
+			}
+		}
+		if updateScrapeConfig {
 			klog.Infof("Adding MinIO tenant Prometheus scrape config")
 			scrapeConfigs = append(scrapeConfigs, promCfg.ScrapeConfigs...)
 			scrapeCfgYaml, err := yaml.Marshal(scrapeConfigs)
@@ -224,27 +240,20 @@ func (c *Controller) deletePrometheusAddlConfig(ctx context.Context, tenant *min
 		return err
 	}
 
-	var scrapeConfigs []configmaps.ScrapeConfig
+	var scrapeConfigs, exceptedScrapeConfigs []configmaps.ScrapeConfig
 	err = yaml.Unmarshal(secret.Data[miniov2.PrometheusAddlScrapeConfigKey], &scrapeConfigs)
 	if err != nil {
 		return err
 	}
-	// Check if the scrape config is present
-	hasScrapeConfig := false
-	scIndex := -1
-	for i, sc := range scrapeConfigs {
-		if sc.JobName == tenant.PrometheusOperatorAddlConfigJobName() {
-			hasScrapeConfig = true
-			scIndex = i
-			break
+	for _, sc := range scrapeConfigs {
+		if !strings.HasPrefix(sc.JobName, tenant.PrometheusOperatorAddlConfigJobName()) {
+			exceptedScrapeConfigs = append(exceptedScrapeConfigs, sc)
 		}
 	}
-	if hasScrapeConfig {
+	if !reflect.DeepEqual(scrapeConfigs, exceptedScrapeConfigs) {
 		klog.Infof("Deleting MinIO tenant Prometheus scrape config")
-		// Delete the config
-		newScrapeConfigs := append(scrapeConfigs[:scIndex], scrapeConfigs[scIndex+1:]...)
 		// Update the secret
-		scrapeCfgYaml, err := yaml.Marshal(newScrapeConfigs)
+		scrapeCfgYaml, err := yaml.Marshal(exceptedScrapeConfigs)
 		if err != nil {
 			return err
 		}
