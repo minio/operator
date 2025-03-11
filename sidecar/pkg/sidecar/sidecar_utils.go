@@ -153,9 +153,9 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 	}
 
 	_, err := tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(old, new interface{}) {
-			oldTenant := old.(*v2.Tenant)
-			newTenant := new.(*v2.Tenant)
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			oldTenant := oldObj.(*v2.Tenant)
+			newTenant := newObj.(*v2.Tenant)
 			if newTenant.ResourceVersion == oldTenant.ResourceVersion {
 				// Periodic resync will send update events for all known Tenants.
 				// Two different versions of the same Tenant will always have different RVs.
@@ -170,14 +170,14 @@ func NewSideCarController(kubeClient *kubernetes.Clientset, controllerClient *cl
 	}
 
 	_, err = secretInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(old, new interface{}) {
-			oldSecret := old.(*corev1.Secret)
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			oldSecret := oldObj.(*corev1.Secret)
 			// ignore anything that is not what we want
 			if oldSecret.Name != secretName {
 				return
 			}
 			log.Printf("Config secret '%s' sync", secretName)
-			newSecret := new.(*corev1.Secret)
+			newSecret := newObj.(*corev1.Secret)
 			if newSecret.ResourceVersion == oldSecret.ResourceVersion {
 				// Periodic resync will send update events for all known Tenants.
 				// Two different versions of the same Tenant will always have different RVs.
