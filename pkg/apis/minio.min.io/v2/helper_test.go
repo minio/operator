@@ -17,11 +17,11 @@ func TestTenant_GenBearerToken(t *testing.T) {
 	secretKey := "testSecretKey"
 	actualToken := mt.GenBearerToken(accessKey, secretKey)
 
-	// Test GetAccessAndSecretKeyFromBearerToken
+	// Test GetAccessKeyFromBearerToken
 	bearerToken := actualToken
 	expectedAccessKey := accessKey
 
-	actualAccessKey, err := GetAccessAndSecretKeyFromBearerToken(bearerToken, secretKey)
+	actualAccessKey, err := GetAccessKeyFromBearerToken(bearerToken, secretKey)
 	if err != nil {
 		t.Errorf("GetAccessAndSecretKeyFromBearerToken() returned an error: %v", err)
 	}
