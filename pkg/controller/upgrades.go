@@ -64,7 +64,7 @@ func (c *Controller) checkForUpgrades(ctx context.Context, tenant *miniov2.Tenan
 		}
 		// when processing the version below 5.0.0, give a hint to manually upgrade
 		if currentSyncVersion.LessThan(version.Must(version.NewVersion(version500))) {
-			return tenant, fmt.Errorf("Tenant version %s is below %s. Please manually upgrade to %s or later.", tenant.Status.SyncVersion, version500, version500)
+			return tenant, fmt.Errorf("Tenant version %s is too old. Please upgrade to latest v5 operator first, before upgrading to the this operator version.", tenant.Status.SyncVersion)
 		}
 		// check which upgrades we need to do
 		versionsThatNeedUpgrades := []string{
