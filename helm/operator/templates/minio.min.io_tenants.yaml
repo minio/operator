@@ -3682,7 +3682,7 @@ spec:
                 type: string
               prometheusOperator:
                 type: boolean
-              prometheusOperatorScrapeMetricsPath:
+              prometheusOperatorScrapeMetricsPaths:
                 items:
                   type: string
                 type: array

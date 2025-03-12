@@ -279,9 +279,10 @@ type TenantSpec struct {
 	// *Optional* +
 	//
 	// The name of the Prometheus instance to scrape metrics from.
+	// If PrometheusOperator: true and PrometheusOperatorScrapeMetricsPaths is empty, will add `/minio/v2/metrics/cluster` to the list of paths to scrape as default like before.
 	//
 	// +optional
-	PrometheusOperatorScrapeMetricsPath []string `json:"prometheusOperatorScrapeMetricsPath,omitempty"`
+	PrometheusOperatorScrapeMetricsPaths []string `json:"prometheusOperatorScrapeMetricsPaths,omitempty"`
 	// *Optional* +
 	//
 	// The https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/[Kubernetes Service Account] to use for running MinIO pods created as part of the Tenant. +

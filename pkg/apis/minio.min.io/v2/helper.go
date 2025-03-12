@@ -413,6 +413,24 @@ func (t *Tenant) GenBearerToken(accessKey, secretKey string) string {
 	return token
 }
 
+// GetAccessKeyFromBearerToken parses the BearerToken with secretKey to extract accessKey
+func GetAccessKeyFromBearerToken(bearerToken string, secretKey string) (string, error) {
+	claims := &jwt.StandardClaims{}
+	token, err := jwt.ParseWithClaims(bearerToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secretKey), nil
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("failed to parse token: %v", err)
+	}
+
+	if !token.Valid {
+		return "", errors.New("invalid token")
+	}
+
+	return claims.Subject, nil
+}
+
 // MinIOHosts returns the domain names in ellipses format created for current Tenant
 func (t *Tenant) MinIOHosts() (hosts []string) {
 	// Create the ellipses style URL

@@ -143,7 +143,7 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 
 	// If the secret is not found, create the secret
 	if k8serrors.IsNotFound(err) {
-		klog.Infof("Adding MinIO tenant Prometheus scrape config")
+		klog.Infof("Adding MinIO tenant %s/%s Prometheus scrape config", ns, tenant.Name)
 		scrapeCfgYaml, err := yaml.Marshal(&promCfg.ScrapeConfigs)
 		if err != nil {
 			return err
@@ -163,7 +163,7 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 			return err
 		}
 	} else {
-		var scrapeConfigs, exceptedScrapeConfigs []configmaps.ScrapeConfig
+		var scrapeConfigs, expectedScrapeConfigs []configmaps.ScrapeConfig
 		err := yaml.Unmarshal(secret.Data[miniov2.PrometheusAddlScrapeConfigKey], &scrapeConfigs)
 		if err != nil {
 			return err
@@ -171,29 +171,36 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 		// get other scrape configs
 		for _, sc := range scrapeConfigs {
 			if !strings.HasPrefix(sc.JobName, tenant.PrometheusOperatorAddlConfigJobName()) {
-				exceptedScrapeConfigs = append(exceptedScrapeConfigs, sc)
+				expectedScrapeConfigs = append(expectedScrapeConfigs, sc)
 			}
 		}
-		exceptedScrapeConfigs = append(exceptedScrapeConfigs, promCfg.ScrapeConfigs...)
+		expectedScrapeConfigs = append(expectedScrapeConfigs, promCfg.ScrapeConfigs...)
 		updateScrapeConfig := false
-		if len(scrapeConfigs) != len(exceptedScrapeConfigs) {
+		if len(scrapeConfigs) != len(expectedScrapeConfigs) {
 			updateScrapeConfig = true
 		} else {
 			for i := range scrapeConfigs {
-				if scrapeConfigs[i].JobName != exceptedScrapeConfigs[i].JobName ||
-					scrapeConfigs[i].MetricsPath != exceptedScrapeConfigs[i].MetricsPath ||
-					scrapeConfigs[i].Scheme != exceptedScrapeConfigs[i].Scheme ||
-					!reflect.DeepEqual(scrapeConfigs[i].TLSConfig, exceptedScrapeConfigs[i].TLSConfig) ||
-					!reflect.DeepEqual(scrapeConfigs[i].StaticConfigs, exceptedScrapeConfigs[i].StaticConfigs) {
+				if scrapeConfigs[i].JobName != expectedScrapeConfigs[i].JobName ||
+					scrapeConfigs[i].MetricsPath != expectedScrapeConfigs[i].MetricsPath ||
+					scrapeConfigs[i].Scheme != expectedScrapeConfigs[i].Scheme ||
+					!reflect.DeepEqual(scrapeConfigs[i].TLSConfig, expectedScrapeConfigs[i].TLSConfig) ||
+					!reflect.DeepEqual(scrapeConfigs[i].StaticConfigs, expectedScrapeConfigs[i].StaticConfigs) {
+					updateScrapeConfig = true
+					break
+				}
+				accKey, err := miniov2.GetAccessKeyFromBearerToken(scrapeConfigs[i].BearerToken, secretKey)
+				if err != nil {
+					klog.Errorf("Failed to get access key from bearer token: %v", err)
+				}
+				if accKey != accessKey {
 					updateScrapeConfig = true
 					break
 				}
 			}
 		}
 		if updateScrapeConfig {
-			klog.Infof("Adding MinIO tenant Prometheus scrape config")
-			scrapeConfigs = append(scrapeConfigs, promCfg.ScrapeConfigs...)
-			scrapeCfgYaml, err := yaml.Marshal(scrapeConfigs)
+			klog.Infof("Updating MinIO tenant %s/%s Prometheus scrape config", ns, tenant.Name)
+			scrapeCfgYaml, err := yaml.Marshal(expectedScrapeConfigs)
 			if err != nil {
 				return err
 			}
