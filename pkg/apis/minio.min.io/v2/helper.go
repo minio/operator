@@ -419,7 +419,6 @@ func GetAccessKeyFromBearerToken(bearerToken string, secretKey string) (string, 
 	token, err := jwt.ParseWithClaims(bearerToken, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(secretKey), nil
 	})
-
 	if err != nil {
 		return "", fmt.Errorf("failed to parse token: %v", err)
 	}

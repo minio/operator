@@ -24,8 +24,8 @@ func TestTenant_GetAccessKeyFromBearerToken(t *testing.T) {
 	if actualAccessKey != accessKey {
 		t.Errorf("GetAccessAndSecretKeyFromBearerToken() accessKey = %v, want %v", actualAccessKey, accessKey)
 	}
-
 }
+
 func TestEnsureDefaults(t *testing.T) {
 	mt := Tenant{}
 	mt.EnsureDefaults()
