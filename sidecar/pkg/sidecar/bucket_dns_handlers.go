@@ -95,9 +95,9 @@ func (c *Controller) BucketSrvHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	ok, error := validateBucketName(bucket)
+	ok, err = validateBucketName(bucket)
 	if !ok {
-		http.Error(w, error.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	// Create the service for the bucket name

@@ -47,7 +47,7 @@ func configureSidecarServer(c *Controller) *http.Server {
 }
 
 // CheckConfigHandler - POST /sidecar/v1/config?c={hash}
-func (c *Controller) CheckConfigHandler(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) CheckConfigHandler(_ http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	hash := vars["c"]
