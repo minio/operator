@@ -339,10 +339,10 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		if t.Spec.CertConfig.CommonName == "" {
 			t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
 		}
-		if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
+		if len(t.Spec.CertConfig.DNSNames) == 0 {
 			t.Spec.CertConfig.DNSNames = t.MinIOHosts()
 		}
-		if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
+		if len(t.Spec.CertConfig.OrganizationName) == 0 {
 			t.Spec.CertConfig.OrganizationName = DefaultOrgName
 		}
 	} else {
@@ -435,15 +435,15 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 		klog.V(2).Infof(msg)
 		return hosts
 	}
-	var max, index int32
+	var maxIndex, index int32
 	// Create the ellipses style URL
 	for _, pool := range t.Spec.Pools {
-		max = max + pool.Servers
+		maxIndex = maxIndex + pool.Servers
 		data := hostsTemplateValues{
 			StatefulSet: t.MinIOStatefulSetNameForPool(&pool),
 			CIService:   t.MinIOCIServiceName(),
 			HLService:   t.MinIOHLServiceName(),
-			Ellipsis:    genEllipsis(int(index), int(max)-1),
+			Ellipsis:    genEllipsis(int(index), int(maxIndex)-1),
 			Domain:      GetClusterDomain(),
 		}
 		output := new(bytes.Buffer)
@@ -451,7 +451,7 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 			continue
 		}
 		hosts = append(hosts, output.String())
-		index = max
+		index = maxIndex
 	}
 	return hosts
 }
@@ -912,11 +912,11 @@ func IsContainersEnvUpdated(existingContainers, expectedContainers []corev1.Cont
 
 // IsEnvUpdated looks for new env vars in the old env vars and returns true if
 // new env vars are not found
-func IsEnvUpdated(old, new map[string]string) bool {
-	if len(old) != len(new) {
+func IsEnvUpdated(oldEnv, newEnv map[string]string) bool {
+	if len(oldEnv) != len(newEnv) {
 		return true
 	}
-	if !reflect.DeepEqual(old, new) {
+	if !reflect.DeepEqual(oldEnv, newEnv) {
 		return true
 	}
 	return false

@@ -294,15 +294,15 @@ func NewController(
 	// Set up an event handler for when Tenant resources change
 	tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueTenant,
-		UpdateFunc: func(old, new interface{}) {
-			oldTenant := old.(*miniov2.Tenant)
-			newTenant := new.(*miniov2.Tenant)
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			oldTenant := oldObj.(*miniov2.Tenant)
+			newTenant := newObj.(*miniov2.Tenant)
 			if newTenant.ResourceVersion == oldTenant.ResourceVersion {
 				// Periodic resync will send update events for all known Tenants.
 				// Two different versions of the same Tenant will always have different RVs.
 				return
 			}
-			controller.enqueueTenant(new)
+			controller.enqueueTenant(newObj)
 		},
 	})
 
@@ -314,44 +314,44 @@ func NewController(
 	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md
 	statefulSetInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
-		UpdateFunc: func(old, new interface{}) {
-			newDepl := new.(*appsv1.StatefulSet)
-			oldDepl := old.(*appsv1.StatefulSet)
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			newDepl := newObj.(*appsv1.StatefulSet)
+			oldDepl := oldObj.(*appsv1.StatefulSet)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
 				// Periodic resync will send update events for all known StatefulSet.
 				// Two different versions of the same StatefulSet will always have different RVs.
 				return
 			}
-			controller.handleObject(new)
+			controller.handleObject(newObj)
 		},
 		DeleteFunc: controller.handleObject,
 	})
 
 	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
-		UpdateFunc: func(old, new interface{}) {
-			newDepl := new.(*appsv1.Deployment)
-			oldDepl := old.(*appsv1.Deployment)
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			newDepl := newObj.(*appsv1.Deployment)
+			oldDepl := oldObj.(*appsv1.Deployment)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
 				// Periodic resync will send update events for all known Deployments.
 				// Two different versions of the same Deployments will always have different RVs.
 				return
 			}
-			controller.handleObject(new)
+			controller.handleObject(newObj)
 		},
 		DeleteFunc: controller.handleObject,
 	})
 
 	podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handlePodChange,
-		UpdateFunc: func(old, new interface{}) {
-			newPod := new.(*corev1.Pod)
-			oldPod := old.(*corev1.Pod)
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			newPod := newObj.(*corev1.Pod)
+			oldPod := oldObj.(*corev1.Pod)
 			// Ignore Pod changes if same ResourceVersion
 			if newPod.ResourceVersion == oldPod.ResourceVersion {
 				return
 			}
-			controller.handlePodChange(new)
+			controller.handlePodChange(newObj)
 		},
 		DeleteFunc: controller.handlePodChange,
 	})
@@ -360,15 +360,15 @@ func NewController(
 		AddFunc: func(obj interface{}) {
 			controller.handleSecret(obj, nil)
 		},
-		UpdateFunc: func(old, new interface{}) {
-			newSecret := new.(*corev1.Secret)
-			oldSecret := old.(*corev1.Secret)
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			newSecret := newObj.(*corev1.Secret)
+			oldSecret := oldObj.(*corev1.Secret)
 			if newSecret.ResourceVersion == oldSecret.ResourceVersion {
 				// Periodic resync will send update events for all known Deployments.
 				// Two different versions of the same secret will always have different RVs.
 				return
 			}
-			controller.handleSecret(new, old)
+			controller.handleSecret(newObj, oldObj)
 		},
 	})
 

@@ -105,7 +105,7 @@ func newApp(name string) *cli.App {
 	app.Commands = commands
 	app.HideHelpCommand = true // Hide `help, h` command, we already have `minio --help`.
 	app.CustomAppHelpTemplate = operatorHelpTemplate
-	app.CommandNotFound = func(ctx *cli.Context, command string) {
+	app.CommandNotFound = func(_ *cli.Context, command string) {
 		console.Printf("‘%s’ is not a console sub-command. See ‘console --help’.\n", command)
 		closestCommands := findClosestCommands(command)
 		if len(closestCommands) > 0 {

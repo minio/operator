@@ -34,7 +34,7 @@ import (
 // Returns the MinIO environment variables set in configuration.
 // If a user specifies a secret in the spec (for MinIO credentials) we use
 // that to set MINIO_ROOT_USER & MINIO_ROOT_PASSWORD.
-func minioEnvironmentVars(t *miniov2.Tenant, skipEnvVars map[string][]byte) []corev1.EnvVar {
+func minioEnvironmentVars(skipEnvVars map[string][]byte) []corev1.EnvVar {
 	var envVars []corev1.EnvVar
 
 	envVarsMap := map[string]corev1.EnvVar{}
@@ -192,7 +192,7 @@ func poolMinioServerContainer(t *miniov2.Tenant, skipEnvVars map[string][]byte, 
 		ImagePullPolicy: t.Spec.ImagePullPolicy,
 		VolumeMounts:    volumeMounts(t, pool, certVolumeSources),
 		Args:            args,
-		Env:             minioEnvironmentVars(t, skipEnvVars),
+		Env:             minioEnvironmentVars(skipEnvVars),
 		Resources:       pool.Resources,
 		LivenessProbe:   t.Spec.Liveness,
 		ReadinessProbe:  t.Spec.Readiness,
