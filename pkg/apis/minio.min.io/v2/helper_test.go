@@ -9,6 +9,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestTenant_GetAccessKeyFromBearerToken(t *testing.T) {
+	mt := Tenant{}
+	mt.EnsureDefaults()
+	accessKey := "testAccessKey"
+	secretKey := "testSecretKey"
+	bearerToken := mt.GenBearerToken(accessKey, secretKey)
+
+	actualAccessKey, err := GetAccessKeyFromBearerToken(bearerToken, secretKey)
+	if err != nil {
+		t.Errorf("GetAccessAndSecretKeyFromBearerToken() returned an error: %v", err)
+	}
+
+	if actualAccessKey != accessKey {
+		t.Errorf("GetAccessAndSecretKeyFromBearerToken() accessKey = %v, want %v", actualAccessKey, accessKey)
+	}
+}
+
 func TestEnsureDefaults(t *testing.T) {
 	mt := Tenant{}
 	mt.EnsureDefaults()
