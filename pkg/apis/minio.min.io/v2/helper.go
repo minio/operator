@@ -416,7 +416,7 @@ func (t *Tenant) GenBearerToken(accessKey, secretKey string) string {
 // GetAccessKeyFromBearerToken parses the BearerToken with secretKey to extract accessKey
 func GetAccessKeyFromBearerToken(bearerToken string, secretKey string) (string, error) {
 	claims := &jwt.StandardClaims{}
-	token, err := jwt.ParseWithClaims(bearerToken, claims, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(bearerToken, claims, func(_ *jwt.Token) (interface{}, error) {
 		return []byte(secretKey), nil
 	})
 	if err != nil {

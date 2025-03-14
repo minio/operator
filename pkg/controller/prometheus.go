@@ -188,10 +188,7 @@ func (c *Controller) checkAndCreatePrometheusAddlConfig(ctx context.Context, ten
 					updateScrapeConfig = true
 					break
 				}
-				accKey, err := miniov2.GetAccessKeyFromBearerToken(scrapeConfigs[i].BearerToken, secretKey)
-				if err != nil {
-					klog.Errorf("Failed to get access key from bearer token: %v", err)
-				}
+				accKey, _ := miniov2.GetAccessKeyFromBearerToken(scrapeConfigs[i].BearerToken, secretKey)
 				if accKey != accessKey {
 					updateScrapeConfig = true
 					break
