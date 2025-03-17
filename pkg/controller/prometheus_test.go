@@ -53,8 +53,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		testNS := "testNamespace"
-		t.Setenv("PROMETHEUS_NAMESPACE", testNS)
+		testNS := "default"
 		prometheus := &v1.Prometheus{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "testPrometheus",
@@ -214,7 +213,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 						StaticConfigs: []configmaps.StaticConfig{
 							{
-								Targets: []string{"minio.testNamespace.svc.cluster.local:443"},
+								Targets: []string{"minio.default.svc.cluster.local:443"},
 							},
 						},
 					},
@@ -228,7 +227,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 						StaticConfigs: []configmaps.StaticConfig{
 							{
-								Targets: []string{"minio.testNamespace.svc.cluster.local:443"},
+								Targets: []string{"minio.default.svc.cluster.local:443"},
 							},
 						},
 					},
@@ -266,7 +265,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 						StaticConfigs: []configmaps.StaticConfig{
 							{
-								Targets: []string{"minio.testNamespace.svc.cluster.local:443"},
+								Targets: []string{"minio.default.svc.cluster.local:443"},
 							},
 						},
 					},
@@ -280,7 +279,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 						StaticConfigs: []configmaps.StaticConfig{
 							{
-								Targets: []string{"minio.testNamespace.svc.cluster.local:443"},
+								Targets: []string{"minio.default.svc.cluster.local:443"},
 							},
 						},
 					},
