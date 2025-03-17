@@ -27,11 +27,13 @@ type globalConfig struct {
 	EvaluationInterval time.Duration `yaml:"evaluation_interval"`
 }
 
-type staticConfig struct {
+// StaticConfig contains the static configuration for prometheus
+type StaticConfig struct {
 	Targets []string `yaml:"targets"`
 }
 
-type tlsConfig struct {
+// TlsConfig contains the tls configuration for prometheus
+type TlsConfig struct {
 	CAFile string `yaml:"ca_file"`
 }
 
@@ -41,8 +43,8 @@ type ScrapeConfig struct {
 	BearerToken   string         `yaml:"bearer_token"`
 	MetricsPath   string         `yaml:"metrics_path"`
 	Scheme        string         `yaml:"scheme"`
-	TLSConfig     tlsConfig      `yaml:"tls_config"`
-	StaticConfigs []staticConfig `yaml:"static_configs"`
+	TLSConfig     TlsConfig      `yaml:"tls_config"`
+	StaticConfigs []StaticConfig `yaml:"static_configs"`
 }
 
 // PrometheusConfig contains the prometheus configuration
@@ -93,10 +95,10 @@ func GetPrometheusConfig(t *miniov2.Tenant, accessKey, secretKey string) *Promet
 			BearerToken: bearerToken,
 			MetricsPath: scrape,
 			Scheme:      minioScheme,
-			TLSConfig: tlsConfig{
+			TLSConfig: TlsConfig{
 				CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 			},
-			StaticConfigs: []staticConfig{
+			StaticConfigs: []StaticConfig{
 				{
 					Targets: []string{minioTargets},
 				},
