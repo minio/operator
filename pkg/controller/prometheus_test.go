@@ -208,7 +208,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
 						MetricsPath: "/minio/v2/metrics/cluster",
 						Scheme:      "https",
-						TLSConfig: configmaps.TlsConfig{
+						TLSConfig: configmaps.TLSConfig{
 							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 						},
 						StaticConfigs: []configmaps.StaticConfig{
@@ -222,7 +222,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
 						MetricsPath: "/minio/metrics/v3/api",
 						Scheme:      "https",
-						TLSConfig: configmaps.TlsConfig{
+						TLSConfig: configmaps.TLSConfig{
 							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 						},
 						StaticConfigs: []configmaps.StaticConfig{
@@ -260,7 +260,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
 						MetricsPath: "/minio/v2/metrics/cluster",
 						Scheme:      "https",
-						TLSConfig: configmaps.TlsConfig{
+						TLSConfig: configmaps.TLSConfig{
 							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 						},
 						StaticConfigs: []configmaps.StaticConfig{
@@ -274,7 +274,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
 						MetricsPath: "/minio/metrics/v3/api",
 						Scheme:      "https",
-						TLSConfig: configmaps.TlsConfig{
+						TLSConfig: configmaps.TLSConfig{
 							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
 						},
 						StaticConfigs: []configmaps.StaticConfig{
