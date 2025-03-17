@@ -16,6 +16,9 @@ package controller
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/minio/operator/pkg/resources/configmaps"
 	v1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/prometheus-operator/prometheus-operator/pkg/client/versioned/fake"
@@ -23,8 +26,6 @@ import (
 	v3 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	fake3 "k8s.io/client-go/kubernetes/fake"
-	"testing"
-	"time"
 
 	miniov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
@@ -133,7 +134,6 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		if changedTokenNumber != arg.excepts.changedTokenNumber {
 			t.Fatalf("Expected %d changed tokens, got %d", arg.excepts.changedTokenNumber, changedTokenNumber)
 		}
-
 	}
 	tests := []args{
 		{
