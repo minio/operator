@@ -19,10 +19,10 @@
 package v2
 
 import (
-	"context"
+	context "context"
 
-	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	miniominiov2 "github.com/minio/operator/pkg/client/applyconfiguration/minio.min.io/v2"
+	miniominiov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	applyconfigurationminiominiov2 "github.com/minio/operator/pkg/client/applyconfiguration/minio.min.io/v2"
 	scheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -38,36 +38,37 @@ type TenantsGetter interface {
 
 // TenantInterface has methods to work with Tenant resources.
 type TenantInterface interface {
-	Create(ctx context.Context, tenant *v2.Tenant, opts v1.CreateOptions) (*v2.Tenant, error)
-	Update(ctx context.Context, tenant *v2.Tenant, opts v1.UpdateOptions) (*v2.Tenant, error)
+	Create(ctx context.Context, tenant *miniominiov2.Tenant, opts v1.CreateOptions) (*miniominiov2.Tenant, error)
+	Update(ctx context.Context, tenant *miniominiov2.Tenant, opts v1.UpdateOptions) (*miniominiov2.Tenant, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, tenant *v2.Tenant, opts v1.UpdateOptions) (*v2.Tenant, error)
+	UpdateStatus(ctx context.Context, tenant *miniominiov2.Tenant, opts v1.UpdateOptions) (*miniominiov2.Tenant, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v2.Tenant, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v2.TenantList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*miniominiov2.Tenant, error)
+	List(ctx context.Context, opts v1.ListOptions) (*miniominiov2.TenantList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v2.Tenant, err error)
-	Apply(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *miniominiov2.Tenant, err error)
+	Apply(ctx context.Context, tenant *applyconfigurationminiominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *miniominiov2.Tenant, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error)
+	ApplyStatus(ctx context.Context, tenant *applyconfigurationminiominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *miniominiov2.Tenant, err error)
 	TenantExpansion
 }
 
 // tenants implements TenantInterface
 type tenants struct {
-	*gentype.ClientWithListAndApply[*v2.Tenant, *v2.TenantList, *miniominiov2.TenantApplyConfiguration]
+	*gentype.ClientWithListAndApply[*miniominiov2.Tenant, *miniominiov2.TenantList, *applyconfigurationminiominiov2.TenantApplyConfiguration]
 }
 
 // newTenants returns a Tenants
 func newTenants(c *MinioV2Client, namespace string) *tenants {
 	return &tenants{
-		gentype.NewClientWithListAndApply[*v2.Tenant, *v2.TenantList, *miniominiov2.TenantApplyConfiguration](
+		gentype.NewClientWithListAndApply[*miniominiov2.Tenant, *miniominiov2.TenantList, *applyconfigurationminiominiov2.TenantApplyConfiguration](
 			"tenants",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v2.Tenant { return &v2.Tenant{} },
-			func() *v2.TenantList { return &v2.TenantList{} }),
+			func() *miniominiov2.Tenant { return &miniominiov2.Tenant{} },
+			func() *miniominiov2.TenantList { return &miniominiov2.TenantList{} },
+		),
 	}
 }

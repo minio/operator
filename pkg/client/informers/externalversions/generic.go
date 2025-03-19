@@ -19,7 +19,7 @@
 package externalversions
 
 import (
-	"fmt"
+	fmt "fmt"
 
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	v1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"

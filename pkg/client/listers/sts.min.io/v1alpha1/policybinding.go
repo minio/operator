@@ -19,10 +19,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	stsminiov1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // PolicyBindingLister helps list PolicyBindings.
@@ -30,7 +30,7 @@ import (
 type PolicyBindingLister interface {
 	// List lists all PolicyBindings in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.PolicyBinding, err error)
+	List(selector labels.Selector) (ret []*stsminiov1alpha1.PolicyBinding, err error)
 	// PolicyBindings returns an object that can list and get PolicyBindings.
 	PolicyBindings(namespace string) PolicyBindingNamespaceLister
 	PolicyBindingListerExpansion
@@ -38,17 +38,17 @@ type PolicyBindingLister interface {
 
 // policyBindingLister implements the PolicyBindingLister interface.
 type policyBindingLister struct {
-	listers.ResourceIndexer[*v1alpha1.PolicyBinding]
+	listers.ResourceIndexer[*stsminiov1alpha1.PolicyBinding]
 }
 
 // NewPolicyBindingLister returns a new PolicyBindingLister.
 func NewPolicyBindingLister(indexer cache.Indexer) PolicyBindingLister {
-	return &policyBindingLister{listers.New[*v1alpha1.PolicyBinding](indexer, v1alpha1.Resource("policybinding"))}
+	return &policyBindingLister{listers.New[*stsminiov1alpha1.PolicyBinding](indexer, stsminiov1alpha1.Resource("policybinding"))}
 }
 
 // PolicyBindings returns an object that can list and get PolicyBindings.
 func (s *policyBindingLister) PolicyBindings(namespace string) PolicyBindingNamespaceLister {
-	return policyBindingNamespaceLister{listers.NewNamespaced[*v1alpha1.PolicyBinding](s.ResourceIndexer, namespace)}
+	return policyBindingNamespaceLister{listers.NewNamespaced[*stsminiov1alpha1.PolicyBinding](s.ResourceIndexer, namespace)}
 }
 
 // PolicyBindingNamespaceLister helps list and get PolicyBindings.
@@ -56,15 +56,15 @@ func (s *policyBindingLister) PolicyBindings(namespace string) PolicyBindingName
 type PolicyBindingNamespaceLister interface {
 	// List lists all PolicyBindings in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.PolicyBinding, err error)
+	List(selector labels.Selector) (ret []*stsminiov1alpha1.PolicyBinding, err error)
 	// Get retrieves the PolicyBinding from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.PolicyBinding, error)
+	Get(name string) (*stsminiov1alpha1.PolicyBinding, error)
 	PolicyBindingNamespaceListerExpansion
 }
 
 // policyBindingNamespaceLister implements the PolicyBindingNamespaceLister
 // interface.
 type policyBindingNamespaceLister struct {
-	listers.ResourceIndexer[*v1alpha1.PolicyBinding]
+	listers.ResourceIndexer[*stsminiov1alpha1.PolicyBinding]
 }

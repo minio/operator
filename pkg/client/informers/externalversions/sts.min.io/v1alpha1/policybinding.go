@@ -19,13 +19,13 @@
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	stsminiov1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
+	apisstsminiov1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	versioned "github.com/minio/operator/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/minio/operator/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/minio/operator/pkg/client/listers/sts.min.io/v1alpha1"
+	stsminiov1alpha1 "github.com/minio/operator/pkg/client/listers/sts.min.io/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // PolicyBindings.
 type PolicyBindingInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.PolicyBindingLister
+	Lister() stsminiov1alpha1.PolicyBindingLister
 }
 
 type policyBindingInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredPolicyBindingInformer(client versioned.Interface, namespace stri
 				return client.StsV1alpha1().PolicyBindings(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&stsminiov1alpha1.PolicyBinding{},
+		&apisstsminiov1alpha1.PolicyBinding{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *policyBindingInformer) defaultInformer(client versioned.Interface, resy
 }
 
 func (f *policyBindingInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&stsminiov1alpha1.PolicyBinding{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisstsminiov1alpha1.PolicyBinding{}, f.defaultInformer)
 }
 
-func (f *policyBindingInformer) Lister() v1alpha1.PolicyBindingLister {
-	return v1alpha1.NewPolicyBindingLister(f.Informer().GetIndexer())
+func (f *policyBindingInformer) Lister() stsminiov1alpha1.PolicyBindingLister {
+	return stsminiov1alpha1.NewPolicyBindingLister(f.Informer().GetIndexer())
 }

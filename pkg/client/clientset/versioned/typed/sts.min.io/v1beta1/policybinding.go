@@ -19,10 +19,10 @@
 package v1beta1
 
 import (
-	"context"
+	context "context"
 
-	v1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
-	stsminiov1beta1 "github.com/minio/operator/pkg/client/applyconfiguration/sts.min.io/v1beta1"
+	stsminiov1beta1 "github.com/minio/operator/pkg/apis/sts.min.io/v1beta1"
+	applyconfigurationstsminiov1beta1 "github.com/minio/operator/pkg/client/applyconfiguration/sts.min.io/v1beta1"
 	scheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -38,36 +38,37 @@ type PolicyBindingsGetter interface {
 
 // PolicyBindingInterface has methods to work with PolicyBinding resources.
 type PolicyBindingInterface interface {
-	Create(ctx context.Context, policyBinding *v1beta1.PolicyBinding, opts v1.CreateOptions) (*v1beta1.PolicyBinding, error)
-	Update(ctx context.Context, policyBinding *v1beta1.PolicyBinding, opts v1.UpdateOptions) (*v1beta1.PolicyBinding, error)
+	Create(ctx context.Context, policyBinding *stsminiov1beta1.PolicyBinding, opts v1.CreateOptions) (*stsminiov1beta1.PolicyBinding, error)
+	Update(ctx context.Context, policyBinding *stsminiov1beta1.PolicyBinding, opts v1.UpdateOptions) (*stsminiov1beta1.PolicyBinding, error)
 	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-	UpdateStatus(ctx context.Context, policyBinding *v1beta1.PolicyBinding, opts v1.UpdateOptions) (*v1beta1.PolicyBinding, error)
+	UpdateStatus(ctx context.Context, policyBinding *stsminiov1beta1.PolicyBinding, opts v1.UpdateOptions) (*stsminiov1beta1.PolicyBinding, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.PolicyBinding, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1beta1.PolicyBindingList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*stsminiov1beta1.PolicyBinding, error)
+	List(ctx context.Context, opts v1.ListOptions) (*stsminiov1beta1.PolicyBindingList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.PolicyBinding, err error)
-	Apply(ctx context.Context, policyBinding *stsminiov1beta1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1beta1.PolicyBinding, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *stsminiov1beta1.PolicyBinding, err error)
+	Apply(ctx context.Context, policyBinding *applyconfigurationstsminiov1beta1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *stsminiov1beta1.PolicyBinding, err error)
 	// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-	ApplyStatus(ctx context.Context, policyBinding *stsminiov1beta1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1beta1.PolicyBinding, err error)
+	ApplyStatus(ctx context.Context, policyBinding *applyconfigurationstsminiov1beta1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *stsminiov1beta1.PolicyBinding, err error)
 	PolicyBindingExpansion
 }
 
 // policyBindings implements PolicyBindingInterface
 type policyBindings struct {
-	*gentype.ClientWithListAndApply[*v1beta1.PolicyBinding, *v1beta1.PolicyBindingList, *stsminiov1beta1.PolicyBindingApplyConfiguration]
+	*gentype.ClientWithListAndApply[*stsminiov1beta1.PolicyBinding, *stsminiov1beta1.PolicyBindingList, *applyconfigurationstsminiov1beta1.PolicyBindingApplyConfiguration]
 }
 
 // newPolicyBindings returns a PolicyBindings
 func newPolicyBindings(c *StsV1beta1Client, namespace string) *policyBindings {
 	return &policyBindings{
-		gentype.NewClientWithListAndApply[*v1beta1.PolicyBinding, *v1beta1.PolicyBindingList, *stsminiov1beta1.PolicyBindingApplyConfiguration](
+		gentype.NewClientWithListAndApply[*stsminiov1beta1.PolicyBinding, *stsminiov1beta1.PolicyBindingList, *applyconfigurationstsminiov1beta1.PolicyBindingApplyConfiguration](
 			"policybindings",
 			c.RESTClient(),
 			scheme.ParameterCodec,
 			namespace,
-			func() *v1beta1.PolicyBinding { return &v1beta1.PolicyBinding{} },
-			func() *v1beta1.PolicyBindingList { return &v1beta1.PolicyBindingList{} }),
+			func() *stsminiov1beta1.PolicyBinding { return &stsminiov1beta1.PolicyBinding{} },
+			func() *stsminiov1beta1.PolicyBindingList { return &stsminiov1beta1.PolicyBindingList{} },
+		),
 	}
 }

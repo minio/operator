@@ -29,7 +29,7 @@ type FakeStsV1alpha1 struct {
 }
 
 func (c *FakeStsV1alpha1) PolicyBindings(namespace string) v1alpha1.PolicyBindingInterface {
-	return &FakePolicyBindings{c, namespace}
+	return newFakePolicyBindings(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

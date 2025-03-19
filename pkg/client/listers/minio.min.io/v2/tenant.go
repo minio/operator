@@ -19,10 +19,10 @@
 package v2
 
 import (
-	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/listers"
-	"k8s.io/client-go/tools/cache"
+	miniominiov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // TenantLister helps list Tenants.
@@ -30,7 +30,7 @@ import (
 type TenantLister interface {
 	// List lists all Tenants in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v2.Tenant, err error)
+	List(selector labels.Selector) (ret []*miniominiov2.Tenant, err error)
 	// Tenants returns an object that can list and get Tenants.
 	Tenants(namespace string) TenantNamespaceLister
 	TenantListerExpansion
@@ -38,17 +38,17 @@ type TenantLister interface {
 
 // tenantLister implements the TenantLister interface.
 type tenantLister struct {
-	listers.ResourceIndexer[*v2.Tenant]
+	listers.ResourceIndexer[*miniominiov2.Tenant]
 }
 
 // NewTenantLister returns a new TenantLister.
 func NewTenantLister(indexer cache.Indexer) TenantLister {
-	return &tenantLister{listers.New[*v2.Tenant](indexer, v2.Resource("tenant"))}
+	return &tenantLister{listers.New[*miniominiov2.Tenant](indexer, miniominiov2.Resource("tenant"))}
 }
 
 // Tenants returns an object that can list and get Tenants.
 func (s *tenantLister) Tenants(namespace string) TenantNamespaceLister {
-	return tenantNamespaceLister{listers.NewNamespaced[*v2.Tenant](s.ResourceIndexer, namespace)}
+	return tenantNamespaceLister{listers.NewNamespaced[*miniominiov2.Tenant](s.ResourceIndexer, namespace)}
 }
 
 // TenantNamespaceLister helps list and get Tenants.
@@ -56,15 +56,15 @@ func (s *tenantLister) Tenants(namespace string) TenantNamespaceLister {
 type TenantNamespaceLister interface {
 	// List lists all Tenants in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v2.Tenant, err error)
+	List(selector labels.Selector) (ret []*miniominiov2.Tenant, err error)
 	// Get retrieves the Tenant from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v2.Tenant, error)
+	Get(name string) (*miniominiov2.Tenant, error)
 	TenantNamespaceListerExpansion
 }
 
 // tenantNamespaceLister implements the TenantNamespaceLister
 // interface.
 type tenantNamespaceLister struct {
-	listers.ResourceIndexer[*v2.Tenant]
+	listers.ResourceIndexer[*miniominiov2.Tenant]
 }
