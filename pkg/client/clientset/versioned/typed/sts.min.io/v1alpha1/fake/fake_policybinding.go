@@ -19,179 +19,35 @@
 package fake
 
 import (
-	"context"
-	json "encoding/json"
-	"fmt"
-
 	v1alpha1 "github.com/minio/operator/pkg/apis/sts.min.io/v1alpha1"
 	stsminiov1alpha1 "github.com/minio/operator/pkg/client/applyconfiguration/sts.min.io/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	typedstsminiov1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/sts.min.io/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakePolicyBindings implements PolicyBindingInterface
-type FakePolicyBindings struct {
+// fakePolicyBindings implements PolicyBindingInterface
+type fakePolicyBindings struct {
+	*gentype.FakeClientWithListAndApply[*v1alpha1.PolicyBinding, *v1alpha1.PolicyBindingList, *stsminiov1alpha1.PolicyBindingApplyConfiguration]
 	Fake *FakeStsV1alpha1
-	ns   string
 }
 
-var policybindingsResource = v1alpha1.SchemeGroupVersion.WithResource("policybindings")
-
-var policybindingsKind = v1alpha1.SchemeGroupVersion.WithKind("PolicyBinding")
-
-// Get takes name of the policyBinding, and returns the corresponding policyBinding object, and an error if there is any.
-func (c *FakePolicyBindings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.PolicyBinding, err error) {
-	emptyResult := &v1alpha1.PolicyBinding{}
-	obj, err := c.Fake.
-		Invokes(testing.NewGetActionWithOptions(policybindingsResource, c.ns, name, options), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
+func newFakePolicyBindings(fake *FakeStsV1alpha1, namespace string) typedstsminiov1alpha1.PolicyBindingInterface {
+	return &fakePolicyBindings{
+		gentype.NewFakeClientWithListAndApply[*v1alpha1.PolicyBinding, *v1alpha1.PolicyBindingList, *stsminiov1alpha1.PolicyBindingApplyConfiguration](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("policybindings"),
+			v1alpha1.SchemeGroupVersion.WithKind("PolicyBinding"),
+			func() *v1alpha1.PolicyBinding { return &v1alpha1.PolicyBinding{} },
+			func() *v1alpha1.PolicyBindingList { return &v1alpha1.PolicyBindingList{} },
+			func(dst, src *v1alpha1.PolicyBindingList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.PolicyBindingList) []*v1alpha1.PolicyBinding {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.PolicyBindingList, items []*v1alpha1.PolicyBinding) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.PolicyBinding), err
-}
-
-// List takes label and field selectors, and returns the list of PolicyBindings that match those selectors.
-func (c *FakePolicyBindings) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.PolicyBindingList, err error) {
-	emptyResult := &v1alpha1.PolicyBindingList{}
-	obj, err := c.Fake.
-		Invokes(testing.NewListActionWithOptions(policybindingsResource, policybindingsKind, c.ns, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.PolicyBindingList{ListMeta: obj.(*v1alpha1.PolicyBindingList).ListMeta}
-	for _, item := range obj.(*v1alpha1.PolicyBindingList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested policyBindings.
-func (c *FakePolicyBindings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchActionWithOptions(policybindingsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a policyBinding and creates it.  Returns the server's representation of the policyBinding, and an error, if there is any.
-func (c *FakePolicyBindings) Create(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.CreateOptions) (result *v1alpha1.PolicyBinding, err error) {
-	emptyResult := &v1alpha1.PolicyBinding{}
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateActionWithOptions(policybindingsResource, c.ns, policyBinding, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PolicyBinding), err
-}
-
-// Update takes the representation of a policyBinding and updates it. Returns the server's representation of the policyBinding, and an error, if there is any.
-func (c *FakePolicyBindings) Update(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.UpdateOptions) (result *v1alpha1.PolicyBinding, err error) {
-	emptyResult := &v1alpha1.PolicyBinding{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateActionWithOptions(policybindingsResource, c.ns, policyBinding, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PolicyBinding), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakePolicyBindings) UpdateStatus(ctx context.Context, policyBinding *v1alpha1.PolicyBinding, opts v1.UpdateOptions) (result *v1alpha1.PolicyBinding, err error) {
-	emptyResult := &v1alpha1.PolicyBinding{}
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceActionWithOptions(policybindingsResource, "status", c.ns, policyBinding, opts), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PolicyBinding), err
-}
-
-// Delete takes name of the policyBinding and deletes it. Returns an error if one occurs.
-func (c *FakePolicyBindings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(policybindingsResource, c.ns, name, opts), &v1alpha1.PolicyBinding{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakePolicyBindings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionActionWithOptions(policybindingsResource, c.ns, opts, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.PolicyBindingList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched policyBinding.
-func (c *FakePolicyBindings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.PolicyBinding, err error) {
-	emptyResult := &v1alpha1.PolicyBinding{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(policybindingsResource, c.ns, name, pt, data, opts, subresources...), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PolicyBinding), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied policyBinding.
-func (c *FakePolicyBindings) Apply(ctx context.Context, policyBinding *stsminiov1alpha1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PolicyBinding, err error) {
-	if policyBinding == nil {
-		return nil, fmt.Errorf("policyBinding provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(policyBinding)
-	if err != nil {
-		return nil, err
-	}
-	name := policyBinding.Name
-	if name == nil {
-		return nil, fmt.Errorf("policyBinding.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.PolicyBinding{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(policybindingsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions()), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PolicyBinding), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakePolicyBindings) ApplyStatus(ctx context.Context, policyBinding *stsminiov1alpha1.PolicyBindingApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.PolicyBinding, err error) {
-	if policyBinding == nil {
-		return nil, fmt.Errorf("policyBinding provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(policyBinding)
-	if err != nil {
-		return nil, err
-	}
-	name := policyBinding.Name
-	if name == nil {
-		return nil, fmt.Errorf("policyBinding.Name must be provided to Apply")
-	}
-	emptyResult := &v1alpha1.PolicyBinding{}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceActionWithOptions(policybindingsResource, c.ns, *name, types.ApplyPatchType, data, opts.ToPatchOptions(), "status"), emptyResult)
-
-	if obj == nil {
-		return emptyResult, err
-	}
-	return obj.(*v1alpha1.PolicyBinding), err
 }

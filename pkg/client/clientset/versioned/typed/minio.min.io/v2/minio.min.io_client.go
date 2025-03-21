@@ -19,10 +19,10 @@
 package v2
 
 import (
-	"net/http"
+	http "net/http"
 
-	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
-	"github.com/minio/operator/pkg/client/clientset/versioned/scheme"
+	miniominiov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	scheme "github.com/minio/operator/pkg/client/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -85,10 +85,10 @@ func New(c rest.Interface) *MinioV2Client {
 }
 
 func setConfigDefaults(config *rest.Config) error {
-	gv := v2.SchemeGroupVersion
+	gv := miniominiov2.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	config.NegotiatedSerializer = rest.CodecFactoryForGeneratedClient(scheme.Scheme, scheme.Codecs).WithoutConversion()
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()

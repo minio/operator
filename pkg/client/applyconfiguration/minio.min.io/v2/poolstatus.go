@@ -19,15 +19,15 @@
 package v2
 
 import (
-	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	miniominiov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
 // PoolStatusApplyConfiguration represents a declarative configuration of the PoolStatus type for use
 // with apply.
 type PoolStatusApplyConfiguration struct {
-	SSName                *string       `json:"ssName,omitempty"`
-	State                 *v2.PoolState `json:"state,omitempty"`
-	LegacySecurityContext *bool         `json:"legacySecurityContext,omitempty"`
+	SSName                *string                 `json:"ssName,omitempty"`
+	State                 *miniominiov2.PoolState `json:"state,omitempty"`
+	LegacySecurityContext *bool                   `json:"legacySecurityContext,omitempty"`
 }
 
 // PoolStatusApplyConfiguration constructs a declarative configuration of the PoolStatus type for use with
@@ -47,7 +47,7 @@ func (b *PoolStatusApplyConfiguration) WithSSName(value string) *PoolStatusApply
 // WithState sets the State field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the State field is set to the value of the last call.
-func (b *PoolStatusApplyConfiguration) WithState(value v2.PoolState) *PoolStatusApplyConfiguration {
+func (b *PoolStatusApplyConfiguration) WithState(value miniominiov2.PoolState) *PoolStatusApplyConfiguration {
 	b.State = &value
 	return b
 }

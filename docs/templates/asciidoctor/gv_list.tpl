@@ -7,8 +7,8 @@
 [id="{p}-api-reference"]
 == API Reference
 
-:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2024-11-07T00-52-20Z]
-:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2024-11-25T13-44-31Z]
+:minio-image: https://hub.docker.com/r/minio/minio/tags[minio/minio:RELEASE.2025-03-12T18-04-18Z]
+:kes-image: https://hub.docker.com/r/minio/kes/tags[minio/kes:2025-03-12T09-35-18Z]
 :mc-image: https://hub.docker.com/r/minio/mc/tags[minio/mc:RELEASE.2024-10-02T08-27-28Z]
 
 {{ range $groupVersions }}

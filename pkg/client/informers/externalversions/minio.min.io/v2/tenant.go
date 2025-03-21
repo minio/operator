@@ -19,13 +19,13 @@
 package v2
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	miniominiov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	apisminiominiov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	versioned "github.com/minio/operator/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/minio/operator/pkg/client/informers/externalversions/internalinterfaces"
-	v2 "github.com/minio/operator/pkg/client/listers/minio.min.io/v2"
+	miniominiov2 "github.com/minio/operator/pkg/client/listers/minio.min.io/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // Tenants.
 type TenantInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v2.TenantLister
+	Lister() miniominiov2.TenantLister
 }
 
 type tenantInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredTenantInformer(client versioned.Interface, namespace string, res
 				return client.MinioV2().Tenants(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&miniominiov2.Tenant{},
+		&apisminiominiov2.Tenant{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *tenantInformer) defaultInformer(client versioned.Interface, resyncPerio
 }
 
 func (f *tenantInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&miniominiov2.Tenant{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisminiominiov2.Tenant{}, f.defaultInformer)
 }
 
-func (f *tenantInformer) Lister() v2.TenantLister {
-	return v2.NewTenantLister(f.Informer().GetIndexer())
+func (f *tenantInformer) Lister() miniominiov2.TenantLister {
+	return miniominiov2.NewTenantLister(f.Informer().GetIndexer())
 }
