@@ -772,7 +772,7 @@ func (z *Pool) Validate(zi int) error {
 		return fmt.Errorf("pool #%d cannot have 0 volumes per server", zi)
 	}
 
-	if z.Servers*z.VolumesPerServer < 4 {
+	if !z.SkipRecommendedPoolSizeValidation && z.Servers*z.VolumesPerServer < 4 {
 		// Erasure coding has few requirements.
 		switch z.Servers {
 		case 2:

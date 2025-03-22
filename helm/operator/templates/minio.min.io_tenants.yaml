@@ -3404,6 +3404,8 @@ spec:
                       x-kubernetes-validations:
                       - message: servers is immutable
                         rule: self == oldSelf
+                    skipRecommendedPoolSizeValidation:
+                      type: boolean
                     tolerations:
                       items:
                         properties:
