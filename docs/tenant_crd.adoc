@@ -552,6 +552,12 @@ The number of Persistent Volume Claims to generate for each MinIO server pod in 
 
 The MinIO Operator requires a minimum of `4` volumes per pool. Specifically, the result of `pools.servers X pools.volumesPerServer` must be greater than `4`. +
 
+|*`skipRecommendedPoolSizeValidation`* __boolean__
+|*Optional* +
+
+
+Allow 2 or 3 volumes per pool that is not recommended for production. Use at your own risk. +
+
 |*`volumeClaimTemplate`* __link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#persistentvolumeclaim-v1-core[$$PersistentVolumeClaim$$]__ 
 |*Required* +
 

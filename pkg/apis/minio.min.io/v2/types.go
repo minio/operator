@@ -661,6 +661,11 @@ type Pool struct {
 	//
 	// The MinIO Operator requires a minimum of `4` volumes per pool. Specifically, the result of `pools.servers X pools.volumesPerServer` must be greater than `4`. +
 	VolumesPerServer int32 `json:"volumesPerServer"`
+	// *Optional* +
+	//
+	// Allow 2 or 3 volumes per pool that is not recommended for production. Use at your own risk. +
+	// +optional
+	SkipRecommendedPoolSizeValidation bool `json:"skipRecommendedPoolSizeValidation,omitempty"`
 	// *Required* +
 	//
 	// Specify the configuration options for the MinIO Operator to use when generating Persistent Volume Claims for the MinIO tenant. +
