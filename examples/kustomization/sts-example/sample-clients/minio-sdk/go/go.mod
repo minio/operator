@@ -1,6 +1,8 @@
 module github.com/minio/operator/sts/example/go
 
-go 1.20
+go 1.23.0
+
+toolchain go1.24.1
 
 require github.com/minio/minio-go/v7 v7.0.33
 
