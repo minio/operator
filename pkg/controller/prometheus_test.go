@@ -31,7 +31,7 @@ import (
 )
 
 func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
-	type except struct {
+	type expect struct {
 		afterScrapeNumber  int
 		afterScrapePath    []string
 		afterScrapeName    []string
@@ -42,7 +42,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		secretKey     string
 		beforeScrapes []configmaps.ScrapeConfig
 		paths         []string
-		excepts       except
+		expects       expect
 	}
 	type args struct {
 		name string
@@ -108,15 +108,15 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(afterScrapes) != arg.excepts.afterScrapeNumber {
-			t.Fatalf("Expected %d scrape configs, got %d", arg.excepts.afterScrapeNumber, len(afterScrapes))
+		if len(afterScrapes) != arg.expects.afterScrapeNumber {
+			t.Fatalf("Expected %d scrape configs, got %d", arg.expects.afterScrapeNumber, len(afterScrapes))
 		}
 		for i, scrape := range afterScrapes {
-			if scrape.JobName != arg.excepts.afterScrapeName[i] {
-				t.Fatalf("Expected scrape config name %s, got %s", arg.excepts.afterScrapeName[i], scrape.JobName)
+			if scrape.JobName != arg.expects.afterScrapeName[i] {
+				t.Fatalf("Expected scrape config name %s, got %s", arg.expects.afterScrapeName[i], scrape.JobName)
 			}
-			if scrape.MetricsPath != arg.excepts.afterScrapePath[i] {
-				t.Fatalf("Expected scrape config path %s, got %s", arg.excepts.afterScrapePath[i], scrape.MetricsPath)
+			if scrape.MetricsPath != arg.expects.afterScrapePath[i] {
+				t.Fatalf("Expected scrape config path %s, got %s", arg.expects.afterScrapePath[i], scrape.MetricsPath)
 			}
 		}
 		changedTokenNumber := 0
@@ -130,8 +130,8 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 				}
 			}
 		}
-		if changedTokenNumber != arg.excepts.changedTokenNumber {
-			t.Fatalf("Expected %d changed tokens, got %d", arg.excepts.changedTokenNumber, changedTokenNumber)
+		if changedTokenNumber != arg.expects.changedTokenNumber {
+			t.Fatalf("Expected %d changed tokens, got %d", arg.expects.changedTokenNumber, changedTokenNumber)
 		}
 	}
 	tests := []args{
@@ -141,7 +141,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 				accessKey:     "accessKey",
 				secretKey:     "secretKey",
 				beforeScrapes: []configmaps.ScrapeConfig{},
-				excepts: except{
+				expects: expect{
 					afterScrapeNumber:  1,
 					afterScrapePath:    []string{"/minio/v2/metrics/cluster"},
 					afterScrapeName:    []string{"testTenant-minio-job-0"},
@@ -156,7 +156,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 				secretKey:     "secretKey",
 				paths:         []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
 				beforeScrapes: []configmaps.ScrapeConfig{},
-				excepts: except{
+				expects: expect{
 					afterScrapeNumber:  2,
 					afterScrapePath:    []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
 					afterScrapeName:    []string{"testTenant-minio-job-0", "testTenant-minio-job-1"},
@@ -180,7 +180,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 					},
 				},
-				excepts: except{
+				expects: expect{
 					afterScrapeNumber:  3,
 					afterScrapePath:    []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
 					afterScrapeName:    []string{"testTarget", "testTenant-minio-job-0", "testTenant-minio-job-1"},
@@ -232,7 +232,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 					},
 				},
-				excepts: except{
+				expects: expect{
 					afterScrapeNumber:  3,
 					afterScrapePath:    []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
 					afterScrapeName:    []string{"testTarget", "testTenant-minio-job-0", "testTenant-minio-job-1"},
@@ -284,7 +284,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 					},
 				},
-				excepts: except{
+				expects: expect{
 					afterScrapeNumber:  3,
 					afterScrapePath:    []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
 					afterScrapeName:    []string{"testTarget", "testTenant-minio-job-0", "testTenant-minio-job-1"},
