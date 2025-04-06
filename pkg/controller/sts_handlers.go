@@ -116,10 +116,25 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 		return
 	}
 
+	isSSTSAudience := false
+	for _, audience := range saAuthResult.Status.Audiences {
+		if audience == TokenReviewAudience {
+			isSSTSAudience = true
+		}
+	}
+
+	if !isSSTSAudience {
+		if !saAuthResult.Status.Authenticated {
+			writeSTSErrorResponse(w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token, audience '%s' not found", TokenReviewAudience))
+			return
+		}
+	}
+
 	if !saAuthResult.Status.Authenticated {
 		writeSTSErrorResponse(w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token"))
 		return
 	}
+
 	chunks := strings.Split(strings.Replace(saAuthResult.Status.User.Username, "system:serviceaccount:", "", -1), ":")
 
 	if len(chunks) < 2 {
