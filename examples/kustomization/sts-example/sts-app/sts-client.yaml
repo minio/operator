@@ -101,5 +101,5 @@ spec:
             sources:
               - serviceAccountToken:
                   audience: "sts.min.io"
-                  expirationSeconds: 86400
+                  expirationSeconds: 3600
                   path: token
