@@ -278,7 +278,7 @@ type TenantSpec struct {
 	PrometheusOperator bool `json:"prometheusOperator,omitempty"`
 	// *Optional* +
 	//
-	// The name of the Prometheus instance to scrape metrics from.
+	// API end point(s) to scrape metrics from PrometheusOperatorScrapeMetricsPaths
 	// If PrometheusOperator: true and PrometheusOperatorScrapeMetricsPaths is empty, will add `/minio/v2/metrics/cluster` to the list of paths to scrape as default like before.
 	//
 	// +optional
