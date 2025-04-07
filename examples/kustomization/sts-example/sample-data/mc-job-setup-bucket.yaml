@@ -6,8 +6,8 @@ metadata:
 data:
   setup.sh: |
     #!/bin/bash
-    mc mb myminio/test-bucket -p --debug && \
-    mc mb myminio/other-bucket -p --debug && \
+    mc mb myminio/test-bucket -p && \
+    mc mb myminio/other-bucket -p && \
     mc admin policy create myminio test-bucket-rw /start-config/bucket-policy.json
   bucket-policy.json: |
     {
