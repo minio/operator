@@ -1143,6 +1143,13 @@ Directs the MinIO Operator to use prometheus operator. +
 
 Tenant scrape configuration will be added to prometheus managed by the prometheus-operator.
 
+|*`prometheusOperatorScrapeMetricsPaths`* __string array__ 
+|*Optional* +
+
+
+API end point(s) to scrape metrics from PrometheusOperatorScrapeMetricsPaths
+If PrometheusOperator: true and PrometheusOperatorScrapeMetricsPaths is empty, will add `/minio/v2/metrics/cluster` to the list of paths to scrape as default like before.
+
 |*`serviceAccountName`* __string__ 
 |*Optional* +
 
