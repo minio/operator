@@ -16,13 +16,6 @@ stringData:
     export MINIO_ROOT_USER={{ .Values.tenant.configSecret.accessKey | quote }}
     export MINIO_ROOT_PASSWORD={{ .Values.tenant.configSecret.secretKey | quote }}
 
-{{- else }}
-{{- if (.Values.tenant.configSecret.accessKey) }}
-{{- fail "# ERROR: cannot set access-key when an existing secret is used" }}
-{{- end }}
-{{- if (.Values.tenant.configSecret.secretKey) }}
-{{- fail "# ERROR: cannot set secret-key when an existing secret is used" }}
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

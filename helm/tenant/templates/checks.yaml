@@ -1,0 +1,24 @@
+{{- with .Values.tenant }}
+
+# If an existing secret is used, do not set access-key and secret-key explicitly
+# (note that we allow the default settings in values.yaml)
+{{- with .configSecret }}
+{{- if .existingSecret }}
+{{- if and .accessKey (ne .accessKey "minio") }}
+{{- fail "Cannot set access-key when an existing secret is used" }}
+{{- end }}
+{{- if and .secretKey (ne .secretKey "minio123") }}
+{{- fail "Cannot set secret-key when an existing secret is used" }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+# If configuration.name is set and not the same as configSecret.name,
+# then we should raise an error and abort
+{{- if and .configuration .configuration.name }}
+{{- if and .configSecret (ne .configuration.name .configSecret.name) -}}
+{{- fail "configuration.name is deprecated and doesn't match .tenant.configSecret.name" }}
+{{- end -}}
+{{- end }}
+
+{{- end }}

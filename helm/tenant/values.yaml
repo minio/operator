@@ -67,11 +67,6 @@ tenant:
   # Specify an empty dictionary ``{}`` to dispatch pods with the default scheduler.
   scheduler: { }
   ###
-  # The Kubernetes secret name that contains MinIO environment variable configurations.
-  # The secret is expected to have a key named config.env containing environment variables exports.
-  configuration:
-    name: myminio-env-configuration
-  ###
   # Root key for dynamically creating a secret for use with configuring root MinIO User
   # Specify the ``name`` and then a list of environment variables.
   #
