@@ -30,7 +30,7 @@ spec:
   {{- end }}
   ## Secret with default environment variable configurations
   configuration:
-    name: {{ .configuration.name }}
+    name: {{ .configSecret.name }}
   {{- if hasKey . "poolsMetadata" }}
   poolsMetadata: {{- if eq (len .poolsMetadata) 0 }} {} {{- end }}
   {{- with (dig "poolsMetadata" (dict) .) }}
