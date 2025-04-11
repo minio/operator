@@ -124,10 +124,8 @@ func (c *Controller) AssumeRoleWithWebIdentityHandler(w http.ResponseWriter, r *
 	}
 
 	if !isSSTSAudience {
-		if !saAuthResult.Status.Authenticated {
-			writeSTSErrorResponse(w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token, audience '%s' not found", TokenReviewAudience))
-			return
-		}
+		writeSTSErrorResponse(w, true, ErrSTSAccessDenied, fmt.Errorf("Access denied: Invalid Token, audience '%s' not found", TokenReviewAudience))
+		return
 	}
 
 	if !saAuthResult.Status.Authenticated {
