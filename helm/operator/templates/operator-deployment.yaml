@@ -48,12 +48,13 @@ spec:
           imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
           args:
             - controller
-          {{- with .Values.operator.env }}
-          env: {{- toYaml . | nindent 12 }}
-          {{- end }}
+          env:
           {{- if .Values.operator.sidecarImage }}
-            - name: "OPERATOR_SIDECAR_IMAGE"
-              value: "{{ .Values.operator.sidecarImage.repository }}:{{ .Values.operator.sidecarImage.digest | default .Values.operator.sidecarImage.tag }}"
+          - name: "OPERATOR_SIDECAR_IMAGE"
+            value: "{{ .Values.operator.sidecarImage.repository }}:{{ .Values.operator.sidecarImage.digest | default .Values.operator.sidecarImage.tag }}"
+          {{- end }}
+          {{- with .Values.operator.env }}
+          {{- toYaml . | nindent 12 }}
           {{- end }}
           resources: {{- toYaml .Values.operator.resources | nindent 12 }}
           {{- with .Values.operator.containerSecurityContext }}
