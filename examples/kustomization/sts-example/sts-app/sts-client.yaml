@@ -8,6 +8,7 @@ kind: ServiceAccount
 metadata:
   namespace: sts-client
   name: stsclient-sa
+automountServiceAccountToken: false
 ---
 apiVersion: v1
 kind: Secret
@@ -53,7 +54,7 @@ spec:
       serviceAccount: stsclient-sa
       containers:
         - name: sts-client
-          image: miniodev/operator-sts-example:minio-go
+          image: miniodev/operator-sts-example:minio-sdk-go
           imagePullPolicy: IfNotPresent
           env:
             - name: MINIO_ENDPOINT
@@ -65,7 +66,7 @@ spec:
             - name: BUCKET
               value: test-bucket
             - name: AWS_WEB_IDENTITY_TOKEN_FILE
-              value: /var/run/secrets/kubernetes.io/serviceaccount/token
+              value: /var/run/secrets/sts.min.io/serviceaccount/token
             - name: STS_POLICY
               value: /tmp/policy.json
             - name: STS_CA_PATH # When Certmanager is used will load the ca in this file
@@ -78,6 +79,9 @@ spec:
               subPath: policy.json
             - name: tenant-certmanager-tls
               mountPath: /var/run/secrets/sts.min.io/
+            - name: sa-token
+              mountPath: /var/run/secrets/sts.min.io/serviceaccount
+              readOnly: true
       volumes:
         - name: sts-policy
           configMap:
@@ -92,3 +96,10 @@ spec:
                   items:
                     - key: ca.crt
                       path: ca.crt
+        - name: sa-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: "sts.min.io"
+                  expirationSeconds: 3600
+                  path: token

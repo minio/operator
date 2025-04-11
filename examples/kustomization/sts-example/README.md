@@ -2,14 +2,9 @@
 
 Each example in this folder contains an example using a different SDK on how to adopt Operator's STS.
 
-> ⚠️ This feature is an Beta release now starting Operator v6.x, Operator v5.x released STS as v1alpha1.
+> ⚠️ This feature is on v1beta1 starting Operator v6.x, Operator v5.x released STS as v1alpha1.
 
 # Requirements
-
-## Enabling STS functionality
-
-At the moment, the STS feature ships off by default, to turn it on switch `OPERATOR_STS_ENABLED` to `on` on
-the `minio-operator` deployment.
 
 ## TLS
 
@@ -20,14 +15,6 @@ use `cert-manager` or bring your own certificates.
 
 To install the example, you need an existing tenant, optionally, you can install the `tenant-lite` example, or
 the `tenant-certmanager` example
-
-# 0. Enable STS Functionality
-
-If you haven't done so, enable the STS feature on operator by turning setting the feature flag `OPERATOR_STS_ENABLED=on`
-
-```shell
-kubectl -n minio-operator set env deployment/minio-operator OPERATOR_STS_ENABLED=on
-```
 
 # 1. Install Tenant (Optional)
 
@@ -115,3 +102,8 @@ kubectl apply -k examples/kustomization/sts-example/sample-clients/minio-sdk/jav
 ```shell
 kubectl apply -k examples/kustomization/sts-example/sample-clients/minio-sdk/dotnet
 ```
+
+## Disabling STS functionality
+
+MinIO Operator is shipped with STS feature on by default, if you want to disable this feature set `OPERATOR_STS_ENABLED` to `off` on
+the `minio-operator` deployment.

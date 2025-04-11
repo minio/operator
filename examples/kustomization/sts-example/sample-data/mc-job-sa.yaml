@@ -3,3 +3,4 @@ kind: ServiceAccount
 metadata:
   namespace: minio-tenant-1
   name: mc-job-sa
+automountServiceAccountToken: false

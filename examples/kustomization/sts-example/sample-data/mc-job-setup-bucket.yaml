@@ -42,6 +42,20 @@ spec:
           configMap:
             name: start-config-script
             defaultMode: 0744
+        - name: sa-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  audience: "sts.min.io"
+                  expirationSeconds: 3600
+                  path: token
+        - name: root-ca
+          configMap:
+            name: kube-root-ca.crt
+            items:
+              - key: ca.crt
+                path: ca.crt
+            defaultMode: 0644
       containers:
         - name: mc
           image: minio/mc
@@ -49,10 +63,16 @@ spec:
           volumeMounts:
             - name: start-config
               mountPath: /start-config/
+            - name: sa-token
+              mountPath: /var/run/secrets/sts.min.io/serviceaccount
+              readOnly: true
+            - name: root-ca
+              mountPath: /root/.mc/certs/CAs/
+              subPath: ca.crt
           env:
             - name: MC_HOST_myminio
               value: https://$(ACCESS_KEY):$(SECRET_KEY)@minio.minio-tenant-1.svc.cluster.local
             - name: MC_STS_ENDPOINT_myminio
               value: https://sts.minio-operator.svc.cluster.local:4223/sts/minio-tenant-1
             - name: MC_WEB_IDENTITY_TOKEN_FILE_myminio
-              value: /var/run/secrets/kubernetes.io/serviceaccount/token
+              value: /var/run/secrets/sts.min.io/serviceaccount/token
