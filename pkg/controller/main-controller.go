@@ -813,6 +813,10 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			c.recorder.Event(tenant, corev1.EventTypeWarning, "MissingCreds", "Tenant is missing root credentials")
 			return WrapResult(Result{}, nil)
 		}
+		if k8serrors.IsNotFound(err) {
+			// if secret is not found, send event
+			c.recorder.Event(tenant, corev1.EventTypeWarning, "NotFound", err.Error())
+		}
 		return WrapResult(Result{}, err)
 	}
 	// get existing configuration from config.env
