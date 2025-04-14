@@ -40,6 +40,11 @@ const (
 )
 
 const (
+	// TokenReviewAudience is the audience for the token review request
+	TokenReviewAudience = "sts.min.io"
+)
+
+const (
 	// STSEnabled Env variable name to turn on and off the STS Service is enabled, disabled by default
 	STSEnabled = "OPERATOR_STS_ENABLED"
 
@@ -380,7 +385,8 @@ func getTenantClient(ctx context.Context, c *Controller, tenant *miniov2.Tenant)
 func (c *Controller) ValidateServiceAccountJWT(ctx *context.Context, token string) (*authv1.TokenReview, error) {
 	tr := authv1.TokenReview{
 		Spec: authv1.TokenReviewSpec{
-			Token: token,
+			Token:     token,
+			Audiences: []string{TokenReviewAudience},
 		},
 	}
 
