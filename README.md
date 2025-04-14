@@ -38,8 +38,8 @@ a Kubernetes cluster.
 
 ### Kubernetes 1.29.0 or Later
 
-Starting with Operator v7.0.1, MinIO requires Kubernetes version 1.29.0 or later. You must upgrade your Kubernetes
-cluster to 1.29.0 or later to use Operator v7.0.1+.
+Starting with Operator v7.1.0, MinIO requires Kubernetes version 1.29.0 or later. You must upgrade your Kubernetes
+cluster to 1.29.0 or later to use Operator v7.1.0+.
 
 This procedure assumes the host machine has [`kubectl`](https://kubernetes.io/docs/tasks/tools) installed and configured
 with access to the target Kubernetes cluster.
@@ -140,7 +140,7 @@ for [kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kusto
 use that to install MiniO Operator.
 
 ```sh
-kubectl kustomize github.com/minio/operator\?ref=v7.0.1 | kubectl apply -f -
+kubectl kustomize github.com/minio/operator\?ref=v7.1.0 | kubectl apply -f -
 ```
 
 Run the following command to verify the status of the Operator:
