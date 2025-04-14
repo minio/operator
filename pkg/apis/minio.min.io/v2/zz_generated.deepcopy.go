@@ -771,6 +771,11 @@ func (in *TenantSpec) DeepCopyInto(out *TenantSpec) {
 		*out = new(KESConfig)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.PrometheusOperatorScrapeMetricsPaths != nil {
+		in, out := &in.PrometheusOperatorScrapeMetricsPaths, &out.PrometheusOperatorScrapeMetricsPaths
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.SideCars != nil {
 		in, out := &in.SideCars, &out.SideCars
 		*out = new(SideCars)
