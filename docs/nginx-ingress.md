@@ -134,7 +134,10 @@ spec:
 
 ### Replication configuration:
 
-Sometimes, you need to configure timeout in order to avoid Load Balancer to kill the connection while replication is taking place, for that, we can configure a read/write timeout of X minutes in the provided load balancer, you can add the appropriate NGINX annotations to your ingress configuration under `metadata.annotations`. The relevant annotations are:
+Ingress by default may time out connections before an operation completes.
+This is common with slower setups (network/drives) or poor operational practices (many objects in one prefix, flat organization). 
+You can set a timeout value that is above what your cluster requires on average to complete an operation to address the above issue.
+Place the following nginx annotations in the ingress configuration under `metadata.anotations`:
 
 * `nginx.ingress.kubernetes.io/proxy-read-timeout`: Controls how long the NGINX load balancer waits for a response from the backend.
 
