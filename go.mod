@@ -44,6 +44,8 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.6.0
 )
 
+replace golang.org/x/crypto => golang.org/x/crypto v0.36.0
+
 require (
 	github.com/go-test/deep v1.1.1
 	github.com/minio/kes-go v0.2.1

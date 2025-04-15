@@ -17,6 +17,8 @@ require (
 
 replace github.com/minio/operator => ../
 
+replace golang.org/x/crypto => golang.org/x/crypto v0.36.0
+
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
