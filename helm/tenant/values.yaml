@@ -8,14 +8,14 @@ tenant:
   ###
   # Specify the Operator container image to use for the deployment.
   # ``image.tag`` 
-  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v7.0.1 tag.
+  # For example, the following sets the image to the ``quay.io/minio/operator`` repo and the v7.1.0 tag.
   # The container pulls the image if not already present:
   #
   # .. code-block:: yaml
   # 
   #    image:
   #       repository: quay.io/minio/minio
-  #       tag: RELEASE.2025-04-03T14-56-28Z
+  #       tag: RELEASE.2025-04-08T15-41-24Z
   #       pullPolicy: IfNotPresent
   #
   # The chart also supports specifying an image based on digest value:
@@ -30,7 +30,7 @@ tenant:
   #
   image:
     repository: quay.io/minio/minio
-    tag: RELEASE.2025-04-03T14-56-28Z
+    tag: RELEASE.2025-04-08T15-41-24Z
     pullPolicy: IfNotPresent
   ###
   #

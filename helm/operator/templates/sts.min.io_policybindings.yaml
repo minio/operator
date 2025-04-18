@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.2
-    operator.min.io/version: v7.0.1
+    operator.min.io/version: v5.0.15
   name: policybindings.sts.min.io
 spec:
   group: sts.min.io

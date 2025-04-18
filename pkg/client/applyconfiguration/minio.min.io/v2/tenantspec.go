@@ -27,42 +27,42 @@ import (
 // TenantSpecApplyConfiguration represents a declarative configuration of the TenantSpec type for use
 // with apply.
 type TenantSpecApplyConfiguration struct {
-	Pools                               []PoolApplyConfiguration                     `json:"pools,omitempty"`
-	Image                               *string                                      `json:"image,omitempty"`
-	ImagePullSecret                     *v1.LocalObjectReference                     `json:"imagePullSecret,omitempty"`
-	PodManagementPolicy                 *appsv1.PodManagementPolicyType              `json:"podManagementPolicy,omitempty"`
-	Env                                 []v1.EnvVar                                  `json:"env,omitempty"`
-	ExternalCertSecret                  []*miniominiov2.LocalCertificateReference    `json:"externalCertSecret,omitempty"`
-	ExternalCaCertSecret                []*miniominiov2.LocalCertificateReference    `json:"externalCaCertSecret,omitempty"`
-	ExternalClientCertSecret            *LocalCertificateReferenceApplyConfiguration `json:"externalClientCertSecret,omitempty"`
-	ExternalClientCertSecrets           []*miniominiov2.LocalCertificateReference    `json:"externalClientCertSecrets,omitempty"`
-	Mountpath                           *string                                      `json:"mountPath,omitempty"`
-	Subpath                             *string                                      `json:"subPath,omitempty"`
-	RequestAutoCert                     *bool                                        `json:"requestAutoCert,omitempty"`
-	CertExpiryAlertThreshold            *int32                                       `json:"certExpiryAlertThreshold,omitempty"`
-	Liveness                            *v1.Probe                                    `json:"liveness,omitempty"`
-	Readiness                           *v1.Probe                                    `json:"readiness,omitempty"`
-	Startup                             *v1.Probe                                    `json:"startup,omitempty"`
-	Lifecycle                           *v1.Lifecycle                                `json:"lifecycle,omitempty"`
-	Features                            *FeaturesApplyConfiguration                  `json:"features,omitempty"`
-	CertConfig                          *CertificateConfigApplyConfiguration         `json:"certConfig,omitempty"`
-	KES                                 *KESConfigApplyConfiguration                 `json:"kes,omitempty"`
-	PrometheusOperator                  *bool                                        `json:"prometheusOperator,omitempty"`
-	PrometheusOperatorScrapeMetricsPath []string                                     `json:"prometheusOperatorScrapeMetricsPath,omitempty"`
-	ServiceAccountName                  *string                                      `json:"serviceAccountName,omitempty"`
-	PriorityClassName                   *string                                      `json:"priorityClassName,omitempty"`
-	ImagePullPolicy                     *v1.PullPolicy                               `json:"imagePullPolicy,omitempty"`
-	SideCars                            *SideCarsApplyConfiguration                  `json:"sideCars,omitempty"`
-	ExposeServices                      *ExposeServicesApplyConfiguration            `json:"exposeServices,omitempty"`
-	ServiceMetadata                     *ServiceMetadataApplyConfiguration           `json:"serviceMetadata,omitempty"`
-	PoolsMetadata                       *PoolsMetadataApplyConfiguration             `json:"poolsMetadata,omitempty"`
-	Users                               []v1.LocalObjectReference                    `json:"users,omitempty"`
-	Buckets                             []BucketApplyConfiguration                   `json:"buckets,omitempty"`
-	Logging                             *LoggingApplyConfiguration                   `json:"logging,omitempty"`
-	Configuration                       *v1.LocalObjectReference                     `json:"configuration,omitempty"`
-	InitContainers                      []v1.Container                               `json:"initContainers,omitempty"`
-	AdditionalVolumes                   []v1.Volume                                  `json:"additionalVolumes,omitempty"`
-	AdditionalVolumeMounts              []v1.VolumeMount                             `json:"additionalVolumeMounts,omitempty"`
+	Pools                                []PoolApplyConfiguration                     `json:"pools,omitempty"`
+	Image                                *string                                      `json:"image,omitempty"`
+	ImagePullSecret                      *v1.LocalObjectReference                     `json:"imagePullSecret,omitempty"`
+	PodManagementPolicy                  *appsv1.PodManagementPolicyType              `json:"podManagementPolicy,omitempty"`
+	Env                                  []v1.EnvVar                                  `json:"env,omitempty"`
+	ExternalCertSecret                   []*miniominiov2.LocalCertificateReference    `json:"externalCertSecret,omitempty"`
+	ExternalCaCertSecret                 []*miniominiov2.LocalCertificateReference    `json:"externalCaCertSecret,omitempty"`
+	ExternalClientCertSecret             *LocalCertificateReferenceApplyConfiguration `json:"externalClientCertSecret,omitempty"`
+	ExternalClientCertSecrets            []*miniominiov2.LocalCertificateReference    `json:"externalClientCertSecrets,omitempty"`
+	Mountpath                            *string                                      `json:"mountPath,omitempty"`
+	Subpath                              *string                                      `json:"subPath,omitempty"`
+	RequestAutoCert                      *bool                                        `json:"requestAutoCert,omitempty"`
+	CertExpiryAlertThreshold             *int32                                       `json:"certExpiryAlertThreshold,omitempty"`
+	Liveness                             *v1.Probe                                    `json:"liveness,omitempty"`
+	Readiness                            *v1.Probe                                    `json:"readiness,omitempty"`
+	Startup                              *v1.Probe                                    `json:"startup,omitempty"`
+	Lifecycle                            *v1.Lifecycle                                `json:"lifecycle,omitempty"`
+	Features                             *FeaturesApplyConfiguration                  `json:"features,omitempty"`
+	CertConfig                           *CertificateConfigApplyConfiguration         `json:"certConfig,omitempty"`
+	KES                                  *KESConfigApplyConfiguration                 `json:"kes,omitempty"`
+	PrometheusOperator                   *bool                                        `json:"prometheusOperator,omitempty"`
+	PrometheusOperatorScrapeMetricsPaths []string                                     `json:"prometheusOperatorScrapeMetricsPaths,omitempty"`
+	ServiceAccountName                   *string                                      `json:"serviceAccountName,omitempty"`
+	PriorityClassName                    *string                                      `json:"priorityClassName,omitempty"`
+	ImagePullPolicy                      *v1.PullPolicy                               `json:"imagePullPolicy,omitempty"`
+	SideCars                             *SideCarsApplyConfiguration                  `json:"sideCars,omitempty"`
+	ExposeServices                       *ExposeServicesApplyConfiguration            `json:"exposeServices,omitempty"`
+	ServiceMetadata                      *ServiceMetadataApplyConfiguration           `json:"serviceMetadata,omitempty"`
+	PoolsMetadata                        *PoolsMetadataApplyConfiguration             `json:"poolsMetadata,omitempty"`
+	Users                                []v1.LocalObjectReference                    `json:"users,omitempty"`
+	Buckets                              []BucketApplyConfiguration                   `json:"buckets,omitempty"`
+	Logging                              *LoggingApplyConfiguration                   `json:"logging,omitempty"`
+	Configuration                        *v1.LocalObjectReference                     `json:"configuration,omitempty"`
+	InitContainers                       []v1.Container                               `json:"initContainers,omitempty"`
+	AdditionalVolumes                    []v1.Volume                                  `json:"additionalVolumes,omitempty"`
+	AdditionalVolumeMounts               []v1.VolumeMount                             `json:"additionalVolumeMounts,omitempty"`
 }
 
 // TenantSpecApplyConfiguration constructs a declarative configuration of the TenantSpec type for use with
@@ -261,12 +261,12 @@ func (b *TenantSpecApplyConfiguration) WithPrometheusOperator(value bool) *Tenan
 	return b
 }
 
-// WithPrometheusOperatorScrapeMetricsPath adds the given value to the PrometheusOperatorScrapeMetricsPath field in the declarative configuration
+// WithPrometheusOperatorScrapeMetricsPaths adds the given value to the PrometheusOperatorScrapeMetricsPaths field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
-// If called multiple times, values provided by each call will be appended to the PrometheusOperatorScrapeMetricsPath field.
-func (b *TenantSpecApplyConfiguration) WithPrometheusOperatorScrapeMetricsPath(values ...string) *TenantSpecApplyConfiguration {
+// If called multiple times, values provided by each call will be appended to the PrometheusOperatorScrapeMetricsPaths field.
+func (b *TenantSpecApplyConfiguration) WithPrometheusOperatorScrapeMetricsPaths(values ...string) *TenantSpecApplyConfiguration {
 	for i := range values {
-		b.PrometheusOperatorScrapeMetricsPath = append(b.PrometheusOperatorScrapeMetricsPath, values[i])
+		b.PrometheusOperatorScrapeMetricsPaths = append(b.PrometheusOperatorScrapeMetricsPaths, values[i])
 	}
 	return b
 }

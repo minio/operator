@@ -81,17 +81,17 @@ function test_kes_tenant() {
 
   echo "Vault root: '$VAULT_ROOT_TOKEN'"
 
-  try kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.1.1:8200" vault auth enable approle'
-  try kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.1.1:8200" vault secrets enable kv'
+  try kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.1.0.1:8200" vault auth enable approle'
+  try kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.1.0.1:8200" vault secrets enable kv'
 
   # copy kes file
   try kubectl cp "${SCRIPT_DIR}/../examples/vault/kes-policy.hcl" $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}'):/kes-policy.hcl
 
-  try kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.1.1:8200" vault policy write kes-policy /kes-policy.hcl'
-  try kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.1.1:8200" vault write auth/approle/role/kes-role token_num_uses=0 secret_id_num_uses=0 period=5m policies=kes-policy'
+  try kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.1.0.1:8200" vault policy write kes-policy /kes-policy.hcl'
+  try kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.1.0.1:8200" vault write auth/approle/role/kes-role token_num_uses=0 secret_id_num_uses=0 period=5m policies=kes-policy'
 
-  ROLE_ID=$(kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.1.1:8200" vault read auth/approle/role/kes-role/role-id' | grep "role_id    " | sed -e "s/role_id    //g")
-  SECRET_ID=$(kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.0.1.1:8200" vault write -f auth/approle/role/kes-role/secret-id' | grep "secret_id             " | sed -e "s/secret_id             //g")
+  ROLE_ID=$(kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.1.0.1:8200" vault read auth/approle/role/kes-role/role-id' | grep "role_id    " | sed -e "s/role_id    //g")
+  SECRET_ID=$(kubectl exec $(kubectl get pods -l app=vault | grep -v NAME | awk '{print $1}') -- sh -c 'VAULT_TOKEN='$VAULT_ROOT_TOKEN' VAULT_ADDR="http://127.1.0.1:8200" vault write -f auth/approle/role/kes-role/secret-id' | grep "secret_id             " | sed -e "s/secret_id             //g")
 
   echo "Creating Tenant"
   sed -i -e 's/ROLE_ID/'"$ROLE_ID"'/g' "${SCRIPT_DIR}/kes-config.yaml"
