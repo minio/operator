@@ -131,3 +131,61 @@ spec:
                 port:
                   number: 9443
 ```
+
+### Replication configuration:
+
+Ingress by default may time out connections before an operation completes.
+This is common with slower setups (network/drives) or poor operational practices (many objects in one prefix, flat organization). 
+You can set a timeout value that is above what your cluster requires on average to complete an operation to address the above issue.
+Place the following nginx annotations in the ingress configuration under `metadata.anotations`:
+
+* `nginx.ingress.kubernetes.io/proxy-read-timeout`: Controls how long the NGINX load balancer waits for a response from the backend.
+
+* `nginx.ingress.kubernetes.io/proxy-send-timeout`: Controls how long the NGINX load balancer waits to send a request to the backend.
+
+Here is the updated ingress configuration:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-minio
+  namespace: tenant1-ns
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ## Remove if using CA signed certificate
+    nginx.ingress.kubernetes.io/proxy-ssl-verify: "off"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      client_max_body_size 0;
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      chunked_transfer_encoding off;
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60s"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60s"
+spec:
+  tls:
+    - hosts:
+        - minio.example.com
+      secretName: nginx-tls
+  rules:
+    - host: minio.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 443
+```
+
+> Explanation:
+
+* `proxy-read-timeout`: Ensures that NGINX waits for 60 seconds for a response from the MinIO backend before timing out.
+
+* `proxy-send-timeout`: Ensures that NGINX waits for 60 seconds for data to be sent to the MinIO backend before timing out.
+
+Apply the updated configuration using `kubectl apply -f <file_name>.yaml`. This will set the desired timeouts for read and write operations.
