@@ -561,7 +561,7 @@ function install_operator() {
     yq -i '.operator.sidecarImage.repository = "minio/operator-sidecar"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.operator.sidecarImage.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
 
-    try helm lint "${SCRIPT_DIR}/../helm/operator" --quiet
+    try helm lint "${SCRIPT_DIR}/../helm/operator" --debug
     try helm template operator --namespace minio-operator --create-namespace "${SCRIPT_DIR}/../helm/operator" --debug
 
     echo "Installing Current Operator via HELM"
@@ -796,7 +796,7 @@ function install_tenant() {
     echo "This test is intended for helm only not for KES, there is another kes test, so let's remove KES here"
     yq -i eval 'del(.tenant.kes)' "${SCRIPT_DIR}/../helm/tenant/values.yaml"
 
-    try helm lint "${SCRIPT_DIR}/../helm/tenant" --quiet
+    try helm lint "${SCRIPT_DIR}/../helm/tenant" --debug
     try helm template operator --namespace minio-operator --create-namespace "${SCRIPT_DIR}/../helm/tenant" --debug
 
     namespace=default
