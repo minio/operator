@@ -561,8 +561,8 @@ function install_operator() {
     yq -i '.operator.sidecarImage.repository = "minio/operator-sidecar"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.operator.sidecarImage.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
 
-		try helm lint "${SCRIPT_DIR}/../helm/operator" --quiet
-		try helm template operator --namespace minio-operator --create-namespace "${SCRIPT_DIR}/../helm/operator" --debug
+    try helm lint "${SCRIPT_DIR}/../helm/operator" --quiet
+    try helm template operator --namespace minio-operator --create-namespace "${SCRIPT_DIR}/../helm/operator" --debug
 
     echo "Installing Current Operator via HELM"
     create_restricted_namespace minio-operator
