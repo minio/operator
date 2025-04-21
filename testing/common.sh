@@ -558,7 +558,12 @@ function install_operator() {
     echo "Change the version accordingly for image to be found within the cluster"
     yq -i '.operator.image.repository = "minio/operator"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
     yq -i '.operator.image.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
-    yq -i '.operator.env += [{"name": "OPERATOR_SIDECAR_IMAGE", "value": "'$SIDECAR_TAG'"}]' "${SCRIPT_DIR}/../helm/operator/values.yaml"
+    yq -i '.operator.sidecarImage.repository = "minio/operator-sidecar"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
+    yq -i '.operator.sidecarImage.tag = "noop"' "${SCRIPT_DIR}/../helm/operator/values.yaml"
+
+    try helm lint "${SCRIPT_DIR}/../helm/operator" --debug
+    try helm template operator --namespace minio-operator --create-namespace "${SCRIPT_DIR}/../helm/operator" --debug
+
     echo "Installing Current Operator via HELM"
     create_restricted_namespace minio-operator
     helm install \
@@ -791,7 +796,8 @@ function install_tenant() {
     echo "This test is intended for helm only not for KES, there is another kes test, so let's remove KES here"
     yq -i eval 'del(.tenant.kes)' "${SCRIPT_DIR}/../helm/tenant/values.yaml"
 
-    try helm lint "${SCRIPT_DIR}/../helm/tenant" --quiet
+    try helm lint "${SCRIPT_DIR}/../helm/tenant" --debug
+    try helm template operator --namespace minio-operator --create-namespace "${SCRIPT_DIR}/../helm/tenant" --debug
 
     namespace=default
     key=v1.min.io/tenant
