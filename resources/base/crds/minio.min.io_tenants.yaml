@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.2
-    operator.min.io/version: v7.1.0
+    operator.min.io/version: v7.1.1
   name: tenants.minio.min.io
 spec:
   group: minio.min.io

@@ -31,7 +31,7 @@ import (
 // +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.currentState"
 // +kubebuilder:printcolumn:name="Health",type="string",JSONPath=".status.healthStatus"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-// +kubebuilder:metadata:annotations=operator.min.io/version=v7.1.0
+// +kubebuilder:metadata:annotations=operator.min.io/version=v7.1.1
 // +kubebuilder:storageversion
 type Tenant struct {
 	metav1.TypeMeta   `json:",inline"`
