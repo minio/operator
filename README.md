@@ -36,10 +36,9 @@ a Kubernetes cluster.
 
 ## Prerequisites
 
-### Kubernetes 1.29.0 or Later
+### Kubernetes 1.30.0 or Later
 
-Starting with Operator v7.1.0, MinIO requires Kubernetes version 1.29.0 or later. You must upgrade your Kubernetes
-cluster to 1.29.0 or later to use Operator v7.1.0+.
+Starting with Operator v7.1.1, MinIO requires Kubernetes version 1.30.0 or later.
 
 This procedure assumes the host machine has [`kubectl`](https://kubernetes.io/docs/tasks/tools) installed and configured
 with access to the target Kubernetes cluster.
@@ -140,7 +139,7 @@ for [kustomize](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kusto
 use that to install MiniO Operator.
 
 ```sh
-kubectl kustomize github.com/minio/operator\?ref=v7.1.0 | kubectl apply -f -
+kubectl kustomize github.com/minio/operator\?ref=v7.1.1 | kubectl apply -f -
 ```
 
 Run the following command to verify the status of the Operator:
@@ -182,9 +181,6 @@ NAME                             TYPE            CLUSTER-IP        EXTERNAL-IP  
 minio                            LoadBalancer    10.104.10.9       <pending>     443:31834/TCP
 myminio-console           LoadBalancer    10.104.216.5      <pending>     9443:31425/TCP
 myminio-hl                ClusterIP       None              <none>        9000/TCP
-myminio-log-hl-svc        ClusterIP       None              <none>        5432/TCP
-myminio-log-search-api    ClusterIP       10.102.151.239    <none>        8080/TCP
-myminio-prometheus-hl-svc ClusterIP       None              <none>        9090/TCP
 ```
 
 Applications *internal* to the Kubernetes cluster should use the `minio` service for performing object storage
