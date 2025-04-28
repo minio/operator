@@ -8,6 +8,7 @@ minio-operator-sidecar
 dist/
 *.minisig
 *.zip
+*.tgz
 *.log
 .vscode
 minio.yaml

@@ -29,6 +29,33 @@ MinIO Tenant deployed into Kubernetes:
 
 MinIO provides multiple methods for accessing and managing the MinIO Tenant:
 
+# Deployment Scope
+
+The MinIO Operator supports two deployment scopes:
+
+- **Cluster Scope** (default): The operator can manage tenants across the entire cluster
+- **Namespace Scope**: The operator manages tenants only in its own namespace
+
+To deploy the MinIO Operator in namespace scope:
+
+```bash
+kubectl kustomize github.com/minio/operator\?ref=v7.1.1 | \
+ sed 's/OPERATOR_SCOPE: "cluster"/OPERATOR_SCOPE: "namespace"/' | \
+ kubectl apply -f -
+```
+
+Or when using Helm:
+
+```bash
+helm install \
+  --namespace minio-operator \
+  --create-namespace \
+  --set operator.scope=namespace \
+  minio-operator minio/operator
+```
+
+Namespace scope mode requires fewer permissions and offers increased isolation for multi-tenant environments.
+
 # Deploy the MinIO Operator and Create a Tenant
 
 This procedure installs the MinIO Operator and creates a 4-node MinIO Tenant for supporting object storage operations in

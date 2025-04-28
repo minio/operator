@@ -50,6 +50,8 @@ import (
 const (
 	// OperatorWatchedNamespaceEnv Env variable name, the namespaces which the operator watches for MinIO tenants. Defaults to "" for all namespaces.
 	OperatorWatchedNamespaceEnv = "WATCHED_NAMESPACE"
+	// OperatorScopeEnv specifies the scope of the operator: "cluster" or "namespace"
+	OperatorScopeEnv = "OPERATOR_SCOPE"
 	// HostnameEnv Host name env variable
 	HostnameEnv = "HOSTNAME"
 )
@@ -132,23 +134,51 @@ func StartOperator(kubeconfig string) {
 		klog.Errorf("Error building Prometheus clientset: %v", err.Error())
 	}
 
-	// Get a comma separated list of namespaces to watch
-	namespacesENv, isNamespaced := os.LookupEnv(OperatorWatchedNamespaceEnv)
+	// Get operator scope - can be "cluster" (default) or "namespace"
+	operatorScope, hasScope := os.LookupEnv(OperatorScopeEnv)
+	if !hasScope || (operatorScope != "namespace" && operatorScope != "cluster") {
+		operatorScope = "cluster"
+	}
+
+	// Determine which namespaces to watch
 	var namespaces set.StringSet
-	if isNamespaced {
+	var currentNamespace string
+
+	if operatorScope == "namespace" {
+		// For namespace scope, only watch the current namespace
+		currentNamespace = v2.GetNSFromFile()
 		namespaces = set.NewStringSet()
-		rawNamespaces := strings.Split(namespacesENv, ",")
-		for _, nsStr := range rawNamespaces {
-			if nsStr != "" {
-				namespaces.Add(strings.TrimSpace(nsStr))
+		namespaces.Add(currentNamespace)
+		klog.Infof("Running in namespace scope mode, watching only current namespace: %s", strings.Join(namespaces.ToSlice(), ","))
+	} else {
+		// For cluster scope, check if WATCHED_NAMESPACE is provided
+		namespacesENv, isNamespaced := os.LookupEnv(OperatorWatchedNamespaceEnv)
+		if isNamespaced {
+			namespaces = set.NewStringSet()
+			rawNamespaces := strings.Split(namespacesENv, ",")
+			for _, nsStr := range rawNamespaces {
+				if nsStr != "" {
+					namespaces.Add(strings.TrimSpace(nsStr))
+				}
 			}
+			klog.Infof("Watching only namespaces: %s", strings.Join(namespaces.ToSlice(), ","))
 		}
-		klog.Infof("Watching only namespaces: %s", strings.Join(namespaces.ToSlice(), ","))
+	}
+
+	var kubeInformerFactory kubeinformers.SharedInformerFactory
+	var minioInformerFactory informers.SharedInformerFactory
+
+	if operatorScope == "namespace" {
+		// For namespace scope, restrict all informers to the current namespace
+		kubeInformerFactory = kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(currentNamespace))
+		minioInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(currentNamespace))
+	} else {
+		// For cluster scope, use the default factories
+		kubeInformerFactory = kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
+		minioInformerFactory = informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	}
 
 	kubeInformerFactoryInOperatorNamespace := kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Hour*1, kubeinformers.WithNamespace(v2.GetNSFromFile()))
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	minioInformerFactory := informers.NewSharedInformerFactory(controllerClient, time.Second*30)
 	podName := os.Getenv(HostnameEnv)
 	if podName == "" {
 		klog.Infof("Could not determine %s, defaulting to pod name: operator-pod", HostnameEnv)
@@ -164,6 +194,8 @@ func StartOperator(kubeconfig string) {
 		promClient,
 		hostsTemplate,
 		pkg.Version,
+		operatorScope,
+		currentNamespace,
 		kubeInformerFactory,
 		minioInformerFactory.Minio().V2().Tenants(),
 		minioInformerFactory.Sts().V1beta1().PolicyBindings(),

@@ -21,6 +21,13 @@ operator:
   env:
     - name: OPERATOR_STS_ENABLED
       value: "on"
+  
+  ###
+  # Operator scope can be either "cluster" (default) or "namespace". 
+  # When scope is "cluster", the operator can manage tenants across the entire cluster.
+  # When scope is "namespace", the operator manages tenants only in its own namespace and requires less permissions.
+  scope: cluster
+  
   # An array of additional annotations to be applied to the operator service account
   serviceAccountAnnotations: []
   # additional labels to be applied to operator resources
@@ -46,7 +53,6 @@ operator:
   #      repository: quay.io/minio/operator@sha256
   #      digest: 28c80b379c75242c6fe793dfbf212f43c602140a0de5ebe3d9c2a3a7b9f9f983
   #      pullPolicy: IfNotPresent
-  #
   image:
     repository: quay.io/minio/operator
     tag: v7.1.1

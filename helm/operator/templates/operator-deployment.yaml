@@ -53,6 +53,8 @@ spec:
             - name: "OPERATOR_SIDECAR_IMAGE"
               value: "{{ .Values.operator.sidecarImage.repository }}:{{ .Values.operator.sidecarImage.digest | default .Values.operator.sidecarImage.tag }}"
           {{- end }}
+            - name: "OPERATOR_SCOPE"
+              value: "{{ .Values.operator.scope }}"
           {{- with .Values.operator.env }}
           {{- toYaml . | nindent 12 }}
           {{- end }}
