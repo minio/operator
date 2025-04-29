@@ -99,9 +99,11 @@ rules:
       - job.min.io
     resources:
       - tenants
+      - tenants/status
       - policymanagements
       - stsaccounts
       - jobs
+      - policybindings
     verbs:
       - get
       - list
