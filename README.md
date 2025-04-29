@@ -56,6 +56,8 @@ helm install \
 
 Namespace scope mode requires fewer permissions and offers increased isolation for multi-tenant environments.
 
+> **Note:** When running in namespace scope mode, the operator cannot auto-generate TLS certificates for Secure Token Service (STS) even if `OPERATOR_STS_ENABLED` and `OPERATOR_STS_AUTO_TLS_ENABLED` are enabled. This is because Certificate Signing Requests (CSRs) are cluster-scoped resources and cannot be managed by namespace-scoped RBAC permissions. In namespace mode, you must provide your own certificates or use alternative certificate management solutions.
+
 # Deploy the MinIO Operator and Create a Tenant
 
 This procedure installs the MinIO Operator and creates a 4-node MinIO Tenant for supporting object storage operations in
