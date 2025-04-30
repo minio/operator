@@ -7,7 +7,7 @@ toolchain go1.23.7
 require (
 	github.com/gorilla/mux v1.8.1
 	github.com/minio/cli v1.24.2
-	github.com/minio/operator v0.0.0-20240506170406-f963b2796cae
+	github.com/minio/operator v0.0.0-20250423195428-51a1c64002f8
 	github.com/minio/pkg v1.7.5
 	k8s.io/api v0.32.3
 	k8s.io/apimachinery v0.32.3
