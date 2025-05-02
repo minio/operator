@@ -25,7 +25,7 @@ getdeps:
 	@echo "Checking dependencies"
 	@mkdir -p ${GOPATH}/bin
 	@echo "Installing golangci-lint" && \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.2 && \
+		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.6 && \
 		echo "Installing govulncheck" && \
 		go install golang.org/x/vuln/cmd/govulncheck@latest &&\
 		echo "installng gopls" && \
