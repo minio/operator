@@ -14,7 +14,7 @@ spec:
     externalCertSecret:
       name: tenant-certmanager-2-tls
       type: cert-manager.io/v1
-    image: minio/kes:2024-06-17T15-47-05Z
+    image: minio/kes:2025-03-12T09-35-18Z
     imagePullPolicy: IfNotPresent
     kesSecret:
       name: kes-configuration
