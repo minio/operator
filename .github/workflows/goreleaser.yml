@@ -6,6 +6,8 @@ on:
     branches:
       - 'release*'
       - 'master'
+      - 'v5-*'
+      - 'v6-*'
 
 jobs:
   goreleaser-operator:
