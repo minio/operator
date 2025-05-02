@@ -244,7 +244,7 @@ func (c *Controller) checkKESStatus(ctx context.Context, tenant *miniov2.Tenant,
 				}
 				klog.V(2).Infof("Creating a new KES StatefulSet for %q", nsName)
 				if _, err = c.kubeClientSet.AppsV1().StatefulSets(tenant.Namespace).Create(ctx, ks, cOpts); err != nil {
-					klog.V(2).Infof(err.Error())
+					klog.V(2).Infof("error: %v", err.Error())
 					c.recorder.Event(tenant, corev1.EventTypeWarning, "StsFailed", fmt.Sprintf("KES Statefulset failed to create: %s", err))
 					return err
 				}

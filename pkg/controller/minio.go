@@ -328,12 +328,12 @@ func (c *Controller) createMinIOClientCertificates(ctx context.Context, tenant *
 func (c *Controller) deleteOldConsoleDeployment(ctx context.Context, tenant *miniov2.Tenant, consoleDeployment string) error {
 	err := c.kubeClientSet.AppsV1().Deployments(tenant.Namespace).Delete(ctx, consoleDeployment, metav1.DeleteOptions{})
 	if err != nil {
-		klog.V(2).Infof(err.Error())
+		klog.V(2).Infof("error: %v", err.Error())
 		return err
 	}
 	err = c.kubeClientSet.CoreV1().Services(tenant.Namespace).Delete(ctx, tenant.ConsoleCIServiceName(), metav1.DeleteOptions{})
 	if err != nil {
-		klog.V(2).Infof(err.Error())
+		klog.V(2).Infof("error: %v", err.Error())
 		return err
 	}
 

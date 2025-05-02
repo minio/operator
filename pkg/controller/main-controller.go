@@ -312,15 +312,15 @@ func NewController(
 	// Set up an event handler for when Tenant resources change
 	tenantInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueTenant,
-		UpdateFunc: func(old, new interface{}) {
+		UpdateFunc: func(old, newObject interface{}) {
 			oldTenant := old.(*miniov2.Tenant)
-			newTenant := new.(*miniov2.Tenant)
+			newTenant := newObject.(*miniov2.Tenant)
 			if newTenant.ResourceVersion == oldTenant.ResourceVersion {
 				// Periodic resync will send update events for all known Tenants.
 				// Two different versions of the same Tenant will always have different RVs.
 				return
 			}
-			controller.enqueueTenant(new)
+			controller.enqueueTenant(newObject)
 		},
 	})
 
@@ -332,44 +332,44 @@ func NewController(
 	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md
 	statefulSetInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
-		UpdateFunc: func(old, new interface{}) {
-			newDepl := new.(*appsv1.StatefulSet)
+		UpdateFunc: func(old, newObject interface{}) {
+			newDepl := newObject.(*appsv1.StatefulSet)
 			oldDepl := old.(*appsv1.StatefulSet)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
 				// Periodic resync will send update events for all known StatefulSet.
 				// Two different versions of the same StatefulSet will always have different RVs.
 				return
 			}
-			controller.handleObject(new)
+			controller.handleObject(newObject)
 		},
 		DeleteFunc: controller.handleObject,
 	})
 
 	deploymentInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handleObject,
-		UpdateFunc: func(old, new interface{}) {
-			newDepl := new.(*appsv1.Deployment)
+		UpdateFunc: func(old, newObject interface{}) {
+			newDepl := newObject.(*appsv1.Deployment)
 			oldDepl := old.(*appsv1.Deployment)
 			if newDepl.ResourceVersion == oldDepl.ResourceVersion {
 				// Periodic resync will send update events for all known Deployments.
 				// Two different versions of the same Deployments will always have different RVs.
 				return
 			}
-			controller.handleObject(new)
+			controller.handleObject(newObject)
 		},
 		DeleteFunc: controller.handleObject,
 	})
 
 	podInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.handlePodChange,
-		UpdateFunc: func(old, new interface{}) {
-			newPod := new.(*corev1.Pod)
+		UpdateFunc: func(old, newObject interface{}) {
+			newPod := newObject.(*corev1.Pod)
 			oldPod := old.(*corev1.Pod)
 			// Ignore Pod changes if same ResourceVersion
 			if newPod.ResourceVersion == oldPod.ResourceVersion {
 				return
 			}
-			controller.handlePodChange(new)
+			controller.handlePodChange(newObject)
 		},
 		DeleteFunc: controller.handlePodChange,
 	})
@@ -378,15 +378,15 @@ func NewController(
 		AddFunc: func(obj interface{}) {
 			controller.handleSecret(obj, nil)
 		},
-		UpdateFunc: func(old, new interface{}) {
-			newSecret := new.(*corev1.Secret)
+		UpdateFunc: func(old, newObject interface{}) {
+			newSecret := newObject.(*corev1.Secret)
 			oldSecret := old.(*corev1.Secret)
 			if newSecret.ResourceVersion == oldSecret.ResourceVersion {
 				// Periodic resync will send update events for all known Deployments.
 				// Two different versions of the same secret will always have different RVs.
 				return
 			}
-			controller.handleSecret(new, old)
+			controller.handleSecret(newObject, old)
 		},
 	})
 
@@ -817,7 +817,7 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 	if err != nil {
 		if errors.Is(err, ErrEmptyRootCredentials) {
 			if _, err2 := c.updateTenantStatus(ctx, tenant, err.Error(), 0); err2 != nil {
-				klog.V(2).Infof(err2.Error())
+				klog.V(2).Infof("error: %v", err2.Error())
 			}
 			c.recorder.Event(tenant, corev1.EventTypeWarning, "MissingCreds", "Tenant is missing root credentials")
 			return WrapResult(Result{}, nil)
@@ -840,10 +840,10 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 
 	// Validate the MinIO Tenant
 	if err = tenant.Validate(); err != nil {
-		klog.V(2).Infof(err.Error())
+		klog.V(2).Infof("error:  %v", err.Error())
 		var err2 error
 		if _, err2 = c.updateTenantStatus(ctx, tenant, err.Error(), 0); err2 != nil {
-			klog.V(2).Infof(err2.Error())
+			klog.V(2).Infof("erro: %v", err2.Error())
 		}
 		// return nil so we don't re-queue this work item
 		return WrapResult(Result{}, nil)
@@ -873,20 +873,20 @@ func (c *Controller) syncHandler(key string) (Result, error) {
 			autoCertEnabled = tenant.AutoCert()
 		}
 		if tenant, err = c.updateCertificatesStatus(ctx, tenant, autoCertEnabled); err != nil {
-			klog.V(2).Infof(err.Error())
+			klog.V(2).Infof("error: %v", err.Error())
 		}
 	}
 
 	// Custom certificates
 	if customCertificates, err := c.getCustomCertificates(ctx, tenant); err == nil {
 		if newTenant, err := c.updateCustomCertificatesStatus(ctx, tenant, customCertificates); err != nil {
-			klog.V(2).Infof(err.Error())
+			klog.V(2).Infof("error: %v", err.Error())
 		} else {
 			// Only change tenant if there was no error, otherwise tenant is being deleted
 			tenant = newTenant
 		}
 	} else {
-		klog.V(2).Infof(err.Error())
+		klog.V(2).Infof("error: %v", err.Error())
 	}
 
 	// validate the minio certificates

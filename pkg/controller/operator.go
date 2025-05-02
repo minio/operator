@@ -247,7 +247,7 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 	defer func() {
 		if err == nil {
 			if _, err = c.updateProvisionedUsersStatus(ctx, tenant, true); err != nil {
-				klog.V(2).Infof(err.Error())
+				klog.V(2).Infof("error: %v", err.Error())
 			}
 		}
 	}()
@@ -299,7 +299,7 @@ func (c *Controller) createBuckets(ctx context.Context, tenant *miniov2.Tenant, 
 	}
 	if created {
 		if _, err = c.updateProvisionedBucketStatus(ctx, tenant, true); err != nil {
-			klog.V(2).Infof(err.Error())
+			klog.V(2).Infof("error: %v", err.Error())
 		}
 	}
 	return created, err

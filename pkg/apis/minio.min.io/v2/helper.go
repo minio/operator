@@ -336,10 +336,10 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		if t.Spec.CertConfig.CommonName == "" {
 			t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
 		}
-		if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
+		if len(t.Spec.CertConfig.DNSNames) == 0 {
 			t.Spec.CertConfig.DNSNames = t.MinIOHosts()
 		}
-		if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
+		if len(t.Spec.CertConfig.OrganizationName) == 0 {
 			t.Spec.CertConfig.OrganizationName = DefaultOrgName
 		}
 	} else {
@@ -429,18 +429,18 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 	tmpl, err := template.New("hosts").Parse(hostsTemplate)
 	if err != nil {
 		msg := "Invalid go template for hosts"
-		klog.V(2).Infof(msg)
+		klog.V(2).Infof("%s", msg)
 		return hosts
 	}
-	var max, index int32
+	var maxPool, index int32
 	// Create the ellipses style URL
 	for _, pool := range t.Spec.Pools {
-		max = max + pool.Servers
+		maxPool = maxPool + pool.Servers
 		data := hostsTemplateValues{
 			StatefulSet: t.MinIOStatefulSetNameForPool(&pool),
 			CIService:   t.MinIOCIServiceName(),
 			HLService:   t.MinIOHLServiceName(),
-			Ellipsis:    genEllipsis(int(index), int(max)-1),
+			Ellipsis:    genEllipsis(int(index), int(maxPool)-1),
 			Domain:      GetClusterDomain(),
 		}
 		output := new(bytes.Buffer)
@@ -448,7 +448,7 @@ func (t *Tenant) TemplatedMinIOHosts(hostsTemplate string) (hosts []string) {
 			continue
 		}
 		hosts = append(hosts, output.String())
-		index = max
+		index = maxPool
 	}
 	return hosts
 }
@@ -472,7 +472,7 @@ func (t *Tenant) ConsoleServerHost() string {
 func (t *Tenant) MinIOHeadlessServiceHost() string {
 	if t.Spec.Pools[0].Servers == 1 {
 		msg := "Please set the server count > 1"
-		klog.V(2).Infof(msg)
+		klog.V(2).Infof("%s", msg)
 		return ""
 	}
 	return fmt.Sprintf("%s.%s.svc.%s", t.MinIOHLServiceName(), t.Namespace, GetClusterDomain())
@@ -923,11 +923,11 @@ func IsContainersEnvUpdated(existingContainers, expectedContainers []corev1.Cont
 
 // IsEnvUpdated looks for new env vars in the old env vars and returns true if
 // new env vars are not found
-func IsEnvUpdated(old, new map[string]string) bool {
-	if len(old) != len(new) {
+func IsEnvUpdated(old, newEnvVar map[string]string) bool {
+	if len(old) != len(newEnvVar) {
 		return true
 	}
-	if !reflect.DeepEqual(old, new) {
+	if !reflect.DeepEqual(old, newEnvVar) {
 		return true
 	}
 	return false

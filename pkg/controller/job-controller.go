@@ -112,20 +112,20 @@ func NewJobController(
 	// Set up an event handler for when resources change
 	minioJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueJob,
-		UpdateFunc: func(old, new interface{}) {
+		UpdateFunc: func(old, newObject interface{}) {
 			oldJob := old.(*v1alpha1.MinIOJob)
-			newJob := new.(*v1alpha1.MinIOJob)
+			newJob := newObject.(*v1alpha1.MinIOJob)
 			if oldJob.ResourceVersion == newJob.ResourceVersion {
 				return
 			}
-			controller.enqueueJob(new)
+			controller.enqueueJob(newObject)
 		},
 		DeleteFunc: controller.enqueueJob,
 	})
 
 	jobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		UpdateFunc: func(_, new interface{}) {
-			newJob := new.(*batchjobv1.Job)
+		UpdateFunc: func(_, newObject interface{}) {
+			newJob := newObject.(*batchjobv1.Job)
 			jobName, ok := newJob.Labels[miniojob.MinioJobName]
 			if !ok {
 				return
