@@ -18,14 +18,14 @@
 
 package v2
 
-// CertificateStatusApplyConfiguration represents an declarative configuration of the CertificateStatus type for use
+// CertificateStatusApplyConfiguration represents a declarative configuration of the CertificateStatus type for use
 // with apply.
 type CertificateStatusApplyConfiguration struct {
 	AutoCertEnabled    *bool                                 `json:"autoCertEnabled,omitempty"`
 	CustomCertificates *CustomCertificatesApplyConfiguration `json:"customCertificates,omitempty"`
 }
 
-// CertificateStatusApplyConfiguration constructs an declarative configuration of the CertificateStatus type for use with
+// CertificateStatusApplyConfiguration constructs a declarative configuration of the CertificateStatus type for use with
 // apply.
 func CertificateStatus() *CertificateStatusApplyConfiguration {
 	return &CertificateStatusApplyConfiguration{}

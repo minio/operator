@@ -19,33 +19,14 @@ fi
 
 echo ">> Using ${CODEGEN_PKG}"
 
-# code-generator does work with go.mod but makes assumptions about
-# the project living in `$GOPATH/src`. To work around this and support
-# any location; create a temporary directory, use this as an output
-# base, and copy everything back once generated.
-TEMP_DIR=$(mktemp -d)
-cleanup() {
-    echo ">> Removing ${TEMP_DIR}"
-    rm -rf ${TEMP_DIR}
-}
-trap "cleanup" EXIT SIGINT
+source ${CODEGEN_PKG}/kube_codegen.sh
 
-echo ">> Temporary output directory ${TEMP_DIR}"
+kube::codegen::gen_helpers $SCRIPT_ROOT/pkg/apis \
+    --boilerplate "k8s/boilerplate.go.txt"
 
-# Ensure we can execute.
-chmod +x ${CODEGEN_PKG}/generate-groups.sh
-chmod +x ${CODEGEN_PKG}/generate-internal-groups.sh
-
-# generate the code with:
-# --output-base    because this script should also be able to run inside the vendor dir of
-#                  k8s.io/kubernetes. The output-base is needed for the generators to output into the vendor dir
-#                  instead of the $GOPATH directly. For normal projects this can be dropped.
-cd ${SCRIPT_ROOT}
-${CODEGEN_PKG}/generate-groups.sh "all" \
-              $ROOT_PKG/pkg/client $ROOT_PKG/pkg/apis \
-              "minio.min.io:v2 sts.min.io:v1alpha1 job.min.io:v1alpha1" \
-              --output-base "${TEMP_DIR}" \
-              --go-header-file "k8s/boilerplate.go.txt"
-
-# Copy everything back.
-cp -a "${TEMP_DIR}/${ROOT_PKG}/." "${SCRIPT_ROOT}/"
+kube::codegen::gen_client $SCRIPT_ROOT/pkg/apis \
+    --with-watch \
+    --with-applyconfig \
+    --output-dir "./pkg/client" \
+    --output-pkg "$ROOT_PKG/pkg/client" \
+    --boilerplate "k8s/boilerplate.go.txt" || echo "Failed"

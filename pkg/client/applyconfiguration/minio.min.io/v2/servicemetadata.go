@@ -18,7 +18,7 @@
 
 package v2
 
-// ServiceMetadataApplyConfiguration represents an declarative configuration of the ServiceMetadata type for use
+// ServiceMetadataApplyConfiguration represents a declarative configuration of the ServiceMetadata type for use
 // with apply.
 type ServiceMetadataApplyConfiguration struct {
 	MinIOServiceLabels        map[string]string `json:"minioServiceLabels,omitempty"`
@@ -27,7 +27,7 @@ type ServiceMetadataApplyConfiguration struct {
 	ConsoleServiceAnnotations map[string]string `json:"consoleServiceAnnotations,omitempty"`
 }
 
-// ServiceMetadataApplyConfiguration constructs an declarative configuration of the ServiceMetadata type for use with
+// ServiceMetadataApplyConfiguration constructs a declarative configuration of the ServiceMetadata type for use with
 // apply.
 func ServiceMetadata() *ServiceMetadataApplyConfiguration {
 	return &ServiceMetadataApplyConfiguration{}

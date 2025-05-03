@@ -18,14 +18,14 @@
 
 package v2
 
-// ExposeServicesApplyConfiguration represents an declarative configuration of the ExposeServices type for use
+// ExposeServicesApplyConfiguration represents a declarative configuration of the ExposeServices type for use
 // with apply.
 type ExposeServicesApplyConfiguration struct {
 	MinIO   *bool `json:"minio,omitempty"`
 	Console *bool `json:"console,omitempty"`
 }
 
-// ExposeServicesApplyConfiguration constructs an declarative configuration of the ExposeServices type for use with
+// ExposeServicesApplyConfiguration constructs a declarative configuration of the ExposeServices type for use with
 // apply.
 func ExposeServices() *ExposeServicesApplyConfiguration {
 	return &ExposeServicesApplyConfiguration{}

@@ -19,171 +19,31 @@
 package fake
 
 import (
-	"context"
-	json "encoding/json"
-	"fmt"
-
 	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 	miniominiov2 "github.com/minio/operator/pkg/client/applyconfiguration/minio.min.io/v2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	typedminiominiov2 "github.com/minio/operator/pkg/client/clientset/versioned/typed/minio.min.io/v2"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeTenants implements TenantInterface
-type FakeTenants struct {
+// fakeTenants implements TenantInterface
+type fakeTenants struct {
+	*gentype.FakeClientWithListAndApply[*v2.Tenant, *v2.TenantList, *miniominiov2.TenantApplyConfiguration]
 	Fake *FakeMinioV2
-	ns   string
 }
 
-var tenantsResource = v2.SchemeGroupVersion.WithResource("tenants")
-
-var tenantsKind = v2.SchemeGroupVersion.WithKind("Tenant")
-
-// Get takes name of the tenant, and returns the corresponding tenant object, and an error if there is any.
-func (c *FakeTenants) Get(ctx context.Context, name string, options v1.GetOptions) (result *v2.Tenant, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(tenantsResource, c.ns, name), &v2.Tenant{})
-
-	if obj == nil {
-		return nil, err
+func newFakeTenants(fake *FakeMinioV2, namespace string) typedminiominiov2.TenantInterface {
+	return &fakeTenants{
+		gentype.NewFakeClientWithListAndApply[*v2.Tenant, *v2.TenantList, *miniominiov2.TenantApplyConfiguration](
+			fake.Fake,
+			namespace,
+			v2.SchemeGroupVersion.WithResource("tenants"),
+			v2.SchemeGroupVersion.WithKind("Tenant"),
+			func() *v2.Tenant { return &v2.Tenant{} },
+			func() *v2.TenantList { return &v2.TenantList{} },
+			func(dst, src *v2.TenantList) { dst.ListMeta = src.ListMeta },
+			func(list *v2.TenantList) []*v2.Tenant { return gentype.ToPointerSlice(list.Items) },
+			func(list *v2.TenantList, items []*v2.Tenant) { list.Items = gentype.FromPointerSlice(items) },
+		),
+		fake,
 	}
-	return obj.(*v2.Tenant), err
-}
-
-// List takes label and field selectors, and returns the list of Tenants that match those selectors.
-func (c *FakeTenants) List(ctx context.Context, opts v1.ListOptions) (result *v2.TenantList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(tenantsResource, tenantsKind, c.ns, opts), &v2.TenantList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v2.TenantList{ListMeta: obj.(*v2.TenantList).ListMeta}
-	for _, item := range obj.(*v2.TenantList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested tenants.
-func (c *FakeTenants) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(tenantsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a tenant and creates it.  Returns the server's representation of the tenant, and an error, if there is any.
-func (c *FakeTenants) Create(ctx context.Context, tenant *v2.Tenant, opts v1.CreateOptions) (result *v2.Tenant, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(tenantsResource, c.ns, tenant), &v2.Tenant{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v2.Tenant), err
-}
-
-// Update takes the representation of a tenant and updates it. Returns the server's representation of the tenant, and an error, if there is any.
-func (c *FakeTenants) Update(ctx context.Context, tenant *v2.Tenant, opts v1.UpdateOptions) (result *v2.Tenant, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(tenantsResource, c.ns, tenant), &v2.Tenant{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v2.Tenant), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeTenants) UpdateStatus(ctx context.Context, tenant *v2.Tenant, opts v1.UpdateOptions) (*v2.Tenant, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(tenantsResource, "status", c.ns, tenant), &v2.Tenant{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v2.Tenant), err
-}
-
-// Delete takes name of the tenant and deletes it. Returns an error if one occurs.
-func (c *FakeTenants) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(tenantsResource, c.ns, name, opts), &v2.Tenant{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeTenants) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(tenantsResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v2.TenantList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched tenant.
-func (c *FakeTenants) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v2.Tenant, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(tenantsResource, c.ns, name, pt, data, subresources...), &v2.Tenant{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v2.Tenant), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied tenant.
-func (c *FakeTenants) Apply(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error) {
-	if tenant == nil {
-		return nil, fmt.Errorf("tenant provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(tenant)
-	if err != nil {
-		return nil, err
-	}
-	name := tenant.Name
-	if name == nil {
-		return nil, fmt.Errorf("tenant.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(tenantsResource, c.ns, *name, types.ApplyPatchType, data), &v2.Tenant{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v2.Tenant), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeTenants) ApplyStatus(ctx context.Context, tenant *miniominiov2.TenantApplyConfiguration, opts v1.ApplyOptions) (result *v2.Tenant, err error) {
-	if tenant == nil {
-		return nil, fmt.Errorf("tenant provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(tenant)
-	if err != nil {
-		return nil, err
-	}
-	name := tenant.Name
-	if name == nil {
-		return nil, fmt.Errorf("tenant.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(tenantsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v2.Tenant{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v2.Tenant), err
 }

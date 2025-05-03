@@ -18,14 +18,14 @@
 
 package v1alpha1
 
-// TenantRefApplyConfiguration represents an declarative configuration of the TenantRef type for use
+// TenantRefApplyConfiguration represents a declarative configuration of the TenantRef type for use
 // with apply.
 type TenantRefApplyConfiguration struct {
 	Name      *string `json:"name,omitempty"`
 	Namespace *string `json:"namespace,omitempty"`
 }
 
-// TenantRefApplyConfiguration constructs an declarative configuration of the TenantRef type for use with
+// TenantRefApplyConfiguration constructs a declarative configuration of the TenantRef type for use with
 // apply.
 func TenantRef() *TenantRefApplyConfiguration {
 	return &TenantRefApplyConfiguration{}

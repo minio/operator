@@ -18,7 +18,7 @@
 
 package v2
 
-// CustomCertificateConfigApplyConfiguration represents an declarative configuration of the CustomCertificateConfig type for use
+// CustomCertificateConfigApplyConfiguration represents a declarative configuration of the CustomCertificateConfig type for use
 // with apply.
 type CustomCertificateConfigApplyConfiguration struct {
 	CertName  *string  `json:"certName,omitempty"`
@@ -28,7 +28,7 @@ type CustomCertificateConfigApplyConfiguration struct {
 	SerialNo  *string  `json:"serialNo,omitempty"`
 }
 
-// CustomCertificateConfigApplyConfiguration constructs an declarative configuration of the CustomCertificateConfig type for use with
+// CustomCertificateConfigApplyConfiguration constructs a declarative configuration of the CustomCertificateConfig type for use with
 // apply.
 func CustomCertificateConfig() *CustomCertificateConfigApplyConfiguration {
 	return &CustomCertificateConfigApplyConfiguration{}

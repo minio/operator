@@ -18,14 +18,14 @@
 
 package v1alpha1
 
-// PolicyBindingSpecApplyConfiguration represents an declarative configuration of the PolicyBindingSpec type for use
+// PolicyBindingSpecApplyConfiguration represents a declarative configuration of the PolicyBindingSpec type for use
 // with apply.
 type PolicyBindingSpecApplyConfiguration struct {
 	Application *ApplicationApplyConfiguration `json:"application,omitempty"`
 	Policies    []string                       `json:"policies,omitempty"`
 }
 
-// PolicyBindingSpecApplyConfiguration constructs an declarative configuration of the PolicyBindingSpec type for use with
+// PolicyBindingSpecApplyConfiguration constructs a declarative configuration of the PolicyBindingSpec type for use with
 // apply.
 func PolicyBindingSpec() *PolicyBindingSpecApplyConfiguration {
 	return &PolicyBindingSpecApplyConfiguration{}

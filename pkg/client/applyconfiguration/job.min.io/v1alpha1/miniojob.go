@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
 )
 
-// MinIOJobApplyConfiguration represents an declarative configuration of the MinIOJob type for use
+// MinIOJobApplyConfiguration represents a declarative configuration of the MinIOJob type for use
 // with apply.
 type MinIOJobApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
@@ -33,7 +33,7 @@ type MinIOJobApplyConfiguration struct {
 	Status                           *MinIOJobStatusApplyConfiguration `json:"status,omitempty"`
 }
 
-// MinIOJob constructs an declarative configuration of the MinIOJob type for use with
+// MinIOJob constructs a declarative configuration of the MinIOJob type for use with
 // apply.
 func MinIOJob(name, namespace string) *MinIOJobApplyConfiguration {
 	b := &MinIOJobApplyConfiguration{}
@@ -48,7 +48,7 @@ func MinIOJob(name, namespace string) *MinIOJobApplyConfiguration {
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Kind field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithKind(value string) *MinIOJobApplyConfiguration {
-	b.Kind = &value
+	b.TypeMetaApplyConfiguration.Kind = &value
 	return b
 }
 
@@ -56,7 +56,7 @@ func (b *MinIOJobApplyConfiguration) WithKind(value string) *MinIOJobApplyConfig
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the APIVersion field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithAPIVersion(value string) *MinIOJobApplyConfiguration {
-	b.APIVersion = &value
+	b.TypeMetaApplyConfiguration.APIVersion = &value
 	return b
 }
 
@@ -65,7 +65,7 @@ func (b *MinIOJobApplyConfiguration) WithAPIVersion(value string) *MinIOJobApply
 // If called multiple times, the Name field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithName(value string) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Name = &value
+	b.ObjectMetaApplyConfiguration.Name = &value
 	return b
 }
 
@@ -74,7 +74,7 @@ func (b *MinIOJobApplyConfiguration) WithName(value string) *MinIOJobApplyConfig
 // If called multiple times, the GenerateName field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithGenerateName(value string) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.GenerateName = &value
+	b.ObjectMetaApplyConfiguration.GenerateName = &value
 	return b
 }
 
@@ -83,7 +83,7 @@ func (b *MinIOJobApplyConfiguration) WithGenerateName(value string) *MinIOJobApp
 // If called multiple times, the Namespace field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithNamespace(value string) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Namespace = &value
+	b.ObjectMetaApplyConfiguration.Namespace = &value
 	return b
 }
 
@@ -92,7 +92,7 @@ func (b *MinIOJobApplyConfiguration) WithNamespace(value string) *MinIOJobApplyC
 // If called multiple times, the UID field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithUID(value types.UID) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.UID = &value
+	b.ObjectMetaApplyConfiguration.UID = &value
 	return b
 }
 
@@ -101,7 +101,7 @@ func (b *MinIOJobApplyConfiguration) WithUID(value types.UID) *MinIOJobApplyConf
 // If called multiple times, the ResourceVersion field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithResourceVersion(value string) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.ResourceVersion = &value
+	b.ObjectMetaApplyConfiguration.ResourceVersion = &value
 	return b
 }
 
@@ -110,7 +110,7 @@ func (b *MinIOJobApplyConfiguration) WithResourceVersion(value string) *MinIOJob
 // If called multiple times, the Generation field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithGeneration(value int64) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.Generation = &value
+	b.ObjectMetaApplyConfiguration.Generation = &value
 	return b
 }
 
@@ -119,7 +119,7 @@ func (b *MinIOJobApplyConfiguration) WithGeneration(value int64) *MinIOJobApplyC
 // If called multiple times, the CreationTimestamp field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithCreationTimestamp(value metav1.Time) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.CreationTimestamp = &value
+	b.ObjectMetaApplyConfiguration.CreationTimestamp = &value
 	return b
 }
 
@@ -128,7 +128,7 @@ func (b *MinIOJobApplyConfiguration) WithCreationTimestamp(value metav1.Time) *M
 // If called multiple times, the DeletionTimestamp field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.DeletionTimestamp = &value
+	b.ObjectMetaApplyConfiguration.DeletionTimestamp = &value
 	return b
 }
 
@@ -137,7 +137,7 @@ func (b *MinIOJobApplyConfiguration) WithDeletionTimestamp(value metav1.Time) *M
 // If called multiple times, the DeletionGracePeriodSeconds field is set to the value of the last call.
 func (b *MinIOJobApplyConfiguration) WithDeletionGracePeriodSeconds(value int64) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	b.DeletionGracePeriodSeconds = &value
+	b.ObjectMetaApplyConfiguration.DeletionGracePeriodSeconds = &value
 	return b
 }
 
@@ -147,11 +147,11 @@ func (b *MinIOJobApplyConfiguration) WithDeletionGracePeriodSeconds(value int64)
 // overwriting an existing map entries in Labels field with the same key.
 func (b *MinIOJobApplyConfiguration) WithLabels(entries map[string]string) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	if b.Labels == nil && len(entries) > 0 {
-		b.Labels = make(map[string]string, len(entries))
+	if b.ObjectMetaApplyConfiguration.Labels == nil && len(entries) > 0 {
+		b.ObjectMetaApplyConfiguration.Labels = make(map[string]string, len(entries))
 	}
 	for k, v := range entries {
-		b.Labels[k] = v
+		b.ObjectMetaApplyConfiguration.Labels[k] = v
 	}
 	return b
 }
@@ -162,11 +162,11 @@ func (b *MinIOJobApplyConfiguration) WithLabels(entries map[string]string) *MinI
 // overwriting an existing map entries in Annotations field with the same key.
 func (b *MinIOJobApplyConfiguration) WithAnnotations(entries map[string]string) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
-	if b.Annotations == nil && len(entries) > 0 {
-		b.Annotations = make(map[string]string, len(entries))
+	if b.ObjectMetaApplyConfiguration.Annotations == nil && len(entries) > 0 {
+		b.ObjectMetaApplyConfiguration.Annotations = make(map[string]string, len(entries))
 	}
 	for k, v := range entries {
-		b.Annotations[k] = v
+		b.ObjectMetaApplyConfiguration.Annotations[k] = v
 	}
 	return b
 }
@@ -180,7 +180,7 @@ func (b *MinIOJobApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerRefe
 		if values[i] == nil {
 			panic("nil value passed to WithOwnerReferences")
 		}
-		b.OwnerReferences = append(b.OwnerReferences, *values[i])
+		b.ObjectMetaApplyConfiguration.OwnerReferences = append(b.ObjectMetaApplyConfiguration.OwnerReferences, *values[i])
 	}
 	return b
 }
@@ -191,7 +191,7 @@ func (b *MinIOJobApplyConfiguration) WithOwnerReferences(values ...*v1.OwnerRefe
 func (b *MinIOJobApplyConfiguration) WithFinalizers(values ...string) *MinIOJobApplyConfiguration {
 	b.ensureObjectMetaApplyConfigurationExists()
 	for i := range values {
-		b.Finalizers = append(b.Finalizers, values[i])
+		b.ObjectMetaApplyConfiguration.Finalizers = append(b.ObjectMetaApplyConfiguration.Finalizers, values[i])
 	}
 	return b
 }
@@ -216,4 +216,10 @@ func (b *MinIOJobApplyConfiguration) WithSpec(value *MinIOJobSpecApplyConfigurat
 func (b *MinIOJobApplyConfiguration) WithStatus(value *MinIOJobStatusApplyConfiguration) *MinIOJobApplyConfiguration {
 	b.Status = value
 	return b
+}
+
+// GetName retrieves the value of the Name field in the declarative configuration.
+func (b *MinIOJobApplyConfiguration) GetName() *string {
+	b.ensureObjectMetaApplyConfigurationExists()
+	return b.ObjectMetaApplyConfiguration.Name
 }

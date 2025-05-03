@@ -19,10 +19,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	jobminiov1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // MinIOJobLister helps list MinIOJobs.
@@ -30,7 +30,7 @@ import (
 type MinIOJobLister interface {
 	// List lists all MinIOJobs in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.MinIOJob, err error)
+	List(selector labels.Selector) (ret []*jobminiov1alpha1.MinIOJob, err error)
 	// MinIOJobs returns an object that can list and get MinIOJobs.
 	MinIOJobs(namespace string) MinIOJobNamespaceLister
 	MinIOJobListerExpansion
@@ -38,25 +38,17 @@ type MinIOJobLister interface {
 
 // minIOJobLister implements the MinIOJobLister interface.
 type minIOJobLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*jobminiov1alpha1.MinIOJob]
 }
 
 // NewMinIOJobLister returns a new MinIOJobLister.
 func NewMinIOJobLister(indexer cache.Indexer) MinIOJobLister {
-	return &minIOJobLister{indexer: indexer}
-}
-
-// List lists all MinIOJobs in the indexer.
-func (s *minIOJobLister) List(selector labels.Selector) (ret []*v1alpha1.MinIOJob, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.MinIOJob))
-	})
-	return ret, err
+	return &minIOJobLister{listers.New[*jobminiov1alpha1.MinIOJob](indexer, jobminiov1alpha1.Resource("miniojob"))}
 }
 
 // MinIOJobs returns an object that can list and get MinIOJobs.
 func (s *minIOJobLister) MinIOJobs(namespace string) MinIOJobNamespaceLister {
-	return minIOJobNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return minIOJobNamespaceLister{listers.NewNamespaced[*jobminiov1alpha1.MinIOJob](s.ResourceIndexer, namespace)}
 }
 
 // MinIOJobNamespaceLister helps list and get MinIOJobs.
@@ -64,36 +56,15 @@ func (s *minIOJobLister) MinIOJobs(namespace string) MinIOJobNamespaceLister {
 type MinIOJobNamespaceLister interface {
 	// List lists all MinIOJobs in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.MinIOJob, err error)
+	List(selector labels.Selector) (ret []*jobminiov1alpha1.MinIOJob, err error)
 	// Get retrieves the MinIOJob from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.MinIOJob, error)
+	Get(name string) (*jobminiov1alpha1.MinIOJob, error)
 	MinIOJobNamespaceListerExpansion
 }
 
 // minIOJobNamespaceLister implements the MinIOJobNamespaceLister
 // interface.
 type minIOJobNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all MinIOJobs in the indexer for a given namespace.
-func (s minIOJobNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.MinIOJob, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.MinIOJob))
-	})
-	return ret, err
-}
-
-// Get retrieves the MinIOJob from the indexer for a given namespace and name.
-func (s minIOJobNamespaceLister) Get(name string) (*v1alpha1.MinIOJob, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("miniojob"), name)
-	}
-	return obj.(*v1alpha1.MinIOJob), nil
+	listers.ResourceIndexer[*jobminiov1alpha1.MinIOJob]
 }

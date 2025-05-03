@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// TenantStatusApplyConfiguration represents an declarative configuration of the TenantStatus type for use
+// TenantStatusApplyConfiguration represents a declarative configuration of the TenantStatus type for use
 // with apply.
 type TenantStatusApplyConfiguration struct {
 	CurrentState       *string                              `json:"currentState,omitempty"`
@@ -44,7 +44,7 @@ type TenantStatusApplyConfiguration struct {
 	ProvisionedBuckets *bool                                `json:"provisionedBuckets,omitempty"`
 }
 
-// TenantStatusApplyConfiguration constructs an declarative configuration of the TenantStatus type for use with
+// TenantStatusApplyConfiguration constructs a declarative configuration of the TenantStatus type for use with
 // apply.
 func TenantStatus() *TenantStatusApplyConfiguration {
 	return &TenantStatusApplyConfiguration{}

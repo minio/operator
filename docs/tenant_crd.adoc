@@ -364,13 +364,13 @@ Specify an object containing the following fields: +
 |*Optional* +
 
 
-Specify the GCP default credentials to be used for KES to authenticate to GCP key store
+ Specify the GCP default credentials to be used for KES to authenticate to GCP key store
 
 |*`gcpWorkloadIdentityPool`* __string__ 
 |*Optional* +
 
 
-Specify the name of the workload identity pool (This is required for generating service account token)
+ Specify the name of the workload identity pool (This is required for generating service account token)
 
 |*`annotations`* __object (keys:string, values:string)__ 
 |*Optional* +

@@ -19,18 +19,18 @@
 package v2
 
 import (
-	v2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
+	miniominiov2 "github.com/minio/operator/pkg/apis/minio.min.io/v2"
 )
 
-// CustomCertificatesApplyConfiguration represents an declarative configuration of the CustomCertificates type for use
+// CustomCertificatesApplyConfiguration represents a declarative configuration of the CustomCertificates type for use
 // with apply.
 type CustomCertificatesApplyConfiguration struct {
-	Client   []*v2.CustomCertificateConfig `json:"client,omitempty"`
-	Minio    []*v2.CustomCertificateConfig `json:"minio,omitempty"`
-	MinioCAs []*v2.CustomCertificateConfig `json:"minioCAs,omitempty"`
+	Client   []*miniominiov2.CustomCertificateConfig `json:"client,omitempty"`
+	Minio    []*miniominiov2.CustomCertificateConfig `json:"minio,omitempty"`
+	MinioCAs []*miniominiov2.CustomCertificateConfig `json:"minioCAs,omitempty"`
 }
 
-// CustomCertificatesApplyConfiguration constructs an declarative configuration of the CustomCertificates type for use with
+// CustomCertificatesApplyConfiguration constructs a declarative configuration of the CustomCertificates type for use with
 // apply.
 func CustomCertificates() *CustomCertificatesApplyConfiguration {
 	return &CustomCertificatesApplyConfiguration{}
@@ -39,7 +39,7 @@ func CustomCertificates() *CustomCertificatesApplyConfiguration {
 // WithClient adds the given value to the Client field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Client field.
-func (b *CustomCertificatesApplyConfiguration) WithClient(values ...**v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
+func (b *CustomCertificatesApplyConfiguration) WithClient(values ...**miniominiov2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithClient")
@@ -52,7 +52,7 @@ func (b *CustomCertificatesApplyConfiguration) WithClient(values ...**v2.CustomC
 // WithMinio adds the given value to the Minio field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the Minio field.
-func (b *CustomCertificatesApplyConfiguration) WithMinio(values ...**v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
+func (b *CustomCertificatesApplyConfiguration) WithMinio(values ...**miniominiov2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithMinio")
@@ -65,7 +65,7 @@ func (b *CustomCertificatesApplyConfiguration) WithMinio(values ...**v2.CustomCe
 // WithMinioCAs adds the given value to the MinioCAs field in the declarative configuration
 // and returns the receiver, so that objects can be build by chaining "With" function invocations.
 // If called multiple times, values provided by each call will be appended to the MinioCAs field.
-func (b *CustomCertificatesApplyConfiguration) WithMinioCAs(values ...**v2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
+func (b *CustomCertificatesApplyConfiguration) WithMinioCAs(values ...**miniominiov2.CustomCertificateConfig) *CustomCertificatesApplyConfiguration {
 	for i := range values {
 		if values[i] == nil {
 			panic("nil value passed to WithMinioCAs")

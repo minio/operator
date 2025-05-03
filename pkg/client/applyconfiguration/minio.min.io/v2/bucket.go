@@ -18,7 +18,7 @@
 
 package v2
 
-// BucketApplyConfiguration represents an declarative configuration of the Bucket type for use
+// BucketApplyConfiguration represents a declarative configuration of the Bucket type for use
 // with apply.
 type BucketApplyConfiguration struct {
 	Name          *string `json:"name,omitempty"`
@@ -26,7 +26,7 @@ type BucketApplyConfiguration struct {
 	ObjectLocking *bool   `json:"objectLock,omitempty"`
 }
 
-// BucketApplyConfiguration constructs an declarative configuration of the Bucket type for use with
+// BucketApplyConfiguration constructs a declarative configuration of the Bucket type for use with
 // apply.
 func Bucket() *BucketApplyConfiguration {
 	return &BucketApplyConfiguration{}

@@ -18,7 +18,7 @@
 
 package v2
 
-// TierUsageApplyConfiguration represents an declarative configuration of the TierUsage type for use
+// TierUsageApplyConfiguration represents a declarative configuration of the TierUsage type for use
 // with apply.
 type TierUsageApplyConfiguration struct {
 	Name      *string `json:"Name,omitempty"`
@@ -26,7 +26,7 @@ type TierUsageApplyConfiguration struct {
 	TotalSize *int64  `json:"totalSize,omitempty"`
 }
 
-// TierUsageApplyConfiguration constructs an declarative configuration of the TierUsage type for use with
+// TierUsageApplyConfiguration constructs a declarative configuration of the TierUsage type for use with
 // apply.
 func TierUsage() *TierUsageApplyConfiguration {
 	return &TierUsageApplyConfiguration{}
