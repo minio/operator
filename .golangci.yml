@@ -3,6 +3,10 @@ linters-settings:
     min-confidence: 0
   misspell:
     locale: US
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
 
 run:
   go: '1.23'
