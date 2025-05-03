@@ -3,10 +3,10 @@ name: UI
 on:
   pull_request:
     branches:
-      - v5.0.*
+      - v5.*
   push:
     branches:
-      - v5.0.*
+      - v5.*
 
 # This ensures that previous jobs for the PR are canceled when the PR is
 # updated.

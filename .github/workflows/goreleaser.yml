@@ -5,7 +5,7 @@ on:
     types: [opened, reopened, synchronize]
     branches:
       - 'release*'
-      - 'v5.0.*'
+      - 'v5*'
       - 'master'
 
 jobs:
