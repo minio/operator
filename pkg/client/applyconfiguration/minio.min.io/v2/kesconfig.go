@@ -22,7 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// KESConfigApplyConfiguration represents an declarative configuration of the KESConfig type for use
+// KESConfigApplyConfiguration represents a declarative configuration of the KESConfig type for use
 // with apply.
 type KESConfigApplyConfiguration struct {
 	Replicas                  *int32                                       `json:"replicas,omitempty"`
@@ -47,7 +47,7 @@ type KESConfigApplyConfiguration struct {
 	Env                       []v1.EnvVar                                  `json:"env,omitempty"`
 }
 
-// KESConfigApplyConfiguration constructs an declarative configuration of the KESConfig type for use with
+// KESConfigApplyConfiguration constructs a declarative configuration of the KESConfig type for use with
 // apply.
 func KESConfig() *KESConfigApplyConfiguration {
 	return &KESConfigApplyConfiguration{}

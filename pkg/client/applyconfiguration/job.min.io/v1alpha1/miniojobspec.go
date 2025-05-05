@@ -22,7 +22,7 @@ import (
 	jobminiov1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 )
 
-// MinIOJobSpecApplyConfiguration represents an declarative configuration of the MinIOJobSpec type for use
+// MinIOJobSpecApplyConfiguration represents a declarative configuration of the MinIOJobSpec type for use
 // with apply.
 type MinIOJobSpecApplyConfiguration struct {
 	ServiceAccountName *string                           `json:"serviceAccountName,omitempty"`
@@ -33,7 +33,7 @@ type MinIOJobSpecApplyConfiguration struct {
 	MCImage            *string                           `json:"mcImage,omitempty"`
 }
 
-// MinIOJobSpecApplyConfiguration constructs an declarative configuration of the MinIOJobSpec type for use with
+// MinIOJobSpecApplyConfiguration constructs a declarative configuration of the MinIOJobSpec type for use with
 // apply.
 func MinIOJobSpec() *MinIOJobSpecApplyConfiguration {
 	return &MinIOJobSpecApplyConfiguration{}

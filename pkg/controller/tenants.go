@@ -72,7 +72,7 @@ func (c *Controller) renewCert(secret corev1.Secret, index int, tenant *miniov2.
 		return errors.New("empty cert data")
 	}
 	CACertificate := data.Data["ca.crt"]
-	if CACertificate == nil || len(CACertificate) <= 0 {
+	if len(CACertificate) <= 0 {
 		klog.Errorf("ca.crt certificate data can't be empty: %s", CACertificate)
 		return errors.New("empty cert ca data")
 	}

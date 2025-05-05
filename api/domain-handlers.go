@@ -51,7 +51,6 @@ func getUpdateDomainsResponse(session *models.Principal, params operator_api.Upd
 	}
 
 	err = updateTenantDomains(ctx, opClient, params.Namespace, params.Tenant, params.Body.Domains)
-
 	if err != nil {
 		return ErrorWithContext(ctx, err)
 	}

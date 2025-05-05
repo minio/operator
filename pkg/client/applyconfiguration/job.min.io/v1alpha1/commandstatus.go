@@ -18,7 +18,7 @@
 
 package v1alpha1
 
-// CommandStatusApplyConfiguration represents an declarative configuration of the CommandStatus type for use
+// CommandStatusApplyConfiguration represents a declarative configuration of the CommandStatus type for use
 // with apply.
 type CommandStatusApplyConfiguration struct {
 	Name    *string `json:"name,omitempty"`
@@ -26,7 +26,7 @@ type CommandStatusApplyConfiguration struct {
 	Message *string `json:"message,omitempty"`
 }
 
-// CommandStatusApplyConfiguration constructs an declarative configuration of the CommandStatus type for use with
+// CommandStatusApplyConfiguration constructs a declarative configuration of the CommandStatus type for use with
 // apply.
 func CommandStatus() *CommandStatusApplyConfiguration {
 	return &CommandStatusApplyConfiguration{}

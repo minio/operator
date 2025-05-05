@@ -19,171 +19,33 @@
 package fake
 
 import (
-	"context"
-	json "encoding/json"
-	"fmt"
-
 	v1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	jobminiov1alpha1 "github.com/minio/operator/pkg/client/applyconfiguration/job.min.io/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	typedjobminiov1alpha1 "github.com/minio/operator/pkg/client/clientset/versioned/typed/job.min.io/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeMinIOJobs implements MinIOJobInterface
-type FakeMinIOJobs struct {
+// fakeMinIOJobs implements MinIOJobInterface
+type fakeMinIOJobs struct {
+	*gentype.FakeClientWithListAndApply[*v1alpha1.MinIOJob, *v1alpha1.MinIOJobList, *jobminiov1alpha1.MinIOJobApplyConfiguration]
 	Fake *FakeJobV1alpha1
-	ns   string
 }
 
-var miniojobsResource = v1alpha1.SchemeGroupVersion.WithResource("miniojobs")
-
-var miniojobsKind = v1alpha1.SchemeGroupVersion.WithKind("MinIOJob")
-
-// Get takes name of the minIOJob, and returns the corresponding minIOJob object, and an error if there is any.
-func (c *FakeMinIOJobs) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.MinIOJob, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(miniojobsResource, c.ns, name), &v1alpha1.MinIOJob{})
-
-	if obj == nil {
-		return nil, err
+func newFakeMinIOJobs(fake *FakeJobV1alpha1, namespace string) typedjobminiov1alpha1.MinIOJobInterface {
+	return &fakeMinIOJobs{
+		gentype.NewFakeClientWithListAndApply[*v1alpha1.MinIOJob, *v1alpha1.MinIOJobList, *jobminiov1alpha1.MinIOJobApplyConfiguration](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("miniojobs"),
+			v1alpha1.SchemeGroupVersion.WithKind("MinIOJob"),
+			func() *v1alpha1.MinIOJob { return &v1alpha1.MinIOJob{} },
+			func() *v1alpha1.MinIOJobList { return &v1alpha1.MinIOJobList{} },
+			func(dst, src *v1alpha1.MinIOJobList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.MinIOJobList) []*v1alpha1.MinIOJob { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha1.MinIOJobList, items []*v1alpha1.MinIOJob) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.MinIOJob), err
-}
-
-// List takes label and field selectors, and returns the list of MinIOJobs that match those selectors.
-func (c *FakeMinIOJobs) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.MinIOJobList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(miniojobsResource, miniojobsKind, c.ns, opts), &v1alpha1.MinIOJobList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.MinIOJobList{ListMeta: obj.(*v1alpha1.MinIOJobList).ListMeta}
-	for _, item := range obj.(*v1alpha1.MinIOJobList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested minIOJobs.
-func (c *FakeMinIOJobs) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(miniojobsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a minIOJob and creates it.  Returns the server's representation of the minIOJob, and an error, if there is any.
-func (c *FakeMinIOJobs) Create(ctx context.Context, minIOJob *v1alpha1.MinIOJob, opts v1.CreateOptions) (result *v1alpha1.MinIOJob, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(miniojobsResource, c.ns, minIOJob), &v1alpha1.MinIOJob{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MinIOJob), err
-}
-
-// Update takes the representation of a minIOJob and updates it. Returns the server's representation of the minIOJob, and an error, if there is any.
-func (c *FakeMinIOJobs) Update(ctx context.Context, minIOJob *v1alpha1.MinIOJob, opts v1.UpdateOptions) (result *v1alpha1.MinIOJob, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(miniojobsResource, c.ns, minIOJob), &v1alpha1.MinIOJob{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MinIOJob), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeMinIOJobs) UpdateStatus(ctx context.Context, minIOJob *v1alpha1.MinIOJob, opts v1.UpdateOptions) (*v1alpha1.MinIOJob, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(miniojobsResource, "status", c.ns, minIOJob), &v1alpha1.MinIOJob{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MinIOJob), err
-}
-
-// Delete takes name of the minIOJob and deletes it. Returns an error if one occurs.
-func (c *FakeMinIOJobs) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(miniojobsResource, c.ns, name, opts), &v1alpha1.MinIOJob{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeMinIOJobs) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(miniojobsResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.MinIOJobList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched minIOJob.
-func (c *FakeMinIOJobs) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.MinIOJob, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(miniojobsResource, c.ns, name, pt, data, subresources...), &v1alpha1.MinIOJob{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MinIOJob), err
-}
-
-// Apply takes the given apply declarative configuration, applies it and returns the applied minIOJob.
-func (c *FakeMinIOJobs) Apply(ctx context.Context, minIOJob *jobminiov1alpha1.MinIOJobApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.MinIOJob, err error) {
-	if minIOJob == nil {
-		return nil, fmt.Errorf("minIOJob provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(minIOJob)
-	if err != nil {
-		return nil, err
-	}
-	name := minIOJob.Name
-	if name == nil {
-		return nil, fmt.Errorf("minIOJob.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(miniojobsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.MinIOJob{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MinIOJob), err
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *FakeMinIOJobs) ApplyStatus(ctx context.Context, minIOJob *jobminiov1alpha1.MinIOJobApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.MinIOJob, err error) {
-	if minIOJob == nil {
-		return nil, fmt.Errorf("minIOJob provided to Apply must not be nil")
-	}
-	data, err := json.Marshal(minIOJob)
-	if err != nil {
-		return nil, err
-	}
-	name := minIOJob.Name
-	if name == nil {
-		return nil, fmt.Errorf("minIOJob.Name must be provided to Apply")
-	}
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(miniojobsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.MinIOJob{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.MinIOJob), err
 }

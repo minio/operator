@@ -29,7 +29,7 @@ type FakeMinioV2 struct {
 }
 
 func (c *FakeMinioV2) Tenants(namespace string) v2.TenantInterface {
-	return &FakeTenants{c, namespace}
+	return newFakeTenants(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

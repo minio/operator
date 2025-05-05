@@ -18,7 +18,7 @@
 
 package v1alpha1
 
-// CommandSpecApplyConfiguration represents an declarative configuration of the CommandSpec type for use
+// CommandSpecApplyConfiguration represents a declarative configuration of the CommandSpec type for use
 // with apply.
 type CommandSpecApplyConfiguration struct {
 	Operation *string           `json:"op,omitempty"`
@@ -27,7 +27,7 @@ type CommandSpecApplyConfiguration struct {
 	DependsOn []string          `json:"dependsOn,omitempty"`
 }
 
-// CommandSpecApplyConfiguration constructs an declarative configuration of the CommandSpec type for use with
+// CommandSpecApplyConfiguration constructs a declarative configuration of the CommandSpec type for use with
 // apply.
 func CommandSpec() *CommandSpecApplyConfiguration {
 	return &CommandSpecApplyConfiguration{}

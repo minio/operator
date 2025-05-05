@@ -18,13 +18,13 @@
 
 package v1alpha1
 
-// PolicyBindingUsageApplyConfiguration represents an declarative configuration of the PolicyBindingUsage type for use
+// PolicyBindingUsageApplyConfiguration represents a declarative configuration of the PolicyBindingUsage type for use
 // with apply.
 type PolicyBindingUsageApplyConfiguration struct {
 	Authorizations *int64 `json:"authotizations,omitempty"`
 }
 
-// PolicyBindingUsageApplyConfiguration constructs an declarative configuration of the PolicyBindingUsage type for use with
+// PolicyBindingUsageApplyConfiguration constructs a declarative configuration of the PolicyBindingUsage type for use with
 // apply.
 func PolicyBindingUsage() *PolicyBindingUsageApplyConfiguration {
 	return &PolicyBindingUsageApplyConfiguration{}

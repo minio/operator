@@ -19,13 +19,13 @@
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	jobminiov1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
+	apisjobminiov1alpha1 "github.com/minio/operator/pkg/apis/job.min.io/v1alpha1"
 	versioned "github.com/minio/operator/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/minio/operator/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
+	jobminiov1alpha1 "github.com/minio/operator/pkg/client/listers/job.min.io/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -36,7 +36,7 @@ import (
 // MinIOJobs.
 type MinIOJobInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.MinIOJobLister
+	Lister() jobminiov1alpha1.MinIOJobLister
 }
 
 type minIOJobInformer struct {
@@ -71,7 +71,7 @@ func NewFilteredMinIOJobInformer(client versioned.Interface, namespace string, r
 				return client.JobV1alpha1().MinIOJobs(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&jobminiov1alpha1.MinIOJob{},
+		&apisjobminiov1alpha1.MinIOJob{},
 		resyncPeriod,
 		indexers,
 	)
@@ -82,9 +82,9 @@ func (f *minIOJobInformer) defaultInformer(client versioned.Interface, resyncPer
 }
 
 func (f *minIOJobInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&jobminiov1alpha1.MinIOJob{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisjobminiov1alpha1.MinIOJob{}, f.defaultInformer)
 }
 
-func (f *minIOJobInformer) Lister() v1alpha1.MinIOJobLister {
-	return v1alpha1.NewMinIOJobLister(f.Informer().GetIndexer())
+func (f *minIOJobInformer) Lister() jobminiov1alpha1.MinIOJobLister {
+	return jobminiov1alpha1.NewMinIOJobLister(f.Informer().GetIndexer())
 }

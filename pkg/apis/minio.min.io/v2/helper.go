@@ -45,7 +45,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -358,10 +358,10 @@ func (t *Tenant) EnsureDefaults() *Tenant {
 		if t.Spec.CertConfig.CommonName == "" {
 			t.Spec.CertConfig.CommonName = t.MinIOWildCardName()
 		}
-		if t.Spec.CertConfig.DNSNames == nil || len(t.Spec.CertConfig.DNSNames) == 0 {
+		if len(t.Spec.CertConfig.DNSNames) == 0 {
 			t.Spec.CertConfig.DNSNames = t.MinIOHosts()
 		}
-		if t.Spec.CertConfig.OrganizationName == nil || len(t.Spec.CertConfig.OrganizationName) == 0 {
+		if len(t.Spec.CertConfig.OrganizationName) == 0 {
 			t.Spec.CertConfig.OrganizationName = DefaultOrgName
 		}
 	} else {
@@ -418,8 +418,8 @@ func (t *Tenant) MinIOEndpoints(hostsTemplate string) (endpoints []string) {
 
 // GenBearerToken returns the JWT token for current Tenant for Prometheus authentication
 func (t *Tenant) GenBearerToken(accessKey, secretKey string) string {
-	jwt := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.StandardClaims{
-		ExpiresAt: time.Now().UTC().Add(defaultPrometheusJWTExpiry).Unix(),
+	jwt := jwt.NewWithClaims(jwt.SigningMethodHS512, jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(defaultPrometheusJWTExpiry)),
 		Subject:   accessKey,
 		Issuer:    "prometheus",
 	})

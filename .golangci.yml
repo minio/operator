@@ -3,9 +3,13 @@ linters-settings:
     min-confidence: 0
   misspell:
     locale: US
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true
 
 run:
-  go: '1.21'
+  go: '1.23'
 
 linters:
   disable-all: true
@@ -35,4 +39,4 @@ issues:
         - deadcode
 
 service:
-  golangci-lint-version: 1.51.2 # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.64.6 # use the fixed version to not introduce new linters unexpectedly

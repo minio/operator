@@ -167,7 +167,6 @@ func getLoginOauth2AuthResponse(params authApi.LoginOauth2AuthParams) (*models.L
 
 		var requestItems oauth2.LoginURLParams
 		err = json.Unmarshal(decodedRState, &requestItems)
-
 		if err != nil {
 			return nil, ErrorWithContext(ctx, err)
 		}

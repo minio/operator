@@ -18,7 +18,7 @@
 
 package v1alpha1
 
-// MinIOJobStatusApplyConfiguration represents an declarative configuration of the MinIOJobStatus type for use
+// MinIOJobStatusApplyConfiguration represents a declarative configuration of the MinIOJobStatus type for use
 // with apply.
 type MinIOJobStatusApplyConfiguration struct {
 	Phase          *string                           `json:"phase,omitempty"`
@@ -26,7 +26,7 @@ type MinIOJobStatusApplyConfiguration struct {
 	Message        *string                           `json:"message,omitempty"`
 }
 
-// MinIOJobStatusApplyConfiguration constructs an declarative configuration of the MinIOJobStatus type for use with
+// MinIOJobStatusApplyConfiguration constructs a declarative configuration of the MinIOJobStatus type for use with
 // apply.
 func MinIOJobStatus() *MinIOJobStatusApplyConfiguration {
 	return &MinIOJobStatusApplyConfiguration{}

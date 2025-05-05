@@ -22,7 +22,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// SideCarsApplyConfiguration represents an declarative configuration of the SideCars type for use
+// SideCarsApplyConfiguration represents a declarative configuration of the SideCars type for use
 // with apply.
 type SideCarsApplyConfiguration struct {
 	Containers           []v1.Container             `json:"containers,omitempty"`
@@ -31,7 +31,7 @@ type SideCarsApplyConfiguration struct {
 	Resources            *v1.ResourceRequirements   `json:"resources,omitempty"`
 }
 
-// SideCarsApplyConfiguration constructs an declarative configuration of the SideCars type for use with
+// SideCarsApplyConfiguration constructs a declarative configuration of the SideCars type for use with
 // apply.
 func SideCars() *SideCarsApplyConfiguration {
 	return &SideCarsApplyConfiguration{}
