@@ -745,6 +745,11 @@ type Pool struct {
 	// If provided, each pod on the Statefulset will run with the specified RuntimeClassName, for more info https://kubernetes.io/docs/concepts/containers/runtime-class/
 	// +optional
 	RuntimeClassName *string `json:"runtimeClassName,omitempty"`
+	// *Optional* +
+	//
+	// If provided, each pod on the Statefulset will get the specified terminationGracePeriodSeconds.
+	// +optional
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 }
 
 // EqualImage returns true if config image and current input image are same
