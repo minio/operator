@@ -184,22 +184,24 @@ spec:
     {{- end }}
     ## Key name to be created on the KMS, default is "my-minio-key"
     keyName: {{ .kes.keyName | quote }}
-    {{- with (dig "resources" (dict) .) }}
-    resources: {{- toYaml . | nindent 4 }}
+    {{- with (dig "kes" "resources" (dict) .) }}
+    resources: {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with (dig "nodeSelector" (dict) .) }}
-    nodeSelector: {{- toYaml . | nindent 4 }}
+    {{- with (dig "kes" "nodeSelector" (dict) .) }}
+    nodeSelector: {{- toYaml . | nindent 6 }}
     {{- end }}
     affinity:
-      nodeAffinity: {}
-      podAffinity: {}
-      podAntiAffinity: {}
-    tolerations: []
-    {{- with (dig "annotations" (dict) .) }}
-    annotations: {{- toYaml . | nindent 4 }}
+      nodeAffinity: {{- (dig "kes" "nodeAffinity" (dict) .) | toYaml | nindent 8 }}
+      podAffinity: {{- (dig "kes" "podAffinity" (dict) .) | toYaml | nindent 8 }}
+      podAntiAffinity: {{- (dig "kes" "podAntiAffinity" (dict) .) | toYaml | nindent 8 }}
+    {{- with (dig "kes" "tolerations" (list) .) }}
+    tolerations: {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "labels" (dict) .) }}
-    labels: {{- toYaml . | nindent 4 }}
+    {{- with (dig "kes" "annotations" (dict) .) }}
+    annotations: {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with (dig "kes" "labels" (dict) .) }}
+    labels: {{- toYaml . | nindent 6 }}
     {{- end }}
     serviceAccountName: {{ .kes.serviceAccountName | quote }}
     {{- if hasKey .kes "securityContext" }}
@@ -214,5 +216,8 @@ spec:
       {{- toYaml . | nindent 6 }}
       {{- end }}
       {{- end }}
+  {{- end }}
+  {{- with (dig "sideCars" (dict) .) }}
+  sideCars: {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- end }}
