@@ -184,10 +184,10 @@ spec:
     {{- end }}
     ## Key name to be created on the KMS, default is "my-minio-key"
     keyName: {{ .kes.keyName | quote }}
-    {{- with (dig "kes" "resources" (dict) .) }}
+    {{- with (dig "kes" "resources" (dict) .) | default (dig "resources" (dict) .)}}
     resources: {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with (dig "kes" "nodeSelector" (dict) .) }}
+    {{- with (dig "kes" "nodeSelector" (dict) .) | default (dig "nodeSelector" (dict) .) }}
     nodeSelector: {{- toYaml . | nindent 6 }}
     {{- end }}
     affinity:
@@ -197,10 +197,10 @@ spec:
     {{- with (dig "kes" "tolerations" (list) .) }}
     tolerations: {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- with (dig "kes" "annotations" (dict) .) }}
+    {{- with (dig "kes" "annotations" (dict) .) | default (dig "annotations" (dict) .) }}
     annotations: {{- toYaml . | nindent 6 }}
     {{- end }}
-    {{- with (dig "kes" "labels" (dict) .) }}
+    {{- with (dig "kes" "labels" (dict) .) | default (dig "labels" (dict) .) }}
     labels: {{- toYaml . | nindent 6 }}
     {{- end }}
     serviceAccountName: {{ .kes.serviceAccountName | quote }}
