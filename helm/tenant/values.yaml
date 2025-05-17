@@ -480,8 +480,8 @@ tenant:
   #        - ALL
   #    seccompProfile:
   #      type: RuntimeDefault
-  #  sideCars:
-  #    resources: { }
+  #sideCars:
+  #  resources: { }
 
 ###
 # Configures `Ingress <https://kubernetes.io/docs/concepts/services-networking/ingress/>`__ for the Tenant S3 API and Console.
