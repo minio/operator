@@ -191,9 +191,9 @@ spec:
     nodeSelector: {{- toYaml . | nindent 6 }}
     {{- end }}
     affinity:
-      nodeAffinity: {{- (dig "kes" "nodeAffinity" (dict) .) | toYaml | nindent 8 }}
-      podAffinity: {{- (dig "kes" "podAffinity" (dict) .) | toYaml | nindent 8 }}
-      podAntiAffinity: {{- (dig "kes" "podAntiAffinity" (dict) .) | toYaml | nindent 8 }}
+      nodeAffinity: {{- (dig "kes" "affinity" "nodeAffinity" (dict) .) | toYaml | nindent 8 }}
+      podAffinity: {{- (dig "kes" "affinity" "podAffinity" (dict) .) | toYaml | nindent 8 }}
+      podAntiAffinity: {{- (dig "kes" "affinity" "podAntiAffinity" (dict) .) | toYaml | nindent 8 }}
     {{- with (dig "kes" "tolerations" (list) .) }}
     tolerations: {{- toYaml . | nindent 4 }}
     {{- end }}
