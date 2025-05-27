@@ -112,7 +112,7 @@ function test_kes_tenant() {
   PASSWORD=$(kubectl -n tenant-kms-encrypted get secrets "$TENANT_CONFIG_SECRET" -o go-template='{{index .data "config.env"|base64decode }}' | grep 'export MINIO_ROOT_PASSWORD="' | sed -e 's/export MINIO_ROOT_PASSWORD="//g' | sed -e 's/"//g')
 
   totalwait=0
-  until (mc config host add kestest https://localhost:9000 $USER $PASSWORD --insecure); do
+  until (mc alias set kestest https://localhost:9000 $USER $PASSWORD --insecure); do
     echo "...waiting... for 5secs" && sleep 5
 
     totalwait=$((totalwait + 5))
