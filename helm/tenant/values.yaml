@@ -134,6 +134,9 @@ tenant:
       # The capacity per volume requested per MinIO Tenant Pod.
       size: 10Gi
       ###
+      # The `terminationGracePeriodSeconds <https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination-grace-period>`__ for MinIO Tenant Pods.
+      # terminationGracePeriodSeconds: 30
+      ###
       # The `storageClass <https://kubernetes.io/docs/concepts/storage/storage-classes/>`__ to associate with volumes generated for this pool.
       #
       # If using Amazon Elastic Block Store (EBS) CSI driver
