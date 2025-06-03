@@ -46,6 +46,9 @@ spec:
       {{- if .runtimeClassName }}
       runtimeClassName: {{ .runtimeClassName }}
       {{- end }}
+      {{- if .terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds | int }}
+      {{- end }}
       volumeClaimTemplate:
         metadata:
           name: data
