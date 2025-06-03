@@ -154,8 +154,9 @@ rules:
       - monitoring.coreos.com
     resources:
       - prometheuses
+      - prometheusagents
     verbs:
-      - '*'
+      - "*"
   - apiGroups:
       - "coordination.k8s.io"
     resources:

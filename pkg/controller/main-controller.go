@@ -304,6 +304,9 @@ func NewController(
 			}
 			controller.enqueueTenant(newObj)
 		},
+		// Enqueue tenant to perform some delete handling actions
+		// during reconciliation
+		DeleteFunc: controller.enqueueTenant,
 	})
 
 	// Set up an event handler for when StatefulSet resources change. This
