@@ -202,6 +202,12 @@ type Controller struct {
 	// policyBindingListerSynced returns true if the PolicyBinding shared informer
 	// has synced at least once.
 	policyBindingListerSynced cache.InformerSynced
+
+	// operatorScope defines if operator runs in "cluster" or "namespace" scope
+	operatorScope string
+
+	// currentNamespace is the namespace where operator is running (used in namespace scope)
+	currentNamespace string
 }
 
 // EventType is Event type to handle
@@ -230,6 +236,8 @@ func NewController(
 	promClient promclientset.Interface,
 	hostsTemplate,
 	operatorVersion string,
+	operatorScope string,
+	currentNamespace string,
 	kubeInformerFactory kubeinformers.SharedInformerFactory,
 	tenantInformer informers.TenantInformer,
 	policyBindingInformer stsInformers.PolicyBindingInformer,
@@ -257,7 +265,14 @@ func NewController(
 		labelSelectorString = "" // falback value
 	}
 
-	podInformer := utils.NewPodInformer(kubeClientSet, labelSelectorString)
+	var podInformer cache.SharedIndexInformer
+	if operatorScope == "namespace" {
+		// For namespace scope, restrict pod informer to current namespace
+		podInformer = utils.NewPodInformer(kubeClientSet, labelSelectorString, currentNamespace)
+	} else {
+		// For cluster scope, watch all namespaces
+		podInformer = utils.NewPodInformer(kubeClientSet, labelSelectorString, "")
+	}
 
 	controller := &Controller{
 		podName:                   podName,
@@ -282,6 +297,8 @@ func NewController(
 		hostsTemplate:             hostsTemplate,
 		operatorVersion:           operatorVersion,
 		policyBindingListerSynced: policyBindingInformer.Informer().HasSynced,
+		operatorScope:             operatorScope,
+		currentNamespace:          currentNamespace,
 	}
 
 	// Initialize operator HTTP upgrade server handlers

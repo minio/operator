@@ -32,6 +32,26 @@ helm install \
 
 The command deploys MinIO Operator on the Kubernetes cluster in the default configuration.
 
+Operator Scope
+--------------------
+
+MinIO Operator can run in two scopes:
+
+- **Cluster Scope** (default): The operator can manage tenants across the entire cluster
+- **Namespace Scope**: The operator manages tenants only in its own namespace, requiring less permissions
+
+To install the operator in namespace scope mode:
+
+```bash
+helm install \
+  --namespace minio-operator \
+  --create-namespace \
+  --set operator.scope=namespace \
+  minio-operator minio/operator
+```
+
+In namespace scope mode, the operator will only use Role and RoleBinding (not ClusterRole), and will automatically restrict tenant management to the namespace it's deployed in.
+
 Creating a Tenant
 -----------------
 

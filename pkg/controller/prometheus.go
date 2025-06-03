@@ -17,6 +17,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"os"
 	"reflect"
 	"strings"
 
@@ -42,6 +43,11 @@ func (c *Controller) getPrometheuses(ctx context.Context) ([]*promv1.Prometheus,
 	ns := miniov2.GetPrometheusNamespace()
 	promName := miniov2.GetPrometheusName()
 
+	// If in namespace scope, only look in current namespace
+	if os.Getenv("OPERATOR_SCOPE") == "namespace" {
+		ns = miniov2.GetNSFromFile()
+	}
+
 	var pList []*promv1.Prometheus
 
 	if promName != "" {
@@ -59,7 +65,6 @@ func (c *Controller) getPrometheuses(ctx context.Context) ([]*promv1.Prometheus,
 			return nil, err
 		}
 		pList = promList.Items
-
 	}
 	return pList, nil
 }
