@@ -21,10 +21,7 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
-	"os"
-	"os/signal"
 	"strings"
-	"syscall"
 	"time"
 
 	kubeinformers "k8s.io/client-go/informers"
@@ -485,22 +482,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
-func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
-	// use a Go context so we can tell the leaderelection code when we
-	// want to step down
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// listen for interrupts or the Linux SIGTERM signal and cancel
-	// our context, which the leader election code will observe and
-	// step down
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-ch
-		klog.Info("Received termination, signaling shutdown")
-		cancel()
-	}()
+func (c *Controller) Start(ctx context.Context, cancel context.CancelFunc, threadiness int, stopCh <-chan struct{}) error {
 
 	leaseLockName := "minio-operator-lock"
 	leaseLockNamespace := miniov2.GetNSFromFile()
@@ -568,7 +550,6 @@ func (c *Controller) Start(threadiness int, stopCh <-chan struct{}) error {
 				} else {
 					c.kubeClientSet.CoreV1().Pods(leaseLockNamespace).Patch(ctx, c.podName, types.JSONPatchType, payloadBytes, metav1.PatchOptions{})
 				}
-				c.Stop()
 				cancel()
 			},
 			OnNewLeader: func(identity string) {
