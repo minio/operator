@@ -483,7 +483,6 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
 func (c *Controller) Start(ctx context.Context, cancel context.CancelFunc, threadiness int, stopCh <-chan struct{}) error {
-
 	leaseLockName := "minio-operator-lock"
 	leaseLockNamespace := miniov2.GetNSFromFile()
 
