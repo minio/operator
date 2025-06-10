@@ -1065,14 +1065,7 @@ func ParseRawConfiguration(configuration []byte) (config map[string][]byte) {
 // GetPrometheusNamespace returns namespace of the prometheus managed by prometheus operator
 func GetPrometheusNamespace() string {
 	prometheusNamespaceOnce.Do(func() {
-		prometheusNamespace = envGet(PrometheusNamespace, "")
-		if prometheusNamespace == "" {
-			if os.Getenv(OperatorScopeEnv) == OperatorScopeNamespace {
-				prometheusNamespace = GetNSFromFile()
-			} else {
-				prometheusNamespace = DefaultPrometheusNamespace
-			}
-		}
+		prometheusNamespace = envGet(PrometheusNamespace, DefaultPrometheusNamespace)
 	})
 	return prometheusNamespace
 }
