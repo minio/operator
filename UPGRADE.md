@@ -89,7 +89,7 @@ If the prometheus is running on a particular namespace, `PROMETHEUS_NAMESPACE` c
 v4.2.3 - v4.2.4
 ---
 In this version we started running the MinIO pods as `non-root` to increase security in the MinIO deployment, however
-this has the implication that older tenants that were not sepcifying
+this has the implication that older tenants that were not specifying
 a [securityContext](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) on a per-pool basis may
 suddenly stop starting due to file-ownership problems.
 
@@ -101,7 +101,7 @@ Unable to read 'format.json' from https://production-storage-pool-0-1.production
 ```
 
 The solution for an existing tenant is to add a `securityContext` to each pool in the
-Tenant's `.spec.pools[*].securityContext` field with the following imlpicit default:
+Tenant's `.spec.pools[*].securityContext` field with the following implicit default:
 
 ```
 securityContext:

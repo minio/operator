@@ -3,6 +3,7 @@ apiVersion: minio.min.io/v2
 kind: Tenant
 metadata:
   name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
   ## Optionally pass labels to be applied to the statefulset pods
   labels:
     app: minio
@@ -44,6 +45,9 @@ spec:
       volumesPerServer: {{ .volumesPerServer | default 4 }}
       {{- if .runtimeClassName }}
       runtimeClassName: {{ .runtimeClassName }}
+      {{- end }}
+      {{- if .terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .terminationGracePeriodSeconds | int }}
       {{- end }}
       volumeClaimTemplate:
         metadata:
