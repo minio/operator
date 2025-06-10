@@ -24,7 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -188,15 +187,14 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 
 	timeout := time.NewTimer(miniov2.DefaultQueryTimeout)
 
-	ch := make(chan os.Signal, 1) // should be always un-buffered SA1017
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(ch)
+	ctx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
 
 	for {
 		select {
-		case s := <-ch:
-			klog.Infof("Signal %s received, exiting ...", s.String())
-			return nil, fmt.Errorf("%s", s.String())
+		case <-ctx.Done():
+			klog.Infof("Termination signal received, exiting.")
+			return nil, errors.New("Termination signal received, exiting.")
 
 		case <-tick.C:
 			if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
