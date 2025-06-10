@@ -17,7 +17,6 @@ package controller
 import (
 	"context"
 	"errors"
-	"os"
 	"reflect"
 	"strings"
 
@@ -42,11 +41,6 @@ type MinIOPrometheusMetrics struct {
 func (c *Controller) getPrometheuses(ctx context.Context) ([]*promv1.Prometheus, error) {
 	ns := miniov2.GetPrometheusNamespace()
 	promName := miniov2.GetPrometheusName()
-
-	// If in namespace scope, only look in current namespace
-	if os.Getenv("OPERATOR_SCOPE") == "namespace" {
-		ns = miniov2.GetNSFromFile()
-	}
 
 	var pList []*promv1.Prometheus
 

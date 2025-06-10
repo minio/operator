@@ -266,7 +266,7 @@ func NewController(
 	}
 
 	var podInformer cache.SharedIndexInformer
-	if operatorScope == "namespace" {
+	if operatorScope == miniov2.OperatorScopeNamespace {
 		// For namespace scope, restrict pod informer to current namespace
 		podInformer = utils.NewPodInformer(kubeClientSet, labelSelectorString, currentNamespace)
 	} else {

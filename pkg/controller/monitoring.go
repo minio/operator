@@ -63,7 +63,7 @@ func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
 func (c *Controller) tenantsHealthMonitor() error {
 	// list all tenants and get their cluster health
 	var namespace string
-	if c.operatorScope == "namespace" {
+	if c.operatorScope == miniov2.OperatorScopeNamespace {
 		namespace = c.currentNamespace
 	}
 	tenants, err := c.minioClientSet.MinioV2().Tenants(namespace).List(context.Background(), metav1.ListOptions{})

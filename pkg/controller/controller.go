@@ -50,8 +50,6 @@ import (
 const (
 	// OperatorWatchedNamespaceEnv Env variable name, the namespaces which the operator watches for MinIO tenants. Defaults to "" for all namespaces.
 	OperatorWatchedNamespaceEnv = "WATCHED_NAMESPACE"
-	// OperatorScopeEnv specifies the scope of the operator: "cluster" or "namespace"
-	OperatorScopeEnv = "OPERATOR_SCOPE"
 	// HostnameEnv Host name env variable
 	HostnameEnv = "HOSTNAME"
 )
@@ -135,16 +133,16 @@ func StartOperator(kubeconfig string) {
 	}
 
 	// Get operator scope - can be "cluster" (default) or "namespace"
-	operatorScope, hasScope := os.LookupEnv(OperatorScopeEnv)
-	if !hasScope || (operatorScope != "namespace" && operatorScope != "cluster") {
-		operatorScope = "cluster"
+	operatorScope, hasScope := os.LookupEnv(v2.OperatorScopeEnv)
+	if !hasScope || (operatorScope != v2.OperatorScopeNamespace && operatorScope != v2.OperatorScopeCluster) {
+		operatorScope = v2.OperatorScopeCluster
 	}
 
 	// Determine which namespaces to watch
 	var namespaces set.StringSet
 	var currentNamespace string
 
-	if operatorScope == "namespace" {
+	if operatorScope == v2.OperatorScopeNamespace {
 		// For namespace scope, only watch the current namespace
 		currentNamespace = v2.GetNSFromFile()
 		namespaces = set.NewStringSet()
@@ -168,7 +166,7 @@ func StartOperator(kubeconfig string) {
 	var kubeInformerFactory kubeinformers.SharedInformerFactory
 	var minioInformerFactory informers.SharedInformerFactory
 
-	if operatorScope == "namespace" {
+	if operatorScope == v2.OperatorScopeNamespace {
 		// For namespace scope, restrict all informers to the current namespace
 		kubeInformerFactory = kubeinformers.NewSharedInformerFactoryWithOptions(kubeClient, time.Second*30, kubeinformers.WithNamespace(currentNamespace))
 		minioInformerFactory = informers.NewSharedInformerFactoryWithOptions(controllerClient, time.Second*30, informers.WithNamespace(currentNamespace))

@@ -1067,7 +1067,7 @@ func GetPrometheusNamespace() string {
 	prometheusNamespaceOnce.Do(func() {
 		prometheusNamespace = envGet(PrometheusNamespace, "")
 		if prometheusNamespace == "" {
-			if os.Getenv("OPERATOR_SCOPE") == "namespace" {
+			if os.Getenv(OperatorScopeEnv) == OperatorScopeNamespace {
 				prometheusNamespace = GetNSFromFile()
 			} else {
 				prometheusNamespace = DefaultPrometheusNamespace
