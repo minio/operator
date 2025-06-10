@@ -193,8 +193,8 @@ func (c *Controller) fetchCertificate(ctx context.Context, csrName string) ([]by
 	for {
 		select {
 		case <-ctx.Done():
-			klog.Infof("Signal to exiting ...")
-			return nil, errors.New("Signal to exiting ...")
+			klog.Infof("Termination signal received, exiting.")
+			return nil, errors.New("Termination signal received, exiting.")
 
 		case <-tick.C:
 			if certificates.GetCertificatesAPIVersion(c.kubeClientSet) == certificates.CSRV1 {
