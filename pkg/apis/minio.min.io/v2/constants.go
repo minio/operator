@@ -223,3 +223,12 @@ const PrometheusAddlScrapeConfigSecret = "minio-prom-additional-scrape-config"
 
 // PrometheusAddlScrapeConfigKey is the key in secret data
 const PrometheusAddlScrapeConfigKey = "prometheus-additional.yaml"
+
+// OperatorScopeEnv specifies the scope of the operator: "cluster" or "namespace"
+const OperatorScopeEnv = "OPERATOR_SCOPE"
+
+// OperatorScopeCluster is the cluster scope
+const OperatorScopeCluster = "cluster"
+
+// OperatorScopeNamespace is the namespace scope
+const OperatorScopeNamespace = "namespace"

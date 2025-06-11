@@ -31,16 +31,16 @@ import (
 )
 
 // NewPodInformer creates a Shared Index Pod Informer matching the labelSelector string
-func NewPodInformer(kubeClientSet kubernetes.Interface, labelSelectorString string) cache.SharedIndexInformer {
+func NewPodInformer(kubeClientSet kubernetes.Interface, labelSelectorString string, namespace string) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(_ metav1.ListOptions) (runtime.Object, error) {
-				return kubeClientSet.CoreV1().Pods("").List(context.Background(), metav1.ListOptions{
+				return kubeClientSet.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{
 					LabelSelector: labelSelectorString,
 				})
 			},
 			WatchFunc: func(_ metav1.ListOptions) (watch.Interface, error) {
-				return kubeClientSet.CoreV1().Pods("").Watch(context.Background(), metav1.ListOptions{
+				return kubeClientSet.CoreV1().Pods(namespace).Watch(context.Background(), metav1.ListOptions{
 					LabelSelector: labelSelectorString,
 				})
 			},

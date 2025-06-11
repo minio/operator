@@ -59,7 +59,6 @@ func (c *Controller) getPrometheuses(ctx context.Context) ([]*promv1.Prometheus,
 			return nil, err
 		}
 		pList = promList.Items
-
 	}
 	return pList, nil
 }
