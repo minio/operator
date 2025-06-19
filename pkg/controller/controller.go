@@ -84,7 +84,6 @@ func StartOperator(kubeconfig string) {
 	// set up signals, so we handle the first shutdown signal gracefully
 	ctx, cancel := setupSignalHandler(context.Background())
 	defer cancel()
-	done := ctx.Done()
 
 	flag.Parse()
 
@@ -174,15 +173,15 @@ func StartOperator(kubeconfig string) {
 		kubeInformerFactoryInOperatorNamespace,
 	)
 
-	go kubeInformerFactory.Start(done)
-	go minioInformerFactory.Start(done)
-	go kubeInformerFactoryInOperatorNamespace.Start(done)
+	go kubeInformerFactory.Start(ctx.Done())
+	go minioInformerFactory.Start(ctx.Done())
+	go kubeInformerFactoryInOperatorNamespace.Start(ctx.Done())
 
-	if err = mainController.Start(ctx, cancel, 2, done); err != nil {
+	if err = mainController.Start(ctx, cancel, 2); err != nil {
 		klog.Fatalf("Error running mainController: %s", err.Error())
 	}
 
-	<-done
+	<-ctx.Done()
 	klog.Info("Shutting down the MinIO Operator")
 	mainController.Stop()
 }

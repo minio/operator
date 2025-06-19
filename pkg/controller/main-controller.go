@@ -373,8 +373,8 @@ func NewController(
 }
 
 // StartPodInformer runs PodInformer
-func (c *Controller) StartPodInformer(stopCh <-chan struct{}) {
-	c.podInformer.Run(stopCh)
+func (c *Controller) StartPodInformer(ctx context.Context) {
+	c.podInformer.Run(ctx.Done())
 }
 
 // startUpgradeServer Starts the Upgrade tenant API server and notifies the start and stop via notificationChannel returned
@@ -418,7 +418,7 @@ func (c *Controller) startSTSAPIServer(ctx context.Context, notificationChannel 
 
 // leaderRun start the Controller and the API's
 // When a new leader is elected this function is ran in the pod
-func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-chan struct{}, notificationChannel chan *EventNotification) {
+func leaderRun(ctx context.Context, c *Controller, threadiness int, notificationChannel chan *EventNotification) {
 	// we declate the channel to communicate on servers errors
 	var upgradeServerChannel <-chan error
 
@@ -430,21 +430,21 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 
 	// Wait for the caches to be synced before starting workers
 	klog.Info("Waiting for informer caches to sync")
-	if ok := cache.WaitForCacheSync(stopCh, c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced, c.secretListerSynced); !ok {
+	if ok := cache.WaitForCacheSync(ctx.Done(), c.statefulSetListerSynced, c.deploymentListerSynced, c.tenantsSynced, c.policyBindingListerSynced, c.secretListerSynced); !ok {
 		panic("failed to wait for caches to sync")
 	}
 
 	// Launch two workers to process Job resources
 	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runWorker, time.Second, stopCh)
+		go wait.Until(c.runWorker, time.Second, ctx.Done())
 	}
 
 	// Launch a single worker for Health Check reacting to Pod Changes
-	go wait.Until(c.runHealthCheckWorker, time.Second, stopCh)
+	go wait.Until(c.runHealthCheckWorker, time.Second, ctx.Done())
 
 	// Launch a goroutine to monitor all Tenants
-	go c.recurrentTenantStatusMonitor(stopCh)
-	go c.StartPodInformer(stopCh)
+	go c.recurrentTenantStatusMonitor(ctx)
+	go c.StartPodInformer(ctx)
 
 	// 2) we need to make sure we have STS API certificates (if enabled)
 	if IsSTSEnabled() {
@@ -472,7 +472,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 			}
 			// webserver was instructed to stop, do not attempt to restart
 			continue
-		case <-stopCh:
+		case <-ctx.Done():
 			return
 		}
 	}
@@ -482,7 +482,7 @@ func leaderRun(ctx context.Context, c *Controller, threadiness int, stopCh <-cha
 // as syncing informer caches and starting workers. It will block until stopCh
 // is closed, at which point it will shutdown the workqueue and wait for
 // workers to finish processing their current work items.
-func (c *Controller) Start(ctx context.Context, cancel context.CancelFunc, threadiness int, stopCh <-chan struct{}) error {
+func (c *Controller) Start(ctx context.Context, cancel context.CancelFunc, threadiness int) error {
 	leaseLockName := "minio-operator-lock"
 	leaseLockNamespace := miniov2.GetNSFromFile()
 
@@ -534,7 +534,7 @@ func (c *Controller) Start(ctx context.Context, cancel context.CancelFunc, threa
 		Callbacks: leaderelection.LeaderCallbacks{
 			OnStartedLeading: func(ctx context.Context) {
 				// start the controller + API code
-				leaderRun(ctx, c, threadiness, stopCh, notificationChannel)
+				leaderRun(ctx, c, threadiness, notificationChannel)
 			},
 			OnStoppedLeading: func() {
 				klog.Infof("leader lost, removing any leader labels that I '%s' might have", c.podName)
