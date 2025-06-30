@@ -62,6 +62,12 @@ tenant:
   #
   initContainers: [ ]
   ###
+  #
+  # Specify `sideCars <https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/>`__.
+  # See https://github.com/minio/operator/blob/master/docs/tenant_crd.adoc#sidecars
+  #
+  sideCars: { }
+  ###
   # The Kubernetes `Scheduler <https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/>`__ to use for dispatching Tenant pods.
   #
   # Specify an empty dictionary ``{}`` to dispatch pods with the default scheduler.

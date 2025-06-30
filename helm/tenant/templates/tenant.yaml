@@ -29,6 +29,9 @@ spec:
   {{- with (dig "initContainers" (list) .) }}
   initContainers: {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with (dig "sideCars" (dict) .) }}
+  sideCars: {{- toYaml . | nindent 4 }}
+  {{- end }}
   ## Secret with default environment variable configurations
   configuration:
     name: {{ .configSecret.name }}
