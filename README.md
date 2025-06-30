@@ -1,6 +1,6 @@
 # MinIO Operator
 
-![build](https://github.com/minio/operator/workflows/Go/badge.svg) ![license](https://img.shields.io/badge/license-AGPL%20V3-blue)
+[![build](https://img.shields.io/badge/build-passing-green.svg)](https://github.com/minio/operator/actions) [![license](https://img.shields.io/badge/license-AGPL%20V3-blue)](https://github.com/minio/operator/blob/master/LICENSE)
 
 [![MinIO](https://raw.githubusercontent.com/minio/minio/master/.github/logo.svg?sanitize=true)](https://min.io)
 
