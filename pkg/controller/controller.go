@@ -15,6 +15,7 @@
 package controller
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -79,8 +80,10 @@ func StartOperator(kubeconfig string) {
 	_ = stsv1beta1.AddToScheme(scheme.Scheme)
 	_ = stsv1alpha1.AddToScheme(scheme.Scheme)
 	klog.Info("Starting MinIO Operator")
+
 	// set up signals, so we handle the first shutdown signal gracefully
-	stopCh := setupSignalHandler()
+	ctx, cancel := setupSignalHandler(context.Background())
+	defer cancel()
 
 	flag.Parse()
 
@@ -170,15 +173,15 @@ func StartOperator(kubeconfig string) {
 		kubeInformerFactoryInOperatorNamespace,
 	)
 
-	go kubeInformerFactory.Start(stopCh)
-	go minioInformerFactory.Start(stopCh)
-	go kubeInformerFactoryInOperatorNamespace.Start(stopCh)
+	go kubeInformerFactory.Start(ctx.Done())
+	go minioInformerFactory.Start(ctx.Done())
+	go kubeInformerFactoryInOperatorNamespace.Start(ctx.Done())
 
-	if err = mainController.Start(2, stopCh); err != nil {
+	if err = mainController.Start(ctx, cancel, 2); err != nil {
 		klog.Fatalf("Error running mainController: %s", err.Error())
 	}
 
-	<-stopCh
+	<-ctx.Done()
 	klog.Info("Shutting down the MinIO Operator")
 	mainController.Stop()
 }
@@ -186,22 +189,11 @@ func StartOperator(kubeconfig string) {
 // setupSignalHandler registered for SIGTERM and SIGINT. A stop channel is returned
 // which is closed on one of these signals. If a second signal is caught, the program
 // is terminated with exit code 1.
-func setupSignalHandler() (stopCh <-chan struct{}) {
+func setupSignalHandler(ctx context.Context) (context.Context, context.CancelFunc) {
 	// panics when called twice
 	close(onlyOneSignalHandler)
 
-	stop := make(chan struct{})
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, shutdownSignals...)
-	go func() {
-		<-c
-		close(stop)
-		<-c
-		// second signal. Exit directly.
-		os.Exit(1)
-	}()
-
-	return stop
+	return signal.NotifyContext(ctx, shutdownSignals...)
 }
 
 // Result contains the result of a sync invocation.
