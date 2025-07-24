@@ -481,6 +481,11 @@ tenant:
   #    seccompProfile:
   #      type: RuntimeDefault
 
+  ###
+  # Customize sideCars, as defined in https://min.io/docs/minio/kubernetes/upstream/reference/operator-crd.html#sidecars
+  #sideCars:
+  #  resources: { }
+
 ###
 # Configures `Ingress <https://kubernetes.io/docs/concepts/services-networking/ingress/>`__ for the Tenant S3 API and Console.
 #
