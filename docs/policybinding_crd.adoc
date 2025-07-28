@@ -74,7 +74,6 @@ PolicyBinding is a https://kubernetes.io/docs/concepts/overview/working-with-obj
 |*`spec`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-policybindingspec[$$PolicyBindingSpec$$]__ 
 |*Required* +
 
-
 The root field for the MinIO PolicyBinding object.
 
 |===
@@ -123,7 +122,6 @@ PolicyBindingSpec (`spec`) defines the configuration of a MinIO PolicyBinding ob
 
 |*`application`* __xref:{anchor_prefix}-github-com-minio-operator-pkg-apis-sts-min-io-v1beta1-application[$$Application$$]__ 
 |*Required* +
-
 
 The Application Property identifies the namespace and service account that will be authorized
 
