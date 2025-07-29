@@ -50,15 +50,18 @@ const (
 
 var serverCertsManager *xcerts.Manager
 
-func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.Tenant) []*v1.Secret {
+func (c *Controller) fetchUserCredentials(ctx context.Context, tenant *miniov2.Tenant) ([]*v1.Secret, error) {
 	var userCredentials []*v1.Secret
 	for _, credential := range tenant.Spec.Users {
 		credentialSecret, err := c.kubeClientSet.CoreV1().Secrets(tenant.Namespace).Get(ctx, credential.Name, metav1.GetOptions{})
-		if err == nil && credentialSecret != nil {
+		if err != nil {
+			return nil, err
+		}
+		if credentialSecret != nil {
 			userCredentials = append(userCredentials, credentialSecret)
 		}
 	}
-	return userCredentials
+	return userCredentials, nil
 }
 
 // getTransport returns a *http.Transport with the collection of the trusted CA certificates
@@ -249,9 +252,9 @@ func (c *Controller) createUsers(ctx context.Context, tenant *miniov2.Tenant, te
 		}
 	}()
 
-	userCredentials := c.fetchUserCredentials(ctx, tenant)
-	if len(userCredentials) == 0 {
-		return nil
+	userCredentials, err := c.fetchUserCredentials(ctx, tenant)
+	if err != nil {
+		return err
 	}
 
 	if _, err = c.updateTenantStatus(ctx, tenant, StatusProvisioningInitialUsers, 0); err != nil {
