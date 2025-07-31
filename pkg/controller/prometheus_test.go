@@ -16,6 +16,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -38,26 +39,38 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		changedTokenNumber int
 	}
 	type arg struct {
-		accessKey     string
-		secretKey     string
-		beforeScrapes []configmaps.ScrapeConfig
-		paths         []string
-		expects       expect
+		accessKey       string
+		secretKey       string
+		tenantName      string
+		tenantNamespace string
+		beforeScrapes   []configmaps.ScrapeConfig
+		paths           []string
+		expects         expect
 	}
 	type args struct {
 		name string
 		arg  arg
 	}
+
+	tenantAName := "tenantA"
+	tenantANamespace := "tenantA-ns"
+	tenantBName := "tenantB"
+	tenantBNamespace := "tenantB-ns"
+
+	// Next is to emulate a tenant with same name as tenantA (different namespace)
+	tenantCName := tenantAName
+	tenantCNamespace := "tenantC-ns"
+
 	testRunCheckAndCreatePrometheusAddlConfig := func(t *testing.T, arg arg) {
 		beforeScrapesBytes, err := yaml.Marshal(arg.beforeScrapes)
 		if err != nil {
 			t.Fatal(err)
 		}
-		testNS := "default"
+		testNS := arg.tenantNamespace
 		prometheus := &v1.Prometheus{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "testPrometheus",
-				Namespace: testNS,
+				Namespace: "default",
 			},
 			Spec: v1.PrometheusSpec{
 				CommonPrometheusFields: v1.CommonPrometheusFields{
@@ -73,7 +86,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		beforeSecret := &v3.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      miniov2.PrometheusAddlScrapeConfigSecret,
-				Namespace: testNS,
+				Namespace: "default",
 			},
 			Data: map[string][]byte{
 				miniov2.PrometheusAddlScrapeConfigKey: beforeScrapesBytes,
@@ -86,7 +99,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		}
 		tenant := &miniov2.Tenant{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "testTenant",
+				Name:      arg.tenantName,
 				Namespace: testNS,
 			},
 			Spec: miniov2.TenantSpec{
@@ -99,7 +112,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		afterSecret, err := kubeclient.CoreV1().Secrets(testNS).Get(context.Background(), miniov2.PrometheusAddlScrapeConfigSecret, metav1.GetOptions{})
+		afterSecret, err := kubeclient.CoreV1().Secrets("default").Get(context.Background(), miniov2.PrometheusAddlScrapeConfigSecret, metav1.GetOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -138,13 +151,17 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		{
 			name: "testDefault",
 			arg: arg{
-				accessKey:     "accessKey",
-				secretKey:     "secretKey",
-				beforeScrapes: []configmaps.ScrapeConfig{},
+				accessKey:       "accessKey",
+				secretKey:       "secretKey",
+				beforeScrapes:   []configmaps.ScrapeConfig{},
+				tenantName:      tenantAName,
+				tenantNamespace: tenantANamespace,
 				expects: expect{
-					afterScrapeNumber:  1,
-					afterScrapePath:    []string{"/minio/v2/metrics/cluster"},
-					afterScrapeName:    []string{"testTenant-minio-job-0"},
+					afterScrapeNumber: 1,
+					afterScrapePath:   []string{"/minio/v2/metrics/cluster"},
+					afterScrapeName: []string{
+						fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+					},
 					changedTokenNumber: 0,
 				},
 			},
@@ -152,14 +169,19 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 		{
 			name: "testFirst",
 			arg: arg{
-				accessKey:     "accessKey",
-				secretKey:     "secretKey",
-				paths:         []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
-				beforeScrapes: []configmaps.ScrapeConfig{},
+				accessKey:       "accessKey",
+				secretKey:       "secretKey",
+				paths:           []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+				beforeScrapes:   []configmaps.ScrapeConfig{},
+				tenantName:      tenantAName,
+				tenantNamespace: tenantANamespace,
 				expects: expect{
-					afterScrapeNumber:  2,
-					afterScrapePath:    []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
-					afterScrapeName:    []string{"testTenant-minio-job-0", "testTenant-minio-job-1"},
+					afterScrapeNumber: 2,
+					afterScrapePath:   []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+					afterScrapeName: []string{
+						fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+					},
 					changedTokenNumber: 0,
 				},
 			},
@@ -180,10 +202,16 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 					},
 				},
+				tenantName:      tenantAName,
+				tenantNamespace: tenantANamespace,
 				expects: expect{
-					afterScrapeNumber:  3,
-					afterScrapePath:    []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
-					afterScrapeName:    []string{"testTarget", "testTenant-minio-job-0", "testTenant-minio-job-1"},
+					afterScrapeNumber: 3,
+					afterScrapePath:   []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+					afterScrapeName: []string{
+						"testTarget",
+						fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+					},
 					changedTokenNumber: 0,
 				},
 			},
@@ -204,7 +232,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 					},
 					{
-						JobName:     "testTenant-minio-job-0",
+						JobName:     fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
 						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
 						MetricsPath: "/minio/v2/metrics/cluster",
 						Scheme:      "https",
@@ -213,12 +241,12 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 						StaticConfigs: []configmaps.StaticConfig{
 							{
-								Targets: []string{"minio.default.svc.cluster.local:443"},
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
 							},
 						},
 					},
 					{
-						JobName:     "testTenant-minio-job-1",
+						JobName:     fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
 						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
 						MetricsPath: "/minio/metrics/v3/api",
 						Scheme:      "https",
@@ -227,15 +255,21 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 						StaticConfigs: []configmaps.StaticConfig{
 							{
-								Targets: []string{"minio.default.svc.cluster.local:443"},
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
 							},
 						},
 					},
 				},
+				tenantName:      tenantAName,
+				tenantNamespace: tenantANamespace,
 				expects: expect{
-					afterScrapeNumber:  3,
-					afterScrapePath:    []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
-					afterScrapeName:    []string{"testTarget", "testTenant-minio-job-0", "testTenant-minio-job-1"},
+					afterScrapeNumber: 3,
+					afterScrapePath:   []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+					afterScrapeName: []string{
+						"testTarget",
+						fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+					},
 					changedTokenNumber: 0,
 				},
 			},
@@ -256,7 +290,7 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 					},
 					{
-						JobName:     "testTenant-minio-job-0",
+						JobName:     fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
 						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
 						MetricsPath: "/minio/v2/metrics/cluster",
 						Scheme:      "https",
@@ -265,12 +299,12 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 						StaticConfigs: []configmaps.StaticConfig{
 							{
-								Targets: []string{"minio.default.svc.cluster.local:443"},
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
 							},
 						},
 					},
 					{
-						JobName:     "testTenant-minio-job-1",
+						JobName:     fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
 						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
 						MetricsPath: "/minio/metrics/v3/api",
 						Scheme:      "https",
@@ -279,16 +313,230 @@ func Test_checkAndCreatePrometheusAddlConfig(t *testing.T) {
 						},
 						StaticConfigs: []configmaps.StaticConfig{
 							{
-								Targets: []string{"minio.default.svc.cluster.local:443"},
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
 							},
 						},
 					},
 				},
+				tenantName:      tenantAName,
+				tenantNamespace: tenantANamespace,
 				expects: expect{
-					afterScrapeNumber:  3,
-					afterScrapePath:    []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
-					afterScrapeName:    []string{"testTarget", "testTenant-minio-job-0", "testTenant-minio-job-1"},
+					afterScrapeNumber: 3,
+					afterScrapePath:   []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+					afterScrapeName: []string{
+						"testTarget",
+						fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+					},
 					changedTokenNumber: 2,
+				},
+			},
+		},
+		{
+			name: "testMultiTenantDifferentName",
+			arg: arg{
+				accessKey: "accessKey",
+				secretKey: "secretKey",
+				paths:     []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+				beforeScrapes: []configmaps.ScrapeConfig{
+					{
+						JobName: "testTarget",
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{"testTarget"},
+							},
+						},
+					},
+					{
+						JobName:     fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
+						MetricsPath: "/minio/v2/metrics/cluster",
+						Scheme:      "https",
+						TLSConfig: configmaps.TLSConfig{
+							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						},
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
+							},
+						},
+					},
+					{
+						JobName:     fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
+						MetricsPath: "/minio/metrics/v3/api",
+						Scheme:      "https",
+						TLSConfig: configmaps.TLSConfig{
+							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						},
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
+							},
+						},
+					},
+				},
+				tenantName:      tenantBName,
+				tenantNamespace: tenantBNamespace,
+				expects: expect{
+					afterScrapeNumber: 5,
+					afterScrapePath:   []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+					afterScrapeName: []string{
+						"testTarget",
+						fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-0", tenantBName, tenantBNamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantBName, tenantBNamespace),
+					},
+					changedTokenNumber: 0,
+				},
+			},
+		},
+		{
+			name: "testMultiTenantSameName",
+			arg: arg{
+				accessKey: "accessKey",
+				secretKey: "secretKey",
+				paths:     []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+				beforeScrapes: []configmaps.ScrapeConfig{
+					{
+						JobName: "testTarget",
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{"testTarget"},
+							},
+						},
+					},
+					{
+						JobName:     fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
+						MetricsPath: "/minio/v2/metrics/cluster",
+						Scheme:      "https",
+						TLSConfig: configmaps.TLSConfig{
+							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						},
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
+							},
+						},
+					},
+					{
+						JobName:     fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
+						MetricsPath: "/minio/metrics/v3/api",
+						Scheme:      "https",
+						TLSConfig: configmaps.TLSConfig{
+							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						},
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
+							},
+						},
+					},
+				},
+				tenantName:      tenantCName,
+				tenantNamespace: tenantCNamespace,
+				expects: expect{
+					afterScrapeNumber: 5,
+					afterScrapePath:   []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+					afterScrapeName: []string{
+						"testTarget",
+						fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-0", tenantCName, tenantCNamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantCName, tenantCNamespace),
+					},
+					changedTokenNumber: 0,
+				},
+			},
+		},
+		{
+			name: "testMultiTenantSameNameNoChange",
+			arg: arg{
+				accessKey: "accessKey",
+				secretKey: "secretKey",
+				paths:     []string{"/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+				beforeScrapes: []configmaps.ScrapeConfig{
+					{
+						JobName: "testTarget",
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{"testTarget"},
+							},
+						},
+					},
+					{
+						JobName:     fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
+						MetricsPath: "/minio/v2/metrics/cluster",
+						Scheme:      "https",
+						TLSConfig: configmaps.TLSConfig{
+							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						},
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
+							},
+						},
+					},
+					{
+						JobName:     fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
+						MetricsPath: "/minio/metrics/v3/api",
+						Scheme:      "https",
+						TLSConfig: configmaps.TLSConfig{
+							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						},
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantANamespace)},
+							},
+						},
+					},
+					{
+						JobName:     fmt.Sprintf("%s-%s-minio-job-0", tenantCName, tenantCNamespace),
+						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
+						MetricsPath: "/minio/v2/metrics/cluster",
+						Scheme:      "https",
+						TLSConfig: configmaps.TLSConfig{
+							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						},
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantCNamespace)},
+							},
+						},
+					},
+					{
+						JobName:     fmt.Sprintf("%s-%s-minio-job-1", tenantCName, tenantCNamespace),
+						BearerToken: (&miniov2.Tenant{}).GenBearerToken("accessKey", "secretKey"),
+						MetricsPath: "/minio/metrics/v3/api",
+						Scheme:      "https",
+						TLSConfig: configmaps.TLSConfig{
+							CAFile: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+						},
+						StaticConfigs: []configmaps.StaticConfig{
+							{
+								Targets: []string{fmt.Sprintf("minio.%s.svc.cluster.local:443", tenantCNamespace)},
+							},
+						},
+					},
+				},
+				tenantName:      tenantAName,
+				tenantNamespace: tenantANamespace,
+				expects: expect{
+					afterScrapeNumber: 5,
+					afterScrapePath:   []string{"", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api", "/minio/v2/metrics/cluster", "/minio/metrics/v3/api"},
+					afterScrapeName: []string{
+						"testTarget",
+						fmt.Sprintf("%s-%s-minio-job-0", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantAName, tenantANamespace),
+						fmt.Sprintf("%s-%s-minio-job-0", tenantCName, tenantCNamespace),
+						fmt.Sprintf("%s-%s-minio-job-1", tenantCName, tenantCNamespace),
+					},
+					changedTokenNumber: 0,
 				},
 			},
 		},
