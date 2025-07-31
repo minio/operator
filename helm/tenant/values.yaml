@@ -301,8 +301,9 @@ tenant:
   buckets: [ ]
   ###
   # Array of Kubernetes secrets from which the Operator generates MinIO users during tenant provisioning.
-  #
+  # Each element in the array is an object consisting of a key-value pair ``name: <string>``, where the ``<string>`` references an opaque Kubernetes secret.
   # Each secret should specify the ``CONSOLE_ACCESS_KEY`` and ``CONSOLE_SECRET_KEY`` as the access key and secret key for that user.
+  # The Operator creates each user with the ``consoleAdmin`` policy by default. You can change the assigned policy after the Tenant starts.
   users: [ ]
   ###
   # The `PodManagement <https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#pod-management-policy>`__ policy for MinIO Tenant Pods. 
