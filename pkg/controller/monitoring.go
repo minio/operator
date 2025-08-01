@@ -40,7 +40,7 @@ const (
 )
 
 // recurrentTenantStatusMonitor loop that checks every N minutes for tenants health
-func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
+func (c *Controller) recurrentTenantStatusMonitor(ctx context.Context) {
 	// How often will this function run
 	interval := miniov2.GetMonitoringInterval()
 	ticker := time.NewTicker(time.Duration(interval) * time.Minute)
@@ -53,7 +53,7 @@ func (c *Controller) recurrentTenantStatusMonitor(stopCh <-chan struct{}) {
 			if err := c.tenantsHealthMonitor(); err != nil {
 				klog.Infof("%v", err)
 			}
-		case <-stopCh:
+		case <-ctx.Done():
 			ticker.Stop()
 			return
 		}
