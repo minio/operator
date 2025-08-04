@@ -247,6 +247,11 @@ type TenantSpec struct {
 	// +optional
 	Readiness *corev1.Probe `json:"readiness,omitempty"`
 
+	// SideCarReadiness Probe for side car containers. Container will be removed from service endpoints if the probe fails.
+	// default is {"httpGet":{"path":"/ready","port":4444,"scheme":"HTTP"},"initialDelaySeconds":5,"periodSeconds":1,"failureThreshold":1}
+	// +optional
+	SideCarReadiness *corev1.Probe `json:"sideCarReadiness,omitempty"`
+
 	// Startup Probe allows to configure a max grace period for a pod to start before getting traffic routed to it.
 	// +optional
 	Startup *corev1.Probe `json:"startup,omitempty"`
