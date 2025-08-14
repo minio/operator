@@ -148,6 +148,11 @@ spec:
   serviceAccountName: {{ dig "serviceAccountName" "" . }}
   {{- end }}
   prometheusOperator: {{ dig "prometheusOperator" "false" . }}
+  {{- if (dig "prometheusOperator" "false" .) }}
+  {{- with (dig "prometheusOperatorScrapeMetricsPaths" (list) .) }}
+  prometheusOperatorScrapeMetricsPaths: {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
   {{- with (dig "logging" (dict) .) }}
   logging: {{- toYaml . | nindent 4 }}
   {{- end }}
