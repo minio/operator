@@ -157,10 +157,10 @@ operator:
       requiredDuringSchedulingIgnoredDuringExecution:
         - labelSelector:
             matchExpressions:
-              - key: name
+              - key: app.kubernetes.io/name
                 operator: In
                 values:
-                  - minio-operator
+                  - operator
           topologyKey: kubernetes.io/hostname
   ###
   #
