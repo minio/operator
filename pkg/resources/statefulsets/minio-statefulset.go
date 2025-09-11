@@ -754,6 +754,10 @@ func getSideCarContainer(t *miniov2.Tenant, pool *miniov2.Pool) corev1.Container
 		FailureThreshold:    1,
 	}
 
+	if t.Spec.SideCarReadiness != nil {
+		readinessProbe = t.Spec.SideCarReadiness
+	}
+
 	sidecarContainer := corev1.Container{
 		Name:  "sidecar",
 		Image: getSidecarImage(),
