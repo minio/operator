@@ -224,8 +224,8 @@ Use of MinIO Operator is governed by the GNU AGPLv3 or later, found in the [LICE
 [Github Resources](https://github.com/minio/operator/blob/master/docs/)
 
 - [Examples for MinIO Tenant Settings](https://github.com/minio/operator/blob/master/docs/examples.md)
-- [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md).
-- [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md).
-- [Deploy MinIO Tenant with KES](shttps://github.com/minio/operator/blob/master/docs/kes.md).
+- [Custom Hostname Discovery](https://github.com/minio/operator/blob/master/docs/custom-name-templates.md)
+- [Apply PodSecurityPolicy](https://github.com/minio/operator/blob/master/docs/pod-security-policy.md)
+- [Deploy MinIO Tenant with KES](https://github.com/minio/operator/blob/master/docs/kes.md)
 - [Tenant API Documentation](docs/tenant_crd.adoc)
 - [Policy Binding API Documentation](docs/policybinding_crd.adoc)
