@@ -123,9 +123,7 @@ func (c *Controller) generateTLSCertificateForService(serviceName, secretName, d
 		tlsCertSecret, err := c.getCertificateSecret(ctx, namespace, secretName)
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
-				if k8serrors.IsNotFound(err) {
-					klog.Infof("%s TLS secret not found: %v", secretName, err)
-				}
+				klog.Infof("%s TLS secret not found: %v", secretName, err)
 				if err = c.checkAndCreateCSR(ctx, operatorDeployment, serviceName, csrName, secretName); err != nil {
 					klog.Infof("Waiting for the %s certificates to be issued %v", serviceName, err.Error())
 					time.Sleep(time.Second * 10)
