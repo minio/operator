@@ -1459,6 +1459,36 @@ func (c *Controller) handleSecret(obj interface{}, oldObj interface{}) {
 			}
 		}
 	}
+
+	// check if there is tenant using this secret for configuration
+	tenants, err := c.minioClientSet.MinioV2().Tenants(secret.Namespace).List(context.Background(), metav1.ListOptions{})
+	if err != nil {
+		klog.Errorf("Unable to list tenants in namespace %s: %v", secret.Namespace, err)
+		return
+	}
+	if len(tenants.Items) == 1 {
+		tenant := &tenants.Items[0]
+		if tenant.HasConfigurationSecret() && tenant.Spec.Configuration.Name == secret.Name {
+			for _, poolStatus := range tenant.Status.Pools {
+				if poolStatus.State != miniov2.PoolInitialized {
+					klog.Infof("Secret '%s/%s' changed, but tenant %s/%s is not fully initialized, not restarting", secret.Namespace, secret.Name, tenant.Namespace, tenant.Name)
+					return
+				}
+			}
+			configuration, err := c.getTenantConfiguration(context.Background(), tenant)
+			if err != nil {
+				klog.Errorf("Unable to get configuration for tenant %s/%s: %v", tenant.Namespace, tenant.Name, err)
+				return
+			}
+			// pick pod from first initialized pool to signal the restart service.
+			err = c.restartInitializedPool(context.Background(), tenant, tenant.Spec.Pools[0], configuration)
+			if err != nil {
+				klog.Errorf("Unable to restart tenant %s/%s: %v", tenant.Namespace, tenant.Name, err)
+				return
+			}
+			klog.Infof("Secret '%s/%s' changed, tenant %s/%s restarted", secret.Namespace, secret.Name, tenant.Namespace, tenant.Name)
+		}
+	}
 }
 
 // MinIOControllerRateLimiter is a no-arg constructor for a default rate limiter for a workqueue for our controller.
