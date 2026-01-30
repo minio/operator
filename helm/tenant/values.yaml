@@ -140,6 +140,9 @@ tenant:
       # The capacity per volume requested per MinIO Tenant Pod.
       size: 10Gi
       ###
+      # The accessModes for the Persistent Volume Claims created for this pool.
+      accessModes: ReadWriteOnce
+      ###
       # The `terminationGracePeriodSeconds <https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination-grace-period>`__ for MinIO Tenant Pods.
       # terminationGracePeriodSeconds: 30
       ###
@@ -149,6 +152,7 @@ tenant:
       # Please make sure to set xfs for "csi.storage.k8s.io/fstype" parameter under StorageClass.parameters.
       # Docs: https://github.com/kubernetes-sigs/aws-ebs-csi-driver/blob/master/docs/parameters.md
       # storageClassName: standard
+
       ###
       # Specify `storageAnnotations <https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/>`__ to associate to PVCs.
       storageAnnotations: { }
