@@ -659,6 +659,7 @@ func NewPool(args *NewPoolArgs) *appsv1.StatefulSet {
 					SecurityContext:               poolSecurityContext(pool, poolStatus),
 					ServiceAccountName:            t.Spec.ServiceAccountName,
 					PriorityClassName:             t.Spec.PriorityClassName,
+					HostAliases:                   t.Spec.HostAliases,
 					TerminationGracePeriodSeconds: pool.TerminationGracePeriodSeconds,
 				},
 			},

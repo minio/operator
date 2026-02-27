@@ -51,6 +51,7 @@ type TenantSpecApplyConfiguration struct {
 	PrometheusOperatorScrapeMetricsPaths []string                                     `json:"prometheusOperatorScrapeMetricsPaths,omitempty"`
 	ServiceAccountName                   *string                                      `json:"serviceAccountName,omitempty"`
 	PriorityClassName                    *string                                      `json:"priorityClassName,omitempty"`
+	HostAliases                          []v1.HostAlias                               `json:"hostAliases,omitempty"`
 	ImagePullPolicy                      *v1.PullPolicy                               `json:"imagePullPolicy,omitempty"`
 	SideCars                             *SideCarsApplyConfiguration                  `json:"sideCars,omitempty"`
 	ExposeServices                       *ExposeServicesApplyConfiguration            `json:"exposeServices,omitempty"`
@@ -284,6 +285,16 @@ func (b *TenantSpecApplyConfiguration) WithServiceAccountName(value string) *Ten
 // If called multiple times, the PriorityClassName field is set to the value of the last call.
 func (b *TenantSpecApplyConfiguration) WithPriorityClassName(value string) *TenantSpecApplyConfiguration {
 	b.PriorityClassName = &value
+	return b
+}
+
+// WithHostAliases adds the given value to the HostAliases field in the declarative configuration
+// and returns the receiver, so that objects can be build by chaining "With" function invocations.
+// If called multiple times, values provided by each call will be appended to the HostAliases field.
+func (b *TenantSpecApplyConfiguration) WithHostAliases(values ...v1.HostAlias) *TenantSpecApplyConfiguration {
+	for i := range values {
+		b.HostAliases = append(b.HostAliases, values[i])
+	}
 	return b
 }
 

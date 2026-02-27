@@ -3778,6 +3778,18 @@ spec:
                 type: boolean
               serviceAccountName:
                 type: string
+              hostAliases:
+                items:
+                  properties:
+                    hostnames:
+                      items:
+                        type: string
+                      type: array
+                      x-kubernetes-list-type: atomic
+                    ip:
+                      type: string
+                  type: object
+                type: array
               serviceMetadata:
                 properties:
                   consoleServiceAnnotations:
