@@ -298,6 +298,11 @@ type TenantSpec struct {
 	PriorityClassName string `json:"priorityClassName,omitempty"`
 	// *Optional* +
 	//
+	// Maps IP addresses to hostnames at the pod level. Entries are added to the `/etc/hosts` file on each MinIO pod.
+	// +optional
+	HostAliases []corev1.HostAlias `json:"hostAliases,omitempty"`
+	// *Optional* +
+	//
 	// The pull policy for the MinIO Docker image. Specify one of the following: +
 	//
 	// * `Always` +

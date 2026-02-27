@@ -362,6 +362,17 @@ tenant:
   # Add environment variables to be set in MinIO container (https://github.com/minio/minio/tree/master/docs/config)
   env: [ ]
   ###
+  # Add custom host aliases to MinIO pods.
+  #
+  # Example:
+  #
+  # .. code-block:: yaml
+  #
+  #    - ip: "10.10.10.10"
+  #      hostnames:
+  #      - "internal.example.local"
+  hostAliases: [ ]
+  ###
   # PriorityClassName indicates the Pod priority and hence importance of a Pod relative to other Pods.
   # This is applied to MinIO pods only.
   # Refer Kubernetes documentation for details https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass/

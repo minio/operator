@@ -157,6 +157,9 @@ spec:
   {{- with (dig "env" (list) .) }}
   env: {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- with (dig "hostAliases" (list) .) }}
+  hostAliases: {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- if dig "priorityClassName" "" . }}
   priorityClassName: {{ dig "priorityClassName" "" . }}
   {{- end }}
