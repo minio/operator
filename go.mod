@@ -6,7 +6,7 @@ toolchain go1.23.7
 
 require (
 	github.com/blang/semver/v4 v4.0.0
-	github.com/docker/cli v28.0.4+incompatible
+	github.com/docker/cli v29.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-openapi/swag v0.23.1 // indirect
