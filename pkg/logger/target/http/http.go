@@ -173,8 +173,8 @@ func (h *Target) logEntry(entry interface{}) {
 func (h *Target) startHTTPLogger() {
 	// Create a routine which sends json logs received
 	// from an internal channel.
+	h.wg.Add(1)
 	go func() {
-		h.wg.Add(1)
 		defer h.wg.Done()
 		for entry := range h.logCh {
 			h.logEntry(entry)

@@ -52,7 +52,7 @@ func (c *Controller) waitForCertSecretReady(serviceName string, secretName strin
 				klog.Infof("Waiting for the %s certificates secret to be issued", serviceName)
 				time.Sleep(time.Second * 10)
 			} else {
-				klog.Infof(err.Error())
+				klog.Info(err)
 			}
 		} else {
 			publicCertPath, publicKeyPath = c.writeCertSecretToFile(tlsCertSecret, serviceName)
@@ -130,7 +130,7 @@ func (c *Controller) generateTLSCert(serviceName string, secretName string, depl
 				} else {
 					err = c.deleteCSR(ctx, csrName)
 					if err != nil {
-						klog.Infof(err.Error())
+						klog.Info(err)
 					}
 				}
 			}
