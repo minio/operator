@@ -101,7 +101,7 @@ func postMPIntegrationResponse(session *models.Principal, params operator_api.Po
 
 func setMPIntegration(ctx context.Context, email string, isInEU bool, clientSet K8sClientI) *models.Error {
 	if email == "" {
-		return ErrorWithContext(ctx, ErrBadRequest, fmt.Errorf(emailNotSetMsg))
+		return ErrorWithContext(ctx, ErrBadRequest, fmt.Errorf("%s", emailNotSetMsg))
 	}
 	if _, err := setMPEmail(ctx, email, isInEU, clientSet); err != nil {
 		return ErrorWithContext(ctx, err)

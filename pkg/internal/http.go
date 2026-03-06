@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"encoding/xml"
-	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -141,7 +140,7 @@ func WriteResponse(w http.ResponseWriter, statusCode int, response []byte, mType
 	}
 	// Similar check to http.checkWriteHeaderCode
 	if statusCode < 100 || statusCode > 999 {
-		klog.Errorf(fmt.Sprintf("invalid WriteHeader code %v", statusCode))
+		klog.Errorf("invalid WriteHeader code %v", statusCode)
 		statusCode = http.StatusInternalServerError
 	}
 	SetCommonHeaders(w)
