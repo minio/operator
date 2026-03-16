@@ -39,7 +39,7 @@ binary:
 operator: binary
 
 docker: operator
-	@docker buildx build --no-cache --load --platform linux/$(GOARCH) -t $(TAG) .
+	@docker build --platform linux/$(GOARCH) -t $(TAG) .
 
 build: regen-crd verify operator docker
 
