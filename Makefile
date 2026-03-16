@@ -38,10 +38,15 @@ binary:
 
 operator: binary
 
-docker: operator
-	@docker build --platform linux/$(GOARCH) -t $(TAG) .
+container-image: operator
+	-podman manifest rm $(TAG)
+	-podman rmi $(TAG)
+	@podman manifest create $(TAG)
+	@podman build --platform linux/amd64 --build-arg TAG=$(TAG) --manifest $(TAG) .
+	@podman build --platform linux/arm64 --build-arg TAG=$(TAG) --manifest $(TAG) .
+#	@podman manifest push $(TAG)
 
-build: regen-crd verify operator docker
+build: regen-crd verify operator container-image
 
 install: all
 
