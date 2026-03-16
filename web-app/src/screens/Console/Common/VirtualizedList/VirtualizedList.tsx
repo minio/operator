@@ -15,9 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import React, { Fragment, ReactElement } from "react";
-import { FixedSizeList as List } from "react-window";
+import { FixedSizeList as FixedSizeListLib } from "react-window";
 import InfiniteLoader from "react-window-infinite-loader";
 import { AutoSizer } from "react-virtualized";
+
+const List = FixedSizeListLib as any;
 
 interface IVirtualizedList {
   rowRenderFunction: (index: number) => ReactElement | null;
@@ -50,14 +52,16 @@ const VirtualizedList = ({
     return <div style={style}>{rowRenderFunction(index)}</div>;
   };
 
+  const InfiniteLoaderAny = InfiniteLoader as any;
+
   return (
     <Fragment>
-      <InfiniteLoader
+      <InfiniteLoaderAny
         isItemLoaded={isItemLoaded}
         loadMoreItems={loadMoreItems}
         itemCount={totalItems}
       >
-        {({ onItemsRendered, ref }) => (
+        {({ onItemsRendered, ref }: any) => (
           // @ts-ignore
           <AutoSizer>
             {({ width, height }) => {
@@ -76,7 +80,7 @@ const VirtualizedList = ({
             }}
           </AutoSizer>
         )}
-      </InfiniteLoader>
+      </InfiniteLoaderAny>
     </Fragment>
   );
 };
